@@ -94,41 +94,11 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         }
 
         RskAddress txSender = tx.getSender(signatureCache);
-
-        AddressBasedAuthorizer authorizer = constants.getChangeLockingCapAuthorizer();
-        ABICallElection increaseLockingCapElection = storageProvider.getIncreaseLockingCapElection(
-            authorizer);
-        ABICallSpec increaseLockingCapVote = new ABICallSpec(INCREASE_LOCKING_CAP_TAG, new byte[][]{
-            BridgeSerializationUtils.serializeRskCoin(newCap)});
-
-        boolean successfulVote = increaseLockingCapElection.vote(increaseLockingCapVote, txSender);
-        if (!successfulVote) {
-            logger.warn("[{}] Unsuccessful vote. Sender: {}, newUnionLockingCap: {}", INCREASE_LOCKING_CAP_TAG, txSender, newCap);
-            return UnionResponseCode.GENERIC_ERROR;
-        }
-
-        Optional<ABICallSpec> electionWinner = increaseLockingCapElection.getWinner();
-        if (electionWinner.isEmpty()) {
-            logger.info("[{}] Successful vote. Sender: {}, newUnionLockingCap: {}", INCREASE_LOCKING_CAP_TAG, txSender, newCap);
-            return UnionResponseCode.SUCCESS;
-        }
-
-        ABICallSpec winner = electionWinner.get();
-        Coin winnerLockingCap;
-        try {
-            winnerLockingCap = BridgeSerializationUtils.deserializeRskCoin(winner.getArguments()[0]);
-        } catch (Exception e) {
-            // This block should not be reached if the serialization and deserialization are consistent.
-            logger.warn("[{}] Exception deserializing winner value", INCREASE_LOCKING_CAP_TAG, e);
-            return UnionResponseCode.GENERIC_ERROR;
-        }
-
         Coin lockingCapBeforeUpdate = getLockingCap();
-        storageProvider.setLockingCap(winnerLockingCap);
-        eventLogger.logUnionLockingCapIncreased(txSender, lockingCapBeforeUpdate, winnerLockingCap);
+        storageProvider.setLockingCap(newCap);
+        eventLogger.logUnionLockingCapIncreased(txSender, lockingCapBeforeUpdate, newCap);
         logger.info("[{}] Union Locking Cap has been increased. Previous value: {}. New value: {}",
-            INCREASE_LOCKING_CAP_TAG, lockingCapBeforeUpdate, winnerLockingCap);
-        increaseLockingCapElection.clear();
+            INCREASE_LOCKING_CAP_TAG, lockingCapBeforeUpdate, newCap);
         return UnionResponseCode.SUCCESS;
     }
 
@@ -302,52 +272,16 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         }
 
         RskAddress txSender = tx.getSender(signatureCache);
-        AddressBasedAuthorizer authorizer = constants.getChangeTransferPermissionsAuthorizer();
-        ABICallElection setTransferPermissionsElection = storageProvider.getTransferPermissionsElection(
-            authorizer);
-        ABICallSpec setTransferPermissionsVote = new ABICallSpec(SET_TRANSFER_PERMISSIONS_TAG, new byte[][]{
-            BridgeSerializationUtils.serializeBoolean(requestEnabled),
-            BridgeSerializationUtils.serializeBoolean(releaseEnabled)
-        });
+        storageProvider.setUnionBridgeRequestEnabled(requestEnabled);
+        storageProvider.setUnionBridgeReleaseEnabled(releaseEnabled);
 
-        boolean successfulVote = setTransferPermissionsElection.vote(setTransferPermissionsVote, txSender);
-        if (!successfulVote) {
-            logger.warn("[{}] Unsuccessful vote. Sender: {}, requestEnabled: {}, releaseEnabled: {}.", SET_TRANSFER_PERMISSIONS_TAG, txSender, requestEnabled, releaseEnabled);
-            return UnionResponseCode.GENERIC_ERROR;
-        }
-
-        Optional<ABICallSpec> electionWinner = setTransferPermissionsElection.getWinner();
-        if (electionWinner.isEmpty()) {
-            logger.info("[{}] Successful vote. Sender: {}, requestEnabled: {}, releaseEnabled: {}.", SET_TRANSFER_PERMISSIONS_TAG, txSender, requestEnabled, releaseEnabled);
-            return UnionResponseCode.SUCCESS;
-        }
-
-        ABICallSpec winner = electionWinner.get();
-        Boolean winnerRequestEnabled;
-        Boolean winnerReleaseEnabled;
-        try {
-            winnerRequestEnabled = BridgeSerializationUtils.deserializeBoolean(
-                winner.getArguments()[0]);
-            winnerReleaseEnabled = BridgeSerializationUtils.deserializeBoolean(
-                winner.getArguments()[1]);
-        } catch (Exception e) {
-            // This block should not be reached if the serialization and deserialization are consistent.
-            logger.warn("[{}] Exception deserializing winner value", SET_TRANSFER_PERMISSIONS_TAG, e);
-            return UnionResponseCode.GENERIC_ERROR;
-        }
-
-        storageProvider.setUnionBridgeRequestEnabled(winnerRequestEnabled);
-        storageProvider.setUnionBridgeReleaseEnabled(winnerReleaseEnabled);
-
-        eventLogger.logUnionBridgeTransferPermissionsUpdated(txSender, winnerRequestEnabled, winnerReleaseEnabled);
+        eventLogger.logUnionBridgeTransferPermissionsUpdated(txSender, requestEnabled, releaseEnabled);
         logger.info(
             "[{}] Transfer permissions have been updated. Request enabled: {}, Release enabled: {}",
             SET_TRANSFER_PERMISSIONS_TAG,
-            winnerRequestEnabled,
-            winnerReleaseEnabled
+            requestEnabled,
+            releaseEnabled
         );
-
-        setTransferPermissionsElection.clear();
         return UnionResponseCode.SUCCESS;
     }
 

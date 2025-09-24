@@ -1,7 +1,5 @@
 package co.rsk.peg.union;
 
-import static co.rsk.peg.union.UnionBridgeStorageIndexKey.UNION_BRIDGE_INCREASE_LOCKING_CAP_ELECTION;
-import static co.rsk.peg.union.UnionBridgeStorageIndexKey.UNION_BRIDGE_TRANSFER_PERMISSIONS_ELECTION;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
@@ -9,8 +7,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.storage.StorageAccessor;
-import co.rsk.peg.vote.ABICallElection;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.util.Optional;
 
 public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvider {
@@ -20,13 +16,11 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     private RskAddress unionBridgeAddress;
 
     private Coin unionBridgeLockingCap;
-    private ABICallElection increaseLockingCapElection;
 
     private Coin weisTransferredToUnionBridge;
 
     private Boolean unionBridgeRequestEnabled;
     private Boolean unionBridgeReleaseEnabled;
-    private ABICallElection transferPermissionsElection;
 
     public UnionBridgeStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -39,8 +33,6 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
         saveWeisTransferredToUnionBridge();
         saveRequestEnabled();
         saveReleaseEnabled();
-        saveIncreaseLockingCapElection();
-        saveTransferPermissionsElection();
     }
 
     private void saveReleaseEnabled() {
@@ -98,30 +90,6 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
             unionBridgeAddress,
             BridgeSerializationUtils::serializeRskAddress
-        );
-    }
-
-    private void saveIncreaseLockingCapElection() {
-        if (increaseLockingCapElection == null) {
-            return;
-        }
-
-        bridgeStorageAccessor.saveToRepository(
-            UNION_BRIDGE_INCREASE_LOCKING_CAP_ELECTION.getKey(),
-            increaseLockingCapElection,
-            BridgeSerializationUtils::serializeElection
-        );
-    }
-
-    private void saveTransferPermissionsElection() {
-        if (transferPermissionsElection == null) {
-            return;
-        }
-
-        bridgeStorageAccessor.saveToRepository(
-            UNION_BRIDGE_TRANSFER_PERMISSIONS_ELECTION.getKey(),
-            transferPermissionsElection,
-            BridgeSerializationUtils::serializeElection
         );
     }
 
@@ -216,31 +184,5 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
                 BridgeSerializationUtils::deserializeBoolean
             )));
-    }
-
-    @Override
-    public ABICallElection getIncreaseLockingCapElection(AddressBasedAuthorizer authorizer) {
-        if (increaseLockingCapElection != null) {
-            return increaseLockingCapElection;
-        }
-
-        increaseLockingCapElection = bridgeStorageAccessor.getFromRepository(
-            UNION_BRIDGE_INCREASE_LOCKING_CAP_ELECTION.getKey(),
-            data -> BridgeSerializationUtils.deserializeElection(data, authorizer)
-        );
-        return increaseLockingCapElection;
-    }
-
-    @Override
-    public ABICallElection getTransferPermissionsElection(AddressBasedAuthorizer authorizer) {
-        if (transferPermissionsElection != null) {
-            return transferPermissionsElection;
-        }
-
-        transferPermissionsElection = bridgeStorageAccessor.getFromRepository(
-            UNION_BRIDGE_TRANSFER_PERMISSIONS_ELECTION.getKey(),
-            data -> BridgeSerializationUtils.deserializeElection(data, authorizer)
-        );
-        return transferPermissionsElection;
     }
 }
