@@ -18,8 +18,12 @@
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.Coin;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.PrecompiledContractsOverride;
 
 import java.math.BigInteger;
 import java.util.Iterator;
@@ -28,8 +32,26 @@ import java.util.Optional;
 
 public class DefaultStateOverrideApplier implements StateOverrideApplier {
 
+    private final ActivationConfig activationConfig;
+    private final PrecompiledContracts precompiledContracts;
+
+    public DefaultStateOverrideApplier(ActivationConfig activationConfig, PrecompiledContracts precompiledContracts) {
+        this.activationConfig = activationConfig;
+        this.precompiledContracts = precompiledContracts;
+    }
+
     @Override
-    public void applyToRepository(Repository repository, AccountOverride accountOverride) {
+    public void applyToRepository(Block block, Repository repository, AccountOverride accountOverride, PrecompiledContractsOverride precompiledContractsOverride) {
+        ActivationConfig.ForBlock blockActivations = activationConfig.forBlock(block.getNumber());
+
+        if (accountOverride.getMovePrecompileToAddress() != null && accountOverride.getAddress() != null && precompiledContractsOverride != null) {
+            if (precompiledContractsOverride.contains(accountOverride.getAddress())) {
+                throw new IllegalStateException(String.format("Account %s has already been overridden by a precompile", accountOverride.getAddress().toHexString()));
+            }
+
+            final var pcc = precompiledContracts.getContractForAddress(blockActivations, DataWord.valueFromHex(accountOverride.getAddress().toHexString()));
+            precompiledContractsOverride.addOverride(accountOverride.getMovePrecompileToAddress(), pcc);
+        }
 
         if (accountOverride.getBalance() != null) {
             Coin storedValue = Optional.ofNullable(repository.getBalance(accountOverride.getAddress())).orElse(Coin.ZERO);

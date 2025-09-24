@@ -17,8 +17,10 @@
  */
 package co.rsk.rpc.modules.eth;
 
+import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
+import org.ethereum.vm.PrecompiledContractsOverride;
 
 public interface StateOverrideApplier {
-    void applyToRepository(Repository repository, AccountOverride accountOverride);
+    void applyToRepository(Block block, Repository repository, AccountOverride accountOverride, PrecompiledContractsOverride precompiledContractsOverride);
 }

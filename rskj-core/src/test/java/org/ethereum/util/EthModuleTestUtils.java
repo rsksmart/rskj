@@ -64,7 +64,7 @@ public class EthModuleTestUtils {
                 config.getActivationConfig(),
                 new PrecompiledContracts(config, null, null),
                 config.getAllowCallStateOverride(),
-                new DefaultStateOverrideApplier());
+                new DefaultStateOverrideApplier(config.getActivationConfig(), new PrecompiledContracts(config, null, null)));
     }
 
     public static EthModuleGasEstimation buildBasicEthModuleForGasEstimation(World world) {

@@ -17,6 +17,7 @@
  */
 package co.rsk.rpc.modules.eth;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.IReadWrittenKeysTracker;
@@ -26,12 +27,15 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.TestUtils;
+import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -42,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DefaultStateOverrideApplierTest {
 
     private static final BigInteger DEFAULT_BALANCE = BigInteger.valueOf(1000);
-    private static final byte[] DEFAULT_CODE = TestUtils.generateBytes(1,10);
+    private static final byte[] DEFAULT_CODE = TestUtils.generateBytes(1, 10);
     private static final BigInteger DEFAULT_NONCE = BigInteger.valueOf(5);
     private static final DataWord DEFAULT_STORAGE_KEY_ONE = DataWord.valueOf(1);
     private static final DataWord DEFAULT_STORAGE_KEY_TWO = DataWord.valueOf(2);
@@ -52,10 +56,12 @@ class DefaultStateOverrideApplierTest {
     private AccountOverride accountOverride;
     private MutableRepository repository;
     private RskAddress address;
-    private final DefaultStateOverrideApplier stateOverrideApplier = new DefaultStateOverrideApplier();
+    private DefaultStateOverrideApplier stateOverrideApplier;
 
     @BeforeEach
     void setup() {
+        final var testSystemProperties = new TestSystemProperties();
+        stateOverrideApplier = new DefaultStateOverrideApplier(testSystemProperties.getActivationConfig(), new PrecompiledContracts(testSystemProperties, null, null));
         address = TestUtils.generateAddress("address");
 
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
@@ -83,7 +89,7 @@ class DefaultStateOverrideApplierTest {
         accountOverride.setBalance(balance);
 
         // When
-        stateOverrideApplier.applyToRepository(repository,accountOverride);
+        stateOverrideApplier.applyToRepository(Mockito.mock(Block.class), repository, accountOverride, null);
 
         // Then
         assertEquals(accountOverride.getBalance(), repository.getBalance(address).asBigInteger());
@@ -96,7 +102,7 @@ class DefaultStateOverrideApplierTest {
         accountOverride.setNonce(nonce);
 
         // When
-        stateOverrideApplier.applyToRepository(repository,accountOverride);
+        stateOverrideApplier.applyToRepository(Mockito.mock(Block.class), repository, accountOverride, null);
 
         // Then
         assertEquals(accountOverride.getNonce(), repository.getNonce(address).longValue());
@@ -109,7 +115,7 @@ class DefaultStateOverrideApplierTest {
         accountOverride.setCode(code);
 
         // When
-        stateOverrideApplier.applyToRepository(repository,accountOverride);
+        stateOverrideApplier.applyToRepository(Mockito.mock(Block.class), repository, accountOverride, null);
 
         // Then
         assertArrayEquals(accountOverride.getCode(), repository.getCode(address));
@@ -126,7 +132,7 @@ class DefaultStateOverrideApplierTest {
         assertNotNull(repository.getStorageValue(address, DEFAULT_STORAGE_KEY_TWO));
 
         // Add an existing key to ensure it is cleared
-        stateOverrideApplier.applyToRepository(repository,accountOverride);
+        stateOverrideApplier.applyToRepository(Mockito.mock(Block.class), repository, accountOverride, null);
         assertEquals(accountOverride.getState().get(DEFAULT_STORAGE_KEY_ONE), repository.getStorageValue(address, DEFAULT_STORAGE_KEY_ONE));
         assertNull(repository.getStorageValue(address, DEFAULT_STORAGE_KEY_TWO));
     }
@@ -140,7 +146,7 @@ class DefaultStateOverrideApplierTest {
 
         // When
         // Add an existing key to ensure it is cleared
-        stateOverrideApplier.applyToRepository(repository,accountOverride);
+        stateOverrideApplier.applyToRepository(Mockito.mock(Block.class), repository, accountOverride, null);
 
         // Then
         assertEquals(accountOverride.getStateDiff().get(DEFAULT_STORAGE_KEY_ONE), repository.getStorageValue(address, DEFAULT_STORAGE_KEY_ONE));
@@ -148,7 +154,7 @@ class DefaultStateOverrideApplierTest {
     }
 
     @Test
-    void applyStateAndStateDiffThrowsException(){
+    void applyStateAndStateDiffThrowsException() {
         // Given
         Map<DataWord, DataWord> state = new HashMap<>();
         state.put(DEFAULT_STORAGE_KEY_ONE, DataWord.valueOf(10));
@@ -157,7 +163,7 @@ class DefaultStateOverrideApplierTest {
 
         // Then
         assertThrows(IllegalStateException.class, () -> {
-            stateOverrideApplier.applyToRepository(repository, accountOverride);
+            stateOverrideApplier.applyToRepository(Mockito.mock(Block.class), repository, accountOverride, null);
         });
     }
 
