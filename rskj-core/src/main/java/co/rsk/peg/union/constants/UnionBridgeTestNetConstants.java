@@ -5,10 +5,9 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.vote.AddressBasedAuthorizer.MinimumRequiredCalculation;
+import co.rsk.peg.vote.AddressBasedAuthorizerFactory;
 import java.math.BigInteger;
 import java.util.Collections;
-import java.util.List;
-import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -36,28 +35,14 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
         );
 
         // TODO: Replace with actual authorizers
-        List<ECKey> changeLockingCapAuthorizers = Stream.of(
-            "049929eb3c107a65108830f4c221068f42301bd8b054f91bd594944e7fb488fd1c93a8921fb28d3494769598eb271cd2834a31c5bd08fa075170b3da804db00a5b",
-            "04c8a5827bfadd2bce6fa782e6c48dd61503d38c86e29381781167cd6371eb56f50bc03c9e9c265ea7e07709b964e0b4b0f3d416955225fcb9202e6763ddd5ca91",
-            "0442329d63de5ec5b2f285da7e2f3eb484db3ee5e39066579244211021b81c32d7061922075e2272a8e8a633a5856071eef7e7f800b3d93c9acee91e0f0f37ac2f"
-        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
-
-        changeLockingCapAuthorizer = new AddressBasedAuthorizer(
-            changeLockingCapAuthorizers,
-            MinimumRequiredCalculation.MAJORITY
-        );
+        changeLockingCapAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
+            new RskAddress("0000000000000000000000000000000000000000")
+        );;
 
         // TODO: Replace with actual authorizers
-        List<ECKey> changeTransferPermissionsAuthorizers = Stream.of(
-            "04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f",
-            "04cf42ec9eb287adc7196e8d3d2c288542b1db733681c22887e3a3e31eb98504002825ecbe0cd9b61aff3600ffd0ca4542094c75cb0bac5e93be0c7e00b2ead9ea",
-            "043a7510e39f8c406fb682c20d0e74e6f18f6ec6cb4bc9718a3c47f9bda741f3333ed39e9854b9ad89f16fccb52453975ff1039dd913addfa6a6c56bcacbd92ff9"
-        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
-
-        changeTransferPermissionsAuthorizer = new AddressBasedAuthorizer(
-            changeTransferPermissionsAuthorizers,
-            MinimumRequiredCalculation.MAJORITY
-        );
+        changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
+            new RskAddress("0000000000000000000000000000000000000000")
+        );;
     }
 
     public static UnionBridgeConstants getInstance() {

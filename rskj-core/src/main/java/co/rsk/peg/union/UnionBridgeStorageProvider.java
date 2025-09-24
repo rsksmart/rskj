@@ -2,8 +2,6 @@ package co.rsk.peg.union;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.vote.ABICallElection;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.util.Optional;
 
 public interface UnionBridgeStorageProvider {
@@ -18,7 +16,5 @@ public interface UnionBridgeStorageProvider {
     Optional<Boolean> isUnionBridgeRequestEnabled();
     void setUnionBridgeReleaseEnabled(boolean enabled);
     Optional<Boolean> isUnionBridgeReleaseEnabled();
-    ABICallElection getIncreaseLockingCapElection(AddressBasedAuthorizer authorizer);
-    ABICallElection getTransferPermissionsElection(AddressBasedAuthorizer authorizer);
     void save();
 }
