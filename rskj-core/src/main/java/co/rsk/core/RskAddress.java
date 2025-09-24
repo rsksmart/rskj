@@ -43,6 +43,8 @@ public class RskAddress {
     public static final int LENGTH_IN_BYTES = 20;
 
     private static final RskAddress NULL_ADDRESS = new RskAddress();
+    //
+    public static final RskAddress ZERO_ADDRESS = new RskAddress("0000000000000000000000000000000000000000");
 
     /**
      * This compares using the lexicographical order of the sender unsigned bytes.

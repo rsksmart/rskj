@@ -1,5 +1,7 @@
 package co.rsk.peg.union.constants;
 
+import static co.rsk.core.RskAddress.ZERO_ADDRESS;
+
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -8,10 +10,6 @@ import co.rsk.peg.vote.AddressBasedAuthorizer.MinimumRequiredCalculation;
 import co.rsk.peg.vote.AddressBasedAuthorizerFactory;
 import java.math.BigInteger;
 import java.util.Collections;
-import java.util.List;
-import java.util.stream.Stream;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
 
 public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
 
@@ -22,7 +20,7 @@ public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
         // TODO: Replace with actual address
-        unionBridgeAddress = new RskAddress("0000000000000000000000000000000000000000");
+        unionBridgeAddress = ZERO_ADDRESS;
 
         // TODO: Replace with actual initial locking cap value and increments multiplier
         BigInteger oneRbtc = BigInteger.TEN.pow(18); // 1 RBTC = 1000000000000000000 wei
@@ -36,13 +34,13 @@ public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
 
         // TODO: Replace with actual authorizers
         changeLockingCapAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("0000000000000000000000000000000000000000")
+            ZERO_ADDRESS
         );
 
         // TODO: Replace with actual authorizers
         changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("0000000000000000000000000000000000000000")
-        );;
+            ZERO_ADDRESS
+        );
     }
 
     public static UnionBridgeConstants getInstance() {

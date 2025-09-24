@@ -1,5 +1,7 @@
 package co.rsk.peg.union.constants;
 
+import static co.rsk.core.RskAddress.ZERO_ADDRESS;
+
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -17,8 +19,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class UnionBridgeConstantsTest {
-
-    private static final RskAddress zeroAddress = new RskAddress("0000000000000000000000000000000000000000");
 
     private static Stream<Arguments> changeUnionAddressAuthorizerProvider() {
         List<RskAddress> testnetAuthorizers = mapToRskAddresses(Stream.of(
@@ -61,9 +61,9 @@ class UnionBridgeConstantsTest {
 
     private static Stream<Arguments> unionBridgeChangeLockingCapAuthorizerProvider() {
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance(), zeroAddress),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), zeroAddress),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), zeroAddress)
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), ZERO_ADDRESS),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), ZERO_ADDRESS),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), ZERO_ADDRESS)
         );
     }
 
@@ -86,9 +86,9 @@ class UnionBridgeConstantsTest {
 
     private static Stream<Arguments> unionBridgeChangeTransferPermissionsAuthorizerProvider() {
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance(), zeroAddress),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), zeroAddress),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), zeroAddress)
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), ZERO_ADDRESS),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), ZERO_ADDRESS),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), ZERO_ADDRESS)
         );
     }
 
