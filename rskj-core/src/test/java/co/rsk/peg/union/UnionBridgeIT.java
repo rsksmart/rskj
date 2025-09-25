@@ -276,7 +276,7 @@ class UnionBridgeIT {
 
     @Test
     @Order(7)
-    void setUnionBridgeContractAddressForTestnet_whenAllActivations_shouldReturnEnvironmentDisabled()
+    void setUnionBridgeContractAddressForTestnet_whenAllActivations_shouldFail()
         throws VMException {
         // Setup for all activations
         setupForAllActivations();
@@ -289,10 +289,10 @@ class UnionBridgeIT {
         assertNoAddressIsStored();
 
         // Attempt to update union address when mainnet network. It should fail.
-        int actualUnionResponseCode = updateUnionAddress();
+        VMException actualException = assertThrows(VMException.class, this::updateUnionAddress);
 
         // Assert mainnet network does not allow updating union address
-        assertEquals(ENVIRONMENT_DISABLED.getCode(), actualUnionResponseCode);
+        assertTrue(actualException.getMessage().contains("The setUnionBridgeContractAddressForTestnet function is disabled in Mainnet."));
         assertNoAddressIsStored();
         assertNoEventWasEmitted();
 
@@ -504,14 +504,17 @@ class UnionBridgeIT {
 
     @Test
     @Order(25)
-    void setUnionBridgeContractAddressForTestnet_whenMainnetAndTransferIsDisabled_shouldReturnEnvironmentDisabled()
+    void setUnionBridgeContractAddressForTestnet_whenMainnetAndTransferIsDisabled_shouldFail()
         throws VMException {
         setupCaller(CURRENT_UNION_BRIDGE_ADDRESS);
         RskAddress actualUnionAddress = getUnionBridgeContractAddress();
         assertEquals(CURRENT_UNION_BRIDGE_ADDRESS, actualUnionAddress);
 
-        int actualUnionResponseCode = updateUnionAddress();
-        assertEquals(ENVIRONMENT_DISABLED.getCode(), actualUnionResponseCode);
+        // Attempt to update union address when mainnet network. It should fail.
+        VMException actualException = assertThrows(VMException.class, this::updateUnionAddress);
+
+        // Assert mainnet network does not allow updating union address
+        assertTrue(actualException.getMessage().contains("The setUnionBridgeContractAddressForTestnet function is disabled in Mainnet."));
 
         // Assert that the union address remains unchanged
         assertNoAddressIsStored();
@@ -798,13 +801,10 @@ class UnionBridgeIT {
         setupCaller(CURRENT_UNION_BRIDGE_ADDRESS);
     }
 
-    private int updateUnionAddress() throws VMException {
+    private void updateUnionAddress() throws VMException {
         CallTransaction.Function function = SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
         byte[] setUnionBridgeContractAddressData = function.encode(NEW_UNION_BRIDGE_CONTRACT_ADDRESS.toHexString());
-        byte[] result = bridge.execute(setUnionBridgeContractAddressData);
-        BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.decodeResult(
-            result)[0];
-        return decodedResult.intValue();
+        bridge.execute(setUnionBridgeContractAddressData);
     }
 
     private void assertNoAddressIsStored() {

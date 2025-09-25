@@ -1548,6 +1548,20 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         };
     }
 
+    public static BridgeMethods.BridgeMethodExecutor executeIfTestnetOrRegTest(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
+        return (self, args) -> {
+            boolean isMainnet = self.constants.getChainId() == Constants.MAINNET_CHAIN_ID;
+            if (isMainnet) {
+                String errorMessage = String.format(
+                    "The %s function is disabled in Mainnet.",
+                    funcName
+                );
+                throw new VMException(errorMessage);
+            }
+            return decoratee.execute(self, args);
+        };
+    }
+
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             boolean isFromActiveFed = BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache);
