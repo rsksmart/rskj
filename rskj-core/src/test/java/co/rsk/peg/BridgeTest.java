@@ -3470,9 +3470,7 @@ class BridgeTest {
         private static Stream<Arguments> setUnionBridgeContractAddressForTestnetConstantsProvider() {
             return Stream.of(
                 Arguments.of(Constants.regtest(), UnionResponseCode.SUCCESS),
-                Arguments.of(Constants.testnet2(ActivationConfigsForTest.all()), UnionResponseCode.SUCCESS),
-                // TODO: Move environment check to Bridge method
-                Arguments.of(Constants.mainnet(), UnionResponseCode.ENVIRONMENT_DISABLED)
+                Arguments.of(Constants.testnet2(ActivationConfigsForTest.all()), UnionResponseCode.SUCCESS)
             );
         }
 
@@ -3499,27 +3497,19 @@ class BridgeTest {
         }
 
         @Test
-        void setUnionBridgeContractAddressForTestnet_whenMainnet_shouldReturnEnvironmentDisabled() throws VMException {
+        void setUnionBridgeContractAddressForTestnet_whenMainnet_shouldReturnEnvironmentDisabled() {
             bridge = bridgeBuilder
                 .activationConfig(allActivations)
                 .bridgeSupport(bridgeSupport)
                 .constants(Constants.mainnet())
                 .build();
 
-            RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress(
-                "newUnionBridgeContractAddress");
-            UnionResponseCode expectedUnionResponseCode = UnionResponseCode.ENVIRONMENT_DISABLED;
-            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, newUnionBridgeContractAddress)).thenReturn(
-                expectedUnionResponseCode);
-
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
-            byte[] data = function.encode(newUnionBridgeContractAddress.toHexString());
+            byte[] data = function.encode(TestUtils.generateAddress("unionBridgeContractAddress").toHexString());
+            VMException actualException = assertThrows(VMException.class, () -> bridge.execute(data));
 
-            byte[] result = bridge.execute(data);
-            BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.decodeResult(result)[0];
-
-            int actualUnionResponseCode = decodedResult.intValue();
-            assertEquals(expectedUnionResponseCode.getCode(), actualUnionResponseCode);
+            assertTrue(actualException.getMessage().contains("The setUnionBridgeContractAddressForTestnet function is disabled in Mainnet"));
+            verify(unionBridgeSupport, never()).setUnionBridgeContractAddressForTestnet(any(), any());
         }
 
         @Test
