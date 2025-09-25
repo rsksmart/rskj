@@ -50,16 +50,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         final String SET_UNION_BRIDGE_ADDRESS_TAG = "setUnionBridgeContractAddressForTestnet";
         logger.info("[{}] Setting new union bridge contract address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, unionBridgeContractAddress);
 
-        // Check if the network is MAINNET as the contract address can only be set in testnet or regtest
-        if (isCurrentEnvironmentMainnet()) {
-            logger.warn(
-                "[{}] Union Bridge Contract Address can only be set in Testnet and RegTest environments. Current network: {}",
-                SET_UNION_BRIDGE_ADDRESS_TAG,
-                constants.getBtcParams().getId()
-            );
-            return UnionResponseCode.ENVIRONMENT_DISABLED;
-        }
-
         AddressBasedAuthorizer authorizer = constants.getChangeUnionBridgeContractAddressAuthorizer();
         if (!isAuthorized(tx, authorizer)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
