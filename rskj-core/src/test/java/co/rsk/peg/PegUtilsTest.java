@@ -225,6 +225,125 @@ class PegUtilsTest {
     }
 
     @Test
+    void allUTXOsToFedAreAboveMinimumPeginValue_peginWithOneOutputExactlyMinimum_shouldReturnTrue() {
+        // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, List.of(activeFederation));
+        BtcTransaction peginBtcTx = new BtcTransaction(btcMainnetParams);
+        BtcECKey userPubKey = BitcoinTestUtils.getBtcEcKeyFromSeed("user");
+
+        peginBtcTx.addInput(
+            BitcoinTestUtils.createHash(1),
+            0,
+            ScriptBuilder.createInputScript(null, userPubKey)
+        );
+
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+        peginBtcTx.addOutput(minimumPeginTxValue, activeFederation.getAddress()); // minimum
+
+        // Act
+        boolean allUTXOsAboveMinimum = PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(
+            peginBtcTx,
+            liveFederationWallet,
+            minimumPeginTxValue,
+            activations
+        );
+
+        // Assert
+        assertTrue(allUTXOsAboveMinimum);
+    }
+
+    @Test
+    void allUTXOsToFedAreAboveMinimumPeginValue_peginWithOneOutputExactlyMinimumAndOneAboveMinimum_shouldReturnTrue() {
+        // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, List.of(activeFederation));
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+
+        BtcTransaction peginBtcTx = new BtcTransaction(btcMainnetParams);
+        BtcECKey userPubKey = BitcoinTestUtils.getBtcEcKeyFromSeed("user");
+
+        peginBtcTx.addInput(
+            BitcoinTestUtils.createHash(1),
+            0,
+            ScriptBuilder.createInputScript(null, userPubKey)
+        );
+
+        peginBtcTx.addOutput(minimumPeginTxValue, activeFederation.getAddress()); // minimum
+        peginBtcTx.addOutput(minimumPeginTxValue.plus(Coin.SATOSHI), activeFederation.getAddress()); // above minimum
+
+        // Act
+        boolean allUTXOsAboveMinimum = PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(
+            peginBtcTx,
+            liveFederationWallet,
+            minimumPeginTxValue,
+            activations
+        );
+
+        // Assert
+        assertTrue(allUTXOsAboveMinimum);
+    }
+
+    @Test
+    void allUTXOsToFedAreAboveMinimumPeginValue_peginWithOneOutputBelowMinimum_shouldReturnFalse() {
+        // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, List.of(activeFederation));
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+
+        BtcTransaction peginBtcTx = new BtcTransaction(btcMainnetParams);
+        BtcECKey userPubKey = BitcoinTestUtils.getBtcEcKeyFromSeed("user");
+
+        peginBtcTx.addInput(
+            BitcoinTestUtils.createHash(1),
+            0,
+            ScriptBuilder.createInputScript(null, userPubKey)
+        );
+
+        peginBtcTx.addOutput(minimumPeginTxValue.minus(Coin.SATOSHI), activeFederation.getAddress()); // below minimum
+        peginBtcTx.addOutput(minimumPeginTxValue, activeFederation.getAddress()); // minimum
+        peginBtcTx.addOutput(minimumPeginTxValue.plus(Coin.SATOSHI), activeFederation.getAddress()); // above minimum
+
+        // Act
+        boolean allUTXOsAboveMinimum = PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(
+            peginBtcTx,
+            liveFederationWallet,
+            minimumPeginTxValue,
+            activations
+        );
+
+        // Assert
+        assertFalse(allUTXOsAboveMinimum);
+    }
+
+    @Test
+    void allUTXOsToFedAreAboveMinimumPeginValue_notPeginTx_shouldReturnFalse() {
+        // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, List.of(activeFederation));
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+
+        BtcTransaction peginBtcTx = new BtcTransaction(btcMainnetParams);
+        BtcECKey userPubKey = BitcoinTestUtils.getBtcEcKeyFromSeed("user");
+
+        peginBtcTx.addInput(
+            BitcoinTestUtils.createHash(1),
+            0,
+            ScriptBuilder.createInputScript(null, userPubKey)
+        );
+
+        Address receiver = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "receiver");
+        peginBtcTx.addOutput(minimumPeginTxValue.minus(Coin.SATOSHI), receiver); // no outputs sent to fed
+
+        // Act
+        boolean allUTXOsAboveMinimum = PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(
+            peginBtcTx,
+            liveFederationWallet,
+            minimumPeginTxValue,
+            activations
+        );
+
+        // Assert
+        assertFalse(allUTXOsAboveMinimum);
+    }
+
+    @Test
     void test_getTransactionType_pegin_active_fed() {
         // Arrange
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
