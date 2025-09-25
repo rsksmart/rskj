@@ -108,8 +108,8 @@ class AddressBasedAuthorizerFactoryTest {
     }
 
     private void assertSingleAuthorizer(AddressBasedAuthorizer addressBasedAuthorizer, RskAddress authorizedAddress) {
-        Assertions.assertEquals(1, addressBasedAuthorizer.getNumberOfAuthorizedKeys());
-        Assertions.assertEquals(1, addressBasedAuthorizer.getRequiredAuthorizedKeys());
+        Assertions.assertEquals(1, addressBasedAuthorizer.getNumberOfAuthorizedAddresses());
+        Assertions.assertEquals(1, addressBasedAuthorizer.getNumberOfAuthorizedAddresses());
 
         // should be authorized
         Assertions.assertTrue(addressBasedAuthorizer.isAuthorized(authorizedAddress));
@@ -119,8 +119,8 @@ class AddressBasedAuthorizerFactoryTest {
     }
 
     private void assertMajorityAuthorizer(AddressBasedAuthorizer majorityAuthorizer, Set<RskAddress> authorizedAddresses) {
-        Assertions.assertEquals(authorizedAddresses.size(), majorityAuthorizer.getNumberOfAuthorizedKeys());
-        Assertions.assertEquals(authorizedAddresses.size() / 2 + 1, majorityAuthorizer.getRequiredAuthorizedKeys());
+        Assertions.assertEquals(authorizedAddresses.size(), majorityAuthorizer.getNumberOfAuthorizedAddresses());
+        Assertions.assertEquals(authorizedAddresses.size() / 2 + 1, majorityAuthorizer.getRequiredAuthorizedAddresses());
 
         authorizedAddresses.stream().map(majorityAuthorizer::isAuthorized).forEach(Assertions::assertTrue);
         authorizedAddresses.forEach(address -> {
