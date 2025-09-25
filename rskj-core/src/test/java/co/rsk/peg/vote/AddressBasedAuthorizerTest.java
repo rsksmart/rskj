@@ -44,8 +44,8 @@ class AddressBasedAuthorizerTest {
             mock(ECKey.class)
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.ONE);
 
-        Assertions.assertEquals(4, auth.getNumberOfAuthorizedKeys());
-        Assertions.assertEquals(1, auth.getRequiredAuthorizedKeys());
+        Assertions.assertEquals(4, auth.getNumberOfAuthorizedAddresses());
+        Assertions.assertEquals(1, auth.getRequiredAuthorizedAddresses());
     }
 
     @Test
@@ -57,8 +57,8 @@ class AddressBasedAuthorizerTest {
             mock(ECKey.class)
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
-        Assertions.assertEquals(4, auth.getNumberOfAuthorizedKeys());
-        Assertions.assertEquals(3, auth.getRequiredAuthorizedKeys());
+        Assertions.assertEquals(4, auth.getNumberOfAuthorizedAddresses());
+        Assertions.assertEquals(3, auth.getRequiredAuthorizedAddresses());
     }
 
     @Test
@@ -70,8 +70,8 @@ class AddressBasedAuthorizerTest {
             mock(ECKey.class)
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.ALL);
 
-        Assertions.assertEquals(4, auth.getNumberOfAuthorizedKeys());
-        Assertions.assertEquals(4, auth.getRequiredAuthorizedKeys());
+        Assertions.assertEquals(4, auth.getNumberOfAuthorizedAddresses());
+        Assertions.assertEquals(4, auth.getRequiredAuthorizedAddresses());
     }
 
     @Test
