@@ -238,7 +238,7 @@ class PegUtilsTest {
         );
 
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
-        peginBtcTx.addOutput(minimumPeginTxValue, activeFederation.getAddress()); // minimum
+        peginBtcTx.addOutput(minimumPeginTxValue, activeFederation.getAddress());
 
         // Act
         boolean allUTXOsAboveMinimum = PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(
@@ -267,8 +267,11 @@ class PegUtilsTest {
             ScriptBuilder.createInputScript(null, userPubKey)
         );
 
-        peginBtcTx.addOutput(minimumPeginTxValue, activeFederation.getAddress()); // minimum
-        peginBtcTx.addOutput(minimumPeginTxValue.plus(Coin.SATOSHI), activeFederation.getAddress()); // above minimum
+        Address federationAddress = activeFederation.getAddress();
+        Coin valueAboveMinimum = minimumPeginTxValue.plus(Coin.SATOSHI);
+
+        peginBtcTx.addOutput(minimumPeginTxValue, federationAddress);
+        peginBtcTx.addOutput(valueAboveMinimum, federationAddress);
 
         // Act
         boolean allUTXOsAboveMinimum = PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(
@@ -297,9 +300,13 @@ class PegUtilsTest {
             ScriptBuilder.createInputScript(null, userPubKey)
         );
 
-        peginBtcTx.addOutput(minimumPeginTxValue.minus(Coin.SATOSHI), activeFederation.getAddress()); // below minimum
-        peginBtcTx.addOutput(minimumPeginTxValue, activeFederation.getAddress()); // minimum
-        peginBtcTx.addOutput(minimumPeginTxValue.plus(Coin.SATOSHI), activeFederation.getAddress()); // above minimum
+        Address federationAddress = activeFederation.getAddress();
+        Coin valueBelowMinimum = minimumPeginTxValue.minus(Coin.SATOSHI);
+        Coin valueAboveMinimum = minimumPeginTxValue.plus(Coin.SATOSHI);
+
+        peginBtcTx.addOutput(valueBelowMinimum, federationAddress);
+        peginBtcTx.addOutput(minimumPeginTxValue, federationAddress);
+        peginBtcTx.addOutput(valueAboveMinimum, federationAddress);
 
         // Act
         boolean allUTXOsAboveMinimum = PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(
@@ -329,7 +336,8 @@ class PegUtilsTest {
         );
 
         Address receiver = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "receiver");
-        peginBtcTx.addOutput(minimumPeginTxValue.minus(Coin.SATOSHI), receiver); // no outputs sent to fed
+        // sending enough value but to some random address
+        peginBtcTx.addOutput(minimumPeginTxValue, receiver);
 
         // Act
         boolean allUTXOsAboveMinimum = PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(
