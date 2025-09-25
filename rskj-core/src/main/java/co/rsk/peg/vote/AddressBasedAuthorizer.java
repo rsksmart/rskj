@@ -73,15 +73,15 @@ public class AddressBasedAuthorizer {
         return isAuthorized(tx.getSender(signatureCache));
     }
 
-    public int getNumberOfAuthorizedKeys() {
+    public int getNumberOfAuthorizedAddresses() {
         return authorizedAddresses.size();
     }
 
-    public int getRequiredAuthorizedKeys() {
+    public int getRequiredAuthorizedAddresses() {
         return switch (requiredCalculation) {
             case ONE -> 1;
-            case MAJORITY -> getNumberOfAuthorizedKeys() / 2 + 1;
-            default -> getNumberOfAuthorizedKeys();
+            case MAJORITY -> getNumberOfAuthorizedAddresses() / 2 + 1;
+            default -> getNumberOfAuthorizedAddresses();
         };
     }
 
