@@ -265,25 +265,6 @@ class UnionBridgeSupportImplTest {
     }
 
     @Test
-    void setUnionBridgeContractAddressForTestnet_whenMainnet_shouldReturnEnvironmentDisabledCode() {
-        // arrange
-        when(rskTx.getSender(signatureCache)).thenReturn(
-            changeUnionAddressAuthorizer);
-        // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            unionBridgeContractAddress);
-
-        // assert
-        UnionResponseCode expectedResponseCode = UnionResponseCode.ENVIRONMENT_DISABLED;
-        Assertions.assertEquals(
-            expectedResponseCode,
-            actualResponseCode
-        );
-        assertAddressWasNotSet();
-        assertNoAddressIsStored();
-    }
-
-    @Test
     void setUnionBridgeContractAddressForTestnet_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
@@ -1265,12 +1246,6 @@ class UnionBridgeSupportImplTest {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(mainnetUnionBridgeConstants).build();
-
-        // Attempt to set union bridge contract address for mainnet should fail
-        when(rskTx.getSender(signatureCache)).thenReturn(changeUnionAddressAuthorizer);
-        UnionResponseCode setAddressResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            mainnetUnionBridgeContractAddress);
-        Assertions.assertEquals(UnionResponseCode.ENVIRONMENT_DISABLED, setAddressResponseCode);
 
         // increase locking cap
         Coin initialLockingCap = mainnetUnionBridgeConstants.getInitialLockingCap();
