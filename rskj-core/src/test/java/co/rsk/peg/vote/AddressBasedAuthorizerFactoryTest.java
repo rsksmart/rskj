@@ -19,8 +19,8 @@ import static org.mockito.Mockito.when;
 class AddressBasedAuthorizerFactoryTest {
 
     private static final RskAddress zeroAddress = new RskAddress("0000000000000000000000000000000000000000");
-    private static final RskAddress authorized = new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(1L)).getAddress());
-    private static final RskAddress unauthorized = new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(999L)).getAddress());
+    private static final RskAddress authorizedAddress = new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(1L)).getAddress());
+    private static final RskAddress unauthorizedAddress = new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(999L)).getAddress());
     private static final Set<RskAddress> authorizedAddresses = Set.of(
         new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(1L)).getAddress()),
         new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(2L)).getAddress()),
@@ -45,23 +45,32 @@ class AddressBasedAuthorizerFactoryTest {
 
         // Assert
         assertSingleAuthorizer(addressBasedAuthorizer, zeroAddress);
+        // Assert unauthorized for any other addresses
+        Assertions.assertFalse(addressBasedAuthorizer.isAuthorized(unauthorizedAddress));
     }
 
     @Test
     void buildSingleAuthorizer_whenAuthorizedAddress_shouldBuildAuthorizer() {
-        AddressBasedAuthorizer addressBasedAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(authorized);
-        assertSingleAuthorizer(addressBasedAuthorizer, authorized);
+        AddressBasedAuthorizer addressBasedAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
+            authorizedAddress);
+        // Assert
+        assertSingleAuthorizer(addressBasedAuthorizer, authorizedAddress);
+        // Assert unauthorized for any other addresses
+        Assertions.assertFalse(addressBasedAuthorizer.isAuthorized(unauthorizedAddress));
     }
 
     @Test
-    void buildSingleAuthorizer_whenNullAddress_shouldThrowNullPointerException() {
-        Assertions.assertThrows(NullPointerException.class, () -> AddressBasedAuthorizerFactory.buildSingleAuthorizer(null));
+    void buildSingleAuthorizer_whenNullAddress_shouldThrowIAE() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AddressBasedAuthorizerFactory.buildSingleAuthorizer(null));
     }
 
     @Test
     void buildMajorityAuthorizer_whenSetOfAddresses_shouldBuildAuthorizer() {
         AddressBasedAuthorizer addressBasedAuthorizer = AddressBasedAuthorizerFactory.buildMajorityAuthorizer(authorizedAddresses);
+        // Assert
         assertMajorityAuthorizer(addressBasedAuthorizer, authorizedAddresses);
+        // Assert unauthorized for any other addresses
+        Assertions.assertFalse(addressBasedAuthorizer.isAuthorized(unauthorizedAddress));
     }
 
     @Test
@@ -71,12 +80,12 @@ class AddressBasedAuthorizerFactoryTest {
     }
 
     @Test
-    void buildMajorityAuthorizer_whenNullSet_shouldThrowNullPointerException() {
-        Assertions.assertThrows(NullPointerException.class, () -> AddressBasedAuthorizerFactory.buildMajorityAuthorizer(null));
+    void buildMajorityAuthorizer_whenNullSet_shouldThrowIAE() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AddressBasedAuthorizerFactory.buildMajorityAuthorizer(null));
     }
 
     @Test
-    void buildMajorityAuthorizer_whenSetContainsNull_shouldThrowNullPointerException() {
+    void buildMajorityAuthorizer_whenSetContainsNull_shouldThrowIAE() {
         Set<RskAddress> authorizersWithNull = new HashSet<>();
         authorizersWithNull.add(null);
         authorizersWithNull.add(null);
@@ -85,14 +94,16 @@ class AddressBasedAuthorizerFactoryTest {
 
     @Test
     void buildMajorityAuthorizer_whenSetContainsZeroAddress_shouldBuildAuthorizer() {
-        Set<RskAddress> addresses = Set.of(zeroAddress, authorized);
+        Set<RskAddress> addresses = Set.of(zeroAddress, authorizedAddress);
         AddressBasedAuthorizer addressBasedAuthorizer = AddressBasedAuthorizerFactory.buildMajorityAuthorizer(addresses);
         assertMajorityAuthorizer(addressBasedAuthorizer, addresses);
+        // Assert unauthorized for any other addresses
+        Assertions.assertFalse(addressBasedAuthorizer.isAuthorized(unauthorizedAddress));
     }
 
     @Test
     void buildMajorityAuthorizer_whenSetContainsSingleAddress_shouldThrowIllegalArgumentException() {
-        Set<RskAddress> authorizersWithSingleAddress = Set.of(authorized);
+        Set<RskAddress> authorizersWithSingleAddress = Set.of(authorizedAddress);
         Assertions.assertThrows(IllegalArgumentException.class, () -> AddressBasedAuthorizerFactory.buildMajorityAuthorizer(authorizersWithSingleAddress));
     }
 
@@ -102,24 +113,20 @@ class AddressBasedAuthorizerFactoryTest {
 
         // should be authorized
         Assertions.assertTrue(addressBasedAuthorizer.isAuthorized(authorizedAddress));
-        // negative authorization for a different address
-        Assertions.assertFalse(addressBasedAuthorizer.isAuthorized(unauthorized));
-        // assert authorization by transaction sender
+        // should be authorized when coming from the transaction
         when(rskTx.getSender(any(SignatureCache.class))).thenReturn(authorizedAddress);
         Assertions.assertTrue(addressBasedAuthorizer.isAuthorized(rskTx, signatureCache));
     }
 
-    private void assertMajorityAuthorizer(AddressBasedAuthorizer auth, Set<RskAddress> authorizedAddresses) {
-        Assertions.assertEquals(authorizedAddresses.size(), auth.getNumberOfAuthorizedKeys());
-        Assertions.assertEquals(authorizedAddresses.size() / 2 + 1, auth.getRequiredAuthorizedKeys());
+    private void assertMajorityAuthorizer(AddressBasedAuthorizer majorityAuthorizer, Set<RskAddress> authorizedAddresses) {
+        Assertions.assertEquals(authorizedAddresses.size(), majorityAuthorizer.getNumberOfAuthorizedKeys());
+        Assertions.assertEquals(authorizedAddresses.size() / 2 + 1, majorityAuthorizer.getRequiredAuthorizedKeys());
 
-        authorizedAddresses.stream().map(auth::isAuthorized).forEach(Assertions::assertTrue);
-        Assertions.assertFalse(auth.isAuthorized(unauthorized));
-
+        authorizedAddresses.stream().map(majorityAuthorizer::isAuthorized).forEach(Assertions::assertTrue);
         authorizedAddresses.forEach(address -> {
             when(rskTx.getSender(any(SignatureCache.class)))
                 .thenReturn(address);
-            Assertions.assertTrue(auth.isAuthorized(rskTx, signatureCache));
+            Assertions.assertTrue(majorityAuthorizer.isAuthorized(rskTx, signatureCache));
         });
     }
 }
