@@ -9,10 +9,16 @@ public class AddressBasedAuthorizerFactory {
     private AddressBasedAuthorizerFactory() { }
 
     public static AddressBasedAuthorizer buildSingleAuthorizer(RskAddress authorizedAddress) {
+        if (authorizedAddress == null) {
+            throw new IllegalArgumentException("Cannot build an authorizer with a null address");
+        }
         return AddressBasedAuthorizer.of(authorizedAddress);
     }
 
     public static AddressBasedAuthorizer buildMajorityAuthorizer(Set<RskAddress> authorizedAddresses) {
+        if(authorizedAddresses == null) {
+            throw new IllegalArgumentException("Cannot build an authorizer with a null set of authorized addresses");
+        }
         if (authorizedAddresses.isEmpty()) {
             throw new IllegalArgumentException("Cannot build an authorizer with no authorized addresses");
         }
