@@ -37,7 +37,6 @@ class AddressBasedAuthorizerFactoryTest {
         signatureCache = mock(SignatureCache.class);
     }
 
-
     @Test
     void buildSingleAuthorizer_whenZeroAddress_shouldBuildAuthorizer() {
         // Act
@@ -87,7 +86,7 @@ class AddressBasedAuthorizerFactoryTest {
     @Test
     void buildMajorityAuthorizer_whenSetContainsNull_shouldThrowIAE() {
         Set<RskAddress> authorizersWithNull = new HashSet<>();
-        authorizersWithNull.add(null);
+        authorizersWithNull.add(authorizedAddress);
         authorizersWithNull.add(null);
         Assertions.assertThrows(IllegalArgumentException.class, () -> AddressBasedAuthorizerFactory.buildMajorityAuthorizer(authorizersWithNull));
     }
