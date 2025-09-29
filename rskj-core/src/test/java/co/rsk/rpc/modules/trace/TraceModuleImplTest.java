@@ -59,7 +59,7 @@ class TraceModuleImplTest {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceTransaction("0x00");
 
@@ -71,7 +71,7 @@ class TraceModuleImplTest {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceBlock("0x0001020300010203000102030001020300010203000102030001020300010203");
 
@@ -84,7 +84,7 @@ class TraceModuleImplTest {
         World world = executeMultiContract(receiptStore);
         ExecutionBlockRetriever executionBlockRetriever = createExecutionBlockRetriever(world);
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), executionBlockRetriever, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), executionBlockRetriever, world.getBlockTxSignatureCache(), world.getConfig());
 
         world.getTransactionPool().addTransaction(createSampleTransaction());
 
@@ -109,7 +109,7 @@ class TraceModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
@@ -143,7 +143,7 @@ class TraceModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
@@ -199,7 +199,7 @@ class TraceModuleImplTest {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = executeMultiContract(receiptStore);
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         String transactionHash = "0x64cbd00a73bad9df13ee188931c84555a5662057e6381b3476bdc20ab3c09ef3";
         JsonNode result = traceModule.traceGet(transactionHash, Stream.of("0x0").collect(Collectors.toList()));
@@ -212,7 +212,7 @@ class TraceModuleImplTest {
     private static void retrieveEmptyBlockTrace(World world, ReceiptStore receiptStore, String blkname) throws Exception {
         Block block = world.getBlockByName(blkname);
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceBlock(block == null ? blkname : block.getHash().toJsonString());
 
@@ -227,7 +227,7 @@ class TraceModuleImplTest {
     private static void retrieveNestedContractCreationBlockTrace(World world, ReceiptStore receiptStore, String blkname) throws Exception {
         Block block = world.getBlockByName(blkname);
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceBlock(block == null ? blkname : block.getHash().toJsonString());
 
@@ -259,7 +259,7 @@ class TraceModuleImplTest {
     private static void retrieveNestedContractCreationTrace(World world, ReceiptStore receiptStore, String txname) throws Exception {
         Transaction transaction = world.getTransactionByName(txname);
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
@@ -283,7 +283,7 @@ class TraceModuleImplTest {
     private static void retrieveNestedContractInvocationTrace(World world, ReceiptStore receiptStore, String txname) throws Exception {
         Transaction transaction = world.getTransactionByName(txname);
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
@@ -307,7 +307,7 @@ class TraceModuleImplTest {
     private static void retrieveNestedRevertedInvocationTrace(World world, ReceiptStore receiptStore, String txname) throws Exception {
         Transaction transaction = world.getTransactionByName(txname);
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
@@ -331,7 +331,7 @@ class TraceModuleImplTest {
     private static void retrieveSuicideInvocationTrace(World world, ReceiptStore receiptStore, String txname) throws Exception {
         Transaction transaction = world.getTransactionByName(txname);
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
@@ -358,7 +358,7 @@ class TraceModuleImplTest {
     private static void retrieveSuicideInvocationBlockTrace(World world, ReceiptStore receiptStore, String blkname) throws Exception {
         Block block = world.getBlockByName(blkname);
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceBlock(block == null ? blkname : block.getHash().toJsonString());
 
@@ -383,7 +383,7 @@ class TraceModuleImplTest {
     }
 
     private static void retrieveTraceFilterEmpty(World world, ReceiptStore receiptStore) throws Exception {
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         TraceFilterRequest traceFilterRequest = new TraceFilterRequest();
 
@@ -403,7 +403,7 @@ class TraceModuleImplTest {
     private static void retrieveTraceFilterPending(World world, ReceiptStore receiptStore) throws Exception {
         ExecutionBlockRetriever executionBlockRetriever = createExecutionBlockRetriever(world);
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), executionBlockRetriever, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), executionBlockRetriever, world.getBlockTxSignatureCache(), world.getConfig());
 
         world.getTransactionPool().addTransaction(createSampleTransaction());
 
@@ -475,7 +475,7 @@ class TraceModuleImplTest {
     }
 
     private static void retrieveTraceFilter1Record(World world, ReceiptStore receiptStore) throws Exception {
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         TraceFilterRequest traceFilterRequest = new TraceFilterRequest();
 
@@ -502,7 +502,7 @@ class TraceModuleImplTest {
     }
 
     private static void retrieveTraceFilter3Records(World world, ReceiptStore receiptStore) throws Exception {
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         TraceFilterRequest traceFilterRequest = new TraceFilterRequest();
 
@@ -539,7 +539,7 @@ class TraceModuleImplTest {
     }
 
     private static void retrieveTraceFilterNext3RecordsAndOnly1Remains(World world, ReceiptStore receiptStore) throws Exception {
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         TraceFilterRequest traceFilterRequest = new TraceFilterRequest();
 
@@ -565,7 +565,7 @@ class TraceModuleImplTest {
     }
 
     private static void retrieveTraceFilterByAddress(World world, ReceiptStore receiptStore) throws Exception {
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         TraceFilterRequest traceFilterRequest = new TraceFilterRequest();
 
@@ -599,7 +599,7 @@ class TraceModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx02");
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
@@ -628,7 +628,7 @@ class TraceModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
@@ -663,7 +663,7 @@ class TraceModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
@@ -701,7 +701,7 @@ class TraceModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
@@ -733,7 +733,7 @@ class TraceModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
@@ -769,7 +769,7 @@ class TraceModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 

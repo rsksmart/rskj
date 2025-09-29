@@ -17,6 +17,7 @@
  */
 package co.rsk.rpc.modules.trace;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
@@ -43,6 +44,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,8 +54,6 @@ public class TraceModuleImpl implements TraceModule {
     private static final String LATEST_BLOCK = "latest";
     private static final String PENDING_BLOCK = "pending";
     private static final Logger logger = LoggerFactory.getLogger("web3");
-
-    private static final int MAX_TRACES_PER_REQUEST = 10000;
 
     private static final ObjectMapper OBJECT_MAPPER = Serializers.createMapper(true);
 
@@ -65,6 +65,7 @@ public class TraceModuleImpl implements TraceModule {
     private final ExecutionBlockRetriever executionBlockRetriever;
 
     private final SignatureCache signatureCache;
+    private final RskSystemProperties config;
 
     public TraceModuleImpl(
             Blockchain blockchain,
@@ -72,13 +73,15 @@ public class TraceModuleImpl implements TraceModule {
             ReceiptStore receiptStore,
             BlockExecutor blockExecutor,
             ExecutionBlockRetriever executionBlockRetriever,
-            SignatureCache signatureCache) {
+            SignatureCache signatureCache,
+            RskSystemProperties config) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.blockExecutor = blockExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
         this.signatureCache = signatureCache;
+        this.config = config;
     }
 
     @Override
@@ -130,11 +133,13 @@ public class TraceModuleImpl implements TraceModule {
 
     @Override
     public JsonNode traceFilter(TraceFilterRequest traceFilterRequest) {
-        int count = traceFilterRequest.getCount() != null ? traceFilterRequest.getCount() : MAX_TRACES_PER_REQUEST;
-        int after = traceFilterRequest.getAfter() != null ? traceFilterRequest.getAfter() : 0;
+        int maxTracesPerRequest = config.rpcTraceMaxTracesPerRequest();
 
-        if (count > MAX_TRACES_PER_REQUEST) {
-            throw RskJsonRpcRequestException.invalidParamError("Count value too big. Maximum " + MAX_TRACES_PER_REQUEST + " traces allowed.");
+        final var count = Optional.ofNullable(traceFilterRequest).map(TraceFilterRequest::getCount).orElse(maxTracesPerRequest);
+        final var after = Optional.ofNullable(traceFilterRequest).map(TraceFilterRequest::getAfter).orElse(0);
+
+        if (count > maxTracesPerRequest) {
+            throw RskJsonRpcRequestException.invalidParamError("Count value too big. Maximum " + maxTracesPerRequest + " traces allowed.");
         }
 
         List<TransactionTrace> allTraces = new ArrayList<>();

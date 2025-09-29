@@ -97,6 +97,7 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_ALLOW_CALL_STATE_OVERRIDE = "rpc.allowCallStateOverride";
     private static final String PROPERTY_RPC_MAX_RESPONSE_SIZE = "rpc.maxResponseSize";
     private static final String PROPERTY_RPC_MIN_GAS_PRICE_MULTIPLIER = "rpc.minGasPriceMultiplier";
+    private static final String PROPERTY_RPC_TRACE_MAX_TRACES_PER_REQUEST = "rpc.trace.maxTracesPerRequest";
     private static final String PROPERTY_RPC_TIMEOUT = "rpc.timeout";
 
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
@@ -732,6 +733,10 @@ public abstract class SystemProperties {
 
     public int getMaxBatchRequestsSize() {
         return configFromFiles.getInt(PROPERTY_RPC_MAX_BATCH_REQUESTS_SIZE);
+    }
+
+    public int rpcTraceMaxTracesPerRequest() {
+        return configFromFiles.getInt(PROPERTY_RPC_TRACE_MAX_TRACES_PER_REQUEST);
     }
 
     /**
