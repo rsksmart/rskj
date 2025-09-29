@@ -45,6 +45,7 @@ import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
@@ -789,6 +790,63 @@ class TraceModuleImplTest {
         Assertions.assertEquals("\"delegatecall\"", oresult.get("action").get("callType").toString());
         Assertions.assertEquals("\"" + delegatedAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("to").toString());
         Assertions.assertEquals("\"" + delegateCallAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("from").toString());
+    }
+
+    @Test
+    void traceFilterWithNullRequestThrowsException() {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+
+        RskJsonRpcRequestException exception = Assertions.assertThrows(
+            RskJsonRpcRequestException.class,
+            () -> traceModule.traceFilter(null)
+        );
+
+        Assertions.assertEquals("Invalid trace_filter parameters.", exception.getMessage());
+    }
+
+    @Test
+    void traceFilterWithCountExceedingMaxThrowsException() {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+
+        TraceFilterRequest traceFilterRequest = new TraceFilterRequest();
+        traceFilterRequest.setFromBlock("0x0");
+        traceFilterRequest.setToBlock("0x1");
+        traceFilterRequest.setCount(Integer.MAX_VALUE);
+
+        RskJsonRpcRequestException exception = Assertions.assertThrows(
+            RskJsonRpcRequestException.class,
+            () -> traceModule.traceFilter(traceFilterRequest)
+        );
+
+        Assertions.assertTrue(exception.getMessage().contains("Count value too big"));
+        Assertions.assertTrue(exception.getMessage().contains("Maximum"));
+        Assertions.assertTrue(exception.getMessage().contains("traces allowed"));
+    }
+
+    @Test
+    void traceFilterWithFromBlockGreaterThanToBlockThrowsException() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = executeMultiContract(receiptStore);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+
+        TraceFilterRequest traceFilterRequest = new TraceFilterRequest();
+        traceFilterRequest.setFromBlock("0x2"); // Block 2
+        traceFilterRequest.setToBlock("0x1");  // Block 1
+        traceFilterRequest.setCount(10);
+
+        RskJsonRpcRequestException exception = Assertions.assertThrows(
+            RskJsonRpcRequestException.class,
+            () -> traceModule.traceFilter(traceFilterRequest)
+        );
+
+        Assertions.assertEquals("fromBlock cannot be greater than toBlock", exception.getMessage());
     }
 
     private static World executeMultiContract(ReceiptStore receiptStore) throws DslProcessorException, FileNotFoundException {

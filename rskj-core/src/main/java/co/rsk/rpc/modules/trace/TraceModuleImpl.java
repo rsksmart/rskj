@@ -133,10 +133,13 @@ public class TraceModuleImpl implements TraceModule {
 
     @Override
     public JsonNode traceFilter(TraceFilterRequest traceFilterRequest) {
-        int maxTracesPerRequest = config.rpcTraceMaxTracesPerRequest();
+        if (traceFilterRequest == null) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid trace_filter parameters.");
+        }
 
-        final var count = Optional.ofNullable(traceFilterRequest).map(TraceFilterRequest::getCount).orElse(maxTracesPerRequest);
-        final var after = Optional.ofNullable(traceFilterRequest).map(TraceFilterRequest::getAfter).orElse(0);
+        int maxTracesPerRequest = config.rpcTraceMaxTracesPerRequest();
+        final var count = Optional.ofNullable(traceFilterRequest.getCount()).orElse(maxTracesPerRequest);
+        final var after = Optional.ofNullable(traceFilterRequest.getAfter()).orElse(0);
 
         if (count > maxTracesPerRequest) {
             throw RskJsonRpcRequestException.invalidParamError("Count value too big. Maximum " + maxTracesPerRequest + " traces allowed.");
