@@ -10,6 +10,7 @@ import static org.mockito.Mockito.*;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
@@ -3509,12 +3510,14 @@ class BridgeTest {
                 .constants(Constants.mainnet())
                 .build();
 
+            RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress(
+                "newUnionBridgeContractAddress");
             UnionResponseCode expectedUnionResponseCode = UnionResponseCode.ENVIRONMENT_DISABLED;
-            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any(), any())).thenReturn(
+            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, newUnionBridgeContractAddress)).thenReturn(
                 expectedUnionResponseCode);
 
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
-            byte[] data = function.encode(TestUtils.generateAddress("unionBridgeContractAddress").toHexString());
+            byte[] data = function.encode(newUnionBridgeContractAddress.toHexString());
 
             byte[] result = bridge.execute(data);
             BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.decodeResult(result)[0];
@@ -3691,7 +3694,7 @@ class BridgeTest {
         }
 
         @Test
-        void increaseUnionBridgeLockingCap_afterRSKIP502_whenNotAuthorized_shouldThrownAnVmException() {
+        void increaseUnionBridgeLockingCap_afterRSKIP502_whenNotAuthorized_shouldThrowVmException() {
             // Arrange
             when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
 
@@ -3700,7 +3703,7 @@ class BridgeTest {
             // Act
             VMException vmException = assertThrows(VMException.class, () -> bridge.execute(data));
             assertInstanceOf(VMException.class, vmException.getCause());
-            assertTrue(vmException.getMessage().contains("The sender is not authorized to call increaseUnionBridgeLockingCa"));
+            assertTrue(vmException.getMessage().contains("The sender is not authorized to call increaseUnionBridgeLockingCap"));
 
             verify(unionBridgeSupport, never()).increaseLockingCap(any(), any());
         }
@@ -3894,7 +3897,8 @@ class BridgeTest {
             byte[] data = function.encode(true, true);
 
             VMException actualException = assertThrows(VMException.class, () -> bridge.execute(data));
-            assertTrue(actualException.getMessage().contains("Invalid data given"));
+            assertTrue(actualException.getMessage().contains(String.format("Invalid data given: %s",
+                Bytes.of(data))));
         }
         
         @Test
