@@ -655,7 +655,7 @@ class TransactionModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                new DefaultStateOverrideApplier()
+                new DefaultStateOverrideApplier(config.getActivationConfig(), new PrecompiledContracts(config, null, null))
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, new ReceivedTxSignatureCache());
         DebugTracer debugTracer = new RskTracer(null, null, null, null);

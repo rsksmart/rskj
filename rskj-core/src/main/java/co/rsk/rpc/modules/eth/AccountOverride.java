@@ -100,7 +100,11 @@ public class AccountOverride {
     }
 
     public void setMovePrecompileToAddress(RskAddress movePrecompileToAddress) {
-        throw unimplemented("Move precompile to address is not supported yet");
+        this.movePrecompileToAddress = movePrecompileToAddress;
+    }
+
+    public RskAddress getMovePrecompileToAddress() {
+        return movePrecompileToAddress;
     }
 
     public AccountOverride fromAccountOverrideParam(AccountOverrideParam accountOverrideParam) {

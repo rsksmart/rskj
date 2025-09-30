@@ -171,6 +171,18 @@ public class PrecompiledContracts {
         this.remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
     }
 
+    protected RskSystemProperties getConfig() {
+        return config;
+    }
+
+    protected BridgeSupportFactory getBridgeSupportFactory() {
+        return bridgeSupportFactory;
+    }
+
+    protected SignatureCache getSignatureCache() {
+        return signatureCache;
+    }
+
     public boolean precompiledContactExists(RskAddress address) {
         return GENESIS_ADDRESSES.contains(address) || CONSENSUS_ENABLED_ADDRESSES.containsKey(address);
     }

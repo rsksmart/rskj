@@ -25,6 +25,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 
 /**
@@ -34,12 +35,23 @@ import org.ethereum.vm.program.ProgramResult;
 public class ReversibleTransactionExecutor {
     private final RepositoryLocator repositoryLocator;
     private final TransactionExecutorFactory transactionExecutorFactory;
+    private final PrecompiledContracts precompiledContracts;
+
+    public ReversibleTransactionExecutor(
+            RepositoryLocator repositoryLocator,
+            TransactionExecutorFactory transactionExecutorFactory,
+            PrecompiledContracts precompiledContracts) {
+        this.repositoryLocator = repositoryLocator;
+        this.transactionExecutorFactory = transactionExecutorFactory;
+        this.precompiledContracts = precompiledContracts;
+    }
 
     public ReversibleTransactionExecutor(
             RepositoryLocator repositoryLocator,
             TransactionExecutorFactory transactionExecutorFactory) {
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
+        this.precompiledContracts = null;
     }
 
     public TransactionExecutor estimateGas(Block executionBlock, RskAddress coinbase, byte[] gasPrice, byte[] gasLimit,
@@ -54,7 +66,8 @@ public class ReversibleTransactionExecutor {
                 toAddress,
                 value,
                 data,
-                fromAddress
+                fromAddress,
+                precompiledContracts
         );
     }
 
@@ -76,7 +89,8 @@ public class ReversibleTransactionExecutor {
                 toAddress,
                 value,
                 data,
-                fromAddress
+                fromAddress,
+                precompiledContracts
         );
     }
 
@@ -90,12 +104,26 @@ public class ReversibleTransactionExecutor {
             byte[] value,
             byte[] data,
             RskAddress fromAddress) {
-        return reversibleExecution(snapshot, executionBlock, coinbase, gasPrice, gasLimit, toAddress, value, data, fromAddress).getResult();
+        return reversibleExecution(snapshot, executionBlock, coinbase, gasPrice, gasLimit, toAddress, value, data, fromAddress, precompiledContracts).getResult();
+    }
+
+    public ProgramResult executeTransaction(
+            RepositorySnapshot snapshot,
+            Block executionBlock,
+            RskAddress coinbase,
+            byte[] gasPrice,
+            byte[] gasLimit,
+            byte[] toAddress,
+            byte[] value,
+            byte[] data,
+            RskAddress fromAddress,
+            PrecompiledContracts precompiledContracts) {
+        return reversibleExecution(snapshot, executionBlock, coinbase, gasPrice, gasLimit, toAddress, value, data, fromAddress, precompiledContracts).getResult();
     }
 
     private TransactionExecutor reversibleExecution(RepositorySnapshot snapshot, Block executionBlock, RskAddress coinbase,
                                                     byte[] gasPrice, byte[] gasLimit, byte[] toAddress, byte[] value,
-                                                    byte[] data, RskAddress fromAddress) {
+                                                    byte[] data, RskAddress fromAddress, PrecompiledContracts precompiledContracts) {
         Repository track = snapshot.startTracking();
 
         byte[] nonce = track.getNonce(fromAddress).toByteArray();
@@ -110,7 +138,7 @@ public class ReversibleTransactionExecutor {
         );
 
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(tx, 0, coinbase, track, executionBlock, 0)
+                .newInstance(tx, 0, coinbase, track, executionBlock, 0, precompiledContracts)
                 .setLocalCall(true);
 
         executor.executeTransaction();
