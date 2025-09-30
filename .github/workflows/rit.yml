@@ -144,10 +144,21 @@ jobs:
           payload: |
             {
               "channel": "${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}",
-              "attachments": [
+              "blocks": [
+                { "type": "header", "text": { "type": "plain_text", "text": "✅ PASSED — ${{ github.repository }} – PR #${{ github.event.pull_request.number }}", "emoji": true } },
                 {
-                  "color": "good",
-                  "text": "*PASSED*: :white_check_mark: - *${{ env.SAFE_PULL_REQUEST_TITLE }}* \n*Pull request*: ${{ env.GITHUB_EVENT_PULL_REQUEST_HTML_URL }} \n*Pipeline*: ${{ env.BUILD_URL }} \n*Branches used*: [ rskj:`${{ env.RSKJ_BRANCH }}` ] [ fed:`${{ env.POWPEG_BRANCH }}` ] [ rit:`${{ env.RIT_BRANCH }}` ]"
+                  "type": "section",
+                  "text": { "type": "mrkdwn", "text": "*${{ env.SAFE_PULL_REQUEST_TITLE }}*" },
+                  "fields": [
+                    { "type": "mrkdwn", "text": "• rskj: `${{ env.RSKJ_BRANCH }}`\n• fed: `${{ env.POWPEG_BRANCH }}`\n• rit: `${{ env.RIT_BRANCH }}`" }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    { "type": "button", "text": { "type": "plain_text", "text": "Open PR" }, "url": "${{ github.event.pull_request.html_url }}" },
+                    { "type": "button", "text": { "type": "plain_text", "text": "View Actions Run" }, "url": "${{ env.BUILD_URL }}" }
+                  ]
                 }
               ]
             }
@@ -163,10 +174,21 @@ jobs:
           payload: |
             {
               "channel": "${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}",
-              "attachments": [
+              "blocks": [
+                { "type": "header", "text": { "type": "plain_text", "text": "❌ FAILED — ${{ github.repository }} – PR #${{ github.event.pull_request.number }}", "emoji": true } },
                 {
-                  "color": "danger",
-                  "text": "*FAILED*: :x: - *${{ env.SAFE_PULL_REQUEST_TITLE }}* \n*Pull request*: ${{ env.GITHUB_EVENT_PULL_REQUEST_HTML_URL }} \n*Pipeline*: ${{ env.BUILD_URL }} \n*Branches used*: [ rskj:`${{ env.RSKJ_BRANCH }}` ] [ fed:`${{ env.POWPEG_BRANCH }}` ] [ rit:`${{ env.RIT_BRANCH }}` ]"
+                  "type": "section",
+                  "text": { "type": "mrkdwn", "text": "*${{ env.SAFE_PULL_REQUEST_TITLE }}*" },
+                  "fields": [
+                    { "type": "mrkdwn", "text": "• rskj: `${{ env.RSKJ_BRANCH }}`\n• fed: `${{ env.POWPEG_BRANCH }}`\n• rit: `${{ env.RIT_BRANCH }}`" }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    { "type": "button", "style": "danger", "text": { "type": "plain_text", "text": "Open PR" }, "url": "${{ github.event.pull_request.html_url }}" },
+                    { "type": "button", "style": "danger", "text": { "type": "plain_text", "text": "View Actions Run" }, "url": "${{ env.BUILD_URL }}" }
+                  ]
                 }
               ]
             }
