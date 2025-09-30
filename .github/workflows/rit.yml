@@ -104,7 +104,6 @@ jobs:
           # Set the Repo Owner
           REPO_OWNER="${github_event_pull_request_head_repo_owner_login:-$github_repository_owner}"
 
-
           echo "REPO_OWNER=$REPO_OWNER" >> $GITHUB_ENV
           echo "RSKJ_BRANCH=$RSKJ_BRANCH" >> $GITHUB_ENV
           echo "RIT_BRANCH=$RIT_BRANCH" >> $GITHUB_ENV
@@ -136,8 +135,6 @@ jobs:
       - name: Send Slack Notification on Success
         if: ${{ success() && github.event.pull_request.head.repo.owner.login == 'rsksmart' }}
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
-        env:
-          GITHUB_EVENT_PULL_REQUEST_HTML_URL: ${{ github.event.pull_request.html_url }}
         with:
           method: chat.postMessage
           token: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
@@ -166,8 +163,6 @@ jobs:
       - name: Send Slack Notification on Failure
         if: ${{ failure() && github.event.pull_request.head.repo.owner.login == 'rsksmart' }}
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
-        env:
-          GITHUB_EVENT_PULL_REQUEST_HTML_URL: ${{ github.event.pull_request.html_url }}
         with:
           method: chat.postMessage
           token: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
