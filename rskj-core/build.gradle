@@ -25,11 +25,14 @@ checkstyle {
 spotless {
     enforceCheck false
     java {
-        googleJavaFormat()
-        indentWithTabs(2)
+        eclipse().configFile("$rootDir/config/eclipse-formatter.xml")
         trimTrailingWhitespace()
         endWithNewline()
         target filteredFiles
+        // Enable ratchet mode to only check files changed from the target branch
+        if (project.hasProperty('ratchetFrom')) {
+            ratchetFrom project.property('ratchetFrom')
+        }
     }
 }
 
