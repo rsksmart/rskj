@@ -134,11 +134,10 @@ jobs:
           repo-owner: ${{ env.REPO_OWNER }}
 
       - name: Send Slack Notification on Success
+        if: ${{ success() && github.event.pull_request.head.repo.owner.login == 'rsksmart' }}
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
           GITHUB_EVENT_PULL_REQUEST_HTML_URL: ${{ github.event.pull_request.html_url }}
-        if: ${{ success() && github.event.pull_request.head.repo.owner.login == 'rsksmart' && env.SLACK_BOT_TOKEN != '' }}
         with:
           method: chat.postMessage
           token: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
@@ -154,11 +153,10 @@ jobs:
             }
 
       - name: Send Slack Notification on Failure
+        if: ${{ failure() && github.event.pull_request.head.repo.owner.login == 'rsksmart' }}
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
           GITHUB_EVENT_PULL_REQUEST_HTML_URL: ${{ github.event.pull_request.html_url }}
-        if: ${{ failure() && github.event.pull_request.head.repo.owner.login == 'rsksmart' && env.SLACK_BOT_TOKEN != '' }}
         with:
           method: chat.postMessage
           token: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
