@@ -19,10 +19,10 @@
 
 package org.ethereum.net;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.discovery.PeerExplorer;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.net.rlpx.Node;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,12 +41,12 @@ class NodeManagerTest {
     private static final String NODE_ID_3 = "e229918d45c131e130c91c4ea51c97ab4f66cfbd0437b35c92392b5c2b3d44b28ea15b84a262459437c955f6cc7f10ad1290132d3fc866bfaf4115eac0e8e860";
 
     private PeerExplorer peerExplorer;
-    private SystemProperties config;
+    private RskSystemProperties config;
 
     @BeforeEach
     void initMocks(){
         peerExplorer = Mockito.mock(PeerExplorer.class);
-        config = Mockito.mock(SystemProperties.class);
+        config = Mockito.mock(RskSystemProperties.class);
 
         Mockito.when(config.nodeId()).thenReturn(Hex.decode(NODE_ID_1));
         Mockito.when(config.getPublicIp()).thenReturn("127.0.0.1");

@@ -184,7 +184,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private ProofOfWorkRule proofOfWorkRule;
     private ForkDetectionDataRule forkDetectionDataRule;
     private BlockParentDependantValidationRule blockParentDependantValidationRule;
+    private BlockParentDependantValidationRule snapBlockParentDependantValidationRule;
     private BlockValidationRule blockValidationRule;
+    private BlockValidationRule snapBlockValidationRule;
     private BlockValidationRule minerServerBlockValidationRule;
     private BlockValidator blockValidator;
     private BlockValidator blockHeaderValidator;
@@ -203,6 +205,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private SyncProcessor syncProcessor;
     private BlockSyncService blockSyncService;
     private SyncPool syncPool;
+    private SnapshotProcessor snapshotProcessor;
     private Web3 web3;
     private JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
@@ -261,6 +264,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private GasPriceTracker gasPriceTracker;
     private BlockChainFlusher blockChainFlusher;
     private MinGasPriceProvider minGasPriceProvider;
+    private StateOverrideApplier stateOverrideApplier;
     private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
 
     private volatile boolean closed;
@@ -519,6 +523,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return bridgeSupportFactory;
     }
 
+    public synchronized StateOverrideApplier getStateOverrideApplier() {
+        checkIfNotClosed();
+
+        if (stateOverrideApplier == null) {
+            stateOverrideApplier = new DefaultStateOverrideApplier();
+        }
+
+        return stateOverrideApplier;
+    }
+
     public synchronized BtcBlockStoreWithCache.Factory getBtcBlockStoreFactory() {
         checkIfNotClosed();
 
@@ -719,7 +733,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getEthModuleTransaction(),
                     getBridgeSupportFactory(),
                     getRskSystemProperties().getGasEstimationCap(),
-                    getRskSystemProperties().getCallGasCap()
+                    getRskSystemProperties().getCallGasCap(),
+                    getRskSystemProperties().getActivationConfig(),
+                    getPrecompiledContracts(),
+                    getRskSystemProperties().getAllowCallStateOverride(),
+                    getStateOverrideApplier()
             );
         }
 
@@ -1019,6 +1037,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (getRskSystemProperties().isSyncEnabled()) {
             internalServices.add(getSyncPool());
+            if (getSyncConfiguration().isServerSnapSyncEnabled()) {
+                internalServices.add(getSnapshotProcessor());
+            }
         }
 
         if (getRskSystemProperties().isMinerServerEnabled()) {
@@ -1134,6 +1155,33 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return blockValidationRule;
     }
 
+    public synchronized BlockValidationRule getSnapBlockValidationRule() {
+        checkIfNotClosed();
+
+        if (snapBlockValidationRule == null) {
+            final RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            final Constants commonConstants = rskSystemProperties.getNetworkConstants();
+            final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
+                    commonConstants.getNewBlockMaxSecondsInTheFuture(),
+                    rskSystemProperties.getActivationConfig(),
+                    rskSystemProperties.getNetworkConstants()
+            );
+            snapBlockValidationRule = new BlockCompositeRule(
+                    new TxsMinGasPriceRule(),
+                    new BlockTxsMaxGasPriceRule(rskSystemProperties.getActivationConfig()),
+                    new BlockRootValidationRule(rskSystemProperties.getActivationConfig()),
+                    getProofOfWorkRule(),
+                    new RemascValidationRule(),
+                    blockTimeStampValidationRule,
+                    new GasLimitRule(commonConstants.getMinGasLimit()),
+                    new ExtraDataRule(commonConstants.getMaximumExtraDataSize()),
+                    new ValidTxExecutionSublistsEdgesRule(getRskSystemProperties().getActivationConfig())
+            );
+        }
+
+        return snapBlockValidationRule;
+    }
+
     public synchronized BlockParentDependantValidationRule getBlockParentDependantValidationRule() {
         checkIfNotClosed();
 
@@ -1150,6 +1198,23 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return blockParentDependantValidationRule;
+    }
+
+    public synchronized BlockParentDependantValidationRule getSnapBlockParentDependantValidationRule() {
+        checkIfNotClosed();
+
+        if (snapBlockParentDependantValidationRule == null) {
+            Constants commonConstants = getRskSystemProperties().getNetworkConstants();
+            snapBlockParentDependantValidationRule = new BlockParentCompositeRule(
+                    new BlockTxsFieldsValidationRule(getBlockTxSignatureCache()),
+                    new PrevMinGasPriceRule(),
+                    new BlockParentNumberRule(),
+                    new BlockDifficultyRule(getDifficultyCalculator()),
+                    new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
+            );
+        }
+
+        return snapBlockParentDependantValidationRule;
     }
 
     public synchronized org.ethereum.db.BlockStore buildBlockStore(String databaseDir) {
@@ -1473,7 +1538,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 rskSystemProperties.getChunkSize(),
                 rskSystemProperties.getMaxRequestedBodies(),
                 rskSystemProperties.getLongSyncLimit(),
-                rskSystemProperties.getTopBest());
+                rskSystemProperties.getTopBest(),
+                rskSystemProperties.isServerSnapshotSyncEnabled(),
+                rskSystemProperties.isClientSnapshotSyncEnabled(),
+                rskSystemProperties.getSnapshotSyncLimit(),
+                rskSystemProperties.getSnapBootNodes());
     }
 
     protected synchronized StateRootHandler buildStateRootHandler() {
@@ -1965,7 +2034,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getDifficultyCalculator(),
                     getPeersInformation(),
                     getGenesis(),
-                    getCompositeEthereumListener());
+                    getCompositeEthereumListener(),
+                    getSnapshotProcessor());
         }
 
         return syncProcessor;
@@ -2001,6 +2071,48 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return syncPool;
+    }
+
+    private SnapshotProcessor getSnapshotProcessor() {
+        if (snapshotProcessor == null) {
+            final RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            final Constants commonConstants = rskSystemProperties.getNetworkConstants();
+            final SyncConfiguration syncConfig = getSyncConfiguration();
+            final int checkpointDistance = syncConfig.getChunkSize() * syncConfig.getMaxSkeletonChunks();
+            final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
+                    commonConstants.getNewBlockMaxSecondsInTheFuture(),
+                    rskSystemProperties.getActivationConfig(),
+                    rskSystemProperties.getNetworkConstants()
+            );
+
+            snapshotProcessor = new SnapshotProcessor(
+                    getBlockchain(),
+                    getTrieStore(),
+                    getPeersInformation(),
+                    getBlockStore(),
+                    getTransactionPool(),
+                    getSnapBlockParentDependantValidationRule(),
+                    getSnapBlockValidationRule(),
+                    new BlockHeaderParentCompositeRule(
+                            new PrevMinGasPriceRule(),
+                            new BlockParentNumberRule(),
+                            blockTimeStampValidationRule,
+                            new BlockDifficultyRule(getDifficultyCalculator()),
+                            new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
+                    ),
+                    new BlockHeaderCompositeRule(
+                            getProofOfWorkRule(),
+                            blockTimeStampValidationRule,
+                            new ValidGasUsedRule()
+                    ),
+                    getRskSystemProperties().getSnapshotChunkSize(),
+                    checkpointDistance,
+                    getRskSystemProperties().getSnapshotMaxSenderRequests(),
+                    getRskSystemProperties().checkHistoricalHeaders(),
+                    getRskSystemProperties().isSnapshotParallelEnabled()
+            );
+        }
+        return snapshotProcessor;
     }
 
     private Web3 getWeb3() {
@@ -2123,6 +2235,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRskSystemProperties(),
                     getNodeBlockProcessor(),
                     getSyncProcessor(),
+                    getSnapshotProcessor(),
                     getChannelManager(),
                     getTransactionGateway(),
                     getPeerScoringManager(),

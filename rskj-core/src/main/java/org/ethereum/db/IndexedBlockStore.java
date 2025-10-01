@@ -23,6 +23,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.BlocksIndex;
 import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.net.BlockCache;
@@ -39,6 +40,7 @@ import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
@@ -88,7 +90,7 @@ public class IndexedBlockStore implements BlockStore {
         long maxLevel = index.getMaxNumber();
         Block bestBlock = getChainBlockByNumber(maxLevel);
         if (bestBlock != null) {
-            return  bestBlock;
+            return bestBlock;
         }
 
         // That scenario can happen
@@ -113,7 +115,7 @@ public class IndexedBlockStore implements BlockStore {
             throw new IllegalArgumentException(String.format("Requested block number > branch hash number: %d < %d",
                     blockNumber, branchBlock.getNumber()));
         }
-        while(branchBlock.getNumber() > blockNumber) {
+        while (branchBlock.getNumber() > blockNumber) {
             branchBlock = getBlockByHash(branchBlock.getParentHash().getBytes());
         }
         return branchBlock.getHash().getBytes();
@@ -153,7 +155,7 @@ public class IndexedBlockStore implements BlockStore {
         return block;
     }
 
-    public boolean isBlockInMainChain(long blockNumber, Keccak256 blockHash){
+    public boolean isBlockInMainChain(long blockNumber, Keccak256 blockHash) {
         List<BlockInfo> blockInfos = index.getBlocksByNumber(blockNumber);
         if (blockInfos == null) {
             return false;
@@ -170,7 +172,7 @@ public class IndexedBlockStore implements BlockStore {
 
     @Override
     public synchronized void flush() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        Metric metric = profiler.start(MetricKind.DB_WRITE);
         index.flush();
         blocks.flush();
         profiler.stop(metric);
@@ -241,7 +243,7 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
-    public synchronized Block getChainBlockByNumber(long number){
+    public synchronized Block getChainBlockByNumber(long number) {
         List<BlockInfo> blockInfos = index.getBlocksByNumber(number);
 
         for (BlockInfo blockInfo : blockInfos) {
@@ -294,17 +296,22 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
-    public synchronized BlockDifficulty getTotalDifficultyForHash(byte[] hash){
+    public synchronized BlockDifficulty getTotalDifficultyForHash(byte[] hash) {
         Block block = this.getBlockByHash(hash);
         if (block == null) {
             return ZERO;
         }
 
+        return getTotalDifficultyForBlock(block);
+    }
+
+    @Override
+    public synchronized BlockDifficulty getTotalDifficultyForBlock(Block block) {
         long level = block.getNumber();
-        List<BlockInfo> blockInfos =  index.getBlocksByNumber(level);
+        List<BlockInfo> blockInfos = index.getBlocksByNumber(level);
 
         for (BlockInfo blockInfo : blockInfos) {
-            if (Arrays.equals(blockInfo.getHash().getBytes(), hash)) {
+            if (Arrays.equals(blockInfo.getHash().getBytes(), block.getHash().getBytes())) {
                 return blockInfo.getCummDifficulty();
             }
         }
@@ -323,7 +330,7 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
-    public synchronized List<byte[]> getListHashesEndWith(byte[] hash, long number){
+    public synchronized List<byte[]> getListHashesEndWith(byte[] hash, long number) {
 
         List<Block> blocks = getListBlocksEndWith(hash, number);
         List<byte[]> hashes = new ArrayList<>(blocks.size());
@@ -357,7 +364,7 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
-    public synchronized void reBranch(Block forkBlock){
+    public synchronized void reBranch(Block forkBlock) {
 
         Block bestBlock = getBestBlock();
         long maxLevel = Math.max(bestBlock.getNumber(), forkBlock.getNumber());
@@ -368,7 +375,7 @@ public class IndexedBlockStore implements BlockStore {
 
         if (forkBlock.getNumber() > bestBlock.getNumber()) {
 
-            while(currentLevel > bestBlock.getNumber()) {
+            while (currentLevel > bestBlock.getNumber()) {
                 List<BlockInfo> blocks = index.getBlocksByNumber(currentLevel);
                 BlockInfo blockInfo = getBlockInfoForHash(blocks, forkLine.getHash().getBytes());
                 if (blockInfo != null) {
@@ -383,10 +390,10 @@ public class IndexedBlockStore implements BlockStore {
         }
 
         Block bestLine = bestBlock;
-        if (bestBlock.getNumber() > forkBlock.getNumber()){
+        if (bestBlock.getNumber() > forkBlock.getNumber()) {
 
-            while(currentLevel > forkBlock.getNumber()) {
-                List<BlockInfo> blocks =  index.getBlocksByNumber(currentLevel);
+            while (currentLevel > forkBlock.getNumber()) {
+                List<BlockInfo> blocks = index.getBlocksByNumber(currentLevel);
                 BlockInfo blockInfo = getBlockInfoForHash(blocks, bestLine.getHash().getBytes());
                 if (blockInfo != null) {
                     blockInfo.setMainChain(false);
@@ -400,7 +407,7 @@ public class IndexedBlockStore implements BlockStore {
         }
 
         // 2. Loop back on each level until common block
-        while( !bestLine.isEqual(forkLine) ) {
+        while (!bestLine.isEqual(forkLine)) {
 
             List<BlockInfo> levelBlocks = index.getBlocksByNumber(currentLevel);
             BlockInfo bestInfo = getBlockInfoForHash(levelBlocks, bestLine.getHash().getBytes());
@@ -433,7 +440,7 @@ public class IndexedBlockStore implements BlockStore {
 
         int i;
         for (i = 0; i < maxBlocks; ++i) {
-            List<BlockInfo> blockInfos =  index.getBlocksByNumber(number);
+            List<BlockInfo> blockInfos = index.getBlocksByNumber(number);
             if (blockInfos == null) {
                 break;
             }
@@ -452,8 +459,7 @@ public class IndexedBlockStore implements BlockStore {
     }
 
 
-
-    private static BlockInfo getBlockInfoForHash(List<BlockInfo> blocks, byte[] hash){
+    private static BlockInfo getBlockInfoForHash(List<BlockInfo> blocks, byte[] hash) {
         if (blocks == null) {
             return null;
         }
@@ -468,16 +474,17 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
-    public synchronized List<Block> getChainBlocksByNumber(long number){
+    @Nonnull
+    public synchronized List<Block> getChainBlocksByNumber(long number) {
         List<Block> result = new ArrayList<>();
 
         List<BlockInfo> blockInfos = index.getBlocksByNumber(number);
 
-        if (blockInfos == null){
+        if (blockInfos == null) {
             return result;
         }
 
-        for (BlockInfo blockInfo : blockInfos){
+        for (BlockInfo blockInfo : blockInfos) {
 
             byte[] hash = blockInfo.getHash().getBytes();
             Block block = getBlockByHash(hash);
@@ -516,19 +523,20 @@ public class IndexedBlockStore implements BlockStore {
     /**
      * When a block is processed on remasc the contract needs to calculate all siblings that
      * that should be rewarded when fees on this block are paid
+     *
      * @param block the block is looked for siblings
      * @return
      */
     private Map<Long, List<Sibling>> getSiblingsFromBlock(Block block) {
         return block.getUncleList().stream()
                 .collect(
-                    Collectors.groupingBy(
-                        BlockHeader::getNumber,
-                        Collectors.mapping(
-                                header -> new Sibling(header, block.getCoinbase(), block.getNumber()),
-                                Collectors.toList()
+                        Collectors.groupingBy(
+                                BlockHeader::getNumber,
+                                Collectors.mapping(
+                                        header -> new Sibling(header, block.getCoinbase(), block.getNumber()),
+                                        Collectors.toList()
+                                )
                         )
-                    )
                 );
     }
 
@@ -566,7 +574,7 @@ public class IndexedBlockStore implements BlockStore {
     }
 
 
-    public static final Serializer<List<BlockInfo>> BLOCK_INFO_SERIALIZER = new Serializer<List<BlockInfo>>(){
+    public static final Serializer<List<BlockInfo>> BLOCK_INFO_SERIALIZER = new Serializer<List<BlockInfo>>() {
 
         @Override
         public void serialize(DataOutput out, List<BlockInfo> value) throws IOException {
@@ -592,7 +600,7 @@ public class IndexedBlockStore implements BlockStore {
 
                 ByteArrayInputStream bis = new ByteArrayInputStream(data, 0, data.length);
                 ObjectInputStream ois = new ObjectInputStream(bis);
-                value = (ArrayList<BlockInfo>)ois.readObject();
+                value = (ArrayList<BlockInfo>) ois.readObject();
             } catch (ClassNotFoundException e) {
                 logger.error("Class not found", e);
             }

@@ -44,7 +44,7 @@ class ActivationConfigTest {
         "    arrowhead600: 0",
         "    arrowhead631: 0",
         "    lovell700: 0",
-        "    tbd800: 0",
+        "    reed800: 0",
         "},",
         "consensusRules: {",
         "    areBridgeTxsPaid: afterBridgeSync,",
@@ -107,6 +107,7 @@ class ActivationConfigTest {
         "    rskip293: hop400",
         "    rskip294: hop400",
         "    rskip297: hop400",
+        "    rskip305: reed800",
         "    rskip326: fingerroot500",
         "    rskip351: arrowhead600",
         "    rskip353: hop401",
@@ -134,6 +135,7 @@ class ActivationConfigTest {
         "    rskip454: lovell700",
         "    rskip459: lovell700",
         "    rskip460: lovell700",
+        "    rskip516: reed800",
         "}"
     ));
 

@@ -88,7 +88,7 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
     }
 
     @Override
-    public boolean isValid(BlockHeader header, Block parent) {
+    public boolean isValid(BlockHeader header, BlockHeader parent) {
         if (this.validPeriodLength == 0) {
             return true;
         }

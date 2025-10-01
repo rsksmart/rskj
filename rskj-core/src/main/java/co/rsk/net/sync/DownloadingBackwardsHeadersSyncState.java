@@ -43,7 +43,7 @@ public class DownloadingBackwardsHeadersSyncState extends BaseSelectedPeerSyncSt
     }
 
     @Override
-    public void newBlockHeaders(List<BlockHeader> toRequest) {
+    public void newBlockHeaders(Peer peer, List<BlockHeader> toRequest) {
         syncEventsHandler.backwardDownloadBodies(
                 child, toRequest.stream().skip(1).collect(Collectors.toList()), selectedPeer
         );

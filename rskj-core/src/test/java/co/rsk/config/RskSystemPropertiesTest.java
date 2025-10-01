@@ -18,16 +18,15 @@
 
 package co.rsk.config;
 
-import co.rsk.cli.CliArgs;
 import co.rsk.cli.RskCli;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
+import org.ethereum.net.rlpx.Node;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
 
 import java.util.List;
 import java.util.Map;
@@ -45,8 +44,6 @@ import static org.mockito.Mockito.mock;
 class RskSystemPropertiesTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
-    @Mock
-    private CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
 
     @Test
     void defaultValues() {
@@ -56,6 +53,8 @@ class RskSystemPropertiesTest {
         assertEquals(0, config.minerGasUnitInDollars(), 0.001);
         assertEquals(0, config.minerMinFeesNotifyInDollars(), 0.001);
         assertEquals(1.1, config.getMinGasPriceMultiplier());
+
+        assertEquals(3, config.getSnapshotMaxSenderRequests());
 
         assertFalse(config.getIsHeartBeatEnabled());
     }
@@ -135,6 +134,80 @@ class RskSystemPropertiesTest {
 
         assertTrue(enabledModuleNames.stream().allMatch(k -> moduleNameEnabledMap.get(k).get(0).isEnabled()));
     }
+
+    @Test
+    void rskCliSnapNodes_ShouldSetSnapBootNodes() {
+        RskCli rskCli = new RskCli();
+        String[] snapNodesArgs = {
+                "--snap-nodes=enode://b2a304b30b3ff90aabcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc1e502@3.94.45.146:50501",
+                "--snap-nodes=enode://b2a304b30b3ff90bbbcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc10502@3.94.45.146:50501"
+        };
+        rskCli.load(snapNodesArgs);
+
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(
+                new ConfigLoader(
+                        rskCli.getCliArgs()
+                )
+        );
+
+        Node expectedFirstSnapNode = new Node("enode://b2a304b30b3ff90aabcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc1e502@3.94.45.146:50501");
+        Node expectedSecondSnapNode = new Node("enode://b2a304b30b3ff90bbbcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc10502@3.94.45.146:50501");
+
+        Assertions.assertEquals(2, rskSystemProperties.getSnapBootNodes().size());
+        Assertions.assertEquals(expectedFirstSnapNode.getHexId(), rskSystemProperties.getSnapBootNodes().get(0).getHexId());
+        Assertions.assertEquals(expectedSecondSnapNode.getHexId(), rskSystemProperties.getSnapBootNodes().get(1).getHexId());
+        Assertions.assertEquals(expectedFirstSnapNode.getId(), rskSystemProperties.getSnapBootNodes().get(0).getId());
+        Assertions.assertEquals(expectedSecondSnapNode.getId(), rskSystemProperties.getSnapBootNodes().get(1).getId());
+    }
+
+    @Test
+    void rskCliSnapNodes_ShouldReturnZeroSnapBootNodesForInvalidNodeFormat() {
+        RskCli rskCli = new RskCli();
+        String[] snapNodesArgs = {
+                "--snap-nodes=http://www.google.es",
+        };
+
+        rskCli.load(snapNodesArgs);
+
+        Assertions.assertThrows(RuntimeException.class, () -> {
+            RskSystemProperties rskSystemProperties = new RskSystemProperties(
+                    new ConfigLoader(rskCli.getCliArgs())
+            );
+
+            Assertions.assertEquals(0, rskSystemProperties.getSnapBootNodes().size());
+        });
+    }
+
+    @Test
+    void rskCliSyncMode_ShouldSetSyncMode() {
+        RskCli rskCli = new RskCli();
+        String[] snapNodesArgs = {"--sync-mode=snap"};
+        rskCli.load(snapNodesArgs);
+
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(
+                new ConfigLoader(
+                        rskCli.getCliArgs()
+                )
+        );
+
+        Assertions.assertTrue(rskSystemProperties.isClientSnapshotSyncEnabled());
+    }
+
+    @Test
+    void rskCliSyncMode_ShouldSetDefaultSyncMode() {
+        RskCli rskCli = new RskCli();
+        String[] snapNodesArgs = {"--sync-mode=full"};
+        rskCli.load(snapNodesArgs);
+
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(
+                new ConfigLoader(
+                        rskCli.getCliArgs()
+                )
+        );
+
+        Assertions.assertFalse(rskSystemProperties.isClientSnapshotSyncEnabled());
+    }
+
     @Test
     void testGetRpcModulesWithList() {
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->

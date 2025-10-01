@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.PegUtilsLegacy.*;
+import static co.rsk.peg.federation.FederationTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -18,6 +19,8 @@ import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.constants.*;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.test.builders.MigrationTransactionBuilder;
+import co.rsk.test.builders.PegoutTransactionBuilder;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,137 +30,137 @@ import org.ethereum.config.blockchain.upgrades.*;
 import org.junit.jupiter.api.*;
 
 class PegUtilsLegacyTest {
-    private static final Instant creationTime = Instant.ofEpochMilli(1000L);
-    private static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
-        BtcECKey.fromPrivate(Hex.decode("45c5b07fc1a6f58892615b7c31dca6c96db58c4bbc538a6b8a22999aaa860c32")),
-        BtcECKey.fromPrivate(Hex.decode("505334c7745df2fc61486dffb900784505776a898377172ffa77384892749179")),
-        BtcECKey.fromPrivate(Hex.decode("bed0af2ce8aa8cb2bc3f9416c9d518fdee15d1ff15b8ded28376fcb23db6db69"))
-    );
+    private final Instant creationTime = Instant.ofEpochMilli(1000L);
+    private final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
+
+    private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
+    private final BridgeConstants bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
+    private final FederationConstants federationConstantsMainnet = bridgeConstantsMainnet.getFederationConstants();
+    private final NetworkParameters networkParametersRegtest = bridgeConstantsRegtest.getBtcParams();
+    private final NetworkParameters networkParametersMainnet = bridgeConstantsMainnet.getBtcParams();
+
+    private final Federation standardFederation = StandardMultiSigFederationBuilder.builder().build();
+    private final Federation p2shErpFederation = P2shErpFederationBuilder.builder().build();
+    private final Federation p2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder().build();
 
     private ActivationConfig.ForBlock activations;
-    private BridgeConstants bridgeConstantsRegtest;
-    private FederationConstants federationConstantsRegtest;
-    private BridgeConstants bridgeConstantsMainnet;
-    private FederationConstants federationConstantsMainnet;
-    private NetworkParameters networkParameters;
+    private PegoutTransactionBuilder pegoutTransactionBuilder;
+    private MigrationTransactionBuilder migrationTransactionBuilder;
 
     @BeforeEach
     void setupConfig() {
         activations = mock(ActivationConfig.ForBlock.class);
-        bridgeConstantsRegtest = new BridgeRegTestConstants();
-        federationConstantsRegtest = bridgeConstantsRegtest.getFederationConstants();
-        bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
-        federationConstantsMainnet = bridgeConstantsMainnet.getFederationConstants();
-        networkParameters = bridgeConstantsRegtest.getBtcParams();
+        pegoutTransactionBuilder = PegoutTransactionBuilder.builder();
+        migrationTransactionBuilder = MigrationTransactionBuilder.builder();
     }
 
     @Test
-    void testIsValidPegInTx() {
+    void isValidPegInTx_withGenesisFederation() {
         // Peg-in is for the genesis federation ATM
-        Context btcContext = new Context(networkParameters);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
-        Wallet wallet = new BridgeBtcWallet(btcContext, Collections.singletonList(genesisFederation));
-        Address federationAddress = genesisFederation.getAddress();
-        wallet.addWatchedAddress(federationAddress, genesisFederation.getCreationTime().toEpochMilli());
+        Context btcContext = new Context(networkParametersRegtest);
+        Federation federation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
+        Wallet wallet = new BridgeBtcWallet(btcContext, List.of(federation));
+        Address federationAddress = federation.getAddress();
+        wallet.addWatchedAddress(federationAddress, federation.getCreationTime().toEpochMilli());
         when(activations.isActive(any(ConsensusRule.class))).thenReturn(false);
 
         // Tx sending less than the minimum allowed, not a peg-in tx
         Coin minimumLockValue = bridgeConstantsRegtest.getMinimumPeginTxValue(activations);
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(minimumLockValue.subtract(Coin.CENT), federationAddress);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(isValidPegInTx(tx, genesisFederation, wallet, bridgeConstantsRegtest, activations));
+        assertFalse(isValidPegInTx(tx, federation, wallet, bridgeConstantsRegtest, activations));
 
         // Tx sending 1 btc to the federation, but also spending from the federation address,
         // the typical peg-out tx, not a peg-in tx.
-        BtcTransaction tx2 = new BtcTransaction(networkParameters);
+        BtcTransaction tx2 = new BtcTransaction(networkParametersRegtest);
         tx2.addOutput(Coin.COIN, federationAddress);
         TransactionInput txIn = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx2,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx2.addInput(txIn);
-        signWithNecessaryKeys(genesisFederation, REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx2);
-        assertFalse(isValidPegInTx(tx2, genesisFederation, wallet, bridgeConstantsRegtest, activations));
+        signWithNecessaryKeys(federation, REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx2);
+        assertFalse(isValidPegInTx(tx2, federation, wallet, bridgeConstantsRegtest, activations));
 
         // Tx sending 1 btc to the federation, is a peg-in tx
-        BtcTransaction tx3 = new BtcTransaction(networkParameters);
+        BtcTransaction tx3 = new BtcTransaction(networkParametersRegtest);
         tx3.addOutput(Coin.COIN, federationAddress);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(isValidPegInTx(tx3, genesisFederation, wallet, bridgeConstantsRegtest, activations));
+        assertTrue(isValidPegInTx(tx3, federation, wallet, bridgeConstantsRegtest, activations));
 
         // Tx sending 50 btc to the federation, is a peg-in tx
-        BtcTransaction tx4 = new BtcTransaction(networkParameters);
+        BtcTransaction tx4 = new BtcTransaction(networkParametersRegtest);
         tx4.addOutput(Coin.FIFTY_COINS, federationAddress);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(isValidPegInTx(tx4, genesisFederation, wallet, bridgeConstantsRegtest, activations));
+        assertTrue(isValidPegInTx(tx4, federation, wallet, bridgeConstantsRegtest, activations));
     }
 
     @Test
-    void testIsValidPegInTx_less_than_minimum_not_pegin_after_iris() {
+    void isValidPegInTx_less_than_minimum_not_pegin_after_iris() {
         // Tx sending less than the minimum allowed, not a peg-in tx
-        Context btcContext = new Context(networkParameters);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Context btcContext = new Context(networkParametersRegtest);
+        Federation federation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
 
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         Coin minimumPegInValueAfterIris = bridgeConstantsRegtest.getMinimumPeginTxValue(activations);
 
         // Tx sending less than the minimum allowed, not a peg-in tx
-        BtcTransaction tx = new BtcTransaction(networkParameters);
-        tx.addOutput(minimumPegInValueAfterIris.subtract(Coin.CENT), genesisFederation.getAddress());
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
+        tx.addOutput(minimumPegInValueAfterIris.div(2), federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(genesisFederation));
-        assertFalse(isValidPegInTx(tx, genesisFederation, federationWallet, bridgeConstantsRegtest, activations));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(federation));
+        assertFalse(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsRegtest, activations));
     }
 
     @Test
-    void testIsValidPegInTx_spending_from_federation_is_pegout_after_iris() {
+    void isValidPegInTx_spending_from_federation_is_pegout_after_iris() {
         // Tx sending 1 btc to the federation, but also spending from the federation address,
         // the typical peg-out tx, not a peg-in tx.
-        Context btcContext = new Context(networkParameters);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Context btcContext = new Context(networkParametersRegtest);
+        Federation federation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
 
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
 
-        BtcTransaction tx = new BtcTransaction(networkParameters);
-        tx.addOutput(Coin.COIN, genesisFederation.getAddress());
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
+        tx.addOutput(Coin.COIN, federation.getAddress());
         TransactionInput txIn = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx.addInput(txIn);
-        signWithNecessaryKeys(genesisFederation, REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
+        signWithNecessaryKeys(federation, REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(genesisFederation));
-        assertFalse(isValidPegInTx(tx, genesisFederation, federationWallet, bridgeConstantsRegtest, activations));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(federation));
+        assertFalse(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsRegtest, activations));
     }
 
     @Test
-    void testIsValidPegInTx_sending_50_btc_after_iris() {
+    void isValidPegInTx_sending_50_btc_after_iris() {
         // Tx sending 50 btc to the federation, is a peg-in tx
         Context btcContext = new Context(bridgeConstantsMainnet.getBtcParams());
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
+        Federation federation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
 
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
 
         BtcTransaction tx = new BtcTransaction(bridgeConstantsMainnet.getBtcParams());
-        tx.addOutput(Coin.FIFTY_COINS, genesisFederation.getAddress());
+        tx.addOutput(Coin.FIFTY_COINS, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(genesisFederation));
-        assertTrue(isValidPegInTx(tx, genesisFederation, federationWallet, bridgeConstantsMainnet, activations));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(federation));
+        assertTrue(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsMainnet, activations));
     }
 
     @Test
-    void testIsValidPegInTx_value_between_old_and_new_before_iris() {
+    void isValidPegInTx_value_between_old_and_new_before_iris() {
         // Tx sending btc between old and new value, it is not a peg-in before iris
         Context btcContext = new Context(bridgeConstantsMainnet.getBtcParams());
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
+        Federation federation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
 
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(false);
 
@@ -170,18 +173,18 @@ class PegUtilsLegacyTest {
         assertTrue(valueLock.isLessThan(minimumPegInValueBeforeIris));
         assertTrue(valueLock.isGreaterThan(minimumPegInValueAfterIris));
 
-        tx.addOutput(valueLock, genesisFederation.getAddress());
+        tx.addOutput(valueLock, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(genesisFederation));
-        assertFalse(isValidPegInTx(tx, genesisFederation, federationWallet, bridgeConstantsMainnet, activations));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(federation));
+        assertFalse(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsMainnet, activations));
     }
 
     @Test
-    void testIsValidPegInTx_value_between_old_and_new_after_iris() {
+    void isValidPegInTx_value_between_old_and_new_after_iris() {
         // Tx sending btc between old and new value, it is a peg-in after iris
         Context btcContext = new Context(bridgeConstantsMainnet.getBtcParams());
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
+        Federation federation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
 
         BtcTransaction tx = new BtcTransaction(bridgeConstantsMainnet.getBtcParams());
@@ -193,18 +196,18 @@ class PegUtilsLegacyTest {
         assertTrue(valueLock.isGreaterThan(minimumPegInValueAfterIris));
         assertTrue(valueLock.isLessThan(minimumPegInValueBeforeIris));
 
-        tx.addOutput(valueLock, genesisFederation.getAddress());
+        tx.addOutput(valueLock, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(genesisFederation));
-        assertTrue(isValidPegInTx(tx, genesisFederation, federationWallet, bridgeConstantsMainnet, activations));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(federation));
+        assertTrue(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsMainnet, activations));
     }
 
     @Test
-    void testIsValidPegInTxForTwoFederations() {
+    void isValidPegInTxForTwoFederations() {
         when(activations.isActive(any(ConsensusRule.class))).thenReturn(false);
 
-        Context btcContext = new Context(networkParameters);
+        Context btcContext = new Context(networkParametersRegtest);
         NetworkParameters btcParams = btcContext.getParams();
 
         List<BtcECKey> federation1Keys = Arrays.asList(
@@ -212,7 +215,7 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        List<FederationMember> fed1Members = FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys);
+        List<FederationMember> fed1Members = getFederationMembersWithBtcKeys(federation1Keys);
         FederationArgs federation1Args = new FederationArgs(fed1Members, creationTime, 0L, btcParams);
         Federation federation1 = FederationFactory.buildStandardMultiSigFederation(federation1Args);
 
@@ -222,7 +225,7 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fb03"))
         );
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        List<FederationMember> fed2Members = FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys);
+        List<FederationMember> fed2Members = getFederationMembersWithBtcKeys(federation2Keys);
         FederationArgs federation2Args = new FederationArgs(fed2Members, creationTime, 0L, btcParams);
         Federation federation2 = FederationFactory.buildStandardMultiSigFederation(federation2Args);
 
@@ -233,10 +236,11 @@ class PegUtilsLegacyTest {
         Wallet federationsWallet = new BridgeBtcWallet(btcContext, federations);
 
         Coin minimumPeginTxValue = bridgeConstantsRegtest.getMinimumPeginTxValue(activations);
+        Coin halfMinimumPeginValue = minimumPeginTxValue.div(2);
 
-        // Tx sending less than 1 btc to the first federation, not a peg-in tx
-        BtcTransaction tx = new BtcTransaction(networkParameters);
-        tx.addOutput(Coin.CENT, address1);
+        // Tx sending less than minimum pegin value to the first federation, so it's not a peg-in tx
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
+        tx.addOutput(halfMinimumPeginValue, address1);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertFalse(isValidPegInTx(
             tx,
@@ -247,9 +251,9 @@ class PegUtilsLegacyTest {
             activations
         ));
 
-        // Tx sending less than 1 btc to the second federation, not a peg-in tx
-        tx = new BtcTransaction(networkParameters);
-        tx.addOutput(Coin.CENT, address2);
+        // Tx sending less than minimum pegin value to the second federation, so it's not a peg-in tx
+        tx = new BtcTransaction(networkParametersRegtest);
+        tx.addOutput(halfMinimumPeginValue, address2);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertFalse(isValidPegInTx(
             tx,
@@ -260,10 +264,11 @@ class PegUtilsLegacyTest {
             activations
         ));
 
-        // Tx sending less than 1 btc to both federations, not a peg-in tx
-        tx = new BtcTransaction(networkParameters);
-        tx.addOutput(Coin.CENT, address1);
-        tx.addOutput(Coin.CENT, address2);
+        // Tx sending less than minimum pegin value (total) to both federations, so it's not a peg-in tx
+        Coin lessThanHalfMinimumPeginValue = halfMinimumPeginValue.minus(Coin.SATOSHI);
+        tx = new BtcTransaction(networkParametersRegtest);
+        tx.addOutput(lessThanHalfMinimumPeginValue, address1);
+        tx.addOutput(lessThanHalfMinimumPeginValue, address2);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertFalse(isValidPegInTx(
             tx,
@@ -275,13 +280,13 @@ class PegUtilsLegacyTest {
         ));
 
         // Tx sending 1 btc to the first federation, but also spending from the first federation address, the typical peg-out tx, not a peg-in tx.
-        BtcTransaction tx2 = new BtcTransaction(networkParameters);
+        BtcTransaction tx2 = new BtcTransaction(networkParametersRegtest);
         tx2.addOutput(Coin.COIN, address1);
         TransactionInput txIn = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx2,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2);
@@ -296,13 +301,13 @@ class PegUtilsLegacyTest {
 
         // Tx sending 1 btc to the second federation, but also spending from the second federation address,
         // the typical peg-out tx, not a peg-in tx.
-        tx2 = new BtcTransaction(networkParameters);
+        tx2 = new BtcTransaction(networkParametersRegtest);
         tx2.addOutput(Coin.COIN, address2);
         txIn = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx2,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation2, federation2Keys, txIn, tx2);
@@ -317,14 +322,14 @@ class PegUtilsLegacyTest {
 
         // Tx sending 1 btc to both federations, but also spending from the first federation address,
         // the typical peg-out tx, not a peg-in tx.
-        tx2 = new BtcTransaction(networkParameters);
+        tx2 = new BtcTransaction(networkParametersRegtest);
         tx2.addOutput(Coin.COIN, address1);
         tx2.addOutput(Coin.COIN, address2);
         txIn = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx2,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2);
@@ -339,14 +344,14 @@ class PegUtilsLegacyTest {
 
         // Tx sending 1 btc to both federations, but also spending from the second federation address,
         // the typical peg-out tx, not a peg-in tx.
-        tx2 = new BtcTransaction(networkParameters);
+        tx2 = new BtcTransaction(networkParametersRegtest);
         tx2.addOutput(Coin.COIN, address1);
         tx2.addOutput(Coin.COIN, address2);
         txIn = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx2,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation2, federation2Keys, txIn, tx2);
@@ -360,13 +365,13 @@ class PegUtilsLegacyTest {
         ));
 
         // Tx sending 1 btc from federation1 to federation2, the typical migration tx, not a peg-in tx.
-        tx2 = new BtcTransaction(networkParameters);
+        tx2 = new BtcTransaction(networkParametersRegtest);
         tx2.addOutput(Coin.COIN, address2);
         txIn = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx2,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2);
@@ -381,19 +386,19 @@ class PegUtilsLegacyTest {
 
         // Tx sending 1 btc from federation1 to federation2, the typical migration tx from the retired federation,
         // not a peg-in tx.
-        tx2 = new BtcTransaction(networkParameters);
+        tx2 = new BtcTransaction(networkParametersRegtest);
         tx2.addOutput(Coin.COIN, address2);
         txIn = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx2,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2);
         assertFalse(isValidPegInTx(
             tx2,
-            Collections.singletonList(federation2),
+            List.of(federation2),
             federation1.getP2SHScript(),
             federationsWallet,
             minimumPeginTxValue,
@@ -401,7 +406,7 @@ class PegUtilsLegacyTest {
         ));
 
         // Tx sending 1 btc to the first federation, is a peg-in tx
-        BtcTransaction tx3 = new BtcTransaction(networkParameters);
+        BtcTransaction tx3 = new BtcTransaction(networkParametersRegtest);
         tx3.addOutput(Coin.COIN, address1);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(isValidPegInTx(
@@ -414,7 +419,7 @@ class PegUtilsLegacyTest {
         ));
 
         // Tx sending 1 btc to the second federation, is a peg-in tx
-        tx3 = new BtcTransaction(networkParameters);
+        tx3 = new BtcTransaction(networkParametersRegtest);
         tx3.addOutput(Coin.COIN, address2);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(isValidPegInTx(
@@ -427,7 +432,7 @@ class PegUtilsLegacyTest {
         ));
 
         // Tx sending 1 btc to the both federations, is a peg-in tx
-        tx3 = new BtcTransaction(networkParameters);
+        tx3 = new BtcTransaction(networkParametersRegtest);
         tx3.addOutput(Coin.COIN, address1);
         tx3.addOutput(Coin.COIN, address2);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
@@ -441,7 +446,7 @@ class PegUtilsLegacyTest {
         ));
 
         // Tx sending 50 btc to the first federation, is a peg-in tx
-        BtcTransaction tx4 = new BtcTransaction(networkParameters);
+        BtcTransaction tx4 = new BtcTransaction(networkParametersRegtest);
         tx4.addOutput(Coin.FIFTY_COINS, address1);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(isValidPegInTx(
@@ -454,7 +459,7 @@ class PegUtilsLegacyTest {
         ));
 
         // Tx sending 50 btc to the second federation, is a peg-in tx
-        tx4 = new BtcTransaction(networkParameters);
+        tx4 = new BtcTransaction(networkParametersRegtest);
         tx4.addOutput(Coin.FIFTY_COINS, address2);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
@@ -468,7 +473,7 @@ class PegUtilsLegacyTest {
         ));
 
         // Tx sending 50 btc to the both federations, is a peg-in tx
-        tx4 = new BtcTransaction(networkParameters);
+        tx4 = new BtcTransaction(networkParametersRegtest);
         tx4.addOutput(Coin.FIFTY_COINS, address1);
         tx4.addOutput(Coin.FIFTY_COINS, address2);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
@@ -483,11 +488,11 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_hasChangeUtxoFromFlyoverFederation_beforeRskip201_isPegin() {
+    void isValidPegInTx_hasChangeUtxoFromFlyoverFederation_beforeRskip201_isPegin() {
         Context btcContext = new Context(bridgeConstantsMainnet.getBtcParams());
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
 
         Keccak256 flyoverDerivationHash = RskTestUtils.createHash(1);
         Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
@@ -500,18 +505,18 @@ class PegUtilsLegacyTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverRedeemScript);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         Assertions.assertTrue(isValidPegInTx(tx, activeFederation, federationWallet,
             bridgeConstantsMainnet, activations));
     }
 
     @Test
-    void testIsValidPegInTx_hasChangeUtxoFromFlyoverFederation_afterRskip201_notPegin() {
+    void isValidPegInTx_hasChangeUtxoFromFlyoverFederation_afterRskip201_notPegin() {
         Context btcContext = new Context(bridgeConstantsMainnet.getBtcParams());
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
 
         Keccak256 flyoverDerivationHash = RskTestUtils.createHash(1);
         Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
@@ -526,18 +531,18 @@ class PegUtilsLegacyTest {
         Script flyoverInputScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, flyoverRedeemScript);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverInputScriptSig);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
         Assertions.assertFalse(isValidPegInTx(tx, activeFederation, federationWallet,
             bridgeConstantsMainnet, activations));
     }
 
     @Test
-    void testIsValidPegInTx_hasChangeUtxoFromFlyoverErpFederation_beforeRskip201_isPegin() {
+    void isValidPegInTx_hasChangeUtxoFromFlyoverErpFederation_beforeRskip201_isPegin() {
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
-        Context btcContext = new Context(networkParameters);
+        Context btcContext = new Context(networkParametersRegtest);
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         FederationArgs federationArgs = activeFederation.getArgs();
 
         List<BtcECKey> erpPubKeys = Arrays.asList(
@@ -557,11 +562,11 @@ class PegUtilsLegacyTest {
         );
 
         // Create a tx from the fast bridge erp fed to the active fed
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverNonStandardRedeemScript);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         Assertions.assertTrue(isValidPegInTx(
             tx,
@@ -573,24 +578,25 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_hasChangeUtxoFromFlyoverErpFederation_afterRskip201_notPegin() {
-        Context btcContext = new Context(networkParameters);
+    void isValidPegInTx_hasChangeUtxoFromFlyoverErpFederation_afterRskip201_notPegin() {
+        Context btcContext = new Context(networkParametersRegtest);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         List<BtcECKey> erpFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        List<FederationMember> erpFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys);
-        FederationArgs args = new FederationArgs(erpFedMembers, creationTime, 0L, networkParameters);
+        List<FederationMember> erpFedMembers = getFederationMembersWithBtcKeys(erpFederationKeys);
+        FederationArgs args = new FederationArgs(erpFedMembers, creationTime, 0L,
+            networkParametersRegtest);
         Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(args);
 
         ErpRedeemScriptBuilder nonStandardErpRedeemScriptBuilder = NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(
             activations,
-            networkParameters
+            networkParametersRegtest
         );
 
         Script nonStandardRedeemScript = nonStandardErpRedeemScriptBuilder.of(
@@ -607,13 +613,13 @@ class PegUtilsLegacyTest {
         );
 
         // Create a tx from the fast bridge erp fed to the active fed
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
 
         Script flyoverInputScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, flyoverNonStandardRedeemScript);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverInputScriptSig);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         Assertions.assertFalse(isValidPegInTx(
             tx,
@@ -625,21 +631,21 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_hasChangeUtxoFromErpFederation_beforeRskip201_isPegin() {
-        Context btcContext = new Context(networkParameters);
+    void isValidPegInTx_hasChangeUtxoFromErpFederation_beforeRskip201_isPegin() {
+        Context btcContext = new Context(networkParametersRegtest);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         List<BtcECKey> erpFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         FederationArgs args = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
+            getFederationMembersWithBtcKeys(erpFederationKeys),
             creationTime,
             0L,
-            networkParameters
+            networkParametersRegtest
         );
         Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(
             args
@@ -647,7 +653,7 @@ class PegUtilsLegacyTest {
 
         ErpRedeemScriptBuilder nonStandardErpRedeemScriptBuilder = NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(
             activations,
-            networkParameters
+            networkParametersRegtest
         );
 
         Script erpRedeemScript = nonStandardErpRedeemScriptBuilder.of(
@@ -659,32 +665,32 @@ class PegUtilsLegacyTest {
         );
 
         // Create a tx from the erp fed to the active fed
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, erpRedeemScript);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         Assertions.assertTrue(isValidPegInTx(tx, activeFederation, federationWallet,
             bridgeConstantsRegtest, activations));
     }
 
     @Test
-    void testIsValidPegInTx_hasChangeUtxoFromErpFederation_afterRskip201_notPegin() {
-        Context btcContext = new Context(networkParameters);
+    void isValidPegInTx_hasChangeUtxoFromErpFederation_afterRskip201_notPegin() {
+        Context btcContext = new Context(networkParametersRegtest);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         List<BtcECKey> erpFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         FederationArgs args = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
+            getFederationMembersWithBtcKeys(erpFederationKeys),
             creationTime,
             0L,
-            networkParameters
+            networkParametersRegtest
         );
         Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(
             args
@@ -692,7 +698,7 @@ class PegUtilsLegacyTest {
 
         ErpRedeemScriptBuilder nonStandardErpRedeemScriptBuilder = NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(
             activations,
-            networkParameters
+            networkParametersRegtest
         );
 
         Script erpRedeemScript = nonStandardErpRedeemScriptBuilder.of(
@@ -704,22 +710,22 @@ class PegUtilsLegacyTest {
         );
 
         // Create a tx from the erp fed to the active fed
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
 
         Script flyoverInputScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, erpRedeemScript);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverInputScriptSig);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         Assertions.assertFalse(isValidPegInTx(tx, activeFederation, federationWallet,
             bridgeConstantsRegtest, activations));
     }
 
     @Test
-    void testIsValidPegInTx_hasChangeUtxoFromFlyoverRetiredFederation_beforeRskip201_isPegin() {
-        Context btcContext = new Context(networkParameters);
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+    void isValidPegInTx_hasChangeUtxoFromFlyoverRetiredFederation_beforeRskip201_isPegin() {
+        Context btcContext = new Context(networkParametersRegtest);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
         List<BtcECKey> retiredFederationKeys = Arrays.asList(
@@ -728,23 +734,23 @@ class PegUtilsLegacyTest {
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         FederationArgs args = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
+            getFederationMembersWithBtcKeys(retiredFederationKeys),
             creationTime,
             0L,
-            networkParameters
+            networkParametersRegtest
         );
         Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
             args
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         TransactionInput txInput = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx,
             new byte[0],
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx.addInput(txInput);
 
@@ -756,11 +762,11 @@ class PegUtilsLegacyTest {
 
         signWithNecessaryKeys(retiredFederation, flyoverRedeemScript, retiredFederationKeys, txInput, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertTrue(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             retiredFederation.getP2SHScript(),
             federationWallet,
             bridgeConstantsRegtest.getMinimumPeginTxValue(activations),
@@ -769,9 +775,9 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_hasChangeUtxoFromFlyoverRetiredFederation_afterRskip201_notPegin() {
-        Context btcContext = new Context(networkParameters);
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+    void isValidPegInTx_hasChangeUtxoFromFlyoverRetiredFederation_afterRskip201_notPegin() {
+        Context btcContext = new Context(networkParametersRegtest);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
         List<BtcECKey> retiredFederationKeys = Arrays.asList(
@@ -780,23 +786,23 @@ class PegUtilsLegacyTest {
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         FederationArgs args = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
+            getFederationMembersWithBtcKeys(retiredFederationKeys),
             creationTime,
             0L,
-            networkParameters
+            networkParametersRegtest
         );
         Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
             args
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         TransactionInput txInput = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx,
             new byte[0],
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx.addInput(txInput);
 
@@ -808,11 +814,11 @@ class PegUtilsLegacyTest {
 
         signWithNecessaryKeys(retiredFederation, flyoverRedeemScript, retiredFederationKeys, txInput, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertFalse(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             retiredFederation.getP2SHScript(),
             federationWallet,
             bridgeConstantsRegtest.getMinimumPeginTxValue(activations),
@@ -821,9 +827,9 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_hasChangeUtxoFromFlyoverErpRetiredFederation_beforeRskip201_isPegin() {
-        Context btcContext = new Context(networkParameters);
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+    void isValidPegInTx_hasChangeUtxoFromFlyoverErpRetiredFederation_beforeRskip201_isPegin() {
+        Context btcContext = new Context(networkParametersRegtest);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
         List<BtcECKey> retiredFederationKeys = Arrays.asList(
@@ -831,9 +837,10 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        List<FederationMember> retiredFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys);
+        List<FederationMember> retiredFederationMembers = getFederationMembersWithBtcKeys(retiredFederationKeys);
 
-        FederationArgs retiredFederationArgs = new FederationArgs(retiredFederationMembers, creationTime, 0L, networkParameters);
+        FederationArgs retiredFederationArgs = new FederationArgs(retiredFederationMembers, creationTime, 0L,
+            networkParametersRegtest);
         Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(retiredFederationArgs);
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -846,13 +853,13 @@ class PegUtilsLegacyTest {
         ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(retiredFederationArgs, erpFederationPublicKeys, activationDelay, activations);
 
         // Create a tx from the retired fast bridge fed to the active fed
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         TransactionInput txInput = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx,
             new byte[0],
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx.addInput(txInput);
 
@@ -863,11 +870,11 @@ class PegUtilsLegacyTest {
 
         signWithNecessaryKeys(nonStandardErpFederation, flyoverNonStandardRedeemScript, retiredFederationKeys, txInput, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertTrue(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             retiredFederation.getP2SHScript(),
             federationWallet,
             bridgeConstantsRegtest.getMinimumPeginTxValue(activations),
@@ -876,9 +883,9 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_hasChangeUtxoFromFlyoverErpRetiredFederation_afterRskip201_notPegin() {
-        Context btcContext = new Context(networkParameters);
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+    void isValidPegInTx_hasChangeUtxoFromFlyoverErpRetiredFederation_afterRskip201_notPegin() {
+        Context btcContext = new Context(networkParametersRegtest);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
         List<BtcECKey> retiredFederationKeys = Arrays.asList(
@@ -887,8 +894,9 @@ class PegUtilsLegacyTest {
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        List<FederationMember> retiredFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys);
-        FederationArgs retiredFederationArgs = new FederationArgs(retiredFederationMembers, creationTime, 0L, networkParameters);
+        List<FederationMember> retiredFederationMembers = getFederationMembersWithBtcKeys(retiredFederationKeys);
+        FederationArgs retiredFederationArgs = new FederationArgs(retiredFederationMembers, creationTime, 0L,
+            networkParametersRegtest);
         Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(retiredFederationArgs);
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -901,13 +909,13 @@ class PegUtilsLegacyTest {
         ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(retiredFederationArgs, erpFederationPublicKeys, activationDelay, activations);
 
         // Create a tx from the retired fast bridge fed to the active fed
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         TransactionInput txInput = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx,
             new byte[0],
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx.addInput(txInput);
 
@@ -918,11 +926,11 @@ class PegUtilsLegacyTest {
 
         signWithNecessaryKeys(nonStandardErpFederation, flyoverNonStandardRedeemScript, retiredFederationKeys, txInput, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertFalse(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             retiredFederation.getP2SHScript(),
             federationWallet,
             bridgeConstantsRegtest.getMinimumPeginTxValue(activations),
@@ -931,9 +939,9 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_hasChangeUtxoFromErpRetiredFederation_beforeRskip201_isPegin() {
-        Context btcContext = new Context(networkParameters);
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+    void isValidPegInTx_hasChangeUtxoFromErpRetiredFederation_beforeRskip201_isPegin() {
+        Context btcContext = new Context(networkParametersRegtest);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
 
         List<BtcECKey> retiredFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
@@ -941,8 +949,9 @@ class PegUtilsLegacyTest {
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        List<FederationMember> retiredFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys);
-        FederationArgs retiredFederationArgs = new FederationArgs(retiredFederationMembers, creationTime, 0L, networkParameters);
+        List<FederationMember> retiredFederationMembers = getFederationMembersWithBtcKeys(retiredFederationKeys);
+        FederationArgs retiredFederationArgs = new FederationArgs(retiredFederationMembers, creationTime, 0L,
+            networkParametersRegtest);
         Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(retiredFederationArgs);
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -955,22 +964,22 @@ class PegUtilsLegacyTest {
         ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(retiredFederationArgs, erpFederationPublicKeys, activationDelay, activations);
 
         // Create a tx from the retired erp fed to the active fed
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         TransactionInput txInput = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx,
             new byte[0],
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx.addInput(txInput);
         signWithErpFederation(nonStandardErpFederation, retiredFederationKeys, txInput, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertTrue(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             retiredFederation.getP2SHScript(),
             federationWallet,
             bridgeConstantsRegtest.getMinimumPeginTxValue(activations),
@@ -979,9 +988,9 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_hasChangeUtxoFromErpRetiredFederation_afterRskip201_notPegin() {
-        Context btcContext = new Context(networkParameters);
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+    void isValidPegInTx_hasChangeUtxoFromErpRetiredFederation_afterRskip201_notPegin() {
+        Context btcContext = new Context(networkParametersRegtest);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
         List<BtcECKey> retiredFederationKeys = Arrays.asList(
@@ -990,8 +999,9 @@ class PegUtilsLegacyTest {
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        List<FederationMember> retiredFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys);
-        FederationArgs retiredFedArgs = new FederationArgs(retiredFederationMembers, creationTime, 0L, networkParameters);
+        List<FederationMember> retiredFederationMembers = getFederationMembersWithBtcKeys(retiredFederationKeys);
+        FederationArgs retiredFedArgs = new FederationArgs(retiredFederationMembers, creationTime, 0L,
+            networkParametersRegtest);
         Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(retiredFedArgs);
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -1004,22 +1014,22 @@ class PegUtilsLegacyTest {
         ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(retiredFedArgs, erpFederationPublicKeys, activationDelay, activations);
 
         // Create a tx from the retired erp fed to the active fed
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         TransactionInput txInput = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx,
             new byte[0],
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx.addInput(txInput);
         signWithErpFederation(nonStandardErpFederation, retiredFederationKeys, txInput, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertFalse(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             retiredFederation.getP2SHScript(),
             federationWallet,
             bridgeConstantsRegtest.getMinimumPeginTxValue(activations),
@@ -1028,9 +1038,9 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_has_multiple_utxos_below_minimum_but_total_amount_is_ok_before_RSKIP293() {
+    void isValidPegInTx_has_multiple_utxos_below_minimum_but_total_amount_is_ok_before_RSKIP293() {
         Context btcContext = new Context(bridgeConstantsMainnet.getBtcParams());
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
@@ -1042,11 +1052,11 @@ class PegUtilsLegacyTest {
         tx.addOutput(minimumPeginValue.div(4), activeFederation.getAddress());
         tx.addOutput(minimumPeginValue.div(4), activeFederation.getAddress());
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertTrue(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             null,
             federationWallet,
             minimumPeginValue,
@@ -1055,9 +1065,9 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_has_utxos_below_minimum_and_total_amount_as_well_before_RSKIP293() {
+    void isValidPegInTx_has_utxos_below_minimum_and_total_amount_as_well_before_RSKIP293() {
         Context btcContext = new Context(bridgeConstantsMainnet.getBtcParams());
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
@@ -1069,11 +1079,11 @@ class PegUtilsLegacyTest {
         tx.addOutput(minimumPeginValue.div(4), activeFederation.getAddress());
         tx.addOutput(minimumPeginValue.div(5), activeFederation.getAddress());
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertFalse(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             null,
             federationWallet,
             bridgeConstantsMainnet.getMinimumPeginTxValue(activations),
@@ -1082,9 +1092,9 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_has_utxos_below_minimum_after_RSKIP293() {
+    void isValidPegInTx_has_utxos_below_minimum_after_RSKIP293() {
         Context btcContext = new Context(bridgeConstantsMainnet.getBtcParams());
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
@@ -1100,11 +1110,11 @@ class PegUtilsLegacyTest {
         tx.addOutput(minimumPeginValue, activeFederation.getAddress());
         tx.addOutput(aboveMinimumPeginValue, activeFederation.getAddress());
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertFalse(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             null,
             federationWallet,
             minimumPeginValue,
@@ -1113,9 +1123,9 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_utxo_equal_to_minimum_after_RSKIP293() {
+    void isValidPegInTx_utxo_equal_to_minimum_after_RSKIP293() {
         Context btcContext = new Context(bridgeConstantsMainnet.getBtcParams());
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
@@ -1124,11 +1134,11 @@ class PegUtilsLegacyTest {
         BtcTransaction tx = new BtcTransaction(bridgeConstantsMainnet.getBtcParams());
         tx.addOutput(minimumPeginValue, activeFederation.getAddress());
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertTrue(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             null,
             federationWallet,
             minimumPeginValue,
@@ -1137,9 +1147,9 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_p2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
-        Address activeFederationAddress = genesisFederation.getAddress();
+    void isValidPegInTx_p2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
+        Federation federation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
+        Address activeFederationAddress = federation.getAddress();
         testIsValidPegInTx_fromP2shErpScriptSender(
             true,
             false,
@@ -1149,8 +1159,8 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_p2shErpScript_sends_funds_to_random_address_after_RSKIP353() {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+    void isValidPegInTx_p2shErpScript_sends_funds_to_random_address_after_RSKIP353() {
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParametersRegtest, "random");
         testIsValidPegInTx_fromP2shErpScriptSender(
             true,
             false,
@@ -1160,8 +1170,8 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_flyoverpP2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
+    void isValidPegInTx_flyoverpP2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         Address activeFederationAddress = activeFederation.getAddress();
         testIsValidPegInTx_fromP2shErpScriptSender(
             true,
@@ -1172,8 +1182,8 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_random_address_after_RSKIP353() {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+    void isValidPegInTx_flyoverP2shErpScript_sends_funds_to_random_address_after_RSKIP353() {
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParametersRegtest, "random");
         testIsValidPegInTx_fromP2shErpScriptSender(
             true,
             true,
@@ -1192,8 +1202,8 @@ class PegUtilsLegacyTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
 
-        Context btcContext = new Context(networkParameters);
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Context btcContext = new Context(networkParametersRegtest);
+        Federation activeFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         FederationArgs activeFederationArgs = activeFederation.getArgs();
 
         List<BtcECKey> emergencyKeys = PegTestUtils.createRandomBtcECKeys(3);
@@ -1208,7 +1218,7 @@ class PegUtilsLegacyTest {
         );
 
         // Create a tx from the p2sh erp fed
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(Coin.COIN, destinationAddress);
 
         Script inputScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null,
@@ -1219,7 +1229,7 @@ class PegUtilsLegacyTest {
             inputScriptSig
         );
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertEquals(expectedResult, isValidPegInTx(
             tx,
@@ -1252,7 +1262,7 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsMigrationTx_sending_funds_from_retired_p2sh_fed_to_active_p2sh_fed() {
+    void isMigrationTx_sending_funds_from_retired_p2sh_fed_to_active_p2sh_fed() {
         NetworkParameters networkParameters = bridgeConstantsMainnet.getBtcParams();
         Context btcContext = new Context(networkParameters);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
@@ -1260,16 +1270,16 @@ class PegUtilsLegacyTest {
         List<BtcECKey> retiredFederationKeys = Stream.of(
             BtcECKey.fromPrivate(Hex.decode("fc01")),
             BtcECKey.fromPrivate(Hex.decode("fc02"))
-        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        List<FederationMember> retiredFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys);
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).toList();
+        List<FederationMember> retiredFedMembers = getFederationMembersWithBtcKeys(retiredFederationKeys);
         NetworkParameters btcParams = bridgeConstantsMainnet.getBtcParams();
         FederationArgs retiredFedArgs = new FederationArgs(retiredFedMembers, creationTime, 1L, btcParams);
 
         List<BtcECKey> activeFederationKeys = Stream.of(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
-        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys);
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).toList();
+        List<FederationMember> activeFedMembers = getFederationMembersWithBtcKeys(activeFederationKeys);
         FederationArgs activeFedArgs = new FederationArgs(activeFedMembers, creationTime, 1L, btcParams);
 
         List<BtcECKey> erpPubKeys = federationConstantsMainnet.getErpFedPubKeysList();
@@ -1291,7 +1301,7 @@ class PegUtilsLegacyTest {
         migrationTx.addInput(migrationTxInput);
         signWithNecessaryKeys(retiredFederation, retiredFederationKeys, migrationTxInput, migrationTx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         FederationContext federationContext = FederationContext.builder()
             .withActiveFederation(activeFederation)
@@ -1320,7 +1330,7 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsMigrationTx_sending_funds_from_retiring_p2sh_fed_to_active_p2sh_fed() {
+    void isMigrationTx_sending_funds_from_retiring_p2sh_fed_to_active_p2sh_fed() {
         NetworkParameters networkParameters = bridgeConstantsMainnet.getBtcParams();
         Context btcContext = new Context(networkParameters);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
@@ -1330,7 +1340,7 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        List<FederationMember> retiringFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiringFedKeys);
+        List<FederationMember> retiringFedMembers = getFederationMembersWithBtcKeys(retiringFedKeys);
         NetworkParameters btcParams = bridgeConstantsMainnet.getBtcParams();
         List<BtcECKey> erpPubKeys = federationConstantsMainnet.getErpFedPubKeysList();
         long activationDelay = federationConstantsMainnet.getErpFedActivationDelay();
@@ -1342,10 +1352,10 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys);
+        List<FederationMember> activeFedMembers = getFederationMembersWithBtcKeys(activeFederationKeys);
         FederationArgs activeFedArgs =
             new FederationArgs(activeFedMembers, creationTime, 1L, btcParams);
-        
+
         Federation activeFederation = FederationFactory.buildP2shErpFederation(activeFedArgs, erpPubKeys, activationDelay);
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1378,7 +1388,7 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsMigrationTx_sending_funds_from_retired_standard_fed_to_active_p2sh_fed() {
+    void isMigrationTx_sending_funds_from_retired_standard_fed_to_active_p2sh_fed() {
         NetworkParameters networkParameters = bridgeConstantsMainnet.getBtcParams();
         Context btcContext = new Context(networkParameters);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
@@ -1389,7 +1399,7 @@ class PegUtilsLegacyTest {
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
         FederationArgs retiredFedArgs = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
+            getFederationMembersWithBtcKeys(retiredFederationKeys),
             creationTime,
             1L,
             bridgeConstantsMainnet.getBtcParams()
@@ -1404,7 +1414,7 @@ class PegUtilsLegacyTest {
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
         FederationArgs activeFedArgs = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+            getFederationMembersWithBtcKeys(activeFederationKeys),
             creationTime,
             1L,
             bridgeConstantsMainnet.getBtcParams()
@@ -1445,7 +1455,7 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsMigrationTx_sending_funds_from_retiring_standard_fed_to_active_p2sh_fed() {
+    void isMigrationTx_sending_funds_from_retiring_standard_fed_to_active_p2sh_fed() {
         NetworkParameters networkParameters = bridgeConstantsMainnet.getBtcParams();
         Context btcContext = new Context(networkParameters);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
@@ -1454,7 +1464,7 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fc01")),
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        List<FederationMember> retiringFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys);
+        List<FederationMember> retiringFedMembers = getFederationMembersWithBtcKeys(retiringFederationKeys);
 
         FederationArgs retiringFedArgs = new FederationArgs(retiringFedMembers, creationTime, 1L, networkParameters);
         Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(retiringFedArgs);
@@ -1463,7 +1473,7 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys);
+        List<FederationMember> activeFedMembers = getFederationMembersWithBtcKeys(activeFederationKeys);
 
         FederationArgs activeFedArgs = new FederationArgs(activeFedMembers, creationTime, 1L, networkParameters);
         Federation activeFederation = FederationFactory.buildP2shErpFederation(
@@ -1485,7 +1495,7 @@ class PegUtilsLegacyTest {
         migrationTx.addInput(migrationTxInput);
         signWithNecessaryKeys(retiringFederation, retiringFederationKeys, migrationTxInput, migrationTx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         FederationContext federationContext = FederationContext.builder()
             .withActiveFederation(activeFederation)
@@ -1502,7 +1512,7 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsMigrationTx_sending_funds_from_retired_standard_fed_to_active_standard_fed() {
+    void isMigrationTx_sending_funds_from_retired_standard_fed_to_active_standard_fed() {
         NetworkParameters networkParameters = bridgeConstantsMainnet.getBtcParams();
         Context btcContext = new Context(networkParameters);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
@@ -1510,9 +1520,9 @@ class PegUtilsLegacyTest {
         List<BtcECKey> retiredFederationKeys = Stream.of(
             BtcECKey.fromPrivate(Hex.decode("fc01")),
             BtcECKey.fromPrivate(Hex.decode("fc02"))
-        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).toList();
 
-        FederationArgs retiredFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
+        FederationArgs retiredFedArgs = new FederationArgs(getFederationMembersWithBtcKeys(retiredFederationKeys),
             creationTime,
             1L,
             bridgeConstantsMainnet.getBtcParams()
@@ -1524,9 +1534,9 @@ class PegUtilsLegacyTest {
         List<BtcECKey> activeFederationKeys = Stream.of(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
-        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).toList();
 
-        FederationArgs activeFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+        FederationArgs activeFedArgs = new FederationArgs(getFederationMembersWithBtcKeys(activeFederationKeys),
             creationTime,
             1L,
             bridgeConstantsMainnet.getBtcParams()
@@ -1565,7 +1575,7 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsMigrationTx_sending_funds_from_retiring_standard_fed_to_active_standard_fed() {
+    void isMigrationTx_sending_funds_from_retiring_standard_fed_to_active_standard_fed() {
         NetworkParameters networkParameters = bridgeConstantsMainnet.getBtcParams();
         Context btcContext = new Context(networkParameters);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
@@ -1573,10 +1583,10 @@ class PegUtilsLegacyTest {
         List<BtcECKey> retiringFederationKeys = Stream.of(
             BtcECKey.fromPrivate(Hex.decode("fc01")),
             BtcECKey.fromPrivate(Hex.decode("fc02"))
-        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).toList();
 
         FederationArgs retiringFedArgs = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
+            getFederationMembersWithBtcKeys(retiringFederationKeys),
             creationTime,
             1L,
             bridgeConstantsMainnet.getBtcParams()
@@ -1588,9 +1598,9 @@ class PegUtilsLegacyTest {
         List<BtcECKey> activeFederationKeys = Stream.of(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
-        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).toList();
 
-        FederationArgs activeFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+        FederationArgs activeFedArgs = new FederationArgs(getFederationMembersWithBtcKeys(activeFederationKeys),
             creationTime,
             1L,
             bridgeConstantsMainnet.getBtcParams()
@@ -1629,18 +1639,18 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsMigrationTx() {
-        Context btcContext = new Context(networkParameters);
+    void isMigrationTx_fromStandardFederation_toStandardFederation() {
+        Context btcContext = new Context(networkParametersRegtest);
 
         List<BtcECKey> activeFederationKeys = Stream.of(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
-        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).toList();
 
-        FederationArgs activeFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+        FederationArgs activeFedArgs = new FederationArgs(getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(2000L),
             2L,
-            networkParameters
+            networkParametersRegtest
         );
         Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
             activeFedArgs
@@ -1650,12 +1660,12 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fb01")),
             BtcECKey.fromPrivate(Hex.decode("fb02")),
             BtcECKey.fromPrivate(Hex.decode("fb03"))
-        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).toList();
 
-        FederationArgs retiringFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
+        FederationArgs retiringFedArgs = new FederationArgs(getFederationMembersWithBtcKeys(retiringFederationKeys),
             creationTime,
             1L,
-            networkParameters
+            networkParametersRegtest
         );
         Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
             retiringFedArgs
@@ -1664,11 +1674,11 @@ class PegUtilsLegacyTest {
         List<BtcECKey> retiredFederationKeys = Stream.of(
             BtcECKey.fromPrivate(Hex.decode("fc01")),
             BtcECKey.fromPrivate(Hex.decode("fc02"))
-        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        FederationArgs retiredFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).toList();
+        FederationArgs retiredFedArgs = new FederationArgs(getFederationMembersWithBtcKeys(retiredFederationKeys),
             creationTime,
             1L,
-            networkParameters
+            networkParametersRegtest
         );
         Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
             retiredFedArgs
@@ -1676,13 +1686,13 @@ class PegUtilsLegacyTest {
 
         Address activeFederationAddress = activeFederation.getAddress();
 
-        BtcTransaction migrationTx = new BtcTransaction(networkParameters);
+        BtcTransaction migrationTx = new BtcTransaction(networkParametersRegtest);
         migrationTx.addOutput(Coin.COIN, activeFederationAddress);
         TransactionInput migrationTxInput = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             migrationTx,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         migrationTx.addInput(migrationTxInput);
         signWithNecessaryKeys(retiringFederation, retiringFederationKeys, migrationTxInput, migrationTx);
@@ -1702,7 +1712,7 @@ class PegUtilsLegacyTest {
             activations
         ));
 
-        BtcTransaction toActiveFederationTx = new BtcTransaction(networkParameters);
+        BtcTransaction toActiveFederationTx = new BtcTransaction(networkParametersRegtest);
         toActiveFederationTx.addOutput(Coin.COIN, activeFederationAddress);
         toActiveFederationTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
@@ -1715,13 +1725,13 @@ class PegUtilsLegacyTest {
         ));
 
         Address randomAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstantsRegtest.getBtcParams(), "address");
-        BtcTransaction fromRetiringFederationTx = new BtcTransaction(networkParameters);
+        BtcTransaction fromRetiringFederationTx = new BtcTransaction(networkParametersRegtest);
         fromRetiringFederationTx.addOutput(Coin.COIN, randomAddress);
         TransactionInput fromRetiringFederationTxInput = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             fromRetiringFederationTx,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         fromRetiringFederationTx.addInput(fromRetiringFederationTxInput);
         signWithNecessaryKeys(retiringFederation, retiringFederationKeys, fromRetiringFederationTxInput, fromRetiringFederationTx);
@@ -1748,13 +1758,13 @@ class PegUtilsLegacyTest {
             activations
         ));
 
-        BtcTransaction retiredMigrationTx = new BtcTransaction(networkParameters);
+        BtcTransaction retiredMigrationTx = new BtcTransaction(networkParametersRegtest);
         retiredMigrationTx.addOutput(Coin.COIN, activeFederationAddress);
         TransactionInput retiredMigrationTxInput = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             retiredMigrationTx,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         retiredMigrationTx.addInput(retiredMigrationTxInput);
         signWithNecessaryKeys(retiredFederation, retiredFederationKeys, retiredMigrationTxInput, retiredMigrationTx);
@@ -1800,14 +1810,73 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsPegOutTx() {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+    void isMigrationTx_fromP2shErpFederation_toP2shP2wshFederation() {
+        Context btcContext = new Context(networkParametersMainnet);
+        FederationContext federationContext = FederationContext.builder()
+            .withActiveFederation(p2shP2wshErpFederation)
+            .withRetiringFederation(p2shErpFederation)
+            .build();
+
+        BtcTransaction migrationTx = migrationTransactionBuilder
+            .withActiveFederation(federationContext.getActiveFederation())
+            .withRetiringFederation(federationContext.getRetiringFederation().get())
+            .build();
+
+        Wallet federationsWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
+
+        assertTrue(isMigrationTx(
+            migrationTx,
+            federationContext,
+            federationsWallet,
+            bridgeConstantsMainnet.getMinimumPeginTxValue(allActivations),
+            allActivations
+        ));
+    }
+
+    @Test
+    void isMigrationTx_fromP2shP2wshFederation_toP2shP2wshFederation() {
+        Context btcContext = new Context(networkParametersMainnet);
+
+        List<BtcECKey> newFederationKeys = new ArrayList<>();
+        for (int i=10; i<30; i++) {
+            BtcECKey key = BtcECKey.fromPrivate(Hex.decode(String.format("ff%s", i)));
+            newFederationKeys.add(key);
+        }
+        Federation newFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(newFederationKeys)
+            .build();
+
+        FederationContext federationContext = FederationContext.builder()
+            .withActiveFederation(newFederation)
+            .withRetiringFederation(p2shP2wshErpFederation)
+            .build();
+
+        BtcTransaction migrationTx = migrationTransactionBuilder
+            .withActiveFederation(federationContext.getActiveFederation())
+            .withRetiringFederation(federationContext.getRetiringFederation().get())
+            .build();
+
+        Wallet federationsWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
+
+        assertTrue(isMigrationTx(
+            migrationTx,
+            federationContext,
+            federationsWallet,
+            bridgeConstantsMainnet.getMinimumPeginTxValue(allActivations),
+            allActivations
+        ));
+    }
+
+    @Test
+    void isPegOutTx_fromStandardFederation() {
+        Federation federation = getFederationWithPrivateKeys(REGTEST_FEDERATION_PRIVATE_KEYS);
+
         List<BtcECKey> activeFederationKeys = Stream.of(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
             BtcECKey.fromPrivate(Hex.decode("fa03"))
-        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).toList();
+        FederationArgs args = new FederationArgs(getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(2000L),
             2L,
             bridgeConstantsRegtest.getBtcParams()
@@ -1815,57 +1884,56 @@ class PegUtilsLegacyTest {
         Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
             args
         );
-        List<BtcECKey> federationPrivateKeys = REGTEST_FEDERATION_PRIVATE_KEYS;
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams());
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstantsRegtest.getBtcParams(), "randomAddress");
 
-        BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
+        BtcTransaction pegOutTx1 = new BtcTransaction(networkParametersRegtest);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             pegOutTx1,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         pegOutTx1.addInput(pegOutInput1);
-        signWithNecessaryKeys(genesisFederation, federationPrivateKeys, pegOutInput1, pegOutTx1);
+        signWithNecessaryKeys(federation, REGTEST_FEDERATION_PRIVATE_KEYS, pegOutInput1, pegOutTx1);
 
-        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(genesisFederation), activations));
-        assertTrue(isPegOutTx(pegOutTx1, Arrays.asList(genesisFederation, federation2), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(federation2), activations));
+        assertTrue(isPegOutTx(pegOutTx1, List.of(federation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, List.of(federation, federation2), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(federation2), activations));
 
-        assertTrue(isPegOutTx(pegOutTx1, activations, genesisFederation.getP2SHScript()));
-        assertTrue(isPegOutTx(pegOutTx1, activations, genesisFederation.getP2SHScript(), federation2.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, federation2.getP2SHScript()));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(federation.getP2SHScript())));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(federation.getP2SHScript(), federation2.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(federation2.getP2SHScript())));
     }
 
     @Test
-    void testIsPegOutTx_fromFlyoverFederation() {
+    void isPegOutTx_fromFlyoverFederation() {
         List<BtcECKey> flyoverFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
             BtcECKey.fromPrivate(Hex.decode("fa03"))
         );
         flyoverFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(flyoverFederationKeys),
+        FederationArgs args = new FederationArgs(getFederationMembersWithBtcKeys(flyoverFederationKeys),
             creationTime,
             0L,
-            networkParameters
+            networkParametersRegtest
         );
         Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(
             args
         );
 
-        Federation standardFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation standardFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
 
         // Create a tx from the fast bridge fed to a random address
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParametersRegtest);
+        BtcTransaction pegOutTx1 = new BtcTransaction(networkParametersRegtest);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             pegOutTx1,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         pegOutTx1.addInput(pegOutInput1);
 
@@ -1880,37 +1948,38 @@ class PegUtilsLegacyTest {
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardMultisigFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardMultisigFederation), activations));
         assertFalse(isPegOutTx(pegOutTx1, Arrays.asList(standardMultisigFederation, standardFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardFederation), activations));
 
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardMultisigFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardMultisigFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardMultisigFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, Arrays.asList(standardMultisigFederation.getP2SHScript(), standardFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
 
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(standardMultisigFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, List.of(standardMultisigFederation), activations));
         assertTrue(isPegOutTx(pegOutTx1, Arrays.asList(standardMultisigFederation, standardFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardFederation), activations));
 
-        assertTrue(isPegOutTx(pegOutTx1, activations, standardMultisigFederation.getP2SHScript()));
-        assertTrue(isPegOutTx(pegOutTx1, activations, standardMultisigFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(standardMultisigFederation.getP2SHScript())));
+        assertTrue(isPegOutTx(pegOutTx1, activations, Arrays.asList(standardMultisigFederation.getP2SHScript(), standardFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
     }
 
     @Test
-    void testIsPegOutTx_fromErpFederation() {
+    void isPegOutTx_fromErpFederation() {
         List<BtcECKey> defaultFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
             BtcECKey.fromPrivate(Hex.decode("fa03"))
         );
         defaultFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        List<FederationMember> federationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys);
+        List<FederationMember> federationMembers = getFederationMembersWithBtcKeys(defaultFederationKeys);
 
-        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, 0L, networkParameters);
+        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, 0L,
+            networkParametersRegtest);
         Federation defaultFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -1921,17 +1990,17 @@ class PegUtilsLegacyTest {
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpFederationPublicKeys, 500L, activations);
 
-        Federation standardFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation standardFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
 
         // Create a tx from the erp fed to a random address
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParametersRegtest, "randomAddress");
+        BtcTransaction pegOutTx1 = new BtcTransaction(networkParametersRegtest);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             pegOutTx1,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         pegOutTx1.addInput(pegOutInput1);
         signWithErpFederation(nonStandardErpFederation, defaultFederationKeys, pegOutInput1, pegOutTx1);
@@ -1939,34 +2008,34 @@ class PegUtilsLegacyTest {
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(defaultFederation), activations));
         assertFalse(isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardFederation), activations));
 
-        assertFalse(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, Arrays.asList(defaultFederation.getP2SHScript(), standardFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(nonStandardErpFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, activations, nonStandardErpFederation.getDefaultP2SHScript()));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(nonStandardErpFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(nonStandardErpFederation.getDefaultP2SHScript())));
 
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, List.of(defaultFederation), activations));
         assertTrue(isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardFederation), activations));
 
-        assertTrue(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
-        assertTrue(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript())));
+        assertTrue(isPegOutTx(pegOutTx1, activations, Arrays.asList(defaultFederation.getP2SHScript(), standardFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
 
-        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(nonStandardErpFederation), activations));
-        assertTrue(isPegOutTx(pegOutTx1, activations, nonStandardErpFederation.getDefaultP2SHScript()));
+        assertTrue(isPegOutTx(pegOutTx1, List.of(nonStandardErpFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(nonStandardErpFederation.getDefaultP2SHScript())));
     }
 
     @Test
-    void testIsPegOutTx_fromFlyoverErpFederation() {
+    void isPegOutTx_fromFlyoverErpFederation() {
         List<BtcECKey> defaultFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
@@ -1974,8 +2043,9 @@ class PegUtilsLegacyTest {
         );
         defaultFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys);
-        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, networkParameters);
+        List<FederationMember> fedMembers = getFederationMembersWithBtcKeys(defaultFederationKeys);
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L,
+            networkParametersRegtest);
         Federation defaultFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -1987,17 +2057,17 @@ class PegUtilsLegacyTest {
 
         ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpFederationPublicKeys, 500L, activations);
 
-        Federation standardFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation standardFederation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
 
         // Create a tx from the fast bridge erp fed to a random address
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParametersRegtest);
+        BtcTransaction pegOutTx1 = new BtcTransaction(networkParametersRegtest);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             pegOutTx1,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         pegOutTx1.addInput(pegOutInput1);
 
@@ -2011,32 +2081,107 @@ class PegUtilsLegacyTest {
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(defaultFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(defaultFederation, standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardFederation), activations));
 
-        assertFalse(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript(), standardFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
 
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
-        assertTrue(isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, List.of(defaultFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, List.of(defaultFederation, standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardFederation), activations));
 
-        assertTrue(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
-        assertTrue(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript())));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript(), standardFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
     }
 
     @Test
-    void testIsPegOutTx_noRedeemScript() {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsMainnet.getBtcParams());
+    void isPegOutTx_fromP2wshP2shFederation() {
+        Script standardFederationP2SHScript = standardFederation.getP2SHScript();
+        Script p2shErpFederationP2SHScript = ((ErpFederation) p2shErpFederation).getDefaultP2SHScript();
+        Script p2shP2wshErpFederationP2SHScript = ((ErpFederation) p2shP2wshErpFederation).getDefaultP2SHScript();
 
-        BtcTransaction pegOutTx1 = new BtcTransaction(bridgeConstantsMainnet.getBtcParams());
+        BtcTransaction pegoutTx = pegoutTransactionBuilder
+            .withActiveFederation(p2shP2wshErpFederation)
+            .build();
+
+        assertTrue(isPegOutTx(pegoutTx, List.of(p2shP2wshErpFederation), allActivations));
+        assertTrue(isPegOutTx(pegoutTx, List.of(p2shP2wshErpFederation, p2shErpFederation), allActivations));
+        assertTrue(isPegOutTx(pegoutTx, List.of(p2shP2wshErpFederation, p2shErpFederation, standardFederation), allActivations));
+
+        assertFalse(isPegOutTx(pegoutTx, List.of(p2shErpFederation, standardFederation), allActivations));
+        assertFalse(isPegOutTx(pegoutTx, List.of(p2shErpFederation), allActivations));
+        assertFalse(isPegOutTx(pegoutTx, List.of(standardFederation), allActivations));
+
+        assertFalse(isPegOutTx(pegoutTx, allActivations, List.of(standardFederationP2SHScript)));
+        assertTrue(isPegOutTx(pegoutTx, allActivations, List.of(p2shP2wshErpFederationP2SHScript, p2shErpFederationP2SHScript)));
+        assertTrue(isPegOutTx(
+            pegoutTx,
+            allActivations,
+            List.of(
+                p2shP2wshErpFederationP2SHScript,
+                p2shErpFederationP2SHScript,
+                standardFederationP2SHScript
+            )
+        ));
+    }
+
+    @Test
+    void isPegOutTx_fromFlyoverP2wshP2shFederation() {
+        Script standardFederationP2SHScript = standardFederation.getP2SHScript();
+        Script p2shErpFederationP2SHScript = ((ErpFederation) p2shErpFederation).getDefaultP2SHScript();
+        Script p2shP2wshErpFederationP2SHScript = ((ErpFederation) p2shP2wshErpFederation).getDefaultP2SHScript();
+
+        BtcTransaction pegoutTx = pegoutTransactionBuilder
+            .withActiveFederation(p2shP2wshErpFederation)
+            .build();
+
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            RskTestUtils.createHash(2),
+            p2shP2wshErpFederation.getRedeemScript()
+        );
+
+        // Override the transaction spending script to use the flyover redeem script
+        BitcoinUtils.addSpendingFederationBaseScript(
+            pegoutTx,
+            0,
+            flyoverRedeemScript,
+            p2shP2wshErpFederation.getFormatVersion()
+        );
+
+        assertTrue(isPegOutTx(pegoutTx, List.of(p2shP2wshErpFederation), allActivations));
+        assertTrue(isPegOutTx(pegoutTx, List.of(p2shP2wshErpFederation, p2shErpFederation), allActivations));
+        assertTrue(isPegOutTx(pegoutTx, List.of(p2shP2wshErpFederation, p2shErpFederation, standardFederation), allActivations));
+
+        assertFalse(isPegOutTx(pegoutTx, List.of(p2shErpFederation, standardFederation), allActivations));
+        assertFalse(isPegOutTx(pegoutTx, List.of(p2shErpFederation), allActivations));
+        assertFalse(isPegOutTx(pegoutTx, List.of(standardFederation), allActivations));
+
+        assertFalse(isPegOutTx(pegoutTx, allActivations, List.of(standardFederationP2SHScript)));
+        assertTrue(isPegOutTx(pegoutTx, allActivations, List.of(p2shP2wshErpFederationP2SHScript, p2shErpFederationP2SHScript)));
+        assertTrue(isPegOutTx(
+            pegoutTx,
+            allActivations,
+            List.of(
+                p2shP2wshErpFederationP2SHScript,
+                p2shErpFederationP2SHScript,
+                standardFederationP2SHScript
+            )
+        ));
+    }
+
+    @Test
+    void isPegOutTx_noRedeemScript() {
+        Federation federation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParametersMainnet, "randomAddress");
+
+        BtcTransaction pegOutTx1 = new BtcTransaction(networkParametersMainnet);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
             bridgeConstantsMainnet.getBtcParams(),
@@ -2046,12 +2191,12 @@ class PegUtilsLegacyTest {
         );
         pegOutTx1.addInput(pegOutInput1);
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(genesisFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(federation), activations));
     }
 
     @Test
-    void testIsPegOutTx_invalidRedeemScript() {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
+    void isPegOutTx_invalidRedeemScript() {
+        Federation federation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsMainnet.getBtcParams());
         Script invalidRedeemScript = ScriptBuilder.createRedeemScript(2, Arrays.asList(new BtcECKey(), new BtcECKey()));
 
@@ -2065,13 +2210,13 @@ class PegUtilsLegacyTest {
         );
         pegOutTx1.addInput(pegOutInput1);
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(genesisFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(federation), activations));
     }
 
     @Test
     void testChangeBetweenFederations() {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Context btcContext = new Context(networkParameters);
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParametersRegtest);
+        Context btcContext = new Context(networkParametersRegtest);
 
         List<BtcECKey> federation1Keys = Stream.of("fa01", "fa02")
             .map(Hex::decode)
@@ -2079,10 +2224,10 @@ class PegUtilsLegacyTest {
             .sorted(BtcECKey.PUBKEY_COMPARATOR)
             .collect(Collectors.toList());
         FederationArgs args1 = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
+            getFederationMembersWithBtcKeys(federation1Keys),
             creationTime,
             0L,
-            networkParameters
+            networkParametersRegtest
         );
         Federation federation1 = FederationFactory.buildStandardMultiSigFederation(
             args1
@@ -2093,11 +2238,11 @@ class PegUtilsLegacyTest {
             .map(BtcECKey::fromPrivate)
             .sorted(BtcECKey.PUBKEY_COMPARATOR)
             .collect(Collectors.toList());
-        List<FederationMember> federation2Members = FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys);
+        List<FederationMember> federation2Members = getFederationMembersWithBtcKeys(federation2Keys);
         FederationArgs args2 = new FederationArgs(federation2Members,
             Instant.ofEpochMilli(2000L),
             0L,
-            networkParameters
+            networkParametersRegtest
         );
         Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
             args2
@@ -2107,14 +2252,14 @@ class PegUtilsLegacyTest {
 
         List<Federation> federations = Arrays.asList(federation1, federation2);
 
-        BtcTransaction pegOutWithChange = new BtcTransaction(networkParameters);
+        BtcTransaction pegOutWithChange = new BtcTransaction(networkParametersRegtest);
         pegOutWithChange.addOutput(Coin.COIN, randomAddress);
         pegOutWithChange.addOutput(Coin.COIN, federation2Address);
         TransactionInput pegOutFromFederation2 = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             pegOutWithChange,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         pegOutWithChange.addInput(pegOutFromFederation2);
         signWithNecessaryKeys(federation2, federation2Keys, pegOutFromFederation2, pegOutWithChange);
@@ -2133,7 +2278,7 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsAnyUTXOAmountBelowMinimum_has_utxos_below_minimum() {
+    void isAnyUTXOAmountBelowMinimum_has_utxos_below_minimum() {
         Coin minimumPegInTxValue = bridgeConstantsRegtest.getMinimumPeginTxValue(activations);
         Coin valueBelowMinimum = minimumPegInTxValue.minus(Coin.SATOSHI);
         Coin valueAboveMinimum = minimumPegInTxValue.plus(Coin.SATOSHI);
@@ -2245,39 +2390,40 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void scriptCorrectlySpends_fromGenesisFederation_ok() {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
-        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+    void scriptCorrectlySpends_fromAFederation_ok() {
+        Federation federation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
+        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(networkParametersRegtest, "destinationAddress");
 
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(Coin.COIN, destinationAddress);
         TransactionInput txIn = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx.addInput(txIn);
-        signWithNecessaryKeys(genesisFederation, REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
+        signWithNecessaryKeys(federation, REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
 
-        assertTrue(scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
+        assertTrue(scriptCorrectlySpendsTx(tx, 0, federation.getP2SHScript()));
     }
 
     @Test
     void scriptCorrectlySpends_invalidScript() {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
-        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Federation federation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
+        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(
+            networkParametersRegtest);
 
-        BtcTransaction tx = new BtcTransaction(networkParameters);
+        BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
         tx.addOutput(Coin.COIN, destinationAddress);
         TransactionInput txIn = new TransactionInput(
-            networkParameters,
+            networkParametersRegtest,
             tx,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+            new TransactionOutPoint(networkParametersRegtest, 0, Sha256Hash.ZERO_HASH)
         );
         tx.addInput(txIn);
-        signWithNecessaryKeys(genesisFederation, REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
+        signWithNecessaryKeys(federation, REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
 
         // Add script op codes to the tx input script sig to make it invalid
         ScriptBuilder scriptBuilder = new ScriptBuilder(tx.getInput(0).getScriptSig());
@@ -2287,7 +2433,7 @@ class PegUtilsLegacyTest {
             .build();
         tx.getInput(0).setScriptSig(invalidScript);
 
-        assertFalse(scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
+        assertFalse(scriptCorrectlySpendsTx(tx, 0, federation.getP2SHScript()));
     }
 
     private void signWithErpFederation(ErpFederation erpFederation, List<BtcECKey> privateKeys, TransactionInput txIn, BtcTransaction tx) {

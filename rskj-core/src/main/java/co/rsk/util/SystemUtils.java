@@ -19,8 +19,12 @@ package co.rsk.util;
 
 import co.rsk.altbn128.cloudflare.Utils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.NetworkUpgrade;
+import org.ethereum.core.Blockchain;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,7 +42,7 @@ public class SystemUtils {
     private SystemUtils() { /* hidden */ }
 
     /**
-    * Wrapper for {@link Utils::isArm()} from external library
+    * Wrapper for {@link Utils#isArm()} from external library
     */
     public static boolean isArm() {
         return Utils.isArm();
@@ -68,5 +72,25 @@ public class SystemUtils {
                 Pair.of("memory.max", Long.toString(runtime.maxMemory())),
                 Pair.of("memory.total", Long.toString(runtime.totalMemory()))
         );
+    }
+
+    private static List<NetworkUpgrade> getDisabledNetworkUpgrades(Blockchain blockchain, ActivationConfig activationConfig) {
+        final var latestBlock = blockchain.getBestBlock();
+
+        return Arrays.stream(NetworkUpgrade.values())
+                .filter(networkUpgrade -> !activationConfig.containsNetworkUpgrade(networkUpgrade) || !activationConfig.isActive(networkUpgrade, latestBlock.getNumber()))
+                .toList();
+    }
+
+    public static void printDisabledNetworkUpgrades(@Nonnull Logger logger, @Nonnull Blockchain blockchain, @Nonnull ActivationConfig activationConfig) {
+        final var disabledNetworkUpgrades = getDisabledNetworkUpgrades(blockchain, activationConfig);
+        final var latestBlock = blockchain.getBestBlock();
+
+        if (disabledNetworkUpgrades.isEmpty()) {
+            logger.info("All network upgrades are active.");
+        } else {
+            logger.warn("Total number of disabled network upgrades: {}", disabledNetworkUpgrades.size());
+            disabledNetworkUpgrades.forEach(disabledNetworkUpgrade -> logger.warn("WARNING: Network upgrade {} is DISABLED. Best block number is: {}.", disabledNetworkUpgrade.name(), latestBlock.getNumber()));
+        }
     }
 }

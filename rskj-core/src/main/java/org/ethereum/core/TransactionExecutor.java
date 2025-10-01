@@ -22,6 +22,7 @@ import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
@@ -327,7 +328,7 @@ public class TransactionExecutor {
 
         if (precompiledContract != null) {
             this.precompiledContractsCalled.add(targetAddress);
-            Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
+            Metric metric = profiler.start(MetricKind.PRECOMPILED_CONTRACT_INIT);
             PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
                     .transaction(tx)
                     .executionBlock(executionBlock)
@@ -340,7 +341,7 @@ public class TransactionExecutor {
             precompiledContract.init(args);
 
             profiler.stop(metric);
-            metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
+            metric = profiler.start(MetricKind.PRECOMPILED_CONTRACT_EXECUTE);
 
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
@@ -446,7 +447,7 @@ public class TransactionExecutor {
 
         //Set the deleted accounts in the block in the remote case there is a CREATE2 creating a deleted account
 
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.VM_EXECUTE);
+        Metric metric = profiler.start(MetricKind.VM_EXECUTE);
         try {
 
             // Charge basic cost of the transaction

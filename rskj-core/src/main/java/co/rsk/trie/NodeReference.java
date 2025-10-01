@@ -63,6 +63,23 @@ public class NodeReference {
     }
 
     /**
+     * The hash or empty if this is an empty reference.
+     * If the hash is not present but its node is known, it will be calculated.
+     */
+    public Optional<Keccak256> getHash() {
+        if (lazyHash != null) {
+            return Optional.of(lazyHash);
+        }
+
+        if (lazyNode == null) {
+            return Optional.empty();
+        }
+
+        lazyHash = lazyNode.getHash();
+        return Optional.of(lazyHash);
+    }
+
+    /**
      * The node or empty if this is an empty reference.
      * If the node is not present but its hash is known, it will be retrieved from the store.
      * If the node could not be retrieved from the store, the Node is stopped using System.exit(1)
@@ -88,23 +105,6 @@ public class NodeReference {
         lazyNode = node.get();
 
         return node;
-    }
-
-    /**
-     * The hash or empty if this is an empty reference.
-     * If the hash is not present but its node is known, it will be calculated.
-     */
-    public Optional<Keccak256> getHash() {
-        if (lazyHash != null) {
-            return Optional.of(lazyHash);
-        }
-
-        if (lazyNode == null) {
-            return Optional.empty();
-        }
-
-        lazyHash = lazyNode.getHash();
-        return Optional.of(lazyHash);
     }
 
     /**

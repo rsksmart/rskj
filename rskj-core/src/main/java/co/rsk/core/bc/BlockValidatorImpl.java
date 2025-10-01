@@ -35,11 +35,11 @@ public class BlockValidatorImpl implements BlockValidator {
 
     private static final Logger logger = LoggerFactory.getLogger("blocksyncservice");
 
-    private BlockStore blockStore;
+    private final BlockStore blockStore;
 
-    private BlockParentDependantValidationRule blockParentValidator;
+    private final BlockParentDependantValidationRule blockParentValidator;
 
-    private BlockValidationRule blockValidator;
+    private final BlockValidationRule blockValidator;
 
     public BlockValidatorImpl(BlockStore blockStore, BlockParentDependantValidationRule blockParentValidator, BlockValidationRule blockValidator) {
         this.blockStore = blockStore;

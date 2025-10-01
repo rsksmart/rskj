@@ -21,6 +21,7 @@ package co.rsk.net.messages;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
+import co.rsk.net.sync.SnapProcessor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.TestUtils;
@@ -35,7 +36,6 @@ import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -50,6 +50,7 @@ class MessageVisitorTest {
     private PeerScoringManager peerScoringManager;
     private TransactionGateway transactionGateway;
     private SyncProcessor syncProcessor;
+    private SnapProcessor snapshotProcessor;
     private BlockProcessor blockProcessor;
     private RskSystemProperties config;
 
@@ -58,6 +59,7 @@ class MessageVisitorTest {
         config = mock(RskSystemProperties.class);
         blockProcessor = mock(BlockProcessor.class);
         syncProcessor = mock(SyncProcessor.class);
+        snapshotProcessor = mock(SnapProcessor.class);
         transactionGateway = mock(TransactionGateway.class);
         peerScoringManager = mock(PeerScoringManager.class);
         channelManager = mock(ChannelManager.class);
@@ -67,6 +69,7 @@ class MessageVisitorTest {
                 config,
                 blockProcessor,
                 syncProcessor,
+                snapshotProcessor,
                 transactionGateway,
                 peerScoringManager,
                 channelManager,
@@ -298,6 +301,19 @@ class MessageVisitorTest {
                 .processBlockHeadersRequest(sender, 1L, hash, 10);
     }
 
+    // fix this
+    @Test
+    void stateChunkRequestMessage() {
+        SnapStateChunkRequestMessage message = mock(SnapStateChunkRequestMessage.class);
+
+        when(message.getId()).thenReturn(1L);
+
+        target.apply(message);
+
+        verify(snapshotProcessor, times(1))
+                .processStateChunkRequest(eq(sender), same(message));
+    }
+
     @Test
     void blockHashRequestMessage() {
         BlockHashRequestMessage message = mock(BlockHashRequestMessage.class);
@@ -435,8 +451,7 @@ class MessageVisitorTest {
         invalidTransactions.add(invalidTx);
 
         when(message.getTransactions())
-                .thenReturn(Stream.concat(validTransactions.stream(), invalidTransactions.stream())
-                        .collect(Collectors.toList()));
+                .thenReturn(Stream.concat(validTransactions.stream(), invalidTransactions.stream()).toList());
         when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
         target.apply(message);

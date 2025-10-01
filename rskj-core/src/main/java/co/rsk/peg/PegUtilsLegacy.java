@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP305;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.*;
@@ -36,10 +37,10 @@ public class PegUtilsLegacy {
      */
     @Deprecated
     public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
-        Script[] federationsP2shScripts = federations.stream()
+        List<Script> federationsP2shScripts = federations.stream()
             .filter(Objects::nonNull)
             .map(PegUtilsLegacy::getFederationStandardP2SHScript)
-            .toArray(Script[]::new);
+            .toList();
 
         return isPegOutTx(tx, activations, federationsP2shScripts);
     }
@@ -54,12 +55,11 @@ public class PegUtilsLegacy {
      * @return true if it is a peg-out. Otherwise, returns false.
      */
     @Deprecated
-    protected static boolean isPegOutTx(BtcTransaction btcTx, ActivationConfig.ForBlock activations, Script ... fedStandardP2shScripts) {
+    protected static boolean isPegOutTx(BtcTransaction btcTx, ActivationConfig.ForBlock activations, List<Script> fedStandardP2shScripts) {
         int inputsSize = btcTx.getInputs().size();
         for (int i = 0; i < inputsSize; i++) {
-            TransactionInput txInput = btcTx.getInput(i);
-            Optional<Script> redeemScriptOptional = BitcoinUtils.extractRedeemScriptFromInput(txInput);
-            if (!redeemScriptOptional.isPresent()) {
+            Optional<Script> redeemScriptOptional = BitcoinUtils.extractRedeemScriptFromInput(btcTx, i);
+            if (redeemScriptOptional.isEmpty()) {
                 continue;
             }
 
@@ -77,8 +77,11 @@ public class PegUtilsLegacy {
             }
 
             Script redeemScript = new ScriptBuilder().addChunks(redeemScriptChunks).build();
-            Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-            if (Arrays.stream(fedStandardP2shScripts).anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
+            Script p2shOutputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+            Script p2wshOutputScript = ScriptBuilder.createP2SHP2WSHOutputScript(redeemScript);
+
+            if (fedStandardP2shScripts.contains(p2shOutputScript) ||
+                (activations.isActive(RSKIP305) && fedStandardP2shScripts.contains(p2wshOutputScript))) {
                 return true;
             }
         }
@@ -190,8 +193,7 @@ public class PegUtilsLegacy {
                 return false;
             }
 
-            TransactionInput txInput = tx.getInput(i);
-            Optional<Script> redeemScriptOptional = BitcoinUtils.extractRedeemScriptFromInput(txInput);
+            Optional<Script> redeemScriptOptional = BitcoinUtils.extractRedeemScriptFromInput(tx, i);
             // Check if the registered utxo is not change from an utxo spent from either a fast bridge federation,
             // erp federation, or even a retired fast bridge or erp federation
             if (activations.isActive(ConsensusRule.RSKIP201) && redeemScriptOptional.isPresent()) {
@@ -205,8 +207,8 @@ public class PegUtilsLegacy {
                         return false;
                     }
 
-                    Script outputScript = ScriptBuilder.createP2SHOutputScript(inputStandardRedeemScript);
-                    if (outputScript.equals(retiredFederationP2SHScript)) {
+                    Script legacyOutputScript = ScriptBuilder.createP2SHOutputScript(inputStandardRedeemScript);
+                    if (legacyOutputScript.equals(retiredFederationP2SHScript)) {
                         return false;
                     }
                 } catch (ScriptException e) {
@@ -261,7 +263,7 @@ public class PegUtilsLegacy {
             federation -> standardP2shScripts.add(getFederationStandardP2SHScript(federation))
         );
 
-        boolean moveFromRetiringOrRetired =  isPegOutTx(btcTx, activations, standardP2shScripts.toArray(new Script[0]));
+        boolean moveFromRetiringOrRetired =  isPegOutTx(btcTx, activations, standardP2shScripts);
 
         Federation activeFederation = federationContext.getActiveFederation();
         BridgeBtcWallet activeFederationWallet = new BridgeBtcWallet(

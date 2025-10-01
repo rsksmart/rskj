@@ -80,6 +80,7 @@ public enum ConsensusRule {
     RSKIP297("rskip297"), // Increase max timestamp difference between btc and rsk blocks for Testnet
     RSKIP351("rskip351"), // block header extension v1
     RSKIP144("rskip144"), // Parallel tx execution
+    RSKIP305("rskip305"), // bridge segwit-compatible
     RSKIP326("rskip326"), // release_request_received event update to use base58 for btcDestinationAddress
     RSKIP353("rskip353"),
     RSKIP357("rskip357"),
@@ -105,7 +106,8 @@ public enum ConsensusRule {
     RSKIP453("rskip453"),
     RSKIP454("rskip454"),
     RSKIP459("rskip459"),
-    RSKIP460("rskip460")
+    RSKIP460("rskip460"),
+    RSKIP516("rskip516"), //  Addition of precompiled contracts for add and mul operations on the secp256k1 curve
     ;
 
     private final String configKey;

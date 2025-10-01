@@ -26,6 +26,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 @CommandLine.Command(name = "rskj", mixinStandardHelpOptions = true, versionProvider = VersionProviderUtil.class,
         description = "RSKJ blockchain node implementation in Java")
 public class RskCli implements Runnable {
@@ -78,6 +79,12 @@ public class RskCli implements Runnable {
 
     @CommandLine.Option(names = {"-X"}, description = "Read arguments in command line")
     private List<String> xArguments;
+
+    @CommandLine.Option(names = {"--sync-mode"}, description = "Set Synchronization mode. Valid options are <full | snap>")
+    private String syncMode;
+
+    @CommandLine.Option(names = {"--snap-nodes"}, description = "Set snapboot nodes")
+    private List<String> snapBootNodes;
 
     private boolean help;
     private boolean version;
@@ -156,6 +163,14 @@ public class RskCli implements Runnable {
             } else if (networkFlags.networkMainnet) {
                 activatedFlags.add(NodeCliFlags.NETWORK_MAINNET);
             }
+        }
+
+        if (syncMode != null) {
+            activatedOptions.put(NodeCliOptions.SYNC_MODE, syncMode);
+        }
+
+        if (snapBootNodes != null) {
+            activatedOptions.put(NodeCliOptions.SNAP_NODES, String.join(",", snapBootNodes));
         }
 
         cliArgs = CliArgs.of(activatedOptions, activatedFlags, paramValueMap);

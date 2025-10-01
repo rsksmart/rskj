@@ -57,7 +57,7 @@ public class Constants {
     private static final long FALLBACK_MINING_DIFFICULTY = (long) 14E15;
     private static final BigInteger DIFFICULTY_BOUND_DIVISOR = BigInteger.valueOf(50);
     private static final int NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE = 540;
-    private static final long MIN_SEQUENTIAL_SET_GAS_LIMIT = 6_800_000L;
+    private static final long MIN_SEQUENTIAL_SET_GAS_LIMIT = 7_500_000L;
     private static final int MINIMUM_DIFFICULTY = 131072;
     private static final int TESTNET_AND_DEVNET_DURATION_LIMIT = 14;
     private static final int REGTEST_DURATION_LIMIT = 10;
@@ -334,7 +334,7 @@ public class Constants {
         );
     }
 
-    public static Constants regtestWithFederation(List<BtcECKey> genesisFederationPublicKeys) {
+    public static Constants regtestWithFederation(List<BtcECKey> federationPublicKeys) {
         return new Constants(
                 REGTEST_CHAIN_ID,
                 true,
@@ -343,7 +343,7 @@ public class Constants {
                 BlockDifficulty.ZERO,
                 BigInteger.valueOf(2048),
                 0,
-                new BridgeRegTestConstants(genesisFederationPublicKeys),
+                new BridgeRegTestConstants(federationPublicKeys),
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
                 1_000_000L
         );

@@ -99,4 +99,23 @@ class StatsTest {
         Assertions.assertTrue(v4 > v5);
 
     }
+
+    @Test
+    void TestSnapshotMessageTypes() {
+        Stats stats = new Stats();
+        stats.setAvg(500);
+
+        double v1 = stats.score(MessageType.SNAP_STATE_CHUNK_RESPONSE_MESSAGE);
+        double v2 = stats.score(MessageType.SNAP_STATE_CHUNK_REQUEST_MESSAGE);
+        double v3 = stats.score(MessageType.SNAP_STATUS_RESPONSE_MESSAGE);
+        double v4 = stats.score(MessageType.SNAP_STATUS_REQUEST_MESSAGE);
+        double v5 = stats.score(MessageType.SNAP_BLOCKS_RESPONSE_MESSAGE);
+        double v6 = stats.score(MessageType.SNAP_BLOCKS_REQUEST_MESSAGE);
+
+        Assertions.assertTrue(v1 == v3);
+        Assertions.assertTrue(v3 == v5);
+        Assertions.assertTrue(v1 > v2);
+        Assertions.assertTrue(v2 == v4);
+        Assertions.assertTrue(v4 == v6);
+    }
 }

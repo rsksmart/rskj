@@ -39,7 +39,7 @@ public class PrevMinGasPriceRule implements BlockParentDependantValidationRule, 
     }
 
     @Override
-    public boolean isValid(BlockHeader header, Block parent) {
+    public boolean isValid(BlockHeader header, BlockHeader parent) {
         if (header.isGenesis()) {
             return true;
         }
