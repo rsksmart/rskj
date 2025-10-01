@@ -108,22 +108,44 @@ jobs:
           path: |
             rskj-core/build/reports/
 
+      - name: Fetch base branch (for PR diffs)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          git fetch --no-tags --prune origin +refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+
+      - name: Debug refs
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          echo "PR #${{ github.event.pull_request.number }}  base=${{ github.base_ref }}  head=${{ github.head_ref }}"
+          git rev-parse --abbrev-ref HEAD
+          git show -s --oneline
+          git branch -r | sed -n '1,200p'
+          git merge-base origin/${{ github.base_ref }} HEAD || true
+
       - name: Run SonarQube analysis
         env:
           GH_EVENT: ${{ github.event_name }}
           GH_PR_NUMBER: ${{ github.event.pull_request.number }}
           GH_PR_BASE_REF: ${{ github.base_ref }}
           GH_PR_HEAD_REF: ${{ github.head_ref }}
-          GH_REF: ${{ github.ref }}
+          GH_REF: ${{ github.ref_name }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
+          set -e
           if [ "$GH_EVENT" = "pull_request" ]; then
             if [ "$SONAR_TOKEN" != "" ]; then
+              # Optional: dump effective scanner properties for debugging
+              DUMP_FILE=sonar-effective.properties
               ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonar --no-daemon -x build -x test \
                 -Dsonar.pullrequest.base="$GH_PR_BASE_REF" \
                 -Dsonar.pullrequest.branch="$GH_PR_HEAD_REF" \
                 -Dsonar.pullrequest.key="$GH_PR_NUMBER" \
-                -Dsonar.token="$SONAR_TOKEN"
+                -Dsonar.token="$SONAR_TOKEN" \
+                -Dsonar.log.level=DEBUG \
+                -Dorg.sonarqube.verbose=true \
+                -Dsonar.scanner.dumpToFile="$DUMP_FILE"
+              echo "---- Effective Sonar properties (excerpt) ----"
+              grep -E '^(sonar\.pullrequest\.|sonar\.projectKey|sonar\.organization|sonar\.host\.url|sonar\.scm)' "$DUMP_FILE" || true
             else
               echo "Skipping SonarQube analysis."
             fi
