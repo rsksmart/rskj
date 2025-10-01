@@ -1548,7 +1548,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         };
     }
 
-    public static BridgeMethods.BridgeMethodExecutor executeIfTestnetOrRegTest(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
+    public static BridgeMethods.BridgeMethodExecutor executeIfEnabledEnvironment(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             boolean isMainnet = self.constants.getChainId() == Constants.MAINNET_CHAIN_ID;
             if (isMainnet) {
