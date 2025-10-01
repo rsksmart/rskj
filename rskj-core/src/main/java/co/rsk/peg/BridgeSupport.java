@@ -106,7 +106,8 @@ public class BridgeSupport {
     // (6 blocks/hour, 24 hours/day, 30 days/month)
     public static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
 
-    private static final Logger logger = LoggerFactory.getLogger(BridgeSupport.class);
+    // TODO: testing sonar
+    private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private final BridgeConstants bridgeConstants;
@@ -168,6 +169,11 @@ public class BridgeSupport {
 
     public List<ProgramSubtrace> getSubtraces() {
         return Collections.unmodifiableList(this.subtraces);
+    }
+
+    @Deprecated
+    public void etc() {
+
     }
 
     @VisibleForTesting
@@ -1802,7 +1808,7 @@ public class BridgeSupport {
         }
 
         processSigning(federationMember, signatures, svpSpendTxCreationRskTxHash, svpSpendTx);
-       
+
         // save current fed signature back in storage
         svpSpendTxWFS.setValue(svpSpendTx);
         provider.setSvpSpendTxWaitingForSignatures(svpSpendTxWFS);
@@ -1977,11 +1983,11 @@ public class BridgeSupport {
      * Retrieves the current SVP spend transaction state for the SVP client.
      *
      * <p>
-     * This method checks if there is an SVP spend transaction waiting for signatures, and if so, it serializes 
+     * This method checks if there is an SVP spend transaction waiting for signatures, and if so, it serializes
      * the state into RLP format. If no transaction is waiting, it returns an encoded empty RLP list.
      * </p>
      *
-     * @return A byte array representing the RLP-encoded state of the SVP spend transaction. If no transaction 
+     * @return A byte array representing the RLP-encoded state of the SVP spend transaction. If no transaction
      *         is waiting, returns a double RLP-encoded empty list.
      */
     public byte[] getStateForSvpClient() {
