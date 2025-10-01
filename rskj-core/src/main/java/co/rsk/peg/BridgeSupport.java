@@ -2941,6 +2941,18 @@ public class BridgeSupport {
         return unionBridgeSupport.setTransferPermissions(tx, requestEnabled, releaseEnabled);
     }
 
+    public byte[] getSuperEvent() {
+        return unionBridgeSupport.getSuperEvent();
+    }
+
+    public void setSuperEvent(byte[] data) {
+        unionBridgeSupport.setSuperEvent(data);
+    }
+
+    public void clearSuperEvent() {
+        unionBridgeSupport.clearSuperEvent();
+    }
+
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {
         return createFlyoverFederationInformation(flyoverDerivationHash, getActiveFederation());
     }
