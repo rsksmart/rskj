@@ -3499,7 +3499,7 @@ class BridgeTest {
         }
 
         @Test
-        void setUnionBridgeContractAddressForTestnet_whenUnauthorized_shouldSetNewAddress() throws VMException {
+        void setUnionBridgeContractAddressForTestnet_whenUnauthorized_shouldThrowVMException() {
             RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress(
                 "newUnionBridgeContractAddress");
 
@@ -3519,7 +3519,7 @@ class BridgeTest {
         }
 
         @Test
-        void setUnionBridgeContractAddressForTestnet_whenMainnet_shouldReturnEnvironmentDisabled() {
+        void setUnionBridgeContractAddressForTestnet_whenMainnet_shouldThrowVMException() {
             bridge = bridgeBuilder
                 .activationConfig(allActivations)
                 .bridgeSupport(bridgeSupport)

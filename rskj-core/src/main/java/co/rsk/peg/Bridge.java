@@ -1559,16 +1559,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 throw new VMException(errorMessage);
             }
 
-            AddressBasedAuthorizer addressBasedAuthorizer = authorizerProvider.provide(self.bridgeConstants);
-            if (!addressBasedAuthorizer.isAuthorized(self.rskTx, self.signatureCache)) {
-                String errorMessage = String.format(
-                    "The sender is not authorized to call %s",
-                    funcName
-                );
-                throw new VMException(errorMessage);
-            }
-
-            return decoratee.execute(self, args);
+            return executeIfAuthorized(authorizerProvider, decoratee, funcName).execute(self, args);
         };
     }
 
