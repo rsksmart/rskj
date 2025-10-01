@@ -1433,6 +1433,72 @@ class UnionBridgeSupportImplTest {
         assertNoWeisTransferredIsStored();
     }
 
+    @Test
+    void getSuperEvent_whenNotSavedData_shouldReturnEmptyArray() {
+        byte[] emptyData = new byte[]{};
+        assertArrayEquals(emptyData, unionBridgeSupport.getSuperEvent());
+    }
+
+    @Test
+    void setSuperEvent_shouldSetSuperEvent() {
+        byte[] superEvent = new byte[]{(byte) 0x123456};
+        unionBridgeSupport.setSuperEvent(superEvent);
+
+        assertArrayEquals(superEvent, unionBridgeSupport.getSuperEvent());
+    }
+
+    @Test
+    void setSuperEvent_dataLengthExactlyMaximum_shouldSetSuperEvent() {
+        // Arrange
+        byte[] superEvent = new byte[128];
+
+        // Act
+        unionBridgeSupport.setSuperEvent(superEvent);
+
+        // Assert
+        assertArrayEquals(superEvent, unionBridgeSupport.getSuperEvent());
+    }
+
+    @Test
+    void setSuperEvent_dataLengthAboveMaximum_shouldNotSetSuperEvent() {
+        // Arrange
+        byte[] superEvent = new byte[129];
+
+        // Act & Assert
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> unionBridgeSupport.setSuperEvent(superEvent)
+        );
+    }
+
+    @Test
+    void setSuperEvent_whenAlreadySavedData_shouldOverrideWithNewData() {
+        // Arrange
+        byte[] superEvent = new byte[]{(byte) 0x123456};
+        unionBridgeSupport.setSuperEvent(superEvent);
+
+        // Act
+        byte[] newSuperEvent = new byte[]{(byte) 0x12345678};
+        unionBridgeSupport.setSuperEvent(newSuperEvent);
+
+        // Assert
+        assertArrayEquals(newSuperEvent, unionBridgeSupport.getSuperEvent());
+    }
+
+    @Test
+    void clearSuperEvent_shouldClearData() {
+        // Arrange
+        byte[] superEvent = new byte[]{(byte) 0x123456};
+        unionBridgeSupport.setSuperEvent(superEvent);
+
+        // Act
+        unionBridgeSupport.clearSuperEvent();
+
+        // Assert
+        byte[] emptyData = new byte[]{};
+        assertArrayEquals(emptyData, unionBridgeSupport.getSuperEvent());
+    }
+
     private void assertAddressWasStored(RskAddress newUnionBridgeContractAddress) {
         RskAddress actualRskAddress = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
