@@ -1548,7 +1548,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         };
     }
 
-    public static BridgeMethods.BridgeMethodExecutor executeIfEnabledEnvironment(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
+    public static BridgeMethods.BridgeMethodExecutor executeIfEnabledEnvironmentAndAuthorized(AuthorizerProvider authorizerProvider, BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             boolean isMainnet = self.constants.getChainId() == Constants.MAINNET_CHAIN_ID;
             if (isMainnet) {
@@ -1558,6 +1558,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 );
                 throw new VMException(errorMessage);
             }
+
+            AddressBasedAuthorizer addressBasedAuthorizer = authorizerProvider.provide(self.bridgeConstants);
+            if (!addressBasedAuthorizer.isAuthorized(self.rskTx, self.signatureCache)) {
+                String errorMessage = String.format(
+                    "The sender is not authorized to call %s",
+                    funcName
+                );
+                throw new VMException(errorMessage);
+            }
+
             return decoratee.execute(self, args);
         };
     }

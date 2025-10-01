@@ -42,18 +42,9 @@ class UnionBridgeSupportImplTest {
     private static final RskAddress mainnetUnionBridgeContractAddress = mainnetUnionBridgeConstants.getAddress();
 
     private static final UnionBridgeConstants testnetUnionBridgeConstants = UnionBridgeTestNetConstants.getInstance();
-    private static final RskAddress changeUnionAddressAuthorizer = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-            "04bd1d5747ca6564ed860df015c1a8779a35ef2a9f184b6f5390bccb51a3dcace02f88a401778be6c8fd8ed61e4d4f1f508075b3394eb6ac0251d4ed6d06ce644d"))
-        .getAddress());
 
     private static final RskAddress changeLockingCapAuthorizer = RskAddress.ZERO_ADDRESS;
     private static final RskAddress changeTransferPermissionsAuthorizer = RskAddress.ZERO_ADDRESS;
-
-    private static final RskAddress testnetChangeUnionAddressAuthorizer = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-                "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"))
-            .getAddress());
 
     private static final RskAddress unionBridgeContractAddress = TestUtils.generateAddress(
         "newUnionBridgeContractAddress");
@@ -161,8 +152,6 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(testnetUnionBridgeConstants).build();
 
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
-
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
             unionBridgeContractAddress);
@@ -200,7 +189,6 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(testnetUnionBridgeConstants).build();
         RskAddress newUnionBridgeAddress = testnetUnionBridgeConstants.getAddress();
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
 
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
@@ -239,8 +227,6 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(testnetUnionBridgeConstants).build();
 
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
-
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
             newUnionBridgeContractAddress);
@@ -265,35 +251,10 @@ class UnionBridgeSupportImplTest {
     }
 
     @Test
-    void setUnionBridgeContractAddressForTestnet_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode() {
-        // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(testnetUnionBridgeConstants).build();
-
-        when(rskTx.getSender(signatureCache)).thenReturn(
-            TestUtils.generateAddress("notAuthorizedAddress"));
-
-        // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            unionBridgeContractAddress);
-
-        // assert
-        UnionResponseCode expectedResponseCode = UnionResponseCode.UNAUTHORIZED_CALLER;
-        Assertions.assertEquals(
-            expectedResponseCode,
-            actualResponseCode
-        );
-        assertAddressWasNotSet();
-        assertNoAddressIsStored();
-    }
-
-    @Test
     void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsNull_shouldReturnSuccess() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(testnetUnionBridgeConstants).build();
-
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
 
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(
@@ -315,8 +276,6 @@ class UnionBridgeSupportImplTest {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(testnetUnionBridgeConstants).build();
-
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
 
         // act
         RskAddress emptyAddress = new RskAddress(new byte[20]);
@@ -1295,7 +1254,6 @@ class UnionBridgeSupportImplTest {
             .withConstants(testnetUnionBridgeConstants).build();
 
         // set union bridge contract address
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
             unionBridgeContractAddress);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
@@ -1353,7 +1311,6 @@ class UnionBridgeSupportImplTest {
         );
 
         // arrange
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
             newUnionBridgeContractAddress);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
