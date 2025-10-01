@@ -108,15 +108,21 @@ jobs:
           path: |
             rskj-core/build/reports/
 
+      - name: Fetch base branch (for PR diffs)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          git fetch --no-tags --prune origin +refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+
       - name: Run SonarQube analysis
         env:
           GH_EVENT: ${{ github.event_name }}
           GH_PR_NUMBER: ${{ github.event.pull_request.number }}
           GH_PR_BASE_REF: ${{ github.base_ref }}
           GH_PR_HEAD_REF: ${{ github.head_ref }}
-          GH_REF: ${{ github.ref }}
+          GH_REF: ${{ github.ref_name }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
+          set -e
           if [ "$GH_EVENT" = "pull_request" ]; then
             if [ "$SONAR_TOKEN" != "" ]; then
               ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonar --no-daemon -x build -x test \
