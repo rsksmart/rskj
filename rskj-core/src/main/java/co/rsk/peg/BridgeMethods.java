@@ -833,7 +833,7 @@ public enum BridgeMethods {
             new String[]{"int"}
         ),
         fixedCost(24000L), // TODO: Define final cost
-        Bridge.executeIfTestnetOrRegTest(
+        Bridge.executeIfEnabledEnvironment(
             (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeContractAddressForTestnet,
             "setUnionBridgeContractAddressForTestnet"
         ),
