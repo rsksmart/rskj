@@ -1028,4 +1028,12 @@ public class BridgeSerializationUtils {
 
         return addresses;
     }
+
+    public static byte[] deserializeSuperEvent(byte[] data) {
+        // at fist, data saved in the entry will be null
+        if (data == null) {
+            return new byte[]{};
+        }
+        return data;
+    }
 }
