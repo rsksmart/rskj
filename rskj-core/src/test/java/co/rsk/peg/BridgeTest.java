@@ -3422,6 +3422,7 @@ class BridgeTest {
         private static final RskAddress setTransferPermissionsAuthorizer = RskAddress.ZERO_ADDRESS;
 
         private static final RskAddress unauthorizedCaller = new RskAddress("0000000000000000000000000000000000000001");
+        private static final byte[] superEvent = new byte []{(byte) 0x123456};
 
         private UnionBridgeSupport unionBridgeSupport;
         private Repository repository;
@@ -4074,6 +4075,179 @@ class BridgeTest {
             // Assert
             assertInstanceOf(VMException.class, actualException.getCause());
             verify(unionBridgeSupport, never()).setTransferPermissions(any(Transaction.class), anyBoolean(), anyBoolean());
+        }
+
+        @Test
+        void getSuperEvent_preRSKIP529_shouldThrowVMException() {
+            // Arrange
+            ActivationConfig activationConfig = ActivationConfigsForTest.reed800();
+            bridge = bridgeBuilder
+                .activationConfig(activationConfig)
+                .build();
+
+            CallTransaction.Function function = BridgeMethods.GET_SUPER_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void getSuperEvent_forAnyAddress_shouldExecute() throws VMException {
+            // Arrange
+            when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
+            CallTransaction.Function function = BridgeMethods.GET_SUPER_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act
+            bridge.execute(data);
+
+            // Assert
+            verify(unionBridgeSupport).getSuperEvent();
+        }
+
+        @Test
+        void getSuperEvent_whenNoDataWasSet_shouldExecute() throws VMException {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.GET_SUPER_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act
+            bridge.execute(data);
+
+            // Assert
+            verify(unionBridgeSupport).getSuperEvent();
+        }
+
+        @Test
+        void getSuperEvent_whenDataWasSet_shouldExecute() throws VMException {
+            // Arrange
+            CallTransaction.Function setSuperEvent = BridgeMethods.SET_SUPER_EVENT.getFunction();
+            byte[] setSuperEventData = setSuperEvent.encode(superEvent);
+            bridge.execute(setSuperEventData);
+
+            CallTransaction.Function getSuperEvent = BridgeMethods.GET_SUPER_EVENT.getFunction();
+            byte[] getSuperEventData = getSuperEvent.encode();
+
+            // Act
+            bridge.execute(getSuperEventData);
+
+            // Assert
+            verify(unionBridgeSupport).getSuperEvent();
+        }
+
+        @Test
+        void setSuperEvent_preRSKIP529_shouldThrowVMException() {
+            // Arrange
+            ActivationConfig activationConfig = ActivationConfigsForTest.reed800();
+            bridge = bridgeBuilder
+                .activationConfig(activationConfig)
+                .build();
+
+            CallTransaction.Function function = BridgeMethods.SET_SUPER_EVENT.getFunction();
+            byte[] data = function.encode(superEvent);
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void setSuperEvent_whenUnauthorized_shouldThrowVMException() {
+            // Arrange
+            when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
+            CallTransaction.Function function = BridgeMethods.SET_SUPER_EVENT.getFunction();
+            byte[] data = function.encode(superEvent);
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void setSuperEvent_whenAuthorized_shouldExecuteExpectedData() throws VMException {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.SET_SUPER_EVENT.getFunction();
+            byte[] data = function.encode(superEvent);
+
+            // Act
+            bridge.execute(data);
+
+            // Assert
+            verify(unionBridgeSupport).setSuperEvent(superEvent);
+        }
+
+        @Test
+        void setSuperEvent_whenAuthorized_whenThereIsSavedData_shouldExecuteNewData() throws VMException {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.SET_SUPER_EVENT.getFunction();
+            byte[] savedData = function.encode(superEvent);
+            bridge.execute(savedData);
+
+            // Act
+            byte[] newSuperEvent = new byte[]{(byte) 0x12345678};
+            byte[] newData = function.encode(newSuperEvent);
+            bridge.execute(newData);
+
+            // Assert
+            InOrder inOrder = inOrder(unionBridgeSupport);
+            inOrder.verify(unionBridgeSupport).setSuperEvent(superEvent);
+            inOrder.verify(unionBridgeSupport).setSuperEvent(newSuperEvent);
+        }
+
+        @Test
+        void setSuperEvent_dataLengthAboveMaximum_shouldThrowVMException() {
+            // Arrange
+            // since we are mocking the union bridge response,
+            // there is no real reason to set the value.
+            // but is better for understanding the test
+            byte[] superEvent = new byte[129];
+            CallTransaction.Function function = BridgeMethods.SET_SUPER_EVENT.getFunction();
+            byte[] data = function.encode(superEvent);
+
+            doThrow(new IllegalArgumentException())
+                .when(unionBridgeSupport)
+                .setSuperEvent(any());
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void clearSuperEvent_preRSKIP529_shouldThrowVMException() {
+            // Arrange
+            ActivationConfig activationConfig = ActivationConfigsForTest.reed800();
+            bridge = bridgeBuilder
+                .activationConfig(activationConfig)
+                .build();
+
+            CallTransaction.Function function = BridgeMethods.CLEAR_SUPER_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void clearSuperEvent_whenUnauthorized_shouldThrowVMException() {
+            // Arrange
+            when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
+            CallTransaction.Function function = BridgeMethods.CLEAR_SUPER_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void clearSuperEvent_whenAuthorized_shouldExecute() throws VMException {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.CLEAR_SUPER_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act
+            bridge.execute(data);
+
+            // Assert
+            verify(unionBridgeSupport).clearSuperEvent();
         }
     }
 
