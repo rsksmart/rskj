@@ -884,7 +884,6 @@ class BridgeSupportTest {
         private static Stream<Arguments> unionResponseCodeProvider() {
             return Stream.of(
                 Arguments.of(UnionResponseCode.SUCCESS),
-                Arguments.of(UnionResponseCode.UNAUTHORIZED_CALLER),
                 Arguments.of(UnionResponseCode.GENERIC_ERROR)
             );
         }

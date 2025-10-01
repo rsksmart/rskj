@@ -7,7 +7,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.math.BigInteger;
 import javax.annotation.Nonnull;
 import org.ethereum.core.SignatureCache;
@@ -49,11 +48,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     public UnionResponseCode setUnionBridgeContractAddressForTestnet(@Nonnull Transaction tx, RskAddress unionBridgeContractAddress) {
         final String SET_UNION_BRIDGE_ADDRESS_TAG = "setUnionBridgeContractAddressForTestnet";
         logger.info("[{}] Setting new union bridge contract address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, unionBridgeContractAddress);
-
-        AddressBasedAuthorizer authorizer = constants.getChangeUnionBridgeContractAddressAuthorizer();
-        if (!isAuthorized(tx, authorizer)) {
-            return UnionResponseCode.UNAUTHORIZED_CALLER;
-        }
 
         RskAddress currentUnionBridgeAddress = getUnionBridgeContractAddress();
         storageProvider.setAddress(unionBridgeContractAddress);
@@ -286,13 +280,5 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     private boolean isCurrentEnvironmentMainnet() {
         String currentNetworkId = constants.getBtcParams().getId();
         return currentNetworkId.equals(NetworkParameters.ID_MAINNET);
-    }
-
-    private boolean isAuthorized(Transaction tx, AddressBasedAuthorizer authorizer) {
-        boolean isAuthorized = authorizer.isAuthorized(tx, signatureCache);
-        if (!isAuthorized) {
-            logger.warn("[isAuthorized] Caller is not authorized to call this method. Caller address: {}", tx.getSender());
-        }
-        return isAuthorized;
     }
 }
