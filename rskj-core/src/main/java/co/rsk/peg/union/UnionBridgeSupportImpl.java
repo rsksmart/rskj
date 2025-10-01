@@ -1,5 +1,6 @@
 package co.rsk.peg.union;
 
+import static java.util.Objects.isNull;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -269,6 +270,41 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         boolean currentReleaseEnabled = isReleaseEnabled();
 
         return currentRequestEnabled == requestEnabled && currentReleaseEnabled == releaseEnabled;
+    }
+
+    @Override
+    public byte[] getSuperEvent() {
+        return storageProvider.getSuperEvent();
+    }
+
+    @Override
+    public void setSuperEvent(byte[] data) {
+        if (isNull(data) || data.length == 0) {
+            clearSuperEvent();
+            return;
+        }
+
+        int maximumDataLength = 128;
+        if (data.length > maximumDataLength) {
+            throw new IllegalArgumentException("SuperEvent has invalid data length.");
+        }
+
+        byte[] previousSuperEventData = getSuperEvent();
+        storageProvider.setSuperEvent(data);
+        logger.info(
+            "[setSuperEvent] Super event info was updated from {} to {}", previousSuperEventData, data
+        );
+    }
+
+    @Override
+    public void clearSuperEvent() {
+        byte[] previousSuperEventData = getSuperEvent();
+
+        byte[] emptyData = new byte[]{};
+        storageProvider.setSuperEvent(emptyData);
+        logger.info(
+            "[clearSuperEvent] Super event info was cleared. Previous value: {}", previousSuperEventData
+        );
     }
 
     @Override
