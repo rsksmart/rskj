@@ -195,7 +195,8 @@ public class ActivationConfigsForTest {
 
     private static List<ConsensusRule> getReed801Rskips() {
         return new ArrayList<>(List.of(
-            ConsensusRule.RSKIP502
+            ConsensusRule.RSKIP502,
+            ConsensusRule.RSKIP529
         ));
     }
 
