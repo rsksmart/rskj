@@ -129,7 +129,7 @@ jobs:
             fi
           else
             ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonar --no-daemon -x build -x test \
-              -Dsonar.branch.name="$GH_REF" \
+              -Dsonar.branch.name="${{ github.ref_name }}" \
               -Dsonar.token="$SONAR_TOKEN"
           fi
 
