@@ -21,6 +21,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     private Boolean unionBridgeRequestEnabled;
     private Boolean unionBridgeReleaseEnabled;
+    private byte[] superEvent;
 
     public UnionBridgeStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -33,6 +34,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
         saveWeisTransferredToUnionBridge();
         saveRequestEnabled();
         saveReleaseEnabled();
+        saveSuperEvent();
     }
 
     private void saveReleaseEnabled() {
@@ -184,5 +186,29 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
                 BridgeSerializationUtils::deserializeBoolean
             )));
+    }
+
+    @Override
+    public byte[] getSuperEvent() {
+        if (superEvent != null) {
+            return superEvent;
+        }
+
+        return bridgeStorageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
+            BridgeSerializationUtils::deserializeSuperEvent
+        );
+    }
+
+    @Override
+    public void setSuperEvent(byte[] data) {
+        this.superEvent = data;
+    }
+
+    private void saveSuperEvent() {
+        bridgeStorageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
+            superEvent
+        );
     }
 }
