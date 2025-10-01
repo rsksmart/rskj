@@ -36,6 +36,10 @@ public class UnionBridgeRegTestConstants extends UnionBridgeConstants {
         changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
             new RskAddress("af0fd16c15d0286fd78db5fe89412c00d3de3cf4")
         );
+
+        superEventAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
+            unionBridgeAddress
+        );
     }
 
     public static UnionBridgeConstants getInstance() {
