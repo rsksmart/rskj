@@ -38,6 +38,8 @@ class UnionBridgeStorageProviderImplTest {
 
     private static final boolean unionBridgeReleaseEnabled = true;
     private static final boolean newUnionBridgeReleaseEnabled = false;
+    private static final byte[] superEventData = new byte[]{(byte) 0x123456};
+    private static final byte[] newSuperEventData = new byte[]{(byte) 0x12345678};
 
     private StorageAccessor storageAccessor;
     private UnionBridgeStorageProviderImpl unionBridgeStorageProvider;
@@ -1031,6 +1033,11 @@ class UnionBridgeStorageProviderImplTest {
             UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
             unionBridgeReleaseEnabled, BridgeSerializationUtils::serializeBoolean
         );
+        // Simulate there is SUPER_EVENT's value already stored
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
+            superEventData
+        );
 
         // Set the new values
         unionBridgeStorageProvider.setAddress(newUnionBridgeContractAddress);
@@ -1038,6 +1045,7 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.increaseWeisTransferredToUnionBridge(newAmountTransferredToUnionBridge);
         unionBridgeStorageProvider.setUnionBridgeRequestEnabled(newUnionBridgeRequestEnabled);
         unionBridgeStorageProvider.setUnionBridgeReleaseEnabled(newUnionBridgeReleaseEnabled);
+        unionBridgeStorageProvider.setSuperEvent(newSuperEventData);
 
         // Act
         unionBridgeStorageProvider.save();
@@ -1050,6 +1058,7 @@ class UnionBridgeStorageProviderImplTest {
         assertGivenWeisTransferredToUnionBridgeIsStored(expectedAmountTransferredToUnionBridge);
         assertGivenUnionBridgeRequestEnabledIsStored(newUnionBridgeRequestEnabled);
         assertGivenUnionBridgeReleaseEnabledIsStored(newUnionBridgeReleaseEnabled);
+        assertSuperEventDataIsStored(newSuperEventData);
     }
 
     @Test
@@ -1063,6 +1072,7 @@ class UnionBridgeStorageProviderImplTest {
         assertNoWeisTransferredToUnionBridgeIsStored();
         assertNoUnionBridgeRequestEnabledIsStored();
         assertNoUnionBridgeReleaseEnabledIsStored();
+        assertEmptySuperEventDataIsStored();
     }
 
     private void assertGivenWeisTransferredToUnionBridgeIsStored(
@@ -1073,5 +1083,112 @@ class UnionBridgeStorageProviderImplTest {
         assertNotNull(savedWeisTransferredToUnionBridge);
 
         assertEquals(expectedTransferredToUnionBridge, savedWeisTransferredToUnionBridge);
+    }
+
+    @Test
+    void getSuperEvent_whenNoDataSaved_shouldReturnEmptyArray() {
+        // Act
+        byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
+
+        // Assert
+        byte[] emptyByte = new byte[]{};
+        assertArrayEquals(emptyByte, superEvent);
+    }
+
+    @Test
+    void getSuperEvent_whenDataSaved_shouldReturnSavedData() {
+        // Arrange
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
+            superEventData
+        );
+
+        // Act
+        byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
+
+        // Act & Assert
+        assertEquals(superEventData, superEvent);
+    }
+
+    @Test
+    void getSuperEvent_whenDataSavedAndNewDataSet_shouldReturnSetData() {
+        // Arrange
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
+            superEventData
+        );
+
+        // Act
+        unionBridgeStorageProvider.setSuperEvent(newSuperEventData);
+
+        // Assert
+        assertEquals(newSuperEventData, unionBridgeStorageProvider.getSuperEvent());
+    }
+
+    @Test
+    void getSuperEvent_whenSavingNewData_shouldSaveNewData() {
+        // Arrange
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
+            superEventData
+        );
+        byte[] superEventSavedData = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
+            BridgeSerializationUtils::deserializeSuperEvent
+        );
+
+        // Act
+        unionBridgeStorageProvider.setSuperEvent(newSuperEventData);
+
+        assertNotEquals(superEventSavedData, newSuperEventData);
+        unionBridgeStorageProvider.save();
+
+        // Assert
+        byte[] superEventSavedDataAfterSaving = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
+            BridgeSerializationUtils::deserializeSuperEvent
+        );
+        assertEquals(superEventSavedDataAfterSaving, newSuperEventData);
+        assertEquals(newSuperEventData, unionBridgeStorageProvider.getSuperEvent());
+    }
+
+    @Test
+    void setSuperEvent_nullData_shouldSetEmptyArray() {
+        // Act
+        unionBridgeStorageProvider.setSuperEvent(null);
+
+        // Assert
+        byte[] emptyByte = new byte[]{};
+        assertArrayEquals(emptyByte, unionBridgeStorageProvider.getSuperEvent());
+    }
+
+    @Test
+    void setSuperEvent_emptyArray_shouldSetEmptyArray() {
+        // Arrange
+        byte[] emptyByte = new byte[]{};
+
+        // Act
+        unionBridgeStorageProvider.setSuperEvent(emptyByte);
+
+        // Assert
+        assertArrayEquals(emptyByte, unionBridgeStorageProvider.getSuperEvent());
+    }
+
+    private void assertEmptySuperEventDataIsStored() {
+        byte[] superEvent = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
+            BridgeSerializationUtils::deserializeSuperEvent
+        );
+        byte[] emptyByte = new byte[]{};
+
+        assertArrayEquals(emptyByte, superEvent);
+    }
+
+    private void assertSuperEventDataIsStored(byte[] data) {
+        byte[] superEvent = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
+            BridgeSerializationUtils::deserializeSuperEvent
+        );
+        assertArrayEquals(data, superEvent);
     }
 }
