@@ -45,6 +45,10 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
         changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
             ZERO_ADDRESS
         );
+
+        superEventAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
+            unionBridgeAddress
+        );
     }
 
     public static UnionBridgeConstants getInstance() {

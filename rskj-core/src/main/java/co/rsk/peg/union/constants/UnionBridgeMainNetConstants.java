@@ -4,7 +4,6 @@ import static co.rsk.core.RskAddress.ZERO_ADDRESS;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.vote.AddressBasedAuthorizer.MinimumRequiredCalculation;
 import co.rsk.peg.vote.AddressBasedAuthorizerFactory;
@@ -40,6 +39,10 @@ public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
         // TODO: Replace with actual authorizers
         changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
             ZERO_ADDRESS
+        );
+
+        superEventAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
+            unionBridgeAddress
         );
     }
 
