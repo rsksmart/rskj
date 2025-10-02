@@ -19,6 +19,10 @@
 package org.ethereum.config;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.params.MainNetParams;
+import co.rsk.bitcoinj.params.RegTestParams;
+import co.rsk.bitcoinj.params.TestNet2Params;
 import co.rsk.config.ConfigLoader;
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
 import co.rsk.metrics.profilers.ProfilerFactory;
@@ -127,6 +131,7 @@ public abstract class SystemProperties {
 
     private ActivationConfig activationConfig;
     private Constants constants;
+    private NetworkParameters networkParameters;
 
     protected SystemProperties(ConfigLoader loader) {
         try {
@@ -181,23 +186,24 @@ public abstract class SystemProperties {
 
     public Constants getNetworkConstants() {
         if (constants == null) {
-            switch (netName()) {
-                case "main":
+            final var networkName = NetworkName.getByName(netName());
+            switch (networkName) {
+                case MAINNET:
                     constants = Constants.mainnet();
                     break;
-                case "testnet":
+                case TESTNET:
                     constants = Constants.testnet(getActivationConfig());
                     break;
-                case "testnet2":
+                case TESTNET2:
                     constants = Constants.testnet2(getActivationConfig());
                     break;
-                case "devnet":
+                case DEVNET:
                     constants = Constants.devnetWithFederation();
                     break;
-                case "regtest":
+                case REGTEST:
                     constants = getGenesisFederationPublicKeys()
-                        .map(Constants::regtestWithFederation)
-                        .orElseGet(Constants::regtest);
+                            .map(Constants::regtestWithFederation)
+                            .orElseGet(Constants::regtest);
                     break;
                 default:
                     throw new RuntimeException(String.format("Unknown network name '%s'", netName()));
@@ -205,6 +211,27 @@ public abstract class SystemProperties {
         }
 
         return constants;
+    }
+
+    public NetworkParameters getBitcoinjNetworkConstants() {
+        if (networkParameters == null) {
+            final var networkName = NetworkName.getByName(netName());
+            switch (networkName) {
+                case MAINNET:
+                    networkParameters = MainNetParams.get();
+                    break;
+                case TESTNET, TESTNET2, DEVNET:
+                    networkParameters = TestNet2Params.get();
+                    break;
+                case REGTEST:
+                    networkParameters = RegTestParams.get();
+                    break;
+                default:
+                    throw new RuntimeException(String.format("Unknown network name '%s'", netName()));
+            }
+        }
+
+        return networkParameters;
     }
 
     public boolean isPeerDiscoveryEnabled() {

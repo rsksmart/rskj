@@ -20,7 +20,6 @@ package co.rsk.validators;
 
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.util.TimeProvider;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -56,12 +55,8 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
         this.bitcoinNetworkParameters = Objects.requireNonNull(bitcoinNetworkParameters);
     }
 
-    public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig, Constants constants, TimeProvider timeProvider) {
-        this(validPeriodLength, activationConfig, constants, timeProvider, RegTestParams.get());
-    }
-
-    public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig, Constants constants) {
-        this(validPeriodLength, activationConfig, constants, System::currentTimeMillis, RegTestParams.get());
+    public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig, Constants constants, NetworkParameters bitcoinNetworkParameters) {
+        this(validPeriodLength, activationConfig, constants, System::currentTimeMillis, bitcoinNetworkParameters);
     }
 
     @Override

@@ -20,7 +20,6 @@ package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.core.types.ints.Uint8;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -43,8 +42,8 @@ public class ForkDetectionDataCalculator {
 
     private NetworkParameters params;
 
-    public ForkDetectionDataCalculator(){
-        this.params = RegTestParams.get();
+    public ForkDetectionDataCalculator(NetworkParameters params){
+        this.params = params;
         new Context(params);
     }
 

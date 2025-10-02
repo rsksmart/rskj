@@ -17,6 +17,7 @@
  */
 package co.rsk.mine;
 
+import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
@@ -610,7 +611,7 @@ class TransactionModuleTest {
                         transactionPool,
                         new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                         new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
+                        new ForkDetectionDataCalculator(RegTestParams.get()),
                         mock(BlockUnclesValidationRule.class),
                         minerClock,
                         blockFactory,
@@ -627,7 +628,7 @@ class TransactionModuleTest {
 
         Wallet wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
-        MinerClient minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
+        MinerClient minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes(), RegTestParams.get());
         EthModuleTransaction transactionModule;
 
         ReversibleTransactionExecutor reversibleTransactionExecutor1 = new ReversibleTransactionExecutor(

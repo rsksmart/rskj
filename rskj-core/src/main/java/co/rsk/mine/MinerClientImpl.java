@@ -25,6 +25,7 @@ import java.util.TimerTask;
 
 import javax.annotation.Nonnull;
 
+import co.rsk.bitcoinj.core.NetworkParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +49,7 @@ public class MinerClientImpl implements MinerClient {
     private final MinerServer minerServer;
     private final Duration delayBetweenBlocks;
     private final Duration delayBetweenRefreshes;
+    private final NetworkParameters bitcoinNetworkParameters;
 
     private volatile boolean stop = false;
 
@@ -58,11 +60,12 @@ public class MinerClientImpl implements MinerClient {
     private volatile MinerWork work;
     private Timer aTimer;
 
-    public MinerClientImpl(NodeBlockProcessor nodeBlockProcessor, MinerServer minerServer, Duration delayBetweenBlocks, Duration delayBetweenRefreshes) {
+    public MinerClientImpl(NodeBlockProcessor nodeBlockProcessor, MinerServer minerServer, Duration delayBetweenBlocks, Duration delayBetweenRefreshes, NetworkParameters bitcoinNetworkParameters) {
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.minerServer = minerServer;
         this.delayBetweenBlocks = delayBetweenBlocks;
         this.delayBetweenRefreshes = delayBetweenRefreshes;
+        this.bitcoinNetworkParameters = bitcoinNetworkParameters;
     }
 
     @Override
@@ -126,7 +129,6 @@ public class MinerClientImpl implements MinerClient {
         newBestBlockArrivedFromAnotherNode = false;
         work = minerServer.getWork();
 
-        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
         co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
 

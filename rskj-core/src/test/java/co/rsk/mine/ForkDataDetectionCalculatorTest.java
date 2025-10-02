@@ -57,7 +57,7 @@ class ForkDataDetectionCalculatorTest {
     void calculateWithMinPossibleBlockchainHeight() {
         List<Block> lastBlockchainBlocks = createBlockchainAsList(449);
 
-        ForkDetectionDataCalculator builder = new ForkDetectionDataCalculator();
+        ForkDetectionDataCalculator builder = new ForkDetectionDataCalculator(RegTestParams.get());
 
         byte[] forkDetectionData = builder.calculate(lastBlockchainBlocks);
 
@@ -90,7 +90,7 @@ class ForkDataDetectionCalculatorTest {
     void calculateReturnsEmptyWhenNotEnoughBlocks() {
         List<Block> lastBlockchainBlocks = createBlockchainAsList(250);
 
-        ForkDetectionDataCalculator builder = new ForkDetectionDataCalculator();
+        ForkDetectionDataCalculator builder = new ForkDetectionDataCalculator(RegTestParams.get());
 
         byte[] forkDetectionData = builder.calculate(lastBlockchainBlocks);
 
@@ -102,7 +102,7 @@ class ForkDataDetectionCalculatorTest {
         List<Block> lastBlockchainBlocks = createBlockchainAsList(512);
         List<Block> trimmedBlocks = lastBlockchainBlocks.subList(0, 449);
 
-        ForkDetectionDataCalculator builder = new ForkDetectionDataCalculator();
+        ForkDetectionDataCalculator builder = new ForkDetectionDataCalculator(RegTestParams.get());
 
         byte[] forkDetectionData = builder.calculate(trimmedBlocks);
 
@@ -136,7 +136,7 @@ class ForkDataDetectionCalculatorTest {
         List<Block> lastBlockchainBlocks = createBlockchainWithUnclesAsList(512, false);
         List<Block> trimmedBlocks = lastBlockchainBlocks.subList(0, 449);
 
-        ForkDetectionDataCalculator builder = new ForkDetectionDataCalculator();
+        ForkDetectionDataCalculator builder = new ForkDetectionDataCalculator(RegTestParams.get());
 
         byte[] forkDetectionData = builder.calculate(trimmedBlocks);
 
@@ -170,7 +170,7 @@ class ForkDataDetectionCalculatorTest {
         List<Block> lastBlockchainBlocks = createBlockchainWithMaxUnclesAsList(564);
         List<Block> trimmedBlocks = lastBlockchainBlocks.subList(0, 449);
 
-        ForkDetectionDataCalculator builder = new ForkDetectionDataCalculator();
+        ForkDetectionDataCalculator builder = new ForkDetectionDataCalculator(RegTestParams.get());
 
         byte[] forkDetectionData = builder.calculate(trimmedBlocks);
 

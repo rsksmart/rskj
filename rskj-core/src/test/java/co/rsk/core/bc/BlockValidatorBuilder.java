@@ -126,7 +126,7 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockTimeStampValidationRule(int validPeriod) {
-        this.blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod, config.getActivationConfig(), config.getNetworkConstants());
+        this.blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod, config.getActivationConfig(), config.getNetworkConstants(), config.getBitcoinjNetworkConstants());
         return this;
     }
 

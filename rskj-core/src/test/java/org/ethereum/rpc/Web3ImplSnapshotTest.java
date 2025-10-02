@@ -17,6 +17,7 @@
  */
 package org.ethereum.rpc;
 
+import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.MiningConfig;
@@ -166,7 +167,7 @@ class Web3ImplSnapshotTest {
     private Web3Impl createWeb3(SimpleEthereum ethereum) {
         MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = getMinerServerForTest(ethereum, minerClock);
-        MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
+        MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes(), RegTestParams.get());
         EvmModule evmModule = new EvmModuleImpl(minerServer, minerClient, minerClock,
                                                 new SnapshotManager(
                                                         blockchain,
@@ -233,7 +234,7 @@ class Web3ImplSnapshotTest {
                         factory.getTransactionPool(),
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
+                        new ForkDetectionDataCalculator(RegTestParams.get()),
                         rule,
                         clock,
                         blockFactory,

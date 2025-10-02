@@ -20,6 +20,7 @@ package co.rsk.mine;
 
 import java.math.BigInteger;
 
+import co.rsk.bitcoinj.core.NetworkParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,12 +34,14 @@ public class AutoMinerClient implements MinerClient {
     private static final Logger logger = LoggerFactory.getLogger("minerClient");
 
     private final MinerServer minerServer;
+    private final NetworkParameters bitcoinNetworkParameters;
 
     private volatile boolean stop = false;
     private volatile boolean isMining = false;
 
-    public AutoMinerClient(MinerServer minerServer) {
+    public AutoMinerClient(MinerServer minerServer, NetworkParameters bitcoinNetworkParameters) {
         this.minerServer = minerServer;
+        this.bitcoinNetworkParameters = bitcoinNetworkParameters;
     }
 
     @Override
@@ -60,7 +63,6 @@ public class AutoMinerClient implements MinerClient {
 
         MinerWork work = minerServer.getWork();
 
-        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
         co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
 
