@@ -287,8 +287,9 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         }
 
         int maximumDataLength = 128;
-        if (data.length > maximumDataLength) {
-            throw new IllegalArgumentException("SuperEvent data length is above maximum.");
+        int dataLength = data.length;
+        if (dataLength > maximumDataLength) {
+            throw new IllegalArgumentException("SuperEvent data length " + dataLength + " is above maximum.");
         }
 
         byte[] previousSuperEventData = getSuperEvent();
