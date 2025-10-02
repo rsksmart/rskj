@@ -4235,7 +4235,7 @@ class BridgeTest {
 
             doThrow(new IllegalArgumentException())
                 .when(unionBridgeSupport)
-                .setSuperEvent(any());
+                .setSuperEvent(superEvent);
 
             // Act & Assert
             assertThrows(VMException.class, () -> bridge.execute(data));
