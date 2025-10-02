@@ -23,8 +23,8 @@ public interface UnionBridgeSupport {
     UnionResponseCode setTransferPermissions(Transaction tx, boolean requestEnabled, boolean releaseEnabled);
 
     byte[] getSuperEvent();
-    void setSuperEvent(byte[] data);
-    void clearSuperEvent();
+    void setSuperEvent(Transaction tx, byte[] data);
+    void clearSuperEvent(Transaction tx);
 
     void save();
 }
