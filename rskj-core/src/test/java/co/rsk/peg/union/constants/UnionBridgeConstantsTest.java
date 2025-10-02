@@ -1,7 +1,11 @@
 package co.rsk.peg.union.constants;
 
 import static co.rsk.core.RskAddress.ZERO_ADDRESS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -10,7 +14,6 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
-
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
@@ -38,25 +41,33 @@ class UnionBridgeConstantsTest {
 
     @ParameterizedTest
     @MethodSource("changeUnionAddressAuthorizerProvider")
-    void getChangeUnionBridgeContractAddressAuthorizer_ok(UnionBridgeConstants unionBridgeConstants,
-                                            List<RskAddress> expectedSenderAddresses) {
+    void getChangeUnionBridgeContractAddressAuthorizer_ok(
+        UnionBridgeConstants unionBridgeConstants,
+        List<RskAddress> expectedSenderAddresses
+    ) {
         // Act
         AddressBasedAuthorizer actualUnionBridgeChangeAddressAuthorizer = unionBridgeConstants.getChangeUnionBridgeContractAddressAuthorizer();
 
         // Assert
         for (RskAddress expectedSenderAddress : expectedSenderAddresses) {
-            Assertions.assertTrue(actualUnionBridgeChangeAddressAuthorizer.isAuthorized(expectedSenderAddress));
+            assertTrue(actualUnionBridgeChangeAddressAuthorizer.isAuthorized(expectedSenderAddress));
         }
+
+        RskAddress unauthorizedAddress = RskTestUtils.generateAddress("unauthorized");
+        assertFalse(actualUnionBridgeChangeAddressAuthorizer.isAuthorized(unauthorizedAddress));
     }
 
     @ParameterizedTest
     @MethodSource("unionBridgeChangeLockingCapAuthorizerProvider")
     void getChangeLockingCapAuthorizer_ok(UnionBridgeConstants unionBridgeConstants, RskAddress expectedSenderAddress) {
+        RskAddress unauthorizedAddress = RskTestUtils.generateAddress("unauthorized");
+
         // Act
         AddressBasedAuthorizer actualUnionBridgeChangeLockingCapAuthorizer = unionBridgeConstants.getChangeLockingCapAuthorizer();
 
         // Assert
-        Assertions.assertTrue(actualUnionBridgeChangeLockingCapAuthorizer.isAuthorized(expectedSenderAddress));
+        assertTrue(actualUnionBridgeChangeLockingCapAuthorizer.isAuthorized(expectedSenderAddress));
+        assertFalse(actualUnionBridgeChangeLockingCapAuthorizer.isAuthorized(unauthorizedAddress));
     }
 
     private static Stream<Arguments> unionBridgeChangeLockingCapAuthorizerProvider() {
@@ -77,11 +88,14 @@ class UnionBridgeConstantsTest {
     @ParameterizedTest
     @MethodSource("unionBridgeChangeTransferPermissionsAuthorizerProvider")
     void getChangeTransferPermissionsAuthorizer_ok(UnionBridgeConstants unionBridgeConstants, RskAddress expectedSenderAddress) {
+        RskAddress unauthorizedAddress = RskTestUtils.generateAddress("unauthorized");
+
         // Act
         AddressBasedAuthorizer actualUnionBridgeChangeTransferPermissionsAuthorizer = unionBridgeConstants.getChangeTransferPermissionsAuthorizer();
 
         // Assert
-        Assertions.assertTrue(actualUnionBridgeChangeTransferPermissionsAuthorizer.isAuthorized(expectedSenderAddress));
+        assertTrue(actualUnionBridgeChangeTransferPermissionsAuthorizer.isAuthorized(expectedSenderAddress));
+        assertFalse(actualUnionBridgeChangeTransferPermissionsAuthorizer.isAuthorized(unauthorizedAddress));
     }
 
     private static Stream<Arguments> unionBridgeChangeTransferPermissionsAuthorizerProvider() {
@@ -113,9 +127,9 @@ class UnionBridgeConstantsTest {
 
     private static Stream<Arguments> unionBridgeAddressProvider() {
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance(), "0000000000000000000000000000000000000000"),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), "5988645d30cd01e4b3bc2c02cb3909dec991ae31"),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), "5988645d30cd01e4b3bc2c02cb3909dec991ae31")
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), ZERO_ADDRESS),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), new RskAddress("5988645d30cd01e4b3bc2c02cb3909dec991ae31")),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), new RskAddress("5988645d30cd01e4b3bc2c02cb3909dec991ae31"))
         );
     }
 
@@ -127,7 +141,7 @@ class UnionBridgeConstantsTest {
         RskAddress actualUnionBridgeAddress = unionBridgeConstants.getAddress();
 
         // Assert
-        Assertions.assertEquals(expectedUnionBridgeAddress, actualUnionBridgeAddress);
+        assertEquals(expectedUnionBridgeAddress, actualUnionBridgeAddress);
     }
 
     private static Stream<Arguments> unionLockingCapInitialValueProvider() {
@@ -147,7 +161,7 @@ class UnionBridgeConstantsTest {
         Coin actualInitialLockingCap = unionBridgeConstants.getInitialLockingCap();
 
         // Assert
-        Assertions.assertEquals(expectedInitialLockingCap, actualInitialLockingCap);
+        assertEquals(expectedInitialLockingCap, actualInitialLockingCap);
     }
 
     private static Stream<Arguments> unionLockingCapIncrementsMultiplierProvider() {
@@ -166,6 +180,6 @@ class UnionBridgeConstantsTest {
         int actualLockingCapIncrementsMultiplier = unionBridgeConstants.getLockingCapIncrementsMultiplier();
 
         // Assert
-        Assertions.assertEquals(expectedLockingCapIncrementsMultiplier, actualLockingCapIncrementsMultiplier);
+        assertEquals(expectedLockingCapIncrementsMultiplier, actualLockingCapIncrementsMultiplier);
     }
 }
