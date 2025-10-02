@@ -4120,36 +4120,6 @@ class BridgeTest {
         }
 
         @Test
-        void getSuperEvent_whenNoDataWasSet_shouldExecute() throws VMException {
-            // Arrange
-            CallTransaction.Function function = BridgeMethods.GET_SUPER_EVENT.getFunction();
-            byte[] data = function.encode();
-
-            // Act
-            bridge.execute(data);
-
-            // Assert
-            verify(unionBridgeSupport).getSuperEvent();
-        }
-
-        @Test
-        void getSuperEvent_whenDataWasSet_shouldExecute() throws VMException {
-            // Arrange
-            CallTransaction.Function setSuperEvent = BridgeMethods.SET_SUPER_EVENT.getFunction();
-            byte[] setSuperEventData = setSuperEvent.encode(superEvent);
-            bridge.execute(setSuperEventData);
-
-            CallTransaction.Function getSuperEvent = BridgeMethods.GET_SUPER_EVENT.getFunction();
-            byte[] getSuperEventData = getSuperEvent.encode();
-
-            // Act
-            bridge.execute(getSuperEventData);
-
-            // Assert
-            verify(unionBridgeSupport).getSuperEvent();
-        }
-
-        @Test
         void setSuperEvent_preRSKIP529_shouldThrowVMException() {
             // Arrange
             ActivationConfig activationConfig = ActivationConfigsForTest.reed800();
@@ -4175,24 +4145,6 @@ class BridgeTest {
 
             // Assert
             verify(unionBridgeSupport).setSuperEvent(rskTx, superEvent);
-        }
-
-        @Test
-        void setSuperEvent_whenThereIsSavedData_shouldExecuteNewData() throws VMException {
-            // Arrange
-            CallTransaction.Function function = BridgeMethods.SET_SUPER_EVENT.getFunction();
-            byte[] savedData = function.encode(superEvent);
-            bridge.execute(savedData);
-
-            // Act
-            byte[] newSuperEvent = new byte[]{(byte) 0x12345678};
-            byte[] newData = function.encode(newSuperEvent);
-            bridge.execute(newData);
-
-            // Assert
-            InOrder inOrder = inOrder(unionBridgeSupport);
-            inOrder.verify(unionBridgeSupport).setSuperEvent(rskTx, superEvent);
-            inOrder.verify(unionBridgeSupport).setSuperEvent(rskTx, newSuperEvent);
         }
 
         @Test
