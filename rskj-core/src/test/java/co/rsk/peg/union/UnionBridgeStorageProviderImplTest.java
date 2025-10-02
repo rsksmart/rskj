@@ -1073,7 +1073,7 @@ class UnionBridgeStorageProviderImplTest {
         assertNoWeisTransferredToUnionBridgeIsStored();
         assertNoUnionBridgeRequestEnabledIsStored();
         assertNoUnionBridgeReleaseEnabledIsStored();
-        assertEmptySuperEventDataIsStored();
+        assertNoSuperEventDataIsStored();
     }
 
     private void assertGivenWeisTransferredToUnionBridgeIsStored(
@@ -1247,7 +1247,7 @@ class UnionBridgeStorageProviderImplTest {
         assertNull(actualSuperEvent);
     }
 
-    private void assertEmptySuperEventDataIsStored() {
+    private void assertNoSuperEventDataIsStored() {
         byte[] superEvent = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
             data -> data
