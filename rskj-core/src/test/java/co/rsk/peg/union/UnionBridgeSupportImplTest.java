@@ -3,8 +3,7 @@ package co.rsk.peg.union;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedData;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedTopics;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -51,6 +50,7 @@ class UnionBridgeSupportImplTest {
 
     private static final RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress(
         "secondNewUnionBridgeContractAddress");
+    private static final byte[] superEvent = new byte[]{(byte) 0x123456};
 
     private final UnionBridgeSupportBuilder unionBridgeSupportBuilder = UnionBridgeSupportBuilder.builder();
 
@@ -174,7 +174,7 @@ class UnionBridgeSupportImplTest {
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
             BridgeSerializationUtils::deserializeRskAddress
         );
-        Assertions.assertNull(actualRskAddress);
+        assertNull(actualRskAddress);
     }
 
     private void assertAddressWasSet(RskAddress expectedAddress) {
@@ -317,7 +317,7 @@ class UnionBridgeSupportImplTest {
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
             BridgeSerializationUtils::deserializeRskCoin
         );
-        Assertions.assertNull(storedLockingCap);
+        assertNull(storedLockingCap);
     }
 
     @ParameterizedTest
@@ -736,7 +736,7 @@ class UnionBridgeSupportImplTest {
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
             BridgeSerializationUtils::deserializeRskCoin
         );
-        Assertions.assertNull(actualAmountTransferred);
+        assertNull(actualAmountTransferred);
     }
 
     @ParameterizedTest
@@ -1441,15 +1441,39 @@ class UnionBridgeSupportImplTest {
 
     @Test
     void getSuperEvent_whenNotSavedData_shouldReturnEmptyArray() {
-        byte[] emptyData = new byte[]{};
-        assertArrayEquals(emptyData, unionBridgeSupport.getSuperEvent());
+        // Arrange
+        byte[] emptyArray = new byte[]{};
+
+        // Act & Assert
+        assertArrayEquals(emptyArray, unionBridgeSupport.getSuperEvent());
     }
 
     @Test
-    void setSuperEvent_shouldSetSuperEvent() {
-        byte[] superEvent = new byte[]{(byte) 0x123456};
+    void getSuperEvent_whenEmptyDataSet_shouldReturnEmptyArray() {
+        // Arrange
+        byte[] emptyArray = new byte[]{};
+        unionBridgeSupport.setSuperEvent(emptyArray);
+
+        // Act & Assert
+        assertArrayEquals(emptyArray, unionBridgeSupport.getSuperEvent());
+    }
+
+    @Test
+    void getSuperEvent_whenNullDataSet_shouldReturnEmptyArray() {
+        // Arrange
+        unionBridgeSupport.setSuperEvent(null);
+
+        // Act & Assert
+        byte[] emptyArray = new byte[]{};
+        assertArrayEquals(emptyArray, unionBridgeSupport.getSuperEvent());
+    }
+
+    @Test
+    void getSuperEvent_shouldSetSuperEvent() {
+        // Arrange
         unionBridgeSupport.setSuperEvent(superEvent);
 
+        // Act & Assert
         assertArrayEquals(superEvent, unionBridgeSupport.getSuperEvent());
     }
 
@@ -1466,7 +1490,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @Test
-    void setSuperEvent_dataLengthAboveMaximum_shouldNotSetSuperEvent() {
+    void setSuperEvent_dataLengthAboveMaximum_shouldThrowIAE() {
         // Arrange
         byte[] superEvent = new byte[129];
 
@@ -1478,10 +1502,10 @@ class UnionBridgeSupportImplTest {
     }
 
     @Test
-    void setSuperEvent_whenAlreadySavedData_shouldOverrideWithNewData() {
+    void getSuperEvent_whenDataSavedAndNewDataSet_shouldReturnNewData() {
         // Arrange
-        byte[] superEvent = new byte[]{(byte) 0x123456};
         unionBridgeSupport.setSuperEvent(superEvent);
+        unionBridgeSupport.save();
 
         // Act
         byte[] newSuperEvent = new byte[]{(byte) 0x12345678};
@@ -1492,10 +1516,10 @@ class UnionBridgeSupportImplTest {
     }
 
     @Test
-    void clearSuperEvent_shouldClearData() {
+    void clearSuperEvent_whenDataSaved_shouldClearData() {
         // Arrange
-        byte[] superEvent = new byte[]{(byte) 0x123456};
         unionBridgeSupport.setSuperEvent(superEvent);
+        unionBridgeSupport.save();
 
         // Act
         unionBridgeSupport.clearSuperEvent();
