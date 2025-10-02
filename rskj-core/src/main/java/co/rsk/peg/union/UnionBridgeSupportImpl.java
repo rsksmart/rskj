@@ -315,9 +315,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     private void clearSuperEvent() {
         byte[] previousSuperEventData = getSuperEvent();
-
-        byte[] emptyData = new byte[]{};
-        storageProvider.setSuperEvent(emptyData);
+        storageProvider.setSuperEvent(ByteUtil.EMPTY_BYTE_ARRAY);
         logger.info(
             "[clearSuperEvent] Super event info was cleared. Previous value: {}", previousSuperEventData
         );
