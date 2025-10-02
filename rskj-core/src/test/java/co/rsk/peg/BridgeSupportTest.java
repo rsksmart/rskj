@@ -836,20 +836,20 @@ class BridgeSupportTest {
         private BridgeEventLogger bridgeEventLogger;
         private BridgeSupport bridgeSupport;
         private SignatureCache signatureCache;
-        private Transaction transaction;
+        private Transaction rskTx;
 
         @BeforeEach
         void setUp() {
             signatureCache = mock(SignatureCache.class);
             unionBridgeStorageProvider = mock(UnionBridgeStorageProvider.class);
-            unionBridgeSupport =
-                unionBridgeSupportBuilder.withSignatureCache(signatureCache)
+            unionBridgeSupport = unionBridgeSupportBuilder
+                .withSignatureCache(signatureCache)
                 .withConstants(unionBridgeConstants)
                 .withStorageProvider(unionBridgeStorageProvider)
                 .build();
 
             repository = mock(Repository.class);
-            bridgeStorageProvider = mock(BridgeStorageProvider.class);
+            BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
             bridgeEventLogger = mock(BridgeEventLogger.class);
 
             bridgeSupport = bridgeSupportBuilder
@@ -860,7 +860,7 @@ class BridgeSupportTest {
                 .withEventLogger(bridgeEventLogger)
                 .build();
 
-            transaction = mock(Transaction.class);
+            rskTx = mock(Transaction.class);
         }
 
         @ParameterizedTest
@@ -1004,11 +1004,11 @@ class BridgeSupportTest {
 
             // act
             UnionResponseCode actualResult = bridgeSupport.increaseUnionBridgeLockingCap(
-                transaction, newLockingCap);
+                rskTx, newLockingCap);
 
             // assert
             assertEquals(expectedUnionResponseCode, actualResult);
-            verify(unionBridgeSupport).increaseLockingCap(transaction, newLockingCap);
+            verify(unionBridgeSupport).increaseLockingCap(rskTx, newLockingCap);
         }
 
         private static Stream<Arguments> increaseUnionBridgeLockingCapResponseCodeProvider() {
@@ -1026,14 +1026,14 @@ class BridgeSupportTest {
             BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
             co.rsk.core.Coin amountRequested = new co.rsk.core.Coin(oneEth);
             unionBridgeSupport = mock(UnionBridgeSupport.class);
-            when(unionBridgeSupport.requestUnionRbtc(transaction, amountRequested)).thenReturn(expectedUnionResponseCode);
+            when(unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested)).thenReturn(expectedUnionResponseCode);
             bridgeSupport = bridgeSupportBuilder.withUnionBridgeSupport(unionBridgeSupport).build();
 
             // act
-            UnionResponseCode actualResponseCode = bridgeSupport.requestUnionBridgeRbtc(transaction, amountRequested);
+            UnionResponseCode actualResponseCode = bridgeSupport.requestUnionBridgeRbtc(rskTx, amountRequested);
 
             // assert
-            verify(unionBridgeSupport, times(1)).requestUnionRbtc(transaction, amountRequested);
+            verify(unionBridgeSupport).requestUnionRbtc(rskTx, amountRequested);
 
             verify(repository, never()).transfer(
                 any(RskAddress.class),
@@ -1063,23 +1063,23 @@ class BridgeSupportTest {
             BigInteger weiPerEther = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
             co.rsk.core.Coin amountRequested = new co.rsk.core.Coin(weiPerEther);
             unionBridgeSupport = mock(UnionBridgeSupport.class);
-            when(unionBridgeSupport.requestUnionRbtc(transaction, amountRequested)).thenReturn(UnionResponseCode.SUCCESS);
+            when(unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested)).thenReturn(UnionResponseCode.SUCCESS);
             when(unionBridgeSupport.getUnionBridgeContractAddress()).thenReturn(newUnionBridgeContractAddress);
 
             bridgeSupport = bridgeSupportBuilder.withUnionBridgeSupport(unionBridgeSupport).build();
 
             // act
-            UnionResponseCode actualResponseCode = bridgeSupport.requestUnionBridgeRbtc(transaction, amountRequested);
+            UnionResponseCode actualResponseCode = bridgeSupport.requestUnionBridgeRbtc(rskTx, amountRequested);
 
             // assert
-            verify(unionBridgeSupport, times(1)).requestUnionRbtc(transaction, amountRequested);
+            verify(unionBridgeSupport).requestUnionRbtc(rskTx, amountRequested);
 
-            verify(repository, times(1)).transfer(
+            verify(repository).transfer(
                 BRIDGE_ADDR,
                 newUnionBridgeContractAddress,
                 amountRequested
             );
-            verify(bridgeEventLogger, times(1)).logUnionRbtcRequested(
+            verify(bridgeEventLogger).logUnionRbtcRequested(
                 newUnionBridgeContractAddress,
                 amountRequested
             );
@@ -1101,16 +1101,16 @@ class BridgeSupportTest {
             co.rsk.core.Coin amountToRelease = new co.rsk.core.Coin(weiPerEther.multiply(BigInteger.TEN)); // 10 RBTC
 
             RskAddress unionBridgeContractAddress = unionBridgeConstants.getAddress();
-            when(transaction.getSender(signatureCache)).thenReturn(unionBridgeContractAddress);
-            when(transaction.getValue()).thenReturn(amountToRelease);
+            when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeContractAddress);
+            when(rskTx.getValue()).thenReturn(amountToRelease);
 
             // act
-            UnionResponseCode actualResponseCode = bridgeSupport.releaseUnionBridgeRbtc(transaction);
+            UnionResponseCode actualResponseCode = bridgeSupport.releaseUnionBridgeRbtc(rskTx);
 
             // assert
-            verify(unionBridgeSupport, times(1)).releaseUnionRbtc(transaction);
+            verify(unionBridgeSupport).releaseUnionRbtc(rskTx);
 
-            verify(repository, times(1)).transfer(
+            verify(repository).transfer(
                 BRIDGE_ADDR,
                 unionBridgeContractAddress,
                 amountToRelease
@@ -1143,14 +1143,14 @@ class BridgeSupportTest {
 
             BigInteger weiPerEther = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
             co.rsk.core.Coin amountToRelease = new co.rsk.core.Coin(weiPerEther.multiply(BigInteger.TEN)); // 10 RBTC
-            when(transaction.getSender(signatureCache)).thenReturn(newUnionBridgeContractAddress);
-            when(transaction.getValue()).thenReturn(amountToRelease);
+            when(rskTx.getSender(signatureCache)).thenReturn(newUnionBridgeContractAddress);
+            when(rskTx.getValue()).thenReturn(amountToRelease);
 
             // act
-            UnionResponseCode actualResponseCode = bridgeSupport.releaseUnionBridgeRbtc(transaction);
+            UnionResponseCode actualResponseCode = bridgeSupport.releaseUnionBridgeRbtc(rskTx);
 
             // assert
-            verify(unionBridgeSupport, times(1)).releaseUnionRbtc(transaction);
+            verify(unionBridgeSupport).releaseUnionRbtc(rskTx);
             verify(repository, never()).transfer(
                 any(),
                 any(),
@@ -1169,11 +1169,60 @@ class BridgeSupportTest {
             bridgeSupport = bridgeSupportBuilder.withUnionBridgeSupport(unionBridgeSupport).build();
 
             // act
-            UnionResponseCode responseCode = bridgeSupport.setUnionBridgeTransferPermissions(transaction, true, false);
+            UnionResponseCode responseCode = bridgeSupport.setUnionBridgeTransferPermissions(rskTx, true, false);
 
             // assert
             assertEquals(UnionResponseCode.SUCCESS, responseCode);
-            verify(unionBridgeSupport, times(1)).setTransferPermissions(transaction, true, false);
+            verify(unionBridgeSupport).setTransferPermissions(rskTx, true, false);
+        }
+
+        @Test
+        void setSuperEvent_shouldSetSuperEvent() {
+            // arrange
+            unionBridgeSupport = mock(UnionBridgeSupport.class);
+            bridgeSupport = bridgeSupportBuilder
+                .withSignatureCache(signatureCache)
+                .withUnionBridgeSupport(unionBridgeSupport)
+                .build();
+
+            // act
+            byte[] superEvent = new byte[]{(byte) 0x123456};
+            bridgeSupport.setSuperEvent(rskTx, superEvent);
+
+            // assert
+            verify(unionBridgeSupport).setSuperEvent(rskTx, superEvent);
+        }
+
+        @Test
+        void clearSuperEvent_shouldClearSuperEvent() {
+            // arrange
+            unionBridgeSupport = mock(UnionBridgeSupport.class);
+            bridgeSupport = bridgeSupportBuilder
+                .withSignatureCache(signatureCache)
+                .withUnionBridgeSupport(unionBridgeSupport)
+                .build();
+
+            // act
+            bridgeSupport.clearSuperEvent(rskTx);
+
+            // assert
+            verify(unionBridgeSupport).clearSuperEvent(rskTx);
+        }
+
+        @Test
+        void getSuperEvent_shouldGetSuperEvent() {
+            // arrange
+            unionBridgeSupport = mock(UnionBridgeSupport.class);
+            bridgeSupport = bridgeSupportBuilder
+                .withSignatureCache(signatureCache)
+                .withUnionBridgeSupport(unionBridgeSupport)
+                .build();
+
+            // act
+            bridgeSupport.getSuperEvent();
+
+            // assert
+            verify(unionBridgeSupport).getSuperEvent();
         }
 
         @Test
@@ -1186,7 +1235,7 @@ class BridgeSupportTest {
             bridgeSupport.save();
 
             // assert
-            verify(unionBridgeSupport, times(1)).save();
+            verify(unionBridgeSupport).save();
         }
     }
 
@@ -2235,7 +2284,7 @@ class BridgeSupportTest {
         assertEquals(0, pegoutBtcTx.getInput(0).getOutpoint().getIndex());
         assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
         // First Rsk tx corresponds to this release
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
+        verify(bridgeEventLogger).logReleaseBtcRequested(
             rskTx1.getHash().getBytes(),
             pegoutBtcTx,
             Coin.COIN.multiply(5)
@@ -2254,7 +2303,7 @@ class BridgeSupportTest {
         assertEquals(1, releaseOutpoints.get(1).getIndex());
         assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx3.getHash()).isPresent());
         // third Rsk tx corresponds to this release
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
+        verify(bridgeEventLogger).logReleaseBtcRequested(
             rskTx3.getHash().getBytes(),
             pegoutBtcTx,
             Coin.COIN.multiply(7)
@@ -2270,7 +2319,7 @@ class BridgeSupportTest {
         assertEquals(0, pegoutBtcTx.getInput(0).getOutpoint().getIndex());
         assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx2.getHash()).isPresent());
         // Second Rsk tx corresponds to this release
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(rskTx2.getHash().getBytes(), pegoutBtcTx, Coin.COIN.multiply(10));
+        verify(bridgeEventLogger).logReleaseBtcRequested(rskTx2.getHash().getBytes(), pegoutBtcTx, Coin.COIN.multiply(10));
 
         assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
     }
@@ -2393,7 +2442,7 @@ class BridgeSupportTest {
         // Tx is locked
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), txWithWitness.bitcoinSerialize(), height, pmtWithWitness.bitcoinSerialize());
         verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(txWithWitness.getHash(true), executionBlock.getNumber());
-        verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(txWithWitness.getHash(false), executionBlock.getNumber());
+        verify(provider).setHeightBtcTxhashAlreadyProcessed(txWithWitness.getHash(false), executionBlock.getNumber());
 
         BtcTransaction txWithoutWitness = new BtcTransaction(btcRegTestParams, txWithWitness.bitcoinSerialize());
         txWithoutWitness.setWitness(0, null);
@@ -2401,7 +2450,7 @@ class BridgeSupportTest {
 
         // Tx is NOT locked again!
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), txWithoutWitness.bitcoinSerialize(), height, pmtWithoutWitness.bitcoinSerialize());
-        verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(txWithoutWitness.getHash(), executionBlock.getNumber());
+        verify(provider).setHeightBtcTxhashAlreadyProcessed(txWithoutWitness.getHash(), executionBlock.getNumber());
 
         assertNotEquals(txWithWitness.getHash(true), txWithoutWitness.getHash());
     }
@@ -2526,7 +2575,7 @@ class BridgeSupportTest {
         assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
         PegoutsWaitingForConfirmations.Entry entry = (PegoutsWaitingForConfirmations.Entry) provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().toArray()[0];
         // Should have been logged with the migrated UTXO
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
+        verify(bridgeEventLogger).logReleaseBtcRequested(
             tx.getHash().getBytes(),
             entry.getBtcTransaction(),
             Coin.COIN
@@ -2653,7 +2702,7 @@ class BridgeSupportTest {
         assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
         PegoutsWaitingForConfirmations.Entry entry = (PegoutsWaitingForConfirmations.Entry) provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().toArray()[0];
         // Should have been logged with the migrated UTXO
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
+        verify(bridgeEventLogger).logReleaseBtcRequested(
             tx.getHash().getBytes(),
             entry.getBtcTransaction(),
             Coin.COIN
@@ -2781,7 +2830,7 @@ class BridgeSupportTest {
 
         bridgeSupport.updateCollections(tx);
 
-        verify(federationStorageProviderMock, times(1)).getNextFederationCreationBlockHeight(any());
+        verify(federationStorageProviderMock).getNextFederationCreationBlockHeight(any());
         verify(federationStorageProviderMock, never()).setActiveFederationCreationBlockHeight(any(Long.class));
         verify(federationStorageProviderMock, never()).clearNextFederationCreationBlockHeight();
 
@@ -2790,8 +2839,8 @@ class BridgeSupportTest {
         bridgeSupport.updateCollections(tx);
 
         verify(federationStorageProviderMock, times(2)).getNextFederationCreationBlockHeight(any());
-        verify(federationStorageProviderMock, times(1)).setActiveFederationCreationBlockHeight(1L);
-        verify(federationStorageProviderMock, times(1)).clearNextFederationCreationBlockHeight();
+        verify(federationStorageProviderMock).setActiveFederationCreationBlockHeight(1L);
+        verify(federationStorageProviderMock).clearNextFederationCreationBlockHeight();
     }
 
     @Test
@@ -2870,7 +2919,7 @@ class BridgeSupportTest {
             .build();
         bridgeSupport.updateCollections(tx);
 
-        verify(eventLogger, times(1)).logPegoutConfirmed(btcTx.getHash(), rskBlockNumber);
+        verify(eventLogger).logPegoutConfirmed(btcTx.getHash(), rskBlockNumber);
 
     }
 
@@ -7231,9 +7280,9 @@ class BridgeSupportTest {
 
         bridgeSupport.receiveHeader(btcBlock2);
 
-        verify(btcBlockStore, times(1)).put(storedBlock2);
-        verify(provider, times(1)).getReceiveHeadersLastTimestamp();
-        verify(provider, times(1)).setReceiveHeadersLastTimestamp(anyLong());
+        verify(btcBlockStore).put(storedBlock2);
+        verify(provider).getReceiveHeadersLastTimestamp();
+        verify(provider).setReceiveHeadersLastTimestamp(anyLong());
     }
 
     @Test
@@ -7273,8 +7322,8 @@ class BridgeSupportTest {
 
         bridgeSupport.receiveHeader(btcBlock2);
 
-        verify(btcBlockStore, times(1)).put(storedBlock2);
-        verify(provider, times(1)).setReceiveHeadersLastTimestamp(anyLong());
+        verify(btcBlockStore).put(storedBlock2);
+        verify(provider).setReceiveHeadersLastTimestamp(anyLong());
     }
 
     @Test
@@ -7346,7 +7395,7 @@ class BridgeSupportTest {
         int result = bridgeSupport.receiveHeader(btcBlock2);
 
         verify(btcBlockStore, never()).put(storedBlock);
-        verify(provider, times(1)).getReceiveHeadersLastTimestamp();
+        verify(provider).getReceiveHeadersLastTimestamp();
         verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
         assertEquals(-99, result);
     }
