@@ -279,7 +279,12 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
-    public void setSuperEvent(byte[] data) {
+    public void setSuperEvent(Transaction tx, byte[] data) {
+        RskAddress caller = tx.getSender(signatureCache);
+        if (!isCallerUnionBridgeContractAddress(caller)) {
+            throw new IllegalArgumentException();
+        }
+
         if (isNull(data) || data.length == 0) {
             clearSuperEvent();
             return;
@@ -299,7 +304,15 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
-    public void clearSuperEvent() {
+    public void clearSuperEvent(Transaction tx) {
+        RskAddress caller = tx.getSender(signatureCache);
+        if (!isCallerUnionBridgeContractAddress(caller)) {
+            throw new IllegalArgumentException();
+        }
+        clearSuperEvent();
+    }
+
+    private void clearSuperEvent() {
         byte[] previousSuperEventData = getSuperEvent();
 
         byte[] emptyData = new byte[]{};
