@@ -18,13 +18,12 @@
 package co.rsk.peg.vote;
 
 import co.rsk.core.RskAddress;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Authorizes an operation based
@@ -35,15 +34,11 @@ import java.util.List;
 public class AddressBasedAuthorizer {
     public enum MinimumRequiredCalculation { ONE, MAJORITY, ALL }
 
-    protected final List<byte[]> authorizedAddresses;
+    protected final Set<RskAddress> authorizedAddresses;
     protected final MinimumRequiredCalculation requiredCalculation;
 
-    // New private constructor that accepts addresses directly
     private AddressBasedAuthorizer(Set<RskAddress> authorizedAddresses, MinimumRequiredCalculation requiredCalculation) {
-        this.authorizedAddresses = authorizedAddresses
-            .stream()
-            .map(RskAddress::getBytes)
-            .toList();
+        this.authorizedAddresses = authorizedAddresses;
         this.requiredCalculation = requiredCalculation;
     }
 
@@ -60,13 +55,15 @@ public class AddressBasedAuthorizer {
      */
     @Deprecated(since = "8.0.0", forRemoval = true)
     public AddressBasedAuthorizer(List<ECKey> authorizedKeys, MinimumRequiredCalculation requiredCalculation) {
-        this.authorizedAddresses = authorizedKeys.stream().map(ECKey::getAddress).toList();
+        this.authorizedAddresses = authorizedKeys.stream()
+            .map(key -> new RskAddress(key.getAddress()))
+            .collect(Collectors.toSet());
         this.requiredCalculation = requiredCalculation;
     }
 
     public boolean isAuthorized(RskAddress sender) {
         return authorizedAddresses.stream()
-            .anyMatch(address -> Arrays.equals(address, sender.getBytes()));
+            .anyMatch(address -> address.equals(sender));
     }
 
     public boolean isAuthorized(Transaction tx, SignatureCache signatureCache) {
