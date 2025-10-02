@@ -2945,12 +2945,12 @@ public class BridgeSupport {
         return unionBridgeSupport.getSuperEvent();
     }
 
-    public void setSuperEvent(byte[] data) {
-        unionBridgeSupport.setSuperEvent(data);
+    public void setSuperEvent(Transaction tx, byte[] data) {
+        unionBridgeSupport.setSuperEvent(tx, data);
     }
 
-    public void clearSuperEvent() {
-        unionBridgeSupport.clearSuperEvent();
+    public void clearSuperEvent(Transaction tx) {
+        unionBridgeSupport.clearSuperEvent(tx);
     }
 
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {
