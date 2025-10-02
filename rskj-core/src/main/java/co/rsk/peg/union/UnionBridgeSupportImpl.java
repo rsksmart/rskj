@@ -11,6 +11,7 @@ import co.rsk.peg.utils.BridgeEventLogger;
 import java.math.BigInteger;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -274,8 +275,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     @Override
     public byte[] getSuperEvent() {
-        byte[] emptyArray = new byte[]{};
-        return storageProvider.getSuperEvent().orElse(emptyArray);
+        return storageProvider.getSuperEvent().orElse(ByteUtil.EMPTY_BYTE_ARRAY);
     }
 
     @Override
