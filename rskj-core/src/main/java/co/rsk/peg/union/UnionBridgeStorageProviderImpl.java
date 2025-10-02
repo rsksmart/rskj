@@ -200,7 +200,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
         return bridgeStorageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
-            BridgeSerializationUtils::deserializeSuperEvent
+            data -> data
         );
     }
 
