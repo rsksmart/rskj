@@ -26,6 +26,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.*;
@@ -1441,21 +1442,17 @@ class UnionBridgeSupportImplTest {
 
     @Test
     void getSuperEvent_whenNotSavedData_shouldReturnEmptyArray() {
-        // Arrange
-        byte[] emptyArray = new byte[]{};
-
         // Act & Assert
-        assertArrayEquals(emptyArray, unionBridgeSupport.getSuperEvent());
+        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, unionBridgeSupport.getSuperEvent());
     }
 
     @Test
     void getSuperEvent_whenEmptyDataSet_shouldReturnEmptyArray() {
         // Arrange
-        byte[] emptyArray = new byte[]{};
-        unionBridgeSupport.setSuperEvent(emptyArray);
+        unionBridgeSupport.setSuperEvent(ByteUtil.EMPTY_BYTE_ARRAY);
 
         // Act & Assert
-        assertArrayEquals(emptyArray, unionBridgeSupport.getSuperEvent());
+        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, unionBridgeSupport.getSuperEvent());
     }
 
     @Test
@@ -1464,8 +1461,7 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport.setSuperEvent(null);
 
         // Act & Assert
-        byte[] emptyArray = new byte[]{};
-        assertArrayEquals(emptyArray, unionBridgeSupport.getSuperEvent());
+        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, unionBridgeSupport.getSuperEvent());
     }
 
     @Test

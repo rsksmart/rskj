@@ -12,6 +12,7 @@ import java.math.BigInteger;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.ethereum.TestUtils;
+import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -1125,8 +1126,7 @@ class UnionBridgeStorageProviderImplTest {
     @Test
     void getSuperEvent_whenEmptyDataSet_shouldReturnEmpty() {
         // Arrange
-        byte[] emptyArray = new byte[]{};
-        unionBridgeStorageProvider.setSuperEvent(emptyArray);
+        unionBridgeStorageProvider.setSuperEvent(ByteUtil.EMPTY_BYTE_ARRAY);
 
         // Act
         Optional<byte[]> superEvent = unionBridgeStorageProvider.getSuperEvent();
@@ -1190,8 +1190,7 @@ class UnionBridgeStorageProviderImplTest {
         );
 
         // Act
-        byte[] emptyArray = new byte[]{};
-        unionBridgeStorageProvider.setSuperEvent(emptyArray);
+        unionBridgeStorageProvider.setSuperEvent(ByteUtil.EMPTY_BYTE_ARRAY);
 
         // Assert
         Optional<byte[]> superEvent = unionBridgeStorageProvider.getSuperEvent();
