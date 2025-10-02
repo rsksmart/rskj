@@ -275,7 +275,8 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     @Override
     public byte[] getSuperEvent() {
-        return storageProvider.getSuperEvent();
+        byte[] emptyArray = new byte[]{};
+        return storageProvider.getSuperEvent().orElse(emptyArray);
     }
 
     @Override
@@ -287,7 +288,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
         int maximumDataLength = 128;
         if (data.length > maximumDataLength) {
-            throw new IllegalArgumentException("SuperEvent has invalid data length.");
+            throw new IllegalArgumentException("SuperEvent data length is above maximum.");
         }
 
         byte[] previousSuperEventData = getSuperEvent();
