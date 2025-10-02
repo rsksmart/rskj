@@ -1086,13 +1086,12 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void getSuperEvent_whenNoDataSaved_shouldReturnEmptyArray() {
+    void getSuperEvent_whenNoDataSaved_shouldReturnNull() {
         // Act
         byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
 
         // Assert
-        byte[] emptyByte = new byte[]{};
-        assertArrayEquals(emptyByte, superEvent);
+        assertNull(superEvent);
     }
 
     @Test
@@ -1126,6 +1125,25 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
+    void getSuperEvent_whenDataSavedAndNewNullDataSet_shouldReturnSavedData() {
+        // since the logic will be managed from the support,
+        // that parses the null data as an empty array,
+        // this is not a realistic scenario.
+
+        // Arrange
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
+            superEventData
+        );
+
+        // Act
+        unionBridgeStorageProvider.setSuperEvent(null);
+
+        // Assert
+        assertEquals(superEventData, unionBridgeStorageProvider.getSuperEvent());
+    }
+
+    @Test
     void getSuperEvent_whenSavingNewData_shouldSaveNewData() {
         // Arrange
         storageAccessor.saveToRepository(
@@ -1134,7 +1152,7 @@ class UnionBridgeStorageProviderImplTest {
         );
         byte[] superEventSavedData = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
-            BridgeSerializationUtils::deserializeSuperEvent
+            data -> data
         );
 
         // Act
@@ -1146,20 +1164,19 @@ class UnionBridgeStorageProviderImplTest {
         // Assert
         byte[] superEventSavedDataAfterSaving = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
-            BridgeSerializationUtils::deserializeSuperEvent
+            data -> data
         );
         assertEquals(superEventSavedDataAfterSaving, newSuperEventData);
         assertEquals(newSuperEventData, unionBridgeStorageProvider.getSuperEvent());
     }
 
     @Test
-    void setSuperEvent_nullData_shouldSetEmptyArray() {
+    void setSuperEvent_nullData_shouldSetNull() {
         // Act
         unionBridgeStorageProvider.setSuperEvent(null);
 
         // Assert
-        byte[] emptyByte = new byte[]{};
-        assertArrayEquals(emptyByte, unionBridgeStorageProvider.getSuperEvent());
+        assertNull(unionBridgeStorageProvider.getSuperEvent());
     }
 
     @Test
@@ -1177,18 +1194,17 @@ class UnionBridgeStorageProviderImplTest {
     private void assertEmptySuperEventDataIsStored() {
         byte[] superEvent = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
-            BridgeSerializationUtils::deserializeSuperEvent
+            data -> data
         );
-        byte[] emptyByte = new byte[]{};
 
-        assertArrayEquals(emptyByte, superEvent);
+        assertNull(superEvent);
     }
 
-    private void assertSuperEventDataIsStored(byte[] data) {
+    private void assertSuperEventDataIsStored(byte[] expectedData) {
         byte[] superEvent = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
-            BridgeSerializationUtils::deserializeSuperEvent
+            data -> data
         );
-        assertArrayEquals(data, superEvent);
+        assertArrayEquals(expectedData, superEvent);
     }
 }
