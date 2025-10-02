@@ -936,11 +936,7 @@ public enum BridgeMethods {
             new String[]{}
         ),
         fixedCost(8_000L), // TODO define final cost
-        Bridge.executeIfAuthorized(
-            bridgeConstants -> bridgeConstants.getUnionBridgeConstants().getSuperEventAuthorizer(),
-            (BridgeMethodExecutorVoid) Bridge::setSuperEvent,
-            "setSuperEvent"
-        ),
+        (BridgeMethodExecutorVoid) Bridge::setSuperEvent,
         activations -> activations.isActive(RSKIP529),
         fixedPermission(false)
     ),
@@ -951,11 +947,7 @@ public enum BridgeMethods {
             new String[]{}
         ),
         fixedCost(8_000L), // TODO define final cost
-        Bridge.executeIfAuthorized(
-            bridgeConstants -> bridgeConstants.getUnionBridgeConstants().getSuperEventAuthorizer(),
-            (BridgeMethodExecutorVoid) Bridge::clearSuperEvent,
-            "clearSuperEvent"
-        ),
+        (BridgeMethodExecutorVoid) Bridge::clearSuperEvent,
         activations -> activations.isActive(RSKIP529),
         fixedPermission(false)
     ),
