@@ -1540,12 +1540,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public void setSuperEvent(Object[] args) {
         logger.trace("setSuperEvent");
         byte[] data = (byte[]) args[0];
-        bridgeSupport.setSuperEvent(data);
+        bridgeSupport.setSuperEvent(rskTx, data);
     }
 
     public void clearSuperEvent(Object[] args) {
         logger.trace("clearSuperEvent");
-        bridgeSupport.clearSuperEvent();
+        bridgeSupport.clearSuperEvent(rskTx);
     }
 
     protected static BridgeMethods.BridgeMethodExecutor executeIfAuthorized(
