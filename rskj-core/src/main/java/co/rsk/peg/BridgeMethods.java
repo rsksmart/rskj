@@ -1030,7 +1030,7 @@ public enum BridgeMethods {
         boolean isTrue(Bridge bridge);
     }
 
-    public interface AuthorizerProvider {
+    protected interface AuthorizerProvider {
         AddressBasedAuthorizer provide(BridgeConstants bridgeConstants);
     }
 
