@@ -88,15 +88,15 @@ class BlockHeaderContractTest {
     private CallTransaction.Function getGasLimitFunction;
     private CallTransaction.Function getGasUsedFunction;
     private CallTransaction.Function getDifficultyFunction;
+    private CallTransaction.Function getCumulativeDifficultyFunction;
     private CallTransaction.Function getBitcoinHeaderFunction;
     private CallTransaction.Function getUncleCoinbaseAddressFunction;
-    private SignatureCache signatureCache;
 
     @BeforeEach
     void setUp() {
         config = new TestSystemProperties();
         blockFactory = new BlockFactory(config.getActivationConfig());
-        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, signatureCache);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -115,6 +115,7 @@ class BlockHeaderContractTest {
         getGasLimitFunction = getContractFunction(contract, GetGasLimit.class);
         getGasUsedFunction = getContractFunction(contract, GetGasUsed.class);
         getDifficultyFunction = getContractFunction(contract, GetDifficulty.class);
+        getCumulativeDifficultyFunction = getContractFunction(contract, GetSuperBlockCumulativeDifficulty.class);
         getBitcoinHeaderFunction = getContractFunction(contract, GetBitcoinHeader.class);
         getUncleCoinbaseAddressFunction = getContractFunction(contract, GetUncleCoinbaseAddress.class);
 
@@ -353,6 +354,23 @@ class BlockHeaderContractTest {
     }
 
     @Test
+    void getCumulativeDifficultyForBlockAtDepth1000() throws VMException {
+        buildBlockchainOfLength(4000);
+
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
+
+        byte[] encodedResult = contract.execute(getCumulativeDifficultyFunction.encode(new BigInteger("1000")));
+        Object[] decodedResult = getCumulativeDifficultyFunction.decodeResult(encodedResult);
+
+        assertEquals(1, decodedResult.length);
+
+        byte[] rskDifficulty = (byte[]) decodedResult[0];
+
+        assertTrue(rskDifficulty.length > 0);
+        assertEquals(RSK_DIFFICULTY, new BigInteger(rskDifficulty));
+    }
+
+    @Test
     void blockBeyondMaximumBlockDepth() throws VMException {
         buildBlockchainOfLength(5000);
 
@@ -545,7 +563,7 @@ class BlockHeaderContractTest {
 
     @Test
     void hasNineMethods() {
-        Assertions.assertEquals(9, contract.getMethods().size());
+        Assertions.assertEquals(10, contract.getMethods().size());
     }
 
     @Test
@@ -581,6 +599,11 @@ class BlockHeaderContractTest {
     @Test
     void hasGetDifficulty() {
         assertHasMethod(GetDifficulty.class, true);
+    }
+
+    @Test
+    void hasGetCumulativeDifficulty() {
+        assertHasMethod(GetSuperBlockCumulativeDifficulty.class, true);
     }
 
     @Test
