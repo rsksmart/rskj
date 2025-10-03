@@ -28,6 +28,8 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     private Boolean unionBridgeReleaseEnabled;
     private byte[] superEvent;
     private boolean isSuperEventSet;
+    private byte[] baseEvent;
+    private boolean isBaseEventSet;
 
     public UnionBridgeStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -41,6 +43,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
         saveRequestEnabled();
         saveReleaseEnabled();
         saveSuperEvent();
+        saveBaseEvent();
     }
 
     private void saveReleaseEnabled() {
@@ -232,6 +235,47 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
         bridgeStorageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
             superEvent
+        );
+    }
+
+    @Override
+    public byte[] getBaseEvent() {
+        if (!isNull(baseEvent) && baseEvent.length > 0) {
+            return baseEvent;
+        }
+
+        // Return empty if the base event was explicitly set to null or empty
+        if (isBaseEventSet) {
+            return EMPTY_BYTE_ARRAY;
+        }
+
+        baseEvent = bridgeStorageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
+            data -> data
+        );
+        return Optional.ofNullable(baseEvent).orElse(EMPTY_BYTE_ARRAY);
+    }
+
+    @Override
+    public void setBaseEvent(byte[] data) {
+        this.baseEvent = data;
+        this.isBaseEventSet = true;
+    }
+
+    @Override
+    public void clearBaseEvent() {
+        logger.info("[clearBaseEvent] Clearing base event.");
+        setBaseEvent(null);
+    }
+
+    private void saveBaseEvent() {
+        if (!isBaseEventSet) {
+            return;
+        }
+
+        bridgeStorageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
+            baseEvent
         );
     }
 }

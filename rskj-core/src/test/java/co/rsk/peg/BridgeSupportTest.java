@@ -1219,6 +1219,55 @@ class BridgeSupportTest {
         }
 
         @Test
+        void setBaseEvent_shouldSetBaseEvent() {
+            // arrange
+            unionBridgeSupport = mock(UnionBridgeSupport.class);
+            bridgeSupport = bridgeSupportBuilder
+                .withSignatureCache(signatureCache)
+                .withUnionBridgeSupport(unionBridgeSupport)
+                .build();
+
+            // act
+            byte[] baseEvent = new byte[]{(byte) 0x123456};
+            bridgeSupport.setBaseEvent(rskTx, baseEvent);
+
+            // assert
+            verify(unionBridgeSupport).setBaseEvent(rskTx, baseEvent);
+        }
+
+        @Test
+        void clearBaseEvent_shouldClearBaseEvent() {
+            // arrange
+            unionBridgeSupport = mock(UnionBridgeSupport.class);
+            bridgeSupport = bridgeSupportBuilder
+                .withSignatureCache(signatureCache)
+                .withUnionBridgeSupport(unionBridgeSupport)
+                .build();
+
+            // act
+            bridgeSupport.clearBaseEvent(rskTx);
+
+            // assert
+            verify(unionBridgeSupport).clearBaseEvent(rskTx);
+        }
+
+        @Test
+        void getBaseEvent_shouldGetBaseEvent() {
+            // arrange
+            unionBridgeSupport = mock(UnionBridgeSupport.class);
+            bridgeSupport = bridgeSupportBuilder
+                .withSignatureCache(signatureCache)
+                .withUnionBridgeSupport(unionBridgeSupport)
+                .build();
+
+            // act
+            bridgeSupport.getBaseEvent();
+
+            // assert
+            verify(unionBridgeSupport).getBaseEvent();
+        }
+
+        @Test
         void save() {
             // arrange
             unionBridgeSupport = mock(UnionBridgeSupport.class);
