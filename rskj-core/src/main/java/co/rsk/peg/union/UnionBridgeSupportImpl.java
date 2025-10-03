@@ -1,6 +1,5 @@
 package co.rsk.peg.union;
 
-import static java.util.Objects.isNull;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -93,7 +92,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         final String REQUEST_UNION_RBTC_TAG = "requestUnionRbtc";
 
         RskAddress caller = tx.getSender(signatureCache);
-        if (!isCallerUnionBridgeContractAddress(caller)) {
+        if (callerIsNotUnionBridge(caller)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
@@ -118,17 +117,23 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return isRequestEnabled;
     }
 
-    private boolean isCallerUnionBridgeContractAddress(RskAddress callerAddress) {
+    private void validateCallerIsUnionBridge(RskAddress callerAddress) {
+        if (callerIsNotUnionBridge(callerAddress)) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private boolean callerIsNotUnionBridge(RskAddress callerAddress) {
         RskAddress unionBridgeContractAddress = getUnionBridgeContractAddress();
-        boolean isCallerUnionBridgeContractAddress = callerAddress.equals(unionBridgeContractAddress);
-        if (!isCallerUnionBridgeContractAddress) {
+        boolean callerIsNotUnionBridge = !callerAddress.equals(unionBridgeContractAddress);
+        if (callerIsNotUnionBridge) {
             logger.warn(
-                "[isCallerUnionBridgeContractAddress] Caller is not the Union Bridge Contract Address. Caller address: {}, Union Bridge Contract Address: {}",
+                "[callerIsNotUnionBridge] Caller address {} does not match Union Bridge address {}",
                 callerAddress,
                 unionBridgeContractAddress
             );
         }
-        return isCallerUnionBridgeContractAddress;
+        return callerIsNotUnionBridge;
     }
 
     private boolean isAmountRequestedValid(Coin amountRequested) {
@@ -193,7 +198,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         final RskAddress caller = tx.getSender(signatureCache);
         final Coin releaseUnionRbtcValueInWeis = tx.getValue();
 
-        if (!isCallerUnionBridgeContractAddress(caller)) {
+        if (callerIsNotUnionBridge(caller)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
@@ -276,17 +281,15 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     @Override
     public byte[] getSuperEvent() {
-        return storageProvider.getSuperEvent().orElse(ByteUtil.EMPTY_BYTE_ARRAY);
+        return storageProvider.getSuperEvent();
     }
 
     @Override
     public void setSuperEvent(Transaction tx, byte[] data) {
         RskAddress caller = tx.getSender(signatureCache);
-        if (!isCallerUnionBridgeContractAddress(caller)) {
-            throw new IllegalArgumentException();
-        }
+        validateCallerIsUnionBridge(caller);
 
-        if (isNull(data) || data.length == 0) {
+        if (data.length == 0) {
             clearSuperEvent();
             return;
         }
@@ -307,9 +310,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     @Override
     public void clearSuperEvent(Transaction tx) {
         RskAddress caller = tx.getSender(signatureCache);
-        if (!isCallerUnionBridgeContractAddress(caller)) {
-            throw new IllegalArgumentException();
-        }
+        validateCallerIsUnionBridge(caller);
         clearSuperEvent();
     }
 
