@@ -2953,6 +2953,18 @@ public class BridgeSupport {
         unionBridgeSupport.clearSuperEvent(tx);
     }
 
+    public byte[] getBaseEvent() {
+        return unionBridgeSupport.getBaseEvent();
+    }
+
+    public void setBaseEvent(Transaction tx, byte[] data) {
+        unionBridgeSupport.setBaseEvent(tx, data);
+    }
+
+    public void clearBaseEvent(Transaction tx) {
+        unionBridgeSupport.clearBaseEvent(tx);
+    }
+
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {
         return createFlyoverFederationInformation(flyoverDerivationHash, getActiveFederation());
     }
