@@ -2,6 +2,7 @@ package co.rsk.peg.union;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -194,21 +195,21 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     }
 
     @Override
-    public Optional<byte[]> getSuperEvent() {
+    public byte[] getSuperEvent() {
         if (!isNull(superEvent) && superEvent.length > 0) {
-            return Optional.of(superEvent);
+            return superEvent;
         }
 
         // Return empty if the super event was explicitly set to null or empty
         if (isSuperEventSet) {
-            return Optional.empty();
+            return EMPTY_BYTE_ARRAY;
         }
 
         superEvent = bridgeStorageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
             data -> data
         );
-        return Optional.ofNullable(superEvent);
+        return Optional.ofNullable(superEvent).orElse(EMPTY_BYTE_ARRAY);
     }
 
     @Override
