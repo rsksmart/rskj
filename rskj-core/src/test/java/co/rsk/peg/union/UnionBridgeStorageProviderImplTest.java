@@ -1,6 +1,7 @@
 package co.rsk.peg.union;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -12,7 +13,6 @@ import java.math.BigInteger;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.ethereum.TestUtils;
-import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -1089,10 +1089,10 @@ class UnionBridgeStorageProviderImplTest {
     @Test
     void getSuperEvent_whenNoDataSaved_shouldReturnEmpty() {
         // Act
-        Optional<byte[]> superEvent = unionBridgeStorageProvider.getSuperEvent();
+        byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
 
         // Assert
-        assertTrue(superEvent.isEmpty());
+        assertArrayEquals(EMPTY_BYTE_ARRAY, superEvent);
     }
 
     @Test
@@ -1104,11 +1104,10 @@ class UnionBridgeStorageProviderImplTest {
         );
 
         // Act
-        Optional<byte[]> superEvent = unionBridgeStorageProvider.getSuperEvent();
+        byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
 
         // Assert
-        assertTrue(superEvent.isPresent());
-        assertEquals(superEventData, superEvent.get());
+        assertArrayEquals(superEventData, superEvent);
     }
 
     @Test
@@ -1117,22 +1116,22 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setSuperEvent(null);
 
         // Act
-        Optional<byte[]> superEvent = unionBridgeStorageProvider.getSuperEvent();
+        byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
 
         // Assert
-        assertTrue(superEvent.isEmpty());
+        assertArrayEquals(EMPTY_BYTE_ARRAY, superEvent);
     }
 
     @Test
     void getSuperEvent_whenEmptyDataSet_shouldReturnEmpty() {
         // Arrange
-        unionBridgeStorageProvider.setSuperEvent(ByteUtil.EMPTY_BYTE_ARRAY);
+        unionBridgeStorageProvider.setSuperEvent(EMPTY_BYTE_ARRAY);
 
         // Act
-        Optional<byte[]> superEvent = unionBridgeStorageProvider.getSuperEvent();
+        byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
 
         // Assert
-        assertTrue(superEvent.isEmpty());
+        assertArrayEquals(EMPTY_BYTE_ARRAY, superEvent);
     }
 
     @Test
@@ -1141,11 +1140,10 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setSuperEvent(superEventData);
 
         // Act
-        Optional<byte[]> superEvent = unionBridgeStorageProvider.getSuperEvent();
+        byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
 
         // Assert
-        assertTrue(superEvent.isPresent());
-        assertEquals(superEventData, superEvent.get());
+        assertArrayEquals(superEventData, superEvent);
     }
 
     @Test
@@ -1160,9 +1158,8 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setSuperEvent(newSuperEventData);
 
         // Assert
-        Optional<byte[]> superEvent = unionBridgeStorageProvider.getSuperEvent();
-        assertTrue(superEvent.isPresent());
-        assertEquals(newSuperEventData, superEvent.get());
+        byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
+        assertArrayEquals(newSuperEventData, superEvent);
     }
 
     @Test
@@ -1177,8 +1174,8 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setSuperEvent(null);
 
         // Assert
-        Optional<byte[]> superEvent = unionBridgeStorageProvider.getSuperEvent();
-        assertTrue(superEvent.isEmpty());
+        byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
+        assertArrayEquals(EMPTY_BYTE_ARRAY, superEvent);
     }
 
     @Test
@@ -1190,11 +1187,11 @@ class UnionBridgeStorageProviderImplTest {
         );
 
         // Act
-        unionBridgeStorageProvider.setSuperEvent(ByteUtil.EMPTY_BYTE_ARRAY);
+        unionBridgeStorageProvider.setSuperEvent(EMPTY_BYTE_ARRAY);
 
         // Assert
-        Optional<byte[]> superEvent = unionBridgeStorageProvider.getSuperEvent();
-        assertTrue(superEvent.isEmpty());
+        byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
+        assertArrayEquals(EMPTY_BYTE_ARRAY, superEvent);
     }
 
     @Test
@@ -1212,21 +1209,20 @@ class UnionBridgeStorageProviderImplTest {
 
         unionBridgeStorageProvider.setSuperEvent(newSuperEventData);
         // before saving, value should have not changed in storage
-        assertNotEquals(superEventSavedData, newSuperEventData);
+        assertNotEquals(newSuperEventData, superEventSavedData);
         // after saving, value should have changed in storage
         unionBridgeStorageProvider.save();
         byte[] superEventSavedDataAfterSaving = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
             data -> data
         );
-        assertEquals(superEventSavedDataAfterSaving, newSuperEventData);
+        assertArrayEquals(newSuperEventData, superEventSavedDataAfterSaving);
 
         // Act
-        Optional<byte[]> superEvent = unionBridgeStorageProvider.getSuperEvent();
+        byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
 
         // Assert
-        assertTrue(superEvent.isPresent());
-        assertEquals(newSuperEventData, superEvent.get());
+        assertArrayEquals(newSuperEventData, superEvent);
     }
 
     @Test
