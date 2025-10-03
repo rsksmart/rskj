@@ -1250,10 +1250,10 @@ class UnionBridgeStorageProviderImplTest {
     @Test
     void getBaseEvent_whenNoDataSaved_shouldReturnEmpty() {
         // Act
-        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+        byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
 
         // Assert
-        assertTrue(baseEvent.isEmpty());
+        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, baseEvent);
     }
 
     @Test
@@ -1265,11 +1265,10 @@ class UnionBridgeStorageProviderImplTest {
         );
 
         // Act
-        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+        byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
 
         // Assert
-        assertTrue(baseEvent.isPresent());
-        assertEquals(baseEventData, baseEvent.get());
+        assertArrayEquals(baseEventData, baseEvent);
     }
 
     @Test
@@ -1278,10 +1277,10 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setBaseEvent(null);
 
         // Act
-        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+        byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
 
         // Assert
-        assertTrue(baseEvent.isEmpty());
+        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, baseEvent);
     }
 
     @Test
@@ -1290,10 +1289,10 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setBaseEvent(ByteUtil.EMPTY_BYTE_ARRAY);
 
         // Act
-        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+        byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
 
         // Assert
-        assertTrue(baseEvent.isEmpty());
+        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, baseEvent);
     }
 
     @Test
@@ -1302,11 +1301,10 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setBaseEvent(baseEventData);
 
         // Act
-        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+        byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
 
         // Assert
-        assertTrue(baseEvent.isPresent());
-        assertEquals(baseEventData, baseEvent.get());
+        assertArrayEquals(baseEventData, baseEvent);
     }
 
     @Test
@@ -1321,9 +1319,8 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setBaseEvent(newBaseEventData);
 
         // Assert
-        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
-        assertTrue(baseEvent.isPresent());
-        assertEquals(newBaseEventData, baseEvent.get());
+        byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
+        assertArrayEquals(newBaseEventData, baseEvent);
     }
 
     @Test
@@ -1338,8 +1335,8 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setBaseEvent(null);
 
         // Assert
-        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
-        assertTrue(baseEvent.isEmpty());
+        byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
+        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, baseEvent);
     }
 
     @Test
@@ -1354,8 +1351,8 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setBaseEvent(ByteUtil.EMPTY_BYTE_ARRAY);
 
         // Assert
-        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
-        assertTrue(baseEvent.isEmpty());
+        byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
+        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, baseEvent);
     }
 
     @Test
@@ -1372,21 +1369,20 @@ class UnionBridgeStorageProviderImplTest {
 
         unionBridgeStorageProvider.setBaseEvent(newBaseEventData);
         // before saving, value should have not changed in storage
-        assertNotEquals(baseEventSavedData, newBaseEventData);
+        assertNotEquals(newBaseEventData, baseEventSavedData);
         // after saving, value should have changed in storage
         unionBridgeStorageProvider.save();
         byte[] baseEventSavedDataAfterSaving = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
             data -> data
         );
-        assertEquals(baseEventSavedDataAfterSaving, newBaseEventData);
+        assertArrayEquals(newBaseEventData, baseEventSavedDataAfterSaving);
 
         // Act
-        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+        byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
 
         // Assert
-        assertTrue(baseEvent.isPresent());
-        assertEquals(newBaseEventData, baseEvent.get());
+        assertArrayEquals(newBaseEventData, baseEvent);
     }
 
     @Test
