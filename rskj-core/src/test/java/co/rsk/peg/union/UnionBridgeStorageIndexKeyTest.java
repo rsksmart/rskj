@@ -15,11 +15,9 @@ class UnionBridgeStorageIndexKeyTest {
         DataWord expectedKey = switch (key) {
             case UNION_BRIDGE_CONTRACT_ADDRESS -> DataWord.fromLongString("unionBridgeContractAddress");
             case UNION_BRIDGE_LOCKING_CAP -> DataWord.fromLongString("unionBridgeLockingCap");
-            case UNION_BRIDGE_INCREASE_LOCKING_CAP_ELECTION -> DataWord.fromLongString("unionBridgeIncreaseLockingCapElection");
             case WEIS_TRANSFERRED_TO_UNION_BRIDGE -> DataWord.fromLongString("weisTransferredToUnionBridge");
             case UNION_BRIDGE_REQUEST_ENABLED -> DataWord.fromLongString("unionBridgeRequestEnabled");
             case UNION_BRIDGE_RELEASE_ENABLED -> DataWord.fromLongString("unionBridgeReleaseEnabled");
-            case UNION_BRIDGE_TRANSFER_PERMISSIONS_ELECTION -> DataWord.fromLongString("unionBridgeTransferPermissionsElection");
         };
         
         assertEquals(expectedKey, key.getKey());

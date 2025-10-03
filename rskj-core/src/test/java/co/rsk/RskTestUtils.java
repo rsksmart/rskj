@@ -2,15 +2,18 @@ package co.rsk;
 
 import static org.mockito.Mockito.mock;
 
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
+import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -36,6 +39,11 @@ public class RskTestUtils {
         return Arrays.stream(seeds)
             .map(RskTestUtils::getEcKeyFromSeed)
             .toList();
+    }
+
+    public static RskAddress generateAddress(String seed) {
+        ECKey key = getEcKeyFromSeed(seed);
+        return new RskAddress(key.getAddress());
     }
 
     public static Block createRskBlock() {

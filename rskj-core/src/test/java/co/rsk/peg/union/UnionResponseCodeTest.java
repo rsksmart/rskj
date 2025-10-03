@@ -40,10 +40,4 @@ class UnionResponseCodeTest {
         // Arrange
         Assertions.assertEquals(-3, UnionResponseCode.RELEASE_DISABLED.getCode());
     }
-
-    @Test
-    void getCode_whenEnvironmentDisabled_shouldReturnCode() {
-        // Arrange
-        Assertions.assertEquals(-3, UnionResponseCode.ENVIRONMENT_DISABLED.getCode());
-    }
 }

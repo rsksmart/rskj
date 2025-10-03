@@ -5,14 +5,9 @@ import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.vote.ABICallElection;
-import co.rsk.peg.vote.ABICallSpec;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.math.BigInteger;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -54,21 +49,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         final String SET_UNION_BRIDGE_ADDRESS_TAG = "setUnionBridgeContractAddressForTestnet";
         logger.info("[{}] Setting new union bridge contract address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, unionBridgeContractAddress);
 
-        // Check if the network is MAINNET as the contract address can only be set in testnet or regtest
-        if (isCurrentEnvironmentMainnet()) {
-            logger.warn(
-                "[{}] Union Bridge Contract Address can only be set in Testnet and RegTest environments. Current network: {}",
-                SET_UNION_BRIDGE_ADDRESS_TAG,
-                constants.getBtcParams().getId()
-            );
-            return UnionResponseCode.ENVIRONMENT_DISABLED;
-        }
-
-        AddressBasedAuthorizer authorizer = constants.getChangeUnionBridgeContractAddressAuthorizer();
-        if (!isAuthorized(tx, authorizer)) {
-            return UnionResponseCode.UNAUTHORIZED_CALLER;
-        }
-
         RskAddress currentUnionBridgeAddress = getUnionBridgeContractAddress();
         storageProvider.setAddress(unionBridgeContractAddress);
         logger.info(
@@ -89,50 +69,16 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     public UnionResponseCode increaseLockingCap(Transaction tx, Coin newCap) {
         final String INCREASE_LOCKING_CAP_TAG = "increaseLockingCap";
 
-        AddressBasedAuthorizer authorizer = constants.getChangeLockingCapAuthorizer();
-        if (!isAuthorized(tx, authorizer)) {
-            return UnionResponseCode.UNAUTHORIZED_CALLER;
-        }
-
         if (!isValidLockingCap(newCap)) {
             return UnionResponseCode.INVALID_VALUE;
         }
 
         RskAddress txSender = tx.getSender(signatureCache);
-
-        ABICallElection increaseLockingCapElection = storageProvider.getIncreaseLockingCapElection(
-            authorizer);
-        ABICallSpec increaseLockingCapVote = new ABICallSpec(INCREASE_LOCKING_CAP_TAG, new byte[][]{
-            BridgeSerializationUtils.serializeRskCoin(newCap)});
-
-        boolean successfulVote = increaseLockingCapElection.vote(increaseLockingCapVote, txSender);
-        if (!successfulVote) {
-            logger.warn("[{}] Unsuccessful vote. Sender: {}, newUnionLockingCap: {}", INCREASE_LOCKING_CAP_TAG, txSender, newCap);
-            return UnionResponseCode.GENERIC_ERROR;
-        }
-
-        Optional<ABICallSpec> electionWinner = increaseLockingCapElection.getWinner();
-        if (electionWinner.isEmpty()) {
-            logger.info("[{}] Successful vote. Sender: {}, newUnionLockingCap: {}", INCREASE_LOCKING_CAP_TAG, txSender, newCap);
-            return UnionResponseCode.SUCCESS;
-        }
-
-        ABICallSpec winner = electionWinner.get();
-        Coin winnerLockingCap;
-        try {
-            winnerLockingCap = BridgeSerializationUtils.deserializeRskCoin(winner.getArguments()[0]);
-        } catch (Exception e) {
-            // This block should not be reached if the serialization and deserialization are consistent.
-            logger.warn("[{}] Exception deserializing winner value", INCREASE_LOCKING_CAP_TAG, e);
-            return UnionResponseCode.GENERIC_ERROR;
-        }
-
         Coin lockingCapBeforeUpdate = getLockingCap();
-        storageProvider.setLockingCap(winnerLockingCap);
-        eventLogger.logUnionLockingCapIncreased(txSender, lockingCapBeforeUpdate, winnerLockingCap);
+        storageProvider.setLockingCap(newCap);
+        eventLogger.logUnionLockingCapIncreased(txSender, lockingCapBeforeUpdate, newCap);
         logger.info("[{}] Union Locking Cap has been increased. Previous value: {}. New value: {}",
-            INCREASE_LOCKING_CAP_TAG, lockingCapBeforeUpdate, winnerLockingCap);
-        increaseLockingCapElection.clear();
+            INCREASE_LOCKING_CAP_TAG, lockingCapBeforeUpdate, newCap);
         return UnionResponseCode.SUCCESS;
     }
 
@@ -295,11 +241,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         boolean releaseEnabled) {
         final String SET_TRANSFER_PERMISSIONS_TAG = "setTransferPermissions";
 
-        AddressBasedAuthorizer authorizer = constants.getChangeTransferPermissionsAuthorizer();
-        if (!isAuthorized(tx, authorizer)) {
-            return UnionResponseCode.UNAUTHORIZED_CALLER;
-        }
-
         if (isTransferPermissionStateAlreadySet(requestEnabled, releaseEnabled)) {
             logger.info(
                 "[{}] Transfer permissions are already set to the requested values. Request enabled: {}, Release enabled: {}",
@@ -311,51 +252,16 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         }
 
         RskAddress txSender = tx.getSender(signatureCache);
-        ABICallElection setTransferPermissionsElection = storageProvider.getTransferPermissionsElection(
-            authorizer);
-        ABICallSpec setTransferPermissionsVote = new ABICallSpec(SET_TRANSFER_PERMISSIONS_TAG, new byte[][]{
-            BridgeSerializationUtils.serializeBoolean(requestEnabled),
-            BridgeSerializationUtils.serializeBoolean(releaseEnabled)
-        });
+        storageProvider.setUnionBridgeRequestEnabled(requestEnabled);
+        storageProvider.setUnionBridgeReleaseEnabled(releaseEnabled);
 
-        boolean successfulVote = setTransferPermissionsElection.vote(setTransferPermissionsVote, txSender);
-        if (!successfulVote) {
-            logger.warn("[{}] Unsuccessful vote. Sender: {}, requestEnabled: {}, releaseEnabled: {}.", SET_TRANSFER_PERMISSIONS_TAG, txSender, requestEnabled, releaseEnabled);
-            return UnionResponseCode.GENERIC_ERROR;
-        }
-
-        Optional<ABICallSpec> electionWinner = setTransferPermissionsElection.getWinner();
-        if (electionWinner.isEmpty()) {
-            logger.info("[{}] Successful vote. Sender: {}, requestEnabled: {}, releaseEnabled: {}.", SET_TRANSFER_PERMISSIONS_TAG, txSender, requestEnabled, releaseEnabled);
-            return UnionResponseCode.SUCCESS;
-        }
-
-        ABICallSpec winner = electionWinner.get();
-        Boolean winnerRequestEnabled;
-        Boolean winnerReleaseEnabled;
-        try {
-            winnerRequestEnabled = BridgeSerializationUtils.deserializeBoolean(
-                winner.getArguments()[0]);
-            winnerReleaseEnabled = BridgeSerializationUtils.deserializeBoolean(
-                winner.getArguments()[1]);
-        } catch (Exception e) {
-            // This block should not be reached if the serialization and deserialization are consistent.
-            logger.warn("[{}] Exception deserializing winner value", SET_TRANSFER_PERMISSIONS_TAG, e);
-            return UnionResponseCode.GENERIC_ERROR;
-        }
-
-        storageProvider.setUnionBridgeRequestEnabled(winnerRequestEnabled);
-        storageProvider.setUnionBridgeReleaseEnabled(winnerReleaseEnabled);
-
-        eventLogger.logUnionBridgeTransferPermissionsUpdated(txSender, winnerRequestEnabled, winnerReleaseEnabled);
+        eventLogger.logUnionBridgeTransferPermissionsUpdated(txSender, requestEnabled, releaseEnabled);
         logger.info(
             "[{}] Transfer permissions have been updated. Request enabled: {}, Release enabled: {}",
             SET_TRANSFER_PERMISSIONS_TAG,
-            winnerRequestEnabled,
-            winnerReleaseEnabled
+            requestEnabled,
+            releaseEnabled
         );
-
-        setTransferPermissionsElection.clear();
         return UnionResponseCode.SUCCESS;
     }
 
@@ -374,13 +280,5 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     private boolean isCurrentEnvironmentMainnet() {
         String currentNetworkId = constants.getBtcParams().getId();
         return currentNetworkId.equals(NetworkParameters.ID_MAINNET);
-    }
-
-    private boolean isAuthorized(Transaction tx, AddressBasedAuthorizer authorizer) {
-        boolean isAuthorized = authorizer.isAuthorized(tx, signatureCache);
-        if (!isAuthorized) {
-            logger.warn("[isAuthorized] Caller is not authorized to call this method. Caller address: {}", tx.getSender());
-        }
-        return isAuthorized;
     }
 }

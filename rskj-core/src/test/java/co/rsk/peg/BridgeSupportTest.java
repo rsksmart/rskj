@@ -884,8 +884,6 @@ class BridgeSupportTest {
         private static Stream<Arguments> unionResponseCodeProvider() {
             return Stream.of(
                 Arguments.of(UnionResponseCode.SUCCESS),
-                Arguments.of(UnionResponseCode.ENVIRONMENT_DISABLED),
-                Arguments.of(UnionResponseCode.UNAUTHORIZED_CALLER),
                 Arguments.of(UnionResponseCode.GENERIC_ERROR)
             );
         }
@@ -1011,8 +1009,7 @@ class BridgeSupportTest {
             return Stream.of(
                 Arguments.of(UnionResponseCode.SUCCESS),
                 Arguments.of(UnionResponseCode.GENERIC_ERROR),
-                Arguments.of(UnionResponseCode.INVALID_VALUE),
-                Arguments.of(UnionResponseCode.UNAUTHORIZED_CALLER)
+                Arguments.of(UnionResponseCode.INVALID_VALUE)
             );
         }
 
@@ -1155,22 +1152,6 @@ class BridgeSupportTest {
             );
 
             assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
-        }
-
-        @Test
-        void setTransferPermissions_whenUnauthorizedCaller_shouldReturnUnauthorizedResponseCode() {
-            // arrange
-            unionBridgeSupport = mock(UnionBridgeSupport.class);
-            when(unionBridgeSupport.setTransferPermissions(any(), anyBoolean(), anyBoolean()))
-                .thenReturn(UnionResponseCode.UNAUTHORIZED_CALLER);
-            bridgeSupport = bridgeSupportBuilder.withUnionBridgeSupport(unionBridgeSupport).build();
-
-            // act
-            UnionResponseCode responseCode = bridgeSupport.setUnionBridgeTransferPermissions(transaction, true, false);
-
-            // assert
-            assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, responseCode);
-            verify(unionBridgeSupport, times(1)).setTransferPermissions(transaction, true, false);
         }
 
         @Test
