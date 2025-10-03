@@ -60,7 +60,7 @@ public class BlockHeaderContract extends NativeContract {
                 new GetDifficulty(getExecutionEnvironment(), this.blockAccessor),
                 new GetBitcoinHeader(getExecutionEnvironment(), this.blockAccessor),
                 new GetUncleCoinbaseAddress(getExecutionEnvironment(), this.blockAccessor),
-                new GetSuperBlockCumulativeDifficulty(getExecutionEnvironment(), this.blockAccessor)
+                new GetCumulativeDifficulty(getExecutionEnvironment(), this.blockAccessor)
         );
     }
 
