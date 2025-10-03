@@ -19,6 +19,7 @@
 
 package co.rsk.peg.vote;
 
+import co.rsk.RskTestUtils;
 import co.rsk.core.RskAddress;
 import java.math.BigInteger;
 import java.util.List;
@@ -35,6 +36,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static co.rsk.core.RskAddress.ZERO_ADDRESS;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,18 +46,18 @@ class AddressBasedAuthorizerTest {
     private Transaction rskTx;
     private SignatureCache signatureCache;
 
-    private static final RskAddress authorizedAddress = new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(101L)).getAddress());
-    private static final RskAddress unauthorizedAddress = new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(999L)).getAddress());
+    private static final RskAddress authorizedAddress = RskTestUtils.generateAddress("authorized");
+    private static final RskAddress unauthorizedAddress = RskTestUtils.generateAddress("non-authorized");
 
     // Addresses for majority test cases
-    private static final RskAddress majorityAuthorizedAddress1 = new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(1L)).getAddress());
-    private static final RskAddress majorityAuthorizedAddress2 = new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(2L)).getAddress());
-    private static final RskAddress majorityAuthorizedAddress3 = new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(3L)).getAddress());
+    private static final RskAddress majorityAuthorizedAddress1 = RskTestUtils.generateAddress("authorized1");
+    private static final RskAddress majorityAuthorizedAddress2 = RskTestUtils.generateAddress("authorized2");
+    private static final RskAddress majorityAuthorizedAddress3 = RskTestUtils.generateAddress("authorized3");
 
     // For testing legacy ALL constructor using keys
-    private static final ECKey legacyKey1 = ECKey.fromPrivate(BigInteger.valueOf(11L));
-    private static final ECKey legacyKey2 = ECKey.fromPrivate(BigInteger.valueOf(12L));
-    private static final ECKey legacyKey3 = ECKey.fromPrivate(BigInteger.valueOf(13L));
+    private static final ECKey legacyKey1 = RskTestUtils.getEcKeyFromSeed("legacy1");
+    private static final ECKey legacyKey2 = RskTestUtils.getEcKeyFromSeed("legacy2");
+    private static final ECKey legacyKey3 = RskTestUtils.getEcKeyFromSeed("legacy3");
 
     @BeforeEach
     void setup() {
@@ -100,7 +103,7 @@ class AddressBasedAuthorizerTest {
     @MethodSource("authorizedAddressProvider")
     void isAuthorized_whenAuthorizedAddress_shouldBeTrue(RskAddress authorizedAddress) {
         AddressBasedAuthorizer singleAuthorizer = createSingleAuthorizer(authorizedAddress);
-        Assertions.assertTrue(singleAuthorizer.isAuthorized(authorizedAddress));
+        assertTrue(singleAuthorizer.isAuthorized(authorizedAddress));
     }
 
     @ParameterizedTest
@@ -109,14 +112,14 @@ class AddressBasedAuthorizerTest {
         AddressBasedAuthorizer singleAuthorizer = createSingleAuthorizer(authorizedAddress);
         when(rskTx.getSender(signatureCache)).thenReturn(authorizedAddress);
 
-        Assertions.assertTrue(singleAuthorizer.isAuthorized(rskTx, signatureCache));
+        assertTrue(singleAuthorizer.isAuthorized(rskTx, signatureCache));
     }
 
     @ParameterizedTest
     @MethodSource("authorizedAddressProvider")
     void isAuthorized_whenUnauthorizedAddress_shouldBeFalse(RskAddress authorizedAddress) {
         AddressBasedAuthorizer singleAuthorizer = createSingleAuthorizer(authorizedAddress);
-        Assertions.assertFalse(singleAuthorizer.isAuthorized(unauthorizedAddress));
+        assertFalse(singleAuthorizer.isAuthorized(unauthorizedAddress));
     }
 
     @ParameterizedTest
@@ -124,12 +127,11 @@ class AddressBasedAuthorizerTest {
     void isAuthorized_whenUnauthorizedTx_shouldBeFalse() {
         AddressBasedAuthorizer singleAuthorizer = createSingleAuthorizer(authorizedAddress);
         when(rskTx.getSender(signatureCache)).thenReturn(unauthorizedAddress);
-        Assertions.assertFalse(singleAuthorizer.isAuthorized(rskTx, signatureCache));
+        assertFalse(singleAuthorizer.isAuthorized(rskTx, signatureCache));
     }
 
     private static Stream<Arguments> authorizedAddressesProvider() {
         return Stream.of(
-            Arguments.of(Set.of(majorityAuthorizedAddress1, majorityAuthorizedAddress2)),
             Arguments.of(Set.of(majorityAuthorizedAddress1, majorityAuthorizedAddress2, majorityAuthorizedAddress3)),
             Arguments.of(Set.of(majorityAuthorizedAddress1, majorityAuthorizedAddress2, majorityAuthorizedAddress3, ZERO_ADDRESS))
         );
@@ -156,14 +158,14 @@ class AddressBasedAuthorizerTest {
     void isAuthorized_whenMajorityAndAuthorizedAddress_shouldBeTrue(Set<RskAddress> authorizedAddresses) {
         AddressBasedAuthorizer majorityAuthorizer = createMajorityAuthorizer(authorizedAddresses);
         // Assert that all authorized addresses are authorized
-        authorizedAddresses.forEach(address -> Assertions.assertTrue(majorityAuthorizer.isAuthorized(address)));
+        authorizedAddresses.forEach(address -> assertTrue(majorityAuthorizer.isAuthorized(address)));
     }
 
     @ParameterizedTest
     @MethodSource("authorizedAddressesProvider")
     void isAuthorized_whenMajorityAndUnauthorizedAddress_shouldBeFalse(Set<RskAddress> authorizedAddresses) {
         AddressBasedAuthorizer majorityAuthorizer = createMajorityAuthorizer(authorizedAddresses);
-        Assertions.assertFalse(majorityAuthorizer.isAuthorized(unauthorizedAddress));
+        assertFalse(majorityAuthorizer.isAuthorized(unauthorizedAddress));
     }
 
     @ParameterizedTest
@@ -171,9 +173,9 @@ class AddressBasedAuthorizerTest {
     void isAuthorized_whenMajorityAuthorizedTx_shouldBeTrue(Set<RskAddress> authorizedAddresses) {
         AddressBasedAuthorizer majorityAuthorizer = createMajorityAuthorizer(authorizedAddresses);
         // Assert that all authorized addresses are authorized
-        authorizedAddresses.forEach(authorizedAddress -> {
-            when(rskTx.getSender(signatureCache)).thenReturn(authorizedAddress);
-            Assertions.assertTrue(majorityAuthorizer.isAuthorized(rskTx, signatureCache));
+        authorizedAddresses.forEach(address -> {
+            when(rskTx.getSender(signatureCache)).thenReturn(address);
+            assertTrue(majorityAuthorizer.isAuthorized(rskTx, signatureCache));
         });
     }
 
@@ -182,7 +184,7 @@ class AddressBasedAuthorizerTest {
     void isAuthorized_whenMajorityAndUnauthorizedTx_shouldBeFalse(Set<RskAddress> authorizedAddresses) {
         AddressBasedAuthorizer majorityAuthorizer = createMajorityAuthorizer(authorizedAddresses);
         when(rskTx.getSender(signatureCache)).thenReturn(unauthorizedAddress);
-        Assertions.assertFalse(majorityAuthorizer.isAuthorized(rskTx, signatureCache));
+        assertFalse(majorityAuthorizer.isAuthorized(rskTx, signatureCache));
     }
 
     private static Stream<Arguments> authorizedKeysProvider() {
@@ -217,14 +219,14 @@ class AddressBasedAuthorizerTest {
         authorizedKeys.stream()
             .map(ECKey::getAddress)
             .map(RskAddress::new)
-            .forEach(authorizedAddress -> Assertions.assertTrue(allAuthorizer.isAuthorized(authorizedAddress)));
+            .forEach(authorizedAddress -> assertTrue(allAuthorizer.isAuthorized(authorizedAddress)));
     }
 
     @ParameterizedTest
     @MethodSource("authorizedKeysProvider")
     void isAuthorized_whenLegacyAllUnauthorizedAddress_shouldBeFalse(List<ECKey> keys) {
         AddressBasedAuthorizer allAuthorizer = createLegacyAllAuthorizer(keys);
-        Assertions.assertFalse(allAuthorizer.isAuthorized(unauthorizedAddress));
+        assertFalse(allAuthorizer.isAuthorized(unauthorizedAddress));
     }
 
     @ParameterizedTest
@@ -238,7 +240,7 @@ class AddressBasedAuthorizerTest {
             .map(RskAddress::new)
             .forEach(authorizedAddress -> {
                 when(rskTx.getSender(signatureCache)).thenReturn(authorizedAddress);
-                Assertions.assertTrue(allAuthorizer.isAuthorized(rskTx, signatureCache));
+                assertTrue(allAuthorizer.isAuthorized(rskTx, signatureCache));
             });
     }
 
@@ -247,6 +249,6 @@ class AddressBasedAuthorizerTest {
     void isAuthorized_whenLegacyAllUnauthorizedTx_shouldBeFalse(List<ECKey> keys) {
         AddressBasedAuthorizer allAuthorizer = createLegacyAllAuthorizer(keys);
         when(rskTx.getSender(signatureCache)).thenReturn(unauthorizedAddress);
-        Assertions.assertFalse(allAuthorizer.isAuthorized(rskTx, signatureCache));
+        assertFalse(allAuthorizer.isAuthorized(rskTx, signatureCache));
     }
 }
