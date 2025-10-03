@@ -14,6 +14,7 @@ import java.math.BigInteger;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.ethereum.TestUtils;
+import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,8 @@ class UnionBridgeStorageProviderImplTest {
     private static final boolean newUnionBridgeReleaseEnabled = false;
     private static final byte[] superEventData = new byte[]{(byte) 0x123456};
     private static final byte[] newSuperEventData = new byte[]{(byte) 0x12345678};
+    private static final byte[] baseEventData = new byte[]{(byte) 0x123456};
+    private static final byte[] newBaseEventData = new byte[]{(byte) 0x12345678};
 
     private StorageAccessor storageAccessor;
     private UnionBridgeStorageProviderImpl unionBridgeStorageProvider;
@@ -1038,6 +1041,11 @@ class UnionBridgeStorageProviderImplTest {
             UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
             superEventData
         );
+        // Simulate there is BASE_EVENT's value already stored
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
+            baseEventData
+        );
 
         // Set the new values
         unionBridgeStorageProvider.setAddress(newUnionBridgeContractAddress);
@@ -1046,6 +1054,7 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setUnionBridgeRequestEnabled(newUnionBridgeRequestEnabled);
         unionBridgeStorageProvider.setUnionBridgeReleaseEnabled(newUnionBridgeReleaseEnabled);
         unionBridgeStorageProvider.setSuperEvent(newSuperEventData);
+        unionBridgeStorageProvider.setBaseEvent(newBaseEventData);
 
         // Act
         unionBridgeStorageProvider.save();
@@ -1059,6 +1068,7 @@ class UnionBridgeStorageProviderImplTest {
         assertGivenUnionBridgeRequestEnabledIsStored(newUnionBridgeRequestEnabled);
         assertGivenUnionBridgeReleaseEnabledIsStored(newUnionBridgeReleaseEnabled);
         assertSuperEventDataIsStored(newSuperEventData);
+        assertBaseEventDataIsStored(newSuperEventData);
     }
 
     @Test
@@ -1073,6 +1083,7 @@ class UnionBridgeStorageProviderImplTest {
         assertNoUnionBridgeRequestEnabledIsStored();
         assertNoUnionBridgeReleaseEnabledIsStored();
         assertNoSuperEventDataIsStored();
+        assertNoBaseEventDataIsStored();
     }
 
     private void assertGivenWeisTransferredToUnionBridgeIsStored(
@@ -1234,5 +1245,182 @@ class UnionBridgeStorageProviderImplTest {
             data -> data
         );
         assertArrayEquals(expectedData, superEvent);
+    }
+
+    @Test
+    void getBaseEvent_whenNoDataSaved_shouldReturnEmpty() {
+        // Act
+        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+
+        // Assert
+        assertTrue(baseEvent.isEmpty());
+    }
+
+    @Test
+    void getBaseEvent_whenDataSaved_shouldReturnSavedData() {
+        // Arrange
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
+            baseEventData
+        );
+
+        // Act
+        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+
+        // Assert
+        assertTrue(baseEvent.isPresent());
+        assertEquals(baseEventData, baseEvent.get());
+    }
+
+    @Test
+    void getBaseEvent_whenNullDataSet_shouldReturnEmpty() {
+        // Arrange
+        unionBridgeStorageProvider.setBaseEvent(null);
+
+        // Act
+        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+
+        // Assert
+        assertTrue(baseEvent.isEmpty());
+    }
+
+    @Test
+    void getBaseEvent_whenEmptyDataSet_shouldReturnEmpty() {
+        // Arrange
+        unionBridgeStorageProvider.setBaseEvent(ByteUtil.EMPTY_BYTE_ARRAY);
+
+        // Act
+        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+
+        // Assert
+        assertTrue(baseEvent.isEmpty());
+    }
+
+    @Test
+    void getBaseEvent_whenDataSet_shouldReturnSetData() {
+        // Arrange
+        unionBridgeStorageProvider.setBaseEvent(baseEventData);
+
+        // Act
+        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+
+        // Assert
+        assertTrue(baseEvent.isPresent());
+        assertEquals(baseEventData, baseEvent.get());
+    }
+
+    @Test
+    void getBaseEvent_whenDataSavedAndNewDataSet_shouldReturnSetData() {
+        // Arrange
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
+            baseEventData
+        );
+
+        // Act
+        unionBridgeStorageProvider.setBaseEvent(newBaseEventData);
+
+        // Assert
+        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+        assertTrue(baseEvent.isPresent());
+        assertEquals(newBaseEventData, baseEvent.get());
+    }
+
+    @Test
+    void getBaseEvent_whenDataSavedAndNewNullDataSet_shouldReturnEmpty() {
+        // Arrange
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
+            baseEventData
+        );
+
+        // Act
+        unionBridgeStorageProvider.setBaseEvent(null);
+
+        // Assert
+        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+        assertTrue(baseEvent.isEmpty());
+    }
+
+    @Test
+    void getBaseEvent_whenDataSavedAndNewEmptyDataSet_shouldReturnEmpty() {
+        // Arrange
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
+            baseEventData
+        );
+
+        // Act
+        unionBridgeStorageProvider.setBaseEvent(ByteUtil.EMPTY_BYTE_ARRAY);
+
+        // Assert
+        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+        assertTrue(baseEvent.isEmpty());
+    }
+
+    @Test
+    void getBaseEvent_whenSavingNewData_shouldReturnNewData() {
+        // Arrange
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
+            baseEventData
+        );
+        byte[] baseEventSavedData = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
+            data -> data
+        );
+
+        unionBridgeStorageProvider.setBaseEvent(newBaseEventData);
+        // before saving, value should have not changed in storage
+        assertNotEquals(baseEventSavedData, newBaseEventData);
+        // after saving, value should have changed in storage
+        unionBridgeStorageProvider.save();
+        byte[] baseEventSavedDataAfterSaving = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
+            data -> data
+        );
+        assertEquals(baseEventSavedDataAfterSaving, newBaseEventData);
+
+        // Act
+        Optional<byte[]> baseEvent = unionBridgeStorageProvider.getBaseEvent();
+
+        // Assert
+        assertTrue(baseEvent.isPresent());
+        assertEquals(newBaseEventData, baseEvent.get());
+    }
+
+    @Test
+    void clearBaseEvent_overridingSavedValue_shouldSaveNullInStorage() {
+        // Initially setting a valid base event in storage
+        unionBridgeStorageProvider.setBaseEvent(baseEventData);
+        unionBridgeStorageProvider.save();
+
+        // Act
+        unionBridgeStorageProvider.clearBaseEvent();
+        unionBridgeStorageProvider.save();
+
+        // Assert
+        byte[] actualBaseEvent = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
+            data -> data
+        );
+        assertNull(actualBaseEvent);
+    }
+
+    private void assertNoBaseEventDataIsStored() {
+        byte[] baseEvent = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
+            data -> data
+        );
+
+        assertNull(baseEvent);
+    }
+
+    private void assertBaseEventDataIsStored(byte[] expectedData) {
+        byte[] baseEvent = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
+            data -> data
+        );
+        assertArrayEquals(expectedData, baseEvent);
     }
 }
