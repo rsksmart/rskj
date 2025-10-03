@@ -40,7 +40,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -95,17 +94,15 @@ class BlockHeaderContractTest {
     @BeforeEach
     void setUp() {
         config = new TestSystemProperties();
-        blockFactory = new BlockFactory(config.getActivationConfig());
         SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, signatureCache);
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-
-        // Enabling necessary RSKIPs for every precompiled contract to be available
-        when(activations.isActive(ConsensusRule.RSKIP119)).thenReturn(true);
-
         world = new World();
-        contract = (BlockHeaderContract) precompiledContracts.getContractForAddress(activations, DataWord.valueFromHex(BLOCK_HEADER_CONTRACT_ADDRESS));
+
+        ActivationConfig activationConfig = config.getActivationConfig();
+        blockFactory = new BlockFactory(activationConfig);
+
+        contract = (BlockHeaderContract) precompiledContracts.getContractForAddress(activationConfig.forBlock(0L), DataWord.valueFromHex(BLOCK_HEADER_CONTRACT_ADDRESS));
 
         // contract methods
         getCoinbaseFunction = getContractFunction(contract, GetCoinbaseAddress.class);
@@ -115,7 +112,7 @@ class BlockHeaderContractTest {
         getGasLimitFunction = getContractFunction(contract, GetGasLimit.class);
         getGasUsedFunction = getContractFunction(contract, GetGasUsed.class);
         getDifficultyFunction = getContractFunction(contract, GetDifficulty.class);
-        getCumulativeDifficultyFunction = getContractFunction(contract, GetSuperBlockCumulativeDifficulty.class);
+        getCumulativeDifficultyFunction = getContractFunction(contract, GetCumulativeDifficulty.class);
         getBitcoinHeaderFunction = getContractFunction(contract, GetBitcoinHeader.class);
         getUncleCoinbaseAddressFunction = getContractFunction(contract, GetUncleCoinbaseAddress.class);
 
@@ -354,6 +351,18 @@ class BlockHeaderContractTest {
     }
 
     @Test
+    void getCumulativeDifficultyForBlock_whenMethodDisabled_shouldThrowVME() {
+        buildBlockchainOfLength(4000);
+
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
+
+        assertThrows(
+            VMException.class,
+            () -> contract.execute(getCumulativeDifficultyFunction.encode(new BigInteger("1000")))
+        );
+    }
+
+    @Test
     void getCumulativeDifficultyForBlockAtDepth1000() throws VMException {
         buildBlockchainOfLength(4000);
 
@@ -548,8 +557,6 @@ class BlockHeaderContractTest {
         }
     }
 
-
-
     private CallTransaction.Function getContractFunction(NativeContract contract, Class methodClass) {
         Optional<NativeMethod> method = contract.getMethods().stream().filter(m -> m.getClass() == methodClass).findFirst();
         assertTrue(method.isPresent());
@@ -603,7 +610,7 @@ class BlockHeaderContractTest {
 
     @Test
     void hasGetCumulativeDifficulty() {
-        assertHasMethod(GetSuperBlockCumulativeDifficulty.class, true);
+        assertHasMethod(GetCumulativeDifficulty.class, true);
     }
 
     @Test
