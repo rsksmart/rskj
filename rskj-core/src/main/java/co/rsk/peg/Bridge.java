@@ -1548,6 +1548,22 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         bridgeSupport.clearSuperEvent(rskTx);
     }
 
+    public byte[] getBaseEvent(Object[] args) {
+        logger.trace("getBaseEvent");
+        return bridgeSupport.getBaseEvent();
+    }
+
+    public void setBaseEvent(Object[] args) {
+        logger.trace("setBaseEvent");
+        byte[] data = (byte[]) args[0];
+        bridgeSupport.setBaseEvent(rskTx, data);
+    }
+
+    public void clearBaseEvent(Object[] args) {
+        logger.trace("clearBaseEvent");
+        bridgeSupport.clearBaseEvent(rskTx);
+    }
+
     protected static BridgeMethods.BridgeMethodExecutor executeIfAuthorized(
         AuthorizerProvider authorizerProvider,
         BridgeMethods.BridgeMethodExecutor decorate,
