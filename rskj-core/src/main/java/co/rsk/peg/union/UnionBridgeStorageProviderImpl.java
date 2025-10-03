@@ -235,21 +235,21 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     }
 
     @Override
-    public Optional<byte[]> getBaseEvent() {
+    public byte[] getBaseEvent() {
         if (!isNull(baseEvent) && baseEvent.length > 0) {
-            return Optional.of(baseEvent);
+            return baseEvent;
         }
 
         // Return empty if the base event was explicitly set to null or empty
         if (isBaseEventSet) {
-            return Optional.empty();
+            return EMPTY_BYTE_ARRAY;
         }
 
         baseEvent = bridgeStorageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
             data -> data
         );
-        return Optional.ofNullable(baseEvent);
+        return Optional.ofNullable(baseEvent).orElse(EMPTY_BYTE_ARRAY);
     }
 
     @Override

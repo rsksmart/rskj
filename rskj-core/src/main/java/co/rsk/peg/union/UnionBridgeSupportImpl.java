@@ -319,17 +319,15 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     @Override
     public byte[] getBaseEvent() {
-        return storageProvider.getBaseEvent().orElse(ByteUtil.EMPTY_BYTE_ARRAY);
+        return storageProvider.getBaseEvent();
     }
 
     @Override
     public void setBaseEvent(Transaction tx, byte[] data) {
         RskAddress caller = tx.getSender(signatureCache);
-        if (!isCallerUnionBridgeContractAddress(caller)) {
-            throw new IllegalArgumentException();
-        }
+        validateCallerIsUnionBridge(caller);
 
-        if (isNull(data) || data.length == 0) {
+        if (data.length == 0) {
             clearBaseEvent();
             return;
         }
@@ -350,9 +348,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     @Override
     public void clearBaseEvent(Transaction tx) {
         RskAddress caller = tx.getSender(signatureCache);
-        if (!isCallerUnionBridgeContractAddress(caller)) {
-            throw new IllegalArgumentException();
-        }
+        validateCallerIsUnionBridge(caller);
         clearBaseEvent();
     }
 
