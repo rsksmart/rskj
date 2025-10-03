@@ -19,6 +19,9 @@ public interface UnionBridgeStorageProvider {
     byte[] getSuperEvent();
     void setSuperEvent(byte[] data);
     void clearSuperEvent();
+    Optional<byte[]> getBaseEvent();
+    void setBaseEvent(byte[] data);
+    void clearBaseEvent();
 
     void save();
 }
