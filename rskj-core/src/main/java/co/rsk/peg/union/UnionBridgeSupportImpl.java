@@ -317,6 +317,53 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
+    public byte[] getBaseEvent() {
+        return storageProvider.getBaseEvent().orElse(ByteUtil.EMPTY_BYTE_ARRAY);
+    }
+
+    @Override
+    public void setBaseEvent(Transaction tx, byte[] data) {
+        RskAddress caller = tx.getSender(signatureCache);
+        if (!isCallerUnionBridgeContractAddress(caller)) {
+            throw new IllegalArgumentException();
+        }
+
+        if (isNull(data) || data.length == 0) {
+            clearBaseEvent();
+            return;
+        }
+
+        int maximumDataLength = 128;
+        int dataLength = data.length;
+        if (dataLength > maximumDataLength) {
+            throw new IllegalArgumentException("BaseEvent data length " + dataLength + " is above maximum.");
+        }
+
+        byte[] previousBaseEventData = getBaseEvent();
+        storageProvider.setBaseEvent(data);
+        logger.info(
+            "[setBaseEvent] Base event info was updated from {} to {}", previousBaseEventData, data
+        );
+    }
+
+    @Override
+    public void clearBaseEvent(Transaction tx) {
+        RskAddress caller = tx.getSender(signatureCache);
+        if (!isCallerUnionBridgeContractAddress(caller)) {
+            throw new IllegalArgumentException();
+        }
+        clearBaseEvent();
+    }
+
+    private void clearBaseEvent() {
+        byte[] previousBaseEventData = getBaseEvent();
+        storageProvider.setBaseEvent(ByteUtil.EMPTY_BYTE_ARRAY);
+        logger.info(
+            "[clearBaseEvent] Base event info was cleared. Previous value: {}", previousBaseEventData
+        );
+    }
+
+    @Override
     public void save() {
         storageProvider.save();
     }
