@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import javax.annotation.Nonnull;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +92,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         final String REQUEST_UNION_RBTC_TAG = "requestUnionRbtc";
 
         RskAddress caller = tx.getSender(signatureCache);
-        if (!isCallerUnionBridgeContractAddress(caller)) {
+        if (callerIsNotUnionBridge(caller)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
@@ -116,7 +117,13 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return isRequestEnabled;
     }
 
-    private boolean isCallerUnionBridgeContractAddress(RskAddress callerAddress) {
+    private void validateCallerIsUnionBridge(RskAddress callerAddress) {
+        if (callerIsNotUnionBridge(callerAddress)) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private boolean callerIsNotUnionBridge(RskAddress callerAddress) {
         RskAddress unionBridgeContractAddress = getUnionBridgeContractAddress();
         boolean isCallerUnionBridgeContractAddress = callerAddress.equals(unionBridgeContractAddress);
         if (!isCallerUnionBridgeContractAddress) {
@@ -191,7 +198,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         final RskAddress caller = tx.getSender(signatureCache);
         final Coin releaseUnionRbtcValueInWeis = tx.getValue();
 
-        if (!isCallerUnionBridgeContractAddress(caller)) {
+        if (callerIsNotUnionBridge(caller)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
@@ -270,6 +277,49 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         boolean currentReleaseEnabled = isReleaseEnabled();
 
         return currentRequestEnabled == requestEnabled && currentReleaseEnabled == releaseEnabled;
+    }
+
+    @Override
+    public byte[] getSuperEvent() {
+        return storageProvider.getSuperEvent();
+    }
+
+    @Override
+    public void setSuperEvent(Transaction tx, byte[] data) {
+        RskAddress caller = tx.getSender(signatureCache);
+        validateCallerIsUnionBridge(caller);
+
+        if (data.length == 0) {
+            clearSuperEvent();
+            return;
+        }
+
+        int maximumDataLength = 128;
+        int dataLength = data.length;
+        if (dataLength > maximumDataLength) {
+            throw new IllegalArgumentException("SuperEvent data length " + dataLength + " is above maximum.");
+        }
+
+        byte[] previousSuperEventData = getSuperEvent();
+        storageProvider.setSuperEvent(data);
+        logger.info(
+            "[setSuperEvent] Super event info was updated from {} to {}", previousSuperEventData, data
+        );
+    }
+
+    @Override
+    public void clearSuperEvent(Transaction tx) {
+        RskAddress caller = tx.getSender(signatureCache);
+        validateCallerIsUnionBridge(caller);
+        clearSuperEvent();
+    }
+
+    private void clearSuperEvent() {
+        byte[] previousSuperEventData = getSuperEvent();
+        storageProvider.setSuperEvent(ByteUtil.EMPTY_BYTE_ARRAY);
+        logger.info(
+            "[clearSuperEvent] Super event info was cleared. Previous value: {}", previousSuperEventData
+        );
     }
 
     @Override
