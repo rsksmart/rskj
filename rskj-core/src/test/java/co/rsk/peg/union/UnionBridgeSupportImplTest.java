@@ -2,6 +2,7 @@ package co.rsk.peg.union;
 
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedData;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedTopics;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -1441,16 +1442,16 @@ class UnionBridgeSupportImplTest {
     @Test
     void getSuperEvent_whenNotSavedData_shouldReturnEmptyArray() {
         // Act & Assert
-        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, unionBridgeSupport.getSuperEvent());
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getSuperEvent());
     }
 
     @Test
     void getSuperEvent_whenEmptyDataSet_shouldReturnEmptyArray() {
         // Arrange
-        unionBridgeSupport.setSuperEvent(rskTx, ByteUtil.EMPTY_BYTE_ARRAY);
+        unionBridgeSupport.setSuperEvent(rskTx, EMPTY_BYTE_ARRAY);
 
         // Act & Assert
-        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, unionBridgeSupport.getSuperEvent());
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getSuperEvent());
     }
 
     @Test
@@ -1557,21 +1558,21 @@ class UnionBridgeSupportImplTest {
 
         when(rskTx.getSender(any())).thenReturn(newUnionBridgeAddress);
         unionBridgeSupport.clearSuperEvent(rskTx);
-        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, unionBridgeSupport.getSuperEvent());
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getSuperEvent());
     }
     @Test
     void getBaseEvent_whenNotSavedData_shouldReturnEmptyArray() {
         // Act & Assert
-        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
     }
 
     @Test
     void getBaseEvent_whenEmptyDataSet_shouldReturnEmptyArray() {
         // Arrange
-        unionBridgeSupport.setBaseEvent(rskTx, ByteUtil.EMPTY_BYTE_ARRAY);
+        unionBridgeSupport.setBaseEvent(rskTx, EMPTY_BYTE_ARRAY);
 
         // Act & Assert
-        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
     }
 
     @Test
@@ -1580,7 +1581,7 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport.setBaseEvent(rskTx, null);
 
         // Act & Assert
-        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
     }
 
     @Test
@@ -1660,7 +1661,7 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport.clearBaseEvent(rskTx);
 
         // Assert
-        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
     }
 
     @Test
@@ -1680,7 +1681,7 @@ class UnionBridgeSupportImplTest {
 
         when(rskTx.getSender(any())).thenReturn(newUnionBridgeAddress);
         unionBridgeSupport.clearBaseEvent(rskTx);
-        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
     }
 
 
