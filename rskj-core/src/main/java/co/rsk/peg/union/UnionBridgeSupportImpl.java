@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import javax.annotation.Nonnull;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +43,11 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         }
 
         return storageProvider.getAddress().orElse(constants.getAddress());
+    }
+
+    private boolean isCurrentEnvironmentMainnet() {
+        String currentNetworkId = constants.getBtcParams().getId();
+        return currentNetworkId.equals(NetworkParameters.ID_MAINNET);
     }
 
     @Override
@@ -91,7 +97,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         final String REQUEST_UNION_RBTC_TAG = "requestUnionRbtc";
 
         RskAddress caller = tx.getSender(signatureCache);
-        if (!isCallerUnionBridgeContractAddress(caller)) {
+        if (callerIsNotUnionBridge(caller)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
@@ -116,17 +122,23 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return isRequestEnabled;
     }
 
-    private boolean isCallerUnionBridgeContractAddress(RskAddress callerAddress) {
+    private void validateCallerIsUnionBridge(RskAddress callerAddress) {
+        if (callerIsNotUnionBridge(callerAddress)) {
+            throw new IllegalArgumentException("Caller is not the Union Bridge contract address");
+        }
+    }
+
+    private boolean callerIsNotUnionBridge(RskAddress callerAddress) {
         RskAddress unionBridgeContractAddress = getUnionBridgeContractAddress();
-        boolean isCallerUnionBridgeContractAddress = callerAddress.equals(unionBridgeContractAddress);
-        if (!isCallerUnionBridgeContractAddress) {
+        boolean callerIsNotUnionBridge = !callerAddress.equals(unionBridgeContractAddress);
+        if (callerIsNotUnionBridge) {
             logger.warn(
-                "[isCallerUnionBridgeContractAddress] Caller is not the Union Bridge Contract Address. Caller address: {}, Union Bridge Contract Address: {}",
+                "[callerIsNotUnionBridge] Caller address {} does not match Union Bridge address {}",
                 callerAddress,
                 unionBridgeContractAddress
             );
         }
-        return isCallerUnionBridgeContractAddress;
+        return callerIsNotUnionBridge;
     }
 
     private boolean isAmountRequestedValid(Coin amountRequested) {
@@ -191,7 +203,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         final RskAddress caller = tx.getSender(signatureCache);
         final Coin releaseUnionRbtcValueInWeis = tx.getValue();
 
-        if (!isCallerUnionBridgeContractAddress(caller)) {
+        if (callerIsNotUnionBridge(caller)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
@@ -273,12 +285,40 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
-    public void save() {
-        storageProvider.save();
+    public byte[] getSuperEvent() {
+        return storageProvider.getSuperEvent();
     }
 
-    private boolean isCurrentEnvironmentMainnet() {
-        String currentNetworkId = constants.getBtcParams().getId();
-        return currentNetworkId.equals(NetworkParameters.ID_MAINNET);
+    @Override
+    public void setSuperEvent(Transaction tx, @Nonnull byte[] data) {
+        RskAddress caller = tx.getSender(signatureCache);
+        validateCallerIsUnionBridge(caller);
+
+        int maximumDataLength = 128;
+        int dataLength = data.length;
+        if (dataLength > maximumDataLength) {
+            throw new IllegalArgumentException(String.format("Super event data length %d is above maximum.", dataLength));
+        }
+
+        byte[] previousSuperEventData = getSuperEvent();
+        storageProvider.setSuperEvent(data);
+        logger.info(
+            "[setSuperEvent] Super event info was updated from {} to {}", previousSuperEventData, data
+        );
+    }
+
+    @Override
+    public void clearSuperEvent(Transaction tx) {
+        RskAddress caller = tx.getSender(signatureCache);
+        validateCallerIsUnionBridge(caller);
+
+        byte[] previousSuperEventData = getSuperEvent();
+        storageProvider.setSuperEvent(ByteUtil.EMPTY_BYTE_ARRAY);
+        logger.info("[clearSuperEvent] Super event info was cleared. Previous value: {}", previousSuperEventData);
+    }
+
+    @Override
+    public void save() {
+        storageProvider.save();
     }
 }

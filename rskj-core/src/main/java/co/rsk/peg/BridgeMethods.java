@@ -917,6 +917,40 @@ public enum BridgeMethods {
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
     ),
+    GET_SUPER_EVENT(
+        CallTransaction.Function.fromSignature(
+          "getSuperEvent",
+          new String[]{},
+          new String[]{"bytes"}
+        ),
+        fixedCost(3_000L), // TODO define final cost
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getSuperEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false),
+        CallTypeHelper.ALLOW_STATIC_CALL
+    ),
+    SET_SUPER_EVENT(
+        CallTransaction.Function.fromSignature(
+            "setSuperEvent",
+            new String[]{"bytes"},
+            new String[]{}
+        ),
+        fixedCost(8_000L), // TODO define final cost
+        (BridgeMethodExecutorVoid) Bridge::setSuperEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false)
+    ),
+    CLEAR_SUPER_EVENT(
+        CallTransaction.Function.fromSignature(
+            "clearSuperEvent",
+            new String[]{},
+            new String[]{}
+        ),
+        fixedCost(8_000L), // TODO define final cost
+        (BridgeMethodExecutorVoid) Bridge::clearSuperEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false)
+    ),
     ;
 
     private static class CallTypeHelper {

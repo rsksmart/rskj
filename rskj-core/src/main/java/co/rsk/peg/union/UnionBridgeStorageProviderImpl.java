@@ -2,14 +2,21 @@ package co.rsk.peg.union;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.storage.StorageAccessor;
+import javax.annotation.Nonnull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Optional;
 
 public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvider {
+    private static final Logger logger = LoggerFactory.getLogger(UnionBridgeStorageProviderImpl.class);
 
     private final StorageAccessor bridgeStorageAccessor;
 
@@ -21,6 +28,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     private Boolean unionBridgeRequestEnabled;
     private Boolean unionBridgeReleaseEnabled;
+    private byte[] superEvent;
 
     public UnionBridgeStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -33,6 +41,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
         saveWeisTransferredToUnionBridge();
         saveRequestEnabled();
         saveReleaseEnabled();
+        saveSuperEvent();
     }
 
     private void saveReleaseEnabled() {
@@ -184,5 +193,41 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
                 BridgeSerializationUtils::deserializeBoolean
             )));
+    }
+
+    @Override
+    public byte[] getSuperEvent() {
+        if (!isNull(superEvent)) {
+            return superEvent.clone();
+        }
+
+        superEvent = bridgeStorageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
+            data -> data
+        );
+        return Optional.ofNullable(superEvent).orElse(EMPTY_BYTE_ARRAY);
+    }
+
+    @Override
+    public void setSuperEvent(@Nonnull byte[] data) {
+        requireNonNull(data, "Super event data cannot be null");
+        this.superEvent = data.clone();
+    }
+
+    @Override
+    public void clearSuperEvent() {
+        logger.info("[clearSuperEvent] Clearing super event.");
+        setSuperEvent(EMPTY_BYTE_ARRAY);
+    }
+
+    private void saveSuperEvent() {
+        if (isNull(superEvent)) {
+            return;
+        }
+
+        bridgeStorageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
+            superEvent
+        );
     }
 }
