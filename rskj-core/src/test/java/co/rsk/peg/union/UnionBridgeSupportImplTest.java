@@ -1458,15 +1458,6 @@ class UnionBridgeSupportImplTest {
     }
 
     @Test
-    void getSuperEvent_whenNullDataSet_shouldReturnEmptyArray() {
-        // Arrange
-        unionBridgeSupport.setSuperEvent(rskTx, null);
-
-        // Act & Assert
-        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, unionBridgeSupport.getSuperEvent());
-    }
-
-    @Test
     void getSuperEvent_shouldSetSuperEvent() {
         // Arrange
         unionBridgeSupport.setSuperEvent(rskTx, superEvent);
@@ -1474,6 +1465,21 @@ class UnionBridgeSupportImplTest {
         // Act & Assert
         assertArrayEquals(superEvent, unionBridgeSupport.getSuperEvent());
     }
+
+    @Test
+    void getSuperEvent_whenDataSavedAndNewDataSet_shouldReturnNewData() {
+        // Arrange
+        unionBridgeSupport.setSuperEvent(rskTx, superEvent);
+        unionBridgeSupport.save();
+
+        // Act
+        byte[] newSuperEvent = new byte[]{(byte) 0x12345678};
+        unionBridgeSupport.setSuperEvent(rskTx, newSuperEvent);
+
+        // Assert
+        assertArrayEquals(newSuperEvent, unionBridgeSupport.getSuperEvent());
+    }
+
 
     @Test
     void setSuperEvent_afterChangingUnionBridgeAddress_newAddressShouldSet_oldAddressShouldNot() {
@@ -1498,39 +1504,30 @@ class UnionBridgeSupportImplTest {
     @Test
     void setSuperEvent_dataLengthExactlyMaximum_shouldSetSuperEvent() {
         // Arrange
-        byte[] superEvent = new byte[128];
+        byte[] superEventMaxLength = new byte[128];
 
         // Act
-        unionBridgeSupport.setSuperEvent(rskTx, superEvent);
+        unionBridgeSupport.setSuperEvent(rskTx, superEventMaxLength);
 
         // Assert
-        assertArrayEquals(superEvent, unionBridgeSupport.getSuperEvent());
+        assertArrayEquals(superEventMaxLength, unionBridgeSupport.getSuperEvent());
     }
 
     @Test
     void setSuperEvent_dataLengthAboveMaximum_shouldThrowIAE() {
         // Arrange
-        byte[] superEvent = new byte[129];
+        byte[] superEventAboveMaxLength = new byte[129];
 
         // Act & Assert
         assertThrows(
             IllegalArgumentException.class,
-            () -> unionBridgeSupport.setSuperEvent(rskTx, superEvent)
+            () -> unionBridgeSupport.setSuperEvent(rskTx, superEventAboveMaxLength)
         );
     }
 
     @Test
-    void getSuperEvent_whenDataSavedAndNewDataSet_shouldReturnNewData() {
-        // Arrange
-        unionBridgeSupport.setSuperEvent(rskTx, superEvent);
-        unionBridgeSupport.save();
-
-        // Act
-        byte[] newSuperEvent = new byte[]{(byte) 0x12345678};
-        unionBridgeSupport.setSuperEvent(rskTx, newSuperEvent);
-
-        // Assert
-        assertArrayEquals(newSuperEvent, unionBridgeSupport.getSuperEvent());
+    void setSuperEvent_whenNullDataSet_shouldThrowNullPointerException() {
+        assertThrows(NullPointerException.class, () -> unionBridgeSupport.setSuperEvent(rskTx, null));
     }
 
     @Test
