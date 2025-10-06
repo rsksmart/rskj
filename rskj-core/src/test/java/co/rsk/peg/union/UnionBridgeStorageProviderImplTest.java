@@ -3,6 +3,7 @@ package co.rsk.peg.union;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
+import co.rsk.RskTestUtils;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
@@ -23,10 +24,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class UnionBridgeStorageProviderImplTest {
 
-    private static final RskAddress storedUnionBridgeContractAddress = TestUtils.generateAddress(
-        "unionBridgeContractAddress");
-    private static final RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress(
-        "newUnionBridgeContractAddress");
+    private static final RskAddress storedUnionBridgeContractAddress = RskTestUtils.generateAddress("unionBridgeContractAddress");
+    private static final RskAddress newUnionBridgeContractAddress = RskTestUtils.generateAddress("newUnionBridgeContractAddress");
 
     private static final Coin unionBridgeLockingCap = UnionBridgeMainNetConstants.getInstance().getInitialLockingCap();
     private static final Coin newUnionBridgeLockingCap = unionBridgeLockingCap.multiply(BigInteger.TWO);
@@ -1111,15 +1110,8 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void getSuperEvent_whenNullDataSet_shouldReturnEmpty() {
-        // Arrange
-        unionBridgeStorageProvider.setSuperEvent(null);
-
-        // Act
-        byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
-
-        // Assert
-        assertArrayEquals(EMPTY_BYTE_ARRAY, superEvent);
+    void getSuperEvent_whenNullDataSet_shouldThowNPE() {
+        assertThrows(NullPointerException.class, () -> unionBridgeStorageProvider.setSuperEvent(null));
     }
 
     @Test
@@ -1160,22 +1152,6 @@ class UnionBridgeStorageProviderImplTest {
         // Assert
         byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
         assertArrayEquals(newSuperEventData, superEvent);
-    }
-
-    @Test
-    void getSuperEvent_whenDataSavedAndNewNullDataSet_shouldReturnEmpty() {
-        // Arrange
-        storageAccessor.saveToRepository(
-            UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
-            superEventData
-        );
-
-        // Act
-        unionBridgeStorageProvider.setSuperEvent(null);
-
-        // Assert
-        byte[] superEvent = unionBridgeStorageProvider.getSuperEvent();
-        assertArrayEquals(EMPTY_BYTE_ARRAY, superEvent);
     }
 
     @Test
@@ -1226,7 +1202,7 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void clearSuperEvent_overridingSavedValue_shouldSaveNullInStorage() {
+    void clearSuperEvent_overridingSavedValue_shouldSaveEmptyInStorage() {
         // Initially setting a valid super event in storage
         unionBridgeStorageProvider.setSuperEvent(superEventData);
         unionBridgeStorageProvider.save();
@@ -1240,7 +1216,7 @@ class UnionBridgeStorageProviderImplTest {
             UnionBridgeStorageIndexKey.SUPER_EVENT.getKey(),
             data -> data
         );
-        assertNull(actualSuperEvent);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, actualSuperEvent);
     }
 
     private void assertNoSuperEventDataIsStored() {
