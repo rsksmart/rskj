@@ -2,12 +2,14 @@ package co.rsk.peg.union;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.storage.StorageAccessor;
+import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +29,6 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     private Boolean unionBridgeRequestEnabled;
     private Boolean unionBridgeReleaseEnabled;
     private byte[] superEvent;
-    private boolean isSuperEventSet;
 
     public UnionBridgeStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -196,13 +197,8 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     @Override
     public byte[] getSuperEvent() {
-        if (!isNull(superEvent) && superEvent.length > 0) {
-            return superEvent;
-        }
-
-        // Return empty if the super event was explicitly set to null or empty
-        if (isSuperEventSet) {
-            return EMPTY_BYTE_ARRAY;
+        if (!isNull(superEvent)) {
+            return superEvent.clone();
         }
 
         superEvent = bridgeStorageAccessor.getFromRepository(
@@ -213,19 +209,19 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     }
 
     @Override
-    public void setSuperEvent(byte[] data) {
-        this.superEvent = data;
-        this.isSuperEventSet = true;
+    public void setSuperEvent(@Nonnull byte[] data) {
+        requireNonNull(data, "Super event data cannot be null");
+        this.superEvent = data.clone();
     }
 
     @Override
     public void clearSuperEvent() {
         logger.info("[clearSuperEvent] Clearing super event.");
-        setSuperEvent(null);
+        setSuperEvent(EMPTY_BYTE_ARRAY);
     }
 
     private void saveSuperEvent() {
-        if (!isSuperEventSet) {
+        if (isNull(superEvent)) {
             return;
         }
 
