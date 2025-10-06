@@ -44,6 +44,11 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return storageProvider.getAddress().orElse(constants.getAddress());
     }
 
+    private boolean isCurrentEnvironmentMainnet() {
+        String currentNetworkId = constants.getBtcParams().getId();
+        return currentNetworkId.equals(NetworkParameters.ID_MAINNET);
+    }
+
     @Override
     public UnionResponseCode setUnionBridgeContractAddressForTestnet(RskAddress unionBridgeContractAddress) {
         final String SET_UNION_BRIDGE_ADDRESS_TAG = "setUnionBridgeContractAddressForTestnet";
@@ -118,7 +123,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     private void validateCallerIsUnionBridge(RskAddress callerAddress) {
         if (callerIsNotUnionBridge(callerAddress)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Caller is not the Union Bridge contract address");
         }
     }
 
@@ -284,19 +289,14 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
-    public void setSuperEvent(Transaction tx, byte[] data) {
+    public void setSuperEvent(Transaction tx, @Nonnull byte[] data) {
         RskAddress caller = tx.getSender(signatureCache);
         validateCallerIsUnionBridge(caller);
-
-        if (data.length == 0) {
-            clearSuperEvent();
-            return;
-        }
 
         int maximumDataLength = 128;
         int dataLength = data.length;
         if (dataLength > maximumDataLength) {
-            throw new IllegalArgumentException("SuperEvent data length " + dataLength + " is above maximum.");
+            throw new IllegalArgumentException(String.format("Super event data length %d is above maximum.", dataLength));
         }
 
         byte[] previousSuperEventData = getSuperEvent();
@@ -310,24 +310,14 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     public void clearSuperEvent(Transaction tx) {
         RskAddress caller = tx.getSender(signatureCache);
         validateCallerIsUnionBridge(caller);
-        clearSuperEvent();
-    }
 
-    private void clearSuperEvent() {
         byte[] previousSuperEventData = getSuperEvent();
         storageProvider.setSuperEvent(ByteUtil.EMPTY_BYTE_ARRAY);
-        logger.info(
-            "[clearSuperEvent] Super event info was cleared. Previous value: {}", previousSuperEventData
-        );
+        logger.info("[clearSuperEvent] Super event info was cleared. Previous value: {}", previousSuperEventData);
     }
 
     @Override
     public void save() {
         storageProvider.save();
-    }
-
-    private boolean isCurrentEnvironmentMainnet() {
-        String currentNetworkId = constants.getBtcParams().getId();
-        return currentNetworkId.equals(NetworkParameters.ID_MAINNET);
     }
 }
