@@ -17,6 +17,7 @@
  */
 package co.rsk.mine;
 
+import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.GasLimitConfig;
 import co.rsk.config.MiningConfig;
 import co.rsk.core.BlockDifficulty;
@@ -83,7 +84,7 @@ class BlockToMineBuilderTest {
                 mock(TransactionPool.class),
                 difficultyCalculator,
                 new GasLimitCalculator(Constants.mainnet()),
-                new ForkDetectionDataCalculator(),
+                new ForkDetectionDataCalculator(RegTestParams.get()),
                 validationRules,
                 mock(MinerClock.class),
                 new BlockFactory(activationConfig),

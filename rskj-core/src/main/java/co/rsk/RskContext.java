@@ -871,7 +871,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (mnrModule == null) {
-            mnrModule = new MnrModuleImpl(getMinerServer());
+            mnrModule = new MnrModuleImpl(getMinerServer(), getRskSystemProperties().getBitcoinjNetworkConstants());
         }
 
         return mnrModule;
@@ -935,13 +935,14 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (minerClient == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             if (rskSystemProperties.minerClientAutoMine()) {
-                minerClient = new AutoMinerClient(getMinerServer());
+                minerClient = new AutoMinerClient(getMinerServer(), getRskSystemProperties().getBitcoinjNetworkConstants());
             } else {
                 minerClient = new MinerClientImpl(
                         getNodeBlockProcessor(),
                         getMinerServer(),
                         rskSystemProperties.minerClientDelayBetweenBlocks(),
-                        rskSystemProperties.minerClientDelayBetweenRefreshes()
+                        rskSystemProperties.minerClientDelayBetweenRefreshes(),
+                        rskSystemProperties.getBitcoinjNetworkConstants()
                 );
             }
         }
@@ -1119,7 +1120,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
                     commonConstants.getNewBlockMaxSecondsInTheFuture(),
                     rskSystemProperties.getActivationConfig(),
-                    rskSystemProperties.getNetworkConstants()
+                    rskSystemProperties.getNetworkConstants(),
+                    rskSystemProperties.getBitcoinjNetworkConstants()
             );
             blockValidationRule = new BlockCompositeRule(
                     new TxsMinGasPriceRule(),
@@ -1165,7 +1167,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
                     commonConstants.getNewBlockMaxSecondsInTheFuture(),
                     rskSystemProperties.getActivationConfig(),
-                    rskSystemProperties.getNetworkConstants()
+                    rskSystemProperties.getNetworkConstants(),
+                    rskSystemProperties.getBitcoinjNetworkConstants()
             );
             snapBlockValidationRule = new BlockCompositeRule(
                     new TxsMinGasPriceRule(),
@@ -1771,7 +1774,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
                     commonConstants.getNewBlockMaxSecondsInTheFuture(),
                     rskSystemProperties.getActivationConfig(),
-                    rskSystemProperties.getNetworkConstants()
+                    rskSystemProperties.getNetworkConstants(),
+                    rskSystemProperties.getBitcoinjNetworkConstants()
             );
 
             final BlockHeaderParentDependantValidationRule blockParentValidator = new BlockHeaderParentCompositeRule(
@@ -1801,7 +1805,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
                     commonConstants.getNewBlockMaxSecondsInTheFuture(),
                     rskSystemProperties.getActivationConfig(),
-                    rskSystemProperties.getNetworkConstants()
+                    rskSystemProperties.getNetworkConstants(),
+                    rskSystemProperties.getBitcoinjNetworkConstants()
             );
 
             final BlockHeaderValidationRule blockHeaderValidationRule = new BlockHeaderCompositeRule(
@@ -1852,7 +1857,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     commonConstants.getUncleGenerationLimit(),
                     new BlockHeaderCompositeRule(
                             getProofOfWorkRule(),
-                            new BlockTimeStampValidationRule(commonConstants.getNewBlockMaxSecondsInTheFuture(), rskSystemProperties.getActivationConfig(), commonConstants),
+                            new BlockTimeStampValidationRule(commonConstants.getNewBlockMaxSecondsInTheFuture(), rskSystemProperties.getActivationConfig(), commonConstants, rskSystemProperties.getBitcoinjNetworkConstants()),
                             new ValidGasUsedRule()
                     ),
                     new BlockHeaderParentCompositeRule(
@@ -1869,7 +1874,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private ForkDetectionDataCalculator getForkDetectionDataCalculator() {
         if (forkDetectionDataCalculator == null) {
-            forkDetectionDataCalculator = new ForkDetectionDataCalculator();
+            forkDetectionDataCalculator = new ForkDetectionDataCalculator(getRskSystemProperties().getBitcoinjNetworkConstants());
         }
 
         return forkDetectionDataCalculator;
@@ -2083,7 +2088,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
                     commonConstants.getNewBlockMaxSecondsInTheFuture(),
                     rskSystemProperties.getActivationConfig(),
-                    rskSystemProperties.getNetworkConstants()
+                    rskSystemProperties.getNetworkConstants(),
+                    rskSystemProperties.getBitcoinjNetworkConstants()
             );
 
             snapshotProcessor = new SnapshotProcessor(

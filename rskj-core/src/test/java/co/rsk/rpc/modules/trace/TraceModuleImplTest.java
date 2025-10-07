@@ -17,6 +17,7 @@
  */
 package co.rsk.rpc.modules.trace;
 
+import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.GasLimitConfig;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskSystemProperties;
@@ -450,7 +451,7 @@ class TraceModuleImplTest {
                         rskSystemProperties.getNetworkConstants()
                 ),
                 new GasLimitCalculator(rskSystemProperties.getNetworkConstants()),
-                new ForkDetectionDataCalculator(),
+                new ForkDetectionDataCalculator(RegTestParams.get()),
                 new DummyBlockValidationRule(),
                 new MinerClock(miningConfig.isFixedClock(), Clock.systemUTC()),
                 new BlockFactory(rskSystemProperties.getActivationConfig()),

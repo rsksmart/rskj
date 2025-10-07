@@ -17,6 +17,7 @@
  */
 package co.rsk.mine;
 
+import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
@@ -263,7 +264,7 @@ public class MinerManagerTest {
     }
 
     private static MinerClientImpl getMinerClient(NodeBlockProcessor nodeBlockProcessor, MinerServerImpl minerServer) {
-        return new MinerClientImpl(nodeBlockProcessor, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
+        return new MinerClientImpl(nodeBlockProcessor, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes(), config.getBitcoinjNetworkConstants());
     }
 
     private MinerServerImpl getMinerServer() {
@@ -286,7 +287,7 @@ public class MinerManagerTest {
                         transactionPool,
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
+                        new ForkDetectionDataCalculator(RegTestParams.get()),
                         new BlockValidationRuleDummy(),
                         clock,
                         blockFactory,

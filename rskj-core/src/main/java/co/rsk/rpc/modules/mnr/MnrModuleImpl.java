@@ -31,7 +31,6 @@ import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.mine.MinerServer;
 import co.rsk.mine.MinerWork;
@@ -45,9 +44,11 @@ public class MnrModuleImpl implements MnrModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
 
     private final MinerServer minerServer;
+    private final NetworkParameters params;
 
-    public MnrModuleImpl(MinerServer minerServer) {
+    public MnrModuleImpl(MinerServer minerServer, NetworkParameters params) {
         this.minerServer = minerServer;
+        this.params = params;
     }
 
     @Override
@@ -60,7 +61,6 @@ public class MnrModuleImpl implements MnrModule {
     public SubmittedBlockInfo submitBitcoinBlock(String bitcoinBlockHex) {
         logger.debug("submitBitcoinBlock(): {}", bitcoinBlockHex.length());
 
-        NetworkParameters params = RegTestParams.get();
         new Context(params);
 
         BtcBlock bitcoinBlock = getBtcBlock(bitcoinBlockHex, params);
@@ -77,7 +77,6 @@ public class MnrModuleImpl implements MnrModule {
     public SubmittedBlockInfo submitBitcoinBlockTransactions(String blockHashHex, String blockHeaderHex, String coinbaseHex, String txnHashesHex) {
         logger.debug("submitBitcoinBlockTransactions(): {}, {}, {}, {}", blockHashHex, blockHeaderHex, coinbaseHex, txnHashesHex);
 
-        NetworkParameters params = RegTestParams.get();
         new Context(params);
 
         BtcBlock bitcoinBlockWithHeaderOnly = getBtcBlock(blockHeaderHex, params);
@@ -100,7 +99,6 @@ public class MnrModuleImpl implements MnrModule {
             throw new JsonRpcSubmitBlockException("The list of merkle hashes can't be empty");
         }
 
-        NetworkParameters params = RegTestParams.get();
         new Context(params);
 
         BtcBlock bitcoinBlockWithHeaderOnly = getBtcBlock(blockHeaderHex, params);
