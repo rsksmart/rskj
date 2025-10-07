@@ -65,7 +65,6 @@ public class TraceModuleImpl implements TraceModule {
     private final ExecutionBlockRetriever executionBlockRetriever;
 
     private final SignatureCache signatureCache;
-    private final RskSystemProperties config;
     private final int maxTracesPerRequest;
 
     public TraceModuleImpl(
