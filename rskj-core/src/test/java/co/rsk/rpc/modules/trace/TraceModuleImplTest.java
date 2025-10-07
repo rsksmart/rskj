@@ -43,7 +43,11 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Assertions;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.Test;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
@@ -804,7 +808,7 @@ class TraceModuleImplTest {
             () -> traceModule.traceFilter(null)
         );
 
-        Assertions.assertEquals("Invalid trace_filter parameters.", exception.getMessage());
+        assertThat(exception.getMessage(), is("Invalid trace_filter parameters."));
     }
 
     @Test
@@ -824,9 +828,10 @@ class TraceModuleImplTest {
             () -> traceModule.traceFilter(traceFilterRequest)
         );
 
-        Assertions.assertTrue(exception.getMessage().contains("Count value too big"));
-        Assertions.assertTrue(exception.getMessage().contains("Maximum"));
-        Assertions.assertTrue(exception.getMessage().contains("traces allowed"));
+        assertThat(exception.getMessage(), CoreMatchers.allOf(
+                containsString("Count value too big"),
+                containsString("Maximum"),
+                containsString("traces allowed")));
     }
 
     @Test
@@ -846,7 +851,7 @@ class TraceModuleImplTest {
             () -> traceModule.traceFilter(traceFilterRequest)
         );
 
-        Assertions.assertEquals("fromBlock cannot be greater than toBlock", exception.getMessage());
+        assertThat(exception.getMessage(), containsString("fromBlock cannot be greater than toBlock"));
     }
 
     private static World executeMultiContract(ReceiptStore receiptStore) throws DslProcessorException, FileNotFoundException {

@@ -66,6 +66,7 @@ public class TraceModuleImpl implements TraceModule {
 
     private final SignatureCache signatureCache;
     private final RskSystemProperties config;
+    private final int maxTracesPerRequest;
 
     public TraceModuleImpl(
             Blockchain blockchain,
@@ -82,6 +83,7 @@ public class TraceModuleImpl implements TraceModule {
         this.executionBlockRetriever = executionBlockRetriever;
         this.signatureCache = signatureCache;
         this.config = config;
+        this.maxTracesPerRequest = config.rpcTraceMaxTracesPerRequest();
     }
 
     @Override
@@ -133,35 +135,26 @@ public class TraceModuleImpl implements TraceModule {
 
     @Override
     public JsonNode traceFilter(TraceFilterRequest traceFilterRequest) {
-        if (traceFilterRequest == null) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid trace_filter parameters.");
-        }
+        validateTraceFilterRequest(traceFilterRequest);
 
-        int maxTracesPerRequest = config.rpcTraceMaxTracesPerRequest();
         final var count = Optional.ofNullable(traceFilterRequest.getCount()).orElse(maxTracesPerRequest);
         final var after = Optional.ofNullable(traceFilterRequest.getAfter()).orElse(0);
-
-        if (count > maxTracesPerRequest) {
-            throw RskJsonRpcRequestException.invalidParamError("Count value too big. Maximum " + maxTracesPerRequest + " traces allowed.");
-        }
 
         List<TransactionTrace> allTraces = new ArrayList<>();
         Block fromBlock = getBlockByTagOrNumber(traceFilterRequest.getFromBlock(), traceFilterRequest.getFromBlockNumber());
         Block toBlock = getBlockByTagOrNumber(traceFilterRequest.getToBlock(), traceFilterRequest.getToBlockNumber());
         toBlock = toBlock == null ? blockchain.getBestBlock() : toBlock;
 
-        if (fromBlock != null && toBlock != null && fromBlock.getNumber() > toBlock.getNumber()) {
-            throw RskJsonRpcRequestException.invalidParamError("fromBlock cannot be greater than toBlock");
-        }
+        validateBlockRange(fromBlock, toBlock);
 
         int processedBlocks = 0;
         int totalNeeded = after + count;
         Block currentBlock = fromBlock;
 
         logger.debug("traceFilter: Starting processing from block {} to block {}, skipCount={}, limitCount={}",
-                fromBlock != null ? fromBlock.getNumber() : -1, toBlock != null ? toBlock.getNumber() : -1, after, count);
+                fromBlock != null ? fromBlock.getNumber() : -1, toBlock.getNumber(), after, count);
 
-        while (currentBlock != null && toBlock != null && currentBlock.getNumber() <= toBlock.getNumber()) {
+        while (currentBlock != null && currentBlock.getNumber() <= toBlock.getNumber()) {
             List<TransactionTrace> builtTraces = buildBlockTraces(currentBlock, traceFilterRequest);
 
             allTraces.addAll(builtTraces);
@@ -176,13 +169,9 @@ public class TraceModuleImpl implements TraceModule {
             currentBlock = this.blockchain.getBlockByNumber(currentBlock.getNumber() + 1);
         }
 
-        Stream<TransactionTrace> txTraceStream = allTraces.stream();
-
-        if (after > 0) {
-            txTraceStream = txTraceStream.skip(after);
-        }
-
-        List<TransactionTrace> traces = txTraceStream.limit(count).collect(Collectors.toList());
+        int fromIndex = Math.min(after, allTraces.size());
+        int toIndex = Math.min(after + count, allTraces.size());
+        List<TransactionTrace> traces = allTraces.subList(fromIndex, toIndex);
 
         logger.debug("traceFilter: Completed processing. Processed {} blocks, collected {} total traces, returning {} traces",
                 processedBlocks, allTraces.size(), traces.size());
@@ -305,6 +294,23 @@ public class TraceModuleImpl implements TraceModule {
         } else {
             long toBlockNumber = biBlock.longValue();
             return this.blockchain.getBlockByNumber(toBlockNumber);
+        }
+    }
+
+    private void validateTraceFilterRequest(TraceFilterRequest traceFilterRequest) {
+        if (traceFilterRequest == null) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid trace_filter parameters.");
+        }
+
+        final var count = Optional.ofNullable(traceFilterRequest.getCount()).orElse(maxTracesPerRequest);
+        if (count > maxTracesPerRequest) {
+            throw RskJsonRpcRequestException.invalidParamError("Count value too big. Maximum " + maxTracesPerRequest + " traces allowed.");
+        }
+    }
+
+    private void validateBlockRange(Block fromBlock, Block toBlock) {
+        if (fromBlock != null && fromBlock.getNumber() > toBlock.getNumber()) {
+            throw RskJsonRpcRequestException.invalidParamError("fromBlock cannot be greater than toBlock");
         }
     }
 }
