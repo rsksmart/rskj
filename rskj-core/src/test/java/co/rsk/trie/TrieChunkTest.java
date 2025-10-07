@@ -259,8 +259,8 @@ class TrieChunkTest {
         Keccak256 hash = root.getHash();
         
         // Test null safety
-        assertThrows(NullPointerException.class, () -> proof.verify(null, root));
-        assertThrows(NullPointerException.class, () -> proof.verify(hash, null));
+        assertThrows(NullPointerException.class, () -> proof.verifyAndApply(root, null));
+        assertThrows(NullPointerException.class, () -> proof.verifyAndApply(null, hash));
     }
 
     @Test
