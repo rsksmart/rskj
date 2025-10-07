@@ -8,7 +8,6 @@ import javax.annotation.Nonnull;
 
 /**
  * Factory methods for building AddressBasedAuthorizer instances with validated inputs.
- *
  * Best practice notes:
  * - Public factory methods perform argument validation and throw IllegalArgumentException for invalid
  *   caller-provided values rather than relying on NullPointerException. This keeps the API contract explicit
@@ -25,7 +24,7 @@ public class AddressBasedAuthorizerFactory {
      * - authorizedAddress must not be null
      * - ZERO_ADDRESS is allowed and results in an authorizer that only authorizes ZERO_ADDRESS.
      * </p>
-     * @param authorizedAddress the single address to authorize (may be ZERO_ADDRESS but not null)
+     * @param authorizedAddress the single address to authorize (can be ZERO_ADDRESS but not null)
      * @return an AddressBasedAuthorizer configured for the single address
      * @throws NullPointerException if authorizedAddress is null
      */

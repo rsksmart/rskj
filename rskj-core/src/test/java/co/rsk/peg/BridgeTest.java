@@ -11,6 +11,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.types.bytes.Bytes;
+import co.rsk.peg.BridgeMethods.AuthorizerProvider;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
@@ -24,6 +25,7 @@ import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.test.builders.BridgeBuilder;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import java.io.IOException;
@@ -3404,10 +3406,16 @@ class BridgeTest {
     @Tag("unionBridge")
     class UnionBridgeTest {
         private static final ActivationConfig allActivations = ActivationConfigsForTest.all();
+
+        private static final Constants testnetConstants = Constants.testnet2(allActivations);
         private static final Constants mainNetConstants = Constants.mainnet();
 
         private static final UnionBridgeConstants unionBridgeMainNetConstants = mainNetConstants.getBridgeConstants()
             .getUnionBridgeConstants();
+
+        private static final AddressBasedAuthorizer testnetChangeUnionBridgeAuthorizer = testnetConstants.getBridgeConstants()
+            .getUnionBridgeConstants().getChangeUnionBridgeContractAddressAuthorizer();
+
         private static final co.rsk.core.Coin initialLockingCap = unionBridgeMainNetConstants.getInitialLockingCap();
         private static final co.rsk.core.Coin newLockingCap = initialLockingCap.multiply(
             BigInteger.valueOf(unionBridgeMainNetConstants.getLockingCapIncrementsMultiplier()));
@@ -3428,6 +3436,10 @@ class BridgeTest {
         private BridgeSupport bridgeSupport;
         private Bridge bridge;
         private Transaction rskTx;
+
+        private BridgeMethods.BridgeMethodExecutor decorate;
+        private AuthorizerProvider authorizerProvider;
+        private Bridge bridgeForTestnet;
 
         @BeforeEach
         void setUp() {
@@ -3450,6 +3462,142 @@ class BridgeTest {
                 .build();
 
             when(rskTx.getSender(any())).thenReturn(unionBridgeAddress);
+            authorizerProvider = mock(AuthorizerProvider.class);
+            decorate = mock(BridgeMethods.BridgeMethodExecutor.class);
+
+            bridgeForTestnet = bridgeBuilder
+                .transaction(rskTx)
+                .constants(testnetConstants)
+                .activationConfig(allActivations)
+                .bridgeSupport(bridgeSupport)
+                .build();
+        }
+
+        @Test
+        void executeIfAuthorized_whenAuthorized_shouldExecute() throws Exception {
+            // Arrange
+            when(rskTx.getSender(any())).thenReturn(changeTestnetUnionAddressAuthorizer);
+            when(authorizerProvider.provide(any())).thenReturn(testnetChangeUnionBridgeAuthorizer);
+
+            // Act
+            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfAuthorized(
+                authorizerProvider,
+                decorate,
+                "setUnionBridgeContractAddressForTestnet"
+            );
+            executor.execute(bridge, null);
+
+            // Assert
+            verify(decorate, times(1)).execute(any(), any());
+        }
+
+        @Test
+        void executeIfAuthorized_whenUnauthorized_shouldThrowVMException() throws Exception {
+            // Arrange
+            when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
+            when(authorizerProvider.provide(any())).thenReturn(unionBridgeMainNetConstants.getChangeUnionBridgeContractAddressAuthorizer());
+
+            // Act
+            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfAuthorized(
+                authorizerProvider,
+                decorate,
+                "setUnionBridgeContractAddressForTestnet"
+            );
+            VMException actualException = assertThrows(VMException.class,
+                () -> executor.execute(bridge, null));
+
+            // Assert
+            assertTrue(actualException.getMessage().contains("The sender is not authorized to call setUnionBridgeContractAddressForTestnet"));
+            verify(decorate, never()).execute(any(), any());
+        }
+
+        @Test
+        void executeIfEnabledEnvironmentAndAuthorized_whenEnabledEnvironmentAndAuthorized_shouldExecute() throws Exception {
+            // Arrange
+            when(rskTx.getSender(any())).thenReturn(changeTestnetUnionAddressAuthorizer);
+            when(authorizerProvider.provide(any())).thenReturn(testnetChangeUnionBridgeAuthorizer);
+
+            // Act
+            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfEnabledEnvironmentAndAuthorized(
+                authorizerProvider,
+                decorate,
+                "setUnionBridgeContractAddressForTestnet"
+            );
+            executor.execute(bridgeForTestnet, null);
+
+            // Assert
+            verify(decorate, times(1)).execute(any(), any());
+        }
+
+        @Test
+        void executeIfEnabledEnvironmentAndAuthorized_whenDisabledEnvironment_shouldThrowVMException() throws Exception {
+            // Arrange
+            when(rskTx.getSender(any())).thenReturn(RskAddress.ZERO_ADDRESS);
+            when(authorizerProvider.provide(any())).thenReturn(unionBridgeMainNetConstants.getChangeLockingCapAuthorizer());
+
+            // Act
+            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfEnabledEnvironmentAndAuthorized(
+                authorizerProvider,
+                decorate,
+                "setUnionBridgeContractAddressForTestnet"
+            );
+            VMException actualException = assertThrows(VMException.class,
+                () -> executor.execute(bridge, null));
+
+            // Assert
+            assertTrue(actualException.getMessage().contains("The setUnionBridgeContractAddressForTestnet function is disabled in Mainnet."));
+            verify(decorate, never()).execute(any(), any());
+        }
+
+        @Test
+        void executeIfEnabledEnvironmentAndAuthorized_whenEnabledEnvironmentButUnauthorized_shouldThrowVMException() throws Exception {
+            // Arrange
+            when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
+
+            when(authorizerProvider.provide(any())).thenReturn(testnetChangeUnionBridgeAuthorizer);
+
+            // Act
+            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfEnabledEnvironmentAndAuthorized(
+                authorizerProvider,
+                decorate,
+                "setUnionBridgeContractAddressForTestnet"
+            );
+            VMException actualException = assertThrows(VMException.class,
+                () -> executor.execute(bridgeForTestnet, null));
+
+            // Assert
+            assertTrue(actualException.getMessage().contains("The sender is not authorized to call setUnionBridgeContractAddressForTestnet"));
+            verify(decorate, never()).execute(any(), any());
+        }
+
+        @Test
+        void executeIfEnabledEnvironmentAndAuthorized_whenDisabledEnvironmentAndUnauthorized_shouldThrowVMException() throws Exception {
+            // Arrange
+            when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
+            when(authorizerProvider.provide(any())).thenReturn(unionBridgeMainNetConstants.getChangeLockingCapAuthorizer());
+
+            BridgeMethods.BridgeMethodExecutor decorate = mock(
+                BridgeMethods.BridgeMethodExecutor.class
+            );
+            Bridge bridge = bridgeBuilder
+                .transaction(rskTx)
+                .constants(Constants.mainnet())
+                .activationConfig(allActivations)
+                .bridgeSupport(bridgeSupport)
+                .build();
+
+            // Act
+            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfEnabledEnvironmentAndAuthorized(
+                authorizerProvider,
+                decorate,
+                "setUnionBridgeContractAddressForTestnet"
+            );
+            VMException actualException = assertThrows(VMException.class,
+                () -> executor.execute(bridge, null));
+
+            // Assert
+            assertTrue(actualException.getMessage().contains("The setUnionBridgeContractAddressForTestnet function is disabled in Mainnet."));
+            verify(decorate, never()).execute(any(), any());
         }
 
         @Test
@@ -3502,18 +3650,12 @@ class BridgeTest {
         void setUnionBridgeContractAddressForTestnet_whenUnauthorized_shouldThrowVMException() {
             RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress(
                 "newUnionBridgeContractAddress");
-
-            bridge = bridgeBuilder
-                .activationConfig(allActivations)
-                .bridgeSupport(bridgeSupport)
-                .constants(Constants.testnet2(allActivations))
-                .build();
             when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
 
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
             byte[] data = function.encode(newUnionBridgeContractAddress.toHexString());
 
-            VMException actualException = assertThrows(VMException.class, () -> bridge.execute(data));
+            VMException actualException = assertThrows(VMException.class, () -> bridgeForTestnet.execute(data));
             assertTrue(actualException.getMessage().contains("The sender is not authorized to call setUnionBridgeContractAddressForTestnet"));
             verify(unionBridgeSupport, never()).setUnionBridgeContractAddressForTestnet(any(), any());
         }
@@ -3539,18 +3681,12 @@ class BridgeTest {
             UnionResponseCode expectedUnionResponseCode = UnionResponseCode.SUCCESS;
             when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(eq(rskTx), any())).thenReturn(expectedUnionResponseCode);
 
-            bridge = bridgeBuilder
-                .activationConfig(allActivations)
-                .bridgeSupport(bridgeSupport)
-                .constants(Constants.testnet2(allActivations))
-                .build();
-
             when(rskTx.getSender(any())).thenReturn(changeTestnetUnionAddressAuthorizer);
 
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
             byte[] data = function.encode();
 
-            byte[] result = bridge.execute(data);
+            byte[] result = bridgeForTestnet.execute(data);
             BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.decodeResult(result)[0];
             int actualUnionResponseCode = decodedResult.intValue();
             assertEquals(expectedUnionResponseCode.getCode(), actualUnionResponseCode);
@@ -3702,7 +3838,7 @@ class BridgeTest {
         }
 
         @Test
-        void increaseUnionBridgeLockingCap_afterRSKIP502_whenNotAuthorized_shouldThrowVmException() {
+        void increaseUnionBridgeLockingCap_afterRSKIP502_whenUnauthorized_shouldThrowVmException() {
             // Arrange
             when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
 

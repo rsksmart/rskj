@@ -8,10 +8,15 @@ import static org.mockito.Mockito.when;
 
 import co.rsk.RskTestUtils;
 import co.rsk.core.RskAddress;
+import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,6 +63,28 @@ class AddressBasedAuthorizerFactoryTest {
         assertSingleAuthorizer(addressBasedAuthorizer, authorizedAddress);
         // Assert unauthorized for any other addresses
         assertFalse(addressBasedAuthorizer.isAuthorized(unauthorizedAddress));
+    }
+
+    @Test
+    void buildMajorityAuthorizer_whenSetContainsDuplicateAddresses_shouldBuildAuthorizer() {
+        // Arrange
+        RskAddress duplicatedAddress = RskTestUtils.generateAddress("authorizedDuplicated");
+        Set<RskAddress> addressesWithDuplicates = Stream.of(authorizedAddress, unauthorizedAddress,
+            duplicatedAddress, duplicatedAddress).collect(Collectors.toSet());
+        // Act
+        AddressBasedAuthorizer authorizer = AddressBasedAuthorizerFactory.buildMajorityAuthorizer(addressesWithDuplicates);
+        // Assert
+        assertTrue(authorizer.isAuthorized(duplicatedAddress));
+    }
+
+    @Test
+    void buildMajorityAuthorizer_whenLargeSet_shouldBuildAuthorizer() {
+        Set<RskAddress> largeSet = IntStream.range(0, 100)
+            .mapToObj(i -> new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(i)).getAddress()))
+            .collect(Collectors.toSet());
+        AddressBasedAuthorizer authorizer = AddressBasedAuthorizerFactory.buildMajorityAuthorizer(largeSet);
+        assertEquals(100, authorizer.getNumberOfAuthorizedAddresses());
+        assertEquals(51, authorizer.getRequiredAuthorizedAddresses()); // majority of 100
     }
 
     @Test

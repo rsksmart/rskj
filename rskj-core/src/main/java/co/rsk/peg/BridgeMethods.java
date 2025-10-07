@@ -36,7 +36,6 @@ import org.ethereum.vm.MessageCall.MsgType;
 /**
  * Represents the methods of the Bridge contract, encapsulating details such as 
  * the Application Binary Interface (ABI), execution costs, and method implementations.
- *
  * Each enum constant corresponds to a specific method of the Bridge contract, 
  * defining its signature and providing the necessary information for execution.
  */
