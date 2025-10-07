@@ -130,6 +130,13 @@ class AddressBasedAuthorizerTest {
         assertFalse(singleAuthorizer.isAuthorized(rskTx, signatureCache));
     }
 
+    @ParameterizedTest
+    @MethodSource("authorizedAddressProvider")
+    void isAuthorized_whenNullTx_shouldBeFalse() {
+        AddressBasedAuthorizer singleAuthorizer = createSingleAuthorizer(authorizedAddress);
+        Assertions.assertThrows(NullPointerException.class, () -> singleAuthorizer.isAuthorized(null, signatureCache));
+    }
+
     private static Stream<Arguments> authorizedAddressesProvider() {
         return Stream.of(
             Arguments.of(Set.of(majorityAuthorizedAddress1, majorityAuthorizedAddress2, majorityAuthorizedAddress3)),
@@ -250,5 +257,12 @@ class AddressBasedAuthorizerTest {
         AddressBasedAuthorizer allAuthorizer = createLegacyAllAuthorizer(keys);
         when(rskTx.getSender(signatureCache)).thenReturn(unauthorizedAddress);
         assertFalse(allAuthorizer.isAuthorized(rskTx, signatureCache));
+    }
+
+    @ParameterizedTest
+    @MethodSource("authorizedKeysProvider")
+    void isAuthorized_whenNullTx_shouldBeFalse(List<ECKey> keys) {
+        AddressBasedAuthorizer allAuthorizer = createLegacyAllAuthorizer(keys);
+        Assertions.assertThrows(NullPointerException.class, () -> allAuthorizer.isAuthorized(null, signatureCache));
     }
 }
