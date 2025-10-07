@@ -9,11 +9,10 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.storage.StorageAccessor;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
 
 public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvider {
     private static final Logger logger = LoggerFactory.getLogger(UnionBridgeStorageProviderImpl.class);
@@ -30,7 +29,6 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     private Boolean unionBridgeReleaseEnabled;
     private byte[] superEvent;
     private byte[] baseEvent;
-    private boolean isBaseEventSet;
 
     public UnionBridgeStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -236,13 +234,8 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     @Override
     public byte[] getBaseEvent() {
-        if (!isNull(baseEvent) && baseEvent.length > 0) {
-            return baseEvent;
-        }
-
-        // Return empty if the base event was explicitly set to null or empty
-        if (isBaseEventSet) {
-            return EMPTY_BYTE_ARRAY;
+        if (!isNull(baseEvent)) {
+            return baseEvent.clone();
         }
 
         baseEvent = bridgeStorageAccessor.getFromRepository(
@@ -253,19 +246,19 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     }
 
     @Override
-    public void setBaseEvent(byte[] data) {
-        this.baseEvent = data;
-        this.isBaseEventSet = true;
+    public void setBaseEvent(@Nonnull byte[] data) {
+        requireNonNull(data, "Base event data cannot be null");
+        this.baseEvent = data.clone();
     }
 
     @Override
     public void clearBaseEvent() {
         logger.info("[clearBaseEvent] Clearing base event.");
-        setBaseEvent(null);
+        setBaseEvent(EMPTY_BYTE_ARRAY);
     }
 
     private void saveBaseEvent() {
-        if (!isBaseEventSet) {
+        if (isNull(baseEvent)) {
             return;
         }
 
