@@ -21,7 +21,6 @@ package co.rsk.peg.vote;
 
 import co.rsk.RskTestUtils;
 import co.rsk.core.RskAddress;
-import java.math.BigInteger;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
