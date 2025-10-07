@@ -792,6 +792,7 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
             peersInformation.processSyncingError(sender, EventType.INVALID_STATE_CHUNK, "Received empty state chunk from peer: [{}] for block: [{}]", sender.getPeerNodeID(), lastBlock.getHash());
             return;
         }
+        // TODO -> Change this to check that the chunk is exactly the expected size (being aware of heiht)
         if (keyValues.size() > TrieChunk.MAX_CHUNK_SIZE) {
             logger.error("Received state chunk with [{}] items, exceeding maximum allowed size of [{}] for block: [{}]", keyValues.size(), TrieChunk.MAX_CHUNK_SIZE, lastBlock.getHash());
             peersInformation.processSyncingError(sender, EventType.INVALID_STATE_CHUNK, "Received state chunk with [{}] items, exceeding maximum allowed size of [{}] for block: [{}]", keyValues.size(), TrieChunk.MAX_CHUNK_SIZE, lastBlock.getHash());
@@ -805,6 +806,8 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
                 return;
             }
         }
+
+        // TODO -> limit value size analysis
 
         Keccak256 lastSavedTrieHash = state.getLastSavedTrieHash();
         Trie trie = lastSavedTrieHash == null ? new Trie(this.trieStore) : trieStore.retrieve(lastSavedTrieHash.getBytes()).orElse(null);
@@ -830,7 +833,7 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
 
         final byte[] blockHash = lastBlock.getHash().getBytes();
 
-        boolean verified = chunk.proof().verify(stateRoot, trie);
+        boolean verified = chunk.proof().verifyAndApply(trie, stateRoot);
         if (!verified) {
             final byte[] fromKey = firstKey;
             logger.error("State chunk proof verification failed for block: [{}] with state root: [{}]", lastBlock.getHash(), stateRoot);

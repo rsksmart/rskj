@@ -23,8 +23,10 @@ import org.ethereum.util.RLPList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -89,7 +91,7 @@ public record TrieChunk(@Nonnull LinkedHashMap<byte[], byte[]> keyValues, @Nonnu
         return new TrieChunk(keyValues, proof);
     }
 
-    public record Proof (@Nonnull List<ProofNode> proofNodes, @Nullable Trie leftChildNode, @Nullable Trie rightChildNode) {
+    public record Proof(@Nonnull List<ProofNode> proofNodes, @Nullable Trie leftChildNode, @Nullable Trie rightChildNode) {
 
         public static final Proof EMPTY = new Proof(Collections.emptyList(), null, null);
 
@@ -97,70 +99,99 @@ public record TrieChunk(@Nonnull LinkedHashMap<byte[], byte[]> keyValues, @Nonnu
             return proofNodes.isEmpty() && leftChildNode == null && rightChildNode == null;
         }
 
-        public boolean verify(@Nonnull Keccak256 expectedTrieHash, @Nonnull Trie root) {
-            Objects.requireNonNull(expectedTrieHash);
-            Objects.requireNonNull(root);
+        public boolean verifyAndApply(@Nonnull Trie baseTrie, @Nonnull Keccak256 candidateTrieHash) {
+            Objects.requireNonNull(baseTrie);
+            Objects.requireNonNull(candidateTrieHash);
             Objects.requireNonNull(proofNodes);
 
-            return applyProof(root, new LinkedList<>(proofNodes), leftChildNode, rightChildNode)
-                    .map(trie -> expectedTrieHash.equals(trie.getHash()))
+            return applyProof(baseTrie, new LinkedList<>(proofNodes), leftChildNode, rightChildNode)
+                    .map(trie -> candidateTrieHash.equals(trie.getHash()))
                     .orElse(false);
         }
 
         private Optional<Trie> applyProof(@Nonnull Trie trie,
                                           @Nonnull LinkedList<ProofNode> proofNodes,
                                           @Nullable Trie leftChildNode, @Nullable Trie rightChildNode) {
-            if (proofNodes.isEmpty()) {
-                if (leftChildNode == null && rightChildNode == null) {
-                    return Optional.of(trie);
+            // Stack to track nodes we need to rebuild on the way back up
+            Deque<TrieLevel> stack = new ArrayDeque<>();
+            Trie currentTrie = trie;
+
+            // Phase 1: Descend the trie, processing proof nodes and tracking the path
+            while (!proofNodes.isEmpty()) {
+                ProofNode proofNode = proofNodes.poll();
+
+                // Split trie if needed to match expected shared path length
+                if (proofNode.sharedPathLength() < currentTrie.getSharedPath().length()) {
+                    currentTrie = currentTrie.split(currentTrie.getSharedPath().slice(0, proofNode.sharedPathLength()));
                 }
-                return Optional.of(new Trie(null, trie.getSharedPath(), trie.getValue(),
-                        leftChildNode != null ? new NodeReference(null, leftChildNode, null) : trie.getLeft(),
-                        rightChildNode != null ? new NodeReference(null, rightChildNode, null) : trie.getRight(),
-                        trie.getValueLength(), trie.getValueHash()));
-            }
 
-            ProofNode proofNode = proofNodes.poll();
-
-            if (proofNode.sharedPathLength() < trie.getSharedPath().length()) {
-                trie = trie.split(trie.getSharedPath().slice(0, proofNode.sharedPathLength()));
-            }
-
-            if (proofNode.rightNode() != null && !trie.getRight().isEmpty()) {
-                return Optional.empty();
-            }
-
-            NodeReference leftNodeRef;
-            NodeReference rightNodeRef;
-
-            if (trie.getRight().isEmpty()) {
-                if (trie.getLeft().isEmpty()) {
+                // Validation: proof node has right node but trie already has right child
+                if (proofNode.rightNode() != null && !currentTrie.getRight().isEmpty()) {
                     return Optional.empty();
                 }
 
-                Optional<Trie> leftNodeOpt = applyProof(Trie.fromRef(trie.getLeft()), proofNodes, leftChildNode, rightChildNode);
-                if (leftNodeOpt.isEmpty()) {
-                    return Optional.empty();
-                }
+                // Determine which direction to traverse
+                if (currentTrie.getRight().isEmpty()) {
+                    // Going down the left path
+                    if (currentTrie.getLeft().isEmpty()) {
+                        return Optional.empty();
+                    }
 
-                leftNodeRef = new NodeReference(null, leftNodeOpt.get(), null);
-                rightNodeRef = proofNode.rightNode() != null
-                        ? new NodeReference(null, proofNode.rightNode(), null)
-                        : trie.getRight();
-            } else {
-                Optional<Trie> rightNodeOpt = applyProof(Trie.fromRef(trie.getRight()), proofNodes, leftChildNode, rightChildNode);
-                if (rightNodeOpt.isEmpty()) {
-                    return Optional.empty();
+                    // Save current level info for reconstruction
+                    stack.push(new TrieLevel(currentTrie, proofNode, true));
+                    
+                    // Move down to left child
+                    currentTrie = Trie.fromRef(currentTrie.getLeft());
+                } else {
+                    // Going down the right path
+                    // Save current level info for reconstruction
+                    stack.push(new TrieLevel(currentTrie, proofNode, false));
+                    
+                    // Move down to right child
+                    currentTrie = Trie.fromRef(currentTrie.getRight());
                 }
-
-                leftNodeRef = trie.getLeft();
-                rightNodeRef = new NodeReference(null, rightNodeOpt.get(), null);
             }
 
-            return Optional.of(new Trie(null, trie.getSharedPath(), trie.getValue(),
-                    leftNodeRef, rightNodeRef,
-                    trie.getValueLength(), trie.getValueHash()));
+            // Phase 2: Attach leaf children if provided
+            if (leftChildNode != null || rightChildNode != null) {
+                currentTrie = new Trie(null, currentTrie.getSharedPath(), currentTrie.getValue(),
+                        leftChildNode != null ? new NodeReference(null, leftChildNode, null) : currentTrie.getLeft(),
+                        rightChildNode != null ? new NodeReference(null, rightChildNode, null) : currentTrie.getRight(),
+                        currentTrie.getValueLength(), currentTrie.getValueHash());
+            }
+
+            // Phase 3: Reconstruct the trie from bottom to top
+            while (!stack.isEmpty()) {
+                TrieLevel level = stack.pop();
+                Trie parentTrie = level.trie();
+                ProofNode proofNode = level.proofNode();
+                boolean wentLeft = level.wentLeft();
+
+                NodeReference leftNodeRef;
+                NodeReference rightNodeRef;
+
+                if (wentLeft) {
+                    // We went left, so attach reconstructed left and potentially add right from proof
+                    leftNodeRef = new NodeReference(null, currentTrie, null);
+                    rightNodeRef = proofNode.rightNode() != null
+                            ? new NodeReference(null, proofNode.rightNode(), null)
+                            : parentTrie.getRight();
+                } else {
+                    // We went right, so keep existing left and attach reconstructed right
+                    leftNodeRef = parentTrie.getLeft();
+                    rightNodeRef = new NodeReference(null, currentTrie, null);
+                }
+
+                // Create new parent node with updated children
+                currentTrie = new Trie(null, parentTrie.getSharedPath(), parentTrie.getValue(),
+                        leftNodeRef, rightNodeRef,
+                        parentTrie.getValueLength(), parentTrie.getValueHash());
+            }
+
+            return Optional.of(currentTrie);
         }
+
+        private record TrieLevel(@Nonnull Trie trie, @Nonnull ProofNode proofNode, boolean wentLeft) {}
 
         public byte[] encode() {
             byte[][] proofNodeEncodings = new byte[proofNodes.size()][];
