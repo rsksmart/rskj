@@ -11,7 +11,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.math.BigInteger;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
@@ -33,7 +32,7 @@ class UnionBridgeConstantsTest {
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance(), Collections.emptyList()),
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), List.of(ZERO_ADDRESS)),
             Arguments.of(UnionBridgeTestNetConstants.getInstance(), testnetAuthorizers),
             Arguments.of(UnionBridgeRegTestConstants.getInstance(), regtestAuthorizers)
         );
