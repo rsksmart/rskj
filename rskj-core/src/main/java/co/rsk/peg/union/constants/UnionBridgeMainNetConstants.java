@@ -4,11 +4,8 @@ import static co.rsk.core.RskAddress.ZERO_ADDRESS;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.Coin;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
-import co.rsk.peg.vote.AddressBasedAuthorizer.MinimumRequiredCalculation;
 import co.rsk.peg.vote.AddressBasedAuthorizerFactory;
 import java.math.BigInteger;
-import java.util.Collections;
 
 public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
 
@@ -26,10 +23,7 @@ public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
         initialLockingCap = new Coin(oneRbtc).multiply(BigInteger.valueOf(300)); // 300 rbtc
         lockingCapIncrementsMultiplier = 2;
 
-        changeUnionBridgeContractAddressAuthorizer = new AddressBasedAuthorizer(
-            Collections.emptyList(),
-            MinimumRequiredCalculation.ONE
-        );
+        changeUnionBridgeContractAddressAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(ZERO_ADDRESS);
 
         // TODO: Replace with actual authorizers
         changeLockingCapAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
