@@ -3838,7 +3838,7 @@ class BridgeTest {
         }
 
         @Test
-        void increaseUnionBridgeLockingCap_afterRSKIP502_whenNotAuthorized_shouldThrowVmException() {
+        void increaseUnionBridgeLockingCap_afterRSKIP502_whenUnauthorized_shouldThrowVmException() {
             // Arrange
             when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
 
