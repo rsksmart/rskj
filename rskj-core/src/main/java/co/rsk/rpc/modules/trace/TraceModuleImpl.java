@@ -81,7 +81,6 @@ public class TraceModuleImpl implements TraceModule {
         this.blockExecutor = blockExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
         this.signatureCache = signatureCache;
-        this.config = config;
         this.maxTracesPerRequest = config.rpcTraceMaxTracesPerRequest();
     }
 
