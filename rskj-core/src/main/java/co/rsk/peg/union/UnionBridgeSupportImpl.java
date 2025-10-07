@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(UnionBridgeSupportImpl.class);
+    protected static final int MAX_EVENT_DATA_LENGTH = 128;
 
     private final UnionBridgeConstants constants;
     private final UnionBridgeStorageProvider storageProvider;
@@ -293,9 +294,8 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         RskAddress caller = tx.getSender(signatureCache);
         validateCallerIsUnionBridge(caller);
 
-        int maximumDataLength = 128;
         int dataLength = data.length;
-        if (dataLength > maximumDataLength) {
+        if (dataLength > MAX_EVENT_DATA_LENGTH) {
             throw new IllegalArgumentException(String.format("Super event data length %d is above maximum.", dataLength));
         }
 
@@ -326,15 +326,9 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         RskAddress caller = tx.getSender(signatureCache);
         validateCallerIsUnionBridge(caller);
 
-        if (data.length == 0) {
-            clearBaseEvent();
-            return;
-        }
-
-        int maximumDataLength = 128;
         int dataLength = data.length;
-        if (dataLength > maximumDataLength) {
-            throw new IllegalArgumentException("BaseEvent data length " + dataLength + " is above maximum.");
+        if (dataLength > MAX_EVENT_DATA_LENGTH) {
+            throw new IllegalArgumentException(String.format("Base event data length %d is above maximum.", dataLength));
         }
 
         byte[] previousBaseEventData = getBaseEvent();
@@ -348,15 +342,10 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     public void clearBaseEvent(Transaction tx) {
         RskAddress caller = tx.getSender(signatureCache);
         validateCallerIsUnionBridge(caller);
-        clearBaseEvent();
-    }
 
-    private void clearBaseEvent() {
         byte[] previousBaseEventData = getBaseEvent();
         storageProvider.setBaseEvent(ByteUtil.EMPTY_BYTE_ARRAY);
-        logger.info(
-            "[clearBaseEvent] Base event info was cleared. Previous value: {}", previousBaseEventData
-        );
+        logger.info("[clearBaseEvent] Base event info was cleared. Previous value: {}", previousBaseEventData);
     }
 
     @Override
