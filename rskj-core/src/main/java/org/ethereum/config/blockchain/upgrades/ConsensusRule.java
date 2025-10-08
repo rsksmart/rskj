@@ -111,6 +111,7 @@ public enum ConsensusRule {
     RSKIP516("rskip516"), // Addition of precompiled contracts for add and mul operations on the secp256k1 curve
     RSKIP529("rskip529"), // New storage cells in Bridge native contract for base and super events info
     RSKIP536("rskip536"), // Additional methods for BlockHeader precompiled contract
+    RSKIP481("rskip481"), // Superevents for the union bridge
     ;
 
     private final String configKey;

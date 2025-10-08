@@ -28,24 +28,32 @@ import java.util.List;
 public class BlockHeaderV0 extends BlockHeader {
     // block header for blocks before rskip351
     @Override
-    public byte getVersion() { return 0x0; }
+    public byte getVersion() {
+        return 0x0;
+    }
+
     @Override
-    public BlockHeaderExtension getExtension() { return null; } // block header v0 has no extension
+    public BlockHeaderExtension getExtension() {
+        return null;
+    } // block header v0 has no extension
+
     @Override
     public void setExtension(BlockHeaderExtension extension) {
         // block header v0 has no extension
     }
 
     private short[] txExecutionSublistsEdges;
+    private byte[] superEvent;
+
 
     public BlockHeaderV0(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
-        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
-        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
-        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-        byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
-        Coin minimumGasPrice, int uncleCount, boolean sealed,
-        boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, short[] txExecutionSublistsEdges) {
-        super(parentHash,unclesHash, coinbase, stateRoot,
+                         byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
+                         long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
+                         Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+                         byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
+                         Coin minimumGasPrice, int uncleCount, boolean sealed,
+                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, byte[] superEvent, short[] txExecutionSublistsEdges) {
+        super(parentHash, unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, logsBloom, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
@@ -53,11 +61,15 @@ public class BlockHeaderV0 extends BlockHeader {
                 minimumGasPrice, uncleCount, sealed,
                 useRskip92Encoding, includeForkDetectionData, ummRoot);
         this.txExecutionSublistsEdges = txExecutionSublistsEdges != null ? Arrays.copyOf(txExecutionSublistsEdges, txExecutionSublistsEdges.length) : null;
+        this.superEvent = superEvent != null ? Arrays.copyOf(superEvent, superEvent.length) : null;
     }
 
     // logs bloom is stored in the extension data
     @Override
-    public byte[] getLogsBloom() { return extensionData; }
+    public byte[] getLogsBloom() {
+        return extensionData;
+    }
+
     @Override
     public void setLogsBloom(byte[] logsBloom) {
         if (this.sealed) {
@@ -69,11 +81,29 @@ public class BlockHeaderV0 extends BlockHeader {
     }
 
     @Override
-    public short[] getTxExecutionSublistsEdges() { return this.txExecutionSublistsEdges != null ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length) : null; }
+    public short[] getTxExecutionSublistsEdges() {
+        return this.txExecutionSublistsEdges != null ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length) : null;
+    }
 
     @Override
     public void setTxExecutionSublistsEdges(short[] edges) {
-        this.txExecutionSublistsEdges =  edges != null? Arrays.copyOf(edges, edges.length) : null;
+        this.txExecutionSublistsEdges = edges != null ? Arrays.copyOf(edges, edges.length) : null;
+    }
+
+    @Override
+    public byte[] getSuperEvent() {
+        return superEvent != null ? Arrays.copyOf(superEvent, superEvent.length) : null;
+    }
+
+    @Override
+    public void setSuperEvent(byte[] superEvent) {
+        /* A sealed block header is immutable, cannot be changed */
+        if (this.sealed) {
+            throw new SealedBlockHeaderException("trying to alter super chain data hash");
+        }
+        this.hash = null;
+
+        this.superEvent = superEvent;
     }
 
     @Override
@@ -84,5 +114,6 @@ public class BlockHeaderV0 extends BlockHeader {
         // 2. keep compressed encoding the same as uncompressed
         //    since this difference should not exist on v0
         this.addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
+        this.addSuperEvent(fieldsToEncode);
     }
 }

@@ -75,9 +75,7 @@ public class Block {
         byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList, isRskip126Enabled);
 
         if (checktxs && !Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
-            String message = String.format(
-                    "Transactions trie root validation failed for block %d %s", header.getNumber(), header.getHash()
-            );
+            String message = String.format("Transactions trie root validation failed for block %d %s", header.getNumber(), header.getHash());
             panicProcessor.panic("txroot", message);
             throw new IllegalArgumentException(message);
         }
@@ -322,9 +320,7 @@ public class Block {
     }
 
     public String getShortDescr() {
-        return "#" + getNumber() + " (" + getPrintableHash() + " <~ "
-                + getParentPrintableHash() + ") Txs:" + getTransactionsList().size() +
-                ", Unc: " + getUncleList().size();
+        return "#" + getNumber() + " (" + getPrintableHash() + " <~ " + getParentPrintableHash() + ") Txs:" + getTransactionsList().size() + ", Unc: " + getUncleList().size();
     }
 
     public String getHashJsonString() {

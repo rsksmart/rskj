@@ -162,6 +162,12 @@ public class BlockFactory {
                     : rlpHeader.get(r++).getRLPData()[0];
         }
 
+        byte[] superEvent = null;
+        if ((!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) &&
+                (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber))) {
+            superEvent = rlpHeader.get(r++).getRLPRawData();
+        }
+
         short[] txExecutionSublistsEdges = null;
 
         if ((!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) &&
@@ -185,7 +191,7 @@ public class BlockFactory {
         return createBlockHeader(compressed, sealed, parentHash, unclesHash,
                 coinBaseBytes, coinbase, stateRoot, txTrieRoot, receiptTrieRoot, extensionData,
                 difficultyBytes, difficulty, glBytes, blockNumber, gasUsed, timestamp, extraData,
-                paidFees, minimumGasPriceBytes, minimumGasPrice, uncleCount, ummRoot, version, txExecutionSublistsEdges,
+                paidFees, minimumGasPriceBytes, minimumGasPrice, uncleCount, ummRoot, superEvent, version, txExecutionSublistsEdges,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 useRskip92Encoding, includeForkDetectionData);
     }
@@ -193,7 +199,7 @@ public class BlockFactory {
     private BlockHeader createBlockHeader(boolean compressed, boolean sealed, byte[] parentHash, byte[] unclesHash,
                                           byte[] coinBaseBytes, RskAddress coinbase, byte[] stateRoot, byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData,
                                           byte[] difficultyBytes, BlockDifficulty difficulty, byte[] glBytes, long blockNumber, long gasUsed, long timestamp, byte[] extraData,
-                                          Coin paidFees, byte[] minimumGasPriceBytes, Coin minimumGasPrice, int uncleCount, byte[] ummRoot, byte version, short[] txExecutionSublistsEdges,
+                                          Coin paidFees, byte[] minimumGasPriceBytes, Coin minimumGasPrice, int uncleCount, byte[] ummRoot, byte[] superEvent, byte version, short[] txExecutionSublistsEdges,
                                           byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof, byte[] bitcoinMergedMiningCoinbaseTransaction,
                                           boolean useRskip92Encoding, boolean includeForkDetectionData) {
         if (blockNumber == Genesis.NUMBER) {
@@ -224,7 +230,7 @@ public class BlockFactory {
                     paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                     bitcoinMergedMiningCoinbaseTransaction, new byte[0],
                     minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                    ummRoot, txExecutionSublistsEdges, compressed
+                    ummRoot, superEvent, txExecutionSublistsEdges, compressed
             );
         }
 
@@ -235,7 +241,7 @@ public class BlockFactory {
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, new byte[0],
                 minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                ummRoot, txExecutionSublistsEdges
+                ummRoot, superEvent, txExecutionSublistsEdges
         );
     }
 
