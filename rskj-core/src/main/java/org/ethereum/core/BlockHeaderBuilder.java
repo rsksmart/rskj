@@ -57,6 +57,7 @@ public class BlockHeaderBuilder {
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
     private byte[] mergedMiningForkDetectionData;
     private byte[] ummRoot;
+    private byte[] superEvent;
     private short[] txExecutionSublistsEdges;
 
     private Coin minimumGasPrice;
@@ -264,6 +265,11 @@ public class BlockHeaderBuilder {
         return this;
     }
 
+    public BlockHeaderBuilder setSuperEvent(byte[] superEvent) {
+        this.superEvent = copy(superEvent, null);
+        return this;
+    }
+
     public BlockHeaderBuilder setTxExecutionSublistsEdges(short[] edges) {
         if (edges != null) {
             this.txExecutionSublistsEdges = new short[edges.length];
@@ -330,6 +336,12 @@ public class BlockHeaderBuilder {
                 if (ummRoot == null) {
                     ummRoot = new byte[0];
                 }
+            }
+        }
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP481, number)) {
+            if (superEvent == null) {
+                superEvent = new byte[0];
             }
         }
 

@@ -457,7 +457,14 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private Block createFakePendingBlock(Block best) {
         // creating fake lightweight calculated block with no hashes calculations
-        return blockFactory.newBlock(blockFactory.getBlockHeaderBuilder().setParentHash(best.getHash().getBytes()).setDifficulty(best.getDifficulty()).setNumber(best.getNumber() + 1).setGasLimit(ByteUtil.longToBytesNoLeadZeroes(Long.MAX_VALUE)).setTimestamp(best.getTimestamp() + 1).build(), Collections.emptyList(), Collections.emptyList());
+        return blockFactory.newBlock(blockFactory.getBlockHeaderBuilder()
+                                        .setParentHash(best.getHash().getBytes())
+                                        .setDifficulty(best.getDifficulty())
+                                        .setNumber(best.getNumber() + 1)
+                                        .setGasLimit(ByteUtil.longToBytesNoLeadZeroes(Long.MAX_VALUE))
+                                        .setTimestamp(best.getTimestamp() + 1)
+                                        .build(),
+                Collections.emptyList(), Collections.emptyList());
     }
 
     private TransactionValidationResult shouldAcceptTx(Transaction tx, RepositorySnapshot currentRepository) {
