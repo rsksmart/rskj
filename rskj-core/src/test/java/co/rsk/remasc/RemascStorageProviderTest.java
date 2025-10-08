@@ -49,7 +49,9 @@ import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Assertions;
@@ -456,6 +458,8 @@ class RemascStorageProviderTest {
         testRunner.setFixedCoinbase(coinbase);
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
+        BlockStore blockStore = builder.getBlockStore();
+        ReceiptStore receiptStore = builder.getReceiptStore();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
         List<Block> blocks = new ArrayList<>();
         blocks.add(RemascTestRunner.createBlock(genesisBlock, blockchain.getBestBlock(), PegTestUtils.createHash3(),
@@ -477,17 +481,20 @@ class RemascStorageProviderTest {
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
 
         BlockExecutor blockExecutor = new BlockExecutor(
+                blockStore,
+                receiptStore,
                 repositoryLocator,
                 new TransactionExecutorFactory(
                         config,
-                        builder.getBlockStore(),
+                        blockStore,
                         null,
                         new BlockFactory(config.getActivationConfig()),
                         new ProgramInvokeFactoryImpl(),
                         new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
-                config);
+                config,
+                new SuperDifficultyCalculator(config.getNetworkConstants()));
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());

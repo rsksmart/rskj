@@ -189,7 +189,7 @@ public class BlockToMineBuilder {
             Coin minimumGasPrice,
             byte[] extraData) {
         BlockHeader newHeader = createHeader(mainchainHeaders, uncles, txs, minimumGasPrice, extraData);
-        Block newBlock = blockFactory.newBlock(newHeader, txs, uncles, false);
+        Block newBlock = blockFactory.newBlock(newHeader, txs, uncles, null, false);
 
         // TODO(nacho): The validation rules should accept a list of uncles and we should never build invalid blocks.
         if (validationRules.isValid(newBlock)) {
@@ -201,7 +201,7 @@ public class BlockToMineBuilder {
         panicProcessor.panic("buildBlock", "some validation failed trying to create a new block");
 
         newHeader = createHeader(mainchainHeaders, Collections.emptyList(), txs, minimumGasPrice, extraData);
-        return blockFactory.newBlock(newHeader, txs, Collections.emptyList(), false);
+        return blockFactory.newBlock(newHeader, txs, Collections.emptyList(), null, false);
     }
 
     private BlockHeader createHeader(
@@ -230,6 +230,8 @@ public class BlockToMineBuilder {
         // ummRoot can not be set to a value yet since the UMM contracts are not yet implemented
         byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
 
+        SuperBlockResolver isSuperResolver = !activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber) ? SuperBlockResolver.FALSE : null;
+
         final BlockHeader newHeader = blockFactory
                 .getBlockHeaderBuilder()
                 .setParentHash(newBlockParentHeader.getHash().getBytes())
@@ -250,6 +252,7 @@ public class BlockToMineBuilder {
                 .setUncleCount(uncles.size())
                 .setUmmRoot(ummRoot)
                 .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
+                .setSuperBlockResolver(isSuperResolver)
                 .build();
 
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));

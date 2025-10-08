@@ -593,9 +593,12 @@ class TransactionModuleTest {
         this.transactionExecutorFactory = transactionExecutorFactory;
         MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         BlockExecutor blockExecutor = new BlockExecutor(
+                blockStore,
+                receiptStore,
                 repositoryLocator,
                 this.transactionExecutorFactory,
-                config);
+                config,
+                new SuperDifficultyCalculator(config.getNetworkConstants()));
 
         MinerServer minerServer = new MinerServerImpl(
                 config,

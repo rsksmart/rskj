@@ -21,6 +21,7 @@ package co.rsk.remasc;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -137,6 +138,8 @@ class RemascTestRunner {
                 builder.getConfig().getActivationConfig(), blockTxSignatureCache);
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory, blockTxSignatureCache);
         BlockExecutor blockExecutor = new BlockExecutor(
+                builder.getBlockStore(),
+                builder.getReceiptStore(),
                 builder.getRepositoryLocator(),
                 new TransactionExecutorFactory(
                         builder.getConfig(),
@@ -147,7 +150,8 @@ class RemascTestRunner {
                         precompiledContracts,
                         blockTxSignatureCache
                 ),
-                builder.getConfig());
+                builder.getConfig(),
+                new SuperDifficultyCalculator(builder.getConfig().getNetworkConstants()));
 
         Random random = new Random(RemascTestRunner.class.hashCode());
         for(int i = 0; i <= this.initialHeight; i++) {
@@ -277,6 +281,7 @@ class RemascTestRunner {
                 ),
                 txs,
                 uncles,
+                null,
                 true,
                 false
         );
@@ -294,7 +299,7 @@ class RemascTestRunner {
                     HashUtil.EMPTY_TRIE_HASH, new Bloom().getData(), finalDifficulty, parentBlock.getNumber() + 1,
                     parentBlock.getGasLimit(), parentBlock.getGasUsed(), parentBlock.getTimestamp(), new byte[0],
                     paidFees, null, null, null, new byte[0],
-                    Coin.valueOf(10), uncles.size(), false, true, false, new byte[0], null
+                    Coin.valueOf(10), uncles.size(), false, true, false, new byte[0], new byte[0], SuperBlockResolver.FALSE, null
             );
             this.blockHash = blockHash;
         }
