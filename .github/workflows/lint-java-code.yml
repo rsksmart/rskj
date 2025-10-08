@@ -49,6 +49,22 @@ jobs:
             echo "changed_files_count=0" >> $GITHUB_OUTPUT
             echo "changed_files=" >> $GITHUB_OUTPUT
           else
+            # Validate file names to prevent command injection
+            is_valid_java_filepath()
+            {
+              # Allow: letters, digits, dot, underscore, forward slash, hyphen, dollar sign
+              echo "$1" | grep -qx '[a-zA-Z0-9._/$-]\{1,\}'
+            }
+
+            # Validate each file
+            while IFS= read -r file; do
+              if [ -n "$file" ] && ! is_valid_java_filepath "$file"; then
+                echo "ERROR: Invalid characters in file path: $file" >&2
+                echo "Only alphanumeric, dot, underscore, slash, hyphen, and dollar sign are allowed" >&2
+                exit 1
+              fi
+            done <<< "$files"
+
             echo "Changed Java files:"
             echo "$files"
             echo "Changed Java files count: $(echo "$files" | wc -l)"
