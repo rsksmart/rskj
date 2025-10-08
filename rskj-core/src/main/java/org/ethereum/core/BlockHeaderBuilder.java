@@ -57,6 +57,7 @@ public class BlockHeaderBuilder {
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
     private byte[] mergedMiningForkDetectionData;
     private byte[] ummRoot;
+    private byte[] superEvent;
     private short[] txExecutionSublistsEdges;
 
     private Coin minimumGasPrice;
@@ -264,6 +265,11 @@ public class BlockHeaderBuilder {
         return this;
     }
 
+    public BlockHeaderBuilder setSuperEvent(byte[] superEvent) {
+        this.superEvent = copy(superEvent, null);
+        return this;
+    }
+
     public BlockHeaderBuilder setTxExecutionSublistsEdges(short[] edges) {
         if (edges != null) {
             this.txExecutionSublistsEdges = new short[edges.length];
@@ -333,12 +339,48 @@ public class BlockHeaderBuilder {
             }
         }
 
+        if (activationConfig.isActive(ConsensusRule.RSKIP481, number)) {
+            if (superEvent == null) {
+                superEvent = new byte[0];
+            }
+        }
+
         if (activationConfig.isActive(ConsensusRule.RSKIP144, number) && createParallelCompliantHeader && txExecutionSublistsEdges == null) {
             txExecutionSublistsEdges = new short[0];
         }
 
-        if (activationConfig.getHeaderVersion(number) == 0x1) {
-            return new BlockHeaderV1(
+        byte version = activationConfig.getHeaderVersion(number);
+
+        return switch (version) {
+            case 0x2 ->
+                new BlockHeaderV2(
+                        parentHash, unclesHash, coinbase,
+                        stateRoot, txTrieRoot, receiptTrieRoot,
+                        logsBloom, difficulty, number,
+                        gasLimit, gasUsed, timestamp, extraData, paidFees,
+                        bitcoinMergedMiningHeader,
+                        bitcoinMergedMiningMerkleProof,
+                        bitcoinMergedMiningCoinbaseTransaction,
+                        mergedMiningForkDetectionData,
+                        minimumGasPrice, uncleCount,
+                        false, useRskip92Encoding,
+                        includeForkDetectionData, ummRoot, superEvent, txExecutionSublistsEdges, false);
+
+            case 0x1 ->
+                new BlockHeaderV1(
+                        parentHash, unclesHash, coinbase,
+                        stateRoot, txTrieRoot, receiptTrieRoot,
+                        logsBloom, difficulty, number,
+                        gasLimit, gasUsed, timestamp, extraData, paidFees,
+                        bitcoinMergedMiningHeader,
+                        bitcoinMergedMiningMerkleProof,
+                        bitcoinMergedMiningCoinbaseTransaction,
+                        mergedMiningForkDetectionData,
+                        minimumGasPrice, uncleCount,
+                        false, useRskip92Encoding,
+                        includeForkDetectionData, ummRoot, superEvent, txExecutionSublistsEdges, false);
+
+            default -> new BlockHeaderV0(
                     parentHash, unclesHash, coinbase,
                     stateRoot, txTrieRoot, receiptTrieRoot,
                     logsBloom, difficulty, number,
@@ -349,22 +391,7 @@ public class BlockHeaderBuilder {
                     mergedMiningForkDetectionData,
                     minimumGasPrice, uncleCount,
                     false, useRskip92Encoding,
-                    includeForkDetectionData, ummRoot, txExecutionSublistsEdges, false
-            );
-        }
-
-        return new BlockHeaderV0(
-                parentHash, unclesHash, coinbase,
-                stateRoot, txTrieRoot, receiptTrieRoot,
-                logsBloom, difficulty, number,
-                gasLimit, gasUsed, timestamp, extraData, paidFees,
-                bitcoinMergedMiningHeader,
-                bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction,
-                mergedMiningForkDetectionData,
-                minimumGasPrice, uncleCount,
-                false, useRskip92Encoding,
-                includeForkDetectionData, ummRoot, txExecutionSublistsEdges
-        );
+                    includeForkDetectionData, ummRoot, superEvent, txExecutionSublistsEdges);
+        };
     }
 }

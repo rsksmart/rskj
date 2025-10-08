@@ -41,6 +41,7 @@ import java.util.Arrays;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.AdditionalMatchers.geq;
 import static org.mockito.AdditionalMatchers.lt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -240,7 +241,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(16));
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(encodedHeader, false));
+        assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(encodedHeader, false));
     }
 
     @Test
@@ -291,12 +292,12 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(19));
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(encodedHeader, false));
+        assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(encodedHeader, false));
     }
 
     @Test
     void genesisHasVersion0() {
-        Assertions.assertEquals((byte) 0x0, factory.decodeBlock(genesisRaw()).getHeader().getVersion());
+        assertEquals((byte) 0x0, factory.decodeBlock(genesisRaw()).getHeader().getVersion());
     }
 
     @Test
@@ -304,7 +305,7 @@ class BlockFactoryTest {
         long number = 20L;
         enableRskip351At(number);
         BlockHeader header = factory.getBlockHeaderBuilder().setNumber(number - 1).build();
-        Assertions.assertEquals(0, header.getVersion());
+        assertEquals(0, header.getVersion());
     }
 
     @Test
@@ -312,7 +313,7 @@ class BlockFactoryTest {
         long number = 20L;
         enableRskip351At(number);
         BlockHeader header = factory.getBlockHeaderBuilder().setNumber(number).build();
-        Assertions.assertEquals(1, header.getVersion());
+        assertEquals(1, header.getVersion());
     }
 
     private BlockHeader testRSKIP351FullHeaderEncoding(byte[] encoded, byte expectedVersion, byte[] expectedLogsBloom, short[] expectedEdges) {
@@ -326,9 +327,9 @@ class BlockFactoryTest {
     private BlockHeader testRSKIP351CompressedHeaderEncoding(byte[] encoded, byte expectedVersion, byte[] expectedLogsBloom, short[] expectedEdges, boolean compressed) {
         BlockHeader decodedHeader = factory.decodeHeader(encoded, compressed);
 
-        Assertions.assertEquals(expectedVersion, decodedHeader.getVersion());
-        Assertions.assertArrayEquals(expectedLogsBloom, decodedHeader.getLogsBloom());
-        Assertions.assertArrayEquals(expectedEdges, decodedHeader.getTxExecutionSublistsEdges());
+        assertEquals(expectedVersion, decodedHeader.getVersion());
+        assertArrayEquals(expectedLogsBloom, decodedHeader.getLogsBloom());
+        assertArrayEquals(expectedEdges, decodedHeader.getTxExecutionSublistsEdges());
 
         return decodedHeader;
     }
@@ -353,7 +354,7 @@ class BlockFactoryTest {
         byte[] encoded = header.getEncodedCompressed();
 
         BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 0,  logsBloom, null);
-        Assertions.assertArrayEquals(logsBloom, decodedHeader.getExtensionData());
+        assertArrayEquals(logsBloom, decodedHeader.getExtensionData());
     }
 
     @Test
@@ -380,7 +381,7 @@ class BlockFactoryTest {
         byte[] encoded = header.getEncodedCompressed();
 
         BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 0,  logsBloom, edges);
-        Assertions.assertArrayEquals(logsBloom, decodedHeader.getExtensionData());
+        assertArrayEquals(logsBloom, decodedHeader.getExtensionData());
     }
 
     @Test
@@ -401,7 +402,7 @@ class BlockFactoryTest {
 
         BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 1,  null, null);
 
-        Assertions.assertArrayEquals(header.getExtensionData(), decodedHeader.getExtensionData());
+        assertArrayEquals(header.getExtensionData(), decodedHeader.getExtensionData());
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
     }
@@ -435,7 +436,7 @@ class BlockFactoryTest {
         byte[] encoded = header.getFullEncoded(); // used before hf
 
         BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 0,  logsBloom, null);
-        Assertions.assertArrayEquals(logsBloom, decodedHeader.getExtensionData());
+        assertArrayEquals(logsBloom, decodedHeader.getExtensionData());
     }
 
     @Test
@@ -462,7 +463,7 @@ class BlockFactoryTest {
         byte[] encoded = header.getFullEncoded(); // used before hf
 
         BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 0,  logsBloom, edges);
-        Assertions.assertArrayEquals(logsBloom, decodedHeader.getExtensionData());
+        assertArrayEquals(logsBloom, decodedHeader.getExtensionData());
     }
 
     @Test
@@ -488,7 +489,7 @@ class BlockFactoryTest {
         byte[] encoded = header.getEncodedCompressed();
 
         BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 1,  null, null);
-        Assertions.assertArrayEquals(BlockHeaderV1.createExtensionData(header.getExtension().getHash()), decodedHeader.getExtensionData());
+        assertArrayEquals(BlockHeaderV1.createExtensionData(header.getExtension()), decodedHeader.getExtensionData());
     }
 
     @Test
@@ -512,7 +513,7 @@ class BlockFactoryTest {
         byte[] encoded = header.getFullEncoded();
 
         BlockHeader decodedHeader = testRSKIP351FullHeaderEncoding(encoded, (byte) 0,  logsBloom, null);
-        Assertions.assertArrayEquals(header.getLogsBloom(), decodedHeader.getExtensionData());
+        assertArrayEquals(header.getLogsBloom(), decodedHeader.getExtensionData());
     }
 
     @Test
@@ -539,7 +540,7 @@ class BlockFactoryTest {
         byte[] encoded = header.getFullEncoded();
 
         BlockHeader decodedHeader = testRSKIP351FullHeaderEncoding(encoded, (byte) 0,  logsBloom, edges);
-        Assertions.assertArrayEquals(header.getLogsBloom(), decodedHeader.getExtensionData());
+        assertArrayEquals(header.getLogsBloom(), decodedHeader.getExtensionData());
     }
 
     @Test
@@ -565,7 +566,7 @@ class BlockFactoryTest {
         byte[] encoded = header.getFullEncoded();
 
         BlockHeader decodedHeader = testRSKIP351FullHeaderEncoding(encoded, (byte) 1,  logsBloom, edges);
-        Assertions.assertArrayEquals(BlockHeaderV1.createExtensionData(header.getExtension().getHash()), decodedHeader.getExtensionData());
+        assertArrayEquals(BlockHeaderV1.createExtensionData(header.getExtension()), decodedHeader.getExtensionData());
     }
 
     @Test

@@ -53,6 +53,7 @@ public class GenesisHeader extends BlockHeaderV0 {
                 useRskip92Encoding,
                 false,
                 null,
+                null,
                 null);
         this.difficulty = ByteUtils.clone(difficulty);
     }
@@ -96,6 +97,7 @@ public class GenesisHeader extends BlockHeaderV0 {
                 false,
                 useRskip92Encoding,
                 false,
+                null,
                 null,
                 null);
         this.difficulty = ByteUtils.clone(difficulty);
