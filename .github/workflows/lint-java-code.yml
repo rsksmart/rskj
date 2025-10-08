@@ -1,0 +1,168 @@
+name: Lint Java Code
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches:
+      - "**"
+
+# Declare default permissions as read only.
+permissions: read-all
+
+jobs:
+  lint-java-code:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #v5.0.0
+        with:
+          # Fetch full history for ratchetFrom to work properly
+          fetch-depth: 0
+
+      - name: Set Branch Variables
+        id: set-branch-variables
+        env:
+          github_base_ref: ${{ github.base_ref }}
+        run: |
+          ALLOWED_BRANCH_CHARACTERS='[-+./0-9A-Z_a-z]'
+
+          is_valid_branch_name()
+          {
+            echo "$1" | grep -qx "$ALLOWED_BRANCH_CHARACTERS\\{1,\\}"
+          }
+
+          BASE_REF="${github_base_ref}"
+
+          if ! is_valid_branch_name "$BASE_REF"; then
+            echo "base_ref: invalid branch name: $BASE_REF" >&2
+            exit 1
+          fi
+
+          echo "BASE_REF=$BASE_REF" >> $GITHUB_ENV
+
+      - name: Get changed Java files
+        id: changed-files
+        run: |
+          files=$(git diff --name-only origin/$BASE_REF...HEAD -- '*.java')
+          if [ -z "$files" ]; then
+            echo "No Java files changed in this PR. Skipping Java code linting."
+            echo "changed_files_count=0" >> $GITHUB_OUTPUT
+            echo "changed_files=" >> $GITHUB_OUTPUT
+          else
+            # Validate file names to prevent command injection
+            is_valid_java_filepath()
+            {
+              # Allow: letters, digits, dot, underscore, forward slash, hyphen, dollar sign
+              echo "$1" | grep -qx '[a-zA-Z0-9._/$-]\{1,\}'
+            }
+
+            # Validate each file
+            while IFS= read -r file; do
+              if [ -n "$file" ] && ! is_valid_java_filepath "$file"; then
+                echo "ERROR: Invalid characters in file path: $file" >&2
+                echo "Only alphanumeric, dot, underscore, slash, hyphen, and dollar sign are allowed" >&2
+                exit 1
+              fi
+            done <<< "$files"
+
+            echo "Changed Java files:"
+            echo "$files"
+            echo "Changed Java files count: $(echo "$files" | wc -l)"
+            echo "changed_files_count=$(echo "$files" | wc -l)" >> $GITHUB_OUTPUT
+            # Checkstyle expects the files to be separated by commas, and we need to remove the rskj-core/ prefix
+            echo "changed_files=$(echo "$files" | sed 's|^rskj-core/||' | tr '\n' ',')" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Java & Gradle
+        if: steps.changed-files.outputs.changed_files_count > 0
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 #v4.7.1
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Verify files
+        if: steps.changed-files.outputs.changed_files_count > 0
+        run: |
+          curl -sSL https://secchannel.rsk.co/SUPPORT.asc | gpg2 --import -
+          gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
+
+      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 #v4.2.4
+        name: Cache Gradle Wrapper
+        if: steps.changed-files.outputs.changed_files_count > 0
+        id: cache-gradle-wrapper
+        with:
+          path: |
+            gradle/wrapper/gradle-wrapper.jar
+          key: gradle-wrapper-v1
+
+      - name: Get Gradle wrapper
+        if: steps.changed-files.outputs.changed_files_count > 0 && steps.cache-gradle-wrapper.outputs.cache-hit != 'true'
+        run: |
+          ./configure.sh
+
+      - name: Run Checkstyle on changed files
+        if: steps.changed-files.outputs.changed_files_count > 0
+        id: checkstyle
+        run: |
+          files="${{ steps.changed-files.outputs.changed_files }}"
+  
+          # Capture output and exit code
+          set +e
+          ./gradlew --no-daemon checkstyleFile -PfilePath="$files" -x build 2> /tmp/checkstyle-errors.log
+          exit_code=$?
+          set -e
+  
+          if [ $exit_code -ne 0 ]; then
+            echo "failed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Spotless check on changed files
+        if: steps.changed-files.outputs.changed_files_count > 0
+        id: spotless
+        run: |
+          # Use ratchetFrom to check only files changed from the PR's target branch
+          set +e
+          ./gradlew --no-daemon spotlessJavaCheck -PratchetFrom=origin/$BASE_REF -x build 2> /tmp/spotless-errors.log
+          exit_code=$?
+          set -e
+
+          if [ $exit_code -ne 0 ]; then
+            echo "failed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Success report
+        if: steps.changed-files.outputs.changed_files_count > 0 && steps.checkstyle.outputs.failed != 'true' && steps.spotless.outputs.failed != 'true'
+        run: |
+          echo "## ✅ Java code linting completed for ${{ steps.changed-files.outputs.changed_files_count }} file(s)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Target branch: $BASE_REF" >> $GITHUB_STEP_SUMMARY
+          echo "Files checked: ${{ steps.changed-files.outputs.changed_files }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Error report
+        if: steps.changed-files.outputs.changed_files_count > 0 && (steps.checkstyle.outputs.failed == 'true' || steps.spotless.outputs.failed == 'true')
+        run: |
+          echo "## ❌ Java code linting failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.checkstyle.outputs.failed }}" == 'true' ]; then
+            echo "### Checkstyle findings:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            grep '^\[ant:checkstyle\]' /tmp/checkstyle-errors.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ steps.spotless.outputs.failed }}" == 'true' ]; then
+            echo "### Spotless findings:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            sed -n '/following files had format violations/,/Run.*spotlessApply/p' /tmp/spotless-errors.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+          exit 1
+
+      - name: Skip message
+        if: steps.changed-files.outputs.changed_files_count == 0
+        run: |
+          echo "No Java files changed in this PR. Skipping Java code linting."
