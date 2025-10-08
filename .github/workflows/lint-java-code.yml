@@ -19,10 +19,31 @@ jobs:
           # Fetch full history for ratchetFrom to work properly
           fetch-depth: 0
 
+      - name: Set Branch Variables
+        id: set-branch-variables
+        env:
+          github_base_ref: ${{ github.base_ref }}
+        run: |
+          ALLOWED_BRANCH_CHARACTERS='[-+./0-9A-Z_a-z]'
+
+          is_valid_branch_name()
+          {
+            echo "$1" | grep -qx "$ALLOWED_BRANCH_CHARACTERS\\{1,\\}"
+          }
+
+          BASE_REF="${github_base_ref}"
+
+          if ! is_valid_branch_name "$BASE_REF"; then
+            echo "base_ref: invalid branch name: $BASE_REF" >&2
+            exit 1
+          fi
+
+          echo "BASE_REF=$BASE_REF" >> $GITHUB_ENV
+
       - name: Get changed Java files
         id: changed-files
         run: |
-          files=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.java')
+          files=$(git diff --name-only origin/$BASE_REF...HEAD -- '*.java')
           if [ -z "$files" ]; then
             echo "No Java files changed in this PR. Skipping Java code linting."
             echo "changed_files_count=0" >> $GITHUB_OUTPUT
@@ -86,7 +107,7 @@ jobs:
         run: |
           # Use ratchetFrom to check only files changed from the PR's target branch
           set +e
-          ./gradlew --no-daemon spotlessJavaCheck -PratchetFrom=origin/${{ github.base_ref }} -x build 2> /tmp/spotless-errors.log
+          ./gradlew --no-daemon spotlessJavaCheck -PratchetFrom=origin/$BASE_REF -x build 2> /tmp/spotless-errors.log
           exit_code=$?
           set -e
 
@@ -99,7 +120,7 @@ jobs:
         run: |
           echo "## ✅ Java code linting completed for ${{ steps.changed-files.outputs.changed_files_count }} file(s)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Target branch: ${{ github.base_ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "Target branch: $BASE_REF" >> $GITHUB_STEP_SUMMARY
           echo "Files checked: ${{ steps.changed-files.outputs.changed_files }}" >> $GITHUB_STEP_SUMMARY
 
       - name: Error report
