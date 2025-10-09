@@ -564,7 +564,7 @@ class BlockHeaderContractTest {
         }
     }
 
-    private CallTransaction.Function getContractFunction(NativeContract contract, Class methodClass) {
+    private CallTransaction.Function getContractFunction(NativeContract contract, Class<? extends BlockHeaderContractMethod> methodClass) {
         Optional<NativeMethod> method = contract.getMethods()
             .stream()
             .filter(m -> m.getClass() == methodClass)
@@ -634,10 +634,10 @@ class BlockHeaderContractTest {
         assertHasMethod(GetUncleCoinbaseAddress.class);
     }
 
-    private void assertHasMethod(Class clazz) {
+    private void assertHasMethod(Class<? extends BlockHeaderContractMethod> methodClass) {
         Optional<NativeMethod> method = contract.getMethods()
             .stream()
-            .filter(m -> m.getClass() == clazz)
+            .filter(m -> m.getClass() == methodClass)
             .findFirst();
         assertTrue(method.isPresent());
         assertEquals(executionEnvironment, method.get().getExecutionEnvironment());
