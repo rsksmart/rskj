@@ -792,10 +792,9 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
             peersInformation.processSyncingError(sender, EventType.INVALID_STATE_CHUNK, "Received empty state chunk from peer: [{}] for block: [{}]", sender.getPeerNodeID(), lastBlock.getHash());
             return;
         }
-        // TODO -> Change this to check that the chunk is exactly the expected size (being aware of heiht)
-        if (keyValues.size() > TrieChunk.MAX_CHUNK_SIZE) {
-            logger.error("Received state chunk with [{}] items, exceeding maximum allowed size of [{}] for block: [{}]", keyValues.size(), TrieChunk.MAX_CHUNK_SIZE, lastBlock.getHash());
-            peersInformation.processSyncingError(sender, EventType.INVALID_STATE_CHUNK, "Received state chunk with [{}] items, exceeding maximum allowed size of [{}] for block: [{}]", keyValues.size(), TrieChunk.MAX_CHUNK_SIZE, lastBlock.getHash());
+        if (keyValues.size() != TrieChunk.MAX_CHUNK_SIZE) {
+            logger.error("Received state chunk with [{}] items. Chunk size required size [{}] for block: [{}]", keyValues.size(), TrieChunk.MAX_CHUNK_SIZE, lastBlock.getHash());
+            peersInformation.processSyncingError(sender, EventType.INVALID_STATE_CHUNK, "Received state chunk with [{}] items. Chunk size required size [{}] for block: [{}]", keyValues.size(), TrieChunk.MAX_CHUNK_SIZE, lastBlock.getHash());
             return;
         }
 
