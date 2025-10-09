@@ -26,7 +26,9 @@ import java.util.Objects;
 
 public interface BlockHeaderExtension {
     byte[] getEncoded();
+
     byte[] getHash();
+
     byte getVersion();
 
     static byte[] toEncoded(BlockHeaderExtension extension) {

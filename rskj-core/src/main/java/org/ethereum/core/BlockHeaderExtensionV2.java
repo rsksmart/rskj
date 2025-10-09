@@ -28,51 +28,51 @@ import java.util.List;
 
 public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
 
- private byte[] superEvent;
+    private byte[] superEvent;
 
- public BlockHeaderExtensionV2(byte[] logsBloom, short[] edges, byte[] superEvent) {
-  super(logsBloom, edges);
-  this.superEvent = superEvent;
- }
+    public BlockHeaderExtensionV2(byte[] logsBloom, short[] edges, byte[] superEvent) {
+        super(logsBloom, edges);
+        this.superEvent = superEvent;
+    }
 
- @Override
- public byte getVersion() {
-  return 0x2;
- }
+    @Override
+    public byte getVersion() {
+        return 0x2;
+    }
 
- public byte[] getSuperEvent() {
-  return superEvent != null ? Arrays.copyOf(superEvent, superEvent.length) : null;
- }
+    public byte[] getSuperEvent() {
+        return superEvent != null ? Arrays.copyOf(superEvent, superEvent.length) : null;
+    }
 
- public void setSuperEvent(byte[] superEvent) {
-  this.superEvent =  superEvent != null ? Arrays.copyOf(superEvent, superEvent.length) : null;
- }
+    public void setSuperEvent(byte[] superEvent) {
+        this.superEvent = superEvent != null ? Arrays.copyOf(superEvent, superEvent.length) : null;
+    }
 
- @Override
- protected void addElementsEncoded(List<byte[]> fieldToEncodeList) {
-  if (this.superEvent != null) {
-   fieldToEncodeList.add(RLP.encodeElement(this.superEvent));
-  } else {
-   fieldToEncodeList.add(RLP.encodeElement(new byte[0]));
-  }
-  super.addElementsEncoded(fieldToEncodeList);
- }
+    @Override
+    protected void addElementsEncoded(List<byte[]> fieldToEncodeList) {
+        if (this.superEvent != null) {
+            fieldToEncodeList.add(RLP.encodeElement(this.superEvent));
+        } else {
+            fieldToEncodeList.add(RLP.encodeElement(new byte[0]));
+        }
+        super.addElementsEncoded(fieldToEncodeList);
+    }
 
- public static BlockHeaderExtensionV2 fromEncoded(byte[] encoded) {
-  RLPList rlpExtension = RLP.decodeList(encoded);
-  byte[] logsBloom = rlpExtension.get(0).getRLPData();
-  byte[] superChainDataHash = rlpExtension.get(1).getRLPData();
-  return new BlockHeaderExtensionV2(
-          logsBloom,
-          rlpExtension.size() == 3 ? toEdges(rlpExtension.get(2).getRLPRawData()) : null,
-          superChainDataHash
-  );
- }
+    public static BlockHeaderExtensionV2 fromEncoded(byte[] encoded) {
+        RLPList rlpExtension = RLP.decodeList(encoded);
+        byte[] logsBloom = rlpExtension.get(0).getRLPData();
+        byte[] superChainDataHash = rlpExtension.get(1).getRLPData();
+        return new BlockHeaderExtensionV2(
+                logsBloom,
+                rlpExtension.size() == 3 ? toEdges(rlpExtension.get(2).getRLPRawData()) : null,
+                superChainDataHash
+        );
+    }
 
- private static short[] toEdges(byte[] rlpData) {
-  if (rlpData == null) {
-   return null;
-  }
-  return ByteUtil.rlpToShorts(rlpData);
- }
+    private static short[] toEdges(byte[] rlpData) {
+        if (rlpData == null) {
+            return null;
+        }
+        return ByteUtil.rlpToShorts(rlpData);
+    }
 }
