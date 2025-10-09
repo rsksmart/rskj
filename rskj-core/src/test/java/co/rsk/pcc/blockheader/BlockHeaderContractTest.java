@@ -580,61 +580,61 @@ class BlockHeaderContractTest {
     }
 
     @Test
-    void hasTenMethods() {
-        assertEquals(10, contract.getMethods().size());
+    void hasElevenMethods() {
+        assertEquals(11, contract.getMethods().size());
     }
 
     @Test
     void hasGetCoinbaseAddress() {
-        assertHasMethod(GetCoinbaseAddress.class, true);
+        assertHasMethod(GetCoinbaseAddress.class);
     }
 
     @Test
     void hasGetBlockHash() {
-        assertHasMethod(GetBlockHash.class, true);
+        assertHasMethod(GetBlockHash.class);
     }
 
     @Test
     void hasGetMergedMiningTags() {
-        assertHasMethod(GetMergedMiningTags.class, true);
+        assertHasMethod(GetMergedMiningTags.class);
     }
 
     @Test
     void hasGetMinimumGasPrice() {
-        assertHasMethod(GetMinimumGasPrice.class, true);
+        assertHasMethod(GetMinimumGasPrice.class);
     }
 
     @Test
     void hasGetGasLimit() {
-        assertHasMethod(GetGasLimit.class, true);
+        assertHasMethod(GetGasLimit.class);
     }
 
     @Test
     void hasGetGasUsed() {
-        assertHasMethod(GetGasUsed.class, true);
+        assertHasMethod(GetGasUsed.class);
     }
 
     @Test
     void hasGetDifficulty() {
-        assertHasMethod(GetDifficulty.class, true);
+        assertHasMethod(GetDifficulty.class);
     }
 
     @Test
     void hasGetCumulativeDifficulty() {
-        assertHasMethod(GetCumulativeDifficulty.class, true);
+        assertHasMethod(GetCumulativeDifficulty.class);
     }
 
     @Test
     void hasGetBitcoinHeader() {
-        assertHasMethod(GetBitcoinHeader.class, true);
+        assertHasMethod(GetBitcoinHeader.class);
     }
 
     @Test
     void hasGetUncleCoinbaseAddress() {
-        assertHasMethod(GetUncleCoinbaseAddress.class, true);
+        assertHasMethod(GetUncleCoinbaseAddress.class);
     }
 
-    private void assertHasMethod(Class clazz, boolean withAccessor) {
+    private void assertHasMethod(Class clazz) {
         Optional<NativeMethod> method = contract.getMethods()
             .stream()
             .filter(m -> m.getClass() == clazz)
@@ -642,10 +642,8 @@ class BlockHeaderContractTest {
         assertTrue(method.isPresent());
         assertEquals(executionEnvironment, method.get().getExecutionEnvironment());
 
-        if (withAccessor) {
-            Object accessor = TestUtils.getInternalState(method.get(), "blockAccessor");
-            assertNotNull(accessor);
-            assertEquals(BlockAccessor.class, accessor.getClass());
-        }
+        Object accessor = TestUtils.getInternalState(method.get(), "blockAccessor");
+        assertNotNull(accessor);
+        assertEquals(BlockAccessor.class, accessor.getClass());
     }
 }
