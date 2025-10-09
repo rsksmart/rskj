@@ -19,15 +19,13 @@
 
 package co.rsk.pcc.blockheader;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-
 import co.rsk.core.RskAddress;
 import co.rsk.pcc.NativeContract;
 import co.rsk.pcc.NativeMethod;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
 /**
  * Precompiled contract that provides access to Block Header fields (coinbase,
@@ -51,16 +49,17 @@ public class BlockHeaderContract extends NativeContract {
     @Override
     public List<NativeMethod> getMethods() {
         return Arrays.asList(
-                new GetCoinbaseAddress(getExecutionEnvironment(), this.blockAccessor),
-                new GetBlockHash(getExecutionEnvironment(), this.blockAccessor),
-                new GetMergedMiningTags(getExecutionEnvironment(), this.blockAccessor),
-                new GetMinimumGasPrice(getExecutionEnvironment(), this.blockAccessor),
-                new GetGasLimit(getExecutionEnvironment(), this.blockAccessor),
-                new GetGasUsed(getExecutionEnvironment(), this.blockAccessor),
-                new GetDifficulty(getExecutionEnvironment(), this.blockAccessor),
-                new GetBitcoinHeader(getExecutionEnvironment(), this.blockAccessor),
-                new GetUncleCoinbaseAddress(getExecutionEnvironment(), this.blockAccessor),
-                new GetCumulativeDifficulty(getExecutionEnvironment(), this.blockAccessor)
+            new GetCoinbaseAddress(getExecutionEnvironment(), this.blockAccessor),
+            new GetBlockHash(getExecutionEnvironment(), this.blockAccessor),
+            new GetMergedMiningTags(getExecutionEnvironment(), this.blockAccessor),
+            new GetMinimumGasPrice(getExecutionEnvironment(), this.blockAccessor),
+            new GetGasLimit(getExecutionEnvironment(), this.blockAccessor),
+            new GetGasUsed(getExecutionEnvironment(), this.blockAccessor),
+            new GetDifficulty(getExecutionEnvironment(), this.blockAccessor),
+            new GetBitcoinHeader(getExecutionEnvironment(), this.blockAccessor),
+            new GetUncleCoinbaseAddress(getExecutionEnvironment(), this.blockAccessor),
+            new GetCumulativeDifficulty(getExecutionEnvironment(), this.blockAccessor),
+            new GetTotalDifficulty(getExecutionEnvironment(), this.blockAccessor)
         );
     }
 

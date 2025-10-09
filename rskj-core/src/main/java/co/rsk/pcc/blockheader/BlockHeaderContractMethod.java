@@ -17,7 +17,7 @@ import java.util.Optional;
 public abstract class BlockHeaderContractMethod extends NativeMethod {
     private final BlockAccessor blockAccessor;
 
-    public BlockHeaderContractMethod(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
+    protected BlockHeaderContractMethod(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
        super(executionEnvironment);
         this.blockAccessor = blockAccessor;
     }
