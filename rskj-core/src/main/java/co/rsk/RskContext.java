@@ -2090,6 +2090,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getPeersInformation(),
                     getBlockStore(),
                     getTransactionPool(),
+                    getStateRootHandler(),
                     getSnapBlockParentDependantValidationRule(),
                     getSnapBlockValidationRule(),
                     new BlockHeaderParentCompositeRule(

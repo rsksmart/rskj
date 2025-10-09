@@ -471,4 +471,28 @@ class MessageVisitorTest {
                 .recordEvent(peer, peerAddress, EventType.INVALID_TRANSACTION, "Invalid transaction {} at {}",
                         invalidTx.getHash().toString(), MessageVisitor.class);
     }
+
+    @Test
+    void snapStateChunkV2RequestMessage() {
+        SnapStateChunkV2RequestMessage message = mock(SnapStateChunkV2RequestMessage.class);
+
+        when(message.getId()).thenReturn(1L);
+
+        target.apply(message);
+
+        verify(snapshotProcessor, times(1))
+                .processStateChunkRequest(eq(sender), same(message));
+    }
+
+    @Test
+    void snapStateChunkV2ResponseMessage() {
+        SnapStateChunkV2ResponseMessage message = mock(SnapStateChunkV2ResponseMessage.class);
+
+        when(message.getId()).thenReturn(1L);
+
+        target.apply(message);
+
+        verify(syncProcessor, times(1))
+                .processStateChunkResponse(eq(sender), same(message));
+    }
 }
