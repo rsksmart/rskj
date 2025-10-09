@@ -47,10 +47,10 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContractArgsBuilder;
 import org.ethereum.vm.PrecompiledContracts;
@@ -69,6 +69,7 @@ class BlockHeaderContractTest {
     private static final long DIFFICULTY_TARGET = 562036735;
     private static final String DATA = "80af2871";
     private static final byte[] ADDITIONAL_TAG = {'A','L','T','B','L','O','C','K',':'};
+    private static final String BLOCK_HEADER_CONTRACT_ADDRESS = PrecompiledContracts.BLOCK_HEADER_ADDR_STR;
 
     private ExecutionEnvironment executionEnvironment;
     private TestSystemProperties config;
@@ -89,24 +90,11 @@ class BlockHeaderContractTest {
 
     @BeforeEach
     void setUp() {
-        final String BLOCK_HEADER_CONTRACT_ADDRESS = PrecompiledContracts.BLOCK_HEADER_ADDR_STR;
-        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
         config = new TestSystemProperties();
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(
-            config,
-            null,
-            signatureCache
-        );
-
         world = new World();
-
-        ActivationConfig activationConfig = config.getActivationConfig();
+        contract = new BlockHeaderContract(activationConfig, new RskAddress(BLOCK_HEADER_CONTRACT_ADDRESS));
         blockFactory = new BlockFactory(activationConfig);
-
-        contract = (BlockHeaderContract) precompiledContracts.getContractForAddress(
-            activationConfig.forBlock(0L),
-            DataWord.valueFromHex(BLOCK_HEADER_CONTRACT_ADDRESS)
-        );
 
         // contract methods
         getCoinbaseFunction = getContractFunction(contract, GetCoinbaseAddress.class);
@@ -331,7 +319,7 @@ class BlockHeaderContractTest {
 
     @Test
     void getDifficultyForBlockAtDepth1000() throws VMException {
-        buildBlockchainOfLength(4000);
+        buildBlockchainOfLengthWithUncles(4000);
         initContract();
 
         byte[] encodedResult = contract.execute(getDifficultyFunction.encode(new BigInteger("1000")));
@@ -347,7 +335,10 @@ class BlockHeaderContractTest {
 
     @Test
     void getCumulativeDifficultyForBlock_whenMethodDisabled_shouldThrowVME() {
-        buildBlockchainOfLength(4000);
+        buildBlockchainOfLengthWithUncles(4000);
+
+        ActivationConfig activationConfig = ActivationConfigsForTest.reed800();
+        contract = new BlockHeaderContract(activationConfig, new RskAddress(BLOCK_HEADER_CONTRACT_ADDRESS));
         initContract();
 
         assertThrows(
