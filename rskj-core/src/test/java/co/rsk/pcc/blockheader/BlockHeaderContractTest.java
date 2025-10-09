@@ -29,7 +29,6 @@ import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.mine.MinerUtils;
 import co.rsk.pcc.ExecutionEnvironment;
@@ -70,9 +69,9 @@ class BlockHeaderContractTest {
     private static final String DATA = "80af2871";
     private static final byte[] ADDITIONAL_TAG = {'A','L','T','B','L','O','C','K',':'};
     private static final String BLOCK_HEADER_CONTRACT_ADDRESS = PrecompiledContracts.BLOCK_HEADER_ADDR_STR;
+    private static final ActivationConfig activationConfig = ActivationConfigsForTest.all();
 
     private ExecutionEnvironment executionEnvironment;
-    private TestSystemProperties config;
     private BlockFactory blockFactory;
     private World world;
     private Transaction rskTx;
@@ -90,8 +89,6 @@ class BlockHeaderContractTest {
 
     @BeforeEach
     void setUp() {
-        ActivationConfig activationConfig = ActivationConfigsForTest.all();
-        config = new TestSystemProperties();
         world = new World();
         contract = new BlockHeaderContract(activationConfig, new RskAddress(BLOCK_HEADER_CONTRACT_ADDRESS));
         blockFactory = new BlockFactory(activationConfig);
@@ -337,8 +334,8 @@ class BlockHeaderContractTest {
     void getCumulativeDifficultyForBlock_whenMethodDisabled_shouldThrowVME() {
         buildBlockchainOfLengthWithUncles(4000);
 
-        ActivationConfig activationConfig = ActivationConfigsForTest.reed800();
-        contract = new BlockHeaderContract(activationConfig, new RskAddress(BLOCK_HEADER_CONTRACT_ADDRESS));
+        ActivationConfig activationConfigForReed = ActivationConfigsForTest.reed800();
+        contract = new BlockHeaderContract(activationConfigForReed, new RskAddress(BLOCK_HEADER_CONTRACT_ADDRESS));
         initContract();
 
         assertThrows(
@@ -492,7 +489,7 @@ class BlockHeaderContractTest {
 
     private Block mineBlock(Block parent, RskAddress coinbase) {
         NetworkParameters networkParameters = RegTestParams.get();
-        BlockGenerator blockGenerator = new BlockGenerator(config.getNetworkConstants(), config.getActivationConfig());
+        BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), activationConfig);
 
         Block childBlock = blockGenerator.createChildBlock(
             parent,
@@ -517,12 +514,12 @@ class BlockHeaderContractTest {
 
         BigInteger targetDifficulty = DifficultyUtils.difficultyToTarget(parent.getDifficulty());
 
-        new BlockMiner(config.getActivationConfig()).findNonce(mergedMiningBlock, targetDifficulty);
+        new BlockMiner(activationConfig).findNonce(mergedMiningBlock, targetDifficulty);
 
         newBlock.setBitcoinMergedMiningHeader(mergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 
         byte[] merkleProof = MinerUtils.buildMerkleProof(
-            config.getActivationConfig(),
+            activationConfig,
             pb -> pb.buildFromBlock(mergedMiningBlock),
             newBlock.getNumber()
         );
