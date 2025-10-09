@@ -83,9 +83,10 @@ class BlockHeaderContractTest {
     private CallTransaction.Function getGasLimitFunction;
     private CallTransaction.Function getGasUsedFunction;
     private CallTransaction.Function getDifficultyFunction;
-    private CallTransaction.Function getCumulativeDifficultyFunction;
     private CallTransaction.Function getBitcoinHeaderFunction;
     private CallTransaction.Function getUncleCoinbaseAddressFunction;
+    private CallTransaction.Function getCumulativeDifficultyFunction;
+    private CallTransaction.Function getTotalDifficultyFunction;
 
     @BeforeEach
     void setUp() {
@@ -101,9 +102,10 @@ class BlockHeaderContractTest {
         getGasLimitFunction = getContractFunction(contract, GetGasLimit.class);
         getGasUsedFunction = getContractFunction(contract, GetGasUsed.class);
         getDifficultyFunction = getContractFunction(contract, GetDifficulty.class);
-        getCumulativeDifficultyFunction = getContractFunction(contract, GetCumulativeDifficulty.class);
         getBitcoinHeaderFunction = getContractFunction(contract, GetBitcoinHeader.class);
         getUncleCoinbaseAddressFunction = getContractFunction(contract, GetUncleCoinbaseAddress.class);
+        getCumulativeDifficultyFunction = getContractFunction(contract, GetCumulativeDifficulty.class);
+        getTotalDifficultyFunction = getContractFunction(contract, GetTotalDifficulty.class);
 
         // invoke transaction
         rskTx = Transaction
@@ -332,7 +334,9 @@ class BlockHeaderContractTest {
 
     @Test
     void getCumulativeDifficultyForBlock_whenMethodDisabled_shouldThrowVME() {
-        buildBlockchainOfLengthWithUncles(4000);
+        int blockCount = 4000;
+        int blockDepth = 1000;
+        buildBlockchainOfLengthWithUncles(blockCount);
 
         ActivationConfig activationConfigForReed = ActivationConfigsForTest.reed800();
         contract = new BlockHeaderContract(activationConfigForReed, new RskAddress(BLOCK_HEADER_CONTRACT_ADDRESS));
@@ -340,27 +344,106 @@ class BlockHeaderContractTest {
 
         assertThrows(
             VMException.class,
-            () -> contract.execute(getCumulativeDifficultyFunction.encode(new BigInteger("1000")))
+            () -> contract.execute(getCumulativeDifficultyFunction.encode(BigInteger.valueOf(blockDepth)))
         );
     }
 
     @Test
-    void getCumulativeDifficultyForBlockAtDepth1000() throws VMException {
-        buildBlockchainOfLengthWithUncles(4000);
+    void getCumulativeDifficulty_forBlockAtDepth1000_withoutUncles() throws VMException {
+        int blockCount = 4000;
+        int blockDepth = 1000;
+        buildBlockchainOfLength(blockCount);
+        initContract();
+
+        byte[] encodedResult = contract.execute(getCumulativeDifficultyFunction.encode(BigInteger.valueOf(blockDepth)));
+        Object[] decodedResult = getCumulativeDifficultyFunction.decodeResult(encodedResult);
+        byte[] cumulativeDifficulty = (byte[]) decodedResult[0];
+
+        assertEquals(1, decodedResult.length);
+        assertEquals(RSK_DIFFICULTY, new BigInteger(cumulativeDifficulty));
+    }
+
+    @Test
+    void getCumulativeDifficulty_forBlockAtDepth1000_withUncles() throws VMException {
+        int blockCount = 4000;
+        int blockDepth = 1000;
+        buildBlockchainOfLengthWithUncles(blockCount);
         initContract();
 
         // Header difficulty plus 2 uncles
         BigInteger expectedCumulativeDifficulty = RSK_DIFFICULTY.multiply(BigInteger.valueOf(3));
 
-        byte[] encodedResult = contract.execute(getCumulativeDifficultyFunction.encode(new BigInteger("1000")));
+        byte[] encodedResult = contract.execute(getCumulativeDifficultyFunction.encode(BigInteger.valueOf(blockDepth)));
         Object[] decodedResult = getCumulativeDifficultyFunction.decodeResult(encodedResult);
+        byte[] cumulativeDifficulty = (byte[]) decodedResult[0];
 
         assertEquals(1, decodedResult.length);
+        assertEquals(expectedCumulativeDifficulty, new BigInteger(cumulativeDifficulty));
+    }
 
-        byte[] rskDifficulty = (byte[]) decodedResult[0];
+    @Test
+    void getTotalDifficultyForBlock_whenMethodDisabled_shouldThrowVME() {
+        int blockCount = 4000;
+        int blockDepth = 1000;
+        buildBlockchainOfLengthWithUncles(blockCount);
 
-        assertTrue(rskDifficulty.length > 0);
-        assertEquals(expectedCumulativeDifficulty, new BigInteger(rskDifficulty));
+        ActivationConfig activationConfigForReed = ActivationConfigsForTest.reed800();
+        contract = new BlockHeaderContract(activationConfigForReed, new RskAddress(BLOCK_HEADER_CONTRACT_ADDRESS));
+        initContract();
+
+        assertThrows(
+            VMException.class,
+            () -> contract.execute(getTotalDifficultyFunction.encode(BigInteger.valueOf(blockDepth)))
+        );
+    }
+
+    @Test
+    void getTotalDifficulty_forBlockAtDepth1000_withoutUncles() throws VMException {
+        int blockCount = 4000;
+        int blockDepth = 1000;
+        buildBlockchainOfLength(blockCount);
+        initContract();
+
+        BigInteger expectedTotalDifficulty = RSK_DIFFICULTY.multiply(BigInteger.valueOf(blockCount - blockDepth));
+
+        byte[] encodedResult = contract.execute(getTotalDifficultyFunction.encode(BigInteger.valueOf(blockDepth)));
+        Object[] decodedResult = getTotalDifficultyFunction.decodeResult(encodedResult);
+        byte[] totalDifficulty = (byte[]) decodedResult[0];
+
+        assertEquals(1, decodedResult.length);
+        assertEquals(expectedTotalDifficulty, new BigInteger(totalDifficulty));
+    }
+
+    @Test
+    void getTotalDifficulty_forBlockAtDepth1000_withUncles() throws VMException {
+        int blockCount = 4000;
+        int blockDepth = 1000;
+        buildBlockchainOfLengthWithUncles(blockCount);
+        initContract();
+
+        // Expected calculation:
+        // - Block 0 (genesis): difficulty 1, no uncles
+        // - Block 1: difficulty 1, no uncles
+        // - Blocks 2-2999: difficulty 1 + 2 uncles (1 each) = 3 per block
+        // Total at block 3000 (depth 1000): (3 × 3000) - 4 = 8996
+        BigInteger expectedTotalDifficulty = calculateExpectedTotalDifficultyWithUncles(blockCount, blockDepth);
+
+        byte[] encodedResult = contract.execute(getTotalDifficultyFunction.encode(BigInteger.valueOf(blockDepth)));
+        Object[] decodedResult = getTotalDifficultyFunction.decodeResult(encodedResult);
+        byte[] totalDifficulty = (byte[]) decodedResult[0];
+
+        assertEquals(1, decodedResult.length);
+        assertEquals(expectedTotalDifficulty, new BigInteger(totalDifficulty));
+    }
+
+    private BigInteger calculateExpectedTotalDifficultyWithUncles(int blockCount, int blockDepth) {
+        BigInteger difficultyPerBlockWithUncles = RSK_DIFFICULTY.multiply(BigInteger.valueOf(3));
+        BigInteger totalBlocks = BigInteger.valueOf(blockCount - blockDepth);
+        BigInteger missingUncleDifficulty = RSK_DIFFICULTY.multiply(BigInteger.valueOf(4));
+
+        return difficultyPerBlockWithUncles
+            .multiply(totalBlocks)
+            .subtract(missingUncleDifficulty);
     }
 
     @Test
@@ -620,11 +703,6 @@ class BlockHeaderContractTest {
     }
 
     @Test
-    void hasGetCumulativeDifficulty() {
-        assertHasMethod(GetCumulativeDifficulty.class);
-    }
-
-    @Test
     void hasGetBitcoinHeader() {
         assertHasMethod(GetBitcoinHeader.class);
     }
@@ -632,6 +710,16 @@ class BlockHeaderContractTest {
     @Test
     void hasGetUncleCoinbaseAddress() {
         assertHasMethod(GetUncleCoinbaseAddress.class);
+    }
+
+    @Test
+    void hasGetCumulativeDifficulty() {
+        assertHasMethod(GetCumulativeDifficulty.class);
+    }
+
+    @Test
+    void hasGetTotalDifficulty() {
+        assertHasMethod(GetTotalDifficulty.class);
     }
 
     private void assertHasMethod(Class<? extends BlockHeaderContractMethod> methodClass) {
