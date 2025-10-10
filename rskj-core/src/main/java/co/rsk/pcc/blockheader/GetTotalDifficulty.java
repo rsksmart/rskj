@@ -34,6 +34,6 @@ public class GetTotalDifficulty extends BlockHeaderContractMethod {
 
     @Override
     public boolean isEnabled() {
-        return getExecutionEnvironment().getActivations().isActive(ConsensusRule.RSKIP529);
+        return getExecutionEnvironment().getActivations().isActive(ConsensusRule.RSKIP536);
     }
 }
