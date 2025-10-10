@@ -21,7 +21,6 @@ import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
-import co.rsk.peg.union.UnionBridgeStorageProvider;
 import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
@@ -55,11 +54,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.InOrder;
 
 class BridgeTest {
-    private static final byte[] EMPTY_BYTE_ARRAY = new byte[]{};
-
     private NetworkParameters networkParameters;
     private BridgeBuilder bridgeBuilder;
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
@@ -1024,7 +1020,7 @@ class BridgeTest {
     }
 
     @Test
-    void getNextPegoutCreationBlockNumber_before_RSKIP271_activation() throws VMException {
+    void getNextPegoutCreationBlockNumber_before_RSKIP271_activation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
         Bridge bridge = bridgeBuilder
@@ -1062,7 +1058,7 @@ class BridgeTest {
     }
 
     @Test
-    void getQueuedPegoutsCount_before_RSKIP271_activation() throws VMException {
+    void getQueuedPegoutsCount_before_RSKIP271_activation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
         Bridge bridge = bridgeBuilder
@@ -2555,7 +2551,7 @@ class BridgeTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void getStateForSvpClient(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException {
+    void getStateForSvpClient(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
         Transaction rskTxMock = mock(Transaction.class);
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
 
@@ -2906,7 +2902,7 @@ class BridgeTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void releaseBtc(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
+    void releaseBtc(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
@@ -3002,7 +2998,7 @@ class BridgeTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void updateCollections(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
+    void updateCollections(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException {
         Transaction rskTxMock = mock(Transaction.class);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
@@ -3074,9 +3070,9 @@ class BridgeTest {
 
         CallTransaction.Function function = BridgeMethods.REGISTER_BTC_COINBASE_TRANSACTION.getFunction();
 
-        byte[] btcTxSerialized = EMPTY_BYTE_ARRAY;
+        byte[] btcTxSerialized = ByteUtil.EMPTY_BYTE_ARRAY;
         Sha256Hash blockHash = BitcoinTestUtils.createHash(1);
-        byte[] pmtSerialized = EMPTY_BYTE_ARRAY;
+        byte[] pmtSerialized = ByteUtil.EMPTY_BYTE_ARRAY;
         Sha256Hash witnessMerkleRoot = BitcoinTestUtils.createHash(2);
         byte[] witnessReservedValue = new byte[32];
         byte[] data = function.encode(
@@ -3317,7 +3313,7 @@ class BridgeTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void getNextPegoutCreationBlockNumber(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
+    void getNextPegoutCreationBlockNumber(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
         Bridge bridge = bridgeBuilder
@@ -3508,8 +3504,10 @@ class BridgeTest {
                 decorate,
                 "setUnionBridgeContractAddressForTestnet"
             );
-            VMException actualException = assertThrows(VMException.class,
-                () -> executor.execute(bridge, null));
+            VMException actualException = assertThrows(
+                VMException.class,
+                () -> executor.execute(bridge, null)
+            );
 
             // Assert
             assertTrue(actualException.getMessage().contains("The sender is not authorized to call setUnionBridgeContractAddressForTestnet"));
@@ -3546,8 +3544,10 @@ class BridgeTest {
                 decorate,
                 "setUnionBridgeContractAddressForTestnet"
             );
-            VMException actualException = assertThrows(VMException.class,
-                () -> executor.execute(bridge, null));
+            VMException actualException = assertThrows(
+                VMException.class,
+                () -> executor.execute(bridge, null)
+            );
 
             // Assert
             assertTrue(actualException.getMessage().contains("The setUnionBridgeContractAddressForTestnet function is disabled in Mainnet."));
@@ -3581,24 +3581,16 @@ class BridgeTest {
             when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
             when(authorizerProvider.provide(any())).thenReturn(unionBridgeMainNetConstants.getChangeLockingCapAuthorizer());
 
-            BridgeMethods.BridgeMethodExecutor decorate = mock(
-                BridgeMethods.BridgeMethodExecutor.class
-            );
-            Bridge bridge = bridgeBuilder
-                .transaction(rskTx)
-                .constants(Constants.mainnet())
-                .activationConfig(allActivations)
-                .bridgeSupport(bridgeSupport)
-                .build();
-
             // Act
             BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfEnabledEnvironmentAndAuthorized(
                 authorizerProvider,
                 decorate,
                 "setUnionBridgeContractAddressForTestnet"
             );
-            VMException actualException = assertThrows(VMException.class,
-                () -> executor.execute(bridge, null));
+            VMException actualException = assertThrows(
+                VMException.class,
+                () -> executor.execute(bridge, null)
+            );
 
             // Assert
             assertTrue(actualException.getMessage().contains("The setUnionBridgeContractAddressForTestnet function is disabled in Mainnet."));
@@ -4094,8 +4086,7 @@ class BridgeTest {
         }
 
         @Test
-        void setUnionBridgeTransferPermissions_whenNotAuthorized_shouldReturnUnauthorizedCode()
-            throws VMException {
+        void setUnionBridgeTransferPermissions_whenNotAuthorized_shouldReturnUnauthorizedCode() {
             // Arrange
             when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
 
@@ -4359,7 +4350,7 @@ class BridgeTest {
 
     private void assertVoidMethodResult(ActivationConfig activationConfig, byte[] result) {
         if (activationConfig.isActive(ConsensusRule.RSKIP417, 0)) {
-            assertArrayEquals(EMPTY_BYTE_ARRAY, result);
+            assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, result);
         } else {
             assertNull(result);
         }
