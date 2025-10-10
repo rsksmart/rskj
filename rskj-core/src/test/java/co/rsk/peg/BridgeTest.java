@@ -21,7 +21,6 @@ import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
-import co.rsk.peg.union.UnionBridgeStorageProvider;
 import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
@@ -51,8 +50,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
 
 class BridgeTest {
-    private static final byte[] EMPTY_BYTE_ARRAY = new byte[]{};
-
     private NetworkParameters networkParameters;
     private BridgeBuilder bridgeBuilder;
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
@@ -3067,9 +3064,9 @@ class BridgeTest {
 
         CallTransaction.Function function = BridgeMethods.REGISTER_BTC_COINBASE_TRANSACTION.getFunction();
 
-        byte[] btcTxSerialized = EMPTY_BYTE_ARRAY;
+        byte[] btcTxSerialized = ByteUtil.EMPTY_BYTE_ARRAY;
         Sha256Hash blockHash = BitcoinTestUtils.createHash(1);
-        byte[] pmtSerialized = EMPTY_BYTE_ARRAY;
+        byte[] pmtSerialized = ByteUtil.EMPTY_BYTE_ARRAY;
         Sha256Hash witnessMerkleRoot = BitcoinTestUtils.createHash(2);
         byte[] witnessReservedValue = new byte[32];
         byte[] data = function.encode(
@@ -3501,8 +3498,10 @@ class BridgeTest {
                 decorate,
                 "setUnionBridgeContractAddressForTestnet"
             );
-            VMException actualException = assertThrows(VMException.class,
-                () -> executor.execute(bridge, null));
+            VMException actualException = assertThrows(
+                VMException.class,
+                () -> executor.execute(bridge, null)
+            );
 
             // Assert
             assertTrue(actualException.getMessage().contains("The sender is not authorized to call setUnionBridgeContractAddressForTestnet"));
@@ -3539,8 +3538,10 @@ class BridgeTest {
                 decorate,
                 "setUnionBridgeContractAddressForTestnet"
             );
-            VMException actualException = assertThrows(VMException.class,
-                () -> executor.execute(bridge, null));
+            VMException actualException = assertThrows(
+                VMException.class,
+                () -> executor.execute(bridge, null)
+            );
 
             // Assert
             assertTrue(actualException.getMessage().contains("The setUnionBridgeContractAddressForTestnet function is disabled in Mainnet."));
@@ -3580,8 +3581,10 @@ class BridgeTest {
                 decorate,
                 "setUnionBridgeContractAddressForTestnet"
             );
-            VMException actualException = assertThrows(VMException.class,
-                () -> executor.execute(bridge, null));
+            VMException actualException = assertThrows(
+                VMException.class,
+                () -> executor.execute(bridge, null)
+            );
 
             // Assert
             assertTrue(actualException.getMessage().contains("The setUnionBridgeContractAddressForTestnet function is disabled in Mainnet."));
@@ -4341,7 +4344,7 @@ class BridgeTest {
 
     private void assertVoidMethodResult(ActivationConfig activationConfig, byte[] result) {
         if (activationConfig.isActive(ConsensusRule.RSKIP417, 0)) {
-            assertArrayEquals(EMPTY_BYTE_ARRAY, result);
+            assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, result);
         } else {
             assertNull(result);
         }
