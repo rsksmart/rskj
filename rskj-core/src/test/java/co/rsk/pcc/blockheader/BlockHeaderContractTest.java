@@ -41,6 +41,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -56,6 +57,8 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class BlockHeaderContractTest {
     private static final BigInteger AMOUNT = new BigInteger("1000000000000000000");
@@ -663,66 +666,13 @@ class BlockHeaderContractTest {
     }
 
     @Test
-    void hasElevenMethods() {
+    void hasExpectedNumberOfMethods() {
         assertEquals(11, contract.getMethods().size());
     }
 
-    @Test
-    void hasGetCoinbaseAddress() {
-        assertHasMethod(GetCoinbaseAddress.class);
-    }
-
-    @Test
-    void hasGetBlockHash() {
-        assertHasMethod(GetBlockHash.class);
-    }
-
-    @Test
-    void hasGetMergedMiningTags() {
-        assertHasMethod(GetMergedMiningTags.class);
-    }
-
-    @Test
-    void hasGetMinimumGasPrice() {
-        assertHasMethod(GetMinimumGasPrice.class);
-    }
-
-    @Test
-    void hasGetGasLimit() {
-        assertHasMethod(GetGasLimit.class);
-    }
-
-    @Test
-    void hasGetGasUsed() {
-        assertHasMethod(GetGasUsed.class);
-    }
-
-    @Test
-    void hasGetDifficulty() {
-        assertHasMethod(GetDifficulty.class);
-    }
-
-    @Test
-    void hasGetBitcoinHeader() {
-        assertHasMethod(GetBitcoinHeader.class);
-    }
-
-    @Test
-    void hasGetUncleCoinbaseAddress() {
-        assertHasMethod(GetUncleCoinbaseAddress.class);
-    }
-
-    @Test
-    void hasGetCumulativeDifficulty() {
-        assertHasMethod(GetCumulativeDifficulty.class);
-    }
-
-    @Test
-    void hasGetTotalDifficulty() {
-        assertHasMethod(GetTotalDifficulty.class);
-    }
-
-    private void assertHasMethod(Class<? extends BlockHeaderContractMethod> methodClass) {
+    @ParameterizedTest
+    @MethodSource("blockHeaderMethodsProvider")
+    void hasMethod(Class<? extends BlockHeaderContractMethod> methodClass) {
         Optional<NativeMethod> method = contract.getMethods()
             .stream()
             .filter(m -> m.getClass() == methodClass)
@@ -733,5 +683,21 @@ class BlockHeaderContractTest {
         Object accessor = TestUtils.getInternalState(method.get(), "blockAccessor");
         assertNotNull(accessor);
         assertEquals(BlockAccessor.class, accessor.getClass());
+    }
+
+    private static Stream<Class<? extends BlockHeaderContractMethod>> blockHeaderMethodsProvider() {
+        return Stream.of(
+            GetCoinbaseAddress.class,
+            GetBlockHash.class,
+            GetMergedMiningTags.class,
+            GetMinimumGasPrice.class,
+            GetGasLimit.class,
+            GetGasUsed.class,
+            GetDifficulty.class,
+            GetBitcoinHeader.class,
+            GetUncleCoinbaseAddress.class,
+            GetCumulativeDifficulty.class,
+            GetTotalDifficulty.class
+        );
     }
 }
