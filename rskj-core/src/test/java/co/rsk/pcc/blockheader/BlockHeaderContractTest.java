@@ -129,10 +129,10 @@ class BlockHeaderContractTest {
 
     @Test
     void getCoinbase() throws VMException {
-        buildBlockchainOfLength(2);
+        buildBlockchainOfLength(4000);
         initContract();
 
-        byte[] encodedResult = contract.execute(getCoinbaseFunction.encode(new BigInteger("0")));
+        byte[] encodedResult = contract.execute(getCoinbaseFunction.encode(BigInteger.valueOf(0)));
         Object[] decodedResult = getCoinbaseFunction.decodeResult(encodedResult);
 
         assertEquals(1, decodedResult.length);
@@ -520,14 +520,17 @@ class BlockHeaderContractTest {
         executeAndAssertCoinbase(new BigInteger("3"), initialChainCoinbase);
     }
 
-    @Test
-    void negativeBlockDepth() {
+    @ParameterizedTest
+    @MethodSource("blockHeaderMethodsProvider")
+    void negativeBlockDepth(Class<? extends BlockHeaderContractMethod> methodClass) {
         buildBlockchainOfLength(10);
         initContract();
 
+        CallTransaction.Function function = getContractFunction(contract, methodClass);
+
         assertThrows(
             VMException.class,
-            () -> contract.execute(getCoinbaseFunction.encode(new BigInteger("-1"))),
+            () -> contract.execute(function.encode(new BigInteger("-1"))),
             "Trying to access a block using a negative block depth should throw an exception"
         );
     }
@@ -615,6 +618,7 @@ class BlockHeaderContractTest {
         byte[] mergedMiningTx = org.bouncycastle.util.Arrays.concatenate(compressedTag, mergedMiningHash, additionalTag);
 
         newBlock.setBitcoinMergedMiningCoinbaseTransaction(mergedMiningTx);
+        newBlock.seal();
 
         return newBlock;
     }
