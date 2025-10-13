@@ -452,7 +452,7 @@ class BlockHeaderTest {
                 headerV0.getPaidFees(), headerV0.getBitcoinMergedMiningHeader(), headerV0.getBitcoinMergedMiningMerkleProof(),
                 headerV0.getBitcoinMergedMiningCoinbaseTransaction(), headerV0.getMiningForkDetectionData(),
                 headerV0.getMinimumGasPrice(), headerV0.getUncleCount(), headerV0.isSealed(),
-                false, false, headerV0.getUmmRoot(), headerV0.getSuperEvent(), headerV0.getTxExecutionSublistsEdges(), false
+                false, false, headerV0.getUmmRoot(), headerV0.getBridgeEvent(), headerV0.getTxExecutionSublistsEdges(), false
         );
     }
 
@@ -594,18 +594,18 @@ class BlockHeaderTest {
 
     private BlockHeader createBlockHeader(byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
-                                          boolean includeForkDetectionData, byte[] ummRoot, byte[] superEvent, short[] edges, boolean sealed) {
+                                          boolean includeForkDetectionData, byte[] ummRoot, byte[] bridgeEvent, short[] edges, boolean sealed) {
         return createBlockHeader(bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
-                forkDetectionData, includeForkDetectionData, ummRoot, superEvent, edges, true, sealed);
+                forkDetectionData, includeForkDetectionData, ummRoot, bridgeEvent, edges, true, sealed);
     }
 
     private BlockHeader createBlockHeader(byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
-                                          boolean includeForkDetectionData, byte[] ummRoot, byte[] superEvent, short[] edges,
+                                          boolean includeForkDetectionData, byte[] ummRoot, byte[] bridgeEvent, short[] edges,
                                           boolean useRskip92Encoding,
                                           boolean sealed) {
         return createBlockHeader((byte) 0x0, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
-                forkDetectionData, includeForkDetectionData, ummRoot, superEvent, edges, useRskip92Encoding, sealed);
+                forkDetectionData, includeForkDetectionData, ummRoot, bridgeEvent, edges, useRskip92Encoding, sealed);
     }
 
     private BlockHeader createBlockHeaderWithVersion(byte version) {
@@ -616,7 +616,7 @@ class BlockHeaderTest {
     private BlockHeader createBlockHeader(byte version,
                                           byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
-                                          boolean includeForkDetectionData, byte[] ummRoot, byte[] superEvent, short[] edges, boolean useRskip92Encoding,
+                                          boolean includeForkDetectionData, byte[] ummRoot, byte[] bridgeEvent, short[] edges, boolean useRskip92Encoding,
                                           boolean sealed) {
         BlockDifficulty difficulty = new BlockDifficulty(BigInteger.ONE);
         long number = 1;
@@ -648,7 +648,7 @@ class BlockHeaderTest {
                 useRskip92Encoding,
                 includeForkDetectionData,
                 ummRoot,
-                superEvent,
+                bridgeEvent,
                 edges,
                 false);
 
@@ -677,7 +677,7 @@ class BlockHeaderTest {
                 useRskip92Encoding,
                 includeForkDetectionData,
                 ummRoot,
-                superEvent,
+                bridgeEvent,
                 edges);
     }
 

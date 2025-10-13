@@ -31,17 +31,22 @@ import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP110;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP351;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP92;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIPUMM;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalMatchers.geq;
 import static org.mockito.AdditionalMatchers.lt;
 import static org.mockito.ArgumentMatchers.eq;
