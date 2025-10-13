@@ -57,7 +57,7 @@ public class BlockHeaderBuilder {
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
     private byte[] mergedMiningForkDetectionData;
     private byte[] ummRoot;
-    private byte[] superEvent;
+    private byte[] bridgeEvent;
     private short[] txExecutionSublistsEdges;
 
     private Coin minimumGasPrice;
@@ -265,8 +265,8 @@ public class BlockHeaderBuilder {
         return this;
     }
 
-    public BlockHeaderBuilder setSuperEvent(byte[] superEvent) {
-        this.superEvent = copy(superEvent, null);
+    public BlockHeaderBuilder setBridgeEvent(byte[] bridgeEvent) {
+        this.bridgeEvent = copy(bridgeEvent, null);
         return this;
     }
 
@@ -340,8 +340,8 @@ public class BlockHeaderBuilder {
         }
 
         if (activationConfig.isActive(ConsensusRule.RSKIP481, number)) {
-            if (superEvent == null) {
-                superEvent = new byte[0];
+            if (bridgeEvent == null) {
+                bridgeEvent = new byte[0];
             }
         }
 
@@ -364,7 +364,7 @@ public class BlockHeaderBuilder {
                         mergedMiningForkDetectionData,
                         minimumGasPrice, uncleCount,
                         false, useRskip92Encoding,
-                        includeForkDetectionData, ummRoot, superEvent, txExecutionSublistsEdges, false);
+                        includeForkDetectionData, ummRoot, bridgeEvent, txExecutionSublistsEdges, false);
 
             case 0x1 ->
                 new BlockHeaderV1(
@@ -378,7 +378,7 @@ public class BlockHeaderBuilder {
                         mergedMiningForkDetectionData,
                         minimumGasPrice, uncleCount,
                         false, useRskip92Encoding,
-                        includeForkDetectionData, ummRoot, superEvent, txExecutionSublistsEdges, false);
+                        includeForkDetectionData, ummRoot, bridgeEvent, txExecutionSublistsEdges, false);
 
             default -> new BlockHeaderV0(
                     parentHash, unclesHash, coinbase,
@@ -391,7 +391,7 @@ public class BlockHeaderBuilder {
                     mergedMiningForkDetectionData,
                     minimumGasPrice, uncleCount,
                     false, useRskip92Encoding,
-                    includeForkDetectionData, ummRoot, superEvent, txExecutionSublistsEdges);
+                    includeForkDetectionData, ummRoot, bridgeEvent, txExecutionSublistsEdges);
         };
     }
 }

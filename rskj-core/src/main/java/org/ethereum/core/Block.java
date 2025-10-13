@@ -320,7 +320,9 @@ public class Block {
     }
 
     public String getShortDescr() {
-        return "#" + getNumber() + " (" + getPrintableHash() + " <~ " + getParentPrintableHash() + ") Txs:" + getTransactionsList().size() + ", Unc: " + getUncleList().size();
+        return "#" + getNumber() + " (" + getPrintableHash() + " <~ "
+                + getParentPrintableHash() + ") Txs:" + getTransactionsList().size() +
+                ", Unc: " + getUncleList().size();
     }
 
     public String getHashJsonString() {

@@ -57,6 +57,8 @@ public class ActivationConfig {
             return 0x1;
         }
 
+        //TODO: Add here the new version header
+
         return 0x0;
     }
 

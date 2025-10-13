@@ -28,11 +28,11 @@ import java.util.List;
 
 public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
 
-    private byte[] superEvent;
+    private byte[] bridgeEvent;
 
-    public BlockHeaderExtensionV2(byte[] logsBloom, short[] edges, byte[] superEvent) {
+    public BlockHeaderExtensionV2(byte[] logsBloom, short[] edges, byte[] bridgeEvent) {
         super(logsBloom, edges);
-        this.superEvent = superEvent;
+        this.bridgeEvent = bridgeEvent;
     }
 
     @Override
@@ -40,18 +40,18 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
         return 0x2;
     }
 
-    public byte[] getSuperEvent() {
-        return superEvent != null ? Arrays.copyOf(superEvent, superEvent.length) : null;
+    public byte[] getBridgeEvent() {
+        return bridgeEvent != null ? Arrays.copyOf(bridgeEvent, bridgeEvent.length) : null;
     }
 
-    public void setSuperEvent(byte[] superEvent) {
-        this.superEvent = superEvent != null ? Arrays.copyOf(superEvent, superEvent.length) : null;
+    public void setBridgeEvent(byte[] bridgeEvent) {
+        this.bridgeEvent = bridgeEvent != null ? Arrays.copyOf(bridgeEvent, bridgeEvent.length) : null;
     }
 
     @Override
     protected void addElementsEncoded(List<byte[]> fieldToEncodeList) {
-        if (this.superEvent != null) {
-            fieldToEncodeList.add(RLP.encodeElement(this.superEvent));
+        if (this.bridgeEvent != null) {
+            fieldToEncodeList.add(RLP.encodeElement(this.bridgeEvent));
         } else {
             fieldToEncodeList.add(RLP.encodeElement(new byte[0]));
         }
