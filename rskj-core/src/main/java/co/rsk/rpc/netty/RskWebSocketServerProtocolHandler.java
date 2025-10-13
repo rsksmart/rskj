@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 public class RskWebSocketServerProtocolHandler extends WebSocketServerProtocolHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(RskWebSocketServerProtocolHandler.class);
-    public static final String WRITE_TIMEOUT_REASON = "Exceeded write timout";
+    public static final String WRITE_TIMEOUT_REASON = "Exceeded write timeout";
     public static final int NORMAL_CLOSE_WEBSOCKET_STATUS = 1000;
 
     public RskWebSocketServerProtocolHandler(String websocketPath, int maxFrameSize) {

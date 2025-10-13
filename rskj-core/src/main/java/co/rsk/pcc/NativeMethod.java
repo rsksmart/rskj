@@ -73,7 +73,7 @@ public abstract class NativeMethod {
 
     public long getGas(Object[] parsedArguments, byte[] originalData) {
         // By default, gas is twice the length of the original data passed in
-        // This can (AND SHOULD) be overriden in implementing methods, although
+        // This can (AND SHOULD) be overridden in implementing methods, although
         // the default can always be used on top.
         // (e.g., "return 23000L + super(parsedArguments, originalData);")
 
@@ -85,7 +85,7 @@ public abstract class NativeMethod {
     public abstract boolean onlyAllowsLocalCalls();
 
     public String getName() {
-        // Can be overriden to provide a more specific name
+        // Can be overridden to provide a more specific name
         return getFunction().name;
     }
 }
