@@ -21,12 +21,10 @@ import co.rsk.test.builders.UnionBridgeSupportBuilder;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Stream;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.*;
@@ -43,49 +41,8 @@ class UnionBridgeSupportImplTest {
 
     private static final UnionBridgeConstants testnetUnionBridgeConstants = UnionBridgeTestNetConstants.getInstance();
 
-    private static final RskAddress changeUnionAddressAuthorizer = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-            "04bd1d5747ca6564ed860df015c1a8779a35ef2a9f184b6f5390bccb51a3dcace02f88a401778be6c8fd8ed61e4d4f1f508075b3394eb6ac0251d4ed6d06ce644d"))
-        .getAddress());
-
-    private static final RskAddress changeLockingCapAuthorizer1 = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-                "040162aff21e78665eabe736746ed86ca613f9e628289438697cf820ed8ac800e5fe8cbca350f8cf0b3ee4ec3d8c3edec93820d889565d4ae9b4f6e6d012acec09"))
-            .getAddress());
-    private static final RskAddress changeLockingCapAuthorizer2 = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode("04ee99364235a33edbd177c0293bd3e13f1c85b2ee6197e66aa7e975fb91183b08b30bf1227468980180e10092decaaeed0ae1c4bcf29d17993569bb3c1b274f83")).getAddress()
-    );
-
-    private static final RskAddress changeTransferPermissionsAuthorizer1 = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-                "0458fdbe66a1eda5b94eaf3b3ef1bc8439a05a0b13d2bb9d5a1c6ea1d98ed5b0405fd002c884eed4aa1102d812c7347acc6dd172ad4828de542e156bd47cd90282"))
-            .getAddress());
-    private static final RskAddress changeTransferPermissionsAuthorizer2 = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode("0486559d73a991df9e5eef1782c41959ecc7e334ef57ddcb6e4ebc500771a50f0c3b889afb9917165db383a9bf9a8e9b4f73abd542109ba06387f016f62df41b0f")).getAddress()
-    );
-
-    private static final RskAddress testnetChangeUnionAddressAuthorizer = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-                "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"))
-            .getAddress());
-
-    private static final RskAddress testnetChangeLockingCapAuthorizer1 = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-                "049929eb3c107a65108830f4c221068f42301bd8b054f91bd594944e7fb488fd1c93a8921fb28d3494769598eb271cd2834a31c5bd08fa075170b3da804db00a5b"))
-            .getAddress());
-    private static final RskAddress testnetChangeLockingCapAuthorizer2 = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-                "0442329d63de5ec5b2f285da7e2f3eb484db3ee5e39066579244211021b81c32d7061922075e2272a8e8a633a5856071eef7e7f800b3d93c9acee91e0f0f37ac2f"))
-            .getAddress());
-
-    private static final RskAddress testnetChangeTransferPermissionsAuthorizer1 = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-                "04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f"))
-            .getAddress());
-    private static final RskAddress testnetChangeTransferPermissionsAuthorizer2 = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-                "04cf42ec9eb287adc7196e8d3d2c288542b1db733681c22887e3a3e31eb98504002825ecbe0cd9b61aff3600ffd0ca4542094c75cb0bac5e93be0c7e00b2ead9ea"))
-            .getAddress());
+    private static final RskAddress changeLockingCapAuthorizer = RskAddress.ZERO_ADDRESS;
+    private static final RskAddress changeTransferPermissionsAuthorizer = RskAddress.ZERO_ADDRESS;
 
     private static final RskAddress unionBridgeContractAddress = TestUtils.generateAddress(
         "newUnionBridgeContractAddress");
@@ -193,8 +150,6 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(testnetUnionBridgeConstants).build();
 
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
-
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
             unionBridgeContractAddress);
@@ -232,7 +187,6 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(testnetUnionBridgeConstants).build();
         RskAddress newUnionBridgeAddress = testnetUnionBridgeConstants.getAddress();
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
 
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
@@ -271,8 +225,6 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(testnetUnionBridgeConstants).build();
 
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
-
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
             newUnionBridgeContractAddress);
@@ -297,54 +249,10 @@ class UnionBridgeSupportImplTest {
     }
 
     @Test
-    void setUnionBridgeContractAddressForTestnet_whenMainnet_shouldReturnEnvironmentDisabledCode() {
-        // arrange
-        when(rskTx.getSender(signatureCache)).thenReturn(
-            changeUnionAddressAuthorizer);
-        // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            unionBridgeContractAddress);
-
-        // assert
-        UnionResponseCode expectedResponseCode = UnionResponseCode.ENVIRONMENT_DISABLED;
-        Assertions.assertEquals(
-            expectedResponseCode,
-            actualResponseCode
-        );
-        assertAddressWasNotSet();
-        assertNoAddressIsStored();
-    }
-
-    @Test
-    void setUnionBridgeContractAddressForTestnet_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode() {
-        // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(testnetUnionBridgeConstants).build();
-
-        when(rskTx.getSender(signatureCache)).thenReturn(
-            TestUtils.generateAddress("notAuthorizedAddress"));
-
-        // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            unionBridgeContractAddress);
-
-        // assert
-        UnionResponseCode expectedResponseCode = UnionResponseCode.UNAUTHORIZED_CALLER;
-        Assertions.assertEquals(
-            expectedResponseCode,
-            actualResponseCode
-        );
-        assertAddressWasNotSet();
-        assertNoAddressIsStored();
-    }
-
-    @Test
     void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsNull_shouldReturnSuccess() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(testnetUnionBridgeConstants).build();
-
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
 
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(
@@ -366,8 +274,6 @@ class UnionBridgeSupportImplTest {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(testnetUnionBridgeConstants).build();
-
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
 
         // act
         RskAddress emptyAddress = new RskAddress(new byte[20]);
@@ -444,13 +350,9 @@ class UnionBridgeSupportImplTest {
         Coin initialLockingCap = mainnetUnionBridgeConstants.getInitialLockingCap();
         Coin newLockingCap = initialLockingCap.multiply(BigInteger.valueOf(mainnetUnionBridgeConstants.getLockingCapIncrementsMultiplier()));
 
+        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
+
         // act
-        // First vote to increase the locking cap
-        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer1);
-        UnionResponseCode firstVoteResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, firstVoteResponseCode);
-        // Second vote to increase the locking cap
-        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer2);
         UnionResponseCode actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
 
         // assert
@@ -485,14 +387,9 @@ class UnionBridgeSupportImplTest {
             .withConstants(UnionBridgeMainNetConstants.getInstance())
             .build();
 
+        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
+
         // act
-        // First vote to increase the locking cap
-        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer1);
-        UnionResponseCode firstVoteResponseCode = unionBridgeSupport.increaseLockingCap(rskTx,
-            moreThanMaxRbtc);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, firstVoteResponseCode);
-        // Second vote to increase the locking cap
-        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer2);
         UnionResponseCode actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, moreThanMaxRbtc);
 
         // Assert that new_locking_cap is allowed.
@@ -512,7 +409,7 @@ class UnionBridgeSupportImplTest {
     @MethodSource("invalidLockingCapProvider")
     void increaseLockingCap_whenInvalidLockingCap_shouldReturnInvalidValue(Coin newLockingCap) {
         // arrange
-        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer1);
+        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
 
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(mainnetUnionBridgeConstants)
@@ -561,33 +458,6 @@ class UnionBridgeSupportImplTest {
             BridgeSerializationUtils::deserializeRskCoin
         );
         Assertions.assertNotEquals(newLockingCap, storedLockingCap);
-    }
-
-    @Test
-    void increaseLockingCap_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode() {
-        // arrange
-        UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(bridgeConstants).build();
-        when(rskTx.getSender(signatureCache)).thenReturn(
-            TestUtils.generateAddress("notAuthorizedAddress"));
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(bridgeConstants)
-            .build();
-        Coin initialLockingCap = bridgeConstants.getInitialLockingCap();
-        Coin newLockingCap = initialLockingCap.multiply(BigInteger.valueOf(bridgeConstants.getLockingCapIncrementsMultiplier()));
-
-        // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
-
-        // assert
-        Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
-        assertNoLockingCapIsStored();
-        assertNoEventWasEmitted();
-
-        // call save and assert that nothing is stored
-        unionBridgeSupport.save();
-        assertNoLockingCapIsStored();
     }
 
     @ParameterizedTest
@@ -1201,52 +1071,19 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @CsvSource({
-        "true, true",
         "true, false",
         "false, true",
         "false, false"
     })
-    void setTransferPermissions_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode(boolean requestEnabled, boolean releaseEnabled) {
-        // arrange
-        UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(bridgeConstants).build();
-        when(rskTx.getSender(signatureCache)).thenReturn(
-            TestUtils.generateAddress("notAuthorizedAddress"));
-
-        // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
-
-        // assert
-        Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
-        assertNoEventWasEmitted();
-
-        // call save and assert that nothing is stored
-        unionBridgeSupport.save();
-        assertNoTransferPermissionsWereStored();
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-        "true, false",
-        "false, true",
-        "false, false"
-    })
-    void setTransferPermissions_whenCallerIsAuthorized_shouldReturnSuccessCode(boolean requestEnabled, boolean releaseEnabled) {
+    void setTransferPermissions_whenMeetsRequirements_shouldReturnSuccessCode(boolean requestEnabled, boolean releaseEnabled) {
         // arrange
         UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(bridgeConstants).build();
 
+        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer);
+
         // act
-
-        // First vote
-        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer1);
-        UnionResponseCode firstVoteResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, firstVoteResponseCode);
-
-        // Second vote
-        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer2);
         UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
 
         // assert
@@ -1269,21 +1106,9 @@ class UnionBridgeSupportImplTest {
         UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(bridgeConstants).build();
+        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer);
 
         // act
-
-        // First vote
-        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer1);
-        UnionResponseCode firstVoteResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, firstVoteResponseCode);
-
-        // Second vote with a different requestEnabled value
-        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer2);
-        UnionResponseCode secondVoteResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, !requestEnabled, releaseEnabled);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, secondVoteResponseCode);
-
-        // Third vote with the same values as the first vote
-        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer2);
         UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
 
         // assert
@@ -1322,7 +1147,7 @@ class UnionBridgeSupportImplTest {
         UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(bridgeConstants).build();
-        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer1);
+        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer);
 
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
@@ -1355,7 +1180,7 @@ class UnionBridgeSupportImplTest {
     private void assertLogUnionTransferPermissionsSet(boolean requestEnabled, boolean releaseEnabled) {
         CallTransaction.Function transferPermissionsEvent = BridgeEvents.UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent();
         byte[][] encodedTopicsSerialized = transferPermissionsEvent.encodeEventTopics(
-            changeTransferPermissionsAuthorizer2.toHexString());
+            changeTransferPermissionsAuthorizer.toHexString());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsSerialized);
         byte[] encodedData = transferPermissionsEvent.encodeEventData(requestEnabled, releaseEnabled);
         assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
@@ -1379,20 +1204,11 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(mainnetUnionBridgeConstants).build();
 
-        // Attempt to set union bridge contract address for mainnet should fail
-        when(rskTx.getSender(signatureCache)).thenReturn(changeUnionAddressAuthorizer);
-        UnionResponseCode setAddressResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            mainnetUnionBridgeContractAddress);
-        Assertions.assertEquals(UnionResponseCode.ENVIRONMENT_DISABLED, setAddressResponseCode);
-
         // increase locking cap
         Coin initialLockingCap = mainnetUnionBridgeConstants.getInitialLockingCap();
         Coin newLockingCap = initialLockingCap.multiply(BigInteger.valueOf(mainnetUnionBridgeConstants.getLockingCapIncrementsMultiplier()));
         rskTx = mock(Transaction.class);
-        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer1);
-        UnionResponseCode firstVoteIncreaseLockingCapResponse = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, firstVoteIncreaseLockingCapResponse);
-        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer2);
+        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
         UnionResponseCode actualLockingCapResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
 
@@ -1411,10 +1227,7 @@ class UnionBridgeSupportImplTest {
 
         // set transfer permissions
         rskTx = mock(Transaction.class);
-        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer1);
-        UnionResponseCode firstVoteTransferPermissionsResponse = unionBridgeSupport.setTransferPermissions(rskTx, true, false);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, firstVoteTransferPermissionsResponse);
-        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer2);
+        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer);
         UnionResponseCode actualSetTransferPermissionsResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, true, false);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualSetTransferPermissionsResponseCode);
 
@@ -1439,7 +1252,6 @@ class UnionBridgeSupportImplTest {
             .withConstants(testnetUnionBridgeConstants).build();
 
         // set union bridge contract address
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
             unionBridgeContractAddress);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
@@ -1448,10 +1260,7 @@ class UnionBridgeSupportImplTest {
         Coin initialLockingCap = testnetUnionBridgeConstants.getInitialLockingCap();
         Coin newLockingCap = initialLockingCap.multiply(BigInteger.valueOf(testnetUnionBridgeConstants.getLockingCapIncrementsMultiplier()));
         rskTx = mock(Transaction.class);
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeLockingCapAuthorizer1);
-        UnionResponseCode firstVoteIncreaseLockingCapResponse = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, firstVoteIncreaseLockingCapResponse);
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeLockingCapAuthorizer2);
+        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
         UnionResponseCode actualLockingCapResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
 
@@ -1470,10 +1279,7 @@ class UnionBridgeSupportImplTest {
 
         // set transfer permissions
         rskTx = mock(Transaction.class);
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeTransferPermissionsAuthorizer1);
-        UnionResponseCode firstVoteTransferPermissionsResponse = unionBridgeSupport.setTransferPermissions(rskTx, true, false);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, firstVoteTransferPermissionsResponse);
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeTransferPermissionsAuthorizer2);
+        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer);
         UnionResponseCode actualSetTransferPermissionsResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, true, false);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualSetTransferPermissionsResponseCode);
 
@@ -1503,7 +1309,6 @@ class UnionBridgeSupportImplTest {
         );
 
         // arrange
-        when(rskTx.getSender(signatureCache)).thenReturn(testnetChangeUnionAddressAuthorizer);
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
             newUnionBridgeContractAddress);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
@@ -1532,14 +1337,8 @@ class UnionBridgeSupportImplTest {
             storedLockingCap,
             BridgeSerializationUtils::serializeRskCoin
         );
+        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
 
-        // First vote
-        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer1);
-        UnionResponseCode firstVoteResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, firstVoteResponseCode);
-
-        // Second vote
-        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer2);
         UnionResponseCode actualLockingCapResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
 
@@ -1626,12 +1425,7 @@ class UnionBridgeSupportImplTest {
             .withConstants(bridgeConstants).build();
 
         // act
-        // First vote
-        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer1);
-        UnionResponseCode firstVoteResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, true, false);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, firstVoteResponseCode);
-        // Second vote
-        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer2);
+        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer);
         UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, true, false);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
@@ -1674,7 +1468,7 @@ class UnionBridgeSupportImplTest {
     private void assertLogUnionLockingCapIncreased(Coin previousLockingCap, Coin newLockingCap) {
         CallTransaction.Function unionLockingCapIncreasedEvent = BridgeEvents.UNION_LOCKING_CAP_INCREASED.getEvent();
         byte[][] encodedTopicsSerialized = unionLockingCapIncreasedEvent.encodeEventTopics(
-            UnionBridgeSupportImplTest.changeLockingCapAuthorizer2.toHexString());
+            UnionBridgeSupportImplTest.changeLockingCapAuthorizer.toHexString());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsSerialized);
         byte[] encodedData = unionLockingCapIncreasedEvent.encodeEventData(previousLockingCap.asBigInteger(), newLockingCap.asBigInteger());
         assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);

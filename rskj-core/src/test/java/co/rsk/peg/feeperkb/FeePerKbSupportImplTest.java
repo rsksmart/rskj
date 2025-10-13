@@ -194,8 +194,8 @@ class FeePerKbSupportImplTest {
 
     @Test
     void voteFeePerKbChange_nullFeeThrows() {
-        Transaction tx = mock(Transaction.class);
         SignatureCache signatureCache = mock(SignatureCache.class);
+        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
 
         assertThrows(NullPointerException.class, () -> feePerKbSupport.voteFeePerKbChange(tx, null, signatureCache));
         verify(storageProvider, never()).setFeePerKb(any());

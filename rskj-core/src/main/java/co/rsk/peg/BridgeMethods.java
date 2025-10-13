@@ -19,6 +19,8 @@ package co.rsk.peg;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.Optional;
@@ -34,7 +36,6 @@ import org.ethereum.vm.MessageCall.MsgType;
 /**
  * Represents the methods of the Bridge contract, encapsulating details such as 
  * the Application Binary Interface (ABI), execution costs, and method implementations.
- *
  * Each enum constant corresponds to a specific method of the Bridge contract, 
  * defining its signature and providing the necessary information for execution.
  */
@@ -831,7 +832,11 @@ public enum BridgeMethods {
             new String[]{"int"}
         ),
         fixedCost(24000L), // TODO: Define final cost
-        (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeContractAddressForTestnet,
+        Bridge.executeIfTestnetAndAuthorized(
+            bridgeConstants -> bridgeConstants.getUnionBridgeConstants().getChangeUnionBridgeContractAddressAuthorizer(),
+            (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeContractAddressForTestnet,
+            "setUnionBridgeContractAddressForTestnet"
+        ),
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
     ),
@@ -866,7 +871,11 @@ public enum BridgeMethods {
             new String[]{"int"}
         ),
         fixedCost(8_000L), // TODO: Define final cost
-        (BridgeMethodExecutorTyped<Integer>) Bridge::increaseUnionBridgeLockingCap,
+        Bridge.executeIfAuthorized(
+            bridgeConstants -> bridgeConstants.getUnionBridgeConstants().getChangeLockingCapAuthorizer(),
+            (BridgeMethodExecutorTyped<Integer>) Bridge::increaseUnionBridgeLockingCap,
+            "increaseUnionBridgeLockingCap"
+        ),
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
     ),
@@ -899,7 +908,11 @@ public enum BridgeMethods {
             new String[]{"int"}
         ),
         fixedCost(8_000L), // TODO: Define final cost
-        (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeTransferPermissions,
+        Bridge.executeIfAuthorized(
+            bridgeConstants -> bridgeConstants.getUnionBridgeConstants().getChangeTransferPermissionsAuthorizer(),
+            (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeTransferPermissions,
+            "setUnionBridgeTransferPermissions"
+        ),
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
     ),
@@ -1014,6 +1027,10 @@ public enum BridgeMethods {
 
     public interface BridgeCondition {
         boolean isTrue(Bridge bridge);
+    }
+
+    protected interface AuthorizerProvider {
+        AddressBasedAuthorizer provide(BridgeConstants bridgeConstants);
     }
 
     /**

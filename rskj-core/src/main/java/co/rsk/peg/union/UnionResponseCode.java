@@ -11,8 +11,6 @@ public enum UnionResponseCode {
     // Response codes when request or release is disabled:
     REQUEST_DISABLED(-3),
     RELEASE_DISABLED(-3),
-    // Environment restriction for preventing union bridge address being updated on production
-    ENVIRONMENT_DISABLED(-3),
     GENERIC_ERROR(-10)
     ;
 
