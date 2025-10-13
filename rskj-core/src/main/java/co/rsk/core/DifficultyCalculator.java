@@ -32,11 +32,20 @@ public class DifficultyCalculator {
     private final ActivationConfig activationConfig;
     private final Constants constants;
     private final DifficultyCalculationLogger difficultyCalculationLogger;
+    private final boolean isDifficultyMetricsEnabled;
 
     public DifficultyCalculator(ActivationConfig activationConfig, Constants constants) {
         this.activationConfig = activationConfig;
         this.constants = constants;
         this.difficultyCalculationLogger = new DifficultyCalculationLogger();
+        this.isDifficultyMetricsEnabled = false;
+    }
+
+    public DifficultyCalculator(ActivationConfig activationConfig, Constants constants, boolean isDifficultyMetricsEnabled) {
+        this.activationConfig = activationConfig;
+        this.constants = constants;
+        this.difficultyCalculationLogger = new DifficultyCalculationLogger();
+        this.isDifficultyMetricsEnabled = isDifficultyMetricsEnabled;
     }
 
     public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
@@ -49,7 +58,9 @@ public class DifficultyCalculator {
         }
 
         BlockDifficulty blockDifficulty = getBlockDifficulty(header, parentHeader);
-        difficultyCalculationLogger.addBlock(header, blockDifficulty);
+        if (isDifficultyMetricsEnabled) {
+            difficultyCalculationLogger.addBlock(header, blockDifficulty, parentHeader.getDifficulty());
+        }
         return blockDifficulty;
     }
 
