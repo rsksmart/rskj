@@ -292,10 +292,11 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     @Override
     public void setSuperEvent(Transaction tx, @Nonnull byte[] data) {
+        requireNonNull(data, "Super event data cannot be null");
+
         RskAddress caller = tx.getSender(signatureCache);
         validateCallerIsUnionBridge(caller);
 
-        requireNonNull(data, "Super event data cannot be null");
         int dataLength = data.length;
         if (dataLength > MAX_EVENT_DATA_LENGTH) {
             throw new IllegalArgumentException(String.format("Super event data length %d is above maximum.", dataLength));
@@ -325,10 +326,11 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     @Override
     public void setBaseEvent(Transaction tx, @Nonnull byte[] data) {
+        requireNonNull(data, "Base event data cannot be null");
+
         RskAddress caller = tx.getSender(signatureCache);
         validateCallerIsUnionBridge(caller);
 
-        requireNonNull(data, "Base event data cannot be null");
         int dataLength = data.length;
         if (dataLength > MAX_EVENT_DATA_LENGTH) {
             throw new IllegalArgumentException(String.format("Base event data length %d is above maximum.", dataLength));
