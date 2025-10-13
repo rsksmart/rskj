@@ -67,11 +67,12 @@ class BlockHeaderContractTest {
     private static final BigInteger GAS_LIMIT = new BigInteger("3000000");
     private static final BigInteger GAS_USED = new BigInteger("0");
     private static final BigInteger MIN_GAS_PRICE = new BigInteger("500000000000000000");
-    private static final BigInteger RSK_DIFFICULTY = new BigInteger("1");
+    private static final BigInteger RSK_BLOCK_DIFFICULTY = new BigInteger("1");
+    private static final BigInteger RSK_BLOCK_WITH_UNCLES_DIFFICULTY = new BigInteger("3");
     private static final long DIFFICULTY_TARGET = 562036735;
     private static final String DATA = "80af2871";
     private static final byte[] ADDITIONAL_TAG = {'A','L','T','B','L','O','C','K',':'};
-    private static final String BLOCK_HEADER_CONTRACT_ADDRESS = PrecompiledContracts.BLOCK_HEADER_ADDR_STR;
+    private static final RskAddress BLOCK_HEADER_CONTRACT_ADDRESS = new RskAddress(PrecompiledContracts.BLOCK_HEADER_ADDR_STR);
     private static final ActivationConfig activationConfig = ActivationConfigsForTest.all();
 
     private ExecutionEnvironment executionEnvironment;
@@ -94,7 +95,7 @@ class BlockHeaderContractTest {
     @BeforeEach
     void setUp() {
         world = new World();
-        contract = new BlockHeaderContract(activationConfig, new RskAddress(BLOCK_HEADER_CONTRACT_ADDRESS));
+        contract = new BlockHeaderContract(activationConfig, BLOCK_HEADER_CONTRACT_ADDRESS);
         blockFactory = new BlockFactory(activationConfig);
 
         // contract methods
@@ -116,7 +117,7 @@ class BlockHeaderContractTest {
             .nonce(NONCE)
             .gasPrice(GAS_PRICE)
             .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(BLOCK_HEADER_CONTRACT_ADDRESS))
+            .destination(BLOCK_HEADER_CONTRACT_ADDRESS.getBytes())
             .data(Hex.decode(DATA))
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(AMOUNT)
@@ -253,7 +254,7 @@ class BlockHeaderContractTest {
         byte[] rskDifficulty = (byte[]) decodedResult[0];
 
         assertTrue(rskDifficulty.length > 0);
-        assertEquals(RSK_DIFFICULTY, new BigInteger(rskDifficulty));
+        assertEquals(RSK_BLOCK_DIFFICULTY, new BigInteger(rskDifficulty));
     }
 
     @Test
@@ -324,7 +325,8 @@ class BlockHeaderContractTest {
         buildBlockchainOfLengthWithUncles(4000);
         initContract();
 
-        byte[] encodedResult = contract.execute(getDifficultyFunction.encode(new BigInteger("1000")));
+        int blockDepth = 1000;
+        byte[] encodedResult = contract.execute(getDifficultyFunction.encode(BigInteger.valueOf(blockDepth)));
         Object[] decodedResult = getDifficultyFunction.decodeResult(encodedResult);
 
         assertEquals(1, decodedResult.length);
@@ -332,7 +334,7 @@ class BlockHeaderContractTest {
         byte[] rskDifficulty = (byte[]) decodedResult[0];
 
         assertTrue(rskDifficulty.length > 0);
-        assertEquals(RSK_DIFFICULTY, new BigInteger(rskDifficulty));
+        assertEquals(RSK_BLOCK_DIFFICULTY, new BigInteger(rskDifficulty));
     }
 
     @Test
@@ -342,7 +344,7 @@ class BlockHeaderContractTest {
         buildBlockchainOfLengthWithUncles(blockCount);
 
         ActivationConfig activationConfigForReed = ActivationConfigsForTest.reed800();
-        contract = new BlockHeaderContract(activationConfigForReed, new RskAddress(BLOCK_HEADER_CONTRACT_ADDRESS));
+        contract = new BlockHeaderContract(activationConfigForReed, BLOCK_HEADER_CONTRACT_ADDRESS);
         initContract();
 
         assertThrows(
@@ -363,7 +365,7 @@ class BlockHeaderContractTest {
         byte[] cumulativeDifficulty = (byte[]) decodedResult[0];
 
         assertEquals(1, decodedResult.length);
-        assertEquals(RSK_DIFFICULTY, new BigInteger(cumulativeDifficulty));
+        assertEquals(RSK_BLOCK_DIFFICULTY, new BigInteger(cumulativeDifficulty));
     }
 
     @Test
@@ -373,15 +375,12 @@ class BlockHeaderContractTest {
         buildBlockchainOfLengthWithUncles(blockCount);
         initContract();
 
-        // Header difficulty plus 2 uncles
-        BigInteger expectedCumulativeDifficulty = RSK_DIFFICULTY.multiply(BigInteger.valueOf(3));
-
         byte[] encodedResult = contract.execute(getCumulativeDifficultyFunction.encode(BigInteger.valueOf(blockDepth)));
         Object[] decodedResult = getCumulativeDifficultyFunction.decodeResult(encodedResult);
         byte[] cumulativeDifficulty = (byte[]) decodedResult[0];
 
         assertEquals(1, decodedResult.length);
-        assertEquals(expectedCumulativeDifficulty, new BigInteger(cumulativeDifficulty));
+        assertEquals(RSK_BLOCK_WITH_UNCLES_DIFFICULTY, new BigInteger(cumulativeDifficulty));
     }
 
     @Test
@@ -391,7 +390,7 @@ class BlockHeaderContractTest {
         buildBlockchainOfLengthWithUncles(blockCount);
 
         ActivationConfig activationConfigForReed = ActivationConfigsForTest.reed800();
-        contract = new BlockHeaderContract(activationConfigForReed, new RskAddress(BLOCK_HEADER_CONTRACT_ADDRESS));
+        contract = new BlockHeaderContract(activationConfigForReed, BLOCK_HEADER_CONTRACT_ADDRESS);
         initContract();
 
         assertThrows(
@@ -407,7 +406,7 @@ class BlockHeaderContractTest {
         buildBlockchainOfLength(blockCount);
         initContract();
 
-        BigInteger expectedTotalDifficulty = RSK_DIFFICULTY.multiply(BigInteger.valueOf(blockCount - blockDepth));
+        BigInteger expectedTotalDifficulty = RSK_BLOCK_DIFFICULTY.multiply(BigInteger.valueOf(blockCount - blockDepth));
 
         byte[] encodedResult = contract.execute(getTotalDifficultyFunction.encode(BigInteger.valueOf(blockDepth)));
         Object[] decodedResult = getTotalDifficultyFunction.decodeResult(encodedResult);
@@ -424,12 +423,8 @@ class BlockHeaderContractTest {
         buildBlockchainOfLengthWithUncles(blockCount);
         initContract();
 
-        // Expected calculation:
-        // - Block 0 (genesis): difficulty 1, no uncles
-        // - Block 1: difficulty 1, no uncles
-        // - Blocks 2-2999: difficulty 1 + 2 uncles (1 each) = 3 per block
-        // Total at block 3000 (depth 1000): (3 × 3000) - 4 = 8996
-        BigInteger expectedTotalDifficulty = calculateExpectedTotalDifficultyWithUncles(blockCount, blockDepth);
+        int blockHeight = blockCount - blockDepth;
+        BigInteger expectedTotalDifficulty = calculateBlockExpectedTotalDifficultyWithUncles(blockHeight);
 
         byte[] encodedResult = contract.execute(getTotalDifficultyFunction.encode(BigInteger.valueOf(blockDepth)));
         Object[] decodedResult = getTotalDifficultyFunction.decodeResult(encodedResult);
@@ -439,14 +434,21 @@ class BlockHeaderContractTest {
         assertEquals(expectedTotalDifficulty, new BigInteger(totalDifficulty));
     }
 
-    private BigInteger calculateExpectedTotalDifficultyWithUncles(int blockCount, int blockDepth) {
-        BigInteger difficultyPerBlockWithUncles = RSK_DIFFICULTY.multiply(BigInteger.valueOf(3));
-        BigInteger totalBlocks = BigInteger.valueOf(blockCount - blockDepth);
-        BigInteger missingUncleDifficulty = RSK_DIFFICULTY.multiply(BigInteger.valueOf(4));
+    private BigInteger calculateBlockExpectedTotalDifficultyWithUncles(int blockHeight) {
+        // Expected calculation:
+        // N = blockHeight
+        // - Block 0 (genesis): difficulty 1, no uncles
+        // - Block 1: difficulty 1, no uncles
+        // - From block 2 to N-1 (total N-2 blocks): difficulty 1 + 2 uncles (of difficulty 1 each) = 3 per block
+        // Total difficulty at block height: 1 + 1 + (3 × (N-2))
 
-        return difficultyPerBlockWithUncles
-            .multiply(totalBlocks)
-            .subtract(missingUncleDifficulty);
+        BigInteger amountOfBlocksWithoutUncles = BigInteger.valueOf(2);
+        BigInteger difficultyFromBlocksWithoutUncles = RSK_BLOCK_DIFFICULTY.multiply(amountOfBlocksWithoutUncles);
+
+        BigInteger amountOfBlocksWithUncles = BigInteger.valueOf(blockHeight).subtract(amountOfBlocksWithoutUncles);
+        BigInteger difficultyFromBlocksWithUncles = RSK_BLOCK_WITH_UNCLES_DIFFICULTY.multiply(amountOfBlocksWithUncles);
+
+        return difficultyFromBlocksWithUncles.add(difficultyFromBlocksWithoutUncles);
     }
 
     @Test
