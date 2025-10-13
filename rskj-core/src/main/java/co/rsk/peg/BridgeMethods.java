@@ -832,7 +832,7 @@ public enum BridgeMethods {
             new String[]{"int"}
         ),
         fixedCost(24000L), // TODO: Define final cost
-        Bridge.executeIfEnabledEnvironmentAndAuthorized(
+        Bridge.executeIfTestnetAndAuthorized(
             bridgeConstants -> bridgeConstants.getUnionBridgeConstants().getChangeUnionBridgeContractAddressAuthorizer(),
             (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeContractAddressForTestnet,
             "setUnionBridgeContractAddressForTestnet"

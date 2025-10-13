@@ -45,15 +45,9 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.exception.VMException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.*;
 
 class BridgeTest {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[]{};
@@ -201,7 +195,7 @@ class BridgeTest {
             .activationConfig(activationConfig)
             .build();
 
-        // Uses the proper signature but appends invalid data type
+        // Uses the proper signature but appends an invalid data type
         // This will be rejected by the solidity decoder in the Bridge directly
         final byte[] invalidTypeData = ByteUtil.merge(increaseLockingCapFunction.encodeSignature(), Hex.decode("ab"));
         assertThrows(VMException.class, () -> bridge.execute(invalidTypeData));
@@ -1022,7 +1016,7 @@ class BridgeTest {
     }
 
     @Test
-    void getNextPegoutCreationBlockNumber_before_RSKIP271_activation() throws VMException {
+    void getNextPegoutCreationBlockNumber_before_RSKIP271_activation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
         Bridge bridge = bridgeBuilder
@@ -1060,7 +1054,7 @@ class BridgeTest {
     }
 
     @Test
-    void getQueuedPegoutsCount_before_RSKIP271_activation() throws VMException {
+    void getQueuedPegoutsCount_before_RSKIP271_activation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
         Bridge bridge = bridgeBuilder
@@ -2553,7 +2547,7 @@ class BridgeTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void getStateForSvpClient(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException {
+    void getStateForSvpClient(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
         Transaction rskTxMock = mock(Transaction.class);
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
 
@@ -2904,7 +2898,7 @@ class BridgeTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void releaseBtc(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
+    void releaseBtc(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
@@ -3000,7 +2994,7 @@ class BridgeTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void updateCollections(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
+    void updateCollections(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException {
         Transaction rskTxMock = mock(Transaction.class);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
@@ -3315,7 +3309,7 @@ class BridgeTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void getNextPegoutCreationBlockNumber(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
+    void getNextPegoutCreationBlockNumber(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
         Bridge bridge = bridgeBuilder
@@ -3512,13 +3506,13 @@ class BridgeTest {
         }
 
         @Test
-        void executeIfEnabledEnvironmentAndAuthorized_whenEnabledEnvironmentAndAuthorized_shouldExecute() throws Exception {
+        void executeIfTestnetAndAuthorized_whenTestnetAndAuthorized_shouldExecute() throws Exception {
             // Arrange
             when(rskTx.getSender(any())).thenReturn(changeTestnetUnionAddressAuthorizer);
             when(authorizerProvider.provide(any())).thenReturn(testnetChangeUnionBridgeAuthorizer);
 
             // Act
-            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfEnabledEnvironmentAndAuthorized(
+            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfTestnetAndAuthorized(
                 authorizerProvider,
                 decorate,
                 "setUnionBridgeContractAddressForTestnet"
@@ -3530,13 +3524,13 @@ class BridgeTest {
         }
 
         @Test
-        void executeIfEnabledEnvironmentAndAuthorized_whenDisabledEnvironment_shouldThrowVMException() throws Exception {
+        void executeIfTestnet_shouldThrowVMException() throws Exception {
             // Arrange
             when(rskTx.getSender(any())).thenReturn(RskAddress.ZERO_ADDRESS);
             when(authorizerProvider.provide(any())).thenReturn(unionBridgeMainNetConstants.getChangeLockingCapAuthorizer());
 
             // Act
-            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfEnabledEnvironmentAndAuthorized(
+            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfTestnetAndAuthorized(
                 authorizerProvider,
                 decorate,
                 "setUnionBridgeContractAddressForTestnet"
@@ -3550,14 +3544,14 @@ class BridgeTest {
         }
 
         @Test
-        void executeIfEnabledEnvironmentAndAuthorized_whenEnabledEnvironmentButUnauthorized_shouldThrowVMException() throws Exception {
+        void executeIfTestnetAndAuthorized_whenTestnetButUnauthorized_shouldThrowVMException() throws Exception {
             // Arrange
             when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
 
             when(authorizerProvider.provide(any())).thenReturn(testnetChangeUnionBridgeAuthorizer);
 
             // Act
-            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfEnabledEnvironmentAndAuthorized(
+            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfTestnetAndAuthorized(
                 authorizerProvider,
                 decorate,
                 "setUnionBridgeContractAddressForTestnet"
@@ -3571,23 +3565,13 @@ class BridgeTest {
         }
 
         @Test
-        void executeIfEnabledEnvironmentAndAuthorized_whenDisabledEnvironmentAndUnauthorized_shouldThrowVMException() throws Exception {
+        void executeIfTestnetAndUnauthorized_shouldThrowVMException() throws Exception {
             // Arrange
             when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
             when(authorizerProvider.provide(any())).thenReturn(unionBridgeMainNetConstants.getChangeLockingCapAuthorizer());
 
-            BridgeMethods.BridgeMethodExecutor decorate = mock(
-                BridgeMethods.BridgeMethodExecutor.class
-            );
-            Bridge bridge = bridgeBuilder
-                .transaction(rskTx)
-                .constants(Constants.mainnet())
-                .activationConfig(allActivations)
-                .bridgeSupport(bridgeSupport)
-                .build();
-
             // Act
-            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfEnabledEnvironmentAndAuthorized(
+            BridgeMethods.BridgeMethodExecutor executor = Bridge.executeIfTestnetAndAuthorized(
                 authorizerProvider,
                 decorate,
                 "setUnionBridgeContractAddressForTestnet"
@@ -4089,8 +4073,7 @@ class BridgeTest {
         }
 
         @Test
-        void setUnionBridgeTransferPermissions_whenNotAuthorized_shouldReturnUnauthorizedCode()
-            throws VMException {
+        void setUnionBridgeTransferPermissions_whenNotAuthorized_shouldReturnUnauthorizedCode() {
             // Arrange
             when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
 

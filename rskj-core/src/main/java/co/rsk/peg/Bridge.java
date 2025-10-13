@@ -1534,7 +1534,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     protected static BridgeMethods.BridgeMethodExecutor executeIfAuthorized(
         AuthorizerProvider authorizerProvider,
-        BridgeMethods.BridgeMethodExecutor decoratee,
+        BridgeMethods.BridgeMethodExecutor decorate,
         String functionName
     ) {
         return (self, args) -> {
@@ -1546,13 +1546,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 );
                 throw new VMException(errorMessage);
             }
-            return decoratee.execute(self, args);
+            return decorate.execute(self, args);
         };
     }
 
-    public static BridgeMethods.BridgeMethodExecutor executeIfEnabledEnvironmentAndAuthorized(
+    public static BridgeMethods.BridgeMethodExecutor executeIfTestnetAndAuthorized(
         AuthorizerProvider authorizerProvider,
-        BridgeMethods.BridgeMethodExecutor decoratee,
+        BridgeMethods.BridgeMethodExecutor decorate,
         String functionName
     ) {
         return (self, args) -> {
@@ -1565,7 +1565,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 throw new VMException(errorMessage);
             }
 
-            return executeIfAuthorized(authorizerProvider, decoratee, functionName).execute(self, args);
+            return executeIfAuthorized(authorizerProvider, decorate, functionName).execute(self, args);
         };
     }
 
