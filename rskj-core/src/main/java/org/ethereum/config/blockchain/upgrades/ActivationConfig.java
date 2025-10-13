@@ -57,7 +57,9 @@ public class ActivationConfig {
             return 0x1;
         }
 
-        //TODO: Add here the new version header
+        if(this.isActive(ConsensusRule.RSKIP481, blockNumber) && (this.isActive(ConsensusRule.RSKIP351, blockNumber))) {
+            return 0x2;
+        }
 
         return 0x0;
     }

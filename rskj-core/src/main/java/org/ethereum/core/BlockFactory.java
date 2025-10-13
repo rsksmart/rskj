@@ -62,9 +62,6 @@ public class BlockFactory {
 
     private Block decodeBlock(byte[] rawData, boolean sealed) {
         RLPList block = RLP.decodeList(rawData);
-        if (block.size() != 3) {
-            throw new IllegalArgumentException("A block must have 3 exactly items");
-        }
 
         RLPList rlpHeader = (RLPList) block.get(0);
         BlockHeader header = decodeHeader(rlpHeader, false, sealed);
@@ -162,18 +159,18 @@ public class BlockFactory {
                     : rlpHeader.get(r++).getRLPData()[0];
         }
 
-        byte[] bridgeEvent = null;
-        if ((!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed)
-                && (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber))) {
-            bridgeEvent = rlpHeader.get(r++).getRLPRawData();
-            version ++;
-        }
-
         short[] txExecutionSublistsEdges = null;
 
         if ((!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) &&
                 (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))) {
             txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
+        }
+
+        byte[] bridgeEvent = null;
+        if ((!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) &&
+                (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber))) {
+            bridgeEvent = rlpHeader.get(r++).getRLPRawData();
+            version ++;
         }
 
         byte[] bitcoinMergedMiningHeader = null;

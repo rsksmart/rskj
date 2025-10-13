@@ -136,7 +136,8 @@ class ActivationConfigTest {
         "    rskip459: lovell700",
         "    rskip460: lovell700",
         "    rskip516: reed800",
-        "}"
+        "    rskip481: 1",
+            "}"
     ));
 
     @Test
@@ -211,7 +212,13 @@ class ActivationConfigTest {
 
     @Test
     void headerVersion1() {
-        ActivationConfig config = ActivationConfigsForTest.all();
+        ActivationConfig config = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP481);
         assertEquals((byte) 0x1, config.getHeaderVersion(10));
+    }
+
+    @Test
+    void headerVersion2() {
+        ActivationConfig config = ActivationConfigsForTest.all();
+        assertEquals((byte) 0x2, config.getHeaderVersion(10));
     }
 }

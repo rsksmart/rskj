@@ -128,12 +128,14 @@ public class BlockHeaderV1 extends BlockHeader {
 
     @Override
     public byte[] getBridgeEvent() {
-        return new byte[0];
+        return null;
     }
 
     @Override
     public void setBridgeEvent(byte[] bridgeEvent) {
-
+        if (bridgeEvent != null) {
+            throw new UnsupportedOperationException("Block header v1 does not support bridge event");
+        }
     }
 
     @Override

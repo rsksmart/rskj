@@ -61,11 +61,11 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
     public static BlockHeaderExtensionV2 fromEncoded(byte[] encoded) {
         RLPList rlpExtension = RLP.decodeList(encoded);
         byte[] logsBloom = rlpExtension.get(0).getRLPData();
-        byte[] superChainDataHash = rlpExtension.get(1).getRLPData();
+        byte[] bridgeEvent = rlpExtension.get(1).getRLPData();
         return new BlockHeaderExtensionV2(
                 logsBloom,
                 rlpExtension.size() == 3 ? toEdges(rlpExtension.get(2).getRLPRawData()) : null,
-                superChainDataHash
+                bridgeEvent
         );
     }
 
