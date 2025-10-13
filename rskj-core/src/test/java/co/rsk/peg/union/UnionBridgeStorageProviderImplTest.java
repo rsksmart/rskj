@@ -14,8 +14,6 @@ import java.math.BigInteger;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.ethereum.TestUtils;
-import org.ethereum.util.ByteUtil;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -294,7 +292,7 @@ class UnionBridgeStorageProviderImplTest {
         Coin zeroLockingCap = Coin.ZERO;
 
         // Act
-        Assertions.assertThrows(IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
             () -> unionBridgeStorageProvider.setLockingCap(zeroLockingCap),
             "Locking cap cannot be zero");
     }
@@ -452,7 +450,7 @@ class UnionBridgeStorageProviderImplTest {
         Coin negativeAmount = Coin.valueOf(-1);
 
         // Act
-        Assertions.assertThrows(IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
             () -> unionBridgeStorageProvider.increaseWeisTransferredToUnionBridge(negativeAmount),
             "Amount requested to Union Bridge cannot be null or negative");
     }
@@ -483,7 +481,7 @@ class UnionBridgeStorageProviderImplTest {
 
     @Test
     void increaseWeisTransferredToUnionBridge_whenNull_shouldThrowIllegalArgumentException() {
-        Assertions.assertThrows(IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
             () -> unionBridgeStorageProvider.increaseWeisTransferredToUnionBridge(null),
             "Amount requested to Union Bridge cannot be null or negative");
     }
@@ -558,7 +556,7 @@ class UnionBridgeStorageProviderImplTest {
     @Test
     void decreaseWeisTransferredToUnionBridge_whenNull_shouldThrowIllegalArgumentException() {
         // Act & Assert
-        Assertions.assertThrows(IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
             () -> unionBridgeStorageProvider.decreaseWeisTransferredToUnionBridge(null),
             "Amount released cannot be null or negative");
     }
@@ -569,7 +567,7 @@ class UnionBridgeStorageProviderImplTest {
         Coin negativeAmount = Coin.valueOf(-1);
 
         // Act & Assert
-        Assertions.assertThrows(IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
             () -> unionBridgeStorageProvider.decreaseWeisTransferredToUnionBridge(negativeAmount),
             "Amount released cannot be null or negative");
     }
@@ -583,7 +581,7 @@ class UnionBridgeStorageProviderImplTest {
         Coin tooLarge = amountTransferredToUnionBridge.add(Coin.valueOf(1));
 
         // Act & Assert
-        Assertions.assertThrows(IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
             () -> unionBridgeStorageProvider.decreaseWeisTransferredToUnionBridge(tooLarge),
             "Cannot decrease weis transferred to Union Bridge below zero");
     }
@@ -591,7 +589,7 @@ class UnionBridgeStorageProviderImplTest {
     @Test
     void decreaseWeisTransferredToUnionBridge_whenNoStoredValueAndDecreaseNonZero_shouldThrowIllegalArgumentException() {
         Coin nonZero = Coin.valueOf(1);
-        Assertions.assertThrows(IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
             () -> unionBridgeStorageProvider.decreaseWeisTransferredToUnionBridge(nonZero),
             "Cannot decrease weis transferred to Union Bridge below zero");
     }
@@ -1207,7 +1205,7 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void setSuperEvent_whenNullDataSet_shouldThowNPE() {
+    void setSuperEvent_whenNullDataSet_shouldThrowNPE() {
         assertThrows(NullPointerException.class, () -> unionBridgeStorageProvider.setSuperEvent(null));
     }
 
@@ -1252,7 +1250,7 @@ class UnionBridgeStorageProviderImplTest {
         byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
 
         // Assert
-        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, baseEvent);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, baseEvent);
     }
 
     @Test
@@ -1273,13 +1271,13 @@ class UnionBridgeStorageProviderImplTest {
     @Test
     void getBaseEvent_whenEmptyDataSet_shouldReturnEmpty() {
         // Arrange
-        unionBridgeStorageProvider.setBaseEvent(ByteUtil.EMPTY_BYTE_ARRAY);
+        unionBridgeStorageProvider.setBaseEvent(EMPTY_BYTE_ARRAY);
 
         // Act
         byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
 
         // Assert
-        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, baseEvent);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, baseEvent);
     }
 
     @Test
@@ -1319,11 +1317,11 @@ class UnionBridgeStorageProviderImplTest {
         );
 
         // Act
-        unionBridgeStorageProvider.setBaseEvent(ByteUtil.EMPTY_BYTE_ARRAY);
+        unionBridgeStorageProvider.setBaseEvent(EMPTY_BYTE_ARRAY);
 
         // Assert
         byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
-        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, baseEvent);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, baseEvent);
     }
 
     @Test
@@ -1357,7 +1355,7 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void setBaseEvent_whenNullDataSet_shouldThowNPE() {
+    void setBaseEvent_whenNullDataSet_shouldThrowNPE() {
         assertThrows(NullPointerException.class, () -> unionBridgeStorageProvider.setBaseEvent(null));
     }
 
@@ -1376,7 +1374,7 @@ class UnionBridgeStorageProviderImplTest {
             UnionBridgeStorageIndexKey.BASE_EVENT.getKey(),
             data -> data
         );
-        assertArrayEquals(EMPTY_BYTE_ARRAY ,actualBaseEvent);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, actualBaseEvent);
     }
 
     private void assertNoBaseEventDataIsStored() {
