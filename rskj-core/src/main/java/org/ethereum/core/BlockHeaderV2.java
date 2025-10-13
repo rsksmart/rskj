@@ -35,7 +35,7 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
                          byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                          byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                          Coin minimumGasPrice, int uncleCount, boolean sealed, boolean useRskip92Encoding,
-                         boolean includeForkDetectionData, byte[] ummRoot, byte[] superEvent,
+                         boolean includeForkDetectionData, byte[] ummRoot, byte[] bridgeEvent,
                          short[] txExecutionSublistsEdges, boolean compressed) {
         super(parentHash, unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, compressed ? extensionData : null, difficulty,
@@ -44,7 +44,7 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
                 bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount, sealed,
                 useRskip92Encoding, includeForkDetectionData, ummRoot,
-                makeExtension(compressed, extensionData, txExecutionSublistsEdges, superEvent), compressed);
+                makeExtension(compressed, extensionData, txExecutionSublistsEdges, bridgeEvent), compressed);
     }
 
     @Override
@@ -53,19 +53,19 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
     }
 
     @Override
-    public byte[] getSuperEvent() {
-        return this.getExtension().getSuperEvent();
+    public byte[] getBridgeEvent() {
+        return this.getExtension().getBridgeEvent();
     }
 
     @Override
-    public void setSuperEvent(byte[] superEvent) {
+    public void setBridgeEvent(byte[] bridgeEvent) {
         /* A sealed block header is immutable, cannot be changed */
         if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter superEvent data of a sealed block");
+            throw new SealedBlockHeaderException("trying to alter bridgeEvent data of a sealed block");
         }
         this.hash = null;
 
-        this.getExtension().setSuperEvent(superEvent);
+        this.getExtension().setBridgeEvent(bridgeEvent);
         this.updateExtensionData();
     }
 
@@ -82,10 +82,10 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
     private static BlockHeaderExtensionV1 makeExtension(boolean compressed,
                                                         byte[] extensionData,
                                                         short[] txExecutionSublistsEdges,
-                                                        byte[] superEvent) {
+                                                        byte[] bridgeEvent) {
         return compressed
                 ? new BlockHeaderExtensionV2(null, null, null)
-                : new BlockHeaderExtensionV2(extensionData, txExecutionSublistsEdges, superEvent);
+                : new BlockHeaderExtensionV2(extensionData, txExecutionSublistsEdges, bridgeEvent);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
     public void addExtraFieldsToEncodedHeader(boolean usingCompressedEncoding, List<byte[]> fieldsToEncode) {
         super.addExtraFieldsToEncodedHeader(usingCompressedEncoding, fieldsToEncode);
         if (!usingCompressedEncoding) {
-            addSuperEvent(fieldsToEncode);
+            addBridgeEvent(fieldsToEncode);
         }
     }
 

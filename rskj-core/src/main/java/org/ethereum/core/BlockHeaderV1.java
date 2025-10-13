@@ -37,7 +37,7 @@ public class BlockHeaderV1 extends BlockHeader {
                          Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                          byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                          Coin minimumGasPrice, int uncleCount, boolean sealed,
-                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, byte[] superEvent, short[] txExecutionSublistsEdges, boolean compressed) {
+                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, byte[] bridgeEvent, short[] txExecutionSublistsEdges, boolean compressed) {
         this(parentHash,unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, compressed ? extensionData : null, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
@@ -45,7 +45,7 @@ public class BlockHeaderV1 extends BlockHeader {
                 bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount, sealed,
                 useRskip92Encoding, includeForkDetectionData, ummRoot,
-        makeExtension(compressed, extensionData, txExecutionSublistsEdges, superEvent), compressed);
+        makeExtension(compressed, extensionData, txExecutionSublistsEdges, bridgeEvent), compressed);
     }
 
     public BlockHeaderV1(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
@@ -88,7 +88,7 @@ public class BlockHeaderV1 extends BlockHeader {
     private static BlockHeaderExtensionV1 makeExtension(boolean compressed,
                                                         byte[] extensionData,
                                                         short[] txExecutionSublistsEdges,
-                                                        byte[] superEvent) {
+                                                        byte[] bridgeEvent) {
         return compressed
                 ? new BlockHeaderExtensionV1(null, null)
                 : new BlockHeaderExtensionV1(extensionData, txExecutionSublistsEdges);
@@ -127,13 +127,15 @@ public class BlockHeaderV1 extends BlockHeader {
     }
 
     @Override
-    public byte[] getSuperEvent() {
-        return new byte[0];
+    public byte[] getBridgeEvent() {
+        return null;
     }
 
     @Override
-    public void setSuperEvent(byte[] superEvent) {
-
+    public void setBridgeEvent(byte[] bridgeEvent) {
+        if (bridgeEvent != null) {
+            throw new UnsupportedOperationException("Block header v1 does not support bridge event");
+        }
     }
 
     @Override
@@ -143,6 +145,4 @@ public class BlockHeaderV1 extends BlockHeader {
             this.addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
         }
     }
-
-
 }
