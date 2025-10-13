@@ -1,5 +1,7 @@
 package co.rsk.peg.union;
 
+import static java.util.Objects.requireNonNull;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -11,7 +13,6 @@ import java.math.BigInteger;
 import javax.annotation.Nonnull;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
-import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,16 +40,16 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     @Override
     public RskAddress getUnionBridgeContractAddress() {
-        if (isCurrentEnvironmentMainnet()) {
+        if (networkIsMainNet()) {
             return constants.getAddress();
         }
 
         return storageProvider.getAddress().orElse(constants.getAddress());
     }
 
-    private boolean isCurrentEnvironmentMainnet() {
-        String currentNetworkId = constants.getBtcParams().getId();
-        return currentNetworkId.equals(NetworkParameters.ID_MAINNET);
+    private boolean networkIsMainNet() {
+        String networkId = constants.getBtcParams().getId();
+        return networkId.equals(NetworkParameters.ID_MAINNET);
     }
 
     @Override
@@ -295,6 +296,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         RskAddress caller = tx.getSender(signatureCache);
         validateCallerIsUnionBridge(caller);
 
+        requireNonNull(data, "Super event data cannot be null");
         int dataLength = data.length;
         if (dataLength > MAX_EVENT_DATA_LENGTH) {
             throw new IllegalArgumentException(String.format("Super event data length %d is above maximum.", dataLength));
@@ -313,7 +315,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         validateCallerIsUnionBridge(caller);
 
         byte[] previousSuperEventData = getSuperEvent();
-        storageProvider.setSuperEvent(ByteUtil.EMPTY_BYTE_ARRAY);
+        storageProvider.setSuperEvent(EMPTY_BYTE_ARRAY);
         logger.info("[clearSuperEvent] Super event info was cleared. Previous value: {}", previousSuperEventData);
     }
 
@@ -323,10 +325,11 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
-    public void setBaseEvent(Transaction tx, byte[] data) {
+    public void setBaseEvent(Transaction tx, @Nonnull byte[] data) {
         RskAddress caller = tx.getSender(signatureCache);
         validateCallerIsUnionBridge(caller);
 
+        requireNonNull(data, "Base event data cannot be null");
         int dataLength = data.length;
         if (dataLength > MAX_EVENT_DATA_LENGTH) {
             throw new IllegalArgumentException(String.format("Base event data length %d is above maximum.", dataLength));
@@ -345,7 +348,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         validateCallerIsUnionBridge(caller);
 
         byte[] previousBaseEventData = getBaseEvent();
-        storageProvider.setBaseEvent(ByteUtil.EMPTY_BYTE_ARRAY);
+        storageProvider.setBaseEvent(EMPTY_BYTE_ARRAY);
         logger.info("[clearBaseEvent] Base event info was cleared. Previous value: {}", previousBaseEventData);
     }
 
