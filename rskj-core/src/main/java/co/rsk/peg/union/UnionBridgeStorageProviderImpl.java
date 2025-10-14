@@ -162,10 +162,12 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
         this.weisTransferredToUnionBridge = updatedWeisTransferred;
     }
 
+    @Override
     public void setUnionBridgeRequestEnabled(boolean enabled) {
         this.unionBridgeRequestEnabled = enabled;
     }
 
+    @Override
     public Optional<Boolean> isUnionBridgeRequestEnabled() {
         return Optional.ofNullable(unionBridgeRequestEnabled)
             .or(() -> Optional.ofNullable(bridgeStorageAccessor.getFromRepository(
@@ -174,10 +176,12 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
                 )));
     }
 
+    @Override
     public void setUnionBridgeReleaseEnabled(boolean enabled) {
         this.unionBridgeReleaseEnabled = enabled;
     }
 
+    @Override
     public Optional<Boolean> isUnionBridgeReleaseEnabled() {
         return Optional.ofNullable(unionBridgeReleaseEnabled)
             .or(() -> Optional.ofNullable(bridgeStorageAccessor.getFromRepository(
