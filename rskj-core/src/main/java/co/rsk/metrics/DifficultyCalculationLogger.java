@@ -204,8 +204,8 @@ public class DifficultyCalculationLogger {
 
         public static String getCsvHeader() {
             return "block_number," + "timestamp," + "block_time," + "difficulty,"
-                    + "parent_difficulty," + "difficulty_difference," + "uncle_count,"
-                    + "window_uncle_count," + "window_uncle_rate," + "window_avg_block_time";
+                    + "parent_difficulty," + "uncle_count," + "window_uncle_count,"
+                    + "window_uncle_rate," + "window_avg_block_time";
         }
 
         public String toCsvRow() {
