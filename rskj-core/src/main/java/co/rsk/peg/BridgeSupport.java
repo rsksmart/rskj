@@ -591,7 +591,7 @@ public class BridgeSupport {
      * @deprecated since ARROWHEAD-6.0.0. Need to keep the code for backward compatibility and consensus
      */
     @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated(since="ARROWHEAD-6.0.0", forRemoval=false)
+    @Deprecated(since="ARROWHEAD-6.0.0")
     private void legacyRegisterPegin(
         BtcTransaction btcTx,
         Keccak256 rskTxHash,
@@ -2895,8 +2895,8 @@ public class BridgeSupport {
         return co.rsk.core.Coin.fromBitcoin(totalAmount).asBigInteger();
     }
 
-    public UnionResponseCode setUnionBridgeContractAddressForTestnet(Transaction tx, RskAddress unionBridgeContractAddress) {
-        return unionBridgeSupport.setUnionBridgeContractAddressForTestnet(tx, unionBridgeContractAddress);
+    public UnionResponseCode setUnionBridgeContractAddressForTestnet(RskAddress unionBridgeContractAddress) {
+        return unionBridgeSupport.setUnionBridgeContractAddressForTestnet(unionBridgeContractAddress);
     }
 
     public RskAddress getUnionBridgeContractAddress() {

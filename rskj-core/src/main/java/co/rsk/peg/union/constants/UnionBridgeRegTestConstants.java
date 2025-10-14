@@ -5,11 +5,8 @@ import static co.rsk.core.RskAddress.ZERO_ADDRESS;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
-import co.rsk.peg.vote.AddressBasedAuthorizer.MinimumRequiredCalculation;
 import co.rsk.peg.vote.AddressBasedAuthorizerFactory;
 import java.math.BigInteger;
-import java.util.Collections;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -31,10 +28,10 @@ public class UnionBridgeRegTestConstants extends UnionBridgeConstants {
 
         // TODO: Replace with actual authorizers
         // seed: unionBridgeAuthorizer
-        ECKey changeUnionBridgeContractAddressAuthorizers = ECKey.fromPublicOnly(Hex.decode("041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"));
-        changeUnionBridgeContractAddressAuthorizer = new AddressBasedAuthorizer(
-            Collections.singletonList(changeUnionBridgeContractAddressAuthorizers),
-            MinimumRequiredCalculation.ONE
+        ECKey changeUnionBridgeContractAddressAuthorizerKey = ECKey.fromPublicOnly(Hex.decode("041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"));
+        RskAddress changeUnionBridgeContractAddressAuthorizerAddress = new RskAddress(changeUnionBridgeContractAddressAuthorizerKey.getAddress());
+        changeUnionBridgeContractAddressAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
+            changeUnionBridgeContractAddressAuthorizerAddress
         );
 
         // TODO: Replace with actual authorizers

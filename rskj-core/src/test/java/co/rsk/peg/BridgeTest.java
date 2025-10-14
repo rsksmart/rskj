@@ -3609,10 +3609,8 @@ class BridgeTest {
         @ParameterizedTest
         @MethodSource("setUnionBridgeContractAddressForTestnetConstantsProvider")
         void setUnionBridgeContractAddressForTestnet_afterRSKIP502_shouldSetNewAddress(Constants constants, UnionResponseCode expectedUnionResponseCode) throws VMException {
-            RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress(
-                "newUnionBridgeContractAddress");
-            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, newUnionBridgeContractAddress)).thenReturn(
-                expectedUnionResponseCode);
+            RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress("newUnionBridgeContractAddress");
+            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress)).thenReturn(expectedUnionResponseCode);
             bridge = bridgeBuilder
                 .activationConfig(allActivations)
                 .bridgeSupport(bridgeSupport)
@@ -3632,8 +3630,7 @@ class BridgeTest {
 
         @Test
         void setUnionBridgeContractAddressForTestnet_whenUnauthorized_shouldThrowVMException() {
-            RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress(
-                "newUnionBridgeContractAddress");
+            RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress("newUnionBridgeContractAddress");
             when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
 
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
@@ -3641,7 +3638,7 @@ class BridgeTest {
 
             VMException actualException = assertThrows(VMException.class, () -> bridgeForTestnet.execute(data));
             assertTrue(actualException.getMessage().contains("The sender is not authorized to call setUnionBridgeContractAddressForTestnet"));
-            verify(unionBridgeSupport, never()).setUnionBridgeContractAddressForTestnet(any(), any());
+            verify(unionBridgeSupport, never()).setUnionBridgeContractAddressForTestnet(any());
         }
 
         @Test
@@ -3657,13 +3654,13 @@ class BridgeTest {
             VMException actualException = assertThrows(VMException.class, () -> bridge.execute(data));
 
             assertTrue(actualException.getMessage().contains("The setUnionBridgeContractAddressForTestnet function is disabled in Mainnet"));
-            verify(unionBridgeSupport, never()).setUnionBridgeContractAddressForTestnet(any(), any());
+            verify(unionBridgeSupport, never()).setUnionBridgeContractAddressForTestnet(any());
         }
 
         @Test
         void setUnionBridgeContractAddressForTestnet_afterRSKIP502_emptyArgument_shouldSuccess() throws VMException {
             UnionResponseCode expectedUnionResponseCode = UnionResponseCode.SUCCESS;
-            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(eq(rskTx), any())).thenReturn(expectedUnionResponseCode);
+            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any())).thenReturn(expectedUnionResponseCode);
 
             when(rskTx.getSender(any())).thenReturn(changeTestnetUnionAddressAuthorizer);
 
