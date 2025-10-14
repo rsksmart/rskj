@@ -40,6 +40,15 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
         return 0x2;
     }
 
+    @Override
+    public byte[] getHash() {
+        // If edges are empty, return null hash
+        if (this.getTxExecutionSublistsEdges() != null && this.getTxExecutionSublistsEdges().length == 0) {
+            return null;
+        }
+        return super.getHash();
+    }
+
     public byte[] getBridgeEvent() {
         return bridgeEvent != null ? Arrays.copyOf(bridgeEvent, bridgeEvent.length) : null;
     }
@@ -50,10 +59,8 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
 
     @Override
     protected void addElementsEncoded(List<byte[]> fieldToEncodeList) {
-        if (this.bridgeEvent != null) {
+        if (this.bridgeEvent != null && this.bridgeEvent.length > 0) {
             fieldToEncodeList.add(RLP.encodeElement(this.bridgeEvent));
-        } else {
-            fieldToEncodeList.add(RLP.encodeElement(new byte[0]));
         }
         super.addElementsEncoded(fieldToEncodeList);
     }
@@ -61,12 +68,19 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
     public static BlockHeaderExtensionV2 fromEncoded(byte[] encoded) {
         RLPList rlpExtension = RLP.decodeList(encoded);
         byte[] logsBloom = rlpExtension.get(0).getRLPData();
-        byte[] bridgeEvent = rlpExtension.get(1).getRLPData();
-        return new BlockHeaderExtensionV2(
-                logsBloom,
-                rlpExtension.size() == 3 ? toEdges(rlpExtension.get(2).getRLPRawData()) : null,
-                bridgeEvent
-        );
+        byte[] bridgeEvent = null;
+        short[] edges = null;
+        
+        if (rlpExtension.size() == 2) {
+            // Only logsBloom and edges (V1 compatibility)
+            edges = toEdges(rlpExtension.get(1).getRLPRawData());
+        } else if (rlpExtension.size() == 3) {
+            // logsBloom, bridgeEvent, and edges
+            bridgeEvent = rlpExtension.get(1).getRLPData();
+            edges = toEdges(rlpExtension.get(2).getRLPRawData());
+        }
+        
+        return new BlockHeaderExtensionV2(logsBloom, edges, bridgeEvent);
     }
 
     private static short[] toEdges(byte[] rlpData) {

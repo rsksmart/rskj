@@ -153,8 +153,8 @@ class BlockHeaderExtensionV2Test {
     void decodeWithEmptyBridgeEvent() {
         byte[] logsBloom = new byte[256];
         short[] edges = new short[] {1};
-        byte[] superChainDataHash = new byte[0];
-        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, edges, superChainDataHash);
+        byte[] bridgeEvent = new byte[0];
+        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, edges, bridgeEvent);
         byte[] encoded = ext.getEncoded();
 
         BlockHeaderExtensionV2 decoded = BlockHeaderExtensionV2.fromEncoded(encoded);
