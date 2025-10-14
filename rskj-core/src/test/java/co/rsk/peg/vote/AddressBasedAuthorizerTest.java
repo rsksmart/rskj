@@ -20,10 +20,7 @@
 package co.rsk.peg.vote;
 
 import static co.rsk.core.RskAddress.ZERO_ADDRESS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,17 +33,12 @@ import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class AddressBasedAuthorizerTest {
-
-    private Transaction rskTx;
-    private SignatureCache signatureCache;
-
     private static final RskAddress authorizedAddress = RskTestUtils.generateAddress("authorized");
     private static final RskAddress unauthorizedAddress = RskTestUtils.generateAddress("non-authorized");
 
@@ -59,6 +51,9 @@ class AddressBasedAuthorizerTest {
     private static final ECKey legacyKey1 = RskTestUtils.getEcKeyFromSeed("legacy1");
     private static final ECKey legacyKey2 = RskTestUtils.getEcKeyFromSeed("legacy2");
     private static final ECKey legacyKey3 = RskTestUtils.getEcKeyFromSeed("legacy3");
+
+    private Transaction rskTx;
+    private SignatureCache signatureCache;
 
     @BeforeEach
     void setup() {
@@ -227,7 +222,7 @@ class AddressBasedAuthorizerTest {
         authorizedKeys.stream()
             .map(ECKey::getAddress)
             .map(RskAddress::new)
-            .forEach(authorizedAddress -> assertTrue(allAuthorizer.isAuthorized(authorizedAddress)));
+            .forEach(address -> assertTrue(allAuthorizer.isAuthorized(address)));
     }
 
     @ParameterizedTest
@@ -246,8 +241,8 @@ class AddressBasedAuthorizerTest {
         authorizedKeys.stream()
             .map(ECKey::getAddress)
             .map(RskAddress::new)
-            .forEach(authorizedAddress -> {
-                when(rskTx.getSender(signatureCache)).thenReturn(authorizedAddress);
+            .forEach(address -> {
+                when(rskTx.getSender(signatureCache)).thenReturn(address);
                 assertTrue(allAuthorizer.isAuthorized(rskTx, signatureCache));
             });
     }
