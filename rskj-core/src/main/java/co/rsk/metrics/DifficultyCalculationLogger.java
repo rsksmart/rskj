@@ -5,6 +5,8 @@ import co.rsk.core.BlockDifficulty;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import org.ethereum.core.BlockHeader;
@@ -33,8 +35,19 @@ public class DifficultyCalculationLogger {
         File file = new File(this.csvFilePath);
         if (!file.exists()) {
             try {
-                file.createNewFile();
-                logger.info("CSV file created: {}", this.csvFilePath);
+                // Ensure parent directories exist
+                String parentPath = file.getParent();
+                if (parentPath != null) {
+                    Files.createDirectories(Paths.get(parentPath));
+                    logger.debug("Parent directories created for CSV file: {}", parentPath);
+                }
+                // Create the file
+                boolean fileCreated = file.createNewFile();
+                if (fileCreated) {
+                    logger.info("CSV file created: {}", this.csvFilePath);
+                } else {
+                    logger.warn("CSV file already exists or could not be created: {}", this.csvFilePath);
+                }
                 // Write the header to the file
                 try (FileWriter writer = new FileWriter(file)) {
                     writer.write(LogEntry.getCsvHeader());
