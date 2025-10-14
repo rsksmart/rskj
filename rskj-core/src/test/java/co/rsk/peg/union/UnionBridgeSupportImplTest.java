@@ -3,6 +3,7 @@ package co.rsk.peg.union;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedData;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedTopics;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -102,7 +103,7 @@ class UnionBridgeSupportImplTest {
 
         // assert
         RskAddress expectedUnionBridgeContractAddress = unionBridgeConstants.getAddress();
-        Assertions.assertEquals(expectedUnionBridgeContractAddress, actualUnionBridgeContractAddress);
+        assertEquals(expectedUnionBridgeContractAddress, actualUnionBridgeContractAddress);
     }
 
     @Test
@@ -121,7 +122,7 @@ class UnionBridgeSupportImplTest {
         RskAddress actualUnionBridgeContractAddress = unionBridgeSupport.getUnionBridgeContractAddress();
 
         // assert
-        Assertions.assertEquals(unionBridgeContractAddress, actualUnionBridgeContractAddress);
+        assertEquals(unionBridgeContractAddress, actualUnionBridgeContractAddress);
     }
 
     @Test
@@ -141,21 +142,21 @@ class UnionBridgeSupportImplTest {
         RskAddress actualUnionBridgeContractAddress = unionBridgeSupport.getUnionBridgeContractAddress();
 
         // assert
-        Assertions.assertEquals(mainnetUnionBridgeContractAddress, actualUnionBridgeContractAddress);
+        assertEquals(mainnetUnionBridgeContractAddress, actualUnionBridgeContractAddress);
     }
 
     @Test
     void setUnionBridgeContractAddressForTestnet_whenMeetRequirementsToUpdate_shouldReturnSuccess() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(testnetUnionBridgeConstants).build();
+            .withConstants(testnetUnionBridgeConstants)
+            .build();
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            unionBridgeContractAddress);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(unionBridgeContractAddress);
 
         // assert
-        Assertions.assertEquals(
+        assertEquals(
             UnionResponseCode.SUCCESS,
             actualResponseCode
         );
@@ -178,22 +179,22 @@ class UnionBridgeSupportImplTest {
     private void assertAddressWasSet(RskAddress expectedAddress) {
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress();
         Assertions.assertTrue(actualAddress.isPresent());
-        Assertions.assertEquals(expectedAddress, actualAddress.get());
+        assertEquals(expectedAddress, actualAddress.get());
     }
 
     @Test
     void setUnionBridgeContractAddressForTestnet_whenAddressIsTheSameAddressInConstants_shouldReturnSuccess() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(testnetUnionBridgeConstants).build();
+            .withConstants(testnetUnionBridgeConstants)
+            .build();
         RskAddress newUnionBridgeAddress = testnetUnionBridgeConstants.getAddress();
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            newUnionBridgeAddress);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeAddress);
 
         // assert
-        Assertions.assertEquals(
+        assertEquals(
             UnionResponseCode.SUCCESS,
             actualResponseCode
         );
@@ -223,14 +224,14 @@ class UnionBridgeSupportImplTest {
         );
 
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(testnetUnionBridgeConstants).build();
+            .withConstants(testnetUnionBridgeConstants)
+            .build();
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            newUnionBridgeContractAddress);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
 
         // assert
-        Assertions.assertEquals(
+        assertEquals(
             UnionResponseCode.SUCCESS,
             actualResponseCode
         );
@@ -240,7 +241,7 @@ class UnionBridgeSupportImplTest {
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
             BridgeSerializationUtils::deserializeRskAddress
         );
-        Assertions.assertEquals(unionBridgeContractAddress, actualRskAddress);
+        assertEquals(unionBridgeContractAddress, actualRskAddress);
         Assertions.assertNotEquals(newUnionBridgeContractAddress, actualRskAddress);
 
         // call save and assert that the new address is stored
@@ -252,16 +253,15 @@ class UnionBridgeSupportImplTest {
     void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsNull_shouldReturnSuccess() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(testnetUnionBridgeConstants).build();
+            .withConstants(testnetUnionBridgeConstants)
+            .build();
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(
-            rskTx,
-            null);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(null);
 
         // assert
         UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
-        Assertions.assertEquals(
+        assertEquals(
             expectedResponseCode,
             actualResponseCode
         );
@@ -273,16 +273,16 @@ class UnionBridgeSupportImplTest {
     void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsEmpty_shouldReturnSuccess() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(testnetUnionBridgeConstants).build();
+            .withConstants(testnetUnionBridgeConstants)
+            .build();
 
         // act
         RskAddress emptyAddress = new RskAddress(new byte[20]);
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            emptyAddress);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(emptyAddress);
 
         // assert
         UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
-        Assertions.assertEquals(
+        assertEquals(
             expectedResponseCode,
             actualResponseCode
         );
@@ -306,7 +306,7 @@ class UnionBridgeSupportImplTest {
 
         // assert
         Coin expectedInitialLockingCap = unionBridgeConstants.getInitialLockingCap();
-        Assertions.assertEquals(expectedInitialLockingCap, actualLockingCap);
+        assertEquals(expectedInitialLockingCap, actualLockingCap);
         assertNoLockingCapIsStored();
     }
 
@@ -337,7 +337,7 @@ class UnionBridgeSupportImplTest {
         Coin actualLockingCap = unionBridgeSupport.getLockingCap();
 
         // assert
-        Assertions.assertEquals(expectedLockingCap, actualLockingCap);
+        assertEquals(expectedLockingCap, actualLockingCap);
     }
 
     @Test
@@ -356,7 +356,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLockingCapWasSet(newLockingCap);
         assertNewLockingCapWasNotStored(newLockingCap);
         assertLogUnionLockingCapIncreased(initialLockingCap, newLockingCap);
@@ -395,7 +395,7 @@ class UnionBridgeSupportImplTest {
         // Assert that new_locking_cap is allowed.
         // The new locking cap surpassing the maxRbtc is allowed because it meets the condition:
         // current_locking_cap <= new_locking_cap <= current_locking_cap * increment_multiplier
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLockingCapWasSet(moreThanMaxRbtc);
         assertNewLockingCapWasNotStored(moreThanMaxRbtc);
         assertLogUnionLockingCapIncreased(storedLockingCap, moreThanMaxRbtc);
@@ -419,7 +419,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
+        assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
         assertNoLockingCapIsStored();
         assertNoEventWasEmitted();
 
@@ -449,7 +449,7 @@ class UnionBridgeSupportImplTest {
     private void assertLockingCapWasSet(Coin newLockingCap) {
         Optional<Coin> cacheLockingCap = unionBridgeStorageProvider.getLockingCap();
         Assertions.assertTrue(cacheLockingCap.isPresent());
-        Assertions.assertEquals(newLockingCap, cacheLockingCap.get());
+        assertEquals(newLockingCap, cacheLockingCap.get());
     }
 
     private void assertNewLockingCapWasNotStored(Coin newLockingCap) {
@@ -478,7 +478,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.REQUEST_DISABLED, actualResponseCode);
+        assertEquals(UnionResponseCode.REQUEST_DISABLED, actualResponseCode);
 
         // call save and assert that nothing is stored
         unionBridgeSupport.save();
@@ -511,7 +511,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
         // call save and assert that the amount is stored
         unionBridgeSupport.save();
@@ -536,7 +536,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
         // call save and assert that the amount is stored
         unionBridgeSupport.save();
@@ -556,7 +556,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
+        assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
 
         // call save and assert that nothing is stored
         unionBridgeSupport.save();
@@ -578,7 +578,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
+        assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
 
         // call save and assert that nothing is stored
         unionBridgeSupport.save();
@@ -617,7 +617,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
+        assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
 
         // call save and assert that nothing is stored
         unionBridgeSupport.save();
@@ -647,7 +647,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
         // call save and assert that the amount is stored
         unionBridgeSupport.save();
@@ -682,7 +682,7 @@ class UnionBridgeSupportImplTest {
             amountToRequest);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
         // call save and assert that the amount is stored
         unionBridgeSupport.save();
@@ -719,14 +719,14 @@ class UnionBridgeSupportImplTest {
             amountToRequest);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
+        assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
 
         Coin storedWeisTransferred = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
             BridgeSerializationUtils::deserializeRskCoin
         );
         // The total weis transferred amount should not change, it should still be 500 RBTC
-        Assertions.assertEquals(currentWeisTransferredAmount, storedWeisTransferred);
+        assertEquals(currentWeisTransferredAmount, storedWeisTransferred);
     }
 
     private void assertNoWeisTransferredIsStored() {
@@ -766,7 +766,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.RELEASE_DISABLED, actualResponseCode);
+        assertEquals(UnionResponseCode.RELEASE_DISABLED, actualResponseCode);
 
         // call save and assert that weisTransferredToUnionBridge still equals the original amount
         unionBridgeSupport.save();
@@ -795,7 +795,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLogUnionRbtcReleased(amountToRelease);
 
         // call save and assert that the amount is stored
@@ -830,7 +830,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLogUnionRbtcReleased(amountToRelease);
 
         // call save and assert that the amount is stored
@@ -860,7 +860,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
+        assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
 
         // call save and assert that weisTransferredToUnionBridge still equals the original amount
         unionBridgeSupport.save();
@@ -890,7 +890,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
+        assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
 
         // call save and assert that weisTransferredToUnionBridge still equals the original amount
         unionBridgeSupport.save();
@@ -926,7 +926,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
+        assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
 
         // assert that the weisTransferredToUnionBridge is not changed
         assertWeisTransferredStoredAmount(lockingCap);
@@ -965,7 +965,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLogUnionRbtcReleased(amountToRelease);
 
         // call save and assert that the amount is stored
@@ -993,7 +993,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLogUnionRbtcReleased(minimumPeginTxValue);
 
         // call save and assert that the amount is stored
@@ -1022,7 +1022,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
+        assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
 
         // The total weis transferred amount should not change, it should still be the minimum pegin tx value.
         assertWeisTransferredStoredAmount(minimumPeginTxValue);
@@ -1046,7 +1046,7 @@ class UnionBridgeSupportImplTest {
         BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
         Coin amountToRequest = new Coin(oneEth.multiply(BigInteger.TEN)); // 10 RBTC
         UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountToRequest);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
         Coin amountToRelease = new Coin(oneEth.multiply(BigInteger.TWO)); // 2 RBTC
         when(rskTx.getValue()).thenReturn(amountToRelease);
@@ -1055,7 +1055,7 @@ class UnionBridgeSupportImplTest {
         actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLogUnionRbtcReleased(amountToRelease);
 
         // assert that weisTransferredToUnionBridge is no stored yet
@@ -1087,7 +1087,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled);
 
         // call save and assert that the permissions are stored
@@ -1112,7 +1112,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled);
 
         // call save and assert that the permissions are stored
@@ -1153,7 +1153,7 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
 
         // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertNoEventWasEmitted();
 
         // call save and assert that the permissions are stored
@@ -1172,8 +1172,8 @@ class UnionBridgeSupportImplTest {
             UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
             BridgeSerializationUtils::deserializeBoolean
         );
-        Assertions.assertEquals(requestEnabled, retrievedUnionBridgeRequestEnabled);
-        Assertions.assertEquals(releaseEnabled, retrievedUnionBridgeReleaseEnabled);
+        assertEquals(requestEnabled, retrievedUnionBridgeRequestEnabled);
+        assertEquals(releaseEnabled, retrievedUnionBridgeReleaseEnabled);
     }
 
 
@@ -1210,26 +1210,26 @@ class UnionBridgeSupportImplTest {
         rskTx = mock(Transaction.class);
         when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
         UnionResponseCode actualLockingCapResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
 
         // request union rbtc
         rskTx = mock(Transaction.class);
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
         Coin amountRequested = new Coin(BigInteger.valueOf(100));
         UnionResponseCode actualRequestUnionRbtcResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS,  actualRequestUnionRbtcResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS,  actualRequestUnionRbtcResponseCode);
 
         // release union rbtc
         Coin amountToRelease = new Coin(BigInteger.valueOf(50));
         when(rskTx.getValue()).thenReturn(amountToRelease);
         UnionResponseCode actualReleaseUnionRbtcResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualReleaseUnionRbtcResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualReleaseUnionRbtcResponseCode);
 
         // set transfer permissions
         rskTx = mock(Transaction.class);
         when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer);
         UnionResponseCode actualSetTransferPermissionsResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, true, false);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualSetTransferPermissionsResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualSetTransferPermissionsResponseCode);
 
         // act
         unionBridgeSupport.save();
@@ -1249,12 +1249,12 @@ class UnionBridgeSupportImplTest {
     void save_whenTestnetAndAllValuesWereUpdated_shouldSave() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(testnetUnionBridgeConstants).build();
+            .withConstants(testnetUnionBridgeConstants)
+            .build();
 
         // set union bridge contract address
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            unionBridgeContractAddress);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(unionBridgeContractAddress);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
         // increase locking cap
         Coin initialLockingCap = testnetUnionBridgeConstants.getInitialLockingCap();
@@ -1262,26 +1262,26 @@ class UnionBridgeSupportImplTest {
         rskTx = mock(Transaction.class);
         when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
         UnionResponseCode actualLockingCapResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
 
         // request union rbtc
         rskTx = mock(Transaction.class);
         when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeContractAddress);
         Coin amountRequested = new Coin(BigInteger.valueOf(100));
         UnionResponseCode actualRequestUnionRbtcResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS,  actualRequestUnionRbtcResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS,  actualRequestUnionRbtcResponseCode);
 
         // release union rbtc
         Coin amountToRelease = new Coin(BigInteger.valueOf(50));
         when(rskTx.getValue()).thenReturn(amountToRelease);
         UnionResponseCode actualReleaseUnionRbtcResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualReleaseUnionRbtcResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualReleaseUnionRbtcResponseCode);
 
         // set transfer permissions
         rskTx = mock(Transaction.class);
         when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer);
         UnionResponseCode actualSetTransferPermissionsResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, true, false);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualSetTransferPermissionsResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualSetTransferPermissionsResponseCode);
 
         // act
         unionBridgeSupport.save();
@@ -1309,9 +1309,8 @@ class UnionBridgeSupportImplTest {
         );
 
         // arrange
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            newUnionBridgeContractAddress);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
         // act
         unionBridgeSupport.save();
@@ -1340,7 +1339,7 @@ class UnionBridgeSupportImplTest {
         when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
 
         UnionResponseCode actualLockingCapResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
 
         assertLogUnionLockingCapIncreased(storedLockingCap, newLockingCap);
 
@@ -1372,7 +1371,7 @@ class UnionBridgeSupportImplTest {
 
         Coin amountRequested = new Coin(oneEth).multiply(BigInteger.TWO);
         UnionResponseCode actualRequestUnionRbtcResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS,  actualRequestUnionRbtcResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS,  actualRequestUnionRbtcResponseCode);
 
         // act
         unionBridgeSupport.save();
@@ -1404,7 +1403,7 @@ class UnionBridgeSupportImplTest {
         Coin amountToRelease = new Coin(oneEth.divide(BigInteger.TEN)); // 0.1 RBTC
         when(rskTx.getValue()).thenReturn(amountToRelease);
         UnionResponseCode actualReleaseUnionRbtcResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS,  actualReleaseUnionRbtcResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS,  actualReleaseUnionRbtcResponseCode);
 
         // act
         unionBridgeSupport.save();
@@ -1427,7 +1426,7 @@ class UnionBridgeSupportImplTest {
         // act
         when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer);
         UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, true, false);
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
         // call save and assert that the permissions are stored
         unionBridgeSupport.save();
@@ -1442,7 +1441,7 @@ class UnionBridgeSupportImplTest {
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
             BridgeSerializationUtils::deserializeRskAddress
         );
-        Assertions.assertEquals(newUnionBridgeContractAddress, actualRskAddress);
+        assertEquals(newUnionBridgeContractAddress, actualRskAddress);
     }
 
     private void assertLockingCapWasStored(Coin newLockingCap) {
@@ -1450,7 +1449,7 @@ class UnionBridgeSupportImplTest {
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
             BridgeSerializationUtils::deserializeRskCoin
         );
-        Assertions.assertEquals(newLockingCap, storedLockingCap);
+        assertEquals(newLockingCap, storedLockingCap);
     }
 
     private void assertWeisTransferredStoredAmount(Coin expectedWeisTransferred) {
@@ -1458,7 +1457,7 @@ class UnionBridgeSupportImplTest {
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
             BridgeSerializationUtils::deserializeRskCoin
         );
-        Assertions.assertEquals(expectedWeisTransferred, actualAmountTransferred);
+        assertEquals(expectedWeisTransferred, actualAmountTransferred);
     }
 
     private void assertNoEventWasEmitted() {

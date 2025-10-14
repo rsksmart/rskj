@@ -194,11 +194,11 @@ class BridgeSupportTest {
         Coin feePerKb = Coin.valueOf(10_000L);
         when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
+        BridgeSupport bridgeSupportWithFeePerKb = bridgeSupportBuilder
             .withFeePerKbSupport(feePerKbSupport)
             .build();
 
-        Coin result = bridgeSupport.getFeePerKb();
+        Coin result = bridgeSupportWithFeePerKb.getFeePerKb();
 
         assertEquals(feePerKb, result);
     }
@@ -207,13 +207,13 @@ class BridgeSupportTest {
     void voteFeePerKbChange_success() {
         when(feePerKbSupport.voteFeePerKbChange(any(), any(), any())).thenReturn(1);
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
+        BridgeSupport bridgeSupportWithFeePerKb = bridgeSupportBuilder
             .withFeePerKbSupport(feePerKbSupport)
             .build();
 
-        Transaction tx = mock(Transaction.class);
+        Transaction feePerKbTx = mock(Transaction.class);
         Coin feePerKbVote = Coin.CENT;
-        int result = bridgeSupport.voteFeePerKbChange(tx, feePerKbVote);
+        int result = bridgeSupportWithFeePerKb.voteFeePerKbChange(feePerKbTx, feePerKbVote);
 
         assertEquals(FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode(), result);
     }
@@ -261,34 +261,44 @@ class BridgeSupportTest {
 
         @Test
         void addOneOffLockWhitelistAddress() {
-            Transaction tx = mock(Transaction.class);
+            Transaction whitelistTx = mock(Transaction.class);
             String address = "address";
             BigInteger maxTransferValue = BigInteger.ONE;
-            when(whitelistSupport.addOneOffLockWhitelistAddress(tx, address, maxTransferValue)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+            when(whitelistSupport.addOneOffLockWhitelistAddress(
+                whitelistTx,
+                address,
+                maxTransferValue
+            )).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
 
-            int result = bridgeSupport.addOneOffLockWhitelistAddress(tx, address, maxTransferValue);
+            int result = bridgeSupport.addOneOffLockWhitelistAddress(whitelistTx, address, maxTransferValue);
 
             assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
         }
 
         @Test
         void addUnlimitedLockWhitelistAddress() {
-            Transaction tx = mock(Transaction.class);
+            Transaction whitelistTx = mock(Transaction.class);
             String address = "address";
-            when(whitelistSupport.addUnlimitedLockWhitelistAddress(tx, address)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+            when(whitelistSupport.addUnlimitedLockWhitelistAddress(
+                whitelistTx,
+                address
+            )).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
 
-            int result = bridgeSupport.addUnlimitedLockWhitelistAddress(tx, address);
+            int result = bridgeSupport.addUnlimitedLockWhitelistAddress(whitelistTx, address);
 
             assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
         }
 
         @Test
         void removeLockWhitelistAddress() {
-            Transaction tx = mock(Transaction.class);
+            Transaction whitelistTx = mock(Transaction.class);
             String address = "address";
-            when(whitelistSupport.removeLockWhitelistAddress(tx, address)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+            when(whitelistSupport.removeLockWhitelistAddress(
+                whitelistTx,
+                address
+            )).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
 
-            int result = bridgeSupport.removeLockWhitelistAddress(tx, address);
+            int result = bridgeSupport.removeLockWhitelistAddress(whitelistTx, address);
 
             assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
         }
@@ -296,15 +306,22 @@ class BridgeSupportTest {
         @Test
         void setLockWhitelistDisableBlockDelay() throws BlockStoreException, IOException {
             // Set of Variables to be use in setLockWhitelistDisableBlockDelay
-            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
+            Transaction whitelistTx = TransactionUtils.getTransactionFromCaller(
+                signatureCache,
+                WhitelistCaller.AUTHORIZED.getRskAddress()
+            );
             BigInteger disableBlockDelayBI = BigInteger.ONE;
-            when(whitelistSupport.setLockWhitelistDisableBlockDelay(tx, disableBlockDelayBI, 0)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+            when(whitelistSupport.setLockWhitelistDisableBlockDelay(
+                whitelistTx,
+                disableBlockDelayBI,
+                0
+            )).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
 
             // Set of variables to be use in bridgeSupportBuilder
             BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
             Repository rskRepository = mock(Repository.class);
             BridgeConstants bridgeConstantsMainNet = BridgeMainNetConstants.getInstance();
-            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
+            BtcBlockStoreWithCache.Factory blockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
             ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
             bridgeSupport = bridgeSupportBuilder
@@ -312,7 +329,7 @@ class BridgeSupportTest {
                 .withProvider(provider)
                 .withRepository(rskRepository)
                 .withBridgeConstants(bridgeConstantsMainNet)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withBtcBlockStoreFactory(blockStoreFactory)
                 .withActivations(activations)
                 .withFederationSupport(federationSupport)
                 .build();
@@ -328,9 +345,14 @@ class BridgeSupportTest {
             when(btcBlockStore.getChainHead()).thenReturn(storedBlock);
             when(storedBlock.getHeader()).thenReturn(btcBlock);
             when(btcBlock.getHash()).thenReturn(genesisBtcBlockHash);
-            when(btcBlockStoreFactory.newInstance(rskRepository, bridgeConstantsMainNet, provider, activations)).thenReturn(btcBlockStore);
+            when(blockStoreFactory.newInstance(
+                rskRepository,
+                bridgeConstantsMainNet,
+                provider,
+                activations
+            )).thenReturn(btcBlockStore);
 
-            int result = bridgeSupport.setLockWhitelistDisableBlockDelay(tx, disableBlockDelayBI);
+            int result = bridgeSupport.setLockWhitelistDisableBlockDelay(whitelistTx, disableBlockDelayBI);
 
             assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
         }
@@ -728,12 +750,12 @@ class BridgeSupportTest {
 
         @Test
         void voteFederationChange() {
-            Transaction tx = mock(Transaction.class);
+            Transaction federationChangeTx = mock(Transaction.class);
             ABICallSpec callSpec = mock(ABICallSpec.class);
             int result = 1;
 
             when(federationSupport.voteFederationChange(any(), any(), any(), any())).thenReturn(result);
-            assertThat(bridgeSupport.voteFederationChange(tx, callSpec), is(result));
+            assertThat(bridgeSupport.voteFederationChange(federationChangeTx, callSpec), is(result));
         }
 
         @Test
@@ -794,12 +816,15 @@ class BridgeSupportTest {
         void increaseLockingCap() throws VMException {
             // Arrange
             Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
-            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
-            when(lockingCapSupport.increaseLockingCap(tx, newLockingCap)).thenReturn(true);
+            Transaction lockingCapTx = TransactionUtils.getTransactionFromCaller(
+                signatureCache,
+                LockingCapCaller.FIRST_AUTHORIZED.getRskAddress()
+            );
+            when(lockingCapSupport.increaseLockingCap(lockingCapTx, newLockingCap)).thenReturn(true);
             when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(newLockingCap));
 
             // Act
-            boolean actualResult = bridgeSupport.increaseLockingCap(tx, newLockingCap);
+            boolean actualResult = bridgeSupport.increaseLockingCap(lockingCapTx, newLockingCap);
 
             // Assert
             assertTrue(actualResult);
@@ -811,21 +836,17 @@ class BridgeSupportTest {
     @Tag("unionBridge")
     class UnionBridgeTest {
         private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
-
         private static final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
         private static final UnionBridgeConstants unionBridgeConstants = bridgeConstants.getUnionBridgeConstants();
+        private static final UnionBridgeSupportBuilder unionBridgeSupportBuilder = UnionBridgeSupportBuilder.builder();
+        private static final RskAddress newUnionBridgeContractAddress = RskTestUtils.generateAddress("newUnionBridgeContractAddress");
 
         private Repository repository;
         private UnionBridgeStorageProvider unionBridgeStorageProvider;
-        private BridgeStorageProvider bridgeStorageProvider;
         private BridgeEventLogger bridgeEventLogger;
         private BridgeSupport bridgeSupport;
-
-        private static final UnionBridgeSupportBuilder unionBridgeSupportBuilder = UnionBridgeSupportBuilder.builder();
-
         private SignatureCache signatureCache;
         private Transaction transaction;
-        private static final RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress("newUnionBridgeContractAddress");
 
         @BeforeEach
         void setUp() {
@@ -838,7 +859,7 @@ class BridgeSupportTest {
                 .build();
 
             repository = mock(Repository.class);
-            bridgeStorageProvider = mock(BridgeStorageProvider.class);
+            BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
             bridgeEventLogger = mock(BridgeEventLogger.class);
 
             bridgeSupport = bridgeSupportBuilder
@@ -857,8 +878,7 @@ class BridgeSupportTest {
         void setUnionBridgeContractAddress_shouldReturnResultedResponseCode(UnionResponseCode expectedUnionResponseCode) {
             // arrange
             unionBridgeSupport = mock(UnionBridgeSupport.class);
-            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any(),
-                any())).thenReturn(
+            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any())).thenReturn(
                 expectedUnionResponseCode
             );
             bridgeSupport = bridgeSupportBuilder
@@ -866,17 +886,14 @@ class BridgeSupportTest {
                 .build();
 
             // act
-            UnionResponseCode actualResponseCode = bridgeSupport.setUnionBridgeContractAddressForTestnet(transaction, newUnionBridgeContractAddress);
+            UnionResponseCode actualResponseCode = bridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
 
             // assert
-            Assertions.assertEquals(
+            assertEquals(
                 expectedUnionResponseCode,
                 actualResponseCode
             );
-            verify(unionBridgeSupport).setUnionBridgeContractAddressForTestnet(
-                transaction,
-                newUnionBridgeContractAddress
-            );
+            verify(unionBridgeSupport).setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
             // Verify save method is not called when setAddress is called
             verify(unionBridgeSupport, never()).save();
         }
@@ -8491,68 +8508,63 @@ class BridgeSupportTest {
                 Arguments.of(segwitRetiringFederation, segwitActiveFederation)
             );
         }
-
     }
 
     @Test
     void getNextPegoutCreationBlockNumber_before_RSKIP271_activation() {
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withActivations(activations)
+        BridgeSupport bridgeSupportIris = bridgeSupportBuilder
+            .withActivations(irisActivations)
             .build();
 
-        assertEquals(0L, bridgeSupport.getNextPegoutCreationBlockNumber());
+        assertEquals(0L, bridgeSupportIris.getNextPegoutCreationBlockNumber());
     }
 
     @Test
     void getNextPegoutCreationBlockNumber_after_RSKIP271_activation() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0L);
+        final long nextPegoutCreationBlockNumber = 10L;
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getNextPegoutHeight()).thenReturn(Optional.of(10L));
+        when(provider.getNextPegoutHeight()).thenReturn(Optional.of(nextPegoutCreationBlockNumber));
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
+        BridgeSupport bridgeSupportHop = bridgeSupportBuilder
             .withProvider(provider)
-            .withActivations(activations)
+            .withActivations(hopActivations)
             .build();
 
-        assertEquals(10L, bridgeSupport.getNextPegoutCreationBlockNumber());
+        assertEquals(nextPegoutCreationBlockNumber, bridgeSupportHop.getNextPegoutCreationBlockNumber());
     }
 
     @Test
     void getQueuedPegoutsCount_before_RSKIP271_activation() throws IOException {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withActivations(activations)
+        BridgeSupport bridgeSupportIris = bridgeSupportBuilder
+            .withActivations(irisActivations)
             .withProvider(provider)
             .build();
 
         verify(provider, never()).getReleaseRequestQueueSize();
-        assertEquals(0, bridgeSupport.getQueuedPegoutsCount());
+        assertEquals(0, bridgeSupportIris.getQueuedPegoutsCount());
     }
 
     @Test
     void getQueuedPegoutsCount_after_RSKIP271_activation() throws IOException {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0L);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getReleaseRequestQueueSize()).thenReturn(2);
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
+        BridgeSupport bridgeSupportHop = bridgeSupportBuilder
             .withProvider(provider)
-            .withActivations(activations)
+            .withActivations(hopActivations)
             .build();
 
-        assertEquals(2, bridgeSupport.getQueuedPegoutsCount());
+        assertEquals(2, bridgeSupportHop.getQueuedPegoutsCount());
     }
 
     private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_pre_RSKIP271(BridgeConstants bridgeConstants) {
@@ -8745,9 +8757,10 @@ class BridgeSupportTest {
         );
     }
 
-    private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_forSegwit(BridgeConstants bridgeConstants) {
-
+    private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_forSegwit() {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
+        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
 
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         List<BtcECKey> erpFedPubKeys = federationConstants.getErpFedPubKeysList();
@@ -8768,11 +8781,15 @@ class BridgeSupportTest {
             .withErpActivationDelay(federationConstants.getErpFedActivationDelay())
             .build();
 
-        ReleaseRequestQueue.Entry pegoutRequest1 = new ReleaseRequestQueue.Entry(getBtcEcKeyFromSeed("1").toAddress(bridgeConstants.getBtcParams()), Coin.valueOf(1, 0));
-        ReleaseRequestQueue.Entry pegoutRequest2 = new ReleaseRequestQueue.Entry(getBtcEcKeyFromSeed("2").toAddress(bridgeConstants.getBtcParams()), Coin.valueOf(2, 0));
-        ReleaseRequestQueue.Entry pegoutRequest3 = new ReleaseRequestQueue.Entry(getBtcEcKeyFromSeed("3").toAddress(bridgeConstants.getBtcParams()), Coin.valueOf(3, 0));
+        Address pegoutDestinationAddress1 = BitcoinTestUtils.createP2PKHAddress(networkParameters, "address1");
+        Address pegoutDestinationAddress2 = BitcoinTestUtils.createP2PKHAddress(networkParameters, "address2");
+        Address pegoutDestinationAddress3 = BitcoinTestUtils.createP2PKHAddress(networkParameters, "address3");
+        Address pegoutDestinationAddress4 = BitcoinTestUtils.createP2PKHAddress(networkParameters, "address4");
 
-        ReleaseRequestQueue.Entry bigPegoutRequest = new ReleaseRequestQueue.Entry(getBtcEcKeyFromSeed("4").toAddress(bridgeConstants.getBtcParams()), Coin.valueOf(10, 0));
+        ReleaseRequestQueue.Entry pegoutRequest1 = new ReleaseRequestQueue.Entry(pegoutDestinationAddress1, Coin.valueOf(1, 0));
+        ReleaseRequestQueue.Entry pegoutRequest2 = new ReleaseRequestQueue.Entry(pegoutDestinationAddress2, Coin.valueOf(2, 0));
+        ReleaseRequestQueue.Entry pegoutRequest3 = new ReleaseRequestQueue.Entry(pegoutDestinationAddress3, Coin.valueOf(3, 0));
+        ReleaseRequestQueue.Entry bigPegoutRequest = new ReleaseRequestQueue.Entry(pegoutDestinationAddress4, Coin.valueOf(10, 0));
 
         UTXO p2shFedUtxo1 = createUTXO(Coin.valueOf(8, 0), p2shFed.getAddress());
         UTXO p2shFedBigUtxoUtxo = createUTXO(Coin.valueOf(13, 0), p2shFed.getAddress());
@@ -8785,7 +8802,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 9490L: 9480L),
+                Coin.valueOf(9490L),
                 List.of(),
                 List.of(p2shFedUtxo1)
             ),
@@ -8794,7 +8811,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 17940L: 17920L),
+                Coin.valueOf(17940L),
                 List.of(pegoutRequest1),
                 List.of()
             ),
@@ -8803,7 +8820,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 9830L: 9820L),
+                Coin.valueOf(9830L),
                 List.of(pegoutRequest1),
                 List.of(p2shFedUtxo1)
             ),
@@ -8811,7 +8828,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 10170L: 10160L),
+                Coin.valueOf(10170L),
                 List.of(pegoutRequest1, pegoutRequest2),
                 List.of(p2shFedUtxo1)
             ),
@@ -8819,7 +8836,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 10510L: 10500L),
+                Coin.valueOf(10510L),
                 List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3),
                 List.of(p2shFedUtxo1)
             ),
@@ -8829,7 +8846,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 18900L: 18880L),
+                Coin.valueOf(18900L),
                 List.of(pegoutRequest1, bigPegoutRequest),
                 List.of(p2shFedUtxo1, p2shFedBigUtxoUtxo)
             ),
@@ -8837,7 +8854,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 19240L: 19220L),
+                Coin.valueOf(19240L),
                 List.of(pegoutRequest1, pegoutRequest2, bigPegoutRequest),
                 List.of(p2shFedUtxo1, p2shFedBigUtxoUtxo)
             ),
@@ -8845,7 +8862,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 19580L: 19560L),
+                Coin.valueOf(19580L),
                 List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3, bigPegoutRequest),
                 List.of(p2shFedUtxo1, p2shFedBigUtxoUtxo)
             ),
@@ -8853,7 +8870,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(5670L), // Savings: 59.75% for mainnet. 58.57% for regtest.
+                Coin.valueOf(5670L), // Savings: 59.75%
                 List.of(),
                 List.of(p2shP2wshFedUtxo1)
             ),
@@ -8862,7 +8879,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 9580L: 9570L),
+                Coin.valueOf(9580L),
                 List.of(pegoutRequest1),
                 List.of()
             ),
@@ -8870,7 +8887,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(6010L), // Savings: 61.12% for mainnet. 59.94% for regtest.
+                Coin.valueOf(6010L), // Savings: 61.12%
                 List.of(pegoutRequest1),
                 List.of(p2shP2wshFedUtxo1)
             ),
@@ -8878,7 +8895,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(6350L), // Savings: 62.42% for mainnet. 61.24% for regtest.
+                Coin.valueOf(6350L), // Savings: 62.42%
                 List.of(pegoutRequest1, pegoutRequest2),
                 List.of(p2shP2wshFedUtxo1)
             ),
@@ -8886,7 +8903,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(6690L), // Savings: 63.66% for mainnet. 62.45% for regtest.
+                Coin.valueOf(6690L), // Savings: 63.66%
                 List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3),
                 List.of(p2shP2wshFedUtxo1)
             ),
@@ -8896,7 +8913,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(11260L), // Savings: 59.58% for mainnet. 58.45% for regtest.
+                Coin.valueOf(11260L), // Savings: 59.58%
                 List.of(pegoutRequest1, bigPegoutRequest),
                 List.of(p2shP2wshFedUtxo1, p2shP2wshFedBigUtxo)
             ),
@@ -8904,7 +8921,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(11600L), // Savings: 60.29% for mainnet. 59.13% for regtest.
+                Coin.valueOf(11600L), // Savings: 60.29%
                 List.of(pegoutRequest1, pegoutRequest2, bigPegoutRequest),
                 List.of(p2shP2wshFedUtxo1, p2shP2wshFedBigUtxo)
             ),
@@ -8912,11 +8929,10 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(11940L), // Savings: 60.97% for mainnet. 59.83% for regtest.
+                Coin.valueOf(11940L), // Savings: 60.97%
                 List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3, bigPegoutRequest),
                 List.of(p2shP2wshFedUtxo1, p2shP2wshFedBigUtxo)
             )
-
         );
     }
 
@@ -8941,23 +8957,6 @@ class BridgeSupportTest {
             preRskip385Mainnet,
             postRskip385Mainnet
         ).flatMap(Function.identity());
-    }
-
-    private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_forSegwit() {
-
-        BridgeRegTestConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
-
-        Stream<Arguments> postRskip305Regtest = getEstimatedFeesForNextPegOutEventArgsProvider_forSegwit(bridgeConstantsRegtest);
-
-        BridgeMainNetConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
-
-        Stream<Arguments> postRskip305Mainnet = getEstimatedFeesForNextPegOutEventArgsProvider_forSegwit(bridgeMainNetConstants);
-
-        return Stream.of(
-            postRskip305Regtest,
-            postRskip305Mainnet
-        ).flatMap(Function.identity());
-
     }
 
     @ParameterizedTest

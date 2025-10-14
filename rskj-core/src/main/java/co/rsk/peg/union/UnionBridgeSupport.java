@@ -9,8 +9,7 @@ public interface UnionBridgeSupport {
 
     RskAddress getUnionBridgeContractAddress();
 
-    UnionResponseCode setUnionBridgeContractAddressForTestnet(Transaction tx,
-        RskAddress unionBridgeContractAddress);
+    UnionResponseCode setUnionBridgeContractAddressForTestnet(RskAddress unionBridgeContractAddress);
 
     Coin getLockingCap();
 
