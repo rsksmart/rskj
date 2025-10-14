@@ -19,6 +19,14 @@
 
 package co.rsk.peg.vote;
 
+import static co.rsk.core.RskAddress.ZERO_ADDRESS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.RskTestUtils;
 import co.rsk.core.RskAddress;
 import java.util.List;
@@ -33,12 +41,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import static co.rsk.core.RskAddress.ZERO_ADDRESS;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class AddressBasedAuthorizerTest {
 
@@ -88,14 +90,14 @@ class AddressBasedAuthorizerTest {
     @MethodSource("authorizedAddressProvider")
     void getNumberOfAuthorizedAddresses_whenSingleAuthorizer_shouldReturnOne(RskAddress authorizedAddress) {
         AddressBasedAuthorizer singleAuthorizer = createSingleAuthorizer(authorizedAddress);
-        Assertions.assertEquals(1, singleAuthorizer.getNumberOfAuthorizedAddresses());
+        assertEquals(1, singleAuthorizer.getNumberOfAuthorizedAddresses());
     }
 
     @ParameterizedTest
     @MethodSource("authorizedAddressProvider")
     void getRequiredAuthorizedAddresses_whenSingleAuthorizer_shouldReturnOne(RskAddress authorizedAddress) {
         AddressBasedAuthorizer singleAuthorizer = createSingleAuthorizer(authorizedAddress);
-        Assertions.assertEquals(1, singleAuthorizer.getRequiredAuthorizedAddresses());
+        assertEquals(1, singleAuthorizer.getRequiredAuthorizedAddresses());
     }
 
     @ParameterizedTest
@@ -133,7 +135,7 @@ class AddressBasedAuthorizerTest {
     @MethodSource("authorizedAddressProvider")
     void isAuthorized_whenNullTx_shouldBeFalse() {
         AddressBasedAuthorizer singleAuthorizer = createSingleAuthorizer(authorizedAddress);
-        Assertions.assertThrows(NullPointerException.class, () -> singleAuthorizer.isAuthorized(null, signatureCache));
+        assertThrows(NullPointerException.class, () -> singleAuthorizer.isAuthorized(null, signatureCache));
     }
 
     private static Stream<Arguments> authorizedAddressesProvider() {
@@ -148,7 +150,7 @@ class AddressBasedAuthorizerTest {
     @MethodSource("authorizedAddressesProvider")
     void getNumberOfAuthorizedAddresses_whenMajorityAuthorizer_shouldReturnSizeOfAuthorizedAddresses(Set<RskAddress> authorizedAddresses) {
         AddressBasedAuthorizer majorityAuthorizer = createMajorityAuthorizer(authorizedAddresses);
-        Assertions.assertEquals(authorizedAddresses.size(), majorityAuthorizer.getNumberOfAuthorizedAddresses());
+        assertEquals(authorizedAddresses.size(), majorityAuthorizer.getNumberOfAuthorizedAddresses());
     }
 
     @ParameterizedTest
@@ -156,7 +158,7 @@ class AddressBasedAuthorizerTest {
     void getRequiredAuthorizedAddresses_whenMajorityAuthorizer_shouldReturnNumberOfRequiredAddresses(Set<RskAddress> authorizedAddresses) {
         AddressBasedAuthorizer majorityAuthorizer = createMajorityAuthorizer(authorizedAddresses);
         int expectedRequiredAuthorizedAddresses = authorizedAddresses.size() / 2 + 1;
-        Assertions.assertEquals(expectedRequiredAuthorizedAddresses, majorityAuthorizer.getRequiredAuthorizedAddresses());
+        assertEquals(expectedRequiredAuthorizedAddresses, majorityAuthorizer.getRequiredAuthorizedAddresses());
     }
 
     @ParameterizedTest
@@ -206,14 +208,14 @@ class AddressBasedAuthorizerTest {
     @MethodSource("authorizedKeysProvider")
     void getNumberOfAuthorizedAddresses_whenLegacyAllAuthorizer_shouldReturnSizeOfAuthorizedAddresses(List<ECKey> keys) {
         AddressBasedAuthorizer allAuthorizer = createLegacyAllAuthorizer(keys);
-        Assertions.assertEquals(keys.size(), allAuthorizer.getNumberOfAuthorizedAddresses());
+        assertEquals(keys.size(), allAuthorizer.getNumberOfAuthorizedAddresses());
     }
 
     @ParameterizedTest
     @MethodSource("authorizedKeysProvider")
     void getRequiredAuthorizedAddresses_whenLegacyAllAuthorizer_shouldReturnRequiredNumberOfAddresses(List<ECKey> keys) {
         AddressBasedAuthorizer allAuthorizer = createLegacyAllAuthorizer(keys);
-        Assertions.assertEquals(keys.size(), allAuthorizer.getRequiredAuthorizedAddresses());
+        assertEquals(keys.size(), allAuthorizer.getRequiredAuthorizedAddresses());
     }
 
     @ParameterizedTest
@@ -262,6 +264,6 @@ class AddressBasedAuthorizerTest {
     @MethodSource("authorizedKeysProvider")
     void isAuthorized_whenNullTx_shouldBeFalse(List<ECKey> keys) {
         AddressBasedAuthorizer allAuthorizer = createLegacyAllAuthorizer(keys);
-        Assertions.assertThrows(NullPointerException.class, () -> allAuthorizer.isAuthorized(null, signatureCache));
+        assertThrows(NullPointerException.class, () -> allAuthorizer.isAuthorized(null, signatureCache));
     }
 }
