@@ -47,6 +47,14 @@ public interface SyncState {
     void newConnectionPointData(byte[] hash);
 
     /**
+     * New method that includes peer information for block hash responses
+     */
+    default void newConnectionPointData(byte[] hash, Peer peer) {
+        // Default implementation calls the old method for backward compatibility
+        newConnectionPointData(hash);
+    }
+
+    /**
      * should only be called when a new peer arrives
      */
     void newPeerStatus();
