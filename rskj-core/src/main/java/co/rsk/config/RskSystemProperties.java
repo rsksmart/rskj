@@ -72,6 +72,8 @@ public class RskSystemProperties extends SystemProperties {
     public static final String PROPERTY_SYNC_TOP_BEST = "sync.topBest";
     public static final String USE_PEERS_FROM_LAST_SESSION = "peer.discovery.usePeersFromLastSession";
 
+    public static final String PROPERTY_DIFFICULTY_METRICS_ENABLED = "system.metrics.difficultyCalculation";
+
     public static final String PROPERTY_SNAP_CLIENT_ENABLED = "sync.snapshot.client.enabled";
     public static final String PROPERTY_SNAP_CLIENT_CHECK_HISTORICAL_HEADERS = "sync.snapshot.client.checkHistoricalHeaders";
     public static final String PROPERTY_SNAP_NODES = "sync.snapshot.client.snapBootNodes";
@@ -561,6 +563,10 @@ public class RskSystemProperties extends SystemProperties {
             throw new RskConfigurationException("Invalid gasPriceCalculatorType: " + value);
         }
         return gasCalculatorType;
+    }
+
+    public boolean isDifficultyMetricsEnabled() {
+        return getBoolean(PROPERTY_DIFFICULTY_METRICS_ENABLED, false);
     }
 
     private void fetchMethodTimeout(Config configElement, Map<String, Long> methodTimeoutMap) {
