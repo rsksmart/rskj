@@ -3,10 +3,11 @@ package co.rsk.peg.union;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedData;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedTopics;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import co.rsk.RskTestUtils;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeEvents;
@@ -33,7 +34,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
 
 class UnionBridgeSupportImplTest {
-
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
 
     private static final BridgeConstants mainnetConstants = BridgeMainNetConstants.getInstance();
@@ -45,11 +45,8 @@ class UnionBridgeSupportImplTest {
     private static final RskAddress changeLockingCapAuthorizer = RskAddress.ZERO_ADDRESS;
     private static final RskAddress changeTransferPermissionsAuthorizer = RskAddress.ZERO_ADDRESS;
 
-    private static final RskAddress unionBridgeContractAddress = TestUtils.generateAddress(
-        "newUnionBridgeContractAddress");
-
-    private static final RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress(
-        "secondNewUnionBridgeContractAddress");
+    private static final RskAddress unionBridgeContractAddress = RskTestUtils.generateAddress("newUnionBridgeContractAddress");
+    private static final RskAddress newUnionBridgeContractAddress = RskTestUtils.generateAddress("secondNewUnionBridgeContractAddress");
 
     private final UnionBridgeSupportBuilder unionBridgeSupportBuilder = UnionBridgeSupportBuilder.builder();
 
@@ -173,12 +170,12 @@ class UnionBridgeSupportImplTest {
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
             BridgeSerializationUtils::deserializeRskAddress
         );
-        Assertions.assertNull(actualRskAddress);
+        assertNull(actualRskAddress);
     }
 
     private void assertAddressWasSet(RskAddress expectedAddress) {
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress();
-        Assertions.assertTrue(actualAddress.isPresent());
+        assertTrue(actualAddress.isPresent());
         assertEquals(expectedAddress, actualAddress.get());
     }
 
@@ -209,7 +206,7 @@ class UnionBridgeSupportImplTest {
 
     private void assertAddressWasNotSet() {
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress();
-        Assertions.assertTrue(actualAddress.isEmpty());
+        assertTrue(actualAddress.isEmpty());
     }
 
     @Test
@@ -242,7 +239,7 @@ class UnionBridgeSupportImplTest {
             BridgeSerializationUtils::deserializeRskAddress
         );
         assertEquals(unionBridgeContractAddress, actualRskAddress);
-        Assertions.assertNotEquals(newUnionBridgeContractAddress, actualRskAddress);
+        assertNotEquals(newUnionBridgeContractAddress, actualRskAddress);
 
         // call save and assert that the new address is stored
         unionBridgeSupport.save();
@@ -315,7 +312,7 @@ class UnionBridgeSupportImplTest {
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
             BridgeSerializationUtils::deserializeRskCoin
         );
-        Assertions.assertNull(storedLockingCap);
+        assertNull(storedLockingCap);
     }
 
     @ParameterizedTest
@@ -448,7 +445,7 @@ class UnionBridgeSupportImplTest {
 
     private void assertLockingCapWasSet(Coin newLockingCap) {
         Optional<Coin> cacheLockingCap = unionBridgeStorageProvider.getLockingCap();
-        Assertions.assertTrue(cacheLockingCap.isPresent());
+        assertTrue(cacheLockingCap.isPresent());
         assertEquals(newLockingCap, cacheLockingCap.get());
     }
 
@@ -457,7 +454,7 @@ class UnionBridgeSupportImplTest {
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
             BridgeSerializationUtils::deserializeRskCoin
         );
-        Assertions.assertNotEquals(newLockingCap, storedLockingCap);
+        assertNotEquals(newLockingCap, storedLockingCap);
     }
 
     @ParameterizedTest
@@ -734,7 +731,7 @@ class UnionBridgeSupportImplTest {
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
             BridgeSerializationUtils::deserializeRskCoin
         );
-        Assertions.assertNull(actualAmountTransferred);
+        assertNull(actualAmountTransferred);
     }
 
     @ParameterizedTest
@@ -1130,8 +1127,8 @@ class UnionBridgeSupportImplTest {
             BridgeSerializationUtils::deserializeOptionalLong
         );
 
-        Assertions.assertTrue(retrievedUnionBridgeRequestEnabled.isEmpty());
-        Assertions.assertTrue(retrievedUnionBridgeReleaseEnabled.isEmpty());
+        assertTrue(retrievedUnionBridgeRequestEnabled.isEmpty());
+        assertTrue(retrievedUnionBridgeReleaseEnabled.isEmpty());
     }
 
     @ParameterizedTest
@@ -1461,7 +1458,7 @@ class UnionBridgeSupportImplTest {
     }
 
     private void assertNoEventWasEmitted() {
-        Assertions.assertTrue(logs.isEmpty(), "No events should have been emitted");
+        assertTrue(logs.isEmpty(), "No events should have been emitted");
     }
 
     private void assertLogUnionLockingCapIncreased(Coin previousLockingCap, Coin newLockingCap) {
