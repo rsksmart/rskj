@@ -7,8 +7,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.AddressBasedAuthorizerFactory;
 import java.math.BigInteger;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
 
 public class UnionBridgeRegTestConstants extends UnionBridgeConstants {
 
@@ -18,30 +16,25 @@ public class UnionBridgeRegTestConstants extends UnionBridgeConstants {
     private UnionBridgeRegTestConstants() {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
-        // TODO: Replace with actual address
-        unionBridgeAddress = new RskAddress("5988645d30cd01e4b3bc2c02cb3909dec991ae31");
+        unionBridgeAddress = ZERO_ADDRESS;
 
-        // TODO: Replace with actual initial value and increments multiplier
         BigInteger oneRbtc = BigInteger.TEN.pow(18); // 1 RBTC = 1000000000000000000 wei
-        initialLockingCap = new Coin(oneRbtc).multiply(BigInteger.valueOf(500)); // 500 rbtc
-        lockingCapIncrementsMultiplier = 4;
+        initialLockingCap = new Coin(oneRbtc).multiply(BigInteger.valueOf(200));
+        lockingCapIncrementsMultiplier = 2;
 
-        // TODO: Replace with actual authorizers
-        // seed: unionBridgeAuthorizer
-        ECKey changeUnionBridgeContractAddressAuthorizerKey = ECKey.fromPublicOnly(Hex.decode("041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"));
-        RskAddress changeUnionBridgeContractAddressAuthorizerAddress = new RskAddress(changeUnionBridgeContractAddressAuthorizerKey.getAddress());
+        // seed: changeUnionBridgeContractAddressAuthorizer
         changeUnionBridgeContractAddressAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            changeUnionBridgeContractAddressAuthorizerAddress
+            new RskAddress("6c9dfd950bf748bb26f893f7e5f693c7f60a8f85")
         );
 
-        // TODO: Replace with actual authorizers
+        // seed: changeLockingCapAuthorizer
         changeLockingCapAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            ZERO_ADDRESS
+            new RskAddress("8f8185858643e08b07df4701d8546406b7bf22e4")
         );
 
-        // TODO: Replace with actual authorizers
+        // seed: changeTransferPermissionsAuthorizer
         changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            ZERO_ADDRESS
+            new RskAddress("af0fd16c15d0286fd78db5fe89412c00d3de3cf4")
         );
     }
 
