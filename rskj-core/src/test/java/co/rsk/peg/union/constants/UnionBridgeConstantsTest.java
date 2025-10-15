@@ -11,10 +11,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.math.BigInteger;
-import java.util.List;
 import java.util.stream.Stream;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -23,18 +20,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 class UnionBridgeConstantsTest {
 
     private static Stream<Arguments> changeUnionAddressAuthorizerProvider() {
-        List<RskAddress> testnetAuthorizers = mapToRskAddresses(Stream.of(
-            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"
-        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
-
-        List<RskAddress> regtestAuthorizers = mapToRskAddresses(Stream.of(
-            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"
-        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
-
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance(), List.of(ZERO_ADDRESS)),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), testnetAuthorizers),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), regtestAuthorizers)
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), ZERO_ADDRESS),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), new RskAddress("c38c7f0bcdf679dd360dee652d83be7d5b386956")),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), new RskAddress("6c9dfd950bf748bb26f893f7e5f693c7f60a8f85"))
         );
     }
 
@@ -42,15 +31,13 @@ class UnionBridgeConstantsTest {
     @MethodSource("changeUnionAddressAuthorizerProvider")
     void getChangeUnionBridgeContractAddressAuthorizer_ok(
         UnionBridgeConstants unionBridgeConstants,
-        List<RskAddress> expectedSenderAddresses
+        RskAddress expectedSenderAddress
     ) {
         // Act
         AddressBasedAuthorizer actualUnionBridgeChangeAddressAuthorizer = unionBridgeConstants.getChangeUnionBridgeContractAddressAuthorizer();
 
         // Assert
-        for (RskAddress expectedSenderAddress : expectedSenderAddresses) {
-            assertTrue(actualUnionBridgeChangeAddressAuthorizer.isAuthorized(expectedSenderAddress));
-        }
+        assertTrue(actualUnionBridgeChangeAddressAuthorizer.isAuthorized(expectedSenderAddress));
 
         RskAddress unauthorizedAddress = RskTestUtils.generateAddress("unauthorized");
         assertFalse(actualUnionBridgeChangeAddressAuthorizer.isAuthorized(unauthorizedAddress));
@@ -73,15 +60,8 @@ class UnionBridgeConstantsTest {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), ZERO_ADDRESS),
             Arguments.of(UnionBridgeTestNetConstants.getInstance(), ZERO_ADDRESS),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), ZERO_ADDRESS)
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), new RskAddress("8f8185858643e08b07df4701d8546406b7bf22e4"))
         );
-    }
-
-    private static List<RskAddress> mapToRskAddresses(List<ECKey> keys) {
-        return keys.stream()
-            .map(ECKey::getAddress)
-            .map(RskAddress::new)
-            .toList();
     }
 
     @ParameterizedTest
@@ -101,7 +81,7 @@ class UnionBridgeConstantsTest {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), ZERO_ADDRESS),
             Arguments.of(UnionBridgeTestNetConstants.getInstance(), ZERO_ADDRESS),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), ZERO_ADDRESS)
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), new RskAddress("af0fd16c15d0286fd78db5fe89412c00d3de3cf4"))
         );
     }
 
@@ -127,8 +107,8 @@ class UnionBridgeConstantsTest {
     private static Stream<Arguments> unionBridgeAddressProvider() {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), ZERO_ADDRESS),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), new RskAddress("5988645d30cd01e4b3bc2c02cb3909dec991ae31")),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), new RskAddress("5988645d30cd01e4b3bc2c02cb3909dec991ae31"))
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), ZERO_ADDRESS),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), ZERO_ADDRESS)
         );
     }
 
@@ -146,9 +126,9 @@ class UnionBridgeConstantsTest {
     private static Stream<Arguments> unionLockingCapInitialValueProvider() {
         Coin oneEth = new Coin(BigInteger.TEN.pow(18)); // 1 ETH = 1000000000000000000 wei
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(300L))),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(400L))),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(500L)))
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(200L))),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(200L))),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(200L)))
         );
     }
 
@@ -166,8 +146,8 @@ class UnionBridgeConstantsTest {
     private static Stream<Arguments> unionLockingCapIncrementsMultiplierProvider() {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), 2),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), 3),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), 4)
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), 2),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), 2)
         );
     }
 
