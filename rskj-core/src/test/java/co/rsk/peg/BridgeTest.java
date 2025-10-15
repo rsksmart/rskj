@@ -3600,7 +3600,6 @@ class BridgeTest {
 
         @Test
         void setUnionBridgeContractAddressForTestnet_afterRSKIP502_shouldSetNewAddress() throws VMException {
-            Constants testnetConstants = Constants.testnet2(allActivations);
             RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress("newUnionBridgeContractAddress");
             when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress)).thenReturn(UnionResponseCode.SUCCESS);
             bridge = bridgeBuilder

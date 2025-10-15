@@ -18,6 +18,7 @@
 package co.rsk.peg;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+import static org.ethereum.solidity.SolidityType.*;
 
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
@@ -31,7 +32,6 @@ import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.solidity.SolidityType;
 import org.ethereum.vm.MessageCall.MsgType;
 
 /**
@@ -44,8 +44,8 @@ public enum BridgeMethods {
     ADD_FEDERATOR_PUBLIC_KEY(
         CallTransaction.Function.fromSignature(
             "addFederatorPublicKey",
-            new String[]{SolidityType.BYTES},
-            new String[]{SolidityType.INT256}
+            new String[]{BYTES},
+            new String[]{INT256}
         ),
         fixedCost(13000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::addFederatorPublicKey,
@@ -55,8 +55,8 @@ public enum BridgeMethods {
     ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY(
         CallTransaction.Function.fromSignature(
             "addFederatorPublicKeyMultikey",
-            new String[]{SolidityType.BYTES, SolidityType.BYTES, SolidityType.BYTES},
-            new String[]{SolidityType.INT256}
+            new String[]{BYTES, BYTES, BYTES},
+            new String[]{INT256}
         ),
         fixedCost(13000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::addFederatorPublicKeyMultikey,
@@ -66,8 +66,8 @@ public enum BridgeMethods {
     ADD_LOCK_WHITELIST_ADDRESS(
         CallTransaction.Function.fromSignature(
             "addLockWhitelistAddress",
-            new String[]{"string", SolidityType.INT256},
-            new String[]{SolidityType.INT256}
+            new String[]{STRING, INT256},
+            new String[]{INT256}
         ),
         fixedCost(25000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::addOneOffLockWhitelistAddress,
@@ -77,8 +77,8 @@ public enum BridgeMethods {
     ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS(
         CallTransaction.Function.fromSignature(
             "addOneOffLockWhitelistAddress",
-            new String[]{SolidityType.STRING, SolidityType.INT256},
-            new String[]{SolidityType.INT256}
+            new String[]{STRING, INT256},
+            new String[]{INT256}
         ),
         fixedCost(25000L), // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
         (BridgeMethodExecutorTyped<Integer>) Bridge::addOneOffLockWhitelistAddress,
@@ -88,8 +88,8 @@ public enum BridgeMethods {
     ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS(
         CallTransaction.Function.fromSignature(
             "addUnlimitedLockWhitelistAddress",
-            new String[]{SolidityType.STRING},
-            new String[]{SolidityType.INT256}
+            new String[]{STRING},
+            new String[]{INT256}
         ),
         fixedCost(25000L), // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
         (BridgeMethodExecutorTyped<Integer>) Bridge::addUnlimitedLockWhitelistAddress,
@@ -99,7 +99,7 @@ public enum BridgeMethods {
     ADD_SIGNATURE(
         CallTransaction.Function.fromSignature(
             "addSignature",
-            new String[]{SolidityType.BYTES, "bytes[]", SolidityType.BYTES},
+            new String[]{BYTES, "bytes[]", BYTES},
             new String[]{}
         ),
         fixedCost(70000L),
@@ -109,8 +109,8 @@ public enum BridgeMethods {
     COMMIT_FEDERATION(
         CallTransaction.Function.fromSignature(
             "commitFederation",
-            new String[]{SolidityType.BYTES},
-            new String[]{SolidityType.INT256}
+            new String[]{BYTES},
+            new String[]{INT256}
         ),
         fixedCost(38000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::commitFederation,
@@ -120,7 +120,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "createFederation",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(11000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::createFederation,
@@ -164,8 +164,8 @@ public enum BridgeMethods {
     GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH(
         CallTransaction.Function.fromSignature(
             "getBtcBlockchainBlockHashAtDepth",
-            new String[]{SolidityType.INT256},
-            new String[]{SolidityType.BYTES}
+            new String[]{INT256},
+            new String[]{BYTES}
         ),
         fixedCost(20000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getBtcBlockchainBlockHashAtDepth,
@@ -176,8 +176,8 @@ public enum BridgeMethods {
     GET_BTC_TRANSACTION_CONFIRMATIONS(
         CallTransaction.Function.fromSignature(
             "getBtcTransactionConfirmations",
-            new String[]{SolidityType.BYTES32, SolidityType.BYTES32, SolidityType.UINT256, "bytes32[]"},
-            new String[]{SolidityType.INT256}
+            new String[]{BYTES32, BYTES32, UINT256, "bytes32[]"},
+            new String[]{INT256}
         ),
         fromMethod(Bridge::getBtcTransactionConfirmationsGetCost),
         (BridgeMethodExecutorTyped<Integer>) Bridge::getBtcTransactionConfirmations,
@@ -188,7 +188,7 @@ public enum BridgeMethods {
     GET_BTC_TX_HASH_PROCESSED_HEIGHT(
         CallTransaction.Function.fromSignature(
             "getBtcTxHashProcessedHeight",
-            new String[]{SolidityType.STRING},
+            new String[]{STRING},
             new String[]{"int64"}
         ),
         fixedCost(22000L),
@@ -200,7 +200,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getFederationAddress",
             new String[]{},
-            new String[]{SolidityType.STRING}
+            new String[]{STRING}
         ),
         fixedCost(11000L),
         (BridgeMethodExecutorTyped<String>) Bridge::getFederationAddress,
@@ -211,7 +211,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getFederationCreationBlockNumber",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(10000L),
         (BridgeMethodExecutorTyped<Long>) Bridge::getFederationCreationBlockNumber,
@@ -222,7 +222,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getFederationCreationTime",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(10000L),
         (BridgeMethodExecutorTyped<Long>) Bridge::getFederationCreationTime,
@@ -233,7 +233,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getFederationSize",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(10000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::getFederationSize,
@@ -244,7 +244,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getFederationThreshold",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(11000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::getFederationThreshold,
@@ -254,8 +254,8 @@ public enum BridgeMethods {
     GET_FEDERATOR_PUBLIC_KEY(
         CallTransaction.Function.fromSignature(
             "getFederatorPublicKey",
-            new String[]{SolidityType.INT256},
-            new String[]{SolidityType.BYTES}
+            new String[]{INT256},
+            new String[]{BYTES}
         ),
         fixedCost(10000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getFederatorPublicKey,
@@ -266,8 +266,8 @@ public enum BridgeMethods {
     GET_FEDERATOR_PUBLIC_KEY_OF_TYPE(
         CallTransaction.Function.fromSignature(
             "getFederatorPublicKeyOfType",
-            new String[]{SolidityType.INT256, SolidityType.STRING},
-            new String[]{SolidityType.BYTES}
+            new String[]{INT256, STRING},
+            new String[]{BYTES}
         ),
         fixedCost(10000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getFederatorPublicKeyOfType,
@@ -279,7 +279,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getFeePerKb",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(2000L),
         (BridgeMethodExecutorTyped<Long>) Bridge::getFeePerKb,
@@ -289,8 +289,8 @@ public enum BridgeMethods {
     GET_LOCK_WHITELIST_ADDRESS(
         CallTransaction.Function.fromSignature(
             "getLockWhitelistAddress",
-            new String[]{SolidityType.INT256},
-            new String[]{SolidityType.STRING}
+            new String[]{INT256},
+            new String[]{STRING}
         ),
         fixedCost(16000L),
         (BridgeMethodExecutorTyped<String>) Bridge::getLockWhitelistAddress,
@@ -300,8 +300,8 @@ public enum BridgeMethods {
     GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS(
         CallTransaction.Function.fromSignature(
             "getLockWhitelistEntryByAddress",
-            new String[]{SolidityType.STRING},
-            new String[]{SolidityType.INT256}
+            new String[]{STRING},
+            new String[]{INT256}
         ),
         fixedCost(16000L),
         (BridgeMethodExecutorTyped<Long>) Bridge::getLockWhitelistEntryByAddress,
@@ -313,7 +313,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getLockWhitelistSize",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(16000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::getLockWhitelistSize,
@@ -335,7 +335,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getPendingFederationHash",
             new String[]{},
-            new String[]{SolidityType.BYTES}
+            new String[]{BYTES}
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getPendingFederationHashSerialized,
@@ -346,7 +346,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getPendingFederationSize",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::getPendingFederationSize,
@@ -356,8 +356,8 @@ public enum BridgeMethods {
     GET_PENDING_FEDERATOR_PUBLIC_KEY(
         CallTransaction.Function.fromSignature(
             "getPendingFederatorPublicKey",
-            new String[]{SolidityType.INT256},
-            new String[]{SolidityType.BYTES}
+            new String[]{INT256},
+            new String[]{BYTES}
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getPendingFederatorPublicKey,
@@ -368,8 +368,8 @@ public enum BridgeMethods {
     GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE(
         CallTransaction.Function.fromSignature(
             "getPendingFederatorPublicKeyOfType",
-            new String[]{SolidityType.INT256, SolidityType.STRING},
-            new String[]{SolidityType.BYTES}
+            new String[]{INT256, STRING},
+            new String[]{BYTES}
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getPendingFederatorPublicKeyOfType,
@@ -381,7 +381,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getRetiringFederationAddress",
             new String[]{},
-            new String[]{SolidityType.STRING}
+            new String[]{STRING}
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<String>) Bridge::getRetiringFederationAddress,
@@ -392,7 +392,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getRetiringFederationCreationBlockNumber",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<Long>) Bridge::getRetiringFederationCreationBlockNumber,
@@ -403,7 +403,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getRetiringFederationCreationTime",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<Long>) Bridge::getRetiringFederationCreationTime,
@@ -414,7 +414,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getRetiringFederationSize",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::getRetiringFederationSize,
@@ -425,7 +425,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getRetiringFederationThreshold",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::getRetiringFederationThreshold,
@@ -435,8 +435,8 @@ public enum BridgeMethods {
     GET_RETIRING_FEDERATOR_PUBLIC_KEY(
         CallTransaction.Function.fromSignature(
             "getRetiringFederatorPublicKey",
-            new String[]{SolidityType.INT256},
-            new String[]{SolidityType.BYTES}
+            new String[]{INT256},
+            new String[]{BYTES}
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getRetiringFederatorPublicKey,
@@ -447,8 +447,8 @@ public enum BridgeMethods {
     GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE(
         CallTransaction.Function.fromSignature(
             "getRetiringFederatorPublicKeyOfType",
-            new String[]{SolidityType.INT256, SolidityType.STRING},
-            new String[]{SolidityType.BYTES}
+            new String[]{INT256, STRING},
+            new String[]{BYTES}
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getRetiringFederatorPublicKeyOfType,
@@ -460,7 +460,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getProposedFederationAddress",
             new String[]{},
-            new String[]{ SolidityType.STRING }
+            new String[]{ STRING }
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<String>) Bridge::getProposedFederationAddress,
@@ -472,7 +472,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
                 "getProposedFederationSize",
                 new String[]{},
-                new String[]{ SolidityType.INT256 }
+                new String[]{ INT256 }
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::getProposedFederationSize,
@@ -484,7 +484,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getProposedFederationCreationTime",
             new String[]{},
-            new String[]{ SolidityType.INT256 }
+            new String[]{ INT256 }
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<Long>) Bridge::getProposedFederationCreationTime,
@@ -496,7 +496,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getProposedFederationCreationBlockNumber",
             new String[]{},
-            new String[]{ SolidityType.INT256 }
+            new String[]{ INT256 }
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<Long>) Bridge::getProposedFederationCreationBlockNumber,
@@ -507,8 +507,8 @@ public enum BridgeMethods {
     GET_PROPOSED_FEDERATOR_PUBLIC_KEY_OF_TYPE(
         CallTransaction.Function.fromSignature(
                 "getProposedFederatorPublicKeyOfType",
-                new String[]{ SolidityType.INT256, SolidityType.STRING },
-                new String[]{ SolidityType.BYTES }
+                new String[]{ INT256, STRING },
+                new String[]{ BYTES }
         ),
         fixedCost(3000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getProposedFederatorPublicKeyOfType,
@@ -520,7 +520,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getStateForBtcReleaseClient",
             new String[]{},
-            new String[]{SolidityType.BYTES}
+            new String[]{BYTES}
         ),
         fixedCost(4000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getStateForBtcReleaseClient,
@@ -531,7 +531,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getStateForSvpClient",
             new String[]{},
-            new String[]{SolidityType.BYTES}
+            new String[]{BYTES}
         ),
         fixedCost(4000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getStateForSvpClient,
@@ -543,7 +543,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getStateForDebugging",
             new String[]{},
-            new String[]{SolidityType.BYTES}
+            new String[]{BYTES}
         ),
         fixedCost(3_000_000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getStateForDebugging,
@@ -554,7 +554,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getLockingCap",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(3_000L),
         (BridgeMethodExecutorTyped<Long>) Bridge::getLockingCap,
@@ -566,7 +566,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getActivePowpegRedeemScript",
             new String[]{},
-            new String[]{SolidityType.BYTES}
+            new String[]{BYTES}
         ),
         fixedCost(30_000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getActivePowpegRedeemScript,
@@ -578,7 +578,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getActiveFederationCreationBlockHeight",
             new String[]{},
-            new String[]{SolidityType.UINT256}
+            new String[]{UINT256}
         ),
         fixedCost(3_000L),
         (BridgeMethodExecutorTyped<Long>) Bridge::getActiveFederationCreationBlockHeight,
@@ -589,8 +589,8 @@ public enum BridgeMethods {
     INCREASE_LOCKING_CAP(
         CallTransaction.Function.fromSignature(
             "increaseLockingCap",
-            new String[]{SolidityType.INT256},
-            new String[]{"bool"}
+            new String[]{INT256},
+            new String[]{BOOL}
         ),
         fixedCost(8_000L),
         (BridgeMethodExecutorTyped<Boolean>) Bridge::increaseLockingCap,
@@ -600,8 +600,8 @@ public enum BridgeMethods {
     IS_BTC_TX_HASH_ALREADY_PROCESSED(
         CallTransaction.Function.fromSignature(
             "isBtcTxHashAlreadyProcessed",
-            new String[]{SolidityType.STRING},
-            new String[]{"bool"}
+            new String[]{STRING},
+            new String[]{BOOL}
         ),
         fixedCost(23000L),
         (BridgeMethodExecutorTyped<Boolean>) Bridge::isBtcTxHashAlreadyProcessed,
@@ -625,8 +625,8 @@ public enum BridgeMethods {
     RECEIVE_HEADER(
         CallTransaction.Function.fromSignature(
             "receiveHeader",
-            new String[]{SolidityType.BYTES},
-            new String[]{SolidityType.INT256}
+            new String[]{BYTES},
+            new String[]{INT256}
         ),
         fixedCost(10_600L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::receiveHeader,
@@ -636,7 +636,7 @@ public enum BridgeMethods {
     REGISTER_BTC_TRANSACTION(
         CallTransaction.Function.fromSignature(
             "registerBtcTransaction",
-            new String[]{SolidityType.BYTES, "int", SolidityType.BYTES},
+            new String[]{BYTES, "int", BYTES},
             new String[]{}
         ),
         fixedCost(22000L),
@@ -660,8 +660,8 @@ public enum BridgeMethods {
     REMOVE_LOCK_WHITELIST_ADDRESS(
         CallTransaction.Function.fromSignature(
             "removeLockWhitelistAddress",
-            new String[]{SolidityType.STRING},
-            new String[]{SolidityType.INT256}
+            new String[]{STRING},
+            new String[]{INT256}
         ),
         fixedCost(24000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::removeLockWhitelistAddress,
@@ -671,7 +671,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "rollbackFederation",
             new String[]{},
-            new String[]{SolidityType.INT256}
+            new String[]{INT256}
         ),
         fixedCost(12_000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::rollbackFederation,
@@ -680,8 +680,8 @@ public enum BridgeMethods {
     SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY(
         CallTransaction.Function.fromSignature(
                 "setLockWhitelistDisableBlockDelay",
-                new String[]{SolidityType.INT256},
-                new String[]{SolidityType.INT256}
+            new String[]{INT256},
+            new String[]{INT256}
         ),
         fixedCost(24000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::setLockWhitelistDisableBlockDelay,
@@ -689,9 +689,9 @@ public enum BridgeMethods {
     ),
     UPDATE_COLLECTIONS(
         CallTransaction.Function.fromSignature(
-                "updateCollections",
-                new String[]{},
-                new String[]{}
+            "updateCollections",
+            new String[]{},
+            new String[]{}
         ),
         fixedCost(48000L),
         Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::updateCollections, "updateCollections"),
@@ -700,8 +700,8 @@ public enum BridgeMethods {
     VOTE_FEE_PER_KB(
         CallTransaction.Function.fromSignature(
                 "voteFeePerKbChange",
-                new String[]{SolidityType.INT256},
-                new String[]{SolidityType.INT256}
+                new String[]{INT256},
+                new String[]{INT256}
         ),
         fixedCost(10000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::voteFeePerKbChange,
@@ -710,7 +710,7 @@ public enum BridgeMethods {
     REGISTER_BTC_COINBASE_TRANSACTION(
         CallTransaction.Function.fromSignature(
         "registerBtcCoinbaseTransaction",
-                new String[]{SolidityType.BYTES, SolidityType.BYTES32, SolidityType.BYTES, SolidityType.BYTES32, SolidityType.BYTES32},
+                new String[]{BYTES, BYTES32, BYTES, BYTES32, BYTES32},
                 new String[]{}
         ),
         fixedCost(10000L),
@@ -721,8 +721,8 @@ public enum BridgeMethods {
     HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION(
         CallTransaction.Function.fromSignature(
                 "hasBtcBlockCoinbaseTransactionInformation",
-                new String[]{SolidityType.BYTES32},
-                new String[]{"bool"}
+                new String[]{BYTES32},
+                new String[]{BOOL}
         ),
         fixedCost(5000L),
         (BridgeMethodExecutorTyped<Boolean>) Bridge::hasBtcBlockCoinbaseTransactionInformation,
@@ -733,8 +733,8 @@ public enum BridgeMethods {
     REGISTER_FAST_BRIDGE_BTC_TRANSACTION(
         CallTransaction.Function.fromSignature(
                 "registerFastBridgeBtcTransaction",
-                new String[]{SolidityType.BYTES, SolidityType.UINT256, SolidityType.BYTES, SolidityType.BYTES32, SolidityType.BYTES, "address", SolidityType.BYTES, "bool"},
-                new String[]{SolidityType.INT256}
+                new String[]{BYTES, UINT256, BYTES, BYTES32, BYTES, ADDRESS, BYTES, BOOL},
+                new String[]{INT256}
         ),
         fixedCost(25_000L),
         (BridgeMethodExecutorTyped<BigInteger>) Bridge::registerFlyoverBtcTransaction,
@@ -745,7 +745,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
                 "getBtcBlockchainBestBlockHeader",
                 new String[0],
-                new String[]{SolidityType.BYTES}
+                new String[]{BYTES}
         ),
         fixedCost(3_800L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getBtcBlockchainBestBlockHeader,
@@ -756,8 +756,8 @@ public enum BridgeMethods {
     GET_BTC_BLOCKCHAIN_BLOCK_HEADER_BY_HASH(
         CallTransaction.Function.fromSignature(
                 "getBtcBlockchainBlockHeaderByHash",
-                new String[]{SolidityType.BYTES32},
-                new String[]{SolidityType.BYTES}
+                new String[]{BYTES32},
+                new String[]{BYTES}
         ),
         fixedCost(4_600L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getBtcBlockchainBlockHeaderByHash,
@@ -768,8 +768,8 @@ public enum BridgeMethods {
     GET_BTC_BLOCKCHAIN_BLOCK_HEADER_BY_HEIGHT(
         CallTransaction.Function.fromSignature(
             "getBtcBlockchainBlockHeaderByHeight",
-            new String[]{SolidityType.UINT256},
-            new String[]{SolidityType.BYTES}
+            new String[]{UINT256},
+            new String[]{BYTES}
         ),
         fixedCost(5_000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getBtcBlockchainBlockHeaderByHeight,
@@ -780,8 +780,8 @@ public enum BridgeMethods {
     GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH(
         CallTransaction.Function.fromSignature(
             "getBtcBlockchainParentBlockHeaderByHash",
-            new String[]{SolidityType.BYTES32},
-            new String[]{SolidityType.BYTES}
+            new String[]{BYTES32},
+            new String[]{BYTES}
         ),
         fixedCost(4_900L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getBtcBlockchainParentBlockHeaderByHash,
@@ -793,7 +793,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
                 "getNextPegoutCreationBlockNumber",
                 new String[]{},
-                new String[]{SolidityType.UINT256}
+                new String[]{UINT256}
         ),
         fixedCost(3_000L),
         (BridgeMethodExecutorTyped<Long>) Bridge::getNextPegoutCreationBlockNumber,
@@ -805,7 +805,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
                 "getQueuedPegoutsCount",
                 new String[]{},
-                new String[]{SolidityType.UINT256}
+                new String[]{UINT256}
         ),
         fixedCost(3_000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::getQueuedPegoutsCount,
@@ -817,7 +817,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
                 "getEstimatedFeesForNextPegOutEvent",
                 new String[]{},
-                new String[]{SolidityType.UINT256}
+                new String[]{UINT256}
         ),
         fixedCost(10_000L),
         (BridgeMethodExecutorTyped<Long>) Bridge::getEstimatedFeesForNextPegOutEvent,
@@ -829,7 +829,7 @@ public enum BridgeMethods {
     SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET(
         CallTransaction.Function.fromSignature(
             "setUnionBridgeContractAddressForTestnet",
-            new String[]{SolidityType.ADDRESS},
+            new String[]{ADDRESS},
             new String[]{"int"}
         ),
         fixedCost(8_000L),
@@ -845,7 +845,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getUnionBridgeContractAddress",
             new String[]{},
-            new String[]{SolidityType.ADDRESS}
+            new String[]{ADDRESS}
         ),
         fixedCost(3_000L),
         (BridgeMethodExecutorTyped<String>) Bridge::getUnionBridgeContractAddress,
@@ -857,7 +857,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getUnionBridgeLockingCap",
             new String[]{},
-            new String[]{SolidityType.UINT256}
+            new String[]{UINT256}
         ),
         fixedCost(3_000L),
         (BridgeMethodExecutorTyped<BigInteger>) Bridge::getUnionBridgeLockingCap,
@@ -868,7 +868,7 @@ public enum BridgeMethods {
     INCREASE_UNION_BRIDGE_LOCKING_CAP(
         CallTransaction.Function.fromSignature(
             "increaseUnionBridgeLockingCap",
-            new String[]{SolidityType.UINT256},
+            new String[]{UINT256},
             new String[]{"int"}
         ),
         fixedCost(8_000L),
@@ -883,7 +883,7 @@ public enum BridgeMethods {
     REQUEST_UNION_BRIDGE_RBTC(
         CallTransaction.Function.fromSignature(
             "requestUnionBridgeRbtc",
-            new String[]{SolidityType.UINT256},
+            new String[]{UINT256},
             new String[]{"int"}
         ),
         fixedCost(8_000L),
@@ -905,7 +905,7 @@ public enum BridgeMethods {
     SET_UNION_BRIDGE_TRANSFER_PERMISSIONS(
         CallTransaction.Function.fromSignature(
             "setUnionBridgeTransferPermissions",
-            new String[]{"bool", "bool"},
+            new String[]{BOOL, BOOL},
             new String[]{"int"}
         ),
         fixedCost(8_000L),
