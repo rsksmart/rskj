@@ -615,17 +615,17 @@ public enum BridgeMethods {
         ),
         fromMethod(Bridge::receiveHeadersGetCost),
         Bridge.executeIfElse(
-                Bridge::receiveHeadersIsPublic,
-                (BridgeMethodExecutorVoid) Bridge::receiveHeaders,
-                Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::receiveHeaders, "receiveHeaders")
+            Bridge::receiveHeadersIsPublic,
+            (BridgeMethodExecutorVoid) Bridge::receiveHeaders,
+            Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::receiveHeaders, "receiveHeaders")
         ),
         fixedPermission(false)
     ),
     RECEIVE_HEADER(
         CallTransaction.Function.fromSignature(
-                "receiveHeader",
-                new String[]{"bytes"},
-                new String[]{"int256"}
+            "receiveHeader",
+            new String[]{"bytes"},
+            new String[]{"int256"}
         ),
         fixedCost(10_600L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::receiveHeader,
@@ -634,9 +634,9 @@ public enum BridgeMethods {
     ),
     REGISTER_BTC_TRANSACTION(
         CallTransaction.Function.fromSignature(
-                "registerBtcTransaction",
-                new String[]{"bytes", "int", "bytes"},
-                new String[]{}
+            "registerBtcTransaction",
+            new String[]{"bytes", "int", "bytes"},
+            new String[]{}
         ),
         fixedCost(22000L),
         Bridge.executeIfElse(
@@ -648,9 +648,9 @@ public enum BridgeMethods {
     ),
     RELEASE_BTC(
         CallTransaction.Function.fromSignature(
-                "releaseBtc",
-                new String[]{},
-                new String[]{}
+            "releaseBtc",
+            new String[]{},
+            new String[]{}
         ),
         fixedCost(23000L),
         (BridgeMethodExecutorVoid) Bridge::releaseBtc,
@@ -658,9 +658,9 @@ public enum BridgeMethods {
     ),
     REMOVE_LOCK_WHITELIST_ADDRESS(
         CallTransaction.Function.fromSignature(
-                "removeLockWhitelistAddress",
-                new String[]{"string"},
-                new String[]{"int256"}
+            "removeLockWhitelistAddress",
+            new String[]{"string"},
+            new String[]{"int256"}
         ),
         fixedCost(24000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::removeLockWhitelistAddress,
@@ -668,11 +668,11 @@ public enum BridgeMethods {
     ),
     ROLLBACK_FEDERATION(
         CallTransaction.Function.fromSignature(
-                "rollbackFederation",
-                new String[]{},
-                new String[]{"int256"}
+            "rollbackFederation",
+            new String[]{},
+            new String[]{"int256"}
         ),
-        fixedCost(12000L),
+        fixedCost(12_000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::rollbackFederation,
         fixedPermission(false)
     ),
@@ -831,7 +831,7 @@ public enum BridgeMethods {
             new String[]{"address"},
             new String[]{"int"}
         ),
-        fixedCost(24000L), // TODO: Define final cost
+        fixedCost(8_000L),
         Bridge.executeIfTestnetAndAuthorized(
             bridgeConstants -> bridgeConstants.getUnionBridgeConstants().getChangeUnionBridgeContractAddressAuthorizer(),
             (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeContractAddressForTestnet,
@@ -846,7 +846,7 @@ public enum BridgeMethods {
             new String[]{},
             new String[]{"address"}
         ),
-        fixedCost(3_000L), // TODO: Define final cost
+        fixedCost(3_000L),
         (BridgeMethodExecutorTyped<String>) Bridge::getUnionBridgeContractAddress,
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false),
@@ -858,7 +858,7 @@ public enum BridgeMethods {
             new String[]{},
             new String[]{"uint256"}
         ),
-        fixedCost(3_000L), // TODO: Define final cost
+        fixedCost(3_000L),
         (BridgeMethodExecutorTyped<BigInteger>) Bridge::getUnionBridgeLockingCap,
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false),
@@ -870,7 +870,7 @@ public enum BridgeMethods {
             new String[]{"uint256"},
             new String[]{"int"}
         ),
-        fixedCost(8_000L), // TODO: Define final cost
+        fixedCost(8_000L),
         Bridge.executeIfAuthorized(
             bridgeConstants -> bridgeConstants.getUnionBridgeConstants().getChangeLockingCapAuthorizer(),
             (BridgeMethodExecutorTyped<Integer>) Bridge::increaseUnionBridgeLockingCap,
@@ -885,7 +885,7 @@ public enum BridgeMethods {
             new String[]{"uint256"},
             new String[]{"int"}
         ),
-        fixedCost(8_000L), // TODO: Define final cost
+        fixedCost(8_000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::requestUnionBridgeRbtc,
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
@@ -896,7 +896,7 @@ public enum BridgeMethods {
             new String[]{},
             new String[]{"int"}
         ),
-        fixedCost(8_000L), // TODO: Define final cost
+        fixedCost(8_000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::releaseUnionBridgeRbtc,
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
@@ -907,7 +907,7 @@ public enum BridgeMethods {
             new String[]{"bool", "bool"},
             new String[]{"int"}
         ),
-        fixedCost(8_000L), // TODO: Define final cost
+        fixedCost(8_000L),
         Bridge.executeIfAuthorized(
             bridgeConstants -> bridgeConstants.getUnionBridgeConstants().getChangeTransferPermissionsAuthorizer(),
             (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeTransferPermissions,
