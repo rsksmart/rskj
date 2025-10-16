@@ -3346,6 +3346,7 @@ public class BridgeSupport {
         }
         logger.debug("[computeTotalAmountSent] Amount sent to the retiring federation {}", amountToRetiring);
 
+        logger.debug("this line should be removed\n");
         return amountToActive.add(amountToRetiring);
     }
 
