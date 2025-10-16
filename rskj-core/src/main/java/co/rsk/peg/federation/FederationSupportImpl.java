@@ -715,17 +715,23 @@ public class FederationSupportImpl implements FederationSupport {
         Federation proposedFederation = provider.getProposedFederation(constants, activations)
             .orElseThrow(IllegalStateException::new);
 
+        logger.info("[commitProposedFederation] Going to handover from old to new federation.");
         handoverToNewFederation(proposedFederation);
+        logger.info("[commitProposedFederation] Going to clear proposed federation.");
         clearProposedFederation();
     }
 
     private void handoverToNewFederation(Federation newFederation) {
+        logger.info("[handoverToNewFederation] Moving UTXOs from new to old federation reference.");
         moveUTXOsFromNewToOldFederation();
 
+        logger.info("[handoverToNewFederation] Setting new and old federation references.");
         setOldAndNewFederations(getActiveFederation(), newFederation);
 
         if (activations.isActive(RSKIP186)) {
+            logger.info("[handoverToNewFederation] Saving last retired federation script.");
             saveLastRetiredFederationScript();
+            logger.info("[handoverToNewFederation] Setting next federation creation block height.");
             provider.setNextFederationCreationBlockHeight(newFederation.getCreationBlockNumber());
         }
     }
