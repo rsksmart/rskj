@@ -145,6 +145,4 @@ public class BlockHeaderV1 extends BlockHeader {
             this.addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
         }
     }
-
-
 }

@@ -39,8 +39,8 @@ import java.util.List;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
-    private static final int RLP_HEADER_SIZE = 19;
-    private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 22;
+    private static final int RLP_HEADER_SIZE = 20;
+    private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 23;
 
     private final ActivationConfig activationConfig;
 
@@ -170,7 +170,6 @@ public class BlockFactory {
         if ((!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) &&
                 (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber))) {
             bridgeEvent = rlpHeader.get(r++).getRLPRawData();
-            version ++;
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -220,6 +219,18 @@ public class BlockFactory {
                     stateRoot);
         }
 
+        if (version == 2) {
+            return new BlockHeaderV2(
+                    parentHash, unclesHash, coinbase, stateRoot,
+                    txTrieRoot, receiptTrieRoot, extensionData, difficulty,
+                    blockNumber, glBytes, gasUsed, timestamp, extraData,
+                    paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                    bitcoinMergedMiningCoinbaseTransaction, new byte[0],
+                    minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
+                    ummRoot, bridgeEvent, txExecutionSublistsEdges, compressed
+            );
+        }
+
         if (version == 1) {
             return new BlockHeaderV1(
                     parentHash, unclesHash, coinbase, stateRoot,
@@ -247,9 +258,10 @@ public class BlockFactory {
         int preUmmHeaderSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? 0 : 1;
         int preParallelSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 0 : 1;
         int preRSKIP351SizeAdjustment = getRSKIP351SizeAdjustment(blockNumber, compressed, preParallelSizeAdjustment);
+        int bridgeEventSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber) ? 0 : 1;
 
-        int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment;
-        int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment;
+        int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - bridgeEventSizeAdjustment;
+        int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - bridgeEventSizeAdjustment;
 
         return rlpHeader.size() == expectedSize || rlpHeader.size() == expectedSizeMM;
     }

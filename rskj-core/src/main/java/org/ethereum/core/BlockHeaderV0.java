@@ -45,7 +45,6 @@ public class BlockHeaderV0 extends BlockHeader {
     private short[] txExecutionSublistsEdges;
     private byte[] bridgeEvent;
 
-
     public BlockHeaderV0(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                          byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
                          long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
@@ -112,7 +111,7 @@ public class BlockHeaderV0 extends BlockHeader {
         // 1. keep RSKIP 351 and RSKIP 144 independent
         //    either can be activated at any height independently
         // 2. keep compressed encoding the same as uncompressed
-        //    since this difference should not exist on v0já
+        //    since this difference should not exist on v0
         this.addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
         this.addBridgeEvent(fieldsToEncode);
     }

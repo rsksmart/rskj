@@ -71,12 +71,14 @@ public class BlockHeaderBuilder {
     private boolean createConsensusCompliantHeader;
     private boolean createUmmCompliantHeader;
     private boolean createParallelCompliantHeader;
+    private boolean createBridgeEventCompliantHeader;
 
     public BlockHeaderBuilder(ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
         createConsensusCompliantHeader = true;
         createUmmCompliantHeader = true;
         createParallelCompliantHeader = true;
+        createBridgeEventCompliantHeader = true;
     }
 
     public BlockHeaderBuilder setCreateConsensusCompliantHeader(boolean createConsensusCompliantHeader) {
@@ -94,6 +96,15 @@ public class BlockHeaderBuilder {
 
         if (!createParallelCompliantHeader) {
             this.txExecutionSublistsEdges = null;
+        }
+        return this;
+    }
+
+    public BlockHeaderBuilder setCreateBridgeEventCompliantHeader(boolean createParallelCompliantHeader) {
+        this.createBridgeEventCompliantHeader = createParallelCompliantHeader;
+
+        if (!createBridgeEventCompliantHeader) {
+            this.bridgeEvent = null;
         }
         return this;
     }

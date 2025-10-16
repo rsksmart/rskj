@@ -138,15 +138,15 @@ class BlockHeaderExtensionV2Test {
     @Test
     void decodeWithEmptyEdges() {
         byte[] logsBloom = new byte[256];
-        short[] edges = new short[0];
-        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, edges, null);
+        byte[] bridgeEvent = new byte[128];
+        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, null, bridgeEvent);
         byte[] encoded = ext.getEncoded();
 
         BlockHeaderExtensionV2 decoded = BlockHeaderExtensionV2.fromEncoded(encoded);
 
         assertArrayEquals(logsBloom, decoded.getLogsBloom());
-        assertArrayEquals(edges, decoded.getTxExecutionSublistsEdges());
-        assertNull(decoded.getHash());
+        assertArrayEquals(bridgeEvent, decoded.getBridgeEvent());
+        assertNull(decoded.getTxExecutionSublistsEdges());
     }
 
     @Test

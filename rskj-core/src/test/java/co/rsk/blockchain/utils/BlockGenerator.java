@@ -174,6 +174,7 @@ public class BlockGenerator {
                 .setUmmRoot(ummRoot)
                 .setBridgeEvent(bridgeEvent)
                 .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
+                .setCreateBridgeEventCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber))
                 .build();
 
         return blockFactory.newBlock(
