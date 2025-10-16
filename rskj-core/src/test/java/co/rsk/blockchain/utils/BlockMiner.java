@@ -1,7 +1,6 @@
 package co.rsk.blockchain.utils;
 
 import co.rsk.config.RskMiningConstants;
-import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
 import org.bouncycastle.util.Arrays;
@@ -34,24 +33,24 @@ public class BlockMiner {
     }
 
     public Block mineBlock(Block block, co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction) {
-        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock( co.rsk.bitcoinj.params.RegTestParams.get(), bitcoinMergedMiningCoinbaseTransaction);
+        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(co.rsk.bitcoinj.params.RegTestParams.get(), bitcoinMergedMiningCoinbaseTransaction);
         BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
 
         findNonce(bitcoinMergedMiningBlock, targetBI);
 
         Block newBlock = blockFactory.cloneBlockForModification(block);
-
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 
-        bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningBlock.getTransactions().get(0);
         byte[] merkleProof = MinerUtils.buildMerkleProof(
                 activationConfig,
                 pb -> pb.buildFromBlock(bitcoinMergedMiningBlock),
                 newBlock.getNumber()
         );
-
-        newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(bitcoinMergedMiningCoinbaseTransaction.bitcoinSerialize()));
         newBlock.setBitcoinMergedMiningMerkleProof(merkleProof);
+
+        bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningBlock.getTransactions().get(0);
+        newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(bitcoinMergedMiningCoinbaseTransaction.bitcoinSerialize()));
+        newBlock.seal();
 
         return newBlock;
     }

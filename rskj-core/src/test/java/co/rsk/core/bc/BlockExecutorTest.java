@@ -758,7 +758,7 @@ public class BlockExecutorTest {
         List<BlockHeader> uncles = new ArrayList<>();
 
         Block block = new BlockGenerator(Constants.regtest(), activationConfig)
-                .createChildBlock(
+                .createChildBlockUsingCoinbase(
                         parent,
                         txs,
                         uncles,
@@ -1165,7 +1165,7 @@ public class BlockExecutorTest {
         List<BlockHeader> uncles = new ArrayList<>();
 
         return new BlockGenerator(Constants.regtest(), activationConfig)
-                .createChildBlock(
+                .createChildBlockUsingCoinbase(
                         bestBlock,
                         txs,
                         uncles,
@@ -1207,7 +1207,7 @@ public class BlockExecutorTest {
         List<BlockHeader> uncles = new ArrayList<>();
 
         return new BlockGenerator(Constants.regtest(), activationConfig)
-                .createChildBlock(
+                .createChildBlockUsingCoinbase(
                         bestBlock,
                         txs,
                         uncles,
@@ -1253,7 +1253,7 @@ public class BlockExecutorTest {
         List<BlockHeader> uncles = new ArrayList<>();
 
         return new BlockGenerator(Constants.regtest(), activationConfig)
-                .createChildBlock(
+                .createChildBlockUsingCoinbase(
                         bestBlock,
                         txs,
                         uncles,
