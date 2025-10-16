@@ -51,12 +51,12 @@ import org.mockito.Mockito;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * Created by ajlopez on 8/6/2016.
  */
 public class BlockChainBuilder {
+    private final SignatureCache signatureCache;
     private boolean testing;
     private List<Block> blocks;
 
@@ -72,7 +72,6 @@ public class BlockChainBuilder {
     private RepositoryLocator repositoryLocator;
     private TrieStore trieStore;
     private boolean requireUnclesValidation;
-    private SignatureCache signatureCache;
 
     public BlockChainBuilder() {
         this.requireUnclesValidation = true; // default
@@ -349,6 +348,20 @@ public class BlockChainBuilder {
 
     private static void extend(Blockchain blockchain, int size, boolean withUncles, boolean mining, Block initialBlock) {
         List<Block> blocks = new BlockGenerator().getBlockChain(initialBlock, size, 0, withUncles, mining, null);
+
+        for (Block block: blocks) {
+            block.seal();
+            blockchain.tryToConnect(block);
+        }
+    }
+
+    public static void extendUsingCoinbase(Blockchain blockchain, int size, boolean withUncles, boolean mining, RskAddress coinbase) {
+        Block initial = blockchain.getBestBlock();
+        extendUsingCoinbase(blockchain, size, withUncles, mining, initial, coinbase);
+    }
+
+    private static void extendUsingCoinbase(Blockchain blockchain, int size, boolean withUncles, boolean mining, Block initialBlock, RskAddress coinbase) {
+        List<Block> blocks = new BlockGenerator().getBlockChainUsingCoinbase(initialBlock, size, 0, withUncles, mining, null, coinbase);
 
         for (Block block: blocks) {
             block.seal();
