@@ -54,6 +54,8 @@ public abstract class BlockHeader {
     public abstract void setLogsBloom(byte[] logsBloom);
     public abstract short[] getTxExecutionSublistsEdges(); // Edges of the transaction execution lists
     public abstract void setTxExecutionSublistsEdges(short[] edges);
+    public abstract byte[] getBridgeEvent();
+    public abstract void setBridgeEvent(byte[] bridgeEvent);
 
     // called after encoding the header, used to add elements at the end
     public abstract void addExtraFieldsToEncodedHeader(boolean usingCompressedEncoding, List<byte[]> fieldsToEncode);
@@ -394,10 +396,17 @@ public abstract class BlockHeader {
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
     }
 
-    public void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
+    protected void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
         short[] txExecutionSublistsEdges = this.getTxExecutionSublistsEdges();
         if (txExecutionSublistsEdges != null) {
             fieldsToEncode.add(ByteUtil.shortsToRLP(txExecutionSublistsEdges));
+        }
+    }
+
+    protected void addBridgeEvent(List<byte[]> fieldsToEncode) {
+        byte[] bridgeEvent = this.getBridgeEvent();
+        if (bridgeEvent != null) {
+            fieldsToEncode.add(RLP.encodeElement(bridgeEvent));
         }
     }
 
@@ -465,6 +474,7 @@ public abstract class BlockHeader {
         toStringBuff.append("  extraData=").append(toHexStringOrEmpty(extraData)).append(suffix);
         toStringBuff.append("  minGasPrice=").append(minimumGasPrice).append(suffix);
         toStringBuff.append("  txExecutionSublistsEdges=").append(Arrays.toString(this.getTxExecutionSublistsEdges())).append(suffix);
+        toStringBuff.append("  bridgeEvent=").append(toHexStringOrEmpty(this.getBridgeEvent())).append(suffix);
 
         return toStringBuff.toString();
     }

@@ -28,6 +28,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.function.Function;
+import java.net.ServerSocket;
 
 import static org.ethereum.TestUtils.waitFor;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,192 +41,160 @@ import static org.mockito.Mockito.verify;
 class Web3HttpServerTest {
 
     public static final String APPLICATION_JSON = "application/json";
+    public static final String APPLICATION_JSON_RPC = "application/json-rpc";
+    public static final String LOCALHOST = "127.0.0.1";
+    public static final String WEB3_SHA3_METHOD = "web3_sha3";
+    public static final String ETH_GET_BLOCK_BY_NUMBER_METHOD = "eth_getBlockByNumber";
+    public static final String LATEST_PARAM = "latest";
+    public static final String MOCK_RESULT = "output";
+    public static final int DEFAULT_MAX_BATCH_SIZE = 1;
+    public static final int MAX_RESPONSE_SIZE = 52428800;
+    
     private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Test
     void smokeTestUsingJsonContentType() throws Exception {
-        smokeTest(APPLICATION_JSON);
+        new SmokeTestBuilder()
+                .contentType(APPLICATION_JSON)
+                .execute();
     }
 
     @Test
     @Disabled("fix okhttp problem with charset/gzip")
     void smokeTestUsingJsonWithCharsetContentType() throws Exception {
-        smokeTest("application/json; charset: utf-8");
+        new SmokeTestBuilder()
+                .contentType("application/json; charset: utf-8")
+                .execute();
     }
 
     @Test
     @Disabled("fix okhttp problem with charset/gzip")
     void smokeTestUsingJsonRpcWithCharsetContentType() throws Exception {
-        smokeTest("application/json-rpc; charset: utf-8");
+        new SmokeTestBuilder()
+                .contentType("application/json-rpc; charset: utf-8")
+                .execute();
     }
 
     @Test
     void testMaxBatchRequest() throws Exception {
-        Web3 web3Mock = Mockito.mock(Web3.class);
-        String mockResult = "output";
-        Mockito.when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
-        CorsConfiguration mockCorsConfiguration = Mockito.mock(CorsConfiguration.class);
-        Mockito.when(mockCorsConfiguration.hasHeader()).thenReturn(true);
-        Mockito.when(mockCorsConfiguration.getHeader()).thenReturn("*");
+        TestServerBuilder serverBuilder = new TestServerBuilder()
+                .maxBatchSize(DEFAULT_MAX_BATCH_SIZE);
 
-        int randomPort = 9000;
+        String content = new BatchRequestBuilder()
+                .addRequest(ETH_GET_BLOCK_BY_NUMBER_METHOD, LATEST_PARAM)
+                .addRequest(ETH_GET_BLOCK_BY_NUMBER_METHOD, LATEST_PARAM)
+                .build();
 
-        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
-        JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
-        JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder().maxBatchRequestsSize(1).rpcModules(filteredModules).build();
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
-        Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
-        server.start();
-
-        String content = "[{\n" +
-                "    \"method\": \"eth_getBlockByNumber\",\n" +
-                "    \"params\": [\n" +
-                "        \"latest\",\n" +
-                "        true\n" +
-                "    ],\n" +
-                "    \"id\": 1,\n" +
-                "    \"jsonrpc\": \"2.0\"\n" +
-                "},{\n" +
-                "    \"method\": \"eth_getBlockByNumber\",\n" +
-                "    \"params\": [\n" +
-                "        \"latest\",\n" +
-                "        true\n" +
-                "    ],\n" +
-                "    \"id\": 1,\n" +
-                "    \"jsonrpc\": \"2.0\"\n" +
-                "}]";
-
-        Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", content);
-        String responseBody = response.body().string();
-        JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
-
-        server.stop();
-
-        assertThat(response.code(), is(HttpResponseStatus.BAD_REQUEST.code()));
-        Assertions.assertEquals(jsonRpcResponse.get("error").get("code").asInt(), ErrorResolver.JsonError.INVALID_REQUEST.code);
-        Assertions.assertEquals("Cannot dispatch batch requests. 1 is the max number of supported batch requests", jsonRpcResponse.get("error").get("message").asText());
+        runServerTest(serverBuilder, content, response -> {
+            try {
+                assertBadRequest(response, ErrorResolver.JsonError.INVALID_REQUEST.code, 
+                    "Cannot dispatch batch requests. 1 is the max number of supported batch requests");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @Test
     void testMaxBatchRequestWithNestedLevels() throws Exception {
-        Web3 web3Mock = Mockito.mock(Web3.class);
-        String mockResult = "output";
-        Mockito.when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
-        CorsConfiguration mockCorsConfiguration = Mockito.mock(CorsConfiguration.class);
-        Mockito.when(mockCorsConfiguration.hasHeader()).thenReturn(true);
-        Mockito.when(mockCorsConfiguration.getHeader()).thenReturn("*");
+        TestServerBuilder serverBuilder = new TestServerBuilder()
+                .maxBatchSize(DEFAULT_MAX_BATCH_SIZE);
 
-        int randomPort = 9000;
+        String singleRequest = new JsonRpcRequestBuilder()
+                .method(ETH_GET_BLOCK_BY_NUMBER_METHOD)
+                .params(LATEST_PARAM, "true")
+                .build();
+        String content = "[[" + singleRequest + "," + singleRequest + "]]";
 
-        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
-        JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
-        JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder().maxBatchRequestsSize(1).rpcModules(filteredModules).build();
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
-        Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
-        server.start();
-
-        String content = "[[[{\n" +
-                "    \"method\": \"eth_getBlockByNumber\",\n" +
-                "    \"params\": [\n" +
-                "        \"latest\",\n" +
-                "        true\n" +
-                "    ],\n" +
-                "    \"id\": 1,\n" +
-                "    \"jsonrpc\": \"2.0\"\n" +
-                "},{\n" +
-                "    \"method\": \"eth_getBlockByNumber\",\n" +
-                "    \"params\": [\n" +
-                "        \"latest\",\n" +
-                "        true\n" +
-                "    ],\n" +
-                "    \"id\": 1,\n" +
-                "    \"jsonrpc\": \"2.0\"\n" +
-                "}]]]";
-
-        Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", content);
-        String responseBody = response.body().string();
-        JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
-
-        server.stop();
-
-        assertThat(response.code(), is(HttpResponseStatus.BAD_REQUEST.code()));
-        Assertions.assertEquals(jsonRpcResponse.get("error").get("code").asInt(), ErrorResolver.JsonError.INVALID_REQUEST.code);
-        Assertions.assertEquals("Cannot dispatch batch requests. 1 is the max number of supported batch requests", jsonRpcResponse.get("error").get("message").asText());
+        runServerTest(serverBuilder, content, response -> {
+            try {
+                assertBadRequest(response, ErrorResolver.JsonError.INVALID_REQUEST.code, 
+                    "Cannot dispatch batch requests. 1 is the max number of supported batch requests");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @Test
     void testStackOverflowErrorInRequest() throws Exception {
-        Web3 web3Mock = Mockito.mock(Web3.class);
-        String mockResult = "output";
-        Mockito.when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
-        CorsConfiguration mockCorsConfiguration = Mockito.mock(CorsConfiguration.class);
-        Mockito.when(mockCorsConfiguration.hasHeader()).thenReturn(true);
-        Mockito.when(mockCorsConfiguration.getHeader()).thenReturn("*");
+        TestServerBuilder serverBuilder = new TestServerBuilder()
+                .maxBatchSize(DEFAULT_MAX_BATCH_SIZE);
 
-        int randomPort = 9900;
+        String baseRequest = new JsonRpcRequestBuilder()
+                .method(WEB3_SHA3_METHOD)
+                .params(LATEST_PARAM)
+                .build();
 
-        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
-        JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
-        JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder().maxBatchRequestsSize(1).rpcModules(filteredModules).build();
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
-        Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
-        server.start();
+        // Wrap the request in an array first, then add 998 levels of nesting
+        String arrayRequest = "[" + baseRequest + "]";
+        String content = createNestedRequest(arrayRequest, 998);
 
-        String content = "[{\n" +
-                "    \"method\": \"web3_sha3\",\n" +
-                "    \"params\": [\n" +
-                "        \"latest\"" +
-                "    ],\n" +
-                "    \"id\": 1,\n" +
-                "    \"jsonrpc\": \"2.0\"\n" +
-                "}]";
+        runServerTest(serverBuilder, content, response -> {
+            try {
+                assertBadRequest(response, ErrorResolver.JsonError.INVALID_REQUEST.code, "Invalid request");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
 
-        int depth = 998;
-        StringBuilder sb = new StringBuilder(content.length() + 2*depth);
-        for (long i = 0; i < depth; i++) {
+    private String createNestedRequest(String baseRequest, int depth) {
+        StringBuilder sb = new StringBuilder(baseRequest.length() + 2 * depth);
+        for (int i = 0; i < depth; i++) {
             sb.append("[");
         }
-        sb.append(content);
-        for (long i = 0; i < depth; i++) {
+        sb.append(baseRequest);
+        for (int i = 0; i < depth; i++) {
             sb.append("]");
         }
-
-        Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", sb.toString());
-        String responseBody = response.body().string();
-        JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
-
-        assertThat(response.code(), is(HttpResponseStatus.BAD_REQUEST.code()));
-        Assertions.assertEquals(jsonRpcResponse.get("error").get("code").asInt(), ErrorResolver.JsonError.INVALID_REQUEST.code);
-        Assertions.assertEquals("Invalid request", jsonRpcResponse.get("error").get("message").asText());
+        return sb.toString();
     }
 
     @Test
     void smokeTestUsingJsonRpcContentType() throws Exception {
-        smokeTest("application/json-rpc");
+        new SmokeTestBuilder()
+                .contentType("application/json-rpc")
+                .execute();
     }
 
     @Test
     void smokeTestUsingInvalidContentType() {
-        Assertions.assertThrows(IOException.class, () -> smokeTest("text/plain"));
+        Assertions.assertThrows(IOException.class, () -> 
+            new SmokeTestBuilder()
+                .contentType("text/plain")
+                .execute());
     }
 
     @Test
     void smokeTestUsingValidHost() throws Exception {
-        smokeTest(APPLICATION_JSON, "localhost");
+        new SmokeTestBuilder()
+                .contentType(APPLICATION_JSON)
+                .host("localhost")
+                .execute();
     }
 
     @Test
     void smokeTestUsingInvalidHost() {
-        Assertions.assertThrows(IOException.class, () -> smokeTest(APPLICATION_JSON, "evil.com"));
+        Assertions.assertThrows(IOException.class, () -> 
+            new SmokeTestBuilder()
+                .contentType(APPLICATION_JSON)
+                .host("evil.com")
+                .execute());
     }
 
     @Test
     void smokeTestUsingValidHostAndHostName() throws Exception {
         String domain = "www.google.com";
-        List<String> rpcHost = new ArrayList<>();
-        rpcHost.add(domain);
-        smokeTest(APPLICATION_JSON, domain, InetAddress.getByName(domain), rpcHost);
+        List<String> rpcHosts = new ArrayList<>();
+        rpcHosts.add(domain);
+        new SmokeTestBuilder()
+                .contentType(APPLICATION_JSON)
+                .host(domain)
+                .rpcAddress(InetAddress.getByName(domain))
+                .rpcHosts(rpcHosts)
+                .execute();
     }
 
     @Test
@@ -325,7 +294,7 @@ class Web3HttpServerTest {
         Mockito.when(mockCorsConfiguration.hasHeader()).thenReturn(true);
         Mockito.when(mockCorsConfiguration.getHeader()).thenReturn("*");
 
-        int randomPort = 9110;
+        int randomPort = getAvailablePort();
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
@@ -337,35 +306,36 @@ class Web3HttpServerTest {
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
         server.start();
+        try {
+            String requestContent = "[\n" +
+                    "  {\n" +
+                    "    \"jsonrpc\": \"2.0\",\n" +
+                    "    \"method\": \"web3_sha3\",\n" +
+                    "    \"params\": [\n" +
+                    "      \"0x68656c6c6f20776f726c64\"\n" +
+                    "    ],\n" +
+                    "    \"id\": 64\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"jsonrpc\": \"2.0\",\n" +
+                    "    \"method\": \"web3_sha3\",\n" +
+                    "    \"params\": [\n" +
+                    "      \"0x68656c6c6f20776f726c64\"\n" +
+                    "    ],\n" +
+                    "    \"id\": 64\n" +
+                    "  }\n" +
+                    "]";
 
-        String requestContent = "[\n" +
-                "  {\n" +
-                "    \"jsonrpc\": \"2.0\",\n" +
-                "    \"method\": \"web3_sha3\",\n" +
-                "    \"params\": [\n" +
-                "      \"0x68656c6c6f20776f726c64\"\n" +
-                "    ],\n" +
-                "    \"id\": 64\n" +
-                "  },\n" +
-                "  {\n" +
-                "    \"jsonrpc\": \"2.0\",\n" +
-                "    \"method\": \"web3_sha3\",\n" +
-                "    \"params\": [\n" +
-                "      \"0x68656c6c6f20776f726c64\"\n" +
-                "    ],\n" +
-                "    \"id\": 64\n" +
-                "  }\n" +
-                "]";
+            Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", requestContent);
 
-        Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", requestContent);
-        server.stop();
+            String responseBody = response.body().string();
+            JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
-
-        String responseBody = response.body().string();
-        JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
-
-        Assertions.assertEquals(JsonRpcError.RPC_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
-        verify(web3Mock, times(2)).web3_sha3(anyString());
+            Assertions.assertEquals(JsonRpcError.RPC_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
+            verify(web3Mock, times(2)).web3_sha3(anyString());
+        } finally {
+            server.stop();
+        }
     }
 
     @Test
@@ -380,7 +350,7 @@ class Web3HttpServerTest {
         Mockito.when(mockCorsConfiguration.hasHeader()).thenReturn(true);
         Mockito.when(mockCorsConfiguration.getHeader()).thenReturn("*");
 
-        int randomPort = 9110;
+        int randomPort = getAvailablePort();
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
@@ -436,7 +406,7 @@ class Web3HttpServerTest {
         Mockito.when(mockCorsConfiguration.hasHeader()).thenReturn(true);
         Mockito.when(mockCorsConfiguration.getHeader()).thenReturn("*");
 
-        int randomPort = 9111;
+        int randomPort = getAvailablePort();
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
@@ -448,35 +418,36 @@ class Web3HttpServerTest {
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
         server.start();
+        try {
+            String requestContent = "[\n" +
+                    "  {\n" +
+                    "    \"jsonrpc\": \"2.0\",\n" +
+                    "    \"method\": \"web3_sha3\",\n" +
+                    "    \"params\": [\n" +
+                    "      \"0x68656c6c6f20776f726c64\"\n" +
+                    "    ],\n" +
+                    "    \"id\": 64\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"jsonrpc\": \"2.0\",\n" +
+                    "    \"method\": \"web3_sha3\",\n" +
+                    "    \"params\": [\n" +
+                    "      \"0x68656c6c6f20776f726c64\"\n" +
+                    "    ],\n" +
+                    "    \"id\": 64\n" +
+                    "  }\n" +
+                    "]";
 
-        String requestContent = "[\n" +
-                "  {\n" +
-                "    \"jsonrpc\": \"2.0\",\n" +
-                "    \"method\": \"web3_sha3\",\n" +
-                "    \"params\": [\n" +
-                "      \"0x68656c6c6f20776f726c64\"\n" +
-                "    ],\n" +
-                "    \"id\": 64\n" +
-                "  },\n" +
-                "  {\n" +
-                "    \"jsonrpc\": \"2.0\",\n" +
-                "    \"method\": \"web3_sha3\",\n" +
-                "    \"params\": [\n" +
-                "      \"0x68656c6c6f20776f726c64\"\n" +
-                "    ],\n" +
-                "    \"id\": 64\n" +
-                "  }\n" +
-                "]";
+            Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", requestContent);
 
-        Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", requestContent);
-        server.stop();
+            String responseBody = response.body().string();
+            JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
-
-        String responseBody = response.body().string();
-        JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
-
-        Assertions.assertEquals(JsonRpcError.RPC_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
-        verify(web3Mock, times(2)).web3_sha3(anyString());
+            Assertions.assertEquals(JsonRpcError.RPC_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
+            verify(web3Mock, times(2)).web3_sha3(anyString());
+        } finally {
+            server.stop();
+        }
     }
 
     @Test
@@ -493,7 +464,7 @@ class Web3HttpServerTest {
         Mockito.when(mockCorsConfiguration.hasHeader()).thenReturn(true);
         Mockito.when(mockCorsConfiguration.getHeader()).thenReturn("*");
 
-        int randomPort = 9111;
+        int randomPort = getAvailablePort();
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
@@ -505,35 +476,36 @@ class Web3HttpServerTest {
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
         server.start();
+        try {
+            String requestContent = "[\n" +
+                    "  {\n" +
+                    "    \"jsonrpc\": \"2.0\",\n" +
+                    "    \"method\": \"web3_sha3\",\n" +
+                    "    \"params\": [\n" +
+                    "      \"0x68656c6c6f20776f726c64\"\n" +
+                    "    ],\n" +
+                    "    \"id\": 64\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"jsonrpc\": \"2.0\",\n" +
+                    "    \"method\": \"web3_sha3\",\n" +
+                    "    \"params\": [\n" +
+                    "      \"0x68656c6c6f20776f726c64\"\n" +
+                    "    ],\n" +
+                    "    \"id\": 64\n" +
+                    "  }\n" +
+                    "]";
 
-        String requestContent = "[\n" +
-                "  {\n" +
-                "    \"jsonrpc\": \"2.0\",\n" +
-                "    \"method\": \"web3_sha3\",\n" +
-                "    \"params\": [\n" +
-                "      \"0x68656c6c6f20776f726c64\"\n" +
-                "    ],\n" +
-                "    \"id\": 64\n" +
-                "  },\n" +
-                "  {\n" +
-                "    \"jsonrpc\": \"2.0\",\n" +
-                "    \"method\": \"web3_sha3\",\n" +
-                "    \"params\": [\n" +
-                "      \"0x68656c6c6f20776f726c64\"\n" +
-                "    ],\n" +
-                "    \"id\": 64\n" +
-                "  }\n" +
-                "]";
+            Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", requestContent);
 
-        Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", requestContent);
-        server.stop();
+            String responseBody = response.body().string();
+            JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
-
-        String responseBody = response.body().string();
-        JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
-
-        Assertions.assertEquals(JsonRpcError.RPC_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
-        verify(web3Mock, times(1)).web3_sha3(anyString());
+            Assertions.assertEquals(JsonRpcError.RPC_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
+            verify(web3Mock, times(1)).web3_sha3(anyString());
+        } finally {
+            server.stop();
+        }
     }
 
     private void smokeTest(String contentType, String host) throws Exception {
@@ -562,7 +534,7 @@ class Web3HttpServerTest {
         Mockito.when(mockCorsConfiguration.hasHeader()).thenReturn(true);
         Mockito.when(mockCorsConfiguration.getHeader()).thenReturn("*");
 
-        int randomPort = 9999;//new ServerSocket(0).getLocalPort();
+        int randomPort = getAvailablePort();
 
         TestSystemProperties testSystemProperties = decorator == null ? new TestSystemProperties() : new TestSystemProperties(decorator);
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", rpcAddress, rpcHost);
@@ -590,10 +562,6 @@ class Web3HttpServerTest {
         } finally {
             server.stop();
         }
-    }
-
-    private void smokeTest(String contentType) throws Exception {
-        smokeTest(contentType, "127.0.0.1");
     }
 
     private Response sendHugeJsonRpcMessage(int port, String contentType, String host, String content) throws IOException {
@@ -731,5 +699,212 @@ class Web3HttpServerTest {
                 "            \"cumulativeDifficulty\": \"0x160a3d\"\n" +
                 "        }\n" +
                 "    }";
+    }
+
+    private int getAvailablePort() {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        } catch (IOException e) {
+            throw new RuntimeException("Could not find available port", e);
+        }
+    }
+
+    private Web3 createMockWeb3(String mockResult) {
+        Web3 web3Mock = Mockito.mock(Web3.class);
+        try {
+            Mockito.when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
+        } catch (Exception e) {
+            // This should not happen in tests
+        }
+        return web3Mock;
+    }
+
+    private CorsConfiguration createMockCorsConfiguration() {
+        CorsConfiguration mockCorsConfiguration = Mockito.mock(CorsConfiguration.class);
+        Mockito.when(mockCorsConfiguration.hasHeader()).thenReturn(true);
+        Mockito.when(mockCorsConfiguration.getHeader()).thenReturn("*");
+        return mockCorsConfiguration;
+    }
+
+    // Test Server Builder
+    private class TestServerBuilder {
+        private Web3 web3Mock;
+        private CorsConfiguration corsConfiguration;
+        private int port;
+        private int maxBatchSize = DEFAULT_MAX_BATCH_SIZE;
+        private int maxResponseSize = MAX_RESPONSE_SIZE;
+        private List<ModuleDescription> modules = Collections.singletonList(
+            new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
+        private String host = "*";
+        private InetAddress rpcAddress = InetAddress.getLoopbackAddress();
+        private List<String> rpcHosts = new ArrayList<>();
+
+        public TestServerBuilder() {
+            this.web3Mock = createMockWeb3(MOCK_RESULT);
+            this.corsConfiguration = createMockCorsConfiguration();
+            this.port = getAvailablePort();
+        }
+
+        public TestServerBuilder maxBatchSize(int size) {
+            this.maxBatchSize = size;
+            return this;
+        }
+
+        public Web3HttpServer build() {
+            JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler(host, rpcAddress, rpcHosts);
+            JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder()
+                    .maxBatchRequestsSize(maxBatchSize)
+                    .rpcModules(modules)
+                    .build();
+            JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
+            return new Web3HttpServer(rpcAddress, port, 0, Boolean.TRUE, corsConfiguration, filterHandler, serverHandler, maxResponseSize);
+        }
+
+        public int getPort() {
+            return port;
+        }
+    }
+
+    // Test Data Builders
+    private static class JsonRpcRequestBuilder {
+        private String method = WEB3_SHA3_METHOD;
+        private String[] params = {LATEST_PARAM};
+        private Object id = 1;
+        private String jsonrpc = "2.0";
+
+        public JsonRpcRequestBuilder method(String method) {
+            this.method = method;
+            return this;
+        }
+
+        public JsonRpcRequestBuilder params(String... params) {
+            this.params = params;
+            return this;
+        }
+
+        public JsonRpcRequestBuilder id(Object id) {
+            this.id = id;
+            return this;
+        }
+
+        public String build() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("{\n");
+            sb.append("    \"method\": \"").append(method).append("\",\n");
+            sb.append("    \"params\": [");
+            for (int i = 0; i < params.length; i++) {
+                if (i > 0) sb.append(", ");
+                sb.append("\"").append(params[i]).append("\"");
+            }
+            sb.append("],\n");
+            sb.append("    \"id\": ").append(id).append(",\n");
+            sb.append("    \"jsonrpc\": \"").append(jsonrpc).append("\"\n");
+            sb.append("}");
+            return sb.toString();
+        }
+    }
+
+    private static class BatchRequestBuilder {
+        private List<String> requests = new ArrayList<>();
+
+        public BatchRequestBuilder addRequest(String method, String... params) {
+            requests.add(new JsonRpcRequestBuilder().method(method).params(params).build());
+            return this;
+        }
+
+        public String build() {
+            return "[" + String.join(",", requests) + "]";
+        }
+    }
+
+    // Assertion Helpers
+    private void assertBadRequest(Response response, int expectedErrorCode, String expectedMessage) throws Exception {
+        String responseBody = response.body().string();
+        JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
+        
+        assertThat(response.code(), is(HttpResponseStatus.BAD_REQUEST.code()));
+        Assertions.assertEquals(expectedErrorCode, jsonRpcResponse.get("error").get("code").asInt());
+        Assertions.assertEquals(expectedMessage, jsonRpcResponse.get("error").get("message").asText());
+    }
+
+    // Test Execution Helpers
+    private void runServerTest(TestServerBuilder serverBuilder, String content, String contentType, String host, 
+                              java.util.function.Consumer<Response> assertions) throws Exception {
+        Web3HttpServer server = serverBuilder.build();
+        server.start();
+        try {
+            Response response = sendHugeJsonRpcMessage(serverBuilder.getPort(), contentType, host, content);
+            assertions.accept(response);
+        } finally {
+            server.stop();
+        }
+    }
+
+    private void runServerTest(TestServerBuilder serverBuilder, String content, 
+                              java.util.function.Consumer<Response> assertions) throws Exception {
+        runServerTest(serverBuilder, content, APPLICATION_JSON_RPC, LOCALHOST, assertions);
+    }
+
+    // Enhanced Smoke Test Builder
+    private class SmokeTestBuilder {
+        private String contentType = APPLICATION_JSON;
+        private String host = LOCALHOST;
+        private InetAddress rpcAddress = InetAddress.getLoopbackAddress();
+        private List<String> rpcHosts = new ArrayList<>();
+        private List<ModuleDescription> modules = Collections.singletonList(
+            new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
+        private Function<Config, Config> decorator = null;
+        private String mockResult = MOCK_RESULT;
+        private String method = WEB3_SHA3_METHOD;
+        private int maxBatchSize = 5;
+        private int maxResponseSize = MAX_RESPONSE_SIZE;
+
+        public SmokeTestBuilder contentType(String contentType) {
+            this.contentType = contentType;
+            return this;
+        }
+
+        public SmokeTestBuilder host(String host) {
+            this.host = host;
+            return this;
+        }
+
+        public SmokeTestBuilder rpcAddress(InetAddress address) {
+            this.rpcAddress = address;
+            return this;
+        }
+
+        public SmokeTestBuilder rpcHosts(List<String> hosts) {
+            this.rpcHosts = hosts;
+            return this;
+        }
+
+        public void execute() throws Exception {
+            Web3 web3Mock = createMockWeb3(mockResult);
+            CorsConfiguration mockCorsConfiguration = createMockCorsConfiguration();
+            int randomPort = getAvailablePort();
+
+            TestSystemProperties testSystemProperties = decorator == null ? new TestSystemProperties() : new TestSystemProperties(decorator);
+            JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", rpcAddress, rpcHosts);
+            JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder()
+                    .maxBatchRequestsSize(maxBatchSize)
+                    .rpcModules(modules)
+                    .build();
+            JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
+            Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, 
+                    mockCorsConfiguration, filterHandler, serverHandler, maxResponseSize);
+            server.start();
+            try {
+                Response response = sendJsonRpcMessage(randomPort, contentType, host, method);
+                String responseBody = response.body().string();
+                JsonNode jsonRpcResponse = JacksonParserUtil.readTree(OBJECT_MAPPER, responseBody);
+
+                assertThat(response.code(), is(HttpResponseStatus.OK.code()));
+                assertThat(jsonRpcResponse.get("result").asText(), is(mockResult));
+                assertThat(jsonRpcResponse.get("id").asInt(), is(13));
+            } finally {
+                server.stop();
+            }
+        }
     }
 }
