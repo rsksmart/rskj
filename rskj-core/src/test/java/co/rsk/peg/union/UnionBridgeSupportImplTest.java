@@ -1496,7 +1496,7 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport.save();
 
         // change testnet union bridge address
-        unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, newUnionBridgeContractAddress);
+        unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
         unionBridgeSupport.save();
 
         // Act & Assert
@@ -1569,7 +1569,7 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport.save();
 
         // change testnet union bridge address
-        unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, newUnionBridgeContractAddress);
+        unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
         unionBridgeSupport.save();
 
         // Act & Assert
@@ -1634,7 +1634,7 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport.save();
 
         // change testnet union bridge address
-        unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, newUnionBridgeContractAddress);
+        unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
         unionBridgeSupport.save();
 
         // Act & Assert
@@ -1706,7 +1706,7 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport.save();
 
         // change testnet union bridge address
-        unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, newUnionBridgeContractAddress);
+        unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
         unionBridgeSupport.save();
 
         // Act & Assert
