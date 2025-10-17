@@ -18,13 +18,12 @@
 package co.rsk.peg.vote;
 
 import co.rsk.core.RskAddress;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Authorizes an operation based
@@ -35,36 +34,59 @@ import java.util.stream.Collectors;
 public class AddressBasedAuthorizer {
     public enum MinimumRequiredCalculation { ONE, MAJORITY, ALL }
 
-    protected List<byte[]> authorizedAddresses;
-    protected MinimumRequiredCalculation requiredCalculation;
+    protected final Set<RskAddress> authorizedAddresses;
+    protected final MinimumRequiredCalculation requiredCalculation;
 
+    private AddressBasedAuthorizer(Set<RskAddress> authorizedAddresses, MinimumRequiredCalculation requiredCalculation) {
+        this.authorizedAddresses = authorizedAddresses;
+        this.requiredCalculation = requiredCalculation;
+    }
+
+    /**
+     * @deprecated Use AddressBasedAuthorizerFactory to construct instances.
+     * This constructor is deprecated and may be removed in future versions.
+     * This constructs an AddressBasedAuthorizer using a list of ECKey for authorized addresses
+     * and a minimum required calculation method.
+     *
+     * @param authorizedKeys the list of ECKey instances representing authorized keys.
+     *                       Each ECKey is converted to its corresponding address.
+     * @param requiredCalculation the method for calculating the minimum number of
+     *                             authorizations required. It can be ONE, MAJORITY, or ALL.
+     */
+    @Deprecated(since = "8.0.0", forRemoval = true)
     public AddressBasedAuthorizer(List<ECKey> authorizedKeys, MinimumRequiredCalculation requiredCalculation) {
-        this.authorizedAddresses = authorizedKeys.stream().map(ECKey::getAddress).collect(Collectors.toList());
+        this.authorizedAddresses = authorizedKeys.stream()
+            .map(key -> new RskAddress(key.getAddress()))
+            .collect(Collectors.toSet());
         this.requiredCalculation = requiredCalculation;
     }
 
     public boolean isAuthorized(RskAddress sender) {
         return authorizedAddresses.stream()
-            .anyMatch(address -> Arrays.equals(address, sender.getBytes()));
+            .anyMatch(address -> address.equals(sender));
     }
 
     public boolean isAuthorized(Transaction tx, SignatureCache signatureCache) {
         return isAuthorized(tx.getSender(signatureCache));
     }
 
-    public int getNumberOfAuthorizedKeys() {
+    public int getNumberOfAuthorizedAddresses() {
         return authorizedAddresses.size();
     }
 
-    public int getRequiredAuthorizedKeys() {
-        switch (requiredCalculation) {
-            case ONE:
-                return 1;
-            case MAJORITY:
-                return getNumberOfAuthorizedKeys() / 2 + 1;
-            case ALL:
-            default:
-                return getNumberOfAuthorizedKeys();
-        }
+    public int getRequiredAuthorizedAddresses() {
+        return switch (requiredCalculation) {
+            case ONE -> 1;
+            case MAJORITY -> getNumberOfAuthorizedAddresses() / 2 + 1;
+            default -> getNumberOfAuthorizedAddresses();
+        };
+    }
+
+    static AddressBasedAuthorizer of(Set<RskAddress> authorizedAddresses, MinimumRequiredCalculation calculation) {
+        return new AddressBasedAuthorizer(authorizedAddresses, calculation);
+    }
+
+    static AddressBasedAuthorizer of(RskAddress authorizedAddress) {
+        return new AddressBasedAuthorizer(Set.of(authorizedAddress), MinimumRequiredCalculation.ONE);
     }
 }

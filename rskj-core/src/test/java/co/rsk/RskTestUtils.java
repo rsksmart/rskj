@@ -2,6 +2,7 @@ package co.rsk;
 
 import static org.mockito.Mockito.mock;
 
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
@@ -36,6 +37,11 @@ public class RskTestUtils {
         return Arrays.stream(seeds)
             .map(RskTestUtils::getEcKeyFromSeed)
             .toList();
+    }
+
+    public static RskAddress generateAddress(String seed) {
+        ECKey key = getEcKeyFromSeed(seed);
+        return new RskAddress(key.getAddress());
     }
 
     public static Block createRskBlock() {
