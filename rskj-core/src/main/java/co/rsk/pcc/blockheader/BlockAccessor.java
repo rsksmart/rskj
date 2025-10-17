@@ -21,9 +21,8 @@ package co.rsk.pcc.blockheader;
 
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
-import org.ethereum.core.Block;
-
 import java.util.Optional;
+import org.ethereum.core.Block;
 
 /**
  * Helper class to provide Block access to the BlockHeaderContract native methods.
@@ -40,8 +39,8 @@ public class BlockAccessor {
     public Optional<Block> getBlock(short blockDepth, ExecutionEnvironment environment) throws NativeContractIllegalArgumentException {
         if (blockDepth < 0) {
             throw new NativeContractIllegalArgumentException(String.format(
-                    "Invalid block depth '%d' (should be a non-negative value)",
-                    blockDepth
+                "Invalid block depth '%d' (should be a non-negative value)",
+                blockDepth
             ));
         }
 
