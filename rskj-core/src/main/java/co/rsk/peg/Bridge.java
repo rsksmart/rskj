@@ -1532,6 +1532,38 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.setUnionBridgeTransferPermissions(rskTx, requestEnabled, releaseEnabled).getCode();
     }
 
+    public byte[] getSuperEvent(Object[] args) {
+        logger.trace("getSuperEvent");
+        return bridgeSupport.getSuperEvent();
+    }
+
+    public void setSuperEvent(Object[] args) {
+        logger.trace("setSuperEvent");
+        byte[] data = (byte[]) args[0];
+        bridgeSupport.setSuperEvent(rskTx, data);
+    }
+
+    public void clearSuperEvent(Object[] args) {
+        logger.trace("clearSuperEvent");
+        bridgeSupport.clearSuperEvent(rskTx);
+    }
+
+    public byte[] getBaseEvent(Object[] args) {
+        logger.trace("getBaseEvent");
+        return bridgeSupport.getBaseEvent();
+    }
+
+    public void setBaseEvent(Object[] args) {
+        logger.trace("setBaseEvent");
+        byte[] data = (byte[]) args[0];
+        bridgeSupport.setBaseEvent(rskTx, data);
+    }
+
+    public void clearBaseEvent(Object[] args) {
+        logger.trace("clearBaseEvent");
+        bridgeSupport.clearBaseEvent(rskTx);
+    }
+
     protected static BridgeMethods.BridgeMethodExecutor executeIfAuthorized(
         AuthorizerProvider authorizerProvider,
         BridgeMethods.BridgeMethodExecutor decorate,

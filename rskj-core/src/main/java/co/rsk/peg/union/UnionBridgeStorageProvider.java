@@ -16,5 +16,12 @@ public interface UnionBridgeStorageProvider {
     Optional<Boolean> isUnionBridgeRequestEnabled();
     void setUnionBridgeReleaseEnabled(boolean enabled);
     Optional<Boolean> isUnionBridgeReleaseEnabled();
+    byte[] getSuperEvent();
+    void setSuperEvent(byte[] data);
+    void clearSuperEvent();
+    byte[] getBaseEvent();
+    void setBaseEvent(byte[] data);
+    void clearBaseEvent();
+
     void save();
 }

@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.solidity.SolidityType;
 import org.ethereum.vm.MessageCall.MsgType;
 
 /**
@@ -915,6 +916,74 @@ public enum BridgeMethods {
             "setUnionBridgeTransferPermissions"
         ),
         activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
+    ),
+    GET_SUPER_EVENT(
+        CallTransaction.Function.fromSignature(
+          "getSuperEvent",
+          new String[]{},
+          new String[]{BYTES}
+        ),
+        fixedCost(3_000L), // TODO define final cost
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getSuperEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false),
+        CallTypeHelper.ALLOW_STATIC_CALL
+    ),
+    SET_SUPER_EVENT(
+        CallTransaction.Function.fromSignature(
+            "setSuperEvent",
+            new String[]{BYTES},
+            new String[]{}
+        ),
+        fixedCost(8_000L), // TODO define final cost
+        (BridgeMethodExecutorVoid) Bridge::setSuperEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false)
+    ),
+    CLEAR_SUPER_EVENT(
+        CallTransaction.Function.fromSignature(
+            "clearSuperEvent",
+            new String[]{},
+            new String[]{}
+        ),
+        fixedCost(8_000L), // TODO define final cost
+        (BridgeMethodExecutorVoid) Bridge::clearSuperEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false)
+    ),
+    GET_BASE_EVENT(
+        CallTransaction.Function.fromSignature(
+            "getBaseEvent",
+            new String[]{},
+            new String[]{BYTES}
+        ),
+        fixedCost(3_000L), // TODO define final cost
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getBaseEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false),
+        CallTypeHelper.ALLOW_STATIC_CALL
+    ),
+    SET_BASE_EVENT(
+        CallTransaction.Function.fromSignature(
+            "setBaseEvent",
+            new String[]{BYTES},
+            new String[]{}
+        ),
+        fixedCost(8_000L), // TODO define final cost
+        (BridgeMethodExecutorVoid) Bridge::setBaseEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false)
+    ),
+    CLEAR_BASE_EVENT(
+        CallTransaction.Function.fromSignature(
+            "clearBaseEvent",
+            new String[]{},
+            new String[]{}
+        ),
+        fixedCost(8_000L), // TODO define final cost
+        (BridgeMethodExecutorVoid) Bridge::clearBaseEvent,
+        activations -> activations.isActive(RSKIP529),
         fixedPermission(false)
     ),
     ;

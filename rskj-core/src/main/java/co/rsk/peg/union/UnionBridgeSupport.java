@@ -21,5 +21,12 @@ public interface UnionBridgeSupport {
 
     UnionResponseCode setTransferPermissions(Transaction tx, boolean requestEnabled, boolean releaseEnabled);
 
+    byte[] getSuperEvent();
+    void setSuperEvent(Transaction tx, byte[] data);
+    void clearSuperEvent(Transaction tx);
+    byte[] getBaseEvent();
+    void setBaseEvent(Transaction tx, byte[] data);
+    void clearBaseEvent(Transaction tx);
+
     void save();
 }

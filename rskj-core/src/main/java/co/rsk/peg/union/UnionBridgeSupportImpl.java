@@ -1,5 +1,7 @@
 package co.rsk.peg.union;
 
+import static java.util.Objects.requireNonNull;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -8,6 +10,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.utils.BridgeEventLogger;
 import java.math.BigInteger;
+import javax.annotation.Nonnull;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
@@ -16,6 +19,7 @@ import org.slf4j.LoggerFactory;
 public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(UnionBridgeSupportImpl.class);
+    protected static final int MAX_EVENT_DATA_LENGTH = 128;
 
     private final UnionBridgeConstants constants;
     private final UnionBridgeStorageProvider storageProvider;
@@ -36,11 +40,16 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     @Override
     public RskAddress getUnionBridgeContractAddress() {
-        if (isCurrentEnvironmentMainnet()) {
+        if (networkIsMainNet()) {
             return constants.getAddress();
         }
 
         return storageProvider.getAddress().orElse(constants.getAddress());
+    }
+
+    private boolean networkIsMainNet() {
+        String networkId = constants.getBtcParams().getId();
+        return networkId.equals(NetworkParameters.ID_MAINNET);
     }
 
     @Override
@@ -90,7 +99,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         final String REQUEST_UNION_RBTC_TAG = "requestUnionRbtc";
 
         RskAddress caller = tx.getSender(signatureCache);
-        if (!isCallerUnionBridgeContractAddress(caller)) {
+        if (callerIsNotUnionBridge(caller)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
@@ -115,17 +124,23 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return isRequestEnabled;
     }
 
-    private boolean isCallerUnionBridgeContractAddress(RskAddress callerAddress) {
+    private void validateCallerIsUnionBridge(RskAddress callerAddress) {
+        if (callerIsNotUnionBridge(callerAddress)) {
+            throw new IllegalArgumentException("Caller is not the Union Bridge contract address");
+        }
+    }
+
+    private boolean callerIsNotUnionBridge(RskAddress callerAddress) {
         RskAddress unionBridgeContractAddress = getUnionBridgeContractAddress();
-        boolean isCallerUnionBridgeContractAddress = callerAddress.equals(unionBridgeContractAddress);
-        if (!isCallerUnionBridgeContractAddress) {
+        boolean callerIsNotUnionBridge = !callerAddress.equals(unionBridgeContractAddress);
+        if (callerIsNotUnionBridge) {
             logger.warn(
-                "[isCallerUnionBridgeContractAddress] Caller is not the Union Bridge Contract Address. Caller address: {}, Union Bridge Contract Address: {}",
+                "[callerIsNotUnionBridge] Caller address {} does not match Union Bridge address {}",
                 callerAddress,
                 unionBridgeContractAddress
             );
         }
-        return isCallerUnionBridgeContractAddress;
+        return callerIsNotUnionBridge;
     }
 
     private boolean isAmountRequestedValid(Coin amountRequested) {
@@ -190,7 +205,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         final RskAddress caller = tx.getSender(signatureCache);
         final Coin releaseUnionRbtcValueInWeis = tx.getValue();
 
-        if (!isCallerUnionBridgeContractAddress(caller)) {
+        if (callerIsNotUnionBridge(caller)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
@@ -272,12 +287,75 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
+    public byte[] getSuperEvent() {
+        return storageProvider.getSuperEvent();
+    }
+
+    @Override
+    public void setSuperEvent(Transaction tx, @Nonnull byte[] data) {
+        requireNonNull(data, "Super event data cannot be null");
+
+        RskAddress caller = tx.getSender(signatureCache);
+        validateCallerIsUnionBridge(caller);
+        validateEventDataLength(data);
+
+        byte[] previousSuperEventData = getSuperEvent();
+        storageProvider.setSuperEvent(data);
+        logger.info(
+            "[setSuperEvent] Super event info was updated from {} to {}", previousSuperEventData, data
+        );
+    }
+
+    @Override
+    public void clearSuperEvent(Transaction tx) {
+        RskAddress caller = tx.getSender(signatureCache);
+        validateCallerIsUnionBridge(caller);
+
+        byte[] previousSuperEventData = getSuperEvent();
+        storageProvider.setSuperEvent(EMPTY_BYTE_ARRAY);
+        logger.info("[clearSuperEvent] Super event info was cleared. Previous value: {}", previousSuperEventData);
+    }
+
+    @Override
+    public byte[] getBaseEvent() {
+        return storageProvider.getBaseEvent();
+    }
+
+    @Override
+    public void setBaseEvent(Transaction tx, @Nonnull byte[] data) {
+        requireNonNull(data, "Base event data cannot be null");
+
+        RskAddress caller = tx.getSender(signatureCache);
+        validateCallerIsUnionBridge(caller);
+        validateEventDataLength(data);
+
+        byte[] previousBaseEventData = getBaseEvent();
+        storageProvider.setBaseEvent(data);
+        logger.info(
+            "[setBaseEvent] Base event info was updated from {} to {}", previousBaseEventData, data
+        );
+    }
+
+    @Override
+    public void clearBaseEvent(Transaction tx) {
+        RskAddress caller = tx.getSender(signatureCache);
+        validateCallerIsUnionBridge(caller);
+
+        byte[] previousBaseEventData = getBaseEvent();
+        storageProvider.setBaseEvent(EMPTY_BYTE_ARRAY);
+        logger.info("[clearBaseEvent] Base event info was cleared. Previous value: {}", previousBaseEventData);
+    }
+
+    @Override
     public void save() {
         storageProvider.save();
     }
 
-    private boolean isCurrentEnvironmentMainnet() {
-        String currentNetworkId = constants.getBtcParams().getId();
-        return currentNetworkId.equals(NetworkParameters.ID_MAINNET);
+    private void validateEventDataLength(@Nonnull byte[] data) {
+        requireNonNull(data, "Event data cannot be null");
+        int dataLength = data.length;
+        if (dataLength > MAX_EVENT_DATA_LENGTH) {
+            throw new IllegalArgumentException(String.format("Base event data length %d is above maximum.", dataLength));
+        }
     }
 }
