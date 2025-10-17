@@ -162,9 +162,7 @@ public class ActivationConfigsForTest {
             ConsensusRule.RSKIP398,
             ConsensusRule.RSKIP400,
             ConsensusRule.RSKIP415,
-            ConsensusRule.RSKIP417,
-            ConsensusRule.RSKIP144,
-            ConsensusRule.RSKIP351
+            ConsensusRule.RSKIP417
         ));
     }
 
@@ -193,8 +191,10 @@ public class ActivationConfigsForTest {
         ));
     }
 
-    private static List<ConsensusRule> getReed801Rskips() {
+    private static List<ConsensusRule> getVetiverRskips() {
         return new ArrayList<>(List.of(
+            ConsensusRule.RSKIP144,
+            ConsensusRule.RSKIP351,
             ConsensusRule.RSKIP502
         ));
     }
@@ -413,9 +413,9 @@ public class ActivationConfigsForTest {
         return enableTheseDisableThose(rskips, except);
     }
 
-    public static ActivationConfig reed801() { return reed801(Collections.emptyList()); }
+    public static ActivationConfig vetiver900() { return vetiver900(Collections.emptyList()); }
 
-    public static ActivationConfig reed801(List<ConsensusRule> except) {
+    public static ActivationConfig vetiver900(List<ConsensusRule> except) {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(getPaidBridgeTxsRskip());
         rskips.addAll(getOrchidRskips());
@@ -432,7 +432,7 @@ public class ActivationConfigsForTest {
         rskips.addAll(getArrowhead631Rskips());
         rskips.addAll(getLovell700Rskips());
         rskips.addAll(getReed800Rskips());
-        rskips.addAll(getReed801Rskips());
+        rskips.addAll(getVetiverRskips());
 
         return enableTheseDisableThose(rskips, except);
     }
