@@ -297,11 +297,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
         RskAddress caller = tx.getSender(signatureCache);
         validateCallerIsUnionBridge(caller);
-
-        int dataLength = data.length;
-        if (dataLength > MAX_EVENT_DATA_LENGTH) {
-            throw new IllegalArgumentException(String.format("Super event data length %d is above maximum.", dataLength));
-        }
+        validateEventDataLength(data);
 
         byte[] previousSuperEventData = getSuperEvent();
         storageProvider.setSuperEvent(data);
@@ -331,11 +327,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
         RskAddress caller = tx.getSender(signatureCache);
         validateCallerIsUnionBridge(caller);
-
-        int dataLength = data.length;
-        if (dataLength > MAX_EVENT_DATA_LENGTH) {
-            throw new IllegalArgumentException(String.format("Base event data length %d is above maximum.", dataLength));
-        }
+        validateEventDataLength(data);
 
         byte[] previousBaseEventData = getBaseEvent();
         storageProvider.setBaseEvent(data);
@@ -357,5 +349,13 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     @Override
     public void save() {
         storageProvider.save();
+    }
+
+    private void validateEventDataLength(@Nonnull byte[] data) {
+        requireNonNull(data, "Event data cannot be null");
+        int dataLength = data.length;
+        if (dataLength > MAX_EVENT_DATA_LENGTH) {
+            throw new IllegalArgumentException(String.format("Base event data length %d is above maximum.", dataLength));
+        }
     }
 }
