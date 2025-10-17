@@ -46,10 +46,8 @@ class Web3HttpServerTest {
     public static final String WEB3_SHA3_METHOD = "web3_sha3";
     public static final String ETH_GET_BLOCK_BY_NUMBER_METHOD = "eth_getBlockByNumber";
     public static final String LATEST_PARAM = "latest";
-    public static final String VALUE_PARAM = "value";
     public static final String MOCK_RESULT = "output";
     public static final int DEFAULT_MAX_BATCH_SIZE = 1;
-    public static final int DEFAULT_TIMEOUT = 600;
     public static final int MAX_RESPONSE_SIZE = 52428800;
     
     private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
@@ -152,82 +150,6 @@ class Web3HttpServerTest {
             sb.append("]");
         }
         return sb.toString();
-    }
-
-    private List<ModuleDescription> createDefaultModules() {
-        return Collections.singletonList(
-            new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
-    }
-
-    // Test Scenarios
-    private class TestScenario {
-        private final String name;
-        private final TestServerBuilder serverBuilder;
-        private final String requestContent;
-        private final String contentType;
-        private final String host;
-        private final java.util.function.Consumer<Response> assertions;
-
-        public TestScenario(String name, TestServerBuilder serverBuilder, String requestContent, 
-                           String contentType, String host, java.util.function.Consumer<Response> assertions) {
-            this.name = name;
-            this.serverBuilder = serverBuilder;
-            this.requestContent = requestContent;
-            this.contentType = contentType;
-            this.host = host;
-            this.assertions = assertions;
-        }
-
-        public void execute() throws Exception {
-            Web3HttpServer server = serverBuilder.build();
-            server.start();
-            try {
-                Response response = sendHugeJsonRpcMessage(serverBuilder.getPort(), contentType, host, requestContent);
-                assertions.accept(response);
-            } finally {
-                server.stop();
-            }
-        }
-    }
-
-    // Common Test Scenarios
-    private TestScenario createBatchLimitScenario() {
-        return new TestScenario("Batch Limit Test",
-            new TestServerBuilder().maxBatchSize(DEFAULT_MAX_BATCH_SIZE),
-            new BatchRequestBuilder()
-                .addRequest(ETH_GET_BLOCK_BY_NUMBER_METHOD, LATEST_PARAM)
-                .addRequest(ETH_GET_BLOCK_BY_NUMBER_METHOD, LATEST_PARAM)
-                .build(),
-            APPLICATION_JSON_RPC,
-            LOCALHOST,
-            response -> {
-                try {
-                    assertBadRequest(response, ErrorResolver.JsonError.INVALID_REQUEST.code, 
-                        "Cannot dispatch batch requests. 1 is the max number of supported batch requests");
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
-    }
-
-    private TestScenario createStackOverflowScenario() {
-        String baseRequest = new JsonRpcRequestBuilder()
-                .method(WEB3_SHA3_METHOD)
-                .params(LATEST_PARAM)
-                .build();
-        
-        return new TestScenario("Stack Overflow Test",
-            new TestServerBuilder().maxBatchSize(DEFAULT_MAX_BATCH_SIZE),
-            createNestedRequest(baseRequest, 998),
-            APPLICATION_JSON_RPC,
-            LOCALHOST,
-            response -> {
-                try {
-                    assertBadRequest(response, ErrorResolver.JsonError.INVALID_REQUEST.code, "Invalid request");
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
     }
 
     @Test
@@ -642,10 +564,6 @@ class Web3HttpServerTest {
         }
     }
 
-    private void smokeTest(String contentType) throws Exception {
-        smokeTest(contentType, "127.0.0.1");
-    }
-
     private Response sendHugeJsonRpcMessage(int port, String contentType, String host, String content) throws IOException {
         Map<String, JsonNode> jsonRpcRequestProperties = new HashMap<>();
         jsonRpcRequestProperties.put("jsonrpc", JSON_NODE_FACTORY.textNode("2.0"));
@@ -808,32 +726,6 @@ class Web3HttpServerTest {
         return mockCorsConfiguration;
     }
 
-    private String createBatchRequest(String method, String param) {
-        return String.format("[\n" +
-                "  {\n" +
-                "    \"jsonrpc\": \"2.0\",\n" +
-                "    \"method\": \"%s\",\n" +
-                "    \"params\": [\"%s\"],\n" +
-                "    \"id\": 64\n" +
-                "  },\n" +
-                "  {\n" +
-                "    \"jsonrpc\": \"2.0\",\n" +
-                "    \"method\": \"%s\",\n" +
-                "    \"params\": [\"%s\"],\n" +
-                "    \"id\": 64\n" +
-                "  }\n" +
-                "]", method, param, method, param);
-    }
-
-    private String createEthBlockRequest() {
-        return String.format("{\n" +
-                "    \"method\": \"%s\",\n" +
-                "    \"params\": [\"%s\", true],\n" +
-                "    \"id\": 1,\n" +
-                "    \"jsonrpc\": \"2.0\"\n" +
-                "}", ETH_GET_BLOCK_BY_NUMBER_METHOD, LATEST_PARAM);
-    }
-
     // Test Server Builder
     private class TestServerBuilder {
         private Web3 web3Mock;
@@ -853,43 +745,8 @@ class Web3HttpServerTest {
             this.port = getAvailablePort();
         }
 
-        public TestServerBuilder web3(Web3 web3) {
-            this.web3Mock = web3;
-            return this;
-        }
-
-        public TestServerBuilder cors(CorsConfiguration cors) {
-            this.corsConfiguration = cors;
-            return this;
-        }
-
         public TestServerBuilder maxBatchSize(int size) {
             this.maxBatchSize = size;
-            return this;
-        }
-
-        public TestServerBuilder maxResponseSize(int size) {
-            this.maxResponseSize = size;
-            return this;
-        }
-
-        public TestServerBuilder modules(List<ModuleDescription> modules) {
-            this.modules = modules;
-            return this;
-        }
-
-        public TestServerBuilder host(String host) {
-            this.host = host;
-            return this;
-        }
-
-        public TestServerBuilder rpcAddress(InetAddress address) {
-            this.rpcAddress = address;
-            return this;
-        }
-
-        public TestServerBuilder rpcHosts(List<String> hosts) {
-            this.rpcHosts = hosts;
             return this;
         }
 
@@ -955,11 +812,6 @@ class Web3HttpServerTest {
             return this;
         }
 
-        public BatchRequestBuilder addRequest(String request) {
-            requests.add(request);
-            return this;
-        }
-
         public String build() {
             return "[" + String.join(",", requests) + "]";
         }
@@ -973,14 +825,6 @@ class Web3HttpServerTest {
         assertThat(response.code(), is(HttpResponseStatus.BAD_REQUEST.code()));
         Assertions.assertEquals(expectedErrorCode, jsonRpcResponse.get("error").get("code").asInt());
         Assertions.assertEquals(expectedMessage, jsonRpcResponse.get("error").get("message").asText());
-    }
-
-    private void assertValidResponse(Response response, String expectedResult) throws Exception {
-        String responseBody = response.body().string();
-        JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
-        
-        assertThat(response.code(), is(HttpResponseStatus.OK.code()));
-        assertThat(jsonRpcResponse.get("result").asText(), is(expectedResult));
     }
 
     // Test Execution Helpers
@@ -1032,36 +876,6 @@ class Web3HttpServerTest {
 
         public SmokeTestBuilder rpcHosts(List<String> hosts) {
             this.rpcHosts = hosts;
-            return this;
-        }
-
-        public SmokeTestBuilder modules(List<ModuleDescription> modules) {
-            this.modules = modules;
-            return this;
-        }
-
-        public SmokeTestBuilder decorator(Function<Config, Config> decorator) {
-            this.decorator = decorator;
-            return this;
-        }
-
-        public SmokeTestBuilder mockResult(String result) {
-            this.mockResult = result;
-            return this;
-        }
-
-        public SmokeTestBuilder method(String method) {
-            this.method = method;
-            return this;
-        }
-
-        public SmokeTestBuilder maxBatchSize(int size) {
-            this.maxBatchSize = size;
-            return this;
-        }
-
-        public SmokeTestBuilder maxResponseSize(int size) {
-            this.maxResponseSize = size;
             return this;
         }
 
