@@ -45,6 +45,7 @@ class ActivationConfigTest {
         "    arrowhead631: 0",
         "    lovell700: 0",
         "    reed800: 0",
+        "    vetiver900: 0",
         "},",
         "consensusRules: {",
         "    areBridgeTxsPaid: afterBridgeSync,",
