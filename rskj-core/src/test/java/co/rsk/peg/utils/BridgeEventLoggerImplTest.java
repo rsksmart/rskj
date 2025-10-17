@@ -34,6 +34,10 @@ import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.RejectedPeginReason;
+import co.rsk.peg.union.constants.UnionBridgeConstants;
+import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
+import co.rsk.peg.union.constants.UnionBridgeRegTestConstants;
+import co.rsk.peg.union.constants.UnionBridgeTestNetConstants;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
@@ -50,11 +54,6 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
 
-/**
- * Test class for BridgeEventLoggerImpl.
- *
- * @author martin.medina
- */
 class BridgeEventLoggerImplTest {
     private static final RskAddress BRIDGE_ADDRESS = PrecompiledContracts.BRIDGE_ADDR;
     private static final byte[] BRIDGE_ADDRESS_SERIALIZED = BRIDGE_ADDRESS.getBytes();
@@ -641,6 +640,191 @@ class BridgeEventLoggerImplTest {
     @MethodSource("logPegoutTransactionCreatedInvalidArgProvider")
     void logPegoutTransactionCreated_invalidBtcTxHashOrOutpointValues_shouldFail(Sha256Hash btcTxHash, List<Coin> outpointValues, Class<? extends  Exception> expectedException) {
         assertThrows(expectedException, () -> eventLogger.logPegoutTransactionCreated(btcTxHash, outpointValues));
+    }
+
+    @ParameterizedTest
+    @MethodSource("logUnionRbtcRequestedArgProvider")
+    void logUnionRbtcRequested_whenOk_shouldEmitEvent(RskAddress requester, co.rsk.core.Coin amount) {
+        // Act
+        eventLogger.logUnionRbtcRequested(requester, amount);
+
+        // Assert
+        commonAssertLogs();
+        assertTopics(2);
+        assertEvent(
+            BridgeEvents.UNION_RBTC_REQUESTED.getEvent(),
+            new Object[]{requester.toHexString()},
+            new Object[]{amount.asBigInteger()}
+        );
+    }
+
+    private static Stream<Arguments> logUnionRbtcRequestedArgProvider() {
+        BigInteger oneRbtcInWeis = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+        co.rsk.core.Coin oneRbtc = new co.rsk.core.Coin(oneRbtcInWeis);
+        co.rsk.core.Coin twoRbtc = new co.rsk.core.Coin(oneRbtcInWeis.multiply(BigInteger.valueOf(2L)));
+        co.rsk.core.Coin threeRbtc = new co.rsk.core.Coin(oneRbtcInWeis.multiply(BigInteger.valueOf(3L)));
+
+        return Stream.of(
+            Arguments.of(UnionBridgeMainNetConstants.getInstance().getAddress(), oneRbtc),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance().getAddress(), twoRbtc),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance().getAddress(), threeRbtc)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("logUnionRbtcRequestedInvalidArgProvider")
+    void logUnionRbtcRequested_whenInvalidArg_shouldFail(RskAddress requester,
+        co.rsk.core.Coin amount) {
+        assertThrows(NullPointerException.class,
+            () -> eventLogger.logUnionRbtcRequested(requester, amount),
+            "Requester or amount cannot be null");
+    }
+
+    private static Stream<Arguments> logUnionRbtcRequestedInvalidArgProvider() {
+        RskAddress unionBridgeContractAddress = UnionBridgeMainNetConstants.getInstance().getAddress();
+        BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+
+        return Stream.of(
+            Arguments.of(unionBridgeContractAddress, null),
+            Arguments.of(null, new co.rsk.core.Coin(oneEth)),
+            Arguments.of(null, null)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("logUnionRbtcReleasedInvalidArgProvider")
+    void logUnionRbtcReleased_whenInvalidArg_shouldFail(RskAddress receiver, co.rsk.core.Coin amount) {
+        assertThrows(NullPointerException.class,
+            () -> eventLogger.logUnionRbtcReleased(receiver, amount),
+            "Receiver or amount cannot be null");
+    }
+
+    private static Stream<Arguments> logUnionRbtcReleasedInvalidArgProvider() {
+        RskAddress unionBridgeContractAddress = UnionBridgeMainNetConstants.getInstance().getAddress();
+        BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+
+        return Stream.of(
+            Arguments.of(unionBridgeContractAddress, null),
+            Arguments.of(null, new co.rsk.core.Coin(oneEth)),
+            Arguments.of(null, null)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("logUnionRbtcReleasedArgProvider")
+    void logUnionRbtcReleased_whenOk_shouldEmitEvent(RskAddress receiver, co.rsk.core.Coin amount) {
+        // Act
+        eventLogger.logUnionRbtcReleased(receiver, amount);
+
+        // Assert
+        commonAssertLogs();
+        assertTopics(2);
+        assertEvent(
+            BridgeEvents.UNION_RBTC_RELEASED.getEvent(),
+            new Object[]{receiver.toHexString()},
+            new Object[]{amount.asBigInteger()}
+        );
+    }
+
+    private static Stream<Arguments> logUnionRbtcReleasedArgProvider() {
+        BigInteger oneRbtcInWeis = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+        co.rsk.core.Coin oneRbtc = new co.rsk.core.Coin(oneRbtcInWeis);
+        co.rsk.core.Coin twoRbtc = new co.rsk.core.Coin(oneRbtcInWeis.multiply(BigInteger.valueOf(2L)));
+        co.rsk.core.Coin threeRbtc = new co.rsk.core.Coin(oneRbtcInWeis.multiply(BigInteger.valueOf(3L)));
+
+        return Stream.of(
+            Arguments.of(UnionBridgeMainNetConstants.getInstance().getAddress(), oneRbtc),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance().getAddress(), twoRbtc),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance().getAddress(), threeRbtc)
+        );
+    }
+
+    @Test
+    void logUnionLockingCapIncreased_whenOk_shouldEmitEvent() {
+        RskAddress caller = new RskAddress(ECKey.fromPublicOnly(Hex.decode(
+                "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"))
+            .getAddress());
+
+        UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
+        int lockingCapIncrementsMultiplier = unionBridgeConstants.getLockingCapIncrementsMultiplier();
+        co.rsk.core.Coin previousLockingCap = unionBridgeConstants.getInitialLockingCap().multiply(BigInteger.valueOf(lockingCapIncrementsMultiplier));
+        co.rsk.core.Coin newLockingCap = previousLockingCap.multiply(BigInteger.valueOf(lockingCapIncrementsMultiplier));
+
+        eventLogger.logUnionLockingCapIncreased(caller, previousLockingCap, newLockingCap);
+
+        commonAssertLogs();
+        assertTopics(2);
+        assertEvent(
+            BridgeEvents.UNION_LOCKING_CAP_INCREASED.getEvent(),
+            new Object[]{caller.toHexString()},
+            new Object[]{previousLockingCap.asBigInteger(), newLockingCap.asBigInteger()}
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("logUnionLockingCapIncreasedNullArgsProvider")
+    void logUnionLockingCapIncreased_whenNullArgs_shouldFail(RskAddress caller, co.rsk.core.Coin previousLockingCap, co.rsk.core.Coin newLockingCap) {
+        assertThrows(NullPointerException.class, () -> eventLogger.logUnionLockingCapIncreased(caller, previousLockingCap, newLockingCap));
+    }
+
+    private static Stream<Arguments> logUnionLockingCapIncreasedNullArgsProvider() {
+        RskAddress caller = new RskAddress(ECKey.fromPublicOnly(Hex.decode(
+            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"))
+            .getAddress());
+
+        UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
+        co.rsk.core.Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
+        int lockingCapIncrementsMultiplier = unionBridgeConstants.getLockingCapIncrementsMultiplier();
+        co.rsk.core.Coin previousLockingCap = initialLockingCap.multiply(BigInteger.valueOf(lockingCapIncrementsMultiplier));
+        co.rsk.core.Coin newLockingCap = previousLockingCap.multiply(BigInteger.valueOf(lockingCapIncrementsMultiplier));
+
+        return Stream.of(
+            Arguments.of(null, previousLockingCap, newLockingCap),
+            Arguments.of(caller, null, newLockingCap),
+            Arguments.of(caller, previousLockingCap, null)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("logUnionBridgeTransferPermissionsUpdatedArgProvider")
+    void logUnionBridgeTransferPermissionsUpdated_whenOk_shouldEmitEvent(RskAddress caller, boolean enablePowPegToUnionBridge, boolean enableUnionBridgeToPowPeg) {
+        eventLogger.logUnionBridgeTransferPermissionsUpdated(caller, enablePowPegToUnionBridge, enableUnionBridgeToPowPeg);
+
+        commonAssertLogs();
+        assertTopics(2);
+        assertEvent(
+            BridgeEvents.UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent(),
+            new Object[]{caller.toHexString()},
+            new Object[]{enablePowPegToUnionBridge, enableUnionBridgeToPowPeg}
+        );
+    }
+
+    private static Stream<Arguments> logUnionBridgeTransferPermissionsUpdatedArgProvider() {
+        RskAddress caller = new RskAddress(ECKey.fromPublicOnly(Hex.decode(
+                "04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f"))
+            .getAddress());
+
+        return Stream.of(
+            Arguments.of(caller, true, true),
+            Arguments.of(caller, false, true),
+            Arguments.of(caller, true, false),
+            Arguments.of(caller, false, false)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("logUnionBridgeTransferPermissionsUpdatedInvalidArgProvider")
+    void logUnionBridgeTransferPermissionsUpdated_whenInvalidArg_shouldFail(RskAddress caller, boolean enablePowPegToUnionBridge, boolean enableUnionBridgeToPowPeg) {
+        assertThrows(NullPointerException.class,
+            () -> eventLogger.logUnionBridgeTransferPermissionsUpdated(caller, enablePowPegToUnionBridge, enableUnionBridgeToPowPeg),
+            "Caller cannot be null");
+    }
+
+    private static Stream<Arguments> logUnionBridgeTransferPermissionsUpdatedInvalidArgProvider() {
+        return Stream.of(
+            Arguments.of(null, true, true),
+            Arguments.of(null, false, false)
+        );
     }
 
     /**********************************

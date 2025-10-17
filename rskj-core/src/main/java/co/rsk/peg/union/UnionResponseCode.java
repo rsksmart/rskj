@@ -1,0 +1,26 @@
+package co.rsk.peg.union;
+
+public enum UnionResponseCode {
+    SUCCESS(0),
+    UNAUTHORIZED_CALLER(-1),
+    // Response codes when the value specified is invalid:
+    // 1. The requested amount of RBTC, combined with previously requested amounts, exceeds the current locking cap value.
+    // 2. The returned amount exceeds the total amount of RBTC previously transferred.
+    // 3. The new cap value is less than the current cap or excessive.
+    INVALID_VALUE(-2),
+    // Response codes when request or release is disabled:
+    REQUEST_DISABLED(-3),
+    RELEASE_DISABLED(-3),
+    GENERIC_ERROR(-10)
+    ;
+
+    private final int code;
+
+    UnionResponseCode(int code) {
+        this.code = code;
+    }
+
+    public int getCode() {
+        return code;
+    }
+}
