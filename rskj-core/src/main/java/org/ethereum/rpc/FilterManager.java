@@ -19,6 +19,8 @@
 package org.ethereum.rpc;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.filterNotFound;
+
+import co.rsk.util.HexUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -27,10 +29,9 @@ import org.ethereum.listener.EthereumListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.concurrent.GuardedBy;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by ajlopez on 17/01/2018.
@@ -39,18 +40,16 @@ public class FilterManager {
 
     private static final Logger logger = LoggerFactory.getLogger(FilterManager.class);
 
-    private static final long FILTER_TIMEOUT = Duration.ofMinutes(5).toMillis(); // 5 minutes in milliseconds
-    private static final long FILTER_CLEANUP_PERIOD = Duration.ofMinutes(1).toMillis(); // 1 minute in milliseconds
+    private final long FILTER_TIMEOUT;
+    private final long FILTER_CLEANUP_PERIOD;
 
-    private final Object filterLock = new Object();
-    private final AtomicInteger filterCounter = new AtomicInteger(1);
-
-    @GuardedBy("filterLock")
-    private final Map<Integer, Filter> installedFilters = new HashMap<>();
+    private final Map<String, Filter> installedFilters = new ConcurrentHashMap<>();
 
     private long latestFilterCleanup = System.currentTimeMillis();
 
     public FilterManager(Ethereum eth) {
+        FILTER_TIMEOUT = Duration.ofMinutes(5).toMillis(); // 5 minutes in milliseconds
+        FILTER_CLEANUP_PERIOD = Duration.ofMinutes(1).toMillis(); // 1 minute in milliseconds
         eth.addListener(new EthereumListenerAdapter() {
             @Override
             public void onBlock(Block block, List<TransactionReceipt> receipts) {
@@ -64,70 +63,75 @@ public class FilterManager {
         });
     }
 
-    public int registerFilter(Filter filter) {
-        synchronized (filterLock) {
-            filtersCleanup();
+    public FilterManager(Ethereum eth, long filterTimeoutInMs, long filterCleanupPeriodInMs) {
+        FILTER_TIMEOUT = filterTimeoutInMs;
+        FILTER_CLEANUP_PERIOD = filterCleanupPeriodInMs;
+        eth.addListener(new EthereumListenerAdapter() {
+            @Override
+            public void onBlock(Block block, List<TransactionReceipt> receipts) {
+                newBlockReceived(block);
+            }
 
-            int id = filterCounter.getAndIncrement();
-            installedFilters.put(id, filter);
-
-            logger.debug("[{}] installed with id: [{}]", filter.getClass().getSimpleName(), id);
-
-            return id;
-        }
+            @Override
+            public void onPendingTransactionsReceived(List<Transaction> transactions) {
+                newPendingTx(transactions);
+            }
+        });
     }
 
-    public boolean removeFilter(int id) {
-        synchronized (filterLock) {
-            Filter filter = installedFilters.remove(id);
-            boolean removed = filter != null;
-            if (removed) {
-                logger.debug("[{}] with id: [{}] uninstalled", filter.getClass().getSimpleName(), id);
-            } else {
-                logger.debug("Cannot uninstalled filter with id: [{}] - not found", id);
-            }
+    public String registerFilter(Filter filter) {
+        filtersCleanup();
 
-            return removed;
-        }
+        final var id = HexUtils.generateRandomUUIDToHexString();
+        installedFilters.put(id, filter);
+
+        logger.debug("[{}] installed with id: [{}]", filter.getClass().getSimpleName(), id);
+
+        return id;
     }
 
-    public Object[] getFilterEvents(int id, boolean newEvents) {
-        synchronized (filterLock) {
-            filtersCleanup();
+    public boolean removeFilter(String id) {
+        Filter filter = installedFilters.remove(id);
+        boolean removed = filter != null;
+        if (removed) {
+            logger.debug("[{}] with id: [{}] uninstalled", filter.getClass().getSimpleName(), id);
+        } else {
+            logger.debug("Cannot uninstalled filter with id: [{}] - not found", id);
+        }
 
-            Filter filter = installedFilters.get(id);
+        return removed;
+    }
 
-            if (filter == null) {
-                throw filterNotFound("filter not found");
-            }
+    public Object[] getFilterEvents(String id, boolean newEvents) {
+        filtersCleanup();
 
-            if (newEvents) {
-                return filter.getNewEvents();
-            }
-            else {
-                return filter.getEvents();
-            }
+        Filter filter = installedFilters.get(id);
+
+        if (filter == null) {
+            throw filterNotFound("filter not found");
+        }
+
+        if (newEvents) {
+            return filter.getNewEvents();
+        } else {
+            return filter.getEvents();
         }
     }
 
     public void newBlockReceived(Block block) {
-        synchronized (filterLock) {
-            filtersCleanup();
+        filtersCleanup();
 
-            for (Filter filter : installedFilters.values()) {
-                filter.newBlockReceived(block);
-            }
+        for (Filter filter : installedFilters.values()) {
+            filter.newBlockReceived(block);
         }
     }
 
     public void newPendingTx(List<Transaction> transactions) {
-        synchronized (filterLock) {
-            filtersCleanup();
+        filtersCleanup();
 
-            for (Filter filter : installedFilters.values()) {
-                for (Transaction tx : transactions) {
-                    filter.newPendingTx(tx);
-                }
+        for (Filter filter : installedFilters.values()) {
+            for (Transaction tx : transactions) {
+                filter.newPendingTx(tx);
             }
         }
     }
@@ -139,9 +143,9 @@ public class FilterManager {
             return;
         }
 
-        List<Integer> toremove = new ArrayList<>();
+        List<String> toremove = new ArrayList<>();
 
-        for (Map.Entry<Integer, Filter> entry : installedFilters.entrySet()) {
+        for (Map.Entry<String, Filter> entry : installedFilters.entrySet()) {
             Filter f = entry.getValue();
 
             if (f.hasExpired(FILTER_TIMEOUT)) {
@@ -150,7 +154,7 @@ public class FilterManager {
             }
         }
 
-        for (Integer id : toremove) {
+        for (String id : toremove) {
             installedFilters.remove(id);
         }
 

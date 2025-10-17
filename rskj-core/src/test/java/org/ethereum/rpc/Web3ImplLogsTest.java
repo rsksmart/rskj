@@ -185,7 +185,7 @@ class Web3ImplLogsTest {
     void newFilterGetLogsInEmptyBlockchain() throws Exception {
         FilterRequestParam fr = new FilterRequestParam(new BlockIdentifierParam("earliest"), null, null, null, null);
         String id = web3.eth_newFilter(fr);
-        Object[] logs = web3.eth_getFilterLogs(new HexIndexParam(id));
+        Object[] logs = web3.eth_getFilterLogs(new HexDataParam(id));
 
         assertNotNull(id);
         assertNotNull(logs);
@@ -208,7 +208,7 @@ class Web3ImplLogsTest {
         tx = getContractTransaction(acc1);
         buildAndConnectBlock(genesis,tx);
 
-        Object[] logs = web3.eth_getFilterLogs(new HexIndexParam(id));
+        Object[] logs = web3.eth_getFilterLogs(new HexDataParam(id));
 
         assertNotNull(id);
         assertNotNull(logs);
@@ -236,7 +236,7 @@ class Web3ImplLogsTest {
 
         String id = web3.eth_newFilter(fr);
 
-        Object[] logs = web3.eth_getFilterLogs(new HexIndexParam(id));
+        Object[] logs = web3.eth_getFilterLogs(new HexDataParam(id));
 
         assertNotNull(id);
         assertNotNull(logs);
@@ -260,7 +260,7 @@ class Web3ImplLogsTest {
         tx = getContractTransaction(acc1);
         buildAndConnectBlock(genesis,tx);
 
-        HexIndexParam idParam = new HexIndexParam(id);
+        final var idParam = new HexDataParam(id);
         web3.eth_getFilterLogs(idParam);
         Object[] logs = web3.eth_getFilterLogs(idParam);
 
@@ -275,8 +275,7 @@ class Web3ImplLogsTest {
     void newFilterGetChangesInEmptyBlockchain() throws Exception {
         String id = registerEarliestFilter();
 
-        HexIndexParam hexIndexParam = new HexIndexParam(id);
-        Object[] logs = web3.eth_getFilterChanges(hexIndexParam);
+        Object[] logs = web3.eth_getFilterChanges(new HexDataParam(id));
 
         assertNotNull(id);
         assertNotNull(logs);
@@ -298,7 +297,7 @@ class Web3ImplLogsTest {
         tx = getContractTransaction(acc1);
         buildAndConnectBlock(genesis,tx);
 
-        Object[] logs = web3.eth_getFilterChanges(new HexIndexParam(id));
+        Object[] logs = web3.eth_getFilterChanges(new HexDataParam(id));
 
         assertNotNull(id);
         assertNotNull(logs);
@@ -907,7 +906,7 @@ class Web3ImplLogsTest {
         ).trieStore(trieStore).parent(genesis).transactions(txs).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
-        Object[] logs = web3.eth_getFilterChanges(new HexIndexParam(id));
+        Object[] logs = web3.eth_getFilterChanges(new HexDataParam(id));
 
         assertNotNull(id);
         assertNotNull(logs);
@@ -947,7 +946,7 @@ class Web3ImplLogsTest {
         ).trieStore(trieStore).parent(block1).transactions(txs2).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
-        Object[] logs = web3.eth_getFilterChanges(new HexIndexParam(id));
+        Object[] logs = web3.eth_getFilterChanges(new HexDataParam(id));
 
         assertNotNull(id);
         assertNotNull(logs);
@@ -1000,7 +999,7 @@ class Web3ImplLogsTest {
         ).trieStore(trieStore).parent(block2).transactions(txs3).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
 
-        Object[] logs = web3.eth_getFilterChanges(new HexIndexParam(id));
+        Object[] logs = web3.eth_getFilterChanges(new HexDataParam(id));
 
         assertNotNull(id);
         assertNotNull(logs);
@@ -1055,7 +1054,7 @@ class Web3ImplLogsTest {
         FilterRequestParam fr = new FilterRequestParam(null, null, address, null, null);
         String id = web3.eth_newFilter(fr);
 
-        Object[] logs = web3.eth_getFilterLogs(new HexIndexParam(id));
+        Object[] logs = web3.eth_getFilterLogs(new HexDataParam(id));
 
         assertNotNull(id);
         assertNotNull(logs);
