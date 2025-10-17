@@ -258,7 +258,7 @@ public class BlockFactory {
         int preUmmHeaderSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? 0 : 1;
         int preParallelSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 0 : 1;
         int preRSKIP351SizeAdjustment = getRSKIP351SizeAdjustment(blockNumber, compressed, preParallelSizeAdjustment);
-        int bridgeEventSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber) ? 0 : 1;
+        int bridgeEventSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber) ? (compressed ? 1 : 0) : 1;
 
         int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - bridgeEventSizeAdjustment;
         int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - bridgeEventSizeAdjustment;
