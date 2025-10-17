@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.solidity.SolidityType;
 import org.ethereum.vm.MessageCall.MsgType;
 
 /**
@@ -921,7 +922,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
           "getSuperEvent",
           new String[]{},
-          new String[]{"bytes"}
+          new String[]{BYTES}
         ),
         fixedCost(3_000L), // TODO define final cost
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getSuperEvent,
@@ -932,7 +933,7 @@ public enum BridgeMethods {
     SET_SUPER_EVENT(
         CallTransaction.Function.fromSignature(
             "setSuperEvent",
-            new String[]{"bytes"},
+            new String[]{BYTES},
             new String[]{}
         ),
         fixedCost(8_000L), // TODO define final cost
@@ -955,7 +956,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getBaseEvent",
             new String[]{},
-            new String[]{"bytes"}
+            new String[]{BYTES}
         ),
         fixedCost(3_000L), // TODO define final cost
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getBaseEvent,
@@ -966,7 +967,7 @@ public enum BridgeMethods {
     SET_BASE_EVENT(
         CallTransaction.Function.fromSignature(
             "setBaseEvent",
-            new String[]{"bytes"},
+            new String[]{BYTES},
             new String[]{}
         ),
         fixedCost(8_000L), // TODO define final cost
