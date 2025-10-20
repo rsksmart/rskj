@@ -250,7 +250,6 @@ public class BlockToMineBuilder {
                 .setUncleCount(uncles.size())
                 .setUmmRoot(ummRoot)
                 .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
-                .setCreateBridgeEventCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber))
                 .build();
 
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));

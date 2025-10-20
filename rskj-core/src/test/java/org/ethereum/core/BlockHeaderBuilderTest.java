@@ -259,14 +259,14 @@ class BlockHeaderBuilderTest {
         assertArrayEquals(new byte[0], header.getExtraData());
     }
 
-    @ParameterizedTest(name = "createHeader: when createConsensusCompliantHeader {0} and useRskip92Encoding {1} and useRSKIP351 {2} and useRSKIP481 {3} then expectedSize {4}")
+    @ParameterizedTest(name = "createHeader: when createConsensusCompliantHeader {0} and useRskip92Encoding {1} and useRSKIP351 {2} and useRSKIP535 {3} then expectedSize {4}")
     @ArgumentsSource(CreateHeaderArgumentsProvider.class)
-    void createsHeaderWith(boolean createConsensusCompliantHeader, boolean useRskip92Encoding, boolean useRSKIP351, boolean useRSKIP481, int expectedSize) {
+    void createsHeaderWith(boolean createConsensusCompliantHeader, boolean useRskip92Encoding, boolean useRSKIP351, boolean useRSKIP535, int expectedSize) {
         BlockHeaderBuilder blockHeaderBuilder;
         if (useRSKIP351)
-            blockHeaderBuilder = useRSKIP481 ? this.blockHeaderBuilder : new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP481));
+            blockHeaderBuilder = useRSKIP535 ? this.blockHeaderBuilder : new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP535));
         else
-            blockHeaderBuilder = new BlockHeaderBuilder(useRSKIP481 ? ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351) : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351, ConsensusRule.RSKIP481));
+            blockHeaderBuilder = new BlockHeaderBuilder(useRSKIP535 ? ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351) : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351, ConsensusRule.RSKIP535));
 
         byte[] btcCoinbase = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcCoinbase",128);
         byte[] btcHeader = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcHeader",80);
@@ -543,7 +543,7 @@ class BlockHeaderBuilderTest {
     @Test
     void createHeaderWithVersion1AfterRskip351() {
         // RSKIP351 = 0
-        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP481)).build();
+        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP535)).build();
         assertEquals((byte) 0x1, header.getVersion());
     }
 

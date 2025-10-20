@@ -28,6 +28,7 @@ import co.rsk.db.*;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.union.UnionBridgeStorageIndexKey;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
@@ -54,6 +55,7 @@ import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RskTestFactory;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -70,6 +72,7 @@ import java.util.*;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -1733,4 +1736,61 @@ public class BlockExecutorTest {
         Assertions.assertEquals(4, transactionReceipts.get(2).getLogInfoList().get(0).getLogIndex(), "Fifth log should have index 4");
         Assertions.assertEquals(5, transactionReceipts.get(2).getLogInfoList().get(1).getLogIndex(), "Sixth log should have index 5");
     }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void executeBlockWithBaseEventFromRepository(boolean activeRskip535) {
+        doReturn(activeRskip535).when(activationConfig).isActive(eq(ConsensusRule.RSKIP535), anyLong());
+        
+        // Create a block with BlockHeaderV2
+        Block parent = blockchain.getBestBlock();
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(parent);
+        
+        // Only test BlockHeaderV2 when RSKIP535 is active, as that's when it's created
+        if (activeRskip535) {
+            // Ensure we have a BlockHeaderV2
+            Assertions.assertTrue(block.getHeader() instanceof BlockHeaderV2, "Block should have BlockHeaderV2 header when RSKIP535 is active");
+            BlockHeaderV2 headerV2 = (BlockHeaderV2) block.getHeader();
+            
+            // Create a real repository with the expected baseEvent value
+            byte[] expectedBaseEvent = new byte[]{0x01, 0x02, 0x03, 0x04, 0x05};
+            Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
+            repository.startTracking();
+            
+            // Set the baseEvent in the repository at the bridge address
+            RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
+            DataWord baseEventKey = UnionBridgeStorageIndexKey.BASE_EVENT.getKey();
+            repository.addStorageBytes(bridgeAddress, baseEventKey, expectedBaseEvent);
+            repository.commit();
+            
+            // Update the parent block's state root to include our repository changes
+            parent.setStateRoot(repository.getRoot());
+            
+            // Create BlockExecutor with the real repository
+            BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+            
+            // Execute the block using executeAndFill to trigger the fill method
+            BlockResult result = executor.executeAndFill(block, parent.getHeader());
+            
+            Assertions.assertNotNull(result);
+            Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+            
+            // When RSKIP535 is active, the baseEvent should be set from repository
+            Assertions.assertArrayEquals(expectedBaseEvent,result.getBlock().getBaseEvent(),
+                    "BaseEvent should be set from repository when RSKIP535 is active");
+        } else {
+            // When RSKIP535 is not active, we should have a different header type
+            Assertions.assertFalse(block.getHeader() instanceof BlockHeaderV2, 
+                    "Block should not have BlockHeaderV2 header when RSKIP535 is not active");
+            
+            // Just verify the block executes successfully
+            BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+            BlockResult result = executor.executeAndFill(block, parent.getHeader());
+            
+            Assertions.assertNotNull(result);
+            Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+            Assertions.assertNull(result.getBlock().getBaseEvent());
+        }
+    }
+
 }

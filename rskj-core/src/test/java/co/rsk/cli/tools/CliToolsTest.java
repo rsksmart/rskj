@@ -361,9 +361,7 @@ class CliToolsTest {
     void importBlocksWithoutRskip351() throws IOException, DslProcessorException {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
-                rawConfig
-                        .withValue("blockchain.config.consensusRules.rskip351", ConfigValueFactory.fromAnyRef(-1))
-                        .withValue("blockchain.config.consensusRules.rskip481", ConfigValueFactory.fromAnyRef(-1))
+                rawConfig.withValue("blockchain.config.consensusRules.rskip351", ConfigValueFactory.fromAnyRef(-1))
         );
         Assertions.assertFalse(config.getActivationConfig().isActive(ConsensusRule.RSKIP351, 3));
         World world = new World(receiptStore, config);
@@ -374,9 +372,7 @@ class CliToolsTest {
     void importBlocksWithRskip351InMiddle() throws IOException, DslProcessorException {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
-                rawConfig
-                        .withValue("blockchain.config.consensusRules.rskip351", ConfigValueFactory.fromAnyRef(2))
-                        .withValue("blockchain.config.consensusRules.rskip481", ConfigValueFactory.fromAnyRef(2))
+                rawConfig.withValue("blockchain.config.consensusRules.rskip351", ConfigValueFactory.fromAnyRef(2))
         );
         Assertions.assertFalse(config.getActivationConfig().isActive(ConsensusRule.RSKIP351, 1));
         Assertions.assertTrue(config.getActivationConfig().isActive(ConsensusRule.RSKIP351, 2));

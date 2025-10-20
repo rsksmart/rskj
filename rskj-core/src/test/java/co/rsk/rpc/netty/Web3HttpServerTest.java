@@ -508,10 +508,6 @@ class Web3HttpServerTest {
         }
     }
 
-    private void smokeTest(String contentType, String host) throws Exception {
-        smokeTest(contentType, host, InetAddress.getLoopbackAddress(), new ArrayList<>());
-    }
-
     private void smokeTest(String contentType, String host, List<ModuleDescription> filteredModules, Function<Config, Config> decorator, String mockResult, String method) throws Exception {
         smokeTest(contentType, host, InetAddress.getLoopbackAddress(), new ArrayList<>(), filteredModules, decorator, mockResult, method);
     }

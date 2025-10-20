@@ -32,18 +32,18 @@ class BlockHeaderExtensionV2Test {
         byte[] logsBloom = new byte[256];
         Arrays.fill(logsBloom, (byte) 0xAB);
         short[] edges = new short[] {1, 2, 3};
-        byte[] bridgeEvent = new byte[] {0x01, 0x02};
+        byte[] baseEvent = new byte[] {0x01, 0x02};
 
-        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, edges, bridgeEvent);
+        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, edges, baseEvent);
 
         assertArrayEquals(logsBloom, ext.getLogsBloom());
         assertArrayEquals(edges, ext.getTxExecutionSublistsEdges());
-        assertArrayEquals(bridgeEvent, ext.getBridgeEvent());
+        assertArrayEquals(baseEvent, ext.getBridgeEvent());
         assertEquals(0x2, ext.getVersion());
     }
 
     @Test
-    void setBridgeEventCopiesArray() {
+    void setBaseEventCopiesArray() {
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, null, null);
         byte[] hash = new byte[] {0x0A, 0x0B};
         ext.setBridgeEvent(hash);
@@ -55,7 +55,7 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
-    void getBridgeEventReturnsCopy() {
+    void getBaseEventReturnsCopy() {
         byte[] hash = new byte[] {0x0A, 0x0B};
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, null, hash);
         byte[] returned = ext.getBridgeEvent();
@@ -138,14 +138,14 @@ class BlockHeaderExtensionV2Test {
     @Test
     void decodeWithEmptyEdges() {
         byte[] logsBloom = new byte[256];
-        byte[] bridgeEvent = new byte[128];
-        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, null, bridgeEvent);
+        byte[] baseEvent = new byte[128];
+        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, null, baseEvent);
         byte[] encoded = ext.getEncoded();
 
         BlockHeaderExtensionV2 decoded = BlockHeaderExtensionV2.fromEncoded(encoded);
 
         assertArrayEquals(logsBloom, decoded.getLogsBloom());
-        assertArrayEquals(bridgeEvent, decoded.getBridgeEvent());
+        assertArrayEquals(baseEvent, decoded.getBridgeEvent());
         assertNull(decoded.getTxExecutionSublistsEdges());
     }
 
@@ -153,8 +153,8 @@ class BlockHeaderExtensionV2Test {
     void decodeWithEmptyBridgeEvent() {
         byte[] logsBloom = new byte[256];
         short[] edges = new short[] {1};
-        byte[] bridgeEvent = new byte[0];
-        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, edges, bridgeEvent);
+        byte[] baseEvent = new byte[0];
+        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, edges, baseEvent);
         byte[] encoded = ext.getEncoded();
 
         BlockHeaderExtensionV2 decoded = BlockHeaderExtensionV2.fromEncoded(encoded);
