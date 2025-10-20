@@ -28,11 +28,11 @@ import java.util.List;
 
 public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
 
-    private byte[] bridgeEvent;
+    private byte[] baseEvent;
 
-    public BlockHeaderExtensionV2(byte[] logsBloom, short[] edges, byte[] bridgeEvent) {
+    public BlockHeaderExtensionV2(byte[] logsBloom, short[] edges, byte[] baseEvent) {
         super(logsBloom, edges);
-        this.bridgeEvent = bridgeEvent;
+        this.baseEvent = baseEvent;
     }
 
     @Override
@@ -41,11 +41,11 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
     }
 
     public byte[] getBridgeEvent() {
-        return bridgeEvent != null ? Arrays.copyOf(bridgeEvent, bridgeEvent.length) : null;
+        return baseEvent != null ? Arrays.copyOf(baseEvent, baseEvent.length) : null;
     }
 
-    public void setBridgeEvent(byte[] bridgeEvent) {
-        this.bridgeEvent = bridgeEvent != null ? Arrays.copyOf(bridgeEvent, bridgeEvent.length) : null;
+    public void setBridgeEvent(byte[] baseEvent) {
+        this.baseEvent = baseEvent != null ? Arrays.copyOf(baseEvent, baseEvent.length) : null;
     }
 
     @Override
@@ -62,12 +62,12 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
     public static BlockHeaderExtensionV2 fromEncoded(byte[] encoded) {
         RLPList rlpExtension = RLP.decodeList(encoded);
         byte[] logsBloom = rlpExtension.get(0).getRLPData();
-        byte[] bridgeEvent = rlpExtension.get(1).getRLPData();
+        byte[] baseEvent = rlpExtension.get(1).getRLPData();
 
         return new BlockHeaderExtensionV2(
                 logsBloom,
                 rlpExtension.size() == 3 ? toEdges(rlpExtension.get(2).getRLPRawData()) : null,
-                bridgeEvent
+                baseEvent
         );
     }
 

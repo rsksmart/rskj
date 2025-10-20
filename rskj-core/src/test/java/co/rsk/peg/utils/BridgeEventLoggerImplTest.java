@@ -205,11 +205,11 @@ class BridgeEventLoggerImplTest {
         commonAssertLogs();
         assertTopics(3);
 
-        CallTransaction.Function bridgeEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
+        CallTransaction.Function baseEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
         Object[] eventTopics = new Object[]{RSK_TX_HASH.getBytes(), expectedRskAddress.toString()};
         Object[] eventParams = new Object[]{federatorBtcPubKey.getPubKey()};
 
-        assertEvent(bridgeEvent, eventTopics, eventParams);
+        assertEvent(baseEvent, eventTopics, eventParams);
     }
 
     @Test

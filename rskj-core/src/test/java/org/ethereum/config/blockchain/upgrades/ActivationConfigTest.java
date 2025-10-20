@@ -19,7 +19,6 @@
 package org.ethereum.config.blockchain.upgrades;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP481;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -143,7 +142,7 @@ class ActivationConfigTest {
         "    rskip516: reed800",
         "    rskip529: reed810",
         "    rskip536: reed810",
-        "    rskip481: reed810",
+        "    rskip535: reed810",  // TODO: Maybe I should use 1
             "}"
     ));
 
@@ -213,13 +212,13 @@ class ActivationConfigTest {
 
     @Test
     void headerVersion0() {
-        ActivationConfig config = ActivationConfigsForTest.allBut(RSKIP351, RSKIP481);
+        ActivationConfig config = ActivationConfigsForTest.allBut(RSKIP351, RSKIP535);
         assertEquals((byte) 0x0, config.getHeaderVersion(10));
     }
 
     @Test
     void headerVersion1() {
-        ActivationConfig config = ActivationConfigsForTest.allBut(RSKIP481);
+        ActivationConfig config = ActivationConfigsForTest.allBut(RSKIP535);
         assertEquals((byte) 0x1, config.getHeaderVersion(10));
     }
 

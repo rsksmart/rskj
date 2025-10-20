@@ -43,7 +43,7 @@ public class BlockHeaderV0 extends BlockHeader {
     }
 
     private short[] txExecutionSublistsEdges;
-    private byte[] bridgeEvent;
+    private byte[] baseEvent;
 
     public BlockHeaderV0(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                          byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
@@ -51,7 +51,7 @@ public class BlockHeaderV0 extends BlockHeader {
                          Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                          byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                          Coin minimumGasPrice, int uncleCount, boolean sealed,
-                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, byte[] bridgeEvent, short[] txExecutionSublistsEdges) {
+                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, byte[] baseEvent, short[] txExecutionSublistsEdges) {
         super(parentHash, unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, logsBloom, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
@@ -60,7 +60,7 @@ public class BlockHeaderV0 extends BlockHeader {
                 minimumGasPrice, uncleCount, sealed,
                 useRskip92Encoding, includeForkDetectionData, ummRoot);
         this.txExecutionSublistsEdges = txExecutionSublistsEdges != null ? Arrays.copyOf(txExecutionSublistsEdges, txExecutionSublistsEdges.length) : null;
-        this.bridgeEvent = bridgeEvent != null ? Arrays.copyOf(bridgeEvent, bridgeEvent.length) : null;
+        this.baseEvent = baseEvent != null ? Arrays.copyOf(baseEvent, baseEvent.length) : null;
     }
 
     // logs bloom is stored in the extension data
@@ -90,19 +90,19 @@ public class BlockHeaderV0 extends BlockHeader {
     }
 
     @Override
-    public byte[] getBridgeEvent() {
-        return bridgeEvent != null ? Arrays.copyOf(bridgeEvent, bridgeEvent.length) : null;
+    public byte[] getBaseEvent() {
+        return baseEvent != null ? Arrays.copyOf(baseEvent, baseEvent.length) : null;
     }
 
     @Override
-    public void setBridgeEvent(byte[] bridgeEvent) {
+    public void setBaseEvent(byte[] baseEvent) {
         /* A sealed block header is immutable, cannot be changed */
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter super chain data hash");
         }
         this.hash = null;
 
-        this.bridgeEvent = bridgeEvent;
+        this.baseEvent = baseEvent;
     }
 
     @Override
@@ -113,6 +113,6 @@ public class BlockHeaderV0 extends BlockHeader {
         // 2. keep compressed encoding the same as uncompressed
         //    since this difference should not exist on v0
         this.addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
-        this.addBridgeEvent(fieldsToEncode);
+        this.addBaseEvent(fieldsToEncode);
     }
 }

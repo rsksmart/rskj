@@ -46,15 +46,15 @@ class BlockHeaderV2Test {
     void testGetAndSetSuperChainDataHash() {
         BlockHeaderV2 header = createHeaderV2();
         byte[] hash = new byte[]{1, 2, 3, 4};
-        header.setBridgeEvent(hash);
-        assertArrayEquals(hash, header.getBridgeEvent());
+        header.setBaseEvent(hash);
+        assertArrayEquals(hash, header.getBaseEvent());
     }
 
     @Test
     void testSetSuperChainDataHashThrowsIfSealed() {
         BlockHeaderV2 header = createHeaderV2();
         header.seal();
-        assertThrows(SealedBlockHeaderException.class, () -> header.setBridgeEvent(new byte[]{1}));
+        assertThrows(SealedBlockHeaderException.class, () -> header.setBaseEvent(new byte[]{1}));
     }
 
     @Test
@@ -135,7 +135,7 @@ class BlockHeaderV2Test {
                 false, // useRskip92Encoding
                 false, // includeForkDetectionData
                 new byte[0], // ummRoot
-                new byte[32], // bridgeEvent
+                new byte[32], // baseEvent
                 new short[0], // txExecutionSublistsEdges
                 false // compressed
         );
