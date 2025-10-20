@@ -27,20 +27,44 @@ import org.slf4j.LoggerFactory;
 public class DifficultyMetricsRecorder {
     private static final Logger logger = LoggerFactory.getLogger(DifficultyMetricsRecorder.class);
 
+    // Singleton instance (lazily initialized)
+    private static volatile DifficultyMetricsRecorder instance;
+
     // File path requires write permissions - see class-level documentation
     private static final String CSV_FILE_PATH = "/var/log/rsk/difficulty_calculation_metrics.csv";
 
     // The expected size of the block window
-    private final int blockWindowSize = 30;
-    // A list of previous log entries used to calculate the metrics
+    private static final int BLOCK_WINDOW_SIZE = 30;
+
+    // Instance fields
     private final List<LogEntry> logEntries;
-    // The last block number processed (to avoid processing the same block twice)
     private long lastBlockNumber = 0;
 
-    public DifficultyMetricsRecorder() {
+    /**
+     * Private constructor for singleton pattern.
+     * Performs one-time initialization of the CSV file.
+     */
+    private DifficultyMetricsRecorder() {
         this.logEntries = new ArrayList<>();
-        logger.info("Dumping difficulty calculation metrics to file: {}", CSV_FILE_PATH);
+        logger.info("Initializing difficulty metrics recorder. Output file: {}", CSV_FILE_PATH);
         ensureCsvFileExists();
+    }
+
+    /**
+     * Gets the singleton instance of DifficultyMetricsRecorder.
+     * Uses double-checked locking for thread-safe lazy initialization.
+     *
+     * @return the singleton instance
+     */
+    public static DifficultyMetricsRecorder getInstance() {
+        if (instance == null) {
+            synchronized (DifficultyMetricsRecorder.class) {
+                if (instance == null) {
+                    instance = new DifficultyMetricsRecorder();
+                }
+            }
+        }
+        return instance;
     }
 
     /**
@@ -115,11 +139,11 @@ public class DifficultyMetricsRecorder {
                     calcUncleRate(blockHeader), calcBlockTimeAverage(blockHeader));
             logEntries.add(newEntry);
             // Ensure the window size is not exceeded
-            if (logEntries.size() > blockWindowSize) {
+            if (logEntries.size() > BLOCK_WINDOW_SIZE) {
                 logEntries.remove(0);
             }
             // Only start logging when the window is full
-            if (logEntries.size() == blockWindowSize) {
+            if (logEntries.size() == BLOCK_WINDOW_SIZE) {
                 logMetrics();
             } else {
                 logger.info("Window is not full yet. Current window size: {}", logEntries.size());
@@ -183,7 +207,7 @@ public class DifficultyMetricsRecorder {
     }
 
     private void logMetrics() {
-        if (logEntries.size() != blockWindowSize) {
+        if (logEntries.size() != BLOCK_WINDOW_SIZE) {
             throw new IllegalArgumentException(
                     "log entries size is not equal to the block window size");
         }

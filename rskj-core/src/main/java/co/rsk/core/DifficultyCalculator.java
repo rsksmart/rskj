@@ -31,20 +31,17 @@ import co.rsk.metrics.DifficultyMetricsRecorder;
 public class DifficultyCalculator {
     private final ActivationConfig activationConfig;
     private final Constants constants;
-    private final DifficultyMetricsRecorder difficultyMetricsRecorder;
     private final boolean isDifficultyMetricsEnabled;
 
     public DifficultyCalculator(ActivationConfig activationConfig, Constants constants) {
         this.activationConfig = activationConfig;
         this.constants = constants;
-        this.difficultyMetricsRecorder = null;
         this.isDifficultyMetricsEnabled = false;
     }
 
     public DifficultyCalculator(ActivationConfig activationConfig, Constants constants, boolean isDifficultyMetricsEnabled) {
         this.activationConfig = activationConfig;
         this.constants = constants;
-        this.difficultyMetricsRecorder = isDifficultyMetricsEnabled ? new DifficultyMetricsRecorder() : null;
         this.isDifficultyMetricsEnabled = isDifficultyMetricsEnabled;
     }
 
@@ -58,8 +55,8 @@ public class DifficultyCalculator {
         }
 
         BlockDifficulty blockDifficulty = getBlockDifficulty(header, parentHeader);
-        if (isDifficultyMetricsEnabled && difficultyMetricsRecorder != null) {
-            difficultyMetricsRecorder.addBlock(header, blockDifficulty, parentHeader.getDifficulty());
+        if (isDifficultyMetricsEnabled) {
+            DifficultyMetricsRecorder.getInstance().addBlock(header, blockDifficulty, parentHeader.getDifficulty());
         }
         return blockDifficulty;
     }
