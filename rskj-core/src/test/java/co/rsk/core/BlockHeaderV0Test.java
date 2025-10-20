@@ -4,6 +4,7 @@ import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeaderExtensionV1;
 import org.ethereum.core.BlockHeaderV0;
+import org.ethereum.core.SuperBlockResolver;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Assertions;
@@ -39,6 +40,8 @@ class BlockHeaderV0Test {
                 false,
                 false,
                 null,
+                null,
+                SuperBlockResolver.FALSE,
                 edges
         );
     }

@@ -1,3 +1,22 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2024 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.ethereum.core;
 
 import com.google.common.collect.Lists;
@@ -19,6 +38,11 @@ public class BlockHeaderExtensionV1 implements BlockHeaderExtension {
     }
 
     @Override
+    public byte getVersion() {
+        return 0x1;
+    }
+
+    @Override
     public byte[] getHash() {
         return HashUtil.keccak256(this.getEncodedForHash());
     }
@@ -26,9 +50,10 @@ public class BlockHeaderExtensionV1 implements BlockHeaderExtension {
     @Override
     public byte[] getEncoded() {
         List<byte[]> fieldToEncodeList = Lists.newArrayList(RLP.encodeElement(this.getLogsBloom()));
-        this.addEdgesEncoded(fieldToEncodeList);
+        this.addElementsEncoded(fieldToEncodeList);
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
     }
+
     public byte[] getLogsBloom() { return this.logsBloom; }
     public void setLogsBloom(byte[] logsBloom) { this.logsBloom = logsBloom; }
 
@@ -43,7 +68,7 @@ public class BlockHeaderExtensionV1 implements BlockHeaderExtension {
         );
     }
 
-    private void addEdgesEncoded(List<byte[]> fieldToEncodeList) {
+    protected void addElementsEncoded(List<byte[]> fieldToEncodeList) {
         short[] internalExecutionSublistsEdges = this.getTxExecutionSublistsEdges();
         if (internalExecutionSublistsEdges != null) {
             fieldToEncodeList.add(ByteUtil.shortsToRLP(internalExecutionSublistsEdges));
@@ -52,7 +77,7 @@ public class BlockHeaderExtensionV1 implements BlockHeaderExtension {
 
     private byte[] getEncodedForHash() {
         List<byte[]> fieldToEncodeList = Lists.newArrayList(RLP.encodeElement(HashUtil.keccak256(this.getLogsBloom())));
-        this.addEdgesEncoded(fieldToEncodeList);
+        this.addElementsEncoded(fieldToEncodeList);
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
     }
 }

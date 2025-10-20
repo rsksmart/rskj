@@ -23,9 +23,11 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.SuperBlockFields;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.*;
 import co.rsk.net.handler.quota.TxQuotaChecker;
@@ -163,9 +165,12 @@ public class TestRunner {
                 null,
                 new DummyBlockValidator(),
                 new BlockExecutor(
+                        blockStore,
+                        receiptStore,
                         new RepositoryLocator(trieStore, stateRootHandler),
                         transactionExecutorFactory,
-                        config),
+                        config,
+                        new SuperDifficultyCalculator(config.getNetworkConstants())),
                 stateRootHandler
         );
 
@@ -688,7 +693,7 @@ public class TestRunner {
             transactions.add(TransactionBuilder.build(tx));
 
         BlockHeader blockHeader = buildHeader(blockFactory, header);
-        return blockFactory.newBlock(blockHeader, transactions, uncles);
+        return blockFactory.newBlock(blockHeader, transactions, uncles, null);
     }
 
 

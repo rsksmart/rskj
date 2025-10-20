@@ -23,6 +23,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockHashesHelper;
+import co.rsk.core.bc.SuperBlockFields;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
@@ -36,6 +37,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The block in Ethereum is the collection of relevant pieces of information
@@ -51,11 +53,13 @@ import java.util.List;
 public class Block {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private BlockHeader header;
+    private final BlockHeader header;
+
+    private final List<BlockHeader> uncleList;
 
     private List<Transaction> transactionsList;
 
-    private List<BlockHeader> uncleList;
+    private SuperBlockFields superBlockFields;
 
     /* Private */
     private byte[] rlpEncoded;
@@ -64,14 +68,14 @@ public class Block {
     private volatile boolean sealed;
 
     public static Block createBlockFromHeader(BlockHeader header, boolean isRskip126Enabled) {
-        return new Block(header, Collections.emptyList(), Collections.emptyList(), isRskip126Enabled, true, false);
+        return new Block(header, Collections.emptyList(), Collections.emptyList(), null, isRskip126Enabled, true, false);
     }
 
-    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, boolean sealed) {
-        this(header, transactionsList, uncleList, isRskip126Enabled, sealed, true);
+    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, SuperBlockFields superBlockFields, boolean isRskip126Enabled, boolean sealed) {
+        this(header, transactionsList, uncleList, superBlockFields, isRskip126Enabled, sealed, true);
     }
 
-    private Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, boolean sealed, boolean checktxs) {
+    private Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, SuperBlockFields superBlockFields, boolean isRskip126Enabled, boolean sealed, boolean checktxs) {
         byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList, isRskip126Enabled);
 
         if (checktxs && !Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
@@ -85,6 +89,7 @@ public class Block {
         this.header = header;
         this.transactionsList = ImmutableList.copyOf(transactionsList);
         this.uncleList = ImmutableList.copyOf(uncleList);
+        this.superBlockFields = superBlockFields;
         this.sealed = sealed;
     }
 
@@ -302,6 +307,10 @@ public class Block {
         body.add(transactions);
         body.add(uncles);
 
+        if (superBlockFields != null && this.header.isSuper().orElse(true)) {
+            body.add(superBlockFields.getEncoded());
+        }
+
         return body;
     }
 
@@ -376,8 +385,53 @@ public class Block {
         rlpEncoded = null;
     }
 
+    public SuperBlockFields getSuperBlockFields() {
+        return superBlockFields;
+    }
+
+    public void setSuperChainFields(SuperBlockFields superBlockFields) {
+        if (this.sealed) {
+            throw new SealedBlockException("trying to alter superchain fields");
+        }
+
+        if (superBlockFields == null) {
+            this.header.setSuperChainDataHash(null);
+            this.superBlockFields = null;
+        } else {
+            this.header.setSuperChainDataHash(superBlockFields.getHash().getBytes());
+            this.superBlockFields = superBlockFields;
+        }
+        rlpEncoded = null;
+    }
+
+    public void clearSuperChainFields() {
+        if (this.sealed) {
+            throw new SealedBlockException("trying to alter superchain fields");
+        }
+
+        this.superBlockFields = null;
+        rlpEncoded = null;
+    }
+
+    public Optional<Boolean> isSuper() {
+        return this.header.isSuper();
+    }
+
+    public void setSuperBlockResolver(SuperBlockResolver isSuperResolver) {
+        if (this.sealed) {
+            throw new SealedBlockException("trying to alter isSuper flag");
+        }
+
+        this.header.setSuperBlockResolver(isSuperResolver);
+        rlpEncoded = null;
+    }
+
     public BigInteger getGasLimitAsInteger() {
         return (this.getGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getGasLimit());
+    }
+
+    public byte[] getSuperChainDataHash() {
+        return header.getSuperChainDataHash();
     }
 
     public void flushRLP() {

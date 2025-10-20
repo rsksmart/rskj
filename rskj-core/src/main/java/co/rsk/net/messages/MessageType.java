@@ -19,6 +19,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.bc.SuperBlockFields;
 import co.rsk.net.Status;
 import co.rsk.remasc.RemascTransaction;
 import org.bouncycastle.util.BigIntegers;
@@ -233,11 +234,21 @@ public enum MessageType {
                 uncles.add(blockFactory.decodeHeader(element.getRLPData(), false));
             }
 
-            BlockHeaderExtension blockHeaderExtension = message.size() == 3
-                    ? BlockHeaderExtension.fromEncoded(message.get(2).getRLPData())
-                    : null;
+            BlockHeaderExtension blockHeaderExtension = null;
+            SuperBlockFields superBlockFields = null;
 
-            return new BodyResponseMessage(id, transactions, uncles, blockHeaderExtension);
+            if (message.size() == 3) {
+                try {
+                    blockHeaderExtension = BlockHeaderExtension.fromEncoded(message.get(2).getRLPData());
+                } catch (RuntimeException e) {
+                    superBlockFields = blockFactory.decodeSuperBlockFields(message.get(2).getRLPData());
+                }
+            } else if (message.size() == 4) {
+                blockHeaderExtension = BlockHeaderExtension.fromEncoded(message.get(2).getRLPData());
+                superBlockFields = blockFactory.decodeSuperBlockFields(message.get(3).getRLPData());
+            }
+
+            return new BodyResponseMessage(id, transactions, uncles, blockHeaderExtension, superBlockFields);
         }
     },
     SKELETON_REQUEST_MESSAGE(16) {

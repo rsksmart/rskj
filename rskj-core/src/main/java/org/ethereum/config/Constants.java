@@ -61,6 +61,13 @@ public class Constants {
     private static final int MINIMUM_DIFFICULTY = 131072;
     private static final int TESTNET_AND_DEVNET_DURATION_LIMIT = 14;
     private static final int REGTEST_DURATION_LIMIT = 10;
+    private static final BigInteger SUPER_BLOCK_DIFFICULTY_RETARGETING_INTERVAL = BigInteger.valueOf(168L);
+    private static final BigInteger SUPER_BLOCK_EXPECTED_RETARGETING_INTERVAL_IN_SECONDS = BigInteger.valueOf(604800); // 1 week
+    private static final BigInteger SUPER_BLOCK_DIFFICULTY_MIN_CORRECTION_FACTOR = BigInteger.valueOf(64);
+    private static final BigInteger SUPER_BLOCK_DIFFICULTY_MAX_CORRECTION_FACTOR = BigInteger.valueOf(192);
+    private static final Integer SUPER_BLOCK_DIFFICULTY_CORRECTION_FACTOR_SHIFT = 7;
+    private static final BigInteger REGTEST_SUPER_BLOCK_DIFFICULTY_RETARGETING_INTERVAL = BigInteger.valueOf(3L);
+    private static final BigInteger REGTEST_SUPER_BLOCK_EXPECTED_RETARGETING_INTERVAL_IN_SECONDS = BigInteger.valueOf(10);
 
     private final byte chainId;
     private final boolean seedCowAccounts;
@@ -73,6 +80,12 @@ public class Constants {
     public final BridgeConstants bridgeConstants;
     private final ActivationConfig activationConfig;
     private final long minSequentialSetGasLimit;
+    private final BigInteger minSuperBlockPoWFactor = BigInteger.valueOf(20);
+    private final BigInteger superBlockRetargetingInterval;
+    private final BigInteger superBlockExpectedRetargetIntervalInSeconds;
+    private final BigInteger superBlockDifficultyMinCorrectionFactor;
+    private final BigInteger superBlockDifficultyMaxCorrectionFactor;
+    private final Integer superBlockDifficultyCorrectionFactorShift;
 
     public Constants(
             byte chainId,
@@ -85,7 +98,12 @@ public class Constants {
             BridgeConstants bridgeConstants,
             ActivationConfig activationConfig,
             BlockDifficulty minimumDifficultyForRskip290,
-            long minSequentialSetGasLimit) {
+            long minSequentialSetGasLimit,
+            BigInteger superBlockRetargetingInterval,
+            BigInteger superBlockExpectedRetargetIntervalInSeconds,
+            BigInteger superBlockDifficultyMinCorrectionFactor,
+            BigInteger superBlockDifficultyMaxCorrectionFactor,
+            Integer superBlockDifficultyCorrectionFactorShift) {
         this.chainId = chainId;
         this.seedCowAccounts = seedCowAccounts;
         this.durationLimit = durationLimit;
@@ -97,6 +115,11 @@ public class Constants {
         this.activationConfig = activationConfig;
         this.minimumDifficultyForRskip290 = minimumDifficultyForRskip290;
         this.minSequentialSetGasLimit = minSequentialSetGasLimit;
+        this.superBlockRetargetingInterval =  superBlockRetargetingInterval;
+        this.superBlockExpectedRetargetIntervalInSeconds = superBlockExpectedRetargetIntervalInSeconds;
+        this.superBlockDifficultyMinCorrectionFactor = superBlockDifficultyMinCorrectionFactor;
+        this.superBlockDifficultyMaxCorrectionFactor = superBlockDifficultyMaxCorrectionFactor;
+        this.superBlockDifficultyCorrectionFactorShift = superBlockDifficultyCorrectionFactorShift;
     }
 
     public Constants(
@@ -109,7 +132,12 @@ public class Constants {
             int newBlockMaxSecondsInTheFuture,
             BridgeConstants bridgeConstants,
             BlockDifficulty minimumDifficultyForRskip290,
-            long minSequentialSetGasLimit) {
+            long minSequentialSetGasLimit,
+            BigInteger superBlockRetargetingInterval,
+            BigInteger superBlockExpectedRetargetIntervalInSeconds,
+            BigInteger superBlockDifficultyMinCorrectionFactor,
+            BigInteger superBlockDifficultyMaxCorrectionFactor,
+            Integer superBlockDifficultyCorrectionFactorShift) {
         this(chainId,
                 seedCowAccounts,
                 durationLimit,
@@ -120,8 +148,13 @@ public class Constants {
                 bridgeConstants,
                 null,
                 minimumDifficultyForRskip290,
-                minSequentialSetGasLimit
-                );
+                minSequentialSetGasLimit,
+                superBlockRetargetingInterval,
+                superBlockExpectedRetargetIntervalInSeconds,
+                superBlockDifficultyMinCorrectionFactor,
+                superBlockDifficultyMaxCorrectionFactor,
+                superBlockDifficultyCorrectionFactorShift
+        );
     }
 
     public boolean seedCowAccounts() {
@@ -257,6 +290,30 @@ public class Constants {
         return minSequentialSetGasLimit;
     }
 
+    public BigInteger getMinSuperBlockPoWFactor() {
+        return minSuperBlockPoWFactor;
+    }
+
+    public BigInteger getSuperBlockRetargetingInterval() {
+        return superBlockRetargetingInterval;
+    }
+
+    public BigInteger getSuperBlockExpectedRetargetIntervalInSeconds() {
+        return superBlockExpectedRetargetIntervalInSeconds;
+    }
+
+    public BigInteger getSuperBlockDifficultyMinCorrectionFactor() {
+        return superBlockDifficultyMinCorrectionFactor;
+    }
+
+    public BigInteger getSuperBlockDifficultyMaxCorrectionFactor() {
+        return superBlockDifficultyMaxCorrectionFactor;
+    }
+
+    public Integer getSuperBlockDifficultyCorrectionFactorShift() {
+        return superBlockDifficultyCorrectionFactorShift;
+    }
+
     public static Constants mainnet() {
         return new Constants(
                 MAINNET_CHAIN_ID,
@@ -268,7 +325,12 @@ public class Constants {
                 60,
                 BridgeMainNetConstants.getInstance(),
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT
+                MIN_SEQUENTIAL_SET_GAS_LIMIT,
+                SUPER_BLOCK_DIFFICULTY_RETARGETING_INTERVAL,
+                SUPER_BLOCK_EXPECTED_RETARGETING_INTERVAL_IN_SECONDS,
+                SUPER_BLOCK_DIFFICULTY_MIN_CORRECTION_FACTOR,
+                SUPER_BLOCK_DIFFICULTY_MAX_CORRECTION_FACTOR,
+                SUPER_BLOCK_DIFFICULTY_CORRECTION_FACTOR_SHIFT
         );
     }
 
@@ -283,7 +345,12 @@ public class Constants {
                 NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
                 new BridgeDevNetConstants(),
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT
+                MIN_SEQUENTIAL_SET_GAS_LIMIT,
+                SUPER_BLOCK_DIFFICULTY_RETARGETING_INTERVAL,
+                SUPER_BLOCK_EXPECTED_RETARGETING_INTERVAL_IN_SECONDS,
+                SUPER_BLOCK_DIFFICULTY_MIN_CORRECTION_FACTOR,
+                SUPER_BLOCK_DIFFICULTY_MAX_CORRECTION_FACTOR,
+                SUPER_BLOCK_DIFFICULTY_CORRECTION_FACTOR_SHIFT
         );
     }
 
@@ -299,7 +366,12 @@ public class Constants {
                 BridgeTestNetConstants.getInstance(),
                 activationConfig,
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT
+                MIN_SEQUENTIAL_SET_GAS_LIMIT,
+                SUPER_BLOCK_DIFFICULTY_RETARGETING_INTERVAL,
+                SUPER_BLOCK_EXPECTED_RETARGETING_INTERVAL_IN_SECONDS,
+                SUPER_BLOCK_DIFFICULTY_MIN_CORRECTION_FACTOR,
+                SUPER_BLOCK_DIFFICULTY_MAX_CORRECTION_FACTOR,
+                SUPER_BLOCK_DIFFICULTY_CORRECTION_FACTOR_SHIFT
         );
     }
 
@@ -315,7 +387,12 @@ public class Constants {
                 BridgeTestNetConstants.getInstance(),
                 activationConfig,
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT
+                MIN_SEQUENTIAL_SET_GAS_LIMIT,
+                SUPER_BLOCK_DIFFICULTY_RETARGETING_INTERVAL,
+                SUPER_BLOCK_EXPECTED_RETARGETING_INTERVAL_IN_SECONDS,
+                SUPER_BLOCK_DIFFICULTY_MIN_CORRECTION_FACTOR,
+                SUPER_BLOCK_DIFFICULTY_MAX_CORRECTION_FACTOR,
+                SUPER_BLOCK_DIFFICULTY_CORRECTION_FACTOR_SHIFT
         );
     }
 
@@ -330,7 +407,12 @@ public class Constants {
                 0,
                 new BridgeRegTestConstants(),
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                1_000_000L
+                1_000_000L,
+                REGTEST_SUPER_BLOCK_DIFFICULTY_RETARGETING_INTERVAL,
+                REGTEST_SUPER_BLOCK_EXPECTED_RETARGETING_INTERVAL_IN_SECONDS,
+                SUPER_BLOCK_DIFFICULTY_MIN_CORRECTION_FACTOR,
+                SUPER_BLOCK_DIFFICULTY_MAX_CORRECTION_FACTOR,
+                SUPER_BLOCK_DIFFICULTY_CORRECTION_FACTOR_SHIFT
         );
     }
 
@@ -345,7 +427,12 @@ public class Constants {
                 0,
                 new BridgeRegTestConstants(federationPublicKeys),
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                1_000_000L
+                1_000_000L,
+                SUPER_BLOCK_DIFFICULTY_RETARGETING_INTERVAL,
+                SUPER_BLOCK_EXPECTED_RETARGETING_INTERVAL_IN_SECONDS,
+                SUPER_BLOCK_DIFFICULTY_MIN_CORRECTION_FACTOR,
+                SUPER_BLOCK_DIFFICULTY_MAX_CORRECTION_FACTOR,
+                SUPER_BLOCK_DIFFICULTY_CORRECTION_FACTOR_SHIFT
         );
     }
 }

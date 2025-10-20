@@ -108,6 +108,30 @@ public interface Bytes extends BytesSlice {
         return FastByteComparisons.equalBytes(b1.asUnsafeByteArray(), b2.asUnsafeByteArray());
     }
 
+    static boolean equalByteSlices(BytesSlice b1, BytesSlice b2) {
+        if (b1 == null && b2 == null) {
+            return true;
+        }
+        if (b1 == null || b2 == null) {
+            return false;
+        }
+        if (b1 instanceof Bytes && b2 instanceof Bytes) {
+            return equalBytes((Bytes) b1, (Bytes) b2);
+        }
+
+        int b1Len = b1.length();
+        int b2Len = b2.length();
+        if (b1Len != b2Len) {
+            return false;
+        }
+        for (int i = 0; i < b1Len; i++) {
+            if (b1.byteAt(i) != b2.byteAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * Returns an underlying byte array, which is backing this instance. Any
      * mutations that are being done with the bytes

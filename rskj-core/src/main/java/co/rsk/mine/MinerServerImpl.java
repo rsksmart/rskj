@@ -35,15 +35,13 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
 
+import co.rsk.util.SuperChainUtils;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Arrays;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.ImportResult;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionReceipt;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.BuildInfo;
@@ -94,6 +92,7 @@ public class MinerServerImpl implements MinerServer {
     private final MiningMainchainView mainchainView;
     private final ProofOfWorkRule powRule;
     private final BlockToMineBuilder builder;
+    private final Constants constants;
     private final ActivationConfig activationConfig;
     private final MinerClock clock;
     private final BlockFactory blockFactory;
@@ -161,6 +160,7 @@ public class MinerServerImpl implements MinerServer {
         this.builder = builder;
         this.clock = clock;
         this.blockFactory = blockFactory;
+        this.constants = config.getNetworkConstants();
         this.activationConfig = config.getActivationConfig();
 
         this.submissionRateLimitHandler = Objects.requireNonNull(submissionRateLimitHandler);
@@ -332,9 +332,17 @@ public class MinerServerImpl implements MinerServer {
 
         logger.info("Received block {} {}", newBlock.getNumber(), newBlock.getHash());
 
-        newBlock.setBitcoinMergedMiningHeader(blockWithHeaderOnly.cloneAsHeader().bitcoinSerialize());
+        BtcBlock btcBlock = blockWithHeaderOnly.cloneAsHeader();
+        newBlock.setBitcoinMergedMiningHeader(btcBlock.bitcoinSerialize());
         newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(coinbase.bitcoinSerialize(), lastTag));
         newBlock.setBitcoinMergedMiningMerkleProof(MinerUtils.buildMerkleProof(activationConfig, proofBuilderFunction, newBlock.getNumber()));
+        if (activationConfig.isActive(ConsensusRule.RSKIP481, newBlock.getNumber())) {
+            boolean isSuperBlock = SuperChainUtils.isSuperBlock(constants, activationConfig, newBlock.getNumber(), newBlock.getDifficulty(), btcBlock);
+            newBlock.setSuperBlockResolver(SuperBlockResolver.of(isSuperBlock));
+            if (!isSuperBlock) {
+                newBlock.clearSuperChainFields();
+            }
+        }
         newBlock.seal();
 
         if (!isValid(newBlock)) {

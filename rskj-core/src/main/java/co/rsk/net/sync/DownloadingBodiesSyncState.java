@@ -119,7 +119,7 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         header.setExtension(message.getBlockHeaderExtension());
         Block block;
         try {
-            block = blockFactory.newBlock(header, message.getTransactions(), message.getUncles());
+            block = blockFactory.newBlock(header, message.getTransactions(), message.getUncles(), message.getSuperBlockFields());
             block.seal();
         } catch (IllegalArgumentException ex) {
             handleInvalidBody(peer, header);

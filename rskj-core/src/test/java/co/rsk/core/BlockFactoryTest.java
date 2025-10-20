@@ -488,7 +488,7 @@ class BlockFactoryTest {
         byte[] encoded = header.getEncodedCompressed();
 
         BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 1,  null, null);
-        Assertions.assertArrayEquals(BlockHeaderV1.createExtensionData(header.getExtension().getHash()), decodedHeader.getExtensionData());
+        Assertions.assertArrayEquals(BlockHeaderV1.createExtensionData(header.getExtension()), decodedHeader.getExtensionData());
     }
 
     @Test
@@ -565,7 +565,7 @@ class BlockFactoryTest {
         byte[] encoded = header.getFullEncoded();
 
         BlockHeader decodedHeader = testRSKIP351FullHeaderEncoding(encoded, (byte) 1,  logsBloom, edges);
-        Assertions.assertArrayEquals(BlockHeaderV1.createExtensionData(header.getExtension().getHash()), decodedHeader.getExtensionData());
+        Assertions.assertArrayEquals(BlockHeaderV1.createExtensionData(header.getExtension()), decodedHeader.getExtensionData());
     }
 
     @Test

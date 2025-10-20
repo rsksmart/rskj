@@ -694,7 +694,8 @@ public class Web3Impl implements Web3 {
     }
 
     public BlockResultDTO getBlockResult(Block b, boolean fullTx) {
-        return BlockResultDTO.fromBlock(b, fullTx, this.blockStore, config.skipRemasc(), config.rpcZeroSignatureIfRemasc(), signatureCache);
+        return BlockResultDTO.fromBlock(b, fullTx, this.blockStore, this.config.getNetworkConstants(),
+                this.config.getActivationConfig(), config.skipRemasc(), config.rpcZeroSignatureIfRemasc(), signatureCache);
     }
 
     public BlockInformationResult[] eth_getBlocksByNumber(String number) {

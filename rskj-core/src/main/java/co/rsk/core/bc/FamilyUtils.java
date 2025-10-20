@@ -19,16 +19,17 @@
 package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.lang.Math.max;
 
@@ -36,6 +37,8 @@ import static java.lang.Math.max;
  * Created by ajlopez on 12/08/2016.
  */
 public class FamilyUtils {
+
+    public record FindSuperParentAndBridgeEventResponse (Block superParent, SuperBridgeEvent superBridgeEvent) {}
 
     /**
      * Calculate the set of hashes of ancestors of a block
@@ -105,7 +108,7 @@ public class FamilyUtils {
         return getUnclesHeaders(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
+    public static List<BlockHeader> getUnclesHeaders(@Nonnull BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
         List<BlockHeader> uncles = new ArrayList<>();
         Set<Keccak256> unclesHeaders = getUncles(store, blockNumber, parentHash, levels);
 
@@ -169,5 +172,51 @@ public class FamilyUtils {
         }
 
         return family;
+    }
+
+    public static FindSuperParentAndBridgeEventResponse findSuperParentAndBridgeEvent(
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            Block block,
+            List<TransactionReceipt> blockReceipts) {
+        Pair<Block, List<Block>> superParentAndAncestors = findSuperParentAndAncestors(blockStore, block.getHeader());
+        Block superParent = superParentAndAncestors.getLeft();
+        List<Block> ancestors = superParentAndAncestors.getRight();
+
+        if (superParent == null) {
+            return new FindSuperParentAndBridgeEventResponse(null,  null);
+        }
+
+        SuperBridgeEvent bridgeEvent = SuperBridgeEvent.findEvent(
+                Stream.concat(
+                        blockReceipts.stream(),
+                        BlockUtils.makeReceiptsStream(receiptStore, ancestors, SuperBridgeEvent.FILTER)
+                )
+        );
+
+        return new FindSuperParentAndBridgeEventResponse(superParent, bridgeEvent);
+    }
+
+    public static Pair<Block, List<Block>> findSuperParentAndAncestors(BlockStore blockStore, BlockHeader header) {
+        Block parent = blockStore.getBlockByHash(header.getParentHash().getBytes());
+        if (parent == null) {
+            return Pair.of(null, Collections.emptyList());
+        }
+        List<Block> ancestors = new ArrayList<>();
+        while (true) {
+            if (parent.getHeader().isSuper().orElse(false)) {
+                Objects.requireNonNull(parent.getSuperChainDataHash());
+                return Pair.of(parent, ancestors);
+            }
+            if (parent.getSuperChainDataHash() == null) {
+                return Pair.of(null, Collections.emptyList());
+            }
+
+            ancestors.add(parent);
+            parent = blockStore.getBlockByHash(parent.getParentHash().getBytes());
+            if (parent == null) {
+                return Pair.of(null, Collections.emptyList());
+            }
+        }
     }
 }

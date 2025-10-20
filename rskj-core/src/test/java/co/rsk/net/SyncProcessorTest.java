@@ -5,6 +5,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
+import co.rsk.core.bc.SuperBlockFields;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
@@ -580,7 +581,7 @@ class SyncProcessorTest {
                 mock(Genesis.class),
                 mock(EthereumListener.class));
 
-        BodyResponseMessage response = new BodyResponseMessage(TestUtils.generateLong("response"), null, null, null);
+        BodyResponseMessage response = new BodyResponseMessage(TestUtils.generateLong("response"), null, null, null, null);
         processor.registerExpectedMessage(response);
 
         processor.processBodyResponse(sender, response);
@@ -616,9 +617,10 @@ class SyncProcessorTest {
                 mock(EthereumListener.class));
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
+        SuperBlockFields superBlockFields = blockchain.getBestBlock().getSuperBlockFields();
         BlockHeaderExtension extension = blockchain.getBestBlock().getHeader().getExtension();
         long lastRequestId = TestUtils.generateLong("lastRequestId");
-        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles, extension);
+        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles, extension, superBlockFields);
         processor.registerExpectedMessage(response);
 
         Deque<BlockHeader> headerStack = new ArrayDeque<>();
@@ -682,6 +684,7 @@ class SyncProcessorTest {
                 mock(Genesis.class),
                 listener);
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
+        SuperBlockFields superBlockFields = blockchain.getBestBlock().getSuperBlockFields();
         BlockHeaderExtension extension = blockchain.getBestBlock().getHeader().getExtension();
         Account senderAccount = createAccount("sender");
         Account receiverAccount = createAccount("receiver");
@@ -690,7 +693,7 @@ class SyncProcessorTest {
         txs.add(tx);
 
         long lastRequestId = TestUtils.generateLong("lastRequestId");
-        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, txs, uncles, extension);
+        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, txs, uncles, extension, superBlockFields);
         processor.registerExpectedMessage(response);
 
         Deque<BlockHeader> headerStack = new ArrayDeque<>();
@@ -746,9 +749,10 @@ class SyncProcessorTest {
                 mock(EthereumListener.class));
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
+        SuperBlockFields superBlockFields = blockchain.getBestBlock().getSuperBlockFields();
         BlockHeaderExtension extension = blockchain.getBestBlock().getHeader().getExtension();
         long lastRequestId = TestUtils.generateLong("lastRequestId");
-        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles, extension);
+        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles, extension, superBlockFields);
         processor.registerExpectedMessage(response);
 
         Deque<BlockHeader> headerStack = new ArrayDeque<>();
@@ -804,6 +808,8 @@ class SyncProcessorTest {
                 config.getActivationConfig(), signatureCache);
 
         BlockExecutor blockExecutor = new BlockExecutor(
+                blockChainBuilder.getBlockStore(),
+                blockChainBuilder.getReceiptStore(),
                 new RepositoryLocator(blockChainBuilder.getTrieStore(), stateRootHandler),
                 new TransactionExecutorFactory(
                         config,
@@ -814,7 +820,8 @@ class SyncProcessorTest {
                         new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
-                config);
+                config,
+                new SuperDifficultyCalculator(config.getNetworkConstants()));
         Assertions.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis.getHeader());
         Assertions.assertEquals(21000, block.getFeesPaidToMiner().asBigInteger().intValueExact());
@@ -839,9 +846,10 @@ class SyncProcessorTest {
                 mock(EthereumListener.class));
         List<Transaction> transactions = block.getTransactionsList();
         List<BlockHeader> uncles = block.getUncleList();
+        SuperBlockFields superBlockFields = block.getSuperBlockFields();
         BlockHeaderExtension extension = block.getHeader().getExtension();
         long lastRequestId = TestUtils.generateLong("lastRequestId");
-        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles, extension);
+        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles, extension, superBlockFields);
         processor.registerExpectedMessage(response);
 
         Deque<BlockHeader> headerStack = new ArrayDeque<>();

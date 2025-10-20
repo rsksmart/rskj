@@ -21,6 +21,7 @@ package org.ethereum.jsontestsuite.runners;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -34,9 +35,7 @@ import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.BlockStoreDummy;
-import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.db.*;
 import org.ethereum.jsontestsuite.Env;
 import org.ethereum.jsontestsuite.StateTestingCase;
 import org.ethereum.jsontestsuite.TestProgramInvokeFactory;
@@ -150,6 +149,7 @@ public class StateTestRunner {
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction);
         BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         blockchain = new BlockChainImpl(
             blockStore,
@@ -158,6 +158,8 @@ public class StateTestRunner {
             null,
             null,
             new BlockExecutor(
+                blockStore,
+                receiptStore,
                 new RepositoryLocator(trieStore, stateRootHandler),
                 new TransactionExecutorFactory(
                     config,
@@ -168,7 +170,8 @@ public class StateTestRunner {
                     precompiledContracts,
                     new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
-                    config),
+                    config,
+                    new SuperDifficultyCalculator(config.getNetworkConstants())),
             stateRootHandler
         );
 
@@ -240,6 +243,7 @@ public class StateTestRunner {
             newHeader,
             Collections.emptyList(),
             Collections.emptyList(),
+            null,
             false
         );
     }

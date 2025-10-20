@@ -20,6 +20,7 @@ package co.rsk.test;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
@@ -179,6 +180,8 @@ public class World {
 
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
+                    getBlockStore(),
+                    getReceiptStore(),
                     new RepositoryLocator(getTrieStore(), stateRootHandler),
                     new TransactionExecutorFactory(
                             config,
@@ -189,7 +192,8 @@ public class World {
                             new PrecompiledContracts(config, bridgeSupportFactory, blockTxSignatureCache),
                             blockTxSignatureCache
                     ),
-                    config);
+                    config,
+                    new SuperDifficultyCalculator(config.getNetworkConstants()));
         }
 
         return this.blockExecutor;
@@ -292,6 +296,10 @@ public class World {
 
     public BlockStore getBlockStore() {
         return blockStore;
+    }
+
+    public ReceiptStore getReceiptStore() {
+        return receiptStore;
     }
 
     public BlockTxSignatureCache getBlockTxSignatureCache() { return blockTxSignatureCache; }
