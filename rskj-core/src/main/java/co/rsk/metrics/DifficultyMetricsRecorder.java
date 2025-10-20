@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Logs metrics for the difficulty calculation process.
+ * Records metrics for the difficulty calculation process.
  *
  * <p><b>Note:</b> This class writes to {@code /var/log/rsk/difficulty_calculation_metrics.csv}.
  * The user running the node must have write permissions to {@code /var/log/rsk/} directory.
@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory;
  *   <li>Setting permissions: {@code sudo chown $USER:$USER /var/log/rsk}</li>
  * </ul>
  */
-public class DifficultyCalculationLogger {
-    private static final Logger logger = LoggerFactory.getLogger(DifficultyCalculationLogger.class);
+public class DifficultyMetricsRecorder {
+    private static final Logger logger = LoggerFactory.getLogger(DifficultyMetricsRecorder.class);
 
     // File path requires write permissions - see class-level documentation
     private static final String CSV_FILE_PATH = "/var/log/rsk/difficulty_calculation_metrics.csv";
@@ -37,7 +37,7 @@ public class DifficultyCalculationLogger {
     // The last block number processed (to avoid processing the same block twice)
     private long lastBlockNumber = 0;
 
-    public DifficultyCalculationLogger() {
+    public DifficultyMetricsRecorder() {
         this.logEntries = new ArrayList<>();
         logger.info("Dumping difficulty calculation metrics to file: {}", CSV_FILE_PATH);
         // Check if the file exists
