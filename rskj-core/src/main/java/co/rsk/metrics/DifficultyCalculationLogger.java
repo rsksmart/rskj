@@ -15,9 +15,20 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Logs metrics for the difficulty calculation process.
+ *
+ * <p><b>Note:</b> This class writes to {@code /var/log/rsk/difficulty_calculation_metrics.csv}.
+ * The user running the node must have write permissions to {@code /var/log/rsk/} directory.
+ * On Unix-like systems, this typically requires:
+ * <ul>
+ *   <li>Creating the directory: {@code sudo mkdir -p /var/log/rsk}</li>
+ *   <li>Setting permissions: {@code sudo chown $USER:$USER /var/log/rsk}</li>
+ * </ul>
  */
 public class DifficultyCalculationLogger {
     private static final Logger logger = LoggerFactory.getLogger(DifficultyCalculationLogger.class);
+
+    // File path requires write permissions - see class-level documentation
+    private static final String CSV_FILE_PATH = "/var/log/rsk/difficulty_calculation_metrics.csv";
 
     // The expected size of the block window
     private final int blockWindowSize = 30;
@@ -25,14 +36,12 @@ public class DifficultyCalculationLogger {
     private final List<LogEntry> logEntries;
     // The last block number processed (to avoid processing the same block twice)
     private long lastBlockNumber = 0;
-    // The location of the CSV file to write the metrics to
-    private final String csvFilePath = "/var/log/rsk/difficulty_calculation_metrics.csv";
 
     public DifficultyCalculationLogger() {
         this.logEntries = new ArrayList<>();
-        logger.info("Dumping difficulty calculation metrics to file: {}", this.csvFilePath);
+        logger.info("Dumping difficulty calculation metrics to file: {}", CSV_FILE_PATH);
         // Check if the file exists
-        File file = new File(this.csvFilePath);
+        File file = new File(CSV_FILE_PATH);
         if (!file.exists()) {
             try {
                 // Ensure parent directories exist
@@ -44,9 +53,9 @@ public class DifficultyCalculationLogger {
                 // Create the file
                 boolean fileCreated = file.createNewFile();
                 if (fileCreated) {
-                    logger.info("CSV file created: {}", this.csvFilePath);
+                    logger.info("CSV file created: {}", CSV_FILE_PATH);
                 } else {
-                    logger.warn("CSV file already exists or could not be created: {}", this.csvFilePath);
+                    logger.warn("CSV file already exists or could not be created: {}", CSV_FILE_PATH);
                 }
                 // Write the header to the file
                 try (FileWriter writer = new FileWriter(file)) {
@@ -158,7 +167,7 @@ public class DifficultyCalculationLogger {
         LogEntry lastEntry = logEntries.get(logEntries.size() - 1);
         logger.debug("New difficulty calculation metrics: {}", lastEntry.toString());
         // Write the metrics to the file
-        try (FileWriter writer = new FileWriter(csvFilePath, true)) {
+        try (FileWriter writer = new FileWriter(CSV_FILE_PATH, true)) {
             writer.write(lastEntry.toCsvRow());
             writer.write("\n");
             writer.flush();
