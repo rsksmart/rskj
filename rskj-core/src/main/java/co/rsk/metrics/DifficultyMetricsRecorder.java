@@ -40,32 +40,56 @@ public class DifficultyMetricsRecorder {
     public DifficultyMetricsRecorder() {
         this.logEntries = new ArrayList<>();
         logger.info("Dumping difficulty calculation metrics to file: {}", CSV_FILE_PATH);
-        // Check if the file exists
+        ensureCsvFileExists();
+    }
+
+    /**
+     * Ensures the CSV file exists and has the proper header row.
+     * Creates parent directories if needed.
+     *
+     * @throws RuntimeException if file creation fails
+     */
+    private void ensureCsvFileExists() {
         File file = new File(CSV_FILE_PATH);
         if (!file.exists()) {
             try {
-                // Ensure parent directories exist
-                String parentPath = file.getParent();
-                if (parentPath != null) {
-                    Files.createDirectories(Paths.get(parentPath));
-                    logger.debug("Parent directories created for CSV file: {}", parentPath);
-                }
-                // Create the file
-                boolean fileCreated = file.createNewFile();
-                if (fileCreated) {
-                    logger.info("CSV file created: {}", CSV_FILE_PATH);
-                } else {
-                    logger.warn("CSV file already exists or could not be created: {}", CSV_FILE_PATH);
-                }
-                // Write the header to the file
-                try (FileWriter writer = new FileWriter(file)) {
-                    writer.write(LogEntry.getCsvHeader());
-                    writer.write("\n");
-                    writer.flush();
-                }
+                createParentDirectories(file);
+                createCsvFileWithHeader(file);
             } catch (IOException e) {
-                logger.error("Error creating the CSV file: {}", e.getMessage());
+                String errorMsg = "Failed to initialize CSV file: " + e.getMessage();
+                logger.error(errorMsg, e);
+                throw new RuntimeException(errorMsg, e);
             }
+        }
+    }
+
+    /**
+     * Creates parent directories for the CSV file if they don't exist.
+     */
+    private void createParentDirectories(File file) throws IOException {
+        String parentPath = file.getParent();
+        if (parentPath != null) {
+            Files.createDirectories(Paths.get(parentPath));
+            logger.debug("Parent directories created for CSV file: {}", parentPath);
+        }
+    }
+
+    /**
+     * Creates the CSV file and writes the header row.
+     */
+    private void createCsvFileWithHeader(File file) throws IOException {
+        boolean fileCreated = file.createNewFile();
+        if (fileCreated) {
+            logger.info("CSV file created: {}", CSV_FILE_PATH);
+        } else {
+            logger.warn("CSV file already exists or could not be created: {}", CSV_FILE_PATH);
+        }
+
+        // Write the header row
+        try (FileWriter writer = new FileWriter(file)) {
+            writer.write(LogEntry.getCsvHeader());
+            writer.write("\n");
+            writer.flush();
         }
     }
 
