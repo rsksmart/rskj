@@ -161,8 +161,7 @@ public class FederationSupportImpl implements FederationSupport {
         switch (getActiveFederationReference()) {
             case OLD:
                 return provider.getOldFederationBtcUTXOs();
-            case NEW:
-            case GENESIS:
+            case NEW, GENESIS:
             default:
                 return provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations);
         }
@@ -722,7 +721,7 @@ public class FederationSupportImpl implements FederationSupport {
         setOldAndNewFederations(getActiveFederation(), newFederation);
 
         if (activations.isActive(RSKIP186)) {
-            saveLastRetiredFederationScript();
+            setLastRetiredFederationScript();
             setNextFederationCreationBlockHeight(newFederation);
         }
         logger.trace("[handoverToNewFederation] Handover to new federation completed successfully.");
@@ -807,14 +806,14 @@ public class FederationSupportImpl implements FederationSupport {
         logger.trace("[clearPendingFederationVoting] Pending federation and votes on election cleared");
     }
 
-    private void saveLastRetiredFederationScript() {
+    private void setLastRetiredFederationScript() {
         Federation activeFederation = getActiveFederation();
         Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(activations, activeFederation);
         provider.setLastRetiredFederationP2SHScript(activeFederationMembersP2SHScript);
 
         String lastRetiredFederationP2SHScriptInHex = ByteUtil.toHexString(activeFederationMembersP2SHScript.getProgram());
         logger.trace(
-            "[saveLastRetiredFederationScript] Last retired federation script set to {}.",
+            "[setLastRetiredFederationScript] Last retired federation script set to {}.",
             lastRetiredFederationP2SHScriptInHex
         );
     }
