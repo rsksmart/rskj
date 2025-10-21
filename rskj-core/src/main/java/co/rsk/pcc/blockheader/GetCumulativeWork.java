@@ -8,14 +8,14 @@ import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.db.BlockStore;
 
-public class GetTotalDifficulty extends BlockHeaderContractMethod {
+public class GetCumulativeWork extends BlockHeaderContractMethod {
     private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-        "getTotalDifficulty",
+        "getCumulativeWork",
         new String[]{"int256"},
         new String[]{"bytes"}
     );
 
-    public GetTotalDifficulty(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
+    public GetCumulativeWork(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
         super(executionEnvironment, blockAccessor);
     }
 
@@ -27,9 +27,9 @@ public class GetTotalDifficulty extends BlockHeaderContractMethod {
     @Override
     protected Object internalExecute(Block block, Object[] arguments) throws NativeContractIllegalArgumentException {
         BlockStore blockStore = getExecutionEnvironment().getBlockStore();
-        BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
+        BlockDifficulty cumulativeWork = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
 
-        return totalDifficulty.getBytes();
+        return cumulativeWork.getBytes();
     }
 
     @Override
