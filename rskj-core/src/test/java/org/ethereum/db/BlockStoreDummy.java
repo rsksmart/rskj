@@ -105,7 +105,7 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public BlockDifficulty getTotalDifficultyForHash(byte[] hash) {
+    public BlockDifficulty getCumulativeWorkForHash(byte[] hash) {
         return null;
     }
 

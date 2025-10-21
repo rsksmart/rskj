@@ -48,12 +48,14 @@ public class StatusResolver {
                     genesis.getDifficultyWithUncles());
         } else {
             Block block = blockStore.getBestBlock();
-            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
+            BlockDifficulty cumulativeWork = blockStore.getCumulativeWorkForHash(block.getHash().getBytes());
 
-            status = new Status(block.getNumber(),
-                    block.getHash().getBytes(),
-                    block.getParentHash().getBytes(),
-                    totalDifficulty);
+            status = new Status(
+                block.getNumber(),
+                block.getHash().getBytes(),
+                block.getParentHash().getBytes(),
+                cumulativeWork
+            );
         }
         return status;
     }

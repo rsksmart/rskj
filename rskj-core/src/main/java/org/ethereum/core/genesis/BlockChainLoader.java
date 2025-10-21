@@ -90,7 +90,7 @@ public class BlockChainLoader {
 
             logger.info("Genesis block loaded");
         } else {
-            totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
+            totalDifficulty = blockStore.getCumulativeWorkForHash(bestBlock.getHash().getBytes());
 
             logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
                     bestBlock.getNumber(),

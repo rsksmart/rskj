@@ -134,7 +134,7 @@ class SnapshotProcessorTest {
         for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber++) {
             Block currentBlock = blockchain.getBlockByNumber(blockNumber);
             blocks.add(currentBlock);
-            difficulties.add(blockStore.getTotalDifficultyForHash(currentBlock.getHash().getBytes()));
+            difficulties.add(blockStore.getCumulativeWorkForHash(currentBlock.getHash().getBytes()));
         }
 
         SnapStatusResponseMessage snapStatusResponseMessage = new SnapStatusResponseMessage(1, blocks, difficulties, 100000L);
@@ -255,7 +255,7 @@ class SnapshotProcessorTest {
         for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber++) {
             Block currentBlock = blockchain.getBlockByNumber(blockNumber);
             blocks.add(currentBlock);
-            difficulties.add(blockStore.getTotalDifficultyForHash(currentBlock.getHash().getBytes()));
+            difficulties.add(blockStore.getCumulativeWorkForHash(currentBlock.getHash().getBytes()));
         }
 
         SnapStatusResponseMessage snapStatusResponseMessage = new SnapStatusResponseMessage(1, blocks, difficulties, 100000L);

@@ -41,7 +41,7 @@ class StatusResolverTest {
         when(bestBlock.getParentHash()).thenReturn(blockHash);
         when(blockHash.getBytes()).thenReturn(hashBytes);
         when(bestBlock.getNumber()).thenReturn(blockNumber);
-        when(blockStore.getTotalDifficultyForHash(hashBytes)).thenReturn(totalDifficulty);
+        when(blockStore.getCumulativeWorkForHash(hashBytes)).thenReturn(totalDifficulty);
 
         Status status = target.currentStatus();
 

@@ -134,9 +134,9 @@ class CliToolsTest {
 
         for (long n = 0; n < 3; n++) {
             Block block = blockchain.getBlockByNumber(n);
-            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
+            BlockDifficulty cumulativeWork = blockStore.getCumulativeWorkForHash(block.getHash().getBytes());
 
-            String line = block.getNumber() + "," + block.getHash().toHexString() + "," + ByteUtil.toHexString(totalDifficulty.getBytes()) + "," + ByteUtil.toHexString(block.getEncoded());
+            String line = block.getNumber() + "," + block.getHash().toHexString() + "," + ByteUtil.toHexString(cumulativeWork.getBytes()) + "," + ByteUtil.toHexString(block.getEncoded());
 
             Assertions.assertTrue(data.contains(line));
         }

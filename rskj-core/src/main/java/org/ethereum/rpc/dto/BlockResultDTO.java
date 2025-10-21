@@ -169,7 +169,7 @@ public class BlockResultDTO {
                 b.getReceiptsRoot(),
                 isPending ? null : b.getCoinbase(),
                 b.getDifficulty(),
-                blockStore.getTotalDifficultyForHash(b.getHash().getBytes()),
+                blockStore.getCumulativeWorkForHash(b.getHash().getBytes()),
                 b.getDifficultyWithUncles(),
                 b.getExtraData(),
                 b.getEncoded().length,

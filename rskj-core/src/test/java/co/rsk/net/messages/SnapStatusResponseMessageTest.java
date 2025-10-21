@@ -48,7 +48,7 @@ class SnapStatusResponseMessageTest {
     private final BlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
     private final Block block4Test = new BlockGenerator().getBlock(1);
     private final List<Block> blockList = Collections.singletonList(new BlockGenerator().getBlock(1));
-    private final List<BlockDifficulty> blockDifficulties = Collections.singletonList(indexedBlockStore.getTotalDifficultyForHash(block4Test.getHash().getBytes()));
+    private final List<BlockDifficulty> blockDifficulties = Collections.singletonList(indexedBlockStore.getCumulativeWorkForHash(block4Test.getHash().getBytes()));
     private final long trieSize = 1L;
     private final SnapStatusResponseMessage underTest = new SnapStatusResponseMessage(1, blockList, blockDifficulties, trieSize);
 

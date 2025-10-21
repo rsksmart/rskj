@@ -112,7 +112,7 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSelectedPeerSyncSta
 
         while (!responses.isEmpty() && responses.peek().isParentOf(child)) {
             Block connectedBlock = responses.poll();
-            BlockDifficulty blockchainDifficulty = blockStore.getTotalDifficultyForHash(child.getHash().getBytes());
+            BlockDifficulty blockchainDifficulty = blockStore.getCumulativeWorkForHash(child.getHash().getBytes());
             blockStore.saveBlock(
                     connectedBlock,
                     blockchainDifficulty.subtract(child.getDifficultyWithUncles()),
@@ -169,7 +169,7 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSelectedPeerSyncSta
             throw new IllegalStateException("Genesis does not connect to the current chain.");
         }
 
-        BlockDifficulty blockchainDifficulty = blockStore.getTotalDifficultyForHash(this.child.getHash().getBytes());
+        BlockDifficulty blockchainDifficulty = blockStore.getCumulativeWorkForHash(this.child.getHash().getBytes());
         if (!blockchainDifficulty.subtract(this.child.getDifficultyWithUncles()).equals(genesis.getDifficultyWithUncles())) {
             throw new IllegalStateException("Blockchain difficulty does not match genesis.");
         }

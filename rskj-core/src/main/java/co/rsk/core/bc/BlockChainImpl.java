@@ -189,7 +189,7 @@ public class BlockChainImpl implements Blockchain {
         Metric metric = profiler.start(MetricKind.BEFORE_BLOCK_EXEC);
 
         if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
-                !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
+                !BlockDifficulty.ZERO.equals(blockStore.getCumulativeWorkForHash(block.getHash().getBytes()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
                          block.getPrintableHash(),
                          block.getNumber());
@@ -226,7 +226,7 @@ public class BlockChainImpl implements Blockchain {
                 return ImportResult.NO_PARENT;
             }
 
-            parentTotalDifficulty = blockStore.getTotalDifficultyForHash(parent.getHash().getBytes());
+            parentTotalDifficulty = blockStore.getCumulativeWorkForHash(parent.getHash().getBytes());
 
             if (parentTotalDifficulty == null || parentTotalDifficulty.equals(BlockDifficulty.ZERO)) {
                 profiler.stop(metric);

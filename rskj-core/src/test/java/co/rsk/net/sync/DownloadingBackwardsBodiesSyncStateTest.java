@@ -122,7 +122,7 @@ class DownloadingBackwardsBodiesSyncStateTest {
 
         when(child.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(50)));
         when(genesis.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(50)));
-        when(blockStore.getTotalDifficultyForHash(childHash.getBytes()))
+        when(blockStore.getCumulativeWorkForHash(childHash.getBytes()))
                 .thenReturn(new BlockDifficulty(BigInteger.valueOf(101)));
 
         Assertions.assertThrows(IllegalStateException.class, target::onEnter);
@@ -151,7 +151,7 @@ class DownloadingBackwardsBodiesSyncStateTest {
         when(child.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(50)));
         BlockDifficulty cumulativeDifficulty = new BlockDifficulty(BigInteger.valueOf(50));
         when(genesis.getDifficultyWithUncles()).thenReturn(cumulativeDifficulty);
-        when(blockStore.getTotalDifficultyForHash(childHash.getBytes()))
+        when(blockStore.getCumulativeWorkForHash(childHash.getBytes()))
                 .thenReturn(new BlockDifficulty(BigInteger.valueOf(100)));
 
         target.onEnter();
@@ -192,7 +192,7 @@ class DownloadingBackwardsBodiesSyncStateTest {
                     .thenReturn(block);
 
             when(block.isParentOf(any())).thenReturn(true);
-            when(blockStore.getTotalDifficultyForHash(headerHash.getBytes()))
+            when(blockStore.getCumulativeWorkForHash(headerHash.getBytes()))
                     .thenReturn(difficultyForBlockNumber.apply(i));
             when(block.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(i)));
         }
@@ -201,7 +201,7 @@ class DownloadingBackwardsBodiesSyncStateTest {
 
         Keccak256 childHash = new Keccak256(ByteUtil.leftPadBytes(ByteUtil.intToBytes(11), 32));
         when(child.getHash()).thenReturn(childHash);
-        when(blockStore.getTotalDifficultyForHash(childHash.getBytes()))
+        when(blockStore.getCumulativeWorkForHash(childHash.getBytes()))
                 .thenReturn(difficultyForBlockNumber.apply(11L));
         when(child.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(11L)));
         when(child.getNumber()).thenReturn(11L);
@@ -261,7 +261,7 @@ class DownloadingBackwardsBodiesSyncStateTest {
                     .thenReturn(block);
 
             when(block.isParentOf(any())).thenReturn(true);
-            when(blockStore.getTotalDifficultyForHash(headerHash.getBytes()))
+            when(blockStore.getCumulativeWorkForHash(headerHash.getBytes()))
                     .thenReturn(difficultyForBlockNumber.apply(i));
             when(block.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(i)));
 
@@ -272,7 +272,7 @@ class DownloadingBackwardsBodiesSyncStateTest {
 
         Keccak256 childHash = new Keccak256(ByteUtil.leftPadBytes(ByteUtil.intToBytes(11), 32));
         when(child.getHash()).thenReturn(childHash);
-        when(blockStore.getTotalDifficultyForHash(childHash.getBytes()))
+        when(blockStore.getCumulativeWorkForHash(childHash.getBytes()))
                 .thenReturn(difficultyForBlockNumber.apply(11L));
         when(child.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(11L)));
         when(child.getNumber()).thenReturn(11L);
@@ -328,14 +328,14 @@ class DownloadingBackwardsBodiesSyncStateTest {
                     .thenReturn(block);
 
             when(block.isParentOf(any())).thenReturn(true);
-            when(blockStore.getTotalDifficultyForHash(headerHash.getBytes()))
+            when(blockStore.getCumulativeWorkForHash(headerHash.getBytes()))
                     .thenReturn(difficultyForBlockNumber.apply(i));
             when(block.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(i)));
         }
 
         Keccak256 childHash = new Keccak256(ByteUtil.leftPadBytes(ByteUtil.intToBytes(11), 32));
         when(child.getHash()).thenReturn(childHash);
-        when(blockStore.getTotalDifficultyForHash(childHash.getBytes()))
+        when(blockStore.getCumulativeWorkForHash(childHash.getBytes()))
                 .thenReturn(difficultyForBlockNumber.apply(11L));
         when(child.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(11L)));
         when(child.getNumber()).thenReturn(11L);

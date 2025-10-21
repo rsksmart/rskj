@@ -57,7 +57,7 @@ public interface BlockStore extends RemascCache {
 
     void saveBlock(Block block, BlockDifficulty cummDifficulty, boolean mainChain);
 
-    BlockDifficulty getTotalDifficultyForHash(byte[] hash);
+    BlockDifficulty getCumulativeWorkForHash(byte[] hash);
 
     Block getBestBlock();
 

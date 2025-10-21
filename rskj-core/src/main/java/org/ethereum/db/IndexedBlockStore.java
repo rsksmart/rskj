@@ -296,7 +296,7 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
-    public synchronized BlockDifficulty getTotalDifficultyForHash(byte[] hash) {
+    public synchronized BlockDifficulty getCumulativeWorkForHash(byte[] hash) {
         Block block = this.getBlockByHash(hash);
         if (block == null) {
             return ZERO;

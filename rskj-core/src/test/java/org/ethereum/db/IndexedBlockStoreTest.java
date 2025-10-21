@@ -70,12 +70,12 @@ public abstract class IndexedBlockStoreTest {
             indexedBlockStore.saveBlock(block, cummDiff, true);
         }
 
-        //  testing:   getTotalDifficultyForHash(byte[])
+        //  testing:   getCumulativeDifficultyForHash(byte[])
         //  testing:   getMaxNumber()
 
         long bestIndex = blocks.get(blocks.size() - 1).getNumber();
         assertEquals(bestIndex, indexedBlockStore.getMaxNumber());
-        assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficultyForHash(blocks.get(blocks.size() - 1).getHash().getBytes()));
+        assertEquals(cumDifficulty, indexedBlockStore.getCumulativeWorkForHash(blocks.get(blocks.size() - 1).getHash().getBytes()));
 
         //  testing:  getBlockByHash(byte[])
 
@@ -176,12 +176,12 @@ public abstract class IndexedBlockStoreTest {
             indexedBlockStore.saveBlock(block, cummDiff, true);
         }
 
-        //  testing:   getTotalDifficultyForHash(byte[])
+        //  testing:   getCumulativeDifficultyForHash(byte[])
         //  testing:   getMaxNumber()
 
         long bestIndex = blocks.get(blocks.size() - 1).getNumber();
         assertEquals(bestIndex, indexedBlockStore.getMaxNumber());
-        assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficultyForHash(blocks.get(blocks.size() - 1).getHash().getBytes()));
+        assertEquals(cumDifficulty, indexedBlockStore.getCumulativeWorkForHash(blocks.get(blocks.size() - 1).getHash().getBytes()));
 
         //  testing:  getBlockByHash(byte[])
 
@@ -287,12 +287,12 @@ public abstract class IndexedBlockStoreTest {
 
         indexedBlockStore.flush();
 
-        //  testing:   getTotalDifficultyForHash(byte[])
+        //  testing:   getCumulativeDifficultyForHash(byte[])
         //  testing:   getMaxNumber()
 
         long bestIndex = blocks.get(blocks.size() - 1).getNumber();
         assertEquals(bestIndex, indexedBlockStore.getMaxNumber());
-        assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficultyForHash(blocks.get(blocks.size() - 1).getHash().getBytes()));
+        assertEquals(cumDifficulty, indexedBlockStore.getCumulativeWorkForHash(blocks.get(blocks.size() - 1).getHash().getBytes()));
 
         //  testing:  getBlockByHash(byte[])
 
@@ -402,12 +402,12 @@ public abstract class IndexedBlockStoreTest {
             indexedBlockStore.saveBlock(block, cummDiff, true);
         }
 
-        //  testing:   getTotalDifficultyForHash(byte[])
+        //  testing:   getCumulativeDifficultyForHash(byte[])
         //  testing:   getMaxNumber()
 
         long bestIndex = blocks.get(blocks.size() - 1).getNumber();
         assertEquals(bestIndex, indexedBlockStore.getMaxNumber());
-        assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficultyForHash(blocks.get(blocks.size() - 1).getHash().getBytes()));
+        assertEquals(cumDifficulty, indexedBlockStore.getCumulativeWorkForHash(blocks.get(blocks.size() - 1).getHash().getBytes()));
 
         //  testing:  getBlockByHash(byte[])
 
@@ -557,12 +557,12 @@ public abstract class IndexedBlockStoreTest {
                 indexedBlockStore.saveBlock(block, cummDiff, true);
             }
 
-            //  testing:   getTotalDifficultyForHash(byte[])
+            //  testing:   getCumulativeDifficultyForHash(byte[])
             //  testing:   getMaxNumber()
 
             long bestIndex = blocks.get(blocks.size() - 1).getNumber();
             assertEquals(bestIndex, indexedBlockStore.getMaxNumber());
-            assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficultyForHash(blocks.get(blocks.size() - 1).getHash().getBytes()));
+            assertEquals(cumDifficulty, indexedBlockStore.getCumulativeWorkForHash(blocks.get(blocks.size() - 1).getHash().getBytes()));
 
             //  testing:  getBlockByHash(byte[])
 
@@ -721,7 +721,7 @@ public abstract class IndexedBlockStoreTest {
             for (int i = 0; i < forkLine.size(); ++i) {
                 Block newBlock = forkLine.get(i);
                 Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash().getBytes());
-                td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash().getBytes());
+                td = indexedBlockStore.getCumulativeWorkForHash(parentBlock.getHash().getBytes());
 
                 td = td.add(newBlock.getDifficultyWithUncles());
                 indexedBlockStore.saveBlock(newBlock, td, false);
@@ -746,14 +746,14 @@ public abstract class IndexedBlockStoreTest {
             // Assert tds on bestLine
             for (Keccak256 hash : tDiffs.keySet()) {
                 BlockDifficulty currTD = tDiffs.get(hash);
-                BlockDifficulty checkTd = indexedBlockStore.getTotalDifficultyForHash(hash.getBytes());
+                BlockDifficulty checkTd = indexedBlockStore.getCumulativeWorkForHash(hash.getBytes());
                 assertEquals(checkTd, currTD);
             }
 
             // Assert tds on forkLine
             for (Keccak256 hash : tForkDiffs.keySet()) {
                 BlockDifficulty currTD = tForkDiffs.get(hash);
-                BlockDifficulty checkTd = indexedBlockStore.getTotalDifficultyForHash(hash.getBytes());
+                BlockDifficulty checkTd = indexedBlockStore.getCumulativeWorkForHash(hash.getBytes());
                 assertEquals(checkTd, currTD);
             }
 
@@ -762,21 +762,21 @@ public abstract class IndexedBlockStoreTest {
             // Assert tds on bestLine
             for (Keccak256 hash : tDiffs.keySet()) {
                 BlockDifficulty currTD = tDiffs.get(hash);
-                BlockDifficulty checkTd = indexedBlockStore.getTotalDifficultyForHash(hash.getBytes());
+                BlockDifficulty checkTd = indexedBlockStore.getCumulativeWorkForHash(hash.getBytes());
                 assertEquals(checkTd, currTD);
             }
 
             // check total difficulty
             Block bestBlock = bestLine.get(bestLine.size() - 1);
-            BlockDifficulty totalDifficulty = indexedBlockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
+            BlockDifficulty cumulativeDifficulty = indexedBlockStore.getCumulativeWorkForHash(bestBlock.getHash().getBytes());
             BlockDifficulty totalDifficulty_ = tDiffs.get(bestBlock.getHash());
 
-            assertEquals(totalDifficulty_, totalDifficulty);
+            assertEquals(totalDifficulty_, cumulativeDifficulty);
 
             // Assert tds on forkLine
             for (Keccak256 hash : tForkDiffs.keySet()) {
                 BlockDifficulty currTD = tForkDiffs.get(hash);
-                BlockDifficulty checkTd = indexedBlockStore.getTotalDifficultyForHash(hash.getBytes());
+                BlockDifficulty checkTd = indexedBlockStore.getCumulativeWorkForHash(hash.getBytes());
                 assertEquals(checkTd, currTD);
             }
 
@@ -824,7 +824,7 @@ public abstract class IndexedBlockStoreTest {
             for (int i = 0; i < forkLine.size(); ++i) {
                 Block newBlock = forkLine.get(i);
                 Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash().getBytes());
-                td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash().getBytes());
+                td = indexedBlockStore.getCumulativeWorkForHash(parentBlock.getHash().getBytes());
 
                 td = td.add(newBlock.getDifficultyWithUncles());
                 indexedBlockStore.saveBlock(newBlock, td, false);
@@ -876,7 +876,7 @@ public abstract class IndexedBlockStoreTest {
             for (int i = 0; i < forkLine.size(); ++i) {
                 Block newBlock = forkLine.get(i);
                 Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash().getBytes());
-                td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash().getBytes());
+                td = indexedBlockStore.getCumulativeWorkForHash(parentBlock.getHash().getBytes());
 
                 td = td.add(newBlock.getDifficultyWithUncles());
                 indexedBlockStore.saveBlock(newBlock, td, false);
@@ -965,8 +965,8 @@ public abstract class IndexedBlockStoreTest {
         indexedBlockStore.saveBlock(block2, block2.getDifficultyWithUncles(), true);
         indexedBlockStore.flush();
 
-        assertEquals(block1.getDifficultyWithUncles(), indexedBlockStore.getTotalDifficultyForHash(block1.getHash().getBytes()));
-        assertEquals(block2.getDifficultyWithUncles(), indexedBlockStore.getTotalDifficultyForHash(block2.getHash().getBytes()));
+        assertEquals(block1.getDifficultyWithUncles(), indexedBlockStore.getCumulativeWorkForHash(block1.getHash().getBytes()));
+        assertEquals(block2.getDifficultyWithUncles(), indexedBlockStore.getCumulativeWorkForHash(block2.getHash().getBytes()));
     }
 
     @Test

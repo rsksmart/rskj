@@ -69,12 +69,12 @@ public class ExportBlocks extends PicoCliToolRskContextAware {
     private void exportBlocks(BlockStore blockStore, PrintStream writer) {
         for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
             Block block = blockStore.getChainBlockByNumber(n);
-            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
+            BlockDifficulty cumulativeWork = blockStore.getCumulativeWorkForHash(block.getHash().getBytes());
 
             writer.println(
                     block.getNumber() + "," +
                             ByteUtil.toHexString(block.getHash().getBytes()) + "," +
-                            ByteUtil.toHexString(totalDifficulty.getBytes()) + "," +
+                            ByteUtil.toHexString(cumulativeWork.getBytes()) + "," +
                             ByteUtil.toHexString(block.getEncoded())
             );
         }

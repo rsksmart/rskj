@@ -63,7 +63,7 @@ class BlockResultDTOTest {
     void setup() {
         block = buildBlockWithTransactions(Arrays.asList(TRANSACTION, REMASC_TRANSACTION));
         blockStore = mock(BlockStore.class);
-        when(blockStore.getTotalDifficultyForHash(any())).thenReturn(BlockDifficulty.ONE);
+        when(blockStore.getCumulativeWorkForHash(any())).thenReturn(BlockDifficulty.ONE);
     }
 
     @Test
