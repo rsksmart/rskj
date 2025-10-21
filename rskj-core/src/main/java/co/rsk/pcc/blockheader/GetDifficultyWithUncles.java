@@ -8,7 +8,7 @@ import org.ethereum.core.CallTransaction;
 
 public class GetDifficultyWithUncles extends BlockHeaderContractMethod {
     private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-        "getCumulativeDifficulty",
+        "getDifficultyWithUncles",
         new String[]{"int256"},
         new String[]{"bytes"}
     );
