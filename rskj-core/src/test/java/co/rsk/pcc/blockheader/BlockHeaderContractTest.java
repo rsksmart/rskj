@@ -91,7 +91,7 @@ class BlockHeaderContractTest {
     private CallTransaction.Function getDifficultyFunction;
     private CallTransaction.Function getBitcoinHeaderFunction;
     private CallTransaction.Function getUncleCoinbaseAddressFunction;
-    private CallTransaction.Function getCumulativeDifficultyFunction;
+    private CallTransaction.Function getDifficultyWithUnclesFunction;
     private CallTransaction.Function getTotalDifficultyFunction;
 
     @BeforeEach
@@ -110,7 +110,7 @@ class BlockHeaderContractTest {
         getDifficultyFunction = getContractFunction(blockHeaderContract, GetDifficulty.class);
         getBitcoinHeaderFunction = getContractFunction(blockHeaderContract, GetBitcoinHeader.class);
         getUncleCoinbaseAddressFunction = getContractFunction(blockHeaderContract, GetUncleCoinbaseAddress.class);
-        getCumulativeDifficultyFunction = getContractFunction(blockHeaderContract, GetCumulativeDifficulty.class);
+        getDifficultyWithUnclesFunction = getContractFunction(blockHeaderContract, GetDifficultyWithUncles.class);
         getTotalDifficultyFunction = getContractFunction(blockHeaderContract, GetTotalDifficulty.class);
 
         // invoke transaction
@@ -152,7 +152,7 @@ class BlockHeaderContractTest {
             GetDifficulty.class,
             GetBitcoinHeader.class,
             GetUncleCoinbaseAddress.class,
-            GetCumulativeDifficulty.class,
+            GetDifficultyWithUncles.class,
             GetTotalDifficulty.class
         );
     }
@@ -374,7 +374,7 @@ class BlockHeaderContractTest {
 
     @ParameterizedTest
     @MethodSource("blockDepthProvider")
-    void getCumulativeDifficulty_whenMethodDisabled_shouldThrowVME(int blockDepth) {
+    void getDifficultyWithUncles_whenMethodDisabled_shouldThrowVME(int blockDepth) {
         ActivationConfig activationConfigForReed = ActivationConfigsForTest.reed800();
         blockHeaderContract = new BlockHeaderContract(activationConfigForReed, BLOCK_HEADER_CONTRACT_ADDRESS);
 
@@ -384,20 +384,20 @@ class BlockHeaderContractTest {
 
         assertThrows(
             VMException.class,
-            () -> blockHeaderContract.execute(getCumulativeDifficultyFunction.encode(BigInteger.valueOf(blockDepth)))
+            () -> blockHeaderContract.execute(getDifficultyWithUnclesFunction.encode(BigInteger.valueOf(blockDepth)))
         );
     }
 
     @ParameterizedTest
     @MethodSource("blockDepthProvider")
-    void getCumulativeDifficulty(int blockDepth) throws VMException {
+    void getDifficultyWithUnclesDifficulty(int blockDepth) throws VMException {
         int blockchainLength = 4000;
         buildBlockchainOfLength(blockchainLength);
         initContract();
 
-        byte[] encodedResult = blockHeaderContract.execute(getCumulativeDifficultyFunction.encode(BigInteger.valueOf(blockDepth)));
+        byte[] encodedResult = blockHeaderContract.execute(getDifficultyWithUnclesFunction.encode(BigInteger.valueOf(blockDepth)));
 
-        Object[] decodedResult = getCumulativeDifficultyFunction.decodeResult(encodedResult);
+        Object[] decodedResult = getDifficultyWithUnclesFunction.decodeResult(encodedResult);
         assertExpectedResult(RSK_BLOCK_WITH_UNCLES_DIFFICULTY, decodedResult);
     }
 
@@ -529,7 +529,7 @@ class BlockHeaderContractTest {
             GetGasUsed.class,
             GetDifficulty.class,
             GetBitcoinHeader.class,
-            GetCumulativeDifficulty.class,
+            GetDifficultyWithUncles.class,
             GetTotalDifficulty.class
         );
     }
