@@ -106,8 +106,8 @@ class ImportLightTest {
         genesis.setStateRoot(repository.getRoot());
         genesis.flushRLP();
 
-        blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
-        blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
+        blockStore.saveBlock(genesis, genesis.getDifficultyWithUncles(), true);
+        blockchain.setStatus(genesis, genesis.getDifficultyWithUncles());
 
         return blockchain;
     }

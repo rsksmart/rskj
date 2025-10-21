@@ -367,7 +367,7 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
         }
 
         if (!blockPair.getLeft().isParentOf(childBlockPair.getLeft())
-                || !blockPair.getRight().equals(childBlockPair.getRight().subtract(childBlockPair.getLeft().getCumulativeDifficulty()))) {
+                || !blockPair.getRight().equals(childBlockPair.getRight().subtract(childBlockPair.getLeft().getDifficultyWithUncles()))) {
             return false;
         }
 

@@ -179,7 +179,7 @@ public class StateTestRunner {
         block.setStateRoot(repository.getRoot());
         block.flushRLP();
 
-        blockchain.setStatus(block, block.getCumulativeDifficulty());
+        blockchain.setStatus(block, block.getDifficultyWithUncles());
 
         ProgramResult programResult = executeTransaction();
 

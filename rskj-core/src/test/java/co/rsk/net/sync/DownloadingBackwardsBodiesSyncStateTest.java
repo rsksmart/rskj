@@ -120,8 +120,8 @@ class DownloadingBackwardsBodiesSyncStateTest {
 
         when(genesis.isParentOf(child)).thenReturn(true);
 
-        when(child.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(50)));
-        when(genesis.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(50)));
+        when(child.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(50)));
+        when(genesis.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(50)));
         when(blockStore.getTotalDifficultyForHash(childHash.getBytes()))
                 .thenReturn(new BlockDifficulty(BigInteger.valueOf(101)));
 
@@ -148,9 +148,9 @@ class DownloadingBackwardsBodiesSyncStateTest {
 
         when(genesis.isParentOf(child)).thenReturn(true);
 
-        when(child.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(50)));
+        when(child.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(50)));
         BlockDifficulty cumulativeDifficulty = new BlockDifficulty(BigInteger.valueOf(50));
-        when(genesis.getCumulativeDifficulty()).thenReturn(cumulativeDifficulty);
+        when(genesis.getDifficultyWithUncles()).thenReturn(cumulativeDifficulty);
         when(blockStore.getTotalDifficultyForHash(childHash.getBytes()))
                 .thenReturn(new BlockDifficulty(BigInteger.valueOf(100)));
 
@@ -194,16 +194,16 @@ class DownloadingBackwardsBodiesSyncStateTest {
             when(block.isParentOf(any())).thenReturn(true);
             when(blockStore.getTotalDifficultyForHash(headerHash.getBytes()))
                     .thenReturn(difficultyForBlockNumber.apply(i));
-            when(block.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(i)));
+            when(block.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(i)));
         }
         when(genesis.isParentOf(expectedBlocks.getLast())).thenReturn(true);
-        when(genesis.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(0L)));
+        when(genesis.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(0L)));
 
         Keccak256 childHash = new Keccak256(ByteUtil.leftPadBytes(ByteUtil.intToBytes(11), 32));
         when(child.getHash()).thenReturn(childHash);
         when(blockStore.getTotalDifficultyForHash(childHash.getBytes()))
                 .thenReturn(difficultyForBlockNumber.apply(11L));
-        when(child.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(11L)));
+        when(child.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(11L)));
         when(child.getNumber()).thenReturn(11L);
 
         DownloadingBackwardsBodiesSyncState target = new DownloadingBackwardsBodiesSyncState(
@@ -263,18 +263,18 @@ class DownloadingBackwardsBodiesSyncStateTest {
             when(block.isParentOf(any())).thenReturn(true);
             when(blockStore.getTotalDifficultyForHash(headerHash.getBytes()))
                     .thenReturn(difficultyForBlockNumber.apply(i));
-            when(block.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(i)));
+            when(block.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(i)));
 
             when(block.getHeader()).thenReturn(headerToRequest);
         }
         when(genesis.isParentOf(expectedBlocks.getLast())).thenReturn(true);
-        when(genesis.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(0L)));
+        when(genesis.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(0L)));
 
         Keccak256 childHash = new Keccak256(ByteUtil.leftPadBytes(ByteUtil.intToBytes(11), 32));
         when(child.getHash()).thenReturn(childHash);
         when(blockStore.getTotalDifficultyForHash(childHash.getBytes()))
                 .thenReturn(difficultyForBlockNumber.apply(11L));
-        when(child.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(11L)));
+        when(child.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(11L)));
         when(child.getNumber()).thenReturn(11L);
 
         DownloadingBackwardsBodiesSyncState target = new DownloadingBackwardsBodiesSyncState(
@@ -330,14 +330,14 @@ class DownloadingBackwardsBodiesSyncStateTest {
             when(block.isParentOf(any())).thenReturn(true);
             when(blockStore.getTotalDifficultyForHash(headerHash.getBytes()))
                     .thenReturn(difficultyForBlockNumber.apply(i));
-            when(block.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(i)));
+            when(block.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(i)));
         }
 
         Keccak256 childHash = new Keccak256(ByteUtil.leftPadBytes(ByteUtil.intToBytes(11), 32));
         when(child.getHash()).thenReturn(childHash);
         when(blockStore.getTotalDifficultyForHash(childHash.getBytes()))
                 .thenReturn(difficultyForBlockNumber.apply(11L));
-        when(child.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(11L)));
+        when(child.getDifficultyWithUncles()).thenReturn(new BlockDifficulty(BigInteger.valueOf(11L)));
         when(child.getNumber()).thenReturn(11L);
 
         DownloadingBackwardsBodiesSyncState target = new DownloadingBackwardsBodiesSyncState(

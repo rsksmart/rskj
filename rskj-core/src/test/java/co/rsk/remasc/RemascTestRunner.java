@@ -174,7 +174,7 @@ class RemascTestRunner {
 
                 blockSiblings.add(siblingBlock.getHeader());
 
-                builder.getBlockStore().saveBlock(siblingBlock, cummDifficulty.add(siblingBlock.getCumulativeDifficulty()), false);
+                builder.getBlockStore().saveBlock(siblingBlock, cummDifficulty.add(siblingBlock.getDifficultyWithUncles()), false);
                 this.addedSiblings.add(siblingBlock);
             }
 

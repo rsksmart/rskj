@@ -58,7 +58,7 @@ public class ContractRunner {
                 .parent(blockchain.getBestBlock())
                 .gasLimit(BigInteger.valueOf(10_000_000))
                 .build();
-        blockchain.setStatus(block, block.getCumulativeDifficulty());
+        blockchain.setStatus(block, block.getDifficultyWithUncles());
         // create a test sender account with a large balance for running any contract
         this.sender = new AccountBuilder(blockchain, blockStore, repositoryLocator)
                 .name("sender")

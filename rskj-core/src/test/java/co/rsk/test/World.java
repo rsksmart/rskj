@@ -131,7 +131,7 @@ public class World {
 
         if (genesis == null) {
             genesis = (Genesis) BlockChainImplTest.getGenesisBlock(trieStore);
-            this.blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
+            this.blockChain.setStatus(genesis, genesis.getDifficultyWithUncles());
         }
         this.saveBlock("g00", genesis);
 

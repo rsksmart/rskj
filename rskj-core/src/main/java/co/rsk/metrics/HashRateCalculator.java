@@ -94,7 +94,7 @@ public abstract class HashRateCalculator {
             if (element == null) {
                 Block block = this.blockStore.getBlockByHash(hash.getBytes());
                 if (block != null) {
-                    element = new BlockHeaderElement(block.getHeader(), this.blockStore.getBlockByHash(hash.getBytes()).getCumulativeDifficulty());
+                    element = new BlockHeaderElement(block.getHeader(), this.blockStore.getBlockByHash(hash.getBytes()).getDifficultyWithUncles());
                     this.headerCache.put(hash, element);
                 }
             }

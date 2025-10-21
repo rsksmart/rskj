@@ -99,7 +99,7 @@ public class BlockChainImplTest {
         Assertions.assertNotNull(bestBlock);
         Assertions.assertEquals(0, bestBlock.getNumber());
         Assertions.assertEquals(genesis.getHash(), bestBlock.getHash());
-        Assertions.assertEquals(genesis.getCumulativeDifficulty(), status.getTotalDifficulty());
+        Assertions.assertEquals(genesis.getDifficultyWithUncles(), status.getTotalDifficulty());
     }
 
     @Test
@@ -140,7 +140,7 @@ public class BlockChainImplTest {
         Assertions.assertNotNull(bestBlock);
         Assertions.assertEquals(1, bestBlock.getNumber());
         Assertions.assertEquals(block1.getHash(), bestBlock.getHash());
-        Assertions.assertEquals(genesis.getCumulativeDifficulty().add(block1.getCumulativeDifficulty()), status.getTotalDifficulty());
+        Assertions.assertEquals(genesis.getDifficultyWithUncles().add(block1.getDifficultyWithUncles()), status.getTotalDifficulty());
     }
 
     @Test

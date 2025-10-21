@@ -112,7 +112,7 @@ class MainNetMinerTest {
         BlockChainImpl blockchain = blockChainBuilder.build();
         Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(blockChainBuilder.getTrieStore());
         gen.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(Long.MAX_VALUE)));
-        blockchain.setStatus(gen, gen.getCumulativeDifficulty());
+        blockchain.setStatus(gen, gen.getDifficultyWithUncles());
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
 

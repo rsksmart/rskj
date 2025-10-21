@@ -1957,7 +1957,7 @@ class Web3ImplTest {
         Block genesis = world.getBlockChain().getBestBlock();
         genesis.setStateRoot(world.getRepository().getRoot());
         genesis.flushRLP();
-        world.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+        world.getBlockStore().saveBlock(genesis, genesis.getDifficultyWithUncles(), true);
         Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
                 world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
@@ -2633,7 +2633,7 @@ class Web3ImplTest {
         Block genesis = world.getBlockChain().getBestBlock();
         genesis.setStateRoot(world.getRepository().getRoot());
         genesis.flushRLP();
-        world.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+        world.getBlockStore().saveBlock(genesis, genesis.getDifficultyWithUncles(), true);
         Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
                 world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
         Assertions.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
@@ -3304,7 +3304,7 @@ class Web3ImplTest {
             final Block genesis = world.getBlockChain().getBestBlock();
             genesis.setStateRoot(world.getRepository().getRoot());
             genesis.flushRLP();
-            world.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+            world.getBlockStore().saveBlock(genesis, genesis.getDifficultyWithUncles(), true);
 
             final BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore());
             final Block block1Canonical = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).build();
@@ -3319,7 +3319,7 @@ class Web3ImplTest {
             final Block genesis = world.getBlockChain().getBestBlock();
             genesis.setStateRoot(world.getRepository().getRoot());
             genesis.flushRLP();
-            world.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+            world.getBlockStore().saveBlock(genesis, genesis.getDifficultyWithUncles(), true);
             block = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
                     world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
             assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block));

@@ -84,7 +84,7 @@ public class BlockChainLoader {
             logger.info("DB is empty - adding Genesis");
 
             bestBlock = genesis;
-            totalDifficulty = genesis.getCumulativeDifficulty();
+            totalDifficulty = genesis.getDifficultyWithUncles();
 
             listener.onBlock(genesis, new ArrayList<>());
 

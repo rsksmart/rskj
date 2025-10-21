@@ -87,7 +87,7 @@ class RskForksBridgeTest {
         genesis.setStateRoot(repository.getRoot());
         genesis.flushRLP();
 
-        blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+        blockStore.saveBlock(genesis, genesis.getDifficultyWithUncles(), true);
 
         Transaction whitelistAddressTx = buildWhitelistTx();
         Transaction receiveHeadersTx = buildReceiveHeadersTx();

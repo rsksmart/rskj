@@ -66,7 +66,7 @@ public abstract class IndexedBlockStoreTest {
 
         BlockDifficulty cummDiff = BlockDifficulty.ZERO;
         for (Block block : blocks) {
-            cummDiff = cummDiff.add(block.getCumulativeDifficulty());
+            cummDiff = cummDiff.add(block.getDifficultyWithUncles());
             indexedBlockStore.saveBlock(block, cummDiff, true);
         }
 
@@ -172,7 +172,7 @@ public abstract class IndexedBlockStoreTest {
 
         BlockDifficulty cummDiff = BlockDifficulty.ZERO;
         for (Block block : blocks) {
-            cummDiff = cummDiff.add(block.getCumulativeDifficulty());
+            cummDiff = cummDiff.add(block.getDifficultyWithUncles());
             indexedBlockStore.saveBlock(block, cummDiff, true);
         }
 
@@ -281,7 +281,7 @@ public abstract class IndexedBlockStoreTest {
         BlockDifficulty cummDiff = BlockDifficulty.ZERO;
 
         for (Block block : blocks) {
-            cummDiff = cummDiff.add(block.getCumulativeDifficulty());
+            cummDiff = cummDiff.add(block.getDifficultyWithUncles());
             indexedBlockStore.saveBlock(block, cummDiff, true);
         }
 
@@ -398,7 +398,7 @@ public abstract class IndexedBlockStoreTest {
 
         BlockDifficulty cummDiff = BlockDifficulty.ZERO;
         for (Block block : blocks) {
-            cummDiff = cummDiff.add(block.getCumulativeDifficulty());
+            cummDiff = cummDiff.add(block.getDifficultyWithUncles());
             indexedBlockStore.saveBlock(block, cummDiff, true);
         }
 
@@ -545,7 +545,7 @@ public abstract class IndexedBlockStoreTest {
             int preloadSize = blocks.size() / 2;
             for (int i = 0; i < preloadSize; ++i) {
                 Block block = blocks.get(i);
-                cummDiff = cummDiff.add(block.getCumulativeDifficulty());
+                cummDiff = cummDiff.add(block.getDifficultyWithUncles());
                 indexedBlockStore.saveBlock(block, cummDiff, true);
             }
 
@@ -553,7 +553,7 @@ public abstract class IndexedBlockStoreTest {
 
             for (int i = preloadSize; i < blocks.size(); ++i) {
                 Block block = blocks.get(i);
-                cummDiff = cummDiff.add(block.getCumulativeDifficulty());
+                cummDiff = cummDiff.add(block.getDifficultyWithUncles());
                 indexedBlockStore.saveBlock(block, cummDiff, true);
             }
 
@@ -703,13 +703,13 @@ public abstract class IndexedBlockStoreTest {
             Block genesis = RskTestFactory.getGenesisInstance(config);
             List<Block> bestLine = getRandomChain(blockFactory, genesis.getHash().getBytes(), 1, 100);
 
-            indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+            indexedBlockStore.saveBlock(genesis, genesis.getDifficultyWithUncles(), true);
 
-            BlockDifficulty td = genesis.getCumulativeDifficulty();
+            BlockDifficulty td = genesis.getDifficultyWithUncles();
 
             for (int i = 0; i < bestLine.size(); ++i) {
                 Block newBlock = bestLine.get(i);
-                td = td.add(newBlock.getCumulativeDifficulty());
+                td = td.add(newBlock.getDifficultyWithUncles());
 
                 indexedBlockStore.saveBlock(newBlock, td, true);
             }
@@ -723,15 +723,15 @@ public abstract class IndexedBlockStoreTest {
                 Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash().getBytes());
                 td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash().getBytes());
 
-                td = td.add(newBlock.getCumulativeDifficulty());
+                td = td.add(newBlock.getDifficultyWithUncles());
                 indexedBlockStore.saveBlock(newBlock, td, false);
             }
 
             // calc all TDs
             Map<Keccak256, BlockDifficulty> tDiffs = new HashMap<>();
-            td = RskTestFactory.getGenesisInstance(config).getCumulativeDifficulty();
+            td = RskTestFactory.getGenesisInstance(config).getDifficultyWithUncles();
             for (Block block : bestLine) {
-                td = td.add(block.getCumulativeDifficulty());
+                td = td.add(block.getDifficultyWithUncles());
                 tDiffs.put(block.getHash(), td);
             }
 
@@ -739,7 +739,7 @@ public abstract class IndexedBlockStoreTest {
             Block block = forkLine.get(0);
             td = tDiffs.get(block.getParentHash());
             for (Block currBlock : forkLine) {
-                td = td.add(currBlock.getCumulativeDifficulty());
+                td = td.add(currBlock.getDifficultyWithUncles());
                 tForkDiffs.put(currBlock.getHash(), td);
             }
 
@@ -806,13 +806,13 @@ public abstract class IndexedBlockStoreTest {
             Block genesis = RskTestFactory.getGenesisInstance(config);
             List<Block> bestLine = getRandomChain(blockFactory, genesis.getHash().getBytes(), 1, 100);
 
-            indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+            indexedBlockStore.saveBlock(genesis, genesis.getDifficultyWithUncles(), true);
 
-            BlockDifficulty td = genesis.getCumulativeDifficulty();
+            BlockDifficulty td = genesis.getDifficultyWithUncles();
 
             for (int i = 0; i < bestLine.size(); ++i) {
                 Block newBlock = bestLine.get(i);
-                td = td.add(newBlock.getCumulativeDifficulty());
+                td = td.add(newBlock.getDifficultyWithUncles());
 
                 indexedBlockStore.saveBlock(newBlock, td, true);
             }
@@ -826,7 +826,7 @@ public abstract class IndexedBlockStoreTest {
                 Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash().getBytes());
                 td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash().getBytes());
 
-                td = td.add(newBlock.getCumulativeDifficulty());
+                td = td.add(newBlock.getDifficultyWithUncles());
                 indexedBlockStore.saveBlock(newBlock, td, false);
             }
 
@@ -858,13 +858,13 @@ public abstract class IndexedBlockStoreTest {
             Block genesis = RskTestFactory.getGenesisInstance(config);
             List<Block> bestLine = getRandomChain(blockFactory, genesis.getHash().getBytes(), 1, 100);
 
-            indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+            indexedBlockStore.saveBlock(genesis, genesis.getDifficultyWithUncles(), true);
 
             BlockDifficulty td = BlockDifficulty.ZERO;
 
             for (int i = 0; i < bestLine.size(); ++i) {
                 Block newBlock = bestLine.get(i);
-                td = td.add(newBlock.getCumulativeDifficulty());
+                td = td.add(newBlock.getDifficultyWithUncles());
 
                 indexedBlockStore.saveBlock(newBlock, td, true);
             }
@@ -878,7 +878,7 @@ public abstract class IndexedBlockStoreTest {
                 Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash().getBytes());
                 td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash().getBytes());
 
-                td = td.add(newBlock.getCumulativeDifficulty());
+                td = td.add(newBlock.getDifficultyWithUncles());
                 indexedBlockStore.saveBlock(newBlock, td, false);
             }
 
@@ -959,14 +959,14 @@ public abstract class IndexedBlockStoreTest {
                         "1edd6e4b4cf55371853cba13d57118bd88d44d3609c7e203c7c0c0"
         ));
 
-        indexedBlockStore.saveBlock(block1, block1.getCumulativeDifficulty(), true);
+        indexedBlockStore.saveBlock(block1, block1.getDifficultyWithUncles(), true);
         indexedBlockStore.flush();
 
-        indexedBlockStore.saveBlock(block2, block2.getCumulativeDifficulty(), true);
+        indexedBlockStore.saveBlock(block2, block2.getDifficultyWithUncles(), true);
         indexedBlockStore.flush();
 
-        assertEquals(block1.getCumulativeDifficulty(), indexedBlockStore.getTotalDifficultyForHash(block1.getHash().getBytes()));
-        assertEquals(block2.getCumulativeDifficulty(), indexedBlockStore.getTotalDifficultyForHash(block2.getHash().getBytes()));
+        assertEquals(block1.getDifficultyWithUncles(), indexedBlockStore.getTotalDifficultyForHash(block1.getHash().getBytes()));
+        assertEquals(block2.getDifficultyWithUncles(), indexedBlockStore.getTotalDifficultyForHash(block2.getHash().getBytes()));
     }
 
     @Test

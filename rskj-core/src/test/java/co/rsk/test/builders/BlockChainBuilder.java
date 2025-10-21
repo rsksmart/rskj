@@ -266,7 +266,7 @@ public class BlockChainBuilder {
             blockChain.setNoValidation(true);
         }
 
-        blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+        blockStore.saveBlock(genesis, genesis.getDifficultyWithUncles(), true);
         if (this.blocks != null) {
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock().getHeader());

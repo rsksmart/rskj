@@ -170,7 +170,7 @@ public class BlockResultDTO {
                 isPending ? null : b.getCoinbase(),
                 b.getDifficulty(),
                 blockStore.getTotalDifficultyForHash(b.getHash().getBytes()),
-                b.getCumulativeDifficulty(),
+                b.getDifficultyWithUncles(),
                 b.getExtraData(),
                 b.getEncoded().length,
                 b.getGasLimit(),

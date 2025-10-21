@@ -6,14 +6,14 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 
-public class GetCumulativeDifficulty extends BlockHeaderContractMethod {
+public class GetDifficultyWithUncles extends BlockHeaderContractMethod {
     private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-        "getCumulativeDifficulty",
+        "getDifficultyWithUncles",
         new String[]{"int256"},
         new String[]{"bytes"}
     );
 
-    public GetCumulativeDifficulty(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
+    public GetDifficultyWithUncles(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
         super(executionEnvironment, blockAccessor);
     }
 
@@ -24,7 +24,7 @@ public class GetCumulativeDifficulty extends BlockHeaderContractMethod {
 
     @Override
     protected Object internalExecute(Block block, Object[] arguments) throws NativeContractIllegalArgumentException {
-        return block.getCumulativeDifficulty().getBytes();
+        return block.getDifficultyWithUncles().getBytes();
     }
 
     @Override

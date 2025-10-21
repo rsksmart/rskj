@@ -45,7 +45,7 @@ public class StatusResolver {
                     genesis.getNumber(),
                     genesis.getHash().getBytes(),
                     genesis.getParentHash().getBytes(),
-                    genesis.getCumulativeDifficulty());
+                    genesis.getDifficultyWithUncles());
         } else {
             Block block = blockStore.getBestBlock();
             BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());

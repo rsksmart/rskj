@@ -61,7 +61,7 @@ class StatusResolverTest {
         when(genesis.getParentHash()).thenReturn(parentHash);
         when(genesis.getNumber()).thenReturn(0L);
         BlockDifficulty genesisDifficulty = new BlockDifficulty(BigInteger.valueOf(10L));
-        when(genesis.getCumulativeDifficulty()).thenReturn(genesisDifficulty);
+        when(genesis.getDifficultyWithUncles()).thenReturn(genesisDifficulty);
 
         Status status = target.currentStatus();
 

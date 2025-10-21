@@ -283,7 +283,7 @@ public class BlockChainImpl implements Blockchain {
 
         metric = profiler.start(MetricKind.AFTER_BLOCK_EXEC);
         // the new accumulated difficulty
-        BlockDifficulty totalDifficulty = parentTotalDifficulty.add(block.getCumulativeDifficulty());
+        BlockDifficulty totalDifficulty = parentTotalDifficulty.add(block.getDifficultyWithUncles());
         logger.trace("TD: updated to {}", totalDifficulty);
 
         // It is the new best block

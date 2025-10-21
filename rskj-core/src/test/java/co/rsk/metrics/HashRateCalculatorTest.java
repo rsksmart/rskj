@@ -84,7 +84,7 @@ class HashRateCalculatorTest {
                 .thenReturn(FAKE_COINBASE)
                 .thenReturn(NOT_MY_COINBASE);
 
-        Mockito.when(block.getCumulativeDifficulty()).thenReturn(TEST_DIFFICULTY);
+        Mockito.when(block.getDifficultyWithUncles()).thenReturn(TEST_DIFFICULTY);
 
         HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
@@ -103,7 +103,7 @@ class HashRateCalculatorTest {
                 .thenReturn(FAKE_COINBASE)
                 .thenReturn(NOT_MY_COINBASE);
 
-        Mockito.when(block.getCumulativeDifficulty()).thenReturn(TEST_DIFFICULTY);
+        Mockito.when(block.getDifficultyWithUncles()).thenReturn(TEST_DIFFICULTY);
 
         HashRateCalculator hashRateCalculator = new HashRateCalculatorNonMining(blockStore, new RskCustomCache<>(1000L));
         BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
@@ -119,7 +119,7 @@ class HashRateCalculatorTest {
 
         Mockito.when(blockHeader.getCoinbase()).thenReturn(FAKE_COINBASE);
 
-        Mockito.when(block.getCumulativeDifficulty()).thenReturn(TEST_DIFFICULTY);
+        Mockito.when(block.getDifficultyWithUncles()).thenReturn(TEST_DIFFICULTY);
 
         HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
@@ -138,7 +138,7 @@ class HashRateCalculatorTest {
                 .thenReturn(FAKE_COINBASE)
                 .thenReturn(NOT_MY_COINBASE);
 
-        Mockito.when(block.getCumulativeDifficulty()).thenReturn(TEST_DIFFICULTY);
+        Mockito.when(block.getDifficultyWithUncles()).thenReturn(TEST_DIFFICULTY);
 
         HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNetHashRate(Duration.ofHours(1));
@@ -154,7 +154,7 @@ class HashRateCalculatorTest {
 
         Mockito.when(blockHeader.getCoinbase()).thenReturn(FAKE_COINBASE);
 
-        Mockito.when(block.getCumulativeDifficulty()).thenReturn(TEST_DIFFICULTY);
+        Mockito.when(block.getDifficultyWithUncles()).thenReturn(TEST_DIFFICULTY);
 
         HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNetHashRate(Duration.ofHours(1));

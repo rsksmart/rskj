@@ -134,7 +134,7 @@ public class TestRunner {
         Repository repository = RepositoryBuilder.build(trieStore, testCase.getPre());
 
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
-        blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+        blockStore.saveBlock(genesis, genesis.getDifficultyWithUncles(), true);
 
         CompositeEthereumListener listener = new TestCompositeEthereumListener();
 
@@ -170,7 +170,7 @@ public class TestRunner {
         );
 
         blockchain.setNoValidation(true);
-        blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
+        blockchain.setStatus(genesis, genesis.getDifficultyWithUncles());
 
         /* 2 */ // Create block traffic list
         List<Block> blockTraffic = new ArrayList<>();
@@ -202,7 +202,7 @@ public class TestRunner {
 
             ImportResult importResult = blockchain.tryToConnect(block);
             logger.debug("{} ~ {} difficulty: {} ::: {}", block.getPrintableHash(), toPrintableHash(block.getParentHash().getBytes()),
-                    block.getCumulativeDifficulty(), importResult.toString());
+                    block.getDifficultyWithUncles(), importResult.toString());
         }
 
         //Check state root matches last valid block

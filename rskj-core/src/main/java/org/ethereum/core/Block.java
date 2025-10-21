@@ -51,11 +51,10 @@ import java.util.List;
 public class Block {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private BlockHeader header;
+    private final BlockHeader header;
+    private final List<BlockHeader> uncleList;
 
     private List<Transaction> transactionsList;
-
-    private List<BlockHeader> uncleList;
 
     /* Private */
     private byte[] rlpEncoded;
@@ -161,7 +160,7 @@ public class Block {
         return this.header.getPaidFees();
     }
 
-    public BlockDifficulty getCumulativeDifficulty() {
+    public BlockDifficulty getDifficultyWithUncles() {
         BlockDifficulty calcDifficulty = this.header.getDifficulty();
         for (BlockHeader uncle : uncleList) {
             calcDifficulty = calcDifficulty.add(uncle.getDifficulty());
