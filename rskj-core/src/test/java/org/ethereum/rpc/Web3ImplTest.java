@@ -2687,7 +2687,7 @@ class Web3ImplTest {
 
         Web3RskImpl web3 = (Web3RskImpl) createWeb3();
 
-        HexIndexParam hexIndexParam = new HexIndexParam("0x01");
+        final var hexIndexParam = new HexDataParam(HexUtils.generateRandomUUIDToHexString());
 
         RskJsonRpcRequestException exception = Assertions.assertThrowsExactly(
                 expectedException.getClass(),
@@ -2709,7 +2709,7 @@ class Web3ImplTest {
 
         Web3RskImpl web3 = (Web3RskImpl) createWeb3();
 
-        HexIndexParam hexIndexParam = new HexIndexParam("0x01");
+        HexDataParam hexIndexParam = new HexDataParam(HexUtils.generateRandomUUIDToHexString());
 
         RskJsonRpcRequestException exception = Assertions.assertThrowsExactly(
                 expectedException.getClass(),

@@ -985,10 +985,7 @@ public class Web3Impl implements Web3 {
         String str = null;
         try {
             Filter filter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore, config.getRpcEthGetLogsMaxBlockToQuery(), config.getRpcEthGetLogsMaxLogsToReturn());
-            int id = filterManager.registerFilter(filter);
-
-            str = toQuantityJsonHex(id);
-            return str;
+            return filterManager.registerFilter(filter);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_newFilter({}): {}", fr, str);
@@ -1000,10 +997,7 @@ public class Web3Impl implements Web3 {
     public String eth_newBlockFilter() {
         String s = null;
         try {
-            int id = filterManager.registerFilter(new NewBlockFilter());
-
-            s = toQuantityJsonHex(id);
-            return s;
+            return filterManager.registerFilter(new NewBlockFilter());
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_newBlockFilter(): {}", s);
@@ -1015,10 +1009,7 @@ public class Web3Impl implements Web3 {
     public String eth_newPendingTransactionFilter() {
         String s = null;
         try {
-            int id = filterManager.registerFilter(new PendingTransactionFilter());
-
-            s = toQuantityJsonHex(id);
-            return s;
+            return filterManager.registerFilter(new PendingTransactionFilter());
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_newPendingTransactionFilter(): {}", s);
@@ -1027,7 +1018,7 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public boolean eth_uninstallFilter(HexIndexParam id) {
+    public boolean eth_uninstallFilter(HexDataParam id) {
         Boolean s = null;
 
         try {
@@ -1035,7 +1026,7 @@ public class Web3Impl implements Web3 {
                 return false;
             }
 
-            return filterManager.removeFilter(id.getIndex());
+            return filterManager.removeFilter(id.getAsHexString());
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_uninstallFilter({}): {}", id, s);
@@ -1044,7 +1035,7 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public Object[] eth_getFilterChanges(HexIndexParam id) {
+    public Object[] eth_getFilterChanges(HexDataParam id) {
         logger.debug("eth_getFilterChanges ...");
 
         // TODO(mc): this is a quick solution that seems to work with OpenZeppelin tests, but needs to be reviewed
@@ -1057,7 +1048,7 @@ public class Web3Impl implements Web3 {
         Object[] s = null;
 
         try {
-            s = this.filterManager.getFilterEvents(id.getIndex(), true);
+            s = this.filterManager.getFilterEvents(id.getAsHexString(), true);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getFilterChanges({}): {}", id, Arrays.toString(s));
@@ -1068,13 +1059,13 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public Object[] eth_getFilterLogs(HexIndexParam id) {
+    public Object[] eth_getFilterLogs(HexDataParam id) {
         logger.debug("eth_getFilterLogs ...");
 
         Object[] s = null;
 
         try {
-            s = this.filterManager.getFilterEvents(id.getIndex(), false);
+            s = this.filterManager.getFilterEvents(id.getAsHexString(), false);
 
         } finally {
             if (logger.isDebugEnabled()) {
@@ -1089,7 +1080,7 @@ public class Web3Impl implements Web3 {
     public Object[] eth_getLogs(FilterRequestParam fr) throws Exception {
         logger.debug("eth_getLogs ...");
         String id = newFilter(fr.toFilterRequest());
-        HexIndexParam idParam = new HexIndexParam(id);
+        final var idParam = new HexDataParam(id);
         Object[] ret = eth_getFilterLogs(idParam);
         eth_uninstallFilter(idParam);
         return ret;
