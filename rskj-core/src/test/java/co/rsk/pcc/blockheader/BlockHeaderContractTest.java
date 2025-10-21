@@ -92,7 +92,7 @@ class BlockHeaderContractTest {
     private CallTransaction.Function getBitcoinHeaderFunction;
     private CallTransaction.Function getUncleCoinbaseAddressFunction;
     private CallTransaction.Function getDifficultyWithUnclesFunction;
-    private CallTransaction.Function getTotalDifficultyFunction;
+    private CallTransaction.Function getCumulativeWorkFunction;
 
     @BeforeEach
     void setUp() {
@@ -111,7 +111,7 @@ class BlockHeaderContractTest {
         getBitcoinHeaderFunction = getContractFunction(blockHeaderContract, GetBitcoinHeader.class);
         getUncleCoinbaseAddressFunction = getContractFunction(blockHeaderContract, GetUncleCoinbaseAddress.class);
         getDifficultyWithUnclesFunction = getContractFunction(blockHeaderContract, GetDifficultyWithUncles.class);
-        getTotalDifficultyFunction = getContractFunction(blockHeaderContract, GetTotalDifficulty.class);
+        getCumulativeWorkFunction = getContractFunction(blockHeaderContract, GetCumulativeWork.class);
 
         // invoke transaction
         rskTx = Transaction
@@ -153,7 +153,7 @@ class BlockHeaderContractTest {
             GetBitcoinHeader.class,
             GetUncleCoinbaseAddress.class,
             GetDifficultyWithUncles.class,
-            GetTotalDifficulty.class
+            GetCumulativeWork.class
         );
     }
 
@@ -403,7 +403,7 @@ class BlockHeaderContractTest {
 
     @ParameterizedTest
     @MethodSource("blockDepthProvider")
-    void getTotalDifficulty_whenMethodDisabled_shouldThrowVME(int blockDepth) {
+    void getCumulativeWork_whenMethodDisabled_shouldThrowVME(int blockDepth) {
         // arrange
         int blockchainLength = 4000;
         buildBlockchainOfLength(blockchainLength);
@@ -414,26 +414,26 @@ class BlockHeaderContractTest {
 
         assertThrows(
             VMException.class,
-            () -> blockHeaderContract.execute(getTotalDifficultyFunction.encode(BigInteger.valueOf(blockDepth)))
+            () -> blockHeaderContract.execute(getCumulativeWorkFunction.encode(BigInteger.valueOf(blockDepth)))
         );
     }
 
     @ParameterizedTest
     @MethodSource("blockDepthProvider")
-    void getTotalDifficulty(int blockDepth) throws VMException {
+    void getCumulativeWork(int blockDepth) throws VMException {
         int blockchainLength = 4000;
         buildBlockchainOfLength(blockchainLength);
         initContract();
 
-        byte[] encodedResult = blockHeaderContract.execute(getTotalDifficultyFunction.encode(BigInteger.valueOf(blockDepth)));
+        byte[] encodedResult = blockHeaderContract.execute(getCumulativeWorkFunction.encode(BigInteger.valueOf(blockDepth)));
 
         int blockHeight = blockchainLength - blockDepth;
-        BigInteger expectedTotalDifficulty = calculateBlockExpectedTotalDifficultyWithUncles(blockHeight);
-        Object[] decodedResult = getTotalDifficultyFunction.decodeResult(encodedResult);
-        assertExpectedResult(expectedTotalDifficulty, decodedResult);
+        BigInteger expectedCumulativeWork = calculateBlockExpectedCumulativeWorkWithUncles(blockHeight);
+        Object[] decodedResult = getCumulativeWorkFunction.decodeResult(encodedResult);
+        assertExpectedResult(expectedCumulativeWork, decodedResult);
     }
 
-    private BigInteger calculateBlockExpectedTotalDifficultyWithUncles(int blockHeight) {
+    private BigInteger calculateBlockExpectedCumulativeWorkWithUncles(int blockHeight) {
         // Expected calculation:
         // N = blockHeight
         // - Block 0 (genesis): difficulty 1, no uncles
@@ -530,7 +530,7 @@ class BlockHeaderContractTest {
             GetDifficulty.class,
             GetBitcoinHeader.class,
             GetDifficultyWithUncles.class,
-            GetTotalDifficulty.class
+            GetCumulativeWork.class
         );
     }
 
