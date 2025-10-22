@@ -24,9 +24,7 @@ import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.net.Status;
 import co.rsk.scoring.PeerScoringManager;
-import co.rsk.util.HexUtils;
 import org.ethereum.core.Blockchain;
-import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
@@ -39,11 +37,11 @@ import org.mockito.MockitoAnnotations;
 import java.math.BigInteger;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -209,7 +207,7 @@ class PeersInformationTest {
     }
 
     private PeersInformation setupTopBestSnapshotScenario(double topBest) {
-        Map<String, Node> trustedSnapPeersMap = new HashMap<>();
+        Set<NodeID> trustedSnapPeersMap = new HashSet<>();
 
         Mockito.when(syncConfiguration.getExpirationTimePeerStatus())
                 .thenReturn(Duration.of(1, ChronoUnit.HOURS));
@@ -219,7 +217,7 @@ class PeersInformationTest {
 
         Mockito.when(blockchain.getStatus()).thenReturn(blockChainStatus);
 
-        Mockito.when(syncConfiguration.getNodeIdToSnapshotTrustedPeerMap()).thenReturn(trustedSnapPeersMap);
+        Mockito.when(syncConfiguration.getSnapBootNodeIds()).thenReturn(trustedSnapPeersMap);
 
         PeersInformation peersInformation = new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager, random);
 
@@ -236,7 +234,7 @@ class PeersInformationTest {
 
         return peersInformation;
     }
-    private Peer setupPeer(PeersInformation peersInformation, Map<String, Node> trustedSnapPeersMap, String nodeId, String nodeHost,
+    private Peer setupPeer(PeersInformation peersInformation, Set<NodeID> trustedSnapPeersMap, String nodeId, String nodeHost,
                            boolean hasGoodReputation, long bestBlockNumber, long blockDifficulty,
                            boolean hasLowerTotalDifficultyThan, boolean isSnapCapable) {
         Peer peer = Mockito.mock(Peer.class);
@@ -245,7 +243,7 @@ class PeersInformationTest {
         Mockito.when(peer.getPeerNodeID()).thenReturn(new NodeID(nodeId.getBytes()));
 
         if(trustedSnapPeersMap!=null){
-            trustedSnapPeersMap.put(peer.getPeerNodeID().toString(), new Node(HexUtils.strHexOrStrNumberToByteArray(nodeId), nodeHost, 0));
+            trustedSnapPeersMap.add(peer.getPeerNodeID());
         }
 
         Mockito.when(peerScoringManager.hasGoodReputation(Mockito.eq(peer.getPeerNodeID()))).thenReturn(hasGoodReputation);
