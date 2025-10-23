@@ -107,8 +107,9 @@ public enum ConsensusRule {
     RSKIP454("rskip454"),
     RSKIP459("rskip459"),
     RSKIP460("rskip460"),
-    RSKIP502("rskip502"), // Union bridge integration
-    RSKIP516("rskip516"), //  Addition of precompiled contracts for add and mul operations on the secp256k1 curve
+    RSKIP502("rskip502"), // PowPeg and Union Bridge integration
+    RSKIP516("rskip516"), // Addition of precompiled contracts for add and mul operations on the secp256k1 curve
+    RSKIP529("rskip529"), // New storage cells in Bridge native contract for base and super events info
     ;
 
     private final String configKey;

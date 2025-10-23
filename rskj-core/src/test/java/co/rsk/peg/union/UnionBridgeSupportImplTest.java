@@ -2,8 +2,11 @@ package co.rsk.peg.union;
 
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedData;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedTopics;
+import static co.rsk.peg.union.UnionBridgeSupportImpl.MAX_EVENT_DATA_LENGTH;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -45,8 +48,10 @@ class UnionBridgeSupportImplTest {
     private static final RskAddress changeLockingCapAuthorizer = RskAddress.ZERO_ADDRESS;
     private static final RskAddress changeTransferPermissionsAuthorizer = RskAddress.ZERO_ADDRESS;
 
-    private static final RskAddress unionBridgeContractAddress = RskTestUtils.generateAddress("newUnionBridgeContractAddress");
-    private static final RskAddress newUnionBridgeContractAddress = RskTestUtils.generateAddress("secondNewUnionBridgeContractAddress");
+    private static final RskAddress newUnionBridgeContractAddress = RskTestUtils.generateAddress("newUnionBridgeContractAddress");
+    private static final RskAddress secondNewUnionBridgeContractAddress = RskTestUtils.generateAddress("secondNewUnionBridgeContractAddress");
+    private static final byte[] superEvent = new byte[]{(byte) 0x123456};
+    private static final byte[] baseEvent = new byte[]{(byte) 0x123456};
 
     private final UnionBridgeSupportBuilder unionBridgeSupportBuilder = UnionBridgeSupportBuilder.builder();
 
@@ -77,6 +82,7 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport = unionBridgeSupportBuilder.build();
 
         rskTx = mock(Transaction.class);
+        when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeConstants.getAddress());
     }
 
     private static Stream<Arguments> unionBridgeConstantsProvider() {
@@ -93,7 +99,8 @@ class UnionBridgeSupportImplTest {
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(unionBridgeConstants).build();
+            .withConstants(unionBridgeConstants)
+            .build();
 
         // act
         RskAddress actualUnionBridgeContractAddress = unionBridgeSupport.getUnionBridgeContractAddress();
@@ -107,11 +114,12 @@ class UnionBridgeSupportImplTest {
     void getUnionBridgeContractAddress_whenStoredAddress_shouldReturnStoredAddress() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(testnetUnionBridgeConstants).build();
+            .withConstants(testnetUnionBridgeConstants)
+            .build();
         // to simulate the case where there is a previous address stored
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
-            unionBridgeContractAddress,
+            newUnionBridgeContractAddress,
             BridgeSerializationUtils::serializeRskAddress
         );
 
@@ -119,7 +127,7 @@ class UnionBridgeSupportImplTest {
         RskAddress actualUnionBridgeContractAddress = unionBridgeSupport.getUnionBridgeContractAddress();
 
         // assert
-        assertEquals(unionBridgeContractAddress, actualUnionBridgeContractAddress);
+        assertEquals(newUnionBridgeContractAddress, actualUnionBridgeContractAddress);
     }
 
     @Test
@@ -128,12 +136,13 @@ class UnionBridgeSupportImplTest {
         // to simulate the case where there is a previous address stored
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
-            unionBridgeContractAddress,
+            newUnionBridgeContractAddress,
             BridgeSerializationUtils::serializeRskAddress
         );
 
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
+            .withConstants(mainnetUnionBridgeConstants)
+            .build();
 
         // act
         RskAddress actualUnionBridgeContractAddress = unionBridgeSupport.getUnionBridgeContractAddress();
@@ -150,19 +159,19 @@ class UnionBridgeSupportImplTest {
             .build();
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(unionBridgeContractAddress);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
 
         // assert
         assertEquals(
             UnionResponseCode.SUCCESS,
             actualResponseCode
         );
-        assertAddressWasSet(unionBridgeContractAddress);
+        assertAddressWasSet(newUnionBridgeContractAddress);
         assertNoAddressIsStored();
 
         // call save and assert that the address is stored
         unionBridgeSupport.save();
-        assertAddressWasStored(unionBridgeContractAddress);
+        assertAddressWasStored(newUnionBridgeContractAddress);
     }
 
     private void assertNoAddressIsStored() {
@@ -216,7 +225,7 @@ class UnionBridgeSupportImplTest {
         // Save the address in storage
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
-            unionBridgeContractAddress,
+            newUnionBridgeContractAddress,
             BridgeSerializationUtils::serializeRskAddress
         );
 
@@ -225,25 +234,25 @@ class UnionBridgeSupportImplTest {
             .build();
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(secondNewUnionBridgeContractAddress);
 
         // assert
         assertEquals(
             UnionResponseCode.SUCCESS,
             actualResponseCode
         );
-        assertAddressWasSet(newUnionBridgeContractAddress);
+        assertAddressWasSet(secondNewUnionBridgeContractAddress);
 
         RskAddress actualRskAddress = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
             BridgeSerializationUtils::deserializeRskAddress
         );
-        assertEquals(unionBridgeContractAddress, actualRskAddress);
-        assertNotEquals(newUnionBridgeContractAddress, actualRskAddress);
+        assertEquals(newUnionBridgeContractAddress, actualRskAddress);
+        assertNotEquals(secondNewUnionBridgeContractAddress, actualRskAddress);
 
         // call save and assert that the new address is stored
         unionBridgeSupport.save();
-        assertAddressWasStored(newUnionBridgeContractAddress);
+        assertAddressWasStored(secondNewUnionBridgeContractAddress);
     }
 
     @Test
@@ -1250,7 +1259,7 @@ class UnionBridgeSupportImplTest {
             .build();
 
         // set union bridge contract address
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(unionBridgeContractAddress);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
         // increase locking cap
@@ -1263,7 +1272,7 @@ class UnionBridgeSupportImplTest {
 
         // request union rbtc
         rskTx = mock(Transaction.class);
-        when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeContractAddress);
+        when(rskTx.getSender(signatureCache)).thenReturn(newUnionBridgeContractAddress);
         Coin amountRequested = new Coin(BigInteger.valueOf(100));
         UnionResponseCode actualRequestUnionRbtcResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
         assertEquals(UnionResponseCode.SUCCESS,  actualRequestUnionRbtcResponseCode);
@@ -1284,8 +1293,8 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport.save();
 
         // assert
-        assertAddressWasSet(unionBridgeContractAddress);
-        assertAddressWasStored(unionBridgeContractAddress);
+        assertAddressWasSet(newUnionBridgeContractAddress);
+        assertAddressWasStored(newUnionBridgeContractAddress);
         assertLockingCapWasStored(newLockingCap);
 
         Coin expectedWeisTransferred = amountRequested.subtract(amountToRelease);
@@ -1301,19 +1310,19 @@ class UnionBridgeSupportImplTest {
         // to simulate the case where the address is already stored
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
-            unionBridgeContractAddress,
+            newUnionBridgeContractAddress,
             BridgeSerializationUtils::serializeRskAddress
         );
 
         // arrange
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(secondNewUnionBridgeContractAddress);
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
         // act
         unionBridgeSupport.save();
 
-        assertAddressWasSet(newUnionBridgeContractAddress);
-        assertAddressWasStored(newUnionBridgeContractAddress);
+        assertAddressWasSet(secondNewUnionBridgeContractAddress);
+        assertAddressWasStored(secondNewUnionBridgeContractAddress);
         assertNoLockingCapIsStored();
         assertNoWeisTransferredIsStored();
         assertNoTransferPermissionsWereStored();
@@ -1432,6 +1441,284 @@ class UnionBridgeSupportImplTest {
         assertNoLockingCapIsStored();
         assertNoWeisTransferredIsStored();
     }
+
+    @Test
+    void getSuperEvent_whenNotSavedData_shouldReturnEmptyArray() {
+        // Act & Assert
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getSuperEvent());
+    }
+
+    @Test
+    void getSuperEvent_whenEmptyDataSet_shouldReturnEmptyArray() {
+        // Arrange
+        unionBridgeSupport.setSuperEvent(rskTx, EMPTY_BYTE_ARRAY);
+
+        // Act & Assert
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getSuperEvent());
+    }
+
+    @Test
+    void getSuperEvent_shouldReturnCachedSuperEvent() {
+        // Arrange
+        unionBridgeSupport.setSuperEvent(rskTx, superEvent);
+
+        // Act & Assert
+        assertArrayEquals(superEvent, unionBridgeSupport.getSuperEvent());
+    }
+
+    @Test
+    void getSuperEvent_whenDataSavedAndNewDataSet_shouldReturnNewData() {
+        // Arrange
+        unionBridgeSupport.setSuperEvent(rskTx, superEvent);
+        unionBridgeSupport.save();
+
+        // Act
+        byte[] newSuperEvent = new byte[]{(byte) 0x12345678};
+        unionBridgeSupport.setSuperEvent(rskTx, newSuperEvent);
+
+        // Assert
+        assertArrayEquals(newSuperEvent, unionBridgeSupport.getSuperEvent());
+    }
+
+
+    @Test
+    void setSuperEvent_afterChangingUnionBridgeAddress_newAddressShouldSet_oldAddressShouldNot() {
+        // Arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(testnetUnionBridgeConstants)
+            .build();
+
+        RskAddress unionBridgeAddress = testnetUnionBridgeConstants.getAddress();
+        when(rskTx.getSender(any())).thenReturn(unionBridgeAddress);
+
+        // save super event data to make sure it will change
+        unionBridgeSupport.setSuperEvent(rskTx, superEvent);
+        unionBridgeSupport.save();
+
+        // change testnet union bridge address
+        unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
+        unionBridgeSupport.save();
+
+        // Act & Assert
+        byte[] newSuperEvent = new byte[]{(byte) 0x12345678};
+
+        // old address should not be able to set new super event data
+        assertThrows(IllegalArgumentException.class, () -> unionBridgeSupport.setSuperEvent(rskTx, newSuperEvent));
+
+        // new address should be able to set new super event data
+        when(rskTx.getSender(any())).thenReturn(newUnionBridgeContractAddress);
+        unionBridgeSupport.setSuperEvent(rskTx, newSuperEvent);
+        assertArrayEquals(newSuperEvent, unionBridgeSupport.getSuperEvent());
+    }
+
+    @Test
+    void setSuperEvent_dataLengthExactlyMaximum_shouldSetSuperEvent() {
+        // Arrange
+        byte[] superEventMaxLength = new byte[MAX_EVENT_DATA_LENGTH];
+
+        // Act
+        unionBridgeSupport.setSuperEvent(rskTx, superEventMaxLength);
+
+        // Assert
+        assertArrayEquals(superEventMaxLength, unionBridgeSupport.getSuperEvent());
+    }
+
+    @Test
+    void setSuperEvent_dataLengthAboveMaximum_shouldThrowIAE() {
+        // Arrange
+        byte[] superEventAboveMaxLength = new byte[MAX_EVENT_DATA_LENGTH + 1];
+
+        // Act & Assert
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> unionBridgeSupport.setSuperEvent(rskTx, superEventAboveMaxLength)
+        );
+    }
+
+    @Test
+    void setSuperEvent_whenNullDataSet_shouldThrowNPE() {
+        assertThrows(NullPointerException.class, () -> unionBridgeSupport.setSuperEvent(rskTx, null));
+    }
+
+    @Test
+    void clearSuperEvent_whenDataSaved_shouldClearData() {
+        // Arrange
+        unionBridgeSupport.setSuperEvent(rskTx, superEvent);
+        unionBridgeSupport.save();
+
+        // Act
+        unionBridgeSupport.clearSuperEvent(rskTx);
+
+        // Assert
+        byte[] emptyData = new byte[]{};
+        assertArrayEquals(emptyData, unionBridgeSupport.getSuperEvent());
+    }
+
+    @Test
+    void clearSuperEvent_afterChangingUnionBridgeAddress_newAddressShouldClear_oldAddressShouldNot() {
+        // Arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(testnetUnionBridgeConstants)
+            .build();
+
+        RskAddress unionBridgeAddress = testnetUnionBridgeConstants.getAddress();
+        when(rskTx.getSender(any())).thenReturn(unionBridgeAddress);
+
+        // save super event data to make sure it will be cleared
+        unionBridgeSupport.setSuperEvent(rskTx, superEvent);
+        unionBridgeSupport.save();
+
+        // change testnet union bridge address
+        unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
+        unionBridgeSupport.save();
+
+        // Act & Assert
+        // old address should not be able to clear super event
+        assertThrows(IllegalArgumentException.class, () -> unionBridgeSupport.clearSuperEvent(rskTx));
+
+        // new address should be able to clear super event data
+        when(rskTx.getSender(any())).thenReturn(newUnionBridgeContractAddress);
+        unionBridgeSupport.clearSuperEvent(rskTx);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getSuperEvent());
+    }
+    @Test
+    void getBaseEvent_whenNotSavedData_shouldReturnEmptyArray() {
+        // Act & Assert
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
+    }
+
+    @Test
+    void getBaseEvent_whenEmptyDataSet_shouldReturnEmptyArray() {
+        // Arrange
+        unionBridgeSupport.setBaseEvent(rskTx, EMPTY_BYTE_ARRAY);
+
+        // Act & Assert
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
+    }
+
+    @Test
+    void getBaseEvent_shouldReturnCachedBaseEvent() {
+        // Arrange
+        unionBridgeSupport.setBaseEvent(rskTx, baseEvent);
+
+        // Act & Assert
+        assertArrayEquals(baseEvent, unionBridgeSupport.getBaseEvent());
+    }
+
+    @Test
+    void getBaseEvent_whenDataSavedAndNewDataSet_shouldReturnNewData() {
+        // Arrange
+        unionBridgeSupport.setBaseEvent(rskTx, baseEvent);
+        unionBridgeSupport.save();
+
+        // Act
+        byte[] newBaseEvent = new byte[]{(byte) 0x12345678};
+        unionBridgeSupport.setBaseEvent(rskTx, newBaseEvent);
+
+        // Assert
+        assertArrayEquals(newBaseEvent, unionBridgeSupport.getBaseEvent());
+    }
+
+    @Test
+    void setBaseEvent_afterChangingUnionBridgeAddress_newAddressShouldSet_oldAddressShouldNot() {
+        // Arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(testnetUnionBridgeConstants)
+            .build();
+
+        RskAddress unionBridgeAddress = testnetUnionBridgeConstants.getAddress();
+        when(rskTx.getSender(any())).thenReturn(unionBridgeAddress);
+
+        // save base event data to make sure it will change
+        unionBridgeSupport.setBaseEvent(rskTx, baseEvent);
+        unionBridgeSupport.save();
+
+        // change testnet union bridge address
+        unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
+        unionBridgeSupport.save();
+
+        // Act & Assert
+        byte[] newBaseEvent = new byte[]{(byte) 0x12345678};
+
+        // old address should not be able to set new base event data
+        assertThrows(IllegalArgumentException.class, () -> unionBridgeSupport.setBaseEvent(rskTx, newBaseEvent));
+
+        // new address should be able to set new base event data
+        when(rskTx.getSender(any())).thenReturn(newUnionBridgeContractAddress);
+        unionBridgeSupport.setBaseEvent(rskTx, newBaseEvent);
+        assertArrayEquals(newBaseEvent, unionBridgeSupport.getBaseEvent());
+    }
+
+    @Test
+    void setBaseEvent_dataLengthExactlyMaximum_shouldSetBaseEvent() {
+        // Arrange
+        byte[] baseEventMaxLength = new byte[MAX_EVENT_DATA_LENGTH];
+
+        // Act
+        unionBridgeSupport.setBaseEvent(rskTx, baseEventMaxLength);
+
+        // Assert
+        assertArrayEquals(baseEventMaxLength, unionBridgeSupport.getBaseEvent());
+    }
+
+    @Test
+    void setBaseEvent_dataLengthAboveMaximum_shouldThrowIAE() {
+        // Arrange
+        byte[] baseEventAboveMaxLength = new byte[MAX_EVENT_DATA_LENGTH + 1];
+
+        // Act & Assert
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> unionBridgeSupport.setBaseEvent(rskTx, baseEventAboveMaxLength)
+        );
+    }
+
+    @Test
+    void setBaseEvent_whenNullDataSet_shouldThrowNPE() {
+        assertThrows(NullPointerException.class, () -> unionBridgeSupport.setBaseEvent(rskTx, null));
+    }
+
+    @Test
+    void clearBaseEvent_whenDataSaved_shouldClearData() {
+        // Arrange
+        unionBridgeSupport.setBaseEvent(rskTx, baseEvent);
+        unionBridgeSupport.save();
+
+        // Act
+        unionBridgeSupport.clearBaseEvent(rskTx);
+
+        // Assert
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
+    }
+
+    @Test
+    void clearBaseEvent_afterChangingUnionBridgeAddress_newAddressShouldClear_oldAddressShouldNot() {
+        // Arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(testnetUnionBridgeConstants)
+            .build();
+
+        RskAddress unionBridgeAddress = testnetUnionBridgeConstants.getAddress();
+        when(rskTx.getSender(any())).thenReturn(unionBridgeAddress);
+
+        // save base event data to make sure it will be cleared
+        unionBridgeSupport.setBaseEvent(rskTx, baseEvent);
+        unionBridgeSupport.save();
+
+        // change testnet union bridge address
+        unionBridgeSupport.setUnionBridgeContractAddressForTestnet(newUnionBridgeContractAddress);
+        unionBridgeSupport.save();
+
+        // Act & Assert
+        // old address should not be able to clear base event data
+        assertThrows(IllegalArgumentException.class, () -> unionBridgeSupport.clearBaseEvent(rskTx));
+
+        // new address should be able to clear base event data
+        when(rskTx.getSender(any())).thenReturn(newUnionBridgeContractAddress);
+        unionBridgeSupport.clearBaseEvent(rskTx);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, unionBridgeSupport.getBaseEvent());
+    }
+
 
     private void assertAddressWasStored(RskAddress newUnionBridgeContractAddress) {
         RskAddress actualRskAddress = storageAccessor.getFromRepository(

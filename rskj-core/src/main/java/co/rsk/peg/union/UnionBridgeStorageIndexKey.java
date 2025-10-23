@@ -11,6 +11,8 @@ public enum UnionBridgeStorageIndexKey {
 
     UNION_BRIDGE_REQUEST_ENABLED("unionBridgeRequestEnabled"),
     UNION_BRIDGE_RELEASE_ENABLED("unionBridgeReleaseEnabled"),
+    SUPER_EVENT("superEvent"),
+    BASE_EVENT("baseEvent"),
     ;
 
     private final String key;

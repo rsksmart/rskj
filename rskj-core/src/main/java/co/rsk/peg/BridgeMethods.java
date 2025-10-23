@@ -130,7 +130,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getBtcBlockchainBestChainHeight",
             new String[]{},
-            new String[]{"int"}
+            new String[]{INT}
         ),
         fixedCost(19000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::getBtcBlockchainBestChainHeight,
@@ -141,7 +141,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getBtcBlockchainInitialBlockHeight",
             new String[]{},
-            new String[]{"int"}
+            new String[]{INT}
         ),
         fixedCost(20000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::getBtcBlockchainInitialBlockHeight,
@@ -324,7 +324,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "getMinimumLockTxValue",
             new String[]{},
-            new String[]{"int"}
+            new String[]{INT}
         ),
         fixedCost(2000L),
         (BridgeMethodExecutorTyped<Long>) Bridge::getMinimumLockTxValue,
@@ -636,7 +636,7 @@ public enum BridgeMethods {
     REGISTER_BTC_TRANSACTION(
         CallTransaction.Function.fromSignature(
             "registerBtcTransaction",
-            new String[]{BYTES, "int", BYTES},
+            new String[]{BYTES, INT, BYTES},
             new String[]{}
         ),
         fixedCost(22000L),
@@ -830,7 +830,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "setUnionBridgeContractAddressForTestnet",
             new String[]{ADDRESS},
-            new String[]{"int"}
+            new String[]{INT}
         ),
         fixedCost(8_000L),
         Bridge.executeIfTestnetAndAuthorized(
@@ -869,7 +869,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "increaseUnionBridgeLockingCap",
             new String[]{UINT256},
-            new String[]{"int"}
+            new String[]{INT}
         ),
         fixedCost(8_000L),
         Bridge.executeIfAuthorized(
@@ -884,7 +884,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "requestUnionBridgeRbtc",
             new String[]{UINT256},
-            new String[]{"int"}
+            new String[]{INT}
         ),
         fixedCost(8_000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::requestUnionBridgeRbtc,
@@ -895,7 +895,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "releaseUnionBridgeRbtc",
             new String[]{},
-            new String[]{"int"}
+            new String[]{INT}
         ),
         fixedCost(8_000L),
         (BridgeMethodExecutorTyped<Integer>) Bridge::releaseUnionBridgeRbtc,
@@ -906,7 +906,7 @@ public enum BridgeMethods {
         CallTransaction.Function.fromSignature(
             "setUnionBridgeTransferPermissions",
             new String[]{BOOL, BOOL},
-            new String[]{"int"}
+            new String[]{INT}
         ),
         fixedCost(8_000L),
         Bridge.executeIfAuthorized(
@@ -917,6 +917,74 @@ public enum BridgeMethods {
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
     ),
+    GET_SUPER_EVENT(
+        CallTransaction.Function.fromSignature(
+          "getSuperEvent",
+          new String[]{},
+          new String[]{BYTES}
+        ),
+        fixedCost(3_000L),
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getSuperEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false),
+        CallTypeHelper.ALLOW_STATIC_CALL
+    ),
+    SET_SUPER_EVENT(
+        CallTransaction.Function.fromSignature(
+            "setSuperEvent",
+            new String[]{BYTES},
+            new String[]{}
+        ),
+        fixedCost(8_000L),
+        (BridgeMethodExecutorVoid) Bridge::setSuperEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false)
+    ),
+    CLEAR_SUPER_EVENT(
+        CallTransaction.Function.fromSignature(
+            "clearSuperEvent",
+            new String[]{},
+            new String[]{}
+        ),
+        fixedCost(8_000L),
+        (BridgeMethodExecutorVoid) Bridge::clearSuperEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false)
+    ),
+    GET_BASE_EVENT(
+        CallTransaction.Function.fromSignature(
+            "getBaseEvent",
+            new String[]{},
+            new String[]{BYTES}
+        ),
+        fixedCost(3_000L),
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getBaseEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false),
+        CallTypeHelper.ALLOW_STATIC_CALL
+    ),
+    SET_BASE_EVENT(
+        CallTransaction.Function.fromSignature(
+            "setBaseEvent",
+            new String[]{BYTES},
+            new String[]{}
+        ),
+        fixedCost(8_000L),
+        (BridgeMethodExecutorVoid) Bridge::setBaseEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false)
+    ),
+    CLEAR_BASE_EVENT(
+        CallTransaction.Function.fromSignature(
+            "clearBaseEvent",
+            new String[]{},
+            new String[]{}
+        ),
+        fixedCost(8_000L),
+        (BridgeMethodExecutorVoid) Bridge::clearBaseEvent,
+        activations -> activations.isActive(RSKIP529),
+        fixedPermission(false)
+    ),
     ;
 
     private static class CallTypeHelper {
@@ -924,6 +992,12 @@ public enum BridgeMethods {
             callType == MsgType.CALL || callType == MsgType.STATICCALL;
         private static final Predicate<MsgType> RESTRICTED_TO_CALL =  callType -> callType == MsgType.CALL;
     }
+
+    private static final Map<ByteArrayWrapper, BridgeMethods> SIGNATURES = Stream.of(BridgeMethods.values())
+        .collect(Collectors.toMap(
+            m -> new ByteArrayWrapper(m.getFunction().encodeSignature()),
+            Function.identity()
+        ));
 
     private final CallTransaction.Function function;
     private final CostProvider costProvider;
@@ -1117,10 +1191,4 @@ public enum BridgeMethods {
     private static BridgeCallPermissionProvider fromMethod(BridgeCallPermissionProvider bridgeCallPermissionProvider) {
         return (Bridge bridge, Object[] args) -> bridgeCallPermissionProvider.getOnlyAllowLocalCallsPermission(bridge, args);
     }
-
-    private static final Map<ByteArrayWrapper, BridgeMethods> SIGNATURES = Stream.of(BridgeMethods.values())
-        .collect(Collectors.toMap(
-            m -> new ByteArrayWrapper(m.getFunction().encodeSignature()),
-            Function.identity()
-        ));
 }

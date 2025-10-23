@@ -18,6 +18,8 @@ class UnionBridgeStorageIndexKeyTest {
             case WEIS_TRANSFERRED_TO_UNION_BRIDGE -> DataWord.fromLongString("weisTransferredToUnionBridge");
             case UNION_BRIDGE_REQUEST_ENABLED -> DataWord.fromLongString("unionBridgeRequestEnabled");
             case UNION_BRIDGE_RELEASE_ENABLED -> DataWord.fromLongString("unionBridgeReleaseEnabled");
+            case SUPER_EVENT -> DataWord.fromLongString("superEvent");
+            case BASE_EVENT -> DataWord.fromLongString("baseEvent");
         };
         
         assertEquals(expectedKey, key.getKey());

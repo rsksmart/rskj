@@ -50,8 +50,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
 
 class BridgeTest {
-    private static final byte[] EMPTY_BYTE_ARRAY = new byte[]{};
-
     private NetworkParameters networkParameters;
     private BridgeBuilder bridgeBuilder;
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
@@ -3066,9 +3064,9 @@ class BridgeTest {
 
         CallTransaction.Function function = BridgeMethods.REGISTER_BTC_COINBASE_TRANSACTION.getFunction();
 
-        byte[] btcTxSerialized = EMPTY_BYTE_ARRAY;
+        byte[] btcTxSerialized = ByteUtil.EMPTY_BYTE_ARRAY;
         Sha256Hash blockHash = BitcoinTestUtils.createHash(1);
-        byte[] pmtSerialized = EMPTY_BYTE_ARRAY;
+        byte[] pmtSerialized = ByteUtil.EMPTY_BYTE_ARRAY;
         Sha256Hash witnessMerkleRoot = BitcoinTestUtils.createHash(2);
         byte[] witnessReservedValue = new byte[32];
         byte[] data = function.encode(
@@ -3422,6 +3420,8 @@ class BridgeTest {
         private static final RskAddress setTransferPermissionsAuthorizer = RskAddress.ZERO_ADDRESS;
 
         private static final RskAddress unauthorizedCaller = new RskAddress("0000000000000000000000000000000000000001");
+        private static final byte[] superEvent = new byte []{(byte) 0x123456};
+        private static final byte[] baseEvent = new byte []{(byte) 0x123456};
 
         private UnionBridgeSupport unionBridgeSupport;
         private Repository repository;
@@ -3443,7 +3443,8 @@ class BridgeTest {
             bridgeSupport = BridgeSupportBuilder.builder()
                 .withEventLogger(eventLogger)
                 .withRepository(repository)
-                .withUnionBridgeSupport(unionBridgeSupport).build();
+                .withUnionBridgeSupport(unionBridgeSupport)
+                .build();
 
             rskTx = mock(Transaction.class);
 
@@ -3496,8 +3497,10 @@ class BridgeTest {
                 decorate,
                 "setUnionBridgeContractAddressForTestnet"
             );
-            VMException actualException = assertThrows(VMException.class,
-                () -> executor.execute(bridge, null));
+            VMException actualException = assertThrows(
+                VMException.class,
+                () -> executor.execute(bridge, null)
+            );
 
             // Assert
             assertTrue(actualException.getMessage().contains("The sender is not authorized to call setUnionBridgeContractAddressForTestnet"));
@@ -3534,8 +3537,10 @@ class BridgeTest {
                 decorate,
                 "setUnionBridgeContractAddressForTestnet"
             );
-            VMException actualException = assertThrows(VMException.class,
-                () -> executor.execute(bridge, null));
+            VMException actualException = assertThrows(
+                VMException.class,
+                () -> executor.execute(bridge, null)
+            );
 
             // Assert
             assertTrue(actualException.getMessage().contains("The setUnionBridgeContractAddressForTestnet function is disabled in Mainnet."));
@@ -3575,8 +3580,10 @@ class BridgeTest {
                 decorate,
                 "setUnionBridgeContractAddressForTestnet"
             );
-            VMException actualException = assertThrows(VMException.class,
-                () -> executor.execute(bridge, null));
+            VMException actualException = assertThrows(
+                VMException.class,
+                () -> executor.execute(bridge, null)
+            );
 
             // Assert
             assertTrue(actualException.getMessage().contains("The setUnionBridgeContractAddressForTestnet function is disabled in Mainnet."));
@@ -4075,6 +4082,230 @@ class BridgeTest {
             assertInstanceOf(VMException.class, actualException.getCause());
             verify(unionBridgeSupport, never()).setTransferPermissions(any(Transaction.class), anyBoolean(), anyBoolean());
         }
+
+        @Test
+        void getSuperEvent_preRSKIP529_shouldThrowVMException() {
+            // Arrange
+            ActivationConfig activationConfig = ActivationConfigsForTest.reed800();
+            bridge = bridgeBuilder
+                .activationConfig(activationConfig)
+                .build();
+
+            CallTransaction.Function function = BridgeMethods.GET_SUPER_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void getSuperEvent_shouldExecute() throws VMException {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.GET_SUPER_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act
+            bridge.execute(data);
+
+            // Assert
+            verify(unionBridgeSupport).getSuperEvent();
+        }
+
+        @Test
+        void setSuperEvent_preRSKIP529_shouldThrowVMException() {
+            // Arrange
+            ActivationConfig activationConfig = ActivationConfigsForTest.reed800();
+            bridge = bridgeBuilder
+                .activationConfig(activationConfig)
+                .build();
+
+            CallTransaction.Function function = BridgeMethods.SET_SUPER_EVENT.getFunction();
+            byte[] data = function.encode(superEvent);
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void setSuperEvent_shouldExecuteData() throws VMException {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.SET_SUPER_EVENT.getFunction();
+            byte[] data = function.encode(superEvent);
+
+            // Act
+            bridge.execute(data);
+
+            // Assert
+            verify(unionBridgeSupport).setSuperEvent(rskTx, superEvent);
+        }
+
+        @Test
+        void setSuperEvent_unionBridgeSupportThrowsIAE_shouldThrowVMException() {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.SET_SUPER_EVENT.getFunction();
+            byte[] data = function.encode(superEvent);
+
+            doThrow(new IllegalArgumentException())
+                .when(unionBridgeSupport)
+                .setSuperEvent(rskTx, superEvent);
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void clearSuperEvent_preRSKIP529_shouldThrowVMException() {
+            // Arrange
+            ActivationConfig activationConfig = ActivationConfigsForTest.reed800();
+            bridge = bridgeBuilder
+                .activationConfig(activationConfig)
+                .build();
+
+            CallTransaction.Function function = BridgeMethods.CLEAR_SUPER_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void clearSuperEvent_shouldExecute() throws VMException {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.CLEAR_SUPER_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act
+            bridge.execute(data);
+
+            // Assert
+            verify(unionBridgeSupport).clearSuperEvent(rskTx);
+        }
+
+        @Test
+        void clearSuperEvent_unionBridgeSupportThrowsIAE_shouldThrowVMException() {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.CLEAR_SUPER_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            doThrow(new IllegalArgumentException())
+                .when(unionBridgeSupport)
+                .clearSuperEvent(rskTx);
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void getBaseEvent_preRSKIP529_shouldThrowVMException() {
+            // Arrange
+            ActivationConfig activationConfig = ActivationConfigsForTest.reed800();
+            bridge = bridgeBuilder
+                .activationConfig(activationConfig)
+                .build();
+
+            CallTransaction.Function function = BridgeMethods.GET_BASE_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void getBaseEvent_shouldExecute() throws VMException {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.GET_BASE_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act
+            bridge.execute(data);
+
+            // Assert
+            verify(unionBridgeSupport).getBaseEvent();
+        }
+
+        @Test
+        void setBaseEvent_preRSKIP529_shouldThrowVMException() {
+            // Arrange
+            ActivationConfig activationConfig = ActivationConfigsForTest.reed800();
+            bridge = bridgeBuilder
+                .activationConfig(activationConfig)
+                .build();
+
+            CallTransaction.Function function = BridgeMethods.SET_BASE_EVENT.getFunction();
+            byte[] data = function.encode(baseEvent);
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void setBaseEvent_shouldExecuteData() throws VMException {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.SET_BASE_EVENT.getFunction();
+            byte[] data = function.encode(baseEvent);
+
+            // Act
+            bridge.execute(data);
+
+            // Assert
+            verify(unionBridgeSupport).setBaseEvent(rskTx, baseEvent);
+        }
+
+        @Test
+        void setBaseEvent_unionBridgeSupportThrowsIAE_shouldThrowVMException() {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.SET_BASE_EVENT.getFunction();
+            byte[] data = function.encode(baseEvent);
+
+            doThrow(new IllegalArgumentException())
+                .when(unionBridgeSupport)
+                .setBaseEvent(rskTx, baseEvent);
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void clearBaseEvent_preRSKIP529_shouldThrowVMException() {
+            // Arrange
+            ActivationConfig activationConfig = ActivationConfigsForTest.reed800();
+            bridge = bridgeBuilder
+                .activationConfig(activationConfig)
+                .build();
+
+            CallTransaction.Function function = BridgeMethods.CLEAR_BASE_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void clearBaseEvent_shouldExecute() throws VMException {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.CLEAR_BASE_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            // Act
+            bridge.execute(data);
+
+            // Assert
+            verify(unionBridgeSupport).clearBaseEvent(rskTx);
+        }
+
+        @Test
+        void clearBaseEvent_unionBridgeSupportThrowsIAE_shouldThrowVMException() {
+            // Arrange
+            CallTransaction.Function function = BridgeMethods.CLEAR_BASE_EVENT.getFunction();
+            byte[] data = function.encode();
+
+            doThrow(new IllegalArgumentException())
+                .when(unionBridgeSupport)
+                .clearBaseEvent(rskTx);
+
+            // Act & Assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
     }
 
     private static Stream<Arguments> msgTypesAndActivations() {
@@ -4101,7 +4332,7 @@ class BridgeTest {
 
     private void assertVoidMethodResult(ActivationConfig activationConfig, byte[] result) {
         if (activationConfig.isActive(ConsensusRule.RSKIP417, 0)) {
-            assertArrayEquals(EMPTY_BYTE_ARRAY, result);
+            assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, result);
         } else {
             assertNull(result);
         }
