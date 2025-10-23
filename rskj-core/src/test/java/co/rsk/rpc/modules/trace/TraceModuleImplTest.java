@@ -570,6 +570,115 @@ class TraceModuleImplTest {
         Assertions.assertNotNull(oresult.get("action").get("creationMethod"));
     }
 
+    @Test
+    void traceFilterWithToBlockGreaterThanBestBlock() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = executeMultiContract(receiptStore);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+
+        long bestBlockNumber = world.getBlockChain().getBestBlock().getNumber();
+        Assertions.assertTrue(bestBlockNumber < 0x999999);
+
+        TraceFilterRequest traceFilterRequest = new TraceFilterRequest();
+        traceFilterRequest.setFromBlock("0x0");
+        traceFilterRequest.setToBlock("0x999999");
+        traceFilterRequest.setCount(10);
+
+        JsonNode result = traceModule.traceFilter(traceFilterRequest);
+
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
+
+        ArrayNode arrayResult = (ArrayNode) result;
+        Assertions.assertTrue(arrayResult.size() >= 0);
+    }
+
+    @Test
+    void traceFilterMemoryOptimizationWithAfterParameter() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = executeMultiContract(receiptStore);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+
+        TraceFilterRequest request1 = new TraceFilterRequest();
+        request1.setAfter(2);
+        request1.setCount(2);
+        JsonNode result1 = traceModule.traceFilter(request1);
+        Assertions.assertTrue(result1.isArray());
+        ArrayNode array1 = (ArrayNode) result1;
+        Assertions.assertEquals(2, array1.size());
+
+        TraceFilterRequest request2 = new TraceFilterRequest();
+        request2.setAfter(1);
+        request2.setCount(3);
+        JsonNode result2 = traceModule.traceFilter(request2);
+        Assertions.assertTrue(result2.isArray());
+        ArrayNode array2 = (ArrayNode) result2;
+        Assertions.assertEquals(3, array2.size());
+
+        TraceFilterRequest request3 = new TraceFilterRequest();
+        request3.setAfter(0);
+        request3.setCount(2);
+        JsonNode result3 = traceModule.traceFilter(request3);
+        Assertions.assertTrue(result3.isArray());
+        ArrayNode array3 = (ArrayNode) result3;
+        Assertions.assertEquals(2, array3.size());
+
+        Assertions.assertNotEquals(array1.get(0), array3.get(0));
+    }
+
+    @Test
+    void traceFilterMemoryOptimizationWithLargeAfter() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = executeMultiContract(receiptStore);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+
+        TraceFilterRequest requestAll = new TraceFilterRequest();
+        requestAll.setAfter(0);
+        requestAll.setCount(1000);
+        JsonNode resultAll = traceModule.traceFilter(requestAll);
+        int totalTraces = ((ArrayNode) resultAll).size();
+
+        TraceFilterRequest request = new TraceFilterRequest();
+        request.setAfter(totalTraces + 10);
+        request.setCount(5);
+        JsonNode result = traceModule.traceFilter(request);
+        Assertions.assertTrue(result.isArray());
+        ArrayNode array = (ArrayNode) result;
+        Assertions.assertEquals(0, array.size());
+    }
+
+    @Test
+    void traceFilterMemoryOptimizationBoundaryConditions() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = executeMultiContract(receiptStore);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+
+        TraceFilterRequest requestAll = new TraceFilterRequest();
+        requestAll.setCount(1000);
+        JsonNode resultAll = traceModule.traceFilter(requestAll);
+        int totalTraces = ((ArrayNode) resultAll).size();
+
+        if (totalTraces > 0) {
+            TraceFilterRequest request1 = new TraceFilterRequest();
+            request1.setAfter(totalTraces - 1);
+            request1.setCount(5);
+            JsonNode result1 = traceModule.traceFilter(request1);
+            ArrayNode array1 = (ArrayNode) result1;
+            Assertions.assertEquals(1, array1.size());
+
+            TraceFilterRequest request2 = new TraceFilterRequest();
+            request2.setAfter(totalTraces);
+            request2.setCount(5);
+            JsonNode result2 = traceModule.traceFilter(request2);
+            ArrayNode array2 = (ArrayNode) result2;
+            Assertions.assertEquals(0, array2.size());
+        }
+    }
+
     private static void retrieveTraceFilterByAddress(World world, ReceiptStore receiptStore) throws Exception {
         TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
 
@@ -852,6 +961,51 @@ class TraceModuleImplTest {
         );
 
         assertThat(exception.getMessage(), containsString("fromBlock cannot be greater than toBlock"));
+    }
+
+    @Test
+    void traceFilterWithNegativeAfterThrowsException() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = executeMultiContract(receiptStore);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(),
+                world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+
+        TraceFilterRequest traceFilterRequest = new TraceFilterRequest();
+        traceFilterRequest.setFromBlock("0x0");
+        traceFilterRequest.setToBlock("0x1");
+        traceFilterRequest.setAfter(-1);
+
+        RskJsonRpcRequestException exception = Assertions.assertThrows(
+            RskJsonRpcRequestException.class,
+            () -> traceModule.traceFilter(traceFilterRequest)
+        );
+
+        assertThat(exception.getMessage(), containsString("After value cannot be negative"));
+    }
+
+    @Test
+    void traceFilterWithAfterExceedingMaxThrowsException() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = executeMultiContract(receiptStore);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(),
+                world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+
+        TraceFilterRequest traceFilterRequest = new TraceFilterRequest();
+        traceFilterRequest.setFromBlock("0x0");
+        traceFilterRequest.setToBlock("0x1");
+        traceFilterRequest.setAfter(Integer.MAX_VALUE);
+
+        RskJsonRpcRequestException exception = Assertions.assertThrows(
+            RskJsonRpcRequestException.class,
+            () -> traceModule.traceFilter(traceFilterRequest)
+        );
+
+        assertThat(exception.getMessage(), CoreMatchers.allOf(
+                containsString("After value too big"),
+                containsString("Maximum"),
+                containsString("traces allowed")));
     }
 
     private static World executeMultiContract(ReceiptStore receiptStore) throws DslProcessorException, FileNotFoundException {

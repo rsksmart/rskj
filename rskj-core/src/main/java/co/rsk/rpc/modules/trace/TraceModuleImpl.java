@@ -141,13 +141,15 @@ public class TraceModuleImpl implements TraceModule {
         List<TransactionTrace> allTraces = new ArrayList<>();
         Block fromBlock = getBlockByTagOrNumber(traceFilterRequest.getFromBlock(), traceFilterRequest.getFromBlockNumber());
         Block toBlock = getBlockByTagOrNumber(traceFilterRequest.getToBlock(), traceFilterRequest.getToBlockNumber());
-        toBlock = toBlock == null ? blockchain.getBestBlock() : toBlock;
 
         validateBlockRange(fromBlock, toBlock);
+
+        toBlock = toBlock == null ? blockchain.getBestBlock() : toBlock;
 
         int processedBlocks = 0;
         int totalNeeded = after + count;
         Block currentBlock = fromBlock;
+        int tracesProcessed = 0;
 
         logger.debug("traceFilter: Starting processing from block {} to block {}, skipCount={}, limitCount={}",
                 fromBlock != null ? fromBlock.getNumber() : -1, toBlock.getNumber(), after, count);
@@ -155,26 +157,29 @@ public class TraceModuleImpl implements TraceModule {
         while (currentBlock != null && currentBlock.getNumber() <= toBlock.getNumber()) {
             List<TransactionTrace> builtTraces = buildBlockTraces(currentBlock, traceFilterRequest);
 
-            allTraces.addAll(builtTraces);
+            int builtTracesSize = builtTraces.size();
+            if (tracesProcessed + builtTracesSize > after) {
+                int startIndex = Math.max(0, after - tracesProcessed);
+                int endIndex = Math.min(builtTracesSize, after + count - tracesProcessed);
+                allTraces.addAll(builtTraces.subList(startIndex, endIndex));
+            }
+
+            tracesProcessed += builtTracesSize;
             processedBlocks++;
 
-            if (allTraces.size() >= totalNeeded) {
-                logger.debug("traceFilter: Early termination at block {} with {} traces (needed {})",
-                        currentBlock.getNumber(), allTraces.size(), totalNeeded);
+            if (tracesProcessed >= totalNeeded) {
+                logger.debug("traceFilter: Early termination at block {} with {} traces collected",
+                        currentBlock.getNumber(), allTraces.size());
                 break;
             }
 
             currentBlock = this.blockchain.getBlockByNumber(currentBlock.getNumber() + 1);
         }
 
-        int fromIndex = Math.min(after, allTraces.size());
-        int toIndex = Math.min(after + count, allTraces.size());
-        List<TransactionTrace> traces = allTraces.subList(fromIndex, toIndex);
+        logger.debug("traceFilter: Completed processing. Processed {} blocks, collected {} traces, returning {} traces",
+                processedBlocks, allTraces.size(), allTraces.size());
 
-        logger.debug("traceFilter: Completed processing. Processed {} blocks, collected {} total traces, returning {} traces",
-                processedBlocks, allTraces.size(), traces.size());
-
-        return OBJECT_MAPPER.valueToTree(traces);
+        return OBJECT_MAPPER.valueToTree(allTraces);
     }
 
     @Override
@@ -304,10 +309,19 @@ public class TraceModuleImpl implements TraceModule {
         if (count > maxTracesPerRequest) {
             throw RskJsonRpcRequestException.invalidParamError("Count value too big. Maximum " + maxTracesPerRequest + " traces allowed.");
         }
+        
+        final var after = Optional.ofNullable(traceFilterRequest.getAfter()).orElse(0);
+        if (after < 0) {
+            throw RskJsonRpcRequestException.invalidParamError("After value cannot be negative.");
+        }
+        
+        if (after > maxTracesPerRequest) {
+            throw RskJsonRpcRequestException.invalidParamError("After value too big. Maximum " + maxTracesPerRequest + " traces allowed.");
+        }
     }
 
     private void validateBlockRange(Block fromBlock, Block toBlock) {
-        if (fromBlock != null && fromBlock.getNumber() > toBlock.getNumber()) {
+        if (fromBlock != null && toBlock != null && fromBlock.getNumber() > toBlock.getNumber()) {
             throw RskJsonRpcRequestException.invalidParamError("fromBlock cannot be greater than toBlock");
         }
     }
