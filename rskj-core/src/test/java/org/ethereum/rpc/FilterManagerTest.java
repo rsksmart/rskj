@@ -1,6 +1,7 @@
 package org.ethereum.rpc;
 
 import co.rsk.util.HexUtils;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.facade.Ethereum;
@@ -27,13 +28,21 @@ public class FilterManagerTest {
     }
 
     @Test
-    void whenGetFilterEvent_throwFilterNotFoundExceptionBecauseTxFiltersExpired() {
+    void whenGetFilterEvent_throwFilterNotFoundExceptionBecauseTxFiltersExpired() throws InterruptedException {
         Ethereum ethMock = Web3Mocks.getMockEthereum();
         FilterManager filterManager = new FilterManager(ethMock, 1, 1);
         final var id = filterManager.registerFilter(new PendingTransactionFilter());
 
-        filterManager.newPendingTx(List.of(Mockito.mock(Transaction.class)));
-        filterManager.newPendingTx(List.of(Mockito.mock(Transaction.class)));
+        Transaction tx1 = Mockito.mock(Transaction.class);
+        Mockito.when(tx1.getHash()).thenReturn(TestUtils.generateHash("txHash1"));
+
+        Transaction tx2 = Mockito.mock(Transaction.class);
+        Mockito.when(tx2.getHash()).thenReturn(TestUtils.generateHash("txHash2"));
+
+        filterManager.newPendingTx(List.of(tx1));
+        filterManager.newPendingTx(List.of(tx2));
+
+        Thread.sleep(10);
 
         Assertions.assertThrowsExactly(
                 RskJsonRpcRequestException.class,
@@ -44,13 +53,21 @@ public class FilterManagerTest {
 
 
     @Test
-    void whenGetFilterEvent_throwFilterNotFoundExceptionBecauseBlockFiltersExpired() {
+    void whenGetFilterEvent_throwFilterNotFoundExceptionBecauseBlockFiltersExpired() throws InterruptedException {
         Ethereum ethMock = Web3Mocks.getMockEthereum();
         FilterManager filterManager = new FilterManager(ethMock, 1, 1);
         final var id = filterManager.registerFilter(new NewBlockFilter());
 
-        filterManager.newBlockReceived(Mockito.mock(Block.class));
-        filterManager.newBlockReceived(Mockito.mock(Block.class));
+        Block block1 = Mockito.mock(Block.class);
+        Mockito.when(block1.getHash()).thenReturn(TestUtils.generateHash("blockHash1"));
+
+        Block block2 = Mockito.mock(Block.class);
+        Mockito.when(block2.getHash()).thenReturn(TestUtils.generateHash("blockHash2"));
+
+        filterManager.newBlockReceived(block1);
+        filterManager.newBlockReceived(block2);
+
+        Thread.sleep(10);
 
         Assertions.assertThrowsExactly(
                 RskJsonRpcRequestException.class,
