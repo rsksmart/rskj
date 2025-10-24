@@ -23,7 +23,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BlockHeaderExtensionV2Test {
 
@@ -168,5 +172,100 @@ class BlockHeaderExtensionV2Test {
     void decodeMalformedRLPThrows() {
         byte[] malformed = new byte[] {0x01, 0x02, 0x03};
         assertThrows(Exception.class, () -> BlockHeaderExtensionV2.fromEncoded(malformed));
+    }
+
+    @Test
+    void testSetBridgeEventWithNull() {
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
+        extension.setBridgeEvent(null);
+        assertNull(extension.getBridgeEvent());
+    }
+
+    @Test
+    void testSetBridgeEventWithEmptyArray() {
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
+        byte[] emptyArray = new byte[0];
+        extension.setBridgeEvent(emptyArray);
+        assertArrayEquals(emptyArray, extension.getBridgeEvent());
+    }
+
+    @Test
+    void testSetBridgeEventWithLargeValue() {
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
+        byte[] largeValue = new byte[1024];
+        for (int i = 0; i < 1024; i++) {
+            largeValue[i] = (byte) (i % 256);
+        }
+        extension.setBridgeEvent(largeValue);
+        assertArrayEquals(largeValue, extension.getBridgeEvent());
+    }
+
+    @Test
+    void testSetBridgeEventWithSpecialBytes() {
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
+        byte[] specialBytes = new byte[]{0x00, (byte) 0xFF, (byte) 0x80, (byte) 0x7F};
+        extension.setBridgeEvent(specialBytes);
+        assertArrayEquals(specialBytes, extension.getBridgeEvent());
+    }
+
+    @Test
+    void testSetBridgeEventMultipleTimes() {
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
+        
+        byte[] firstValue = new byte[]{1, 2, 3};
+        extension.setBridgeEvent(firstValue);
+        assertArrayEquals(firstValue, extension.getBridgeEvent());
+        
+        byte[] secondValue = new byte[]{4, 5, 6, 7, 8};
+        extension.setBridgeEvent(secondValue);
+        assertArrayEquals(secondValue, extension.getBridgeEvent());
+    }
+
+    @Test
+    void testGetBridgeEventReturnsCorrectValue() {
+        byte[] expectedBridgeEvent = new byte[]{(byte) 0xAA, (byte) 0xBB, (byte) 0xCC, (byte) 0xDD};
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], expectedBridgeEvent);
+        assertArrayEquals(expectedBridgeEvent, extension.getBridgeEvent());
+    }
+
+    @Test
+    void testBridgeEventPersistenceAfterEncoding() {
+        byte[] originalBridgeEvent = new byte[]{0x11, 0x22, 0x33, 0x44, 0x55};
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], originalBridgeEvent);
+        
+        // Encode and decode
+        byte[] encoded = extension.getEncoded();
+        BlockHeaderExtensionV2 decoded = BlockHeaderExtensionV2.fromEncoded(encoded);
+        
+        // Verify bridge event is preserved
+        assertArrayEquals(originalBridgeEvent, decoded.getBridgeEvent());
+    }
+
+    @Test
+    void testBridgeEventWithZeroBytes() {
+        byte[] zeroBytes = new byte[32];
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], zeroBytes);
+        assertArrayEquals(zeroBytes, extension.getBridgeEvent());
+    }
+
+    @Test
+    void testBridgeEventWithAllOnesBytes() {
+        byte[] onesBytes = new byte[16];
+        for (int i = 0; i < 16; i++) {
+            onesBytes[i] = (byte) 0xFF;
+        }
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], onesBytes);
+        assertArrayEquals(onesBytes, extension.getBridgeEvent());
+    }
+
+    @Test
+    void testBridgeEventWithMaxSize() {
+        // Test with maximum practical size (64KB)
+        byte[] maxSizeValue = new byte[65536];
+        for (int i = 0; i < 65536; i++) {
+            maxSizeValue[i] = (byte) (i % 256);
+        }
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], maxSizeValue);
+        assertArrayEquals(maxSizeValue, extension.getBridgeEvent());
     }
 }

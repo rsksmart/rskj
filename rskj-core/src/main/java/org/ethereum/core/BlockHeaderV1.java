@@ -23,6 +23,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.core.exception.SealedBlockHeaderException;
 import org.ethereum.util.RLP;
 
 import java.util.Arrays;

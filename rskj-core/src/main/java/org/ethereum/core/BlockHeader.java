@@ -26,6 +26,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.util.ListArrayUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import org.ethereum.core.exception.SealedBlockHeaderException;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;

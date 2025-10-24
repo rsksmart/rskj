@@ -23,11 +23,15 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.core.exception.FieldMaxSizeBlockHeaderException;
+import org.ethereum.core.exception.SealedBlockHeaderException;
 import org.ethereum.util.RLP;
 
 import java.util.List;
 
 public class BlockHeaderV2 extends BlockHeaderV1 {
+
+    public static final int BASE_EVENT_MAX_SIZE = 128;
 
     public BlockHeaderV2(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot, byte[] txTrieRoot,
                          byte[] receiptTrieRoot, byte[] extensionData, BlockDifficulty difficulty, long number,
@@ -62,6 +66,10 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
         /* A sealed block header is immutable, cannot be changed */
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter baseEvent data of a sealed block");
+        }
+
+        if(baseEvent.length > BASE_EVENT_MAX_SIZE) {
+            throw new FieldMaxSizeBlockHeaderException("baseEvent length cannot exceed 128 bytes");
         }
         this.hash = null;
 
