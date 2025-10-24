@@ -34,8 +34,13 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
-import org.ethereum.util.ByteUtil;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -46,13 +51,34 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
-import static org.ethereum.util.ByteUtil.*;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.util.ByteUtil.toHexString;
 
 /**
  * This is a stateless class with methods to execute blocks with its transactions.
@@ -183,13 +209,16 @@ public class BlockExecutor {
     }
 
     private void setBaseEventIfRskip535IsActive(Block block, BlockHeader header) {
-        if(activationConfig.isActive(ConsensusRule.RSKIP535, block.getNumber())) {
+        if (block != null && header != null && activationConfig.isActive(ConsensusRule.RSKIP535, block.getNumber())) {
             try {
                 Repository repo = repositoryLocator.startTrackingAt(header);
                 if (repo != null) {
                     RskAddress address = PrecompiledContracts.BRIDGE_ADDR;
                     DataWord key = UnionBridgeStorageIndexKey.BASE_EVENT.getKey(); // tbd
-                    byte[] baseEvent = repo.getStorageBytes(address, key) == null ? EMPTY_BYTE_ARRAY : repo.getStorageBytes(address, key);
+                    byte[] baseEvent = repo.getStorageBytes(address, key);
+                    if (baseEvent == null) {
+                        baseEvent = EMPTY_BYTE_ARRAY;
+                    }
                     header.setBaseEvent(baseEvent);
                 }
             } catch (Exception e) {

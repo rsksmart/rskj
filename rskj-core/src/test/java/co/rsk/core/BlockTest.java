@@ -26,6 +26,8 @@ import co.rsk.remasc.RemascTransaction;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
+import org.ethereum.core.exception.SealedBlockException;
+import org.ethereum.core.exception.SealedBlockHeaderException;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;

@@ -24,7 +24,11 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
-import co.rsk.db.*;
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
+import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -41,7 +45,19 @@ import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockHeaderV2;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.cryptohash.Keccak256;
@@ -61,21 +77,27 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.junit.jupiter.api.io.TempDir;
 
 import java.math.BigInteger;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 /**
  * Created by ajlopez on 29/07/2016.
@@ -95,6 +117,58 @@ public class BlockExecutorTest {
     private Blockchain blockchain;
     private TrieStore trieStore;
     private RepositorySnapshot repository;
+
+    public static Account createAccount(String seed, Repository repository, Coin balance) {
+        Account account = createAccount(seed);
+        repository.createAccount(account.getAddress());
+        repository.addBalance(account.getAddress(), balance);
+        return account;
+    }
+
+    public static Account createAccount(String seed) {
+        byte[] privateKeyBytes = HashUtil.keccak256(seed.getBytes());
+        ECKey key = ECKey.fromPrivate(privateKeyBytes);
+        Account account = new Account(key);
+        return account;
+    }
+
+    private static Transaction createStrangeTransaction(
+            Account sender, Account receiver,
+            BigInteger value, BigInteger nonce, int strangeTransactionType) {
+        byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
+        byte[] to = receiver.getAddress().getBytes();
+        byte[] gasLimitData = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21000));
+        byte[] valueData = BigIntegers.asUnsignedByteArray(value);
+
+        if (strangeTransactionType == 0) {
+            to = new byte[1]; // one zero
+            to[0] = 127;
+        } else if (strangeTransactionType == 1) {
+            to = new byte[1024];
+            java.util.Arrays.fill(to, (byte) -1); // fill with 0xff
+        } else {
+            // Bad encoding for value
+            byte[] newValueData = new byte[1024];
+            System.arraycopy(valueData, 0, newValueData, 1024 - valueData.length, valueData.length);
+            valueData = newValueData;
+        }
+
+        Transaction tx = Transaction.builder()
+                .nonce(nonce)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(gasLimitData)
+                .destination(to)
+                .value(valueData)
+                .build(); // no data
+        tx.sign(privateKeyBytes);
+        return tx;
+    }
+
+    private static byte[] sha3(byte[] input) {
+        Keccak256 digest = new Keccak256();
+        digest.update(input);
+        return digest.digest();
+    }
 
     @BeforeEach
     public void setUp() {
@@ -344,7 +418,6 @@ public class BlockExecutorTest {
         Assertions.assertEquals(3000000, new BigInteger(1, block.getGasLimit()).longValue());
     }
 
-
     private Block createBlockWithExcludedTransaction(boolean withRemasc, boolean activeRskip144) {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
@@ -511,7 +584,7 @@ public class BlockExecutorTest {
         Assertions.assertArrayEquals(new short[]{1}, blockResult.getTxEdges());
 
         List<TransactionReceipt> transactionReceipts = blockResult.getTransactionReceipts();
-        for (TransactionReceipt receipt: transactionReceipts) {
+        for (TransactionReceipt receipt : transactionReceipts) {
             Assertions.assertEquals(expectedAccumulatedGas, GasCost.toGas(receipt.getCumulativeGas()));
         }
     }
@@ -542,7 +615,7 @@ public class BlockExecutorTest {
         long accumulatedGasUsed = 0L;
         short i = 0;
         short edgeIndex = 0;
-        for (TransactionReceipt receipt: transactionReceipts) {
+        for (TransactionReceipt receipt : transactionReceipts) {
             boolean isFromADifferentSublist = (edgeIndex < expectedEdges.length) && (i == expectedEdges[edgeIndex]);
             if (isFromADifferentSublist) {
                 edgeIndex++;
@@ -587,7 +660,7 @@ public class BlockExecutorTest {
         Block parent = blockchain.getBestBlock();
         int gasLimit = 21000;
         int numberOfTransactions = (int) (BlockUtils.getSublistGasLimit(parent, false, MIN_SEQUENTIAL_SET_GAS_LIMIT) / gasLimit);
-        short[] expectedEdges = new short[]{(short) numberOfTransactions, (short) (numberOfTransactions*2)};
+        short[] expectedEdges = new short[]{(short) numberOfTransactions, (short) (numberOfTransactions * 2)};
         int transactionsInSequential = 1;
         Block block = getBlockWithNIndependentTransactions(numberOfTransactions * Constants.getTransactionExecutionThreads() + transactionsInSequential, BigInteger.valueOf(gasLimit), false);
         List<Transaction> transactionsList = block.getTransactionsList();
@@ -601,7 +674,7 @@ public class BlockExecutorTest {
         long accumulatedGasUsed = 0L;
         short i = 0;
         short edgeIndex = 0;
-        for (TransactionReceipt receipt: transactionReceipts) {
+        for (TransactionReceipt receipt : transactionReceipts) {
             accumulatedGasUsed += gasLimit;
 
             if ((edgeIndex < expectedEdges.length) && (i == expectedEdges[edgeIndex])) {
@@ -631,7 +704,7 @@ public class BlockExecutorTest {
         Block block = getBlockWithNIndependentTransactions(totalTxsNumber, BigInteger.valueOf(gasLimit), false);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
 
-        Assertions.assertEquals(gasLimit * totalTxsNumber, blockResult.getGasUsed());
+        Assertions.assertEquals((long) gasLimit * totalTxsNumber, blockResult.getGasUsed());
     }
 
     @ParameterizedTest
@@ -673,7 +746,6 @@ public class BlockExecutorTest {
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
         Assertions.assertEquals(expectedNumberOfTx, blockResult.getExecutedTransactions().size());
     }
-
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
@@ -729,6 +801,7 @@ public class BlockExecutorTest {
         BlockResult result = executor.execute(null, 0, pBlock, parent.getHeader(), true, false, true);
         Assertions.assertEquals(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
     }
+
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void whenExecuteATxWithGasLimitExceedingSublistGasLimitShouldNotBeInlcuded(boolean activeRskip144) {
@@ -815,13 +888,13 @@ public class BlockExecutorTest {
         Assertions.assertArrayEquals(block1.getHash().getBytes(), block2.getHash().getBytes());
     }
 
-    private void testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition (int txAmount, short [] expectedSublistsEdges, Boolean activeRskip144) {
+    private void testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(int txAmount, short[] expectedSublistsEdges, Boolean activeRskip144) {
         Block block = getBlockWithNIndependentTransactions(txAmount, BigInteger.valueOf(21000), true);
 
         assertBlockResultHasTxEdgesAndRemascAtLastPosition(block, txAmount, expectedSublistsEdges, activeRskip144);
     }
 
-    private void assertBlockResultHasTxEdgesAndRemascAtLastPosition (Block block, int txAmount, short [] expectedSublistsEdges, Boolean activeRskip144) {
+    private void assertBlockResultHasTxEdgesAndRemascAtLastPosition(Block block, int txAmount, short[] expectedSublistsEdges, Boolean activeRskip144) {
         Block parent = blockchain.getBestBlock();
         BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
@@ -835,35 +908,35 @@ public class BlockExecutorTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void blockWithOnlyRemascShouldGoToSequentialSublist (boolean activeRskip144) {
+    void blockWithOnlyRemascShouldGoToSequentialSublist(boolean activeRskip144) {
         if (!activeRskip144) return;
         testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(0, new short[]{}, activeRskip144);
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void blockWithOneTxRemascShouldGoToSequentialSublist (boolean activeRskip144) {
+    void blockWithOneTxRemascShouldGoToSequentialSublist(boolean activeRskip144) {
         if (!activeRskip144) return;
-        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(1, new short[]{ 1 }, activeRskip144);
+        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(1, new short[]{1}, activeRskip144);
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void blockWithManyTxsRemascShouldGoToSequentialSublist (boolean activeRskip144) {
+    void blockWithManyTxsRemascShouldGoToSequentialSublist(boolean activeRskip144) {
         if (!activeRskip144) return;
-        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(2, new short[]{ 1, 2 }, activeRskip144);
+        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(2, new short[]{1, 2}, activeRskip144);
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void blockWithMoreThanThreadsTxsRemascShouldGoToSequentialSublist (boolean activeRskip144) {
+    void blockWithMoreThanThreadsTxsRemascShouldGoToSequentialSublist(boolean activeRskip144) {
         if (!activeRskip144) return;
-        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(3, new short[]{ 2, 3 }, activeRskip144);
+        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(3, new short[]{2, 3}, activeRskip144);
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void blockWithExcludedTransactionHasRemascInSequentialSublist (boolean activeRskip144) {
+    void blockWithExcludedTransactionHasRemascInSequentialSublist(boolean activeRskip144) {
         if (!activeRskip144) return;
         Block block = createBlockWithExcludedTransaction(true, activeRskip144);
         assertBlockResultHasTxEdgesAndRemascAtLastPosition(block, 0, new short[]{}, activeRskip144);
@@ -898,7 +971,7 @@ public class BlockExecutorTest {
         Trie trie = new Trie(trieStore);
 
         Block block = new BlockGenerator(Constants.regtest(), activationConfig).getBlock(1);
-        block.setStateRoot(new byte[] { 1, 2, 3, 4 });
+        block.setStateRoot(new byte[]{1, 2, 3, 4});
 
         BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), new short[0], 0,
                 Coin.ZERO, trie);
@@ -1180,6 +1253,8 @@ public class BlockExecutorTest {
                 );
     }
 
+    /// ///////////////////////////////////////////
+    // Testing strange Txs
     private Block getBlockWithTenTransactions(short[] edges) {
         int nTxs = 10;
         int nAccounts = nTxs * 2;
@@ -1268,23 +1343,7 @@ public class BlockExecutorTest {
                 );
     }
 
-    public static Account createAccount(String seed, Repository repository, Coin balance) {
-        Account account = createAccount(seed);
-        repository.createAccount(account.getAddress());
-        repository.addBalance(account.getAddress(), balance);
-        return account;
-    }
-
-    public static Account createAccount(String seed) {
-        byte[] privateKeyBytes = HashUtil.keccak256(seed.getBytes());
-        ECKey key = ECKey.fromPrivate(privateKeyBytes);
-        Account account = new Account(key);
-        return account;
-    }
-
-    //////////////////////////////////////////////
-    // Testing strange Txs
-    /////////////////////////////////////////////
+    /// //////////////////////////////////////////
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void executeBlocksWithOneStrangeTransactions1(Boolean activeRskip144) {
@@ -1415,44 +1474,6 @@ public class BlockExecutorTest {
         );
     }
 
-    private static Transaction createStrangeTransaction(
-            Account sender, Account receiver,
-            BigInteger value, BigInteger nonce, int strangeTransactionType) {
-        byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        byte[] to = receiver.getAddress().getBytes();
-        byte[] gasLimitData = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21000));
-        byte[] valueData = BigIntegers.asUnsignedByteArray(value);
-
-        if (strangeTransactionType == 0) {
-            to = new byte[1]; // one zero
-            to[0] = 127;
-        } else if (strangeTransactionType == 1) {
-            to = new byte[1024];
-            java.util.Arrays.fill(to, (byte) -1); // fill with 0xff
-        } else {
-            // Bad encoding for value
-            byte[] newValueData = new byte[1024];
-            System.arraycopy(valueData, 0, newValueData, 1024 - valueData.length, valueData.length);
-            valueData = newValueData;
-        }
-
-        Transaction tx = Transaction.builder()
-                .nonce(nonce)
-                .gasPrice(BigInteger.ONE)
-                .gasLimit(gasLimitData)
-                .destination(to)
-                .value(valueData)
-                .build(); // no data
-        tx.sign(privateKeyBytes);
-        return tx;
-    }
-
-    private static byte[] sha3(byte[] input) {
-        Keccak256 digest = new Keccak256();
-        digest.update(input);
-        return digest.digest();
-    }
-
     private BlockExecutor buildBlockExecutor(TrieStore store, Boolean activeRskip144, boolean rskip126IsActive) {
         return buildBlockExecutor(store, config, activeRskip144, rskip126IsActive);
     }
@@ -1486,6 +1507,230 @@ public class BlockExecutorTest {
                         signatureCache
                 ),
                 cfg);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void executeBlockWithContractEmittingLogsUsingDsl(boolean isRSKIP144Activated) throws Exception {
+        TestSystemProperties config = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(isRSKIP144Activated ? 1 : -1))
+        );
+
+        // Use DSL to set up the blockchain with log-emitting contract
+        DslParser parser = DslParser.fromResource("dsl/log_indexes_pte.txt");
+        World world = new World(config);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        // Get the blocks created by DSL
+        Block deployBlock = world.getBlockByName("b01");
+        Block callBlock = world.getBlockByName("b02");  // Now contains all three transactions
+
+        Assertions.assertNotNull(deployBlock);
+        Assertions.assertNotNull(callBlock);
+
+        // Verify the deployment transaction was successful
+        TransactionReceipt deployReceipt = world.getTransactionReceiptByName("txDeploy");
+        Assertions.assertNotNull(deployReceipt);
+        Assertions.assertTrue(deployReceipt.isSuccessful());
+
+        // Verify all three transactions are in the same block
+        Assertions.assertEquals(3, callBlock.getTransactionsList().size(), "Block b02 should contain 3 transactions");
+
+        // Verify the first function call transaction and its logs
+        TransactionReceipt callReceipt = world.getTransactionReceiptByName("txCallEmit");
+        Assertions.assertNotNull(callReceipt);
+        Assertions.assertTrue(callReceipt.isSuccessful());
+
+        // Most importantly: verify that logs were emitted
+        Assertions.assertNotNull(callReceipt.getLogInfoList());
+        Assertions.assertFalse(callReceipt.getLogInfoList().isEmpty());
+        Assertions.assertEquals(2, callReceipt.getLogInfoList().size(), "Should emit exactly 2 logs");
+
+        // Verify the second function call transaction and its logs
+        TransactionReceipt callReceipt2 = world.getTransactionReceiptByName("txCallEmit2");
+        Assertions.assertNotNull(callReceipt2);
+        Assertions.assertTrue(callReceipt2.isSuccessful());
+        Assertions.assertNotNull(callReceipt2.getLogInfoList());
+        Assertions.assertFalse(callReceipt2.getLogInfoList().isEmpty());
+        Assertions.assertEquals(2, callReceipt2.getLogInfoList().size(), "Second call should emit exactly 2 logs");
+
+        // Verify the third function call transaction and its logs
+        TransactionReceipt callReceipt3 = world.getTransactionReceiptByName("txCallEmit3");
+        Assertions.assertNotNull(callReceipt3);
+        Assertions.assertTrue(callReceipt3.isSuccessful());
+        Assertions.assertNotNull(callReceipt3.getLogInfoList());
+        Assertions.assertFalse(callReceipt3.getLogInfoList().isEmpty());
+        Assertions.assertEquals(2, callReceipt3.getLogInfoList().size(), "Third call should emit exactly 2 logs");
+
+        // Verify logs from first call contain the expected contract address
+        org.ethereum.vm.LogInfo logInfo1 = callReceipt.getLogInfoList().get(0);
+        org.ethereum.vm.LogInfo logInfo2 = callReceipt.getLogInfoList().get(1);
+
+        // Verify logs from second call contain the expected contract address
+        org.ethereum.vm.LogInfo logInfo3 = callReceipt2.getLogInfoList().get(0);
+        org.ethereum.vm.LogInfo logInfo4 = callReceipt2.getLogInfoList().get(1);
+
+        // Verify logs from third call contain the expected contract address
+        org.ethereum.vm.LogInfo logInfo5 = callReceipt3.getLogInfoList().get(0);
+        org.ethereum.vm.LogInfo logInfo6 = callReceipt3.getLogInfoList().get(1);
+
+        // Verify that all logs from the same block have correct sequential log indexes
+        // Since all transactions are in the same block, log indexes should be sequential across all transactions:
+        // Transaction 1 (txCallEmit) should have logs at indexes 0, 1
+        // Transaction 2 (txCallEmit2) should have logs at indexes 2, 3
+        // Transaction 3 (txCallEmit3) should have logs at indexes 4, 5
+        Assertions.assertEquals(0, logInfo1.getLogIndex(), "First log should have index 0");
+        Assertions.assertEquals(1, logInfo2.getLogIndex(), "Second log should have index 1");
+        Assertions.assertEquals(2, logInfo3.getLogIndex(), "Third log should have index 2");
+        Assertions.assertEquals(3, logInfo4.getLogIndex(), "Fourth log should have index 3");
+        Assertions.assertEquals(4, logInfo5.getLogIndex(), "Fifth log should have index 4");
+        Assertions.assertEquals(5, logInfo6.getLogIndex(), "Sixth log should have index 5");
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void executeBlockWithLogEmittingContractAndVerifyLogIndexes(boolean isRSKIP144Activated) throws Exception {
+        TestSystemProperties config = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(isRSKIP144Activated ? 1 : -1))
+        );
+
+        // Now use DSL to create a block with log-emitting contract for log index verification
+        DslParser parser = DslParser.fromResource("dsl/log_indexes_pte.txt");
+        World world = new World(config);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        // Get the blocks created by DSL
+        Block deployBlock = world.getBlockByName("b01");
+        Block callBlock1 = world.getBlockByName("b02");
+        Block callBlock2 = world.getBlockByName("b03");
+
+        Assertions.assertNotNull(deployBlock);
+        Assertions.assertNotNull(callBlock1);
+        Assertions.assertNotNull(callBlock2);
+
+        BlockResult result = world.getBlockExecutor().execute(null, 0, callBlock2, callBlock1.getHeader(), false, false, false);
+
+        List<TransactionReceipt> transactionReceipts = result.getTransactionReceipts();
+
+        Assertions.assertNotNull(transactionReceipts);
+
+        Assertions.assertEquals(0, transactionReceipts.get(0).getLogInfoList().get(0).getLogIndex(), "First log should have index 0");
+        Assertions.assertEquals(1, transactionReceipts.get(0).getLogInfoList().get(1).getLogIndex(), "Second log should have index 1");
+        Assertions.assertEquals(2, transactionReceipts.get(1).getLogInfoList().get(0).getLogIndex(), "Third log should have index 2");
+        Assertions.assertEquals(3, transactionReceipts.get(1).getLogInfoList().get(1).getLogIndex(), "Fourth log should have index 3");
+        Assertions.assertEquals(4, transactionReceipts.get(2).getLogInfoList().get(0).getLogIndex(), "Fifth log should have index 4");
+        Assertions.assertEquals(5, transactionReceipts.get(2).getLogInfoList().get(1).getLogIndex(), "Sixth log should have index 5");
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void executeBlockWithBaseEventFromRepository(boolean activeRskip535) {
+        //given
+        doReturn(activeRskip535).when(activationConfig).isActive(eq(ConsensusRule.RSKIP535), anyLong());
+
+        Block parent = blockchain.getBestBlock();
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(parent);
+
+        // Only test BlockHeaderV2 when RSKIP535 is active, as that's when it's created
+        if (activeRskip535) {
+            // Ensure we have a BlockHeaderV2
+            Assertions.assertInstanceOf(BlockHeaderV2.class, block.getHeader(), "Block should have BlockHeaderV2 header when RSKIP535 is active");
+
+            // Create a real repository with the expected baseEvent value
+            byte[] expectedBaseEvent = new byte[]{0x01, 0x02, 0x03, 0x04, 0x05};
+            Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
+            repository.startTracking();
+
+            // Set the baseEvent in the repository at the bridge address
+            RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
+            DataWord baseEventKey = UnionBridgeStorageIndexKey.BASE_EVENT.getKey();
+            repository.addStorageBytes(bridgeAddress, baseEventKey, expectedBaseEvent);
+            repository.commit();
+
+            // Update the parent block's state root to include our repository changes
+            parent.setStateRoot(repository.getRoot());
+
+            // when
+            BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+            // then
+            BlockResult result = executor.executeAndFill(block, parent.getHeader());
+            Assertions.assertNotNull(result);
+            Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+            Assertions.assertArrayEquals(expectedBaseEvent, result.getBlock().getBaseEvent(),
+                    "BaseEvent should be set from repository when RSKIP535 is active");
+        } else {
+            // when RSKIP535 is not active, we should have a different header type
+            Assertions.assertFalse(block.getHeader() instanceof BlockHeaderV2,
+                    "Block should not have BlockHeaderV2 header when RSKIP535 is not active");
+
+            BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+            BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+            // then
+            Assertions.assertNotNull(result);
+            Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+            Assertions.assertNull(result.getBlock().getBaseEvent());
+        }
+    }
+
+    @Test
+    void executeBlockWithBaseEventFromRepository_WhenRepositoryIsNull() {
+        // given
+        // Create a block with BlockHeaderV2
+        Block parent = blockchain.getBestBlock();
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(parent);
+
+        // Create a real repository but don't set any baseEvent
+        Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
+        repository.startTracking();
+        repository.commit();
+        parent.setStateRoot(repository.getRoot());
+
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        // when
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        // then
+        Assertions.assertNotNull(result);
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertArrayEquals(EMPTY_BYTE_ARRAY, result.getBlock().getBaseEvent(),
+                "BaseEvent should be set to empty array when repository has no baseEvent");
+    }
+
+    @Test
+    void executeBlockWithBaseEventFromRepository_WhenRepositoryThrowsException() {
+        // given
+        doReturn(true).when(activationConfig).isActive(eq(ConsensusRule.RSKIP535), anyLong());
+
+        Block parent = blockchain.getBestBlock();
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(parent);
+
+        // Create a real repository with baseEvent data
+        Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
+        repository.startTracking();
+        RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
+        DataWord baseEventKey = UnionBridgeStorageIndexKey.BASE_EVENT.getKey();
+        byte[] expectedBaseEvent = new byte[]{0x01, 0x02, 0x03, 0x04, 0x05};
+        repository.addStorageBytes(bridgeAddress, baseEventKey, expectedBaseEvent);
+        repository.commit();
+        parent.setStateRoot(repository.getRoot());
+
+        // Create BlockExecutor with real repository
+        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
+
+        // when
+        BlockResult result = executor.executeAndFill(block, parent.getHeader());
+
+        // then
+        Assertions.assertNotNull(result);
+        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        // When repository has baseEvent, it should be retrieved correctly
+        Assertions.assertArrayEquals(expectedBaseEvent, result.getBlock().getBaseEvent(),
+                "BaseEvent should be retrieved from repository when available");
     }
 
     public static class TestObjects {
@@ -1621,176 +1866,4 @@ public class BlockExecutorTest {
 
         }
     }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void executeBlockWithContractEmittingLogsUsingDsl(boolean isRSKIP144Activated) throws Exception {
-        TestSystemProperties config = new TestSystemProperties(rawConfig ->
-                rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(isRSKIP144Activated ? 1 : -1))
-        );
-        
-        // Use DSL to set up the blockchain with log-emitting contract
-        DslParser parser = DslParser.fromResource("dsl/log_indexes_pte.txt");
-        World world = new World(config);
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Get the blocks created by DSL
-        Block deployBlock = world.getBlockByName("b01");
-        Block callBlock = world.getBlockByName("b02");  // Now contains all three transactions
-        
-        Assertions.assertNotNull(deployBlock);
-        Assertions.assertNotNull(callBlock);
-        
-        // Verify the deployment transaction was successful
-        TransactionReceipt deployReceipt = world.getTransactionReceiptByName("txDeploy");
-        Assertions.assertNotNull(deployReceipt);
-        Assertions.assertTrue(deployReceipt.isSuccessful());
-        
-        // Verify all three transactions are in the same block
-        Assertions.assertEquals(3, callBlock.getTransactionsList().size(), "Block b02 should contain 3 transactions");
-        
-        // Verify the first function call transaction and its logs
-        TransactionReceipt callReceipt = world.getTransactionReceiptByName("txCallEmit");
-        Assertions.assertNotNull(callReceipt);
-        Assertions.assertTrue(callReceipt.isSuccessful());
-        
-        // Most importantly: verify that logs were emitted
-        Assertions.assertNotNull(callReceipt.getLogInfoList());
-        Assertions.assertFalse(callReceipt.getLogInfoList().isEmpty());
-        Assertions.assertEquals(2, callReceipt.getLogInfoList().size(), "Should emit exactly 2 logs");
-        
-        // Verify the second function call transaction and its logs
-        TransactionReceipt callReceipt2 = world.getTransactionReceiptByName("txCallEmit2");
-        Assertions.assertNotNull(callReceipt2);
-        Assertions.assertTrue(callReceipt2.isSuccessful());
-        Assertions.assertNotNull(callReceipt2.getLogInfoList());
-        Assertions.assertFalse(callReceipt2.getLogInfoList().isEmpty());
-        Assertions.assertEquals(2, callReceipt2.getLogInfoList().size(), "Second call should emit exactly 2 logs");
-        
-        // Verify the third function call transaction and its logs
-        TransactionReceipt callReceipt3 = world.getTransactionReceiptByName("txCallEmit3");
-        Assertions.assertNotNull(callReceipt3);
-        Assertions.assertTrue(callReceipt3.isSuccessful());
-        Assertions.assertNotNull(callReceipt3.getLogInfoList());
-        Assertions.assertFalse(callReceipt3.getLogInfoList().isEmpty());
-        Assertions.assertEquals(2, callReceipt3.getLogInfoList().size(), "Third call should emit exactly 2 logs");
-        
-        // Verify logs from first call contain the expected contract address
-        org.ethereum.vm.LogInfo logInfo1 = callReceipt.getLogInfoList().get(0);
-        org.ethereum.vm.LogInfo logInfo2 = callReceipt.getLogInfoList().get(1);
-        
-        // Verify logs from second call contain the expected contract address
-        org.ethereum.vm.LogInfo logInfo3 = callReceipt2.getLogInfoList().get(0);
-        org.ethereum.vm.LogInfo logInfo4 = callReceipt2.getLogInfoList().get(1);
-        
-        // Verify logs from third call contain the expected contract address
-        org.ethereum.vm.LogInfo logInfo5 = callReceipt3.getLogInfoList().get(0);
-        org.ethereum.vm.LogInfo logInfo6 = callReceipt3.getLogInfoList().get(1);
-
-        // Verify that all logs from the same block have correct sequential log indexes
-        // Since all transactions are in the same block, log indexes should be sequential across all transactions:
-        // Transaction 1 (txCallEmit) should have logs at indexes 0, 1
-        // Transaction 2 (txCallEmit2) should have logs at indexes 2, 3  
-        // Transaction 3 (txCallEmit3) should have logs at indexes 4, 5
-        Assertions.assertEquals(0, logInfo1.getLogIndex(), "First log should have index 0");
-        Assertions.assertEquals(1, logInfo2.getLogIndex(), "Second log should have index 1");
-        Assertions.assertEquals(2, logInfo3.getLogIndex(), "Third log should have index 2");
-        Assertions.assertEquals(3, logInfo4.getLogIndex(), "Fourth log should have index 3");
-        Assertions.assertEquals(4, logInfo5.getLogIndex(), "Fifth log should have index 4");
-        Assertions.assertEquals(5, logInfo6.getLogIndex(), "Sixth log should have index 5");
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void executeBlockWithLogEmittingContractAndVerifyLogIndexes(boolean isRSKIP144Activated) throws Exception {
-        TestSystemProperties config = new TestSystemProperties(rawConfig ->
-                rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(isRSKIP144Activated ? 1 : -1))
-        );
-        
-        // Now use DSL to create a block with log-emitting contract for log index verification
-        DslParser parser = DslParser.fromResource("dsl/log_indexes_pte.txt");
-        World world = new World(config);
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Get the blocks created by DSL
-        Block deployBlock = world.getBlockByName("b01");
-        Block callBlock1 = world.getBlockByName("b02");
-        Block callBlock2 = world.getBlockByName("b03");
-        
-        Assertions.assertNotNull(deployBlock);
-        Assertions.assertNotNull(callBlock1);
-        Assertions.assertNotNull(callBlock2);
-
-        BlockResult result = world.getBlockExecutor().execute(null, 0, callBlock2, callBlock1.getHeader(), false, false, false);
-
-        List<TransactionReceipt> transactionReceipts = result.getTransactionReceipts();
-
-        Assertions.assertNotNull(transactionReceipts);
-
-        Assertions.assertEquals(0, transactionReceipts.get(0).getLogInfoList().get(0).getLogIndex(), "First log should have index 0");
-        Assertions.assertEquals(1, transactionReceipts.get(0).getLogInfoList().get(1).getLogIndex(), "Second log should have index 1");
-        Assertions.assertEquals(2, transactionReceipts.get(1).getLogInfoList().get(0).getLogIndex(), "Third log should have index 2");
-        Assertions.assertEquals(3, transactionReceipts.get(1).getLogInfoList().get(1).getLogIndex(), "Fourth log should have index 3");
-        Assertions.assertEquals(4, transactionReceipts.get(2).getLogInfoList().get(0).getLogIndex(), "Fifth log should have index 4");
-        Assertions.assertEquals(5, transactionReceipts.get(2).getLogInfoList().get(1).getLogIndex(), "Sixth log should have index 5");
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void executeBlockWithBaseEventFromRepository(boolean activeRskip535) {
-        doReturn(activeRskip535).when(activationConfig).isActive(eq(ConsensusRule.RSKIP535), anyLong());
-        
-        // Create a block with BlockHeaderV2
-        Block parent = blockchain.getBestBlock();
-        Block block = new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(parent);
-        
-        // Only test BlockHeaderV2 when RSKIP535 is active, as that's when it's created
-        if (activeRskip535) {
-            // Ensure we have a BlockHeaderV2
-            Assertions.assertTrue(block.getHeader() instanceof BlockHeaderV2, "Block should have BlockHeaderV2 header when RSKIP535 is active");
-            BlockHeaderV2 headerV2 = (BlockHeaderV2) block.getHeader();
-            
-            // Create a real repository with the expected baseEvent value
-            byte[] expectedBaseEvent = new byte[]{0x01, 0x02, 0x03, 0x04, 0x05};
-            Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
-            repository.startTracking();
-            
-            // Set the baseEvent in the repository at the bridge address
-            RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
-            DataWord baseEventKey = UnionBridgeStorageIndexKey.BASE_EVENT.getKey();
-            repository.addStorageBytes(bridgeAddress, baseEventKey, expectedBaseEvent);
-            repository.commit();
-            
-            // Update the parent block's state root to include our repository changes
-            parent.setStateRoot(repository.getRoot());
-            
-            // Create BlockExecutor with the real repository
-            BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
-            
-            // Execute the block using executeAndFill to trigger the fill method
-            BlockResult result = executor.executeAndFill(block, parent.getHeader());
-            
-            Assertions.assertNotNull(result);
-            Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
-            
-            // When RSKIP535 is active, the baseEvent should be set from repository
-            Assertions.assertArrayEquals(expectedBaseEvent,result.getBlock().getBaseEvent(),
-                    "BaseEvent should be set from repository when RSKIP535 is active");
-        } else {
-            // When RSKIP535 is not active, we should have a different header type
-            Assertions.assertFalse(block.getHeader() instanceof BlockHeaderV2, 
-                    "Block should not have BlockHeaderV2 header when RSKIP535 is not active");
-            
-            // Just verify the block executes successfully
-            BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
-            BlockResult result = executor.executeAndFill(block, parent.getHeader());
-            
-            Assertions.assertNotNull(result);
-            Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
-            Assertions.assertNull(result.getBlock().getBaseEvent());
-        }
-    }
-
 }

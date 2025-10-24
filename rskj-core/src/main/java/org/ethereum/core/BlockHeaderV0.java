@@ -21,6 +21,7 @@ package org.ethereum.core;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.ethereum.core.exception.SealedBlockHeaderException;
 
 import java.util.Arrays;
 import java.util.List;

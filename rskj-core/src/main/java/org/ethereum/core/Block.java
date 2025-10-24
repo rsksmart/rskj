@@ -29,6 +29,7 @@ import co.rsk.panic.PanicProcessor;
 import com.google.common.collect.ImmutableList;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.core.exception.SealedBlockException;
 import org.ethereum.util.RLP;
 
 import javax.annotation.Nonnull;
