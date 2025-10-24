@@ -17,6 +17,7 @@
  */
 package co.rsk.rpc.modules.trace;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
@@ -41,9 +42,9 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,6 +65,7 @@ public class TraceModuleImpl implements TraceModule {
     private final ExecutionBlockRetriever executionBlockRetriever;
 
     private final SignatureCache signatureCache;
+    private final int maxTracesPerRequest;
 
     public TraceModuleImpl(
             Blockchain blockchain,
@@ -71,13 +73,15 @@ public class TraceModuleImpl implements TraceModule {
             ReceiptStore receiptStore,
             BlockExecutor blockExecutor,
             ExecutionBlockRetriever executionBlockRetriever,
-            SignatureCache signatureCache) {
+            SignatureCache signatureCache,
+            RskSystemProperties config) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.blockExecutor = blockExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
         this.signatureCache = signatureCache;
+        this.maxTracesPerRequest = config.rpcTraceMaxTracesPerRequest();
     }
 
     @Override
@@ -129,36 +133,53 @@ public class TraceModuleImpl implements TraceModule {
 
     @Override
     public JsonNode traceFilter(TraceFilterRequest traceFilterRequest) {
-        List<List<TransactionTrace>> blockTracesGroup = new ArrayList<>();
+        validateTraceFilterRequest(traceFilterRequest);
 
+        final var count = Optional.ofNullable(traceFilterRequest.getCount()).orElse(maxTracesPerRequest);
+        final var after = Optional.ofNullable(traceFilterRequest.getAfter()).orElse(0);
+
+        List<TransactionTrace> allTraces = new ArrayList<>();
         Block fromBlock = getBlockByTagOrNumber(traceFilterRequest.getFromBlock(), traceFilterRequest.getFromBlockNumber());
-        Block block = getBlockByTagOrNumber(traceFilterRequest.getToBlock(), traceFilterRequest.getToBlockNumber());
+        Block toBlock = getBlockByTagOrNumber(traceFilterRequest.getToBlock(), traceFilterRequest.getToBlockNumber());
 
-        block = block == null ? blockchain.getBestBlock() : block;
+        validateBlockRange(fromBlock, toBlock);
 
-        while (fromBlock != null && block != null && block.getNumber() >= fromBlock.getNumber()) {
-            List<TransactionTrace> builtTraces = buildBlockTraces(block, traceFilterRequest);
+        toBlock = toBlock == null ? blockchain.getBestBlock() : toBlock;
 
-            blockTracesGroup.add(builtTraces);
+        int processedBlocks = 0;
+        int totalNeeded = after + count;
+        Block currentBlock = fromBlock;
+        int tracesProcessed = 0;
 
-            block = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
+        logger.debug("traceFilter: Starting processing from block {} to block {}, skipCount={}, limitCount={}",
+                fromBlock != null ? fromBlock.getNumber() : -1, toBlock.getNumber(), after, count);
+
+        while (currentBlock != null && currentBlock.getNumber() <= toBlock.getNumber()) {
+            List<TransactionTrace> builtTraces = buildBlockTraces(currentBlock, traceFilterRequest);
+
+            int builtTracesSize = builtTraces.size();
+            if (tracesProcessed + builtTracesSize > after) {
+                int startIndex = Math.max(0, after - tracesProcessed);
+                int endIndex = Math.min(builtTracesSize, after + count - tracesProcessed);
+                allTraces.addAll(builtTraces.subList(startIndex, endIndex));
+            }
+
+            tracesProcessed += builtTracesSize;
+            processedBlocks++;
+
+            if (tracesProcessed >= totalNeeded) {
+                logger.debug("traceFilter: Early termination at block {} with {} traces collected",
+                        currentBlock.getNumber(), allTraces.size());
+                break;
+            }
+
+            currentBlock = this.blockchain.getBlockByNumber(currentBlock.getNumber() + 1);
         }
 
-        Collections.reverse(blockTracesGroup);
+        logger.debug("traceFilter: Completed processing. Processed {} blocks, collected {} traces, returning {} traces",
+                processedBlocks, allTraces.size(), allTraces.size());
 
-        Stream<TransactionTrace> txTraceStream = blockTracesGroup.stream().flatMap(Collection::stream);
-
-        if (traceFilterRequest.getAfter() != null) {
-            txTraceStream = txTraceStream.skip(traceFilterRequest.getAfter());
-        }
-
-        if (traceFilterRequest.getCount() != null) {
-            txTraceStream = txTraceStream.limit(traceFilterRequest.getCount());
-        }
-
-        List<TransactionTrace> traces = txTraceStream.collect(Collectors.toList());
-
-        return OBJECT_MAPPER.valueToTree(traces);
+        return OBJECT_MAPPER.valueToTree(allTraces);
     }
 
     @Override
@@ -178,7 +199,7 @@ public class TraceModuleImpl implements TraceModule {
 
         TransactionTrace transactionTrace = traces.get(
                 request.getTracePositionsAsListOfIntegers().get(0));
-        
+
         return OBJECT_MAPPER.valueToTree(transactionTrace);
     }
 
@@ -276,6 +297,32 @@ public class TraceModuleImpl implements TraceModule {
         } else {
             long toBlockNumber = biBlock.longValue();
             return this.blockchain.getBlockByNumber(toBlockNumber);
+        }
+    }
+
+    private void validateTraceFilterRequest(TraceFilterRequest traceFilterRequest) {
+        if (traceFilterRequest == null) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid trace_filter parameters.");
+        }
+
+        final var count = Optional.ofNullable(traceFilterRequest.getCount()).orElse(maxTracesPerRequest);
+        if (count > maxTracesPerRequest) {
+            throw RskJsonRpcRequestException.invalidParamError("Count value too big. Maximum " + maxTracesPerRequest + " traces allowed.");
+        }
+        
+        final var after = Optional.ofNullable(traceFilterRequest.getAfter()).orElse(0);
+        if (after < 0) {
+            throw RskJsonRpcRequestException.invalidParamError("After value cannot be negative.");
+        }
+        
+        if (after > maxTracesPerRequest) {
+            throw RskJsonRpcRequestException.invalidParamError("After value too big. Maximum " + maxTracesPerRequest + " traces allowed.");
+        }
+    }
+
+    private void validateBlockRange(Block fromBlock, Block toBlock) {
+        if (fromBlock != null && toBlock != null && fromBlock.getNumber() > toBlock.getNumber()) {
+            throw RskJsonRpcRequestException.invalidParamError("fromBlock cannot be greater than toBlock");
         }
     }
 }
