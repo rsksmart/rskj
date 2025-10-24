@@ -31,7 +31,10 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
-import co.rsk.peg.storage.*;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.InMemoryStorage;
+import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.whitelist.WhitelistSupport;
 import co.rsk.test.builders.BridgeSupportBuilder;
@@ -83,11 +86,13 @@ class BridgeSupportAddSignatureTest {
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
     private WhitelistSupport whitelistSupport;
     private LockingCapSupport lockingCapSupport;
+    private UnionBridgeSupport unionBridgeSupport;
 
     @BeforeEach
     void setUpOnEachTest() {
         whitelistSupport = mock(WhitelistSupport.class);
         lockingCapSupport = mock(LockingCapSupport.class);
+        unionBridgeSupport = mock(UnionBridgeSupport.class);
     }
 
     @Test
@@ -126,6 +131,7 @@ class BridgeSupportAddSignatureTest {
             whitelistSupport,
             mockFederationSupport,
             lockingCapSupport,
+            unionBridgeSupport,
             null,
             null,
             null
@@ -162,6 +168,7 @@ class BridgeSupportAddSignatureTest {
             whitelistSupport,
             mockFederationSupport,
             lockingCapSupport,
+            unionBridgeSupport,
             null,
             null,
             null
@@ -229,6 +236,7 @@ class BridgeSupportAddSignatureTest {
             whitelistSupport,
             mockFederationSupport,
             lockingCapSupport,
+            unionBridgeSupport,
             null,
             null,
             null

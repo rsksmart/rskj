@@ -45,6 +45,8 @@ class ActivationConfigTest {
         "    arrowhead631: 0",
         "    lovell700: 0",
         "    reed800: 0",
+        "    reed810: 0",
+        "    vetiver900: 0",
         "},",
         "consensusRules: {",
         "    areBridgeTxsPaid: afterBridgeSync,",
@@ -73,7 +75,7 @@ class ActivationConfigTest {
         "    rskip137: papyrus200",
         "    rskip140: papyrus200,",
         "    rskip143: papyrus200",
-        "    rskip144: arrowhead600",
+        "    rskip144: reed810",
         "    rskip146: papyrus200",
         "    rskip150: twoToThree",
         "    rskip151: papyrus200",
@@ -109,7 +111,7 @@ class ActivationConfigTest {
         "    rskip297: hop400",
         "    rskip305: reed800",
         "    rskip326: fingerroot500",
-        "    rskip351: arrowhead600",
+        "    rskip351: reed810",
         "    rskip353: hop401",
         "    rskip357: hop401",
         "    rskip374: fingerroot500",
@@ -135,7 +137,10 @@ class ActivationConfigTest {
         "    rskip454: lovell700",
         "    rskip459: lovell700",
         "    rskip460: lovell700",
+        "    rskip502: reed810",
         "    rskip516: reed800",
+        "    rskip529: reed810",
+        "    rskip536: reed810",
         "}"
     ));
 

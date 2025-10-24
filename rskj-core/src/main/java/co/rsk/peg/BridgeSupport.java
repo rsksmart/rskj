@@ -49,6 +49,8 @@ import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegin.*;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
+import co.rsk.peg.union.UnionBridgeSupport;
+import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.vote.*;
 import co.rsk.peg.whitelist.*;
@@ -122,6 +124,7 @@ public class BridgeSupport {
 
     private final Context btcContext;
     private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private final UnionBridgeSupport unionBridgeSupport;
     private BtcBlockStoreWithCache btcBlockStore;
     private BtcBlockChain btcBlockChain;
     private final org.ethereum.core.Block rskExecutionBlock;
@@ -142,6 +145,7 @@ public class BridgeSupport {
         WhitelistSupport whitelistSupport,
         FederationSupport federationSupport,
         LockingCapSupport lockingCapSupport,
+        UnionBridgeSupport unionBridgeSupport,
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
         ActivationConfig.ForBlock activations,
         SignatureCache signatureCache) {
@@ -158,6 +162,7 @@ public class BridgeSupport {
         this.whitelistSupport = whitelistSupport;
         this.federationSupport = federationSupport;
         this.lockingCapSupport = lockingCapSupport;
+        this.unionBridgeSupport = unionBridgeSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.activations = activations;
         this.signatureCache = signatureCache;
@@ -185,6 +190,7 @@ public class BridgeSupport {
         whitelistSupport.save();
         federationSupport.save();
         lockingCapSupport.save();
+        unionBridgeSupport.save();
     }
 
     /**
@@ -585,7 +591,7 @@ public class BridgeSupport {
      * @deprecated since ARROWHEAD-6.0.0. Need to keep the code for backward compatibility and consensus
      */
     @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated(since="ARROWHEAD-6.0.0", forRemoval=false)
+    @Deprecated(since="ARROWHEAD-6.0.0")
     private void legacyRegisterPegin(
         BtcTransaction btcTx,
         Keccak256 rskTxHash,
@@ -2217,7 +2223,12 @@ public class BridgeSupport {
                 return BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE;
             }
         } catch (BlockStoreException e) {
-            logger.warn("Illegal state trying to get block with hash {}", btcBlockHash, e);
+            String message = String.format(
+                "Error trying to get block with hash %s at height %d",
+                btcBlockHash,
+                block.getHeight()
+            );
+            logger.warn(message, e);
             return BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
         }
 
@@ -2882,6 +2893,76 @@ public class BridgeSupport {
         );
 
         return co.rsk.core.Coin.fromBitcoin(totalAmount).asBigInteger();
+    }
+
+    public UnionResponseCode setUnionBridgeContractAddressForTestnet(RskAddress unionBridgeContractAddress) {
+        return unionBridgeSupport.setUnionBridgeContractAddressForTestnet(unionBridgeContractAddress);
+    }
+
+    public RskAddress getUnionBridgeContractAddress() {
+        return unionBridgeSupport.getUnionBridgeContractAddress();
+    }
+
+    public co.rsk.core.Coin getUnionBridgeLockingCap() {
+        return unionBridgeSupport.getLockingCap();
+    }
+
+    public UnionResponseCode increaseUnionBridgeLockingCap(Transaction tx, co.rsk.core.Coin newLockingCap) {
+        return unionBridgeSupport.increaseLockingCap(tx,
+            newLockingCap);
+    }
+
+    public UnionResponseCode requestUnionBridgeRbtc(Transaction tx, co.rsk.core.Coin amountRequested) {
+        UnionResponseCode responseCode = unionBridgeSupport.requestUnionRbtc(tx, amountRequested);
+        if (responseCode == UnionResponseCode.SUCCESS) {
+            RskAddress unionBridgeContractAddress = unionBridgeSupport.getUnionBridgeContractAddress();
+            transferTo(unionBridgeContractAddress, amountRequested);
+            eventLogger.logUnionRbtcRequested(unionBridgeContractAddress, amountRequested);
+        }
+        return responseCode;
+    }
+
+    public UnionResponseCode releaseUnionBridgeRbtc(Transaction tx) {
+        final RskAddress txSender = tx.getSender(signatureCache);
+        final co.rsk.core.Coin amountToRelease = tx.getValue();
+
+        UnionResponseCode responseCode = unionBridgeSupport.releaseUnionRbtc(tx);
+
+        // If the response code is not SUCCESS, it means that the transaction was not processed
+        // successfully, so we need to transfer the amount back to the sender.
+        boolean isAmountValid = amountToRelease.compareTo(co.rsk.core.Coin.ZERO) > 0;
+        if (responseCode != UnionResponseCode.SUCCESS && isAmountValid) {
+            transferTo(txSender, amountToRelease);
+        }
+        return responseCode;
+    }
+
+    public UnionResponseCode setUnionBridgeTransferPermissions(Transaction tx, boolean requestEnabled, boolean releaseEnabled) {
+        return unionBridgeSupport.setTransferPermissions(tx, requestEnabled, releaseEnabled);
+    }
+
+    public byte[] getSuperEvent() {
+        return unionBridgeSupport.getSuperEvent();
+    }
+
+    public void setSuperEvent(Transaction tx, byte[] data) {
+        unionBridgeSupport.setSuperEvent(tx, data);
+    }
+
+    public void clearSuperEvent(Transaction tx) {
+        unionBridgeSupport.clearSuperEvent(tx);
+    }
+
+    public byte[] getBaseEvent() {
+        return unionBridgeSupport.getBaseEvent();
+    }
+
+    public void setBaseEvent(Transaction tx, byte[] data) {
+        unionBridgeSupport.setBaseEvent(tx, data);
+    }
+
+    public void clearBaseEvent(Transaction tx) {
+        unionBridgeSupport.clearBaseEvent(tx);
     }
 
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {

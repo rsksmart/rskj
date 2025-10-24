@@ -23,30 +23,40 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP417;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.core.types.bytes.Bytes;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.BridgeMethods.AuthorizerProvider;
 import co.rsk.peg.BridgeMethods.BridgeMethodExecutor;
-import co.rsk.peg.feeperkb.FeePerKbResponseCode;
-import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
-import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationChangeResponseCode;
 import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.feeperkb.FeePerKbResponseCode;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.peg.vote.ABICallSpec;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.WhitelistResponseCode;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall.MsgType;
@@ -56,16 +66,6 @@ import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 /**
  * Precompiled contract that manages the 2 way peg between bitcoin and RSK.
@@ -223,6 +223,15 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH = BridgeMethods.GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH.getFunction();
 
     public static final CallTransaction.Function GET_ACTIVE_POWPEG_REDEEM_SCRIPT = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction();
+
+    // Union Bridge Contract functions
+    public static final CallTransaction.Function SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
+    public static final CallTransaction.Function GET_UNION_BRIDGE_CONTRACT_ADDRESS = BridgeMethods.GET_UNION_BRIDGE_CONTRACT_ADDRESS.getFunction();
+    public static final CallTransaction.Function GET_UNION_BRIDGE_LOCKING_CAP = BridgeMethods.GET_UNION_BRIDGE_LOCKING_CAP.getFunction();
+    public static final CallTransaction.Function INCREASE_UNION_BRIDGE_LOCKING_CAP = BridgeMethods.INCREASE_UNION_BRIDGE_LOCKING_CAP.getFunction();
+    public static final CallTransaction.Function REQUEST_UNION_BRIDGE_RBTC = BridgeMethods.REQUEST_UNION_BRIDGE_RBTC.getFunction();
+    public static final CallTransaction.Function RELEASE_UNION_BRIDGE_RBTC = BridgeMethods.RELEASE_UNION_BRIDGE_RBTC.getFunction();
+    public static final CallTransaction.Function SET_UNION_BRIDGE_TRANSFER_PERMISSIONS = BridgeMethods.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
 
     // Log topics used by Bridge Contract pre RSKIP146
     public static final DataWord RELEASE_BTC_TOPIC = DataWord.fromString("release_btc_topic");
@@ -1480,6 +1489,116 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getEstimatedFeesForNextPegOutEvent");
 
         return bridgeSupport.getEstimatedFeesForNextPegOutEvent().value;
+    }
+
+    public int setUnionBridgeContractAddressForTestnet(Object[] args) {
+        logger.trace("setUnionBridgeContractAddressForTestnet");
+        // A DataWord cast is used because a SolidityType "address" is decoded using this specific type.
+        RskAddress unionBridgeContractAddress = new RskAddress((DataWord) args[0]);
+        return bridgeSupport.setUnionBridgeContractAddressForTestnet(unionBridgeContractAddress).getCode();
+    }
+
+    public String getUnionBridgeContractAddress(Object[] args) {
+        logger.trace("getUnionBridgeContractAddress");
+        return bridgeSupport.getUnionBridgeContractAddress().toHexString();
+    }
+
+    public BigInteger getUnionBridgeLockingCap(Object[] args) {
+        logger.trace("getUnionBridgeLockingCap");
+        return bridgeSupport.getUnionBridgeLockingCap().asBigInteger();
+    }
+
+    public int increaseUnionBridgeLockingCap(Object[] args) {
+        logger.trace("increaseUnionBridgeLockingCap");
+        co.rsk.core.Coin newLockingCap = new co.rsk.core.Coin((BigInteger) args[0]);
+        return bridgeSupport.increaseUnionBridgeLockingCap(rskTx, newLockingCap).getCode();
+    }
+
+    public int requestUnionBridgeRbtc(Object[] args) {
+        logger.trace("requestUnionBridgeRbtc");
+        co.rsk.core.Coin amountRequested = new co.rsk.core.Coin((BigInteger) args[0]);
+        return bridgeSupport.requestUnionBridgeRbtc(rskTx, amountRequested).getCode();
+    }
+
+    public int releaseUnionBridgeRbtc(Object[] args) {
+        logger.trace("releaseUnionBridgeRbtc");
+        return bridgeSupport.releaseUnionBridgeRbtc(rskTx).getCode();
+    }
+
+    public int setUnionBridgeTransferPermissions(Object[] args) {
+        logger.trace("setUnionBridgeTransferPermissions");
+        boolean requestEnabled = (boolean) args[0];
+        boolean releaseEnabled = (boolean) args[1];
+        return bridgeSupport.setUnionBridgeTransferPermissions(rskTx, requestEnabled, releaseEnabled).getCode();
+    }
+
+    public byte[] getSuperEvent(Object[] args) {
+        logger.trace("getSuperEvent");
+        return bridgeSupport.getSuperEvent();
+    }
+
+    public void setSuperEvent(Object[] args) {
+        logger.trace("setSuperEvent");
+        byte[] data = (byte[]) args[0];
+        bridgeSupport.setSuperEvent(rskTx, data);
+    }
+
+    public void clearSuperEvent(Object[] args) {
+        logger.trace("clearSuperEvent");
+        bridgeSupport.clearSuperEvent(rskTx);
+    }
+
+    public byte[] getBaseEvent(Object[] args) {
+        logger.trace("getBaseEvent");
+        return bridgeSupport.getBaseEvent();
+    }
+
+    public void setBaseEvent(Object[] args) {
+        logger.trace("setBaseEvent");
+        byte[] data = (byte[]) args[0];
+        bridgeSupport.setBaseEvent(rskTx, data);
+    }
+
+    public void clearBaseEvent(Object[] args) {
+        logger.trace("clearBaseEvent");
+        bridgeSupport.clearBaseEvent(rskTx);
+    }
+
+    protected static BridgeMethods.BridgeMethodExecutor executeIfAuthorized(
+        AuthorizerProvider authorizerProvider,
+        BridgeMethods.BridgeMethodExecutor decorate,
+        String functionName
+    ) {
+        return (self, args) -> {
+            AddressBasedAuthorizer addressBasedAuthorizer = authorizerProvider.provide(self.bridgeConstants);
+            if (!addressBasedAuthorizer.isAuthorized(self.rskTx, self.signatureCache)) {
+                String errorMessage = String.format(
+                    "The sender is not authorized to call %s",
+                    functionName
+                );
+                throw new VMException(errorMessage);
+            }
+            return decorate.execute(self, args);
+        };
+    }
+
+    public static BridgeMethods.BridgeMethodExecutor executeIfTestnetAndAuthorized(
+        AuthorizerProvider authorizerProvider,
+        BridgeMethods.BridgeMethodExecutor decorate,
+        String functionName
+    ) {
+        return (self, args) -> {
+            boolean isMainnet = self.constants.getChainId() == Constants.MAINNET_CHAIN_ID;
+            if (isMainnet) {
+                String errorMessage = String.format(
+                    "The %s function is disabled in Mainnet.",
+                    functionName
+                );
+                throw new VMException(errorMessage);
+            }
+
+            return executeIfAuthorized(authorizerProvider, decorate, functionName).execute(self, args);
+        };
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {

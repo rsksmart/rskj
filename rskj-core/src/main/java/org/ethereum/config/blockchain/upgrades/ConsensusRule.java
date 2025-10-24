@@ -45,6 +45,7 @@ public enum ConsensusRule {
     RSKIP137("rskip137"),
     RSKIP140("rskip140"),
     RSKIP143("rskip143"),
+    RSKIP144("rskip144"), // Parallel tx execution
     RSKIP146("rskip146"),
     RSKIP150("rskip150"),
     RSKIP151("rskip151"),
@@ -78,10 +79,9 @@ public enum ConsensusRule {
     RSKIP293("rskip293"), // Flyover improvements
     RSKIP294("rskip294"),
     RSKIP297("rskip297"), // Increase max timestamp difference between btc and rsk blocks for Testnet
-    RSKIP351("rskip351"), // block header extension v1
-    RSKIP144("rskip144"), // Parallel tx execution
     RSKIP305("rskip305"), // bridge segwit-compatible
     RSKIP326("rskip326"), // release_request_received event update to use base58 for btcDestinationAddress
+    RSKIP351("rskip351"), // block header extension v1
     RSKIP353("rskip353"),
     RSKIP357("rskip357"),
     RSKIP374("rskip374"),
@@ -107,7 +107,10 @@ public enum ConsensusRule {
     RSKIP454("rskip454"),
     RSKIP459("rskip459"),
     RSKIP460("rskip460"),
-    RSKIP516("rskip516"), //  Addition of precompiled contracts for add and mul operations on the secp256k1 curve
+    RSKIP502("rskip502"), // PowPeg and Union Bridge integration
+    RSKIP516("rskip516"), // Addition of precompiled contracts for add and mul operations on the secp256k1 curve
+    RSKIP529("rskip529"), // New storage cells in Bridge native contract for base and super events info
+    RSKIP536("rskip536"), // Additional methods for BlockHeader precompiled contract
     ;
 
     private final String configKey;

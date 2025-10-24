@@ -110,7 +110,7 @@ public class ABICallElection {
     }
 
     private boolean areEnoughVotes(int votesSize) {
-        return votesSize >= authorizer.getRequiredAuthorizedKeys();
+        return votesSize >= authorizer.getRequiredAuthorizedAddresses();
     }
 
     /**

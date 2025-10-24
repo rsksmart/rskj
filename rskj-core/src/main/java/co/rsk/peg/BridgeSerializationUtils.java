@@ -64,6 +64,26 @@ public class BridgeSerializationUtils {
         throw new IllegalAccessError("Utility class, do not instantiate it");
     }
 
+    public static byte[] serializeRskAddress(RskAddress rskAddress) {
+        if (rskAddress == null) {
+            throw new IllegalArgumentException("Rsk address cannot be null.");
+        }
+        return RLP.encodeElement(rskAddress.getBytes());
+    }
+
+    public static RskAddress deserializeRskAddress(byte[] rskAddressSerialized) {
+        if (rskAddressSerialized == null || rskAddressSerialized.length == 0) {
+            return null;
+        }
+
+        return Optional.of(rskAddressSerialized)
+            .map(RLP::decode2)
+            .map(rlpList -> rlpList.get(0))
+            .map(RLPElement::getRLPData)
+            .map(RskAddress::new)
+            .orElseThrow(() -> new IllegalArgumentException("Invalid serialized address"));
+    }
+
     private static byte[] serializeRskTxHash(Keccak256 rskTxHash) {
         return RLP.encodeElement(rskTxHash.getBytes());
     }
@@ -623,6 +643,22 @@ public class BridgeSerializationUtils {
         return data == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(data);
     }
 
+    public static byte[] serializeRskCoin(co.rsk.core.Coin coin) {
+        if (coin == null || coin.compareTo(co.rsk.core.Coin.ZERO) < 0) {
+            throw new IllegalArgumentException("Rsk coin value cannot be negative.");
+        }
+        return RLP.encodeBigInteger(coin.asBigInteger());
+    }
+
+    @Nullable
+    public static co.rsk.core.Coin deserializeRskCoin(byte[] data) {
+        if (data == null || data.length == 0) {
+            return null;
+        }
+
+        return new co.rsk.core.Coin(RLP.decodeBigInteger(data, 0));
+    }
+
     public static byte[] serializeCoin(Coin coin) {
         return RLP.encodeBigInteger(BigInteger.valueOf(coin.getValue()));
     }
@@ -816,6 +852,25 @@ public class BridgeSerializationUtils {
         }
 
         return new PegoutsWaitingForConfirmations(entries);
+    }
+
+    public static byte[] serializeBoolean(Boolean value) {
+        if (value == null) {
+            throw new IllegalArgumentException("Cannot serialize null Boolean value");
+        }
+        return RLP.encodeInt(value ?  1 : 0);
+    }
+
+    public static Boolean deserializeBoolean(byte[] data) {
+        if (data == null || data.length == 0) {
+            return null;
+        }
+
+        int decodedValue = RLP.decodeInt(data, 0);
+        if (decodedValue < 0 || decodedValue > 1) {
+            throw new IllegalArgumentException("Invalid serialized boolean value: " + decodedValue);
+        }
+        return decodedValue == 1;
     }
 
     public static byte[] serializeInteger(Integer value) {

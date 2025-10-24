@@ -56,12 +56,14 @@ public class BlockGenerator {
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    private final Block[] blockCache = new Block[5];
+    private static final BigInteger MIN_GAS_PRICE = BigInteger.valueOf(1);
 
+    private final ActivationConfig activationConfig;
+
+    private final Block[] blockCache = new Block[5];
     private final DifficultyCalculator difficultyCalculator;
     private final BlockFactory blockFactory;
     private int count = 0;
-    private ActivationConfig activationConfig;
 
     public BlockGenerator() {
         this(Constants.regtest(), ActivationConfigsForTest.regtest());
@@ -245,14 +247,39 @@ public class BlockGenerator {
     }
 
     public Block createChildBlock(
-            Block parent, List<Transaction> txs, List<BlockHeader> uncles,
-            long difficulty, BigInteger minGasPrice, byte[] gasLimit, RskAddress coinbase) {
-        short[] edges = activationConfig.isActive(ConsensusRule.RSKIP144, parent.getNumber() + 1) ? new short[0] : null;
-        return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, gasLimit, coinbase, edges);
+        Block parent,
+        List<Transaction> txs,
+        List<BlockHeader> uncles,
+        long difficulty,
+        BigInteger minGasPrice,
+        byte[] gasLimit
+    ) {
+        return createChildBlockUsingCoinbase(parent, txs, uncles, difficulty, minGasPrice, gasLimit, parent.getCoinbase());
     }
 
-    public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
-                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit, RskAddress coinbase, short[] edges) {
+    public Block createChildBlockUsingCoinbase(
+        Block parent,
+        List<Transaction> txs,
+        List<BlockHeader> uncles,
+        long difficulty,
+        BigInteger minGasPrice,
+        byte[] gasLimit,
+        RskAddress coinbase
+    ) {
+        short[] edges = activationConfig.isActive(ConsensusRule.RSKIP144, parent.getNumber() + 1) ? new short[0] : null;
+        return createChildBlockUsingCoinbase(parent, txs, uncles, difficulty, minGasPrice, gasLimit, coinbase, edges);
+    }
+
+    public Block createChildBlockUsingCoinbase(
+        Block parent,
+        List<Transaction> txs,
+        List<BlockHeader> uncles,
+        long difficulty,
+        BigInteger minGasPrice,
+        byte[] gasLimit,
+        RskAddress coinbase,
+        short[] edges
+    ) {
         if (txs == null) {
             txs = new ArrayList<>();
         }
@@ -303,11 +330,6 @@ public class BlockGenerator {
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 
         return blockFactory.newBlock(newHeader, txs, uncles, false);
-    }
-
-    public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
-                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit) {
-        return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, gasLimit, parent.getCoinbase());
     }
 
     public Block createBlock(long number, int ntxs) {
@@ -441,10 +463,7 @@ public class BlockGenerator {
                 difficulty = 0l;
             }
 
-            Block newblock = createChildBlock(
-                    parent, txs, uncles,
-                    difficulty,
-                    BigInteger.valueOf(1));
+            Block newblock = createChildBlock(parent, txs, uncles, difficulty, MIN_GAS_PRICE);
 
             if (withMining) {
                 newblock = new BlockMiner(activationConfig).mineBlock(newblock);
@@ -465,6 +484,49 @@ public class BlockGenerator {
             }
 
             parent = newblock;
+            chainSize++;
+        }
+
+        return chain;
+    }
+
+    public List<Block> getBlockChainUsingCoinbase(Block parent, int size, int ntxs, boolean withUncles, boolean withMining, Long difficulty, RskAddress coinbase) {
+        List<Block> chain = new ArrayList<Block>();
+        List<BlockHeader> uncles = new ArrayList<>();
+        int chainSize = 0;
+
+        while (chainSize < size) {
+            List<Transaction> txs = new ArrayList<>();
+
+            for (int ntx = 0; ntx < ntxs; ntx++) {
+                txs.add(new SimpleRskTransaction(null));
+            }
+
+            if (difficulty == null) {
+                difficulty = 0l;
+            }
+
+            Block childBlock = createChildBlockUsingCoinbase(parent, txs, uncles, difficulty, MIN_GAS_PRICE, parent.getGasLimit(), coinbase);
+
+            if (withMining) {
+                childBlock = new BlockMiner(activationConfig).mineBlock(childBlock);
+            }
+
+            chain.add(childBlock);
+
+            if (withUncles) {
+                uncles = new ArrayList<>();
+
+                Block newuncle = createChildBlock(parent, ntxs);
+                chain.add(newuncle);
+                uncles.add(newuncle.getHeader());
+
+                newuncle = createChildBlock(parent, ntxs);
+                chain.add(newuncle);
+                uncles.add(newuncle.getHeader());
+            }
+
+            parent = childBlock;
             chainSize++;
         }
 

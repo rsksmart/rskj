@@ -55,6 +55,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.*;
@@ -73,6 +74,41 @@ class BridgeSerializationUtilsTest {
 
     private static final Address ADDRESS = BitcoinTestUtils.createP2PKHAddress(MAINNET_PARAMETERS, "first");
     private static final Address OTHER_ADDRESS = BitcoinTestUtils.createP2PKHAddress(MAINNET_PARAMETERS, "second");
+
+    private static Stream<Arguments> validRskAddressesProvider() {
+        return Stream.of(
+            Arguments.of(TestUtils.generateAddress("address1")),
+            Arguments.of(TestUtils.generateAddress("address2")),
+            Arguments.of(TestUtils.generateAddress("address3"))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("validRskAddressesProvider")
+    void serializeAndDeserializeRskAddress_validAddress_ok(RskAddress address) {
+        // Act & Assert
+        byte[] actualSerializedAddress = BridgeSerializationUtils.serializeRskAddress(address);
+        assertNotNull(actualSerializedAddress);
+
+        RskAddress actualDeserializedAddress = BridgeSerializationUtils.deserializeRskAddress(actualSerializedAddress);
+        assertNotNull(actualDeserializedAddress);
+
+        assertEquals(address, actualDeserializedAddress);
+    }
+
+    @Test
+    void serializeRskAddress_whenNull_shouldFail() {
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> BridgeSerializationUtils.serializeRskAddress(null));
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    void deserializeRskAddress_whenNullOrEmptyData_shouldReturnNull(byte[] data) {
+        // Act & Assert
+        RskAddress actualAddress = BridgeSerializationUtils.deserializeRskAddress(data);
+        assertNull(actualAddress);
+    }
 
     @Test
     void serializeAndDeserializeBtcTransaction_withValidDataAndInputs_shouldReturnEqualResults() {
@@ -1314,6 +1350,42 @@ class BridgeSerializationUtilsTest {
             nullValue());
     }
 
+    @ParameterizedTest
+    @MethodSource("provideValidRskCoins")
+    void serializeDeserializationRskCoin_whenValidCoin_shouldSerialize(co.rsk.core.Coin coin) {
+        byte[] actualSerializedValue = BridgeSerializationUtils.serializeRskCoin(coin);
+        assertArrayEquals(RLP.encodeBigInteger(coin.asBigInteger()), actualSerializedValue);
+
+        co.rsk.core.Coin deserializedValue = BridgeSerializationUtils.deserializeRskCoin(actualSerializedValue);
+        assertEquals(coin, deserializedValue);
+    }
+
+    public static Stream<Arguments> provideValidRskCoins() {
+        BigInteger oneEth = BigInteger.TEN.pow(18);
+
+        return Stream.of(
+            Arguments.of(co.rsk.core.Coin.ZERO),
+            Arguments.of(co.rsk.core.Coin.valueOf(1)),
+            Arguments.of(new co.rsk.core.Coin(oneEth)),
+            Arguments.of(new co.rsk.core.Coin(oneEth).multiply(BigInteger.valueOf(100))),
+            Arguments.of(co.rsk.core.Coin.valueOf(Long.MAX_VALUE)),
+            Arguments.of(new co.rsk.core.Coin(oneEth).multiply(BigInteger.valueOf(Long.MAX_VALUE)))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidRskCoins")
+    void serializeDeserializationRskCoin_whenInvalidCoin_shouldFailToSerialize(co.rsk.core.Coin coin) {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeSerializationUtils.serializeRskCoin(coin));
+    }
+
+    public static Stream<Arguments> provideInvalidRskCoins() {
+        return Stream.of(
+            Arguments.of(co.rsk.core.Coin.valueOf(Long.MIN_VALUE)),
+            Arguments.of(new co.rsk.core.Coin(BigInteger.valueOf(-1)))
+        );
+    }
+
     @Test
     void serializeInteger() {
         Assertions.assertEquals(BigInteger.valueOf(123), RLP.decodeBigInteger(BridgeSerializationUtils.serializeInteger(123), 0));
@@ -1495,6 +1567,26 @@ class BridgeSerializationUtilsTest {
         byte[] serializedCoinbaseInformation = BridgeSerializationUtils.serializeCoinbaseInformation(coinbaseInformation);
 
         Assertions.assertEquals(witnessRoot, BridgeSerializationUtils.deserializeCoinbaseInformation(serializedCoinbaseInformation).getWitnessMerkleRoot());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void serializeDeserializeBoolean_whenValid_shouldSerialize(Boolean expectedValue) {
+        byte[] serializedValue = BridgeSerializationUtils.serializeBoolean(expectedValue);
+
+        Boolean deserializedValue = BridgeSerializationUtils.deserializeBoolean(serializedValue);
+        assertEquals(expectedValue, deserializedValue);
+    }
+
+    @Test
+    void serializeBoolean_whenNull_shouldThrowIllegalArgumentException() {
+        Assertions.assertThrowsExactly(IllegalArgumentException.class, () -> BridgeSerializationUtils.serializeBoolean(null));
+    }
+
+    @Test
+    void deserializeBoolean_whenNull_shouldReturnNull() {
+        Boolean deserializedValue = BridgeSerializationUtils.deserializeBoolean(null);
+        assertNull(deserializedValue);
     }
 
     private Address mockAddressHash160(String hash160) {
