@@ -23,7 +23,11 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskTestFactory;
@@ -47,17 +51,14 @@ import static org.mockito.Mockito.when;
 
 class BlockResultDTOTest {
 
-    private Block block;
-    private BlockStore blockStore;
-
-    @TempDir
-    public Path tempDir;
-
     // todo(fedejinich) currently RemascTx(blockNumber) has a bug, thats why I initialize this way
     public static final RemascTransaction REMASC_TRANSACTION = new RemascTransaction(new RemascTransaction(1).getEncoded());
     public static final Transaction TRANSACTION = new TransactionBuilder().buildRandomTransaction();
-
     private static final String HEX_ZERO = "0x0";
+    @TempDir
+    public Path tempDir;
+    private Block block;
+    private BlockStore blockStore;
 
     @BeforeEach
     void setup() {
@@ -90,7 +91,7 @@ class BlockResultDTOTest {
 
     @Test
     void getBlockResultDTOWithoutRemasc_emptyTransactions() {
-        Block block = buildBlockWithTransactions(Arrays.asList(REMASC_TRANSACTION));
+        Block block = buildBlockWithTransactions(List.of(REMASC_TRANSACTION));
         BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         Assertions.assertEquals(HexUtils.toUnformattedJsonHex(EMPTY_TRIE_HASH), blockResultDTO.getTransactionsRoot());
