@@ -46,7 +46,7 @@ class HttpGetMinGasPriceProviderTest {
 
     @BeforeEach
     void setUp() {
-        reset(fallbackProvider);
+        reset(fallbackProvider, httpClient);
         config = createStableMinGasPriceSystemConfig();
     }
 
