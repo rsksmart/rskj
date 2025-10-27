@@ -284,10 +284,15 @@ public class FederationSupportImpl implements FederationSupport {
     public byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
-            return null;
+            return EMPTY_BYTE_ARRAY;
         }
 
-        return getFederationMemberPublicKeyOfType(retiringFederation.getMembers(), index, keyType, "Retiring federator");
+        return getFederationMemberPublicKeyOfType(
+            retiringFederation.getMembers(),
+            index,
+            keyType,
+            "Retiring federator"
+        );
     }
 
     @Override
@@ -890,7 +895,11 @@ public class FederationSupportImpl implements FederationSupport {
      * @return federation member's public key
      */
     private byte[] getFederationMemberPublicKeyOfType(
-          List<FederationMember> members, int index, FederationMember.KeyType keyType, String errorPrefix) {
+          List<FederationMember> members,
+        int index,
+        FederationMember.KeyType keyType,
+        String errorPrefix
+    ) {
         if (index < 0 || index >= members.size()) {
             throw new IndexOutOfBoundsException(
                 String.format("%s index must be between 0 and %d (found: %d)", errorPrefix, members.size() - 1, index));

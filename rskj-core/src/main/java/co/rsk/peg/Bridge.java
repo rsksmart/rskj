@@ -909,14 +909,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw new VMException("Exception in getRetiringFederatorPublicKeyOfType", e);
         }
 
-        byte[] publicKey = bridgeSupport.getRetiringFederatorPublicKeyOfType(index, keyType);
-
-        if (publicKey == null) {
-            // Empty array is returned when public key is not found or there's no retiring federation
-            return new byte[]{};
-        }
-
-        return publicKey;
+        return bridgeSupport.getRetiringFederatorPublicKeyOfType(index, keyType);
     }
 
     public Long getRetiringFederationCreationTime(Object[] args) {
