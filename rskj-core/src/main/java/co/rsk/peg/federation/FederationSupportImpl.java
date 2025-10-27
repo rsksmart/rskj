@@ -434,7 +434,8 @@ public class FederationSupportImpl implements FederationSupport {
                 .filter(function -> function.getKey().equals(calledFunction))
                 .findAny();
         if (federationChangeFunction.isEmpty()) {
-            logger.warn("[voteFederationChange] Federation change function \"{}\" does not exist.", StringUtils.trim(calledFunction));
+            String calledFunctionTrimmed = StringUtils.trim(calledFunction);
+            logger.warn("[voteFederationChange] Federation change function \"{}\" does not exist.", calledFunctionTrimmed);
             return FederationChangeResponseCode.NON_EXISTING_FUNCTION_CALLED.getCode();
         }
 
