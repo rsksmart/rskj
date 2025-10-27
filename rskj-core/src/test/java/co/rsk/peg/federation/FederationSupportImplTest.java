@@ -2068,22 +2068,22 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getPendingFederatorBtcPublicKey")
-        void getPendingFederatorBtcPublicKey_returnsNull() {
+        void getPendingFederatorBtcPublicKey_returnsEmpty() {
             byte[] pendingFederatorBtcPublicKey = federationSupport.getPendingFederatorBtcPublicKey(0);
-            assertThat(pendingFederatorBtcPublicKey, is(nullValue()));
+            assertEquals(EMPTY_BYTE_ARRAY, pendingFederatorBtcPublicKey);
         }
 
         @Test
         @Tag("getPendingFederatorPublicKeyOfType")
-        void getPendingFederatorPublicKeyOfType_returnsNull() {
+        void getPendingFederatorPublicKeyOfType_returnsEmpty() {
             byte[] pendingFederatorBtcPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(pendingFederatorBtcPublicKey, is(nullValue()));
+            assertEquals(EMPTY_BYTE_ARRAY, pendingFederatorBtcPublicKey);
 
             byte[] pendingFederatorRskPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(pendingFederatorRskPublicKey, is(nullValue()));
+            assertEquals(EMPTY_BYTE_ARRAY, pendingFederatorRskPublicKey);
 
             byte[] pendingFederatorMstPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(pendingFederatorMstPublicKey, is(nullValue()));
+            assertEquals(EMPTY_BYTE_ARRAY, pendingFederatorMstPublicKey);
         }
     }
 

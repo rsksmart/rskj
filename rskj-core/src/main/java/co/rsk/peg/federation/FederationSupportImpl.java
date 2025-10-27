@@ -362,7 +362,7 @@ public class FederationSupportImpl implements FederationSupport {
         PendingFederation currentPendingFederation = getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return null;
+            return EMPTY_BYTE_ARRAY;
         }
 
         List<BtcECKey> publicKeys = currentPendingFederation.getBtcPublicKeys();
@@ -375,10 +375,15 @@ public class FederationSupportImpl implements FederationSupport {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return null;
+            return EMPTY_BYTE_ARRAY;
         }
 
-        return getFederationMemberPublicKeyOfType(currentPendingFederation.getMembers(), index, keyType, "Federator");
+        return getFederationMemberPublicKeyOfType(
+            currentPendingFederation.getMembers(),
+            index,
+            keyType,
+            "Federator"
+        );
     }
 
     @Override
@@ -895,7 +900,7 @@ public class FederationSupportImpl implements FederationSupport {
      * @return federation member's public key
      */
     private byte[] getFederationMemberPublicKeyOfType(
-          List<FederationMember> members,
+        List<FederationMember> members,
         int index,
         FederationMember.KeyType keyType,
         String errorPrefix
