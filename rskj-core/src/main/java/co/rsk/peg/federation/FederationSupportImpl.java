@@ -1,6 +1,7 @@
 package co.rsk.peg.federation;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
@@ -267,7 +268,7 @@ public class FederationSupportImpl implements FederationSupport {
     public byte[] getRetiringFederatorBtcPublicKey(int index) {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
-            return null;
+            return EMPTY_BYTE_ARRAY;
         }
 
         List<BtcECKey> publicKeys = retiringFederation.getBtcPublicKeys();

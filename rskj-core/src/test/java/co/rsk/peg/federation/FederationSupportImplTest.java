@@ -19,6 +19,7 @@ package co.rsk.peg.federation;
 
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -1312,9 +1313,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederatorBtcPublicKey")
-        void getRetiringFederatorBtcPublicKey_returnsNull() {
+        void getRetiringFederatorBtcPublicKey_returnsEmpty() {
             byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+            assertEquals(EMPTY_BYTE_ARRAY, retiringFederatorBtcPublicKey);
         }
 
         @Test
@@ -1401,9 +1402,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederatorBtcPublicKey")
-        void getRetiringFederatorBtcPublicKey_returnsNull() {
+        void getRetiringFederatorBtcPublicKey_returnsEmpty() {
             byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+            assertEquals(EMPTY_BYTE_ARRAY, retiringFederatorBtcPublicKey);
         }
 
         @Test
@@ -1727,7 +1728,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederatorBtcPublicKey")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederatorBtcPublicKey_withNewFederationNotActive_returnsNull(
+        void getRetiringFederatorBtcPublicKey_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1742,7 +1743,7 @@ class FederationSupportImplTest {
                 .build();
 
             byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+            assertEquals(EMPTY_BYTE_ARRAY, retiringFederatorBtcPublicKey);
         }
 
         @ParameterizedTest

@@ -893,14 +893,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getRetiringFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
-        byte[] publicKey = bridgeSupport.getRetiringFederatorBtcPublicKey(index);
-
-        if (publicKey == null) {
-            // Empty array is returned when public key is not found or there's no retiring federation
-            return new byte[]{};
-        }
-
-        return publicKey;
+        return bridgeSupport.getRetiringFederatorBtcPublicKey(index);
     }
 
     public byte[] getRetiringFederatorPublicKeyOfType(Object[] args) throws VMException {
