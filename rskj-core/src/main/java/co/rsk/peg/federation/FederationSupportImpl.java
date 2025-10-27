@@ -742,8 +742,8 @@ public class FederationSupportImpl implements FederationSupport {
         provider.setNewFederation(newFederation);
         logger.info(
             "[setOldAndNewFederations] Old federation set to {}, new federation set to {}.",
-            oldFederation,
-            newFederation
+            oldFederation.getAddress(),
+            newFederation.getAddress()
         );
     }
 
