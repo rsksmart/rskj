@@ -334,7 +334,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         } else {
             byte[] functionSignature = Arrays.copyOfRange(data, 0, 4);
             Optional<BridgeMethods> invokedMethod = BridgeMethods.findBySignature(functionSignature);
-            if (!invokedMethod.isPresent()) {
+            if (invokedMethod.isEmpty()) {
                 logger.warn("Invalid function signature {}.", Bytes.of(functionSignature));
                 return null;
             }

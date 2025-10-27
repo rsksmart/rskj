@@ -20,15 +20,13 @@ package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.util.StringUtils;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Immutable representation of an RSK Federation member.
@@ -72,16 +70,15 @@ public final class FederationMember {
         }
 
         public static KeyType byValue(String value) {
-            switch (value) {
-                case "rsk":
-                    return KeyType.RSK;
-                case "mst":
-                    return KeyType.MST;
-                case "btc":
-                    return KeyType.BTC;
-                default:
-                    throw new IllegalArgumentException(String.format("Invalid value for FederationMember.KeyType: %s", StringUtils.trim(value)));
+            for (KeyType keyType : KeyType.values()) {
+                if (keyType.value.equalsIgnoreCase(value)) {
+                    return keyType;
+                }
             }
+            throw new IllegalArgumentException(String.format(
+                "Invalid value for FederationMember.KeyType: %s",
+                StringUtils.trim(value)
+            ));
         }
     }
 
@@ -94,7 +91,7 @@ public final class FederationMember {
     }
 
     public static List<FederationMember> getFederationMembersFromKeys(List<BtcECKey> pks) {
-        return pks.stream().map(FederationMember::getFederationMemberFromKey).collect(Collectors.toList());
+        return pks.stream().map(FederationMember::getFederationMemberFromKey).toList();
     }
 
     public BtcECKey getBtcPublicKey() {
@@ -113,24 +110,20 @@ public final class FederationMember {
     }
 
     public ECKey getPublicKey(KeyType keyType) {
-        switch (keyType) {
-            case RSK:
-                return getRskPublicKey();
-            case MST:
-                return getMstPublicKey();
-            case BTC:
-            default:
-                return ECKey.fromPublicOnly(btcPublicKey.getPubKey());
-        }
+        return switch (keyType) {
+            case RSK -> getRskPublicKey();
+            case MST -> getMstPublicKey();
+            default -> ECKey.fromPublicOnly(btcPublicKey.getPubKey());
+        };
     }
 
     @Override
     public String toString() {
         return String.format(
-                "<BTC-%s, RSK-%s, MST-%s> federation member",
-                ByteUtil.toHexString(btcPublicKey.getPubKey()),
-                ByteUtil.toHexString(rskPublicKey.getPubKey()),
-                ByteUtil.toHexString(mstPublicKey.getPubKey())
+            "<BTC-%s, RSK-%s, MST-%s> federation member",
+            ByteUtil.toHexString(btcPublicKey.getPubKey()),
+            ByteUtil.toHexString(rskPublicKey.getPubKey()),
+            ByteUtil.toHexString(mstPublicKey.getPubKey())
         );
     }
 
@@ -156,9 +149,9 @@ public final class FederationMember {
         // Can use java.util.Objects.hash since both BtcECKey and ECKey have
         // well-defined hashCode(s).
         return Objects.hash(
-                btcPublicKey,
-                rskPublicKey,
-                mstPublicKey
+            btcPublicKey,
+            rskPublicKey,
+            mstPublicKey
         );
     }
 
@@ -189,6 +182,7 @@ public final class FederationMember {
         BtcECKey btcKey = BtcECKey.fromPublicOnly(btcKeyData);
         ECKey rskKey = ECKey.fromPublicOnly(rskKeyData);
         ECKey mstKey = ECKey.fromPublicOnly(mstKeyData);
+
         return new FederationMember(btcKey, rskKey, mstKey);
     }
 }
