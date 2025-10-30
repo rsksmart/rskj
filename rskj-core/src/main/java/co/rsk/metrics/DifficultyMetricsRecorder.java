@@ -203,7 +203,7 @@ public class DifficultyMetricsRecorder {
         long firstBlockTimestamp = logEntries.get(0).getTimestamp();
         long lastBlockTimestamp = newBlock.getTimestamp();
         int numSamples = logEntries.size() + 1;
-        return (lastBlockTimestamp - firstBlockTimestamp) / (numSamples - 1);
+        return (double)(lastBlockTimestamp - firstBlockTimestamp) / (numSamples - 1);
     }
 
     private void logMetrics() {
@@ -224,7 +224,7 @@ public class DifficultyMetricsRecorder {
         }
     }
 
-    private class LogEntry {
+    private static class LogEntry {
         private final long blockNumber;
         private final long timestamp;
         private final long blockTime;
