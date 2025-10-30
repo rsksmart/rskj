@@ -5,7 +5,7 @@ on:
     - cron: '0 0 * * *'
   pull_request:
     types: [ opened, synchronize, reopened ]
-    branches: ["master", "*-rc"]
+    branches: [ "master", "*-rc" ]
   workflow_dispatch:
     inputs:
       rit-branch:
@@ -125,7 +125,7 @@ jobs:
           echo "SAFE_PULL_REQUEST_TITLE=$SAFE_PULL_REQUEST_TITLE" >> $GITHUB_ENV
 
       - name: Run Rootstock Integration Tests
-        uses: rsksmart/rootstock-integration-tests@main
+        uses: rsksmart/rootstock-integration-tests@2ec21fe275cc7fc2c6a3fddad4de84462b1ffe6c
         with:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
