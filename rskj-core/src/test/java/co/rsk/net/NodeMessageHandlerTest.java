@@ -1180,4 +1180,3 @@ class NodeMessageHandlerTest {
         verify(scoring, times(0)).recordEvent(any(), any(), any(), any(), any());
     }
 }
-
