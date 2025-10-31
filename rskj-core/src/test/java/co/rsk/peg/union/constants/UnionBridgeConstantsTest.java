@@ -126,16 +126,18 @@ class UnionBridgeConstantsTest {
     private static Stream<Arguments> unionLockingCapInitialValueProvider() {
         Coin oneEth = new Coin(BigInteger.TEN.pow(18)); // 1 ETH = 1000000000000000000 wei
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(200L))),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(200L))),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(200L)))
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), oneEth),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), oneEth),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), oneEth)
         );
     }
 
     @ParameterizedTest
     @MethodSource("unionLockingCapInitialValueProvider")
-    void getInitialLockingCap_ok(UnionBridgeConstants unionBridgeConstants,
-        Coin expectedInitialLockingCap) {
+    void getInitialLockingCap_ok(
+        UnionBridgeConstants unionBridgeConstants,
+        Coin expectedInitialLockingCap
+    ) {
         // Act
         Coin actualInitialLockingCap = unionBridgeConstants.getInitialLockingCap();
 
