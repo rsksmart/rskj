@@ -21,10 +21,10 @@ import co.rsk.RskContext;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
-import co.rsk.util.cli.CommandLineFixture;
 import co.rsk.util.DataBytesFixture;
 import co.rsk.util.HexUtils;
 import co.rsk.util.OkHttpClientTestFixture;
+import co.rsk.util.cli.CommandLineFixture;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.Response;
@@ -36,15 +36,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -53,12 +58,12 @@ import static org.mockito.Mockito.when;
 
 class CliToolsIntegrationTest {
 
+    private final int port = 9999;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private String buildLibsPath;
     private String jarName;
     private String databaseDir;
     private String bloomsDbDir;
-    private final int port = 9999;
-    private final ObjectMapper objectMapper = new ObjectMapper();
     @TempDir
     private Path tempDir;
 
@@ -66,342 +71,290 @@ class CliToolsIntegrationTest {
     private String strBaseArgs;
     private String baseJavaCmd;
 
-
     @BeforeEach
-    public void setup() throws IOException {
-        String projectPath = System.getProperty("user.dir");
-        buildLibsPath = String.format("%s/build/libs", projectPath);
-        String integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
-        String logbackXmlFile = String.format("%s/logback.xml", integrationTestResourcesPath);
-        String rskConfFile = String.format("%s/integration-test-rskj.conf", integrationTestResourcesPath);
-        try (Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath))) {
-            jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
-                    .map(p -> p.getFileName().toString())
-                    .filter(fn -> fn.endsWith("-all.jar"))
-                    .findFirst()
-                    .get();
+    void setup() throws IOException {
+        try {
+            String projectPath = System.getProperty("user.dir");
+            buildLibsPath = String.format("%s/build/libs", projectPath);
+            String integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
+            String logbackXmlFile = String.format("%s/logback.xml", integrationTestResourcesPath);
+            String rskConfFile = String.format("%s/integration-test-rskj.conf", integrationTestResourcesPath);
+            try (Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath))) {
+                jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
+                        .map(p -> p.getFileName().toString())
+                        .filter(fn -> fn.endsWith("-all.jar"))
+                        .findFirst()
+                        .get();
+            }
+            Path databaseDirPath = tempDir.resolve("database");
+            databaseDir = databaseDirPath.toString();
+            bloomsDbDir = databaseDirPath.resolve("blooms").toString();
+            baseArgs = new String[]{
+                    String.format("-Xdatabase.dir=%s", databaseDir),
+                    "--regtest",
+                    "-Xkeyvalue.datasource=leveldb",
+                    String.format("-Xrpc.providers.web.http.port=%s", port)
+            };
+            strBaseArgs = String.join(" ", baseArgs);
+            baseJavaCmd = String.format("java %s %s", String.format("-Dlogback.configurationFile=%s", logbackXmlFile), String.format("-Drsk.conf.file=%s", rskConfFile));
+        } catch (Exception e) {
+            // Ensure cleanup on setup failure
+            cleanupTempFiles();
+            throw e;
         }
-        Path databaseDirPath = tempDir.resolve("database");
-        databaseDir = databaseDirPath.toString();
-        bloomsDbDir = databaseDirPath.resolve("blooms").toString();
-        baseArgs = new String[]{
-                String.format("-Xdatabase.dir=%s", databaseDir),
-                "--regtest",
-                "-Xkeyvalue.datasource=leveldb",
-                String.format("-Xrpc.providers.web.http.port=%s", port)
-        };
-        strBaseArgs = String.join(" ", baseArgs);
-        baseJavaCmd = String.format("java %s %s", String.format("-Dlogback.configurationFile=%s", logbackXmlFile), String.format("-Drsk.conf.file=%s", rskConfFile));
     }
 
     @Test
     void whenExportBlocksRuns_shouldExportSpecifiedBlocks() throws Exception {
-        Map<String, Response> responseMap = new HashMap<>();
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        CommandLineFixture.runCommand(
-                cmd,
-                1,
-                TimeUnit.MINUTES,
-                proc -> {
-                    try {
-                        Response response = OkHttpClientTestFixture.sendJsonRpcGetBestBlockMessage(port);
-                        responseMap.put("latestProcessedBlock", response);
-                    } catch (IOException e) {
-                        Assertions.fail(e);
-                    }
-                }
-        );
+        Path blocksFile = null;
+        try {
+            BlockInfo blockInfo = getLatestBlockInfo();
+            long blockNumber = blockInfo.blockNumber;
 
-        String responseBody = responseMap.get("latestProcessedBlock").body().string();
-        JsonNode jsonRpcResponse = objectMapper.readTree(responseBody);
-        JsonNode transactionsNode = jsonRpcResponse.get(0).get("result").get("transactions");
+            blocksFile = createTempFile("blocks.txt");
 
-        long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
+            String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportBlocks --fromBlock 0 --toBlock %s --file %s %s",
+                    baseJavaCmd, buildLibsPath, jarName, blockNumber, blocksFile, strBaseArgs);
+            executeCommand(cmd, 1, TimeUnit.MINUTES);
 
-        File blocksFile = tempDir.resolve("blocks.txt").toFile();
-        Files.deleteIfExists(Paths.get(blocksFile.getAbsolutePath()));
+            waitForFile(blocksFile, 5000);
+            List<String> exportedBlocksLines = readAllLines(blocksFile);
+            String exportedBlocksLine = exportedBlocksLines.stream()
+                    .filter(l -> l.split(",")[0].equals(String.valueOf(blockNumber)))
+                    .findFirst()
+                    .get();
+            String[] exportedBlocksLineParts = exportedBlocksLine.split(",");
 
-        Assertions.assertTrue(blocksFile.createNewFile());
-
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportBlocks --fromBlock 0 --toBlock %s --file %s %s", baseJavaCmd, buildLibsPath, jarName, blockNumber, blocksFile.getAbsolutePath(), strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        List<String> exportedBlocksLines = Files.readAllLines(Paths.get(blocksFile.getAbsolutePath()));
-        String exportedBlocksLine = exportedBlocksLines.stream()
-                .filter(l -> l.split(",")[0].equals(String.valueOf(blockNumber)))
-                .findFirst()
-                .get();
-        String[] exportedBlocksLineParts = exportedBlocksLine.split(",");
-
-        Files.delete(Paths.get(blocksFile.getAbsolutePath()));
-
-        Assertions.assertFalse(exportedBlocksLines.isEmpty());
-        Assertions.assertTrue(transactionsNode.get(0).get("blockHash").asText().contains(exportedBlocksLineParts[1]));
+            Assertions.assertFalse(exportedBlocksLines.isEmpty());
+            Assertions.assertTrue(blockInfo.transactionsNode.get(0).get("blockHash").asText().contains(exportedBlocksLineParts[1]));
+        } finally {
+            safeDeleteFile(blocksFile);
+        }
     }
 
     @Test
     void whenExportStateRuns_shouldExportSpecifiedBlockState() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
+        Path statesFile = null;
+        RskContext rskContext = null;
+        try {
+            startRskNode();
 
-        RskContext rskContext = new RskContext(baseArgs);
+            rskContext = createRskContext();
+            Block block = rskContext.getBlockchain().getBestBlock();
+            Optional<Trie> optionalTrie = rskContext.getTrieStore().retrieve(block.getStateRoot());
+            byte[] bMessage = optionalTrie.get().toMessage();
+            String strMessage = ByteUtil.toHexString(bMessage);
+            long blockNumber = block.getNumber();
 
-        Block block = rskContext.getBlockchain().getBestBlock();
-        Optional<Trie> optionalTrie = rskContext.getTrieStore().retrieve(block.getStateRoot());
-        byte[] bMessage = optionalTrie.get().toMessage();
-        String strMessage = ByteUtil.toHexString(bMessage);
-        long blockNumber = block.getNumber();
+            closeRskContext(rskContext);
+            rskContext = null;
 
-        rskContext.close();
+            statesFile = createTempFile("states.txt");
 
-        File statesFile = tempDir.resolve("states.txt").toFile();
-        Files.deleteIfExists(Paths.get(statesFile.getAbsolutePath()));
+            String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportState --block %s --file %s %s",
+                    baseJavaCmd, buildLibsPath, jarName, blockNumber, statesFile, strBaseArgs);
+            executeCommand(cmd, 1, TimeUnit.MINUTES);
 
-        Assertions.assertTrue(statesFile.createNewFile());
-
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportState --block %s --file %s %s", baseJavaCmd, buildLibsPath, jarName, blockNumber, statesFile.getAbsolutePath(), strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        List<String> exportedStateLines = Files.readAllLines(Paths.get(statesFile.getAbsolutePath()));
-
-        Files.delete(Paths.get(statesFile.getAbsolutePath()));
-
-        Assertions.assertFalse(exportedStateLines.isEmpty());
-        Assertions.assertTrue(exportedStateLines.stream().anyMatch(l -> l.equals(strMessage)));
+            validateFileContainsExact(statesFile, strMessage);
+        } finally {
+            closeRskContext(rskContext);
+            safeDeleteFile(statesFile);
+        }
     }
 
     @Test
     void whenShowStateInfoRuns_shouldShowSpecifiedState() throws Exception {
-        Map<String, Response> responseMap = new HashMap<>();
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        CommandLineFixture.runCommand(
-                cmd,
-                1,
-                TimeUnit.MINUTES, proc -> {
-                    try {
-                        Response response = OkHttpClientTestFixture.sendJsonRpcGetBestBlockMessage(port);
-                        responseMap.put("latestProcessedBlock", response);
-                    } catch (IOException e) {
-                        Assertions.fail(e);
-                    }
-                }
-        );
+        BlockInfo blockInfo = getLatestBlockInfo();
+        long blockNumber = blockInfo.blockNumber;
 
-        String responseBody = responseMap.get("latestProcessedBlock").body().string();
-        JsonNode jsonRpcResponse = objectMapper.readTree(responseBody);
-        JsonNode result = jsonRpcResponse.get(0).get("result");
-        JsonNode transactionsNode = result.get("transactions");
-
-        long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
-
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ShowStateInfo --block %s %s", baseJavaCmd, buildLibsPath, jarName, blockNumber, strBaseArgs);
-        CommandLineFixture.CustomProcess showStateInfoProc = CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
+        String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ShowStateInfo --block %s %s",
+                baseJavaCmd, buildLibsPath, jarName, blockNumber, strBaseArgs);
+        CommandLineFixture.CustomProcess showStateInfoProc = executeCommand(cmd, 1, TimeUnit.MINUTES);
 
         List<String> stateInfoLines = Arrays.asList(showStateInfoProc.getOutput().split("\\n"));
 
         Assertions.assertFalse(stateInfoLines.isEmpty());
-        Assertions.assertTrue(stateInfoLines.stream().anyMatch(l -> l.contains(HexUtils.removeHexPrefix(result.get("hash").asText()))));
+        Assertions.assertTrue(stateInfoLines.stream().anyMatch(l -> l.contains(HexUtils.removeHexPrefix(blockInfo.blockHash))));
     }
 
     @Test
     void whenExecuteBlocksRuns_shouldReturnExpectedBestBlock() throws Exception {
-        Map<String, Response> responseMap = new HashMap<>();
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        CommandLineFixture.runCommand(
-                cmd,
-                2,
-                TimeUnit.MINUTES, proc -> {
-                    try {
-                        Response response = OkHttpClientTestFixture.sendJsonRpcGetBestBlockMessage(port);
-                        responseMap.put("latestProcessedBlock", response);
-                    } catch (IOException e) {
-                        Assertions.fail(e);
-                    }
-                }
-        );
+        RskContext rskContext = null;
+        try {
+            BlockInfo blockInfo = getLatestBlockInfo();
+            long blockNumber = blockInfo.blockNumber;
+            long fromBlock = blockNumber - 10;
 
-        String responseBody = responseMap.get("latestProcessedBlock").body().string();
-        JsonNode jsonRpcResponse = objectMapper.readTree(responseBody);
-        JsonNode result = jsonRpcResponse.get(0).get("result");
-        JsonNode transactionsNode = result.get("transactions");
+            String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExecuteBlocks --fromBlock %s --toBlock %s %s",
+                    baseJavaCmd, buildLibsPath, jarName, fromBlock, blockNumber, strBaseArgs);
+            executeCommand(cmd, 2, TimeUnit.MINUTES);
 
-        long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
-        long fromBlock = blockNumber - 10;
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExecuteBlocks --fromBlock %s --toBlock %s %s", baseJavaCmd, buildLibsPath, jarName, fromBlock, blockNumber, strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 2, TimeUnit.MINUTES);
+            rskContext = createRskContext();
+            Block block = rskContext.getBlockchain().getBestBlock();
 
-        RskContext rskContext = new RskContext(baseArgs);
-
-        Block block = rskContext.getBlockchain().getBestBlock();
-
-        rskContext.close();
-
-        Assertions.assertEquals(block.getNumber(), blockNumber);
+            Assertions.assertEquals(block.getNumber(), blockNumber);
+        } finally {
+            closeRskContext(rskContext);
+        }
     }
 
     @Test
     void whenConnectBlocksRuns_shouldConnectSpecifiedBlocks() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
+        RskContext rskContext = null;
+        Path blocksFile = null;
+        try {
+            startRskNode();
 
-        RskContext rskContext = new RskContext(baseArgs);
+            rskContext = createRskContext();
+            Block block1 = rskContext.getBlockchain().getBlockByNumber(1);
+            Block block2 = rskContext.getBlockchain().getBlockByNumber(2);
+            closeRskContext(rskContext);
+            rskContext = null;
 
-        Block block1 = rskContext.getBlockchain().getBlockByNumber(1);
-        Block block2 = rskContext.getBlockchain().getBlockByNumber(2);
-        rskContext.close();
+            blocksFile = createBlocksFile("blocks.txt", block1, block2);
 
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("1,");
-        stringBuilder.append(ByteUtil.toHexString(block1.getHash().getBytes()));
-        stringBuilder.append(",02,");
-        stringBuilder.append(ByteUtil.toHexString(block1.getEncoded()));
-        stringBuilder.append("\n");
-        stringBuilder.append("1,");
-        stringBuilder.append(ByteUtil.toHexString(block2.getHash().getBytes()));
-        stringBuilder.append(",03,");
-        stringBuilder.append(ByteUtil.toHexString(block2.getEncoded()));
-        stringBuilder.append("\n");
+            String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ConnectBlocks --file %s %s",
+                    baseJavaCmd, buildLibsPath, jarName, blocksFile, strBaseArgs);
+            executeCommand(cmd, 1, TimeUnit.MINUTES);
 
-        File blocksFile = tempDir.resolve("blocks.txt").toFile();
+            rskContext = createRskContext();
+            Block block1AfterConnect = rskContext.getBlockchain().getBlockByNumber(1);
+            Block block2AfterConnect = rskContext.getBlockchain().getBlockByNumber(2);
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(blocksFile))) {
-            writer.write(stringBuilder.toString());
+            Assertions.assertEquals(block1.getHash(), block1AfterConnect.getHash());
+            Assertions.assertEquals(block2.getHash(), block2AfterConnect.getHash());
+        } finally {
+            closeRskContext(rskContext);
+            safeDeleteFile(blocksFile);
         }
-
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ConnectBlocks --file %s %s", baseJavaCmd, buildLibsPath, jarName, blocksFile.getAbsolutePath(), strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        Files.delete(Paths.get(blocksFile.getAbsolutePath()));
-
-        rskContext = new RskContext(baseArgs);
-
-        Block block1AfterConnect = rskContext.getBlockchain().getBlockByNumber(1);
-        Block block2AfterConnect = rskContext.getBlockchain().getBlockByNumber(2);
-
-        rskContext.close();
-
-        Assertions.assertEquals(block1.getHash(), block1AfterConnect.getHash());
-        Assertions.assertEquals(block2.getHash(), block2AfterConnect.getHash());
     }
 
     @Test
     void whenImportBlocksRuns_shouldImportAllExportedBlocks() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
+        Path blocksFile = null;
+        RskContext rskContext = null;
+        try {
+            startRskNode();
 
-        File blocksFile = tempDir.resolve("blocks.txt").toFile();
+            blocksFile = createTempFile("blocks.txt");
 
-        Assertions.assertTrue(blocksFile.createNewFile());
+            String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportBlocks --fromBlock 0 --toBlock 20 --file %s %s",
+                    baseJavaCmd, buildLibsPath, jarName, blocksFile, strBaseArgs);
+            executeCommand(cmd, 1, TimeUnit.MINUTES);
 
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportBlocks --fromBlock 0 --toBlock 20 --file %s %s", baseJavaCmd, buildLibsPath, jarName, blocksFile.getAbsolutePath(), strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
+            waitForFile(blocksFile, 5000);
 
-        FileUtil.recursiveDelete(databaseDir);
+            FileUtil.recursiveDelete(databaseDir);
 
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ImportBlocks --file %s %s", baseJavaCmd, buildLibsPath, jarName, blocksFile.getAbsolutePath(), strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
+            cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ImportBlocks --file %s %s",
+                    baseJavaCmd, buildLibsPath, jarName, blocksFile, strBaseArgs);
+            executeCommand(cmd, 1, TimeUnit.MINUTES);
 
-        RskContext rskContext = new RskContext(baseArgs);
+            rskContext = createRskContext();
+            long maxNumber = rskContext.getBlockStore().getMaxNumber();
 
-        long maxNumber = rskContext.getBlockStore().getMaxNumber();
-
-        rskContext.close();
-
-        Assertions.assertEquals(20, maxNumber);
+            Assertions.assertEquals(20, maxNumber);
+        } finally {
+            closeRskContext(rskContext);
+            safeDeleteFile(blocksFile);
+        }
     }
 
     @Test
     void whenImportStateRuns_shouldImportStateSuccessfully() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
+        Path statesFile = null;
+        RskContext rskContext = null;
+        try {
+            startRskNode();
 
-        RskContext rskContext = new RskContext(baseArgs);
+            rskContext = createRskContext();
+            Block block = rskContext.getBlockchain().getBestBlock();
+            Optional<Trie> optionalTrie = rskContext.getTrieStore().retrieve(block.getStateRoot());
+            byte[] bMessage = optionalTrie.get().toMessage();
+            String strMessage = ByteUtil.toHexString(bMessage);
+            long blockNumber = block.getNumber();
 
-        Block block = rskContext.getBlockchain().getBestBlock();
-        Optional<Trie> optionalTrie = rskContext.getTrieStore().retrieve(block.getStateRoot());
-        byte[] bMessage = optionalTrie.get().toMessage();
-        String strMessage = ByteUtil.toHexString(bMessage);
-        long blockNumber = block.getNumber();
+            closeRskContext(rskContext);
+            rskContext = null;
 
-        rskContext.close();
+            statesFile = createTempFile("states.txt");
 
-        File statesFile = tempDir.resolve("states.txt").toFile();
-        Files.deleteIfExists(Paths.get(statesFile.getAbsolutePath()));
+            String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportState --block %s --file %s %s",
+                    baseJavaCmd, buildLibsPath, jarName, blockNumber, statesFile, strBaseArgs);
+            executeCommand(cmd, 1, TimeUnit.MINUTES);
 
-        Assertions.assertTrue(statesFile.createNewFile());
+            waitForFile(statesFile, 5000);
 
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportState --block %s --file %s %s", baseJavaCmd, buildLibsPath, jarName, blockNumber, statesFile.getAbsolutePath(), strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
+            FileUtil.recursiveDelete(databaseDir);
 
-        FileUtil.recursiveDelete(databaseDir);
+            cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ImportState --file %s %s",
+                    baseJavaCmd, buildLibsPath, jarName, statesFile, strBaseArgs);
+            executeCommand(cmd, 1, TimeUnit.MINUTES);
 
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ImportState --file %s %s", baseJavaCmd, buildLibsPath, jarName, statesFile.getAbsolutePath(), strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
+            rskContext = createRskContext();
+            Optional<Trie> optionalTrieImported = rskContext.getTrieStore().retrieve(block.getStateRoot());
+            byte[] bMessageImported = optionalTrieImported.get().toMessage();
+            String strMessageImported = ByteUtil.toHexString(bMessageImported);
 
-        Files.delete(Paths.get(statesFile.getAbsolutePath()));
-
-        rskContext = new RskContext(baseArgs);
-
-        Optional<Trie> optionalTrieImported = rskContext.getTrieStore().retrieve(block.getStateRoot());
-        byte[] bMessageImported = optionalTrieImported.get().toMessage();
-        String strMessageImported = ByteUtil.toHexString(bMessageImported);
-
-        rskContext.close();
-
-        Assertions.assertEquals(strMessage, strMessageImported);
+            Assertions.assertEquals(strMessage, strMessageImported);
+        } finally {
+            closeRskContext(rskContext);
+            safeDeleteFile(statesFile);
+        }
     }
 
     @Test
     void whenRewindBlocksRuns_shouldNotFindInconsistentBlocks() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
+        startRskNode();
 
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.RewindBlocks -fmi %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        CommandLineFixture.CustomProcess proc = CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
+        String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.RewindBlocks -fmi %s",
+                baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        CommandLineFixture.CustomProcess proc = executeCommand(cmd, 1, TimeUnit.MINUTES);
 
-        Assertions.assertTrue(proc.getOutput().contains("No inconsistent block has been found"));
+        validateProcessOutput(proc, "No inconsistent block has been found");
     }
 
     @Test
     void whenRewindBlocksRuns_shouldRewindSpecifiedBlocks() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
+        RskContext rskContext = null;
+        try {
+            startRskNode();
 
-        RskContext rskContext = new RskContext(baseArgs);
+            rskContext = createRskContext();
+            Random random = new Random(100);
 
-        Random random = new Random(100);
+            Block bestBlock = rskContext.getBlockStore().getBestBlock();
+            long blocksToGenerate = bestBlock.getNumber() + 14;
+            Keccak256 parentHash = bestBlock.getHash();
 
-        Block bestBlock = rskContext.getBlockStore().getBestBlock();
-        long blocksToGenerate = bestBlock.getNumber() + 14;
-        Keccak256 parentHash = bestBlock.getHash();
+            for (long i = bestBlock.getNumber() + 1; i < blocksToGenerate; i++) {
+                Block block = mock(Block.class);
+                Keccak256 blockHash = new Keccak256(DataBytesFixture.generateBytesFromRandom(random, 32));
+                when(block.getHash()).thenReturn(blockHash);
+                when(block.getParentHash()).thenReturn(parentHash);
+                when(block.getNumber()).thenReturn(i);
+                when(block.getEncoded()).thenReturn(bestBlock.getEncoded());
 
-        for (long i = bestBlock.getNumber() + 1; i < blocksToGenerate; i++) {
-            Block block = mock(Block.class);
-            Keccak256 blockHash = new Keccak256(DataBytesFixture.generateBytesFromRandom(random, 32));
-            when(block.getHash()).thenReturn(blockHash);
-            when(block.getParentHash()).thenReturn(parentHash);
-            when(block.getNumber()).thenReturn(i);
-            when(block.getEncoded()).thenReturn(bestBlock.getEncoded());
+                rskContext.getBlockStore().saveBlock(block, BlockDifficulty.ZERO, true);
+                parentHash = blockHash;
+            }
 
-            rskContext.getBlockStore().saveBlock(block, BlockDifficulty.ZERO, true);
-            parentHash = blockHash;
+            long maxNumber = rskContext.getBlockStore().getMaxNumber();
+            closeRskContext(rskContext);
+            rskContext = null;
+
+            String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.RewindBlocks --block %s %s",
+                    baseJavaCmd, buildLibsPath, jarName, bestBlock.getNumber() + 2, strBaseArgs);
+            executeCommand(cmd, 1, TimeUnit.MINUTES);
+
+            rskContext = createRskContext();
+            long maxNumberAfterRewind = rskContext.getBlockStore().getMaxNumber();
+
+            Assertions.assertTrue(maxNumber > maxNumberAfterRewind);
+            Assertions.assertEquals(bestBlock.getNumber() + 2, maxNumberAfterRewind);
+        } finally {
+            closeRskContext(rskContext);
         }
-
-        long maxNumber = rskContext.getBlockStore().getMaxNumber();
-
-        rskContext.close();
-
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.RewindBlocks --block %s %s", baseJavaCmd, buildLibsPath, jarName, bestBlock.getNumber() + 2, strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        rskContext = new RskContext(baseArgs);
-
-        long maxNumberAfterRewind = rskContext.getBlockStore().getMaxNumber();
-
-        rskContext.close();
-
-        Assertions.assertTrue(maxNumber > maxNumberAfterRewind);
-        Assertions.assertEquals(bestBlock.getNumber() + 2, maxNumberAfterRewind);
     }
 
     @Test
@@ -423,7 +376,7 @@ class CliToolsIntegrationTest {
     }
 
     @Test
-    public void whenDbMigrateRuns_shouldMigrateLevelDbToRocksDbAndShouldStartNodeSuccessfully() throws Exception {
+    void whenDbMigrateRuns_shouldMigrateLevelDbToRocksDbAndShouldStartNodeSuccessfully() throws Exception {
         String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
@@ -464,5 +417,251 @@ class CliToolsIntegrationTest {
         CommandLineFixture.CustomProcess proc = CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
         Assertions.assertTrue(proc.getOutput().contains("[c.r.c.t.IndexBlooms] [main]  Processed "));
+    }
+
+    private Path createTempFile(String fileName) throws IOException {
+        Path filePath = tempDir.resolve(fileName);
+        return createFileWithRetry(filePath);
+    }
+
+    /**
+     * Creates a file with retry mechanism to handle potential race conditions
+     */
+    private Path createFileWithRetry(Path filePath) throws IOException {
+        int maxRetries = 3;
+        int retryDelayMs = 100;
+
+        for (int attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                Files.createDirectories(filePath.getParent());
+
+                Files.deleteIfExists(filePath);
+
+                Files.createFile(filePath);
+
+                if (Files.exists(filePath) && Files.isWritable(filePath)) {
+                    return filePath;
+                }
+            } catch (IOException e) {
+                if (attempt == maxRetries - 1) {
+                    throw new IOException("Failed to create file " + filePath + " after " + maxRetries + " attempts", e);
+                }
+                try {
+                    Thread.sleep(retryDelayMs * (attempt + 1));
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Interrupted while retrying file creation", ie);
+                }
+            }
+        }
+        throw new IOException("Failed to create file " + filePath + " after " + maxRetries + " attempts");
+    }
+
+    private void writeToFile(Path filePath, String content) throws IOException {
+        try {
+            Files.write(filePath, content.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+        } catch (IOException e) {
+            throw new IOException("Failed to write to file " + filePath, e);
+        }
+    }
+
+    private List<String> readAllLines(Path filePath) throws IOException {
+        try {
+            return Files.readAllLines(filePath);
+        } catch (IOException e) {
+            throw new IOException("Failed to read lines from file " + filePath, e);
+        }
+    }
+
+    /**
+     * Safely deletes a file with retry mechanism
+     */
+    private void safeDeleteFile(Path filePath) {
+        if (filePath != null && Files.exists(filePath)) {
+            int maxRetries = 3;
+            int retryDelayMs = 50;
+
+            for (int attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    Files.delete(filePath);
+                    return; // Success
+                } catch (IOException e) {
+                    if (attempt == maxRetries - 1) {
+                        // Log warning but don't fail the test
+                        System.err.println("Warning: Failed to delete file " + filePath + " after " + maxRetries + " attempts: " + e.getMessage());
+                    } else {
+                        try {
+                            Thread.sleep(retryDelayMs * (attempt + 1));
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void waitForFile(Path filePath, long timeoutMs) throws IOException, TimeoutException {
+        long startTime = System.currentTimeMillis();
+        long checkInterval = 100; // Check every 100ms
+
+        while (System.currentTimeMillis() - startTime < timeoutMs) {
+            if (Files.exists(filePath) && Files.isReadable(filePath)) {
+                return;
+            }
+            try {
+                Thread.sleep(checkInterval);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while waiting for file " + filePath, e);
+            }
+        }
+        throw new TimeoutException("File " + filePath + " did not become available within " + timeoutMs + "ms");
+    }
+
+    /**
+     * Ensures proper cleanup of temporary files and resources
+     */
+    private void cleanupTempFiles() {
+        try {
+            // Clean up any remaining files in temp directory
+            if (tempDir != null && Files.exists(tempDir)) {
+                Files.walk(tempDir)
+                        .sorted((a, b) -> b.compareTo(a)) // Delete files before directories
+                        .forEach(path -> {
+                            try {
+                                Files.deleteIfExists(path);
+                            } catch (IOException e) {
+                                // Log but don't fail - this is cleanup
+                                System.err.println("Warning: Could not delete " + path + ": " + e.getMessage());
+                            }
+                        });
+            }
+        } catch (IOException e) {
+            System.err.println("Warning: Error during cleanup: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Safely manages RskContext lifecycle with proper cleanup
+     */
+    private RskContext createRskContext() {
+        return new RskContext(baseArgs);
+    }
+
+    /**
+     * Safely closes RskContext with error handling
+     */
+    private void closeRskContext(RskContext rskContext) {
+        if (rskContext != null) {
+            try {
+                rskContext.close();
+            } catch (Exception e) {
+                System.err.println("Warning: Error closing RskContext: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Executes a command and waits for it to complete
+     */
+    private CommandLineFixture.CustomProcess executeCommand(String cmd, int timeout, TimeUnit timeUnit) throws InterruptedException, IOException {
+        return CommandLineFixture.runCommand(cmd, timeout, timeUnit);
+    }
+
+    /**
+     * Executes a command with a callback for processing
+     */
+    private void executeCommandWithCallback(String cmd, int timeout, TimeUnit timeUnit,
+                                            java.util.function.Consumer<Process> callback) throws InterruptedException, IOException {
+        CommandLineFixture.runCommand(cmd, timeout, timeUnit, callback);
+    }
+
+    /**
+     * Starts RSK node and waits for it to be ready
+     */
+    private void startRskNode() throws Exception {
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        executeCommand(cmd, 1, TimeUnit.MINUTES);
+    }
+
+    /**
+     * Starts RSK node and waits for it to be ready with callback
+     */
+    private void startRskNodeWithCallback(java.util.function.Consumer<Process> callback) throws Exception {
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        executeCommandWithCallback(cmd, 1, TimeUnit.MINUTES, callback);
+    }
+
+    /**
+     * Gets the latest block information from the running node
+     */
+    private BlockInfo getLatestBlockInfo() throws Exception {
+        Map<String, Response> responseMap = new HashMap<>();
+        startRskNodeWithCallback(proc -> {
+            try {
+                Response response = OkHttpClientTestFixture.sendJsonRpcGetBestBlockMessage(port);
+                responseMap.put("latestProcessedBlock", response);
+            } catch (IOException e) {
+                Assertions.fail("Failed to get latest block info: " + e.getMessage());
+            }
+        });
+
+        String responseBody = responseMap.get("latestProcessedBlock").body().string();
+        JsonNode jsonRpcResponse = objectMapper.readTree(responseBody);
+        JsonNode result = jsonRpcResponse.get(0).get("result");
+        JsonNode transactionsNode = result.get("transactions");
+
+        long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
+        String blockHash = result.get("hash").asText();
+
+        return new BlockInfo(blockNumber, blockHash, transactionsNode);
+    }
+
+    /**
+     * Validates that a file contains expected content (exact match)
+     */
+    private void validateFileContainsExact(Path filePath, String expectedContent) throws Exception {
+        waitForFile(filePath, 5000);
+        List<String> lines = readAllLines(filePath);
+        Assertions.assertFalse(lines.isEmpty(), "File should not be empty");
+        Assertions.assertTrue(lines.stream().anyMatch(l -> l.equals(expectedContent)),
+                "File should contain exact match: " + expectedContent);
+    }
+
+    /**
+     * Creates a blocks file with specified blocks
+     */
+    private Path createBlocksFile(String fileName, Block... blocks) throws IOException {
+        Path blocksFile = createTempFile(fileName);
+        StringBuilder content = new StringBuilder();
+
+        for (int i = 0; i < blocks.length; i++) {
+            Block block = blocks[i];
+            content.append(block.getNumber()).append(",");
+            content.append(ByteUtil.toHexString(block.getHash().getBytes())).append(",");
+            content.append("0").append(i + 2).append(",");
+            content.append(ByteUtil.toHexString(block.getEncoded()));
+            content.append("\n");
+        }
+
+        writeToFile(blocksFile, content.toString());
+        return blocksFile;
+    }
+
+    /**
+     * Validates that a process output contains expected text
+     */
+    private void validateProcessOutput(CommandLineFixture.CustomProcess process, String expectedText) {
+        String output = process.getOutput();
+        Assertions.assertTrue(output.contains(expectedText),
+                "Process output should contain: " + expectedText + "\nActual output: " + output);
+    }
+
+    /**
+     * Helper class to hold block information
+     */
+    private record BlockInfo(long blockNumber, String blockHash, JsonNode transactionsNode) {
     }
 }

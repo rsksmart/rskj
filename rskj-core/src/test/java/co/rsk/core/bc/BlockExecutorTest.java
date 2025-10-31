@@ -24,6 +24,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.db.*;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
@@ -1446,7 +1447,7 @@ public class BlockExecutorTest {
 
     private static byte[] sha3(byte[] input) {
         Keccak256 digest = new Keccak256();
-        digest.update(input);
+        digest.update(Bytes.of(input));
         return digest.digest();
     }
 

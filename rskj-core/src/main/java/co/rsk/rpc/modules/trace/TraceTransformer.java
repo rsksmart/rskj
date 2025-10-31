@@ -19,10 +19,8 @@
 
 package co.rsk.rpc.modules.trace;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-
+import co.rsk.core.RskAddress;
+import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.DataWord;
@@ -30,8 +28,9 @@ import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.InvokeData;
 import org.ethereum.vm.trace.SummarizedProgramTrace;
 
-import co.rsk.core.RskAddress;
-import co.rsk.util.HexUtils;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TraceTransformer {
     private TraceTransformer() {
@@ -89,7 +88,7 @@ public class TraceTransformer {
     }
 
     public static TransactionTrace toTrace(TraceType traceType, InvokeData invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, CreationData creationData, String creationMethod, String err, int nsubtraces, DataWord codeAddress) {
-        TraceAction action = toAction(traceType, invoke, callType, creationData == null ? null : creationData.getCreationInput(), creationMethod, codeAddress);
+        TraceAction action = toAction(traceType, invoke, callType, creationData == null ? null : creationData.getCreationInput(), creationMethod, codeAddress, txInfo);
         TraceResult result = null;
         String error = null;
 
@@ -100,8 +99,7 @@ public class TraceTransformer {
 
             if (programResult.getException() != null) {
                 error = programResult.getException().toString();
-            }
-            else if (programResult.isRevert()) {
+            } else if (programResult.isRevert()) {
                 error = "Reverted";
             }
 
@@ -138,21 +136,19 @@ public class TraceTransformer {
         if (createdCode != null && createdAddress != null) {
             code = HexUtils.toUnformattedJsonHex(createdCode);
             address = createdAddress.toJsonString();
-        }
-        else {
+        } else {
             output = HexUtils.toUnformattedJsonHex(programResult.getHReturn());
         }
 
         return new TraceResult(gasUsed, output, code, address);
     }
 
-    public static TraceAction toAction(TraceType traceType, InvokeData invoke, CallType callType, byte[] creationInput, String creationMethod, DataWord codeAddress) {
+    public static TraceAction toAction(TraceType traceType, InvokeData invoke, CallType callType, byte[] creationInput, String creationMethod, DataWord codeAddress, TransactionInfo txInfo) {
         String from;
 
         if (callType == CallType.DELEGATECALL) {
             from = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
-        }
-        else {
+        } else {
             from = new RskAddress(invoke.getCallerAddress().getLast20Bytes()).toJsonString();
         }
 
@@ -175,7 +171,8 @@ public class TraceTransformer {
         }
 
         if (traceType == TraceType.CALL) {
-            input = HexUtils.toUnformattedJsonHex(invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize()));;
+            byte[] txData = txInfo.getReceipt().getTransaction().getData();
+            input = HexUtils.toUnformattedJsonHex(txData);
             value = HexUtils.toQuantityJsonHex(callValue.getData());
 
             if (callType == CallType.DELEGATECALL) {
@@ -184,8 +181,7 @@ public class TraceTransformer {
                 if (codeAddress != null) {
                     to = new RskAddress(codeAddress.getLast20Bytes()).toJsonString();
                 }
-            }
-            else {
+            } else {
                 to = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
             }
 

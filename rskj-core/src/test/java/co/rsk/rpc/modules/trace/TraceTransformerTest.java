@@ -18,15 +18,26 @@
 
 package co.rsk.rpc.modules.trace;
 
+import co.rsk.core.types.bytes.Bytes;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionReceipt;
+import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 class TraceTransformerTest {
     @Test
     void getActionFromInvokeData() {
+        TransactionInfo txInfo = mock(TransactionInfo.class);
+        TransactionReceipt receipt = mock(TransactionReceipt.class);
+        Transaction transaction = mock(Transaction.class);
+
         DataWord address = DataWord.valueOf(1);
         DataWord origin = DataWord.valueOf(2);
         DataWord caller = DataWord.valueOf(3);
@@ -42,14 +53,17 @@ class TraceTransformerTest {
                 null,
                 gas,
                 callValue,
-                data,
+                Bytes.of(data),
                 null, null, null, null, null, null, null,
                 null, null, 0, null, false, false);
 
-        TraceAction action = TraceTransformer.toAction(TraceType.CALL, invoke, CallType.CALL, null, null, null);
+        when(txInfo.getReceipt()).thenReturn(receipt);
+        when(receipt.getTransaction()).thenReturn(transaction);
+        when(transaction.getData()).thenReturn(data);
+
+        TraceAction action = TraceTransformer.toAction(TraceType.CALL, invoke, CallType.CALL, null, null, null, txInfo);
 
         Assertions.assertNotNull(action);
-
         Assertions.assertEquals("call", action.getCallType());
         Assertions.assertEquals("0x0000000000000000000000000000000000000001", action.getTo());
         Assertions.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
@@ -79,7 +93,7 @@ class TraceTransformerTest {
                 null, null, null, null, null, null, null,
                 null, null, 0, null, false, false);
 
-        TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, null, null);
+        TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, null, null, null);
 
         Assertions.assertNotNull(action);
 
@@ -113,7 +127,7 @@ class TraceTransformerTest {
                 null, null, null, null, null, null, null,
                 null, null, 0, null, false, false);
 
-        TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, "create2", null);
+        TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, "create2", null, null);
 
         Assertions.assertNotNull(action);
 

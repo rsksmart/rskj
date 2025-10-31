@@ -19,6 +19,8 @@
 
 package org.ethereum.util;
 
+import co.rsk.core.types.bytes.Bytes;
+import co.rsk.core.types.bytes.BytesSlice;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.ByteArrayWrapper;
 
@@ -38,6 +40,7 @@ public class ByteUtil {
     }
 
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+    public static final BytesSlice EMPTY_BYTES_SLICE = Bytes.of(EMPTY_BYTE_ARRAY);
     public static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
     /**
