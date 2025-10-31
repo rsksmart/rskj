@@ -23,7 +23,10 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import com.google.common.primitives.Bytes;
 import org.ethereum.TestUtils;
-import org.ethereum.core.*;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockHeaderV0;
+import org.ethereum.core.BlockHeaderV1;
+import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -50,13 +53,24 @@ import static org.mockito.Mockito.mockStatic;
 @ExtendWith(MockitoExtension.class)
 class BlockHeaderTest {
 
+    private static final byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+    private static final short[] edges = new short[]{1, 2, 3, 4};
+
+    @BeforeAll
+    static void setupLogsBloom() {
+        logsBloom[0] = 0x01;
+        logsBloom[1] = 0x02;
+        logsBloom[2] = 0x03;
+        logsBloom[3] = 0x04;
+    }
+
     @Test
     void getHashForMergedMiningWithForkDetectionDataAndIncludedOnAndMergedMiningFields() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0], new short[0]);
 
         byte[] encodedBlock = header.getEncoded(false, false, false);
         byte[] hashForMergedMiningPrefix = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
-        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData", 12);
         byte[] hashForMergedMining = concatenate(hashForMergedMiningPrefix, forkDetectionData);
         byte[] coinbase = concatenate(RskMiningConstants.RSK_TAG, hashForMergedMining);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
@@ -79,7 +93,7 @@ class BlockHeaderTest {
 
     @Test
     void getHashForMergedMiningWithForkDetectionDataAndIncludedOn() {
-        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData", 12);
         BlockHeader header = createBlockHeaderWithNoMergedMiningFields(forkDetectionData, true, new byte[0], new short[0]);
 
         byte[] hash = header.getHash().getBytes();
@@ -93,7 +107,7 @@ class BlockHeaderTest {
 
     @Test
     void getHashForMergedMiningWithForkDetectionDataAndIncludedOff() {
-        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData", 12);
         BlockHeader header = createBlockHeaderWithNoMergedMiningFields(forkDetectionData, false, new byte[0], new short[0]);
 
         byte[] hash = header.getHash().getBytes();
@@ -102,10 +116,9 @@ class BlockHeaderTest {
         MatcherAssert.assertThat(hash, is(hashForMergedMining));
     }
 
-
     @Test
     void getEncodedWithUmmRootWithMergedMiningFields() {
-        byte[] ummRoot = TestUtils.generateBytes("ummRoot",20);
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false, ummRoot, new short[0]);
 
         byte[] headerEncoded = header.getFullEncoded();
@@ -116,7 +129,7 @@ class BlockHeaderTest {
 
     @Test
     void getEncodedWithUmmRootWithoutMergedMiningFields() {
-        byte[] ummRoot = TestUtils.generateBytes("ummRoot",20);
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
         BlockHeader header = createBlockHeaderWithNoMergedMiningFields(new byte[0], false, ummRoot, new short[0]);
 
         byte[] headerEncoded = header.getFullEncoded();
@@ -231,14 +244,13 @@ class BlockHeaderTest {
         MatcherAssert.assertThat(headerRLP.size(), is(18));
     }
 
-
     @Test
     void getMiningForkDetectionData() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0], new short[0]);
 
         byte[] encodedBlock = header.getEncoded(false, false, false);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
-        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData", 12);
         byte[] coinbase = concatenate(hashForMergedMining, forkDetectionData);
         coinbase = concatenate(RskMiningConstants.RSK_TAG, coinbase);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
@@ -249,7 +261,7 @@ class BlockHeaderTest {
 
     @Test
     void getUmmRoot() {
-        byte[] ummRoot = TestUtils.generateBytes("ummRoot",20);
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
         MatcherAssert.assertThat(header.getUmmRoot(), is(ummRoot));
@@ -257,7 +269,7 @@ class BlockHeaderTest {
 
     @Test
     void isUMMBlockWhenUmmRoot() {
-        byte[] ummRoot = TestUtils.generateBytes("ummRoot",20);
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
         MatcherAssert.assertThat(header.isUMMBlock(), is(true));
@@ -281,8 +293,8 @@ class BlockHeaderTest {
 
     @Test
     void getHashForMergedMiningWhenUmmRoot() {
-        byte[] ummRoot = TestUtils.generateBytes("ummRoot",20);
-        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData", 12);
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot, forkDetectionData);
 
         byte[] encodedBlock = header.getEncoded(false, false, false);
@@ -311,7 +323,7 @@ class BlockHeaderTest {
 
     @Test
     void getHashForMergedMiningWhenUmmRootWithLengthUnder20() {
-        byte[] ummRoot = TestUtils.generateBytes("ummRoot",19);
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 19);
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
         Assertions.assertThrows(IllegalStateException.class, header::getHashForMergedMining);
@@ -319,7 +331,7 @@ class BlockHeaderTest {
 
     @Test
     void getHashForMergedMiningWhenUmmRootWithLengthOver20() {
-        byte[] ummRoot = TestUtils.generateBytes("ummRoot",21);
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 21);
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
         Assertions.assertThrows(IllegalStateException.class, header::getHashForMergedMining);
@@ -332,7 +344,7 @@ class BlockHeaderTest {
     void getMiningForkDetectionDataNoDataCanBeFound() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0], new short[0]);
 
-        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData", 12);
         byte[] coinbase = concatenate(RskMiningConstants.RSK_TAG, forkDetectionData);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
         header.seal();
@@ -398,22 +410,13 @@ class BlockHeaderTest {
     }
 
     @Test
-    void getVersion0() { this.testHeaderVersion((byte) 0x0); }
+    void getVersion0() {
+        this.testHeaderVersion((byte) 0x0);
+    }
 
     @Test
     void getVersion1() {
         this.testHeaderVersion((byte) 0x1);
-    }
-
-    private static byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
-    private static short[] edges = new short[]{ 1, 2, 3, 4 };
-
-    @BeforeAll
-    static void setupLogsBloom() {
-        logsBloom[0] = 0x01;
-        logsBloom[1] = 0x02;
-        logsBloom[2] = 0x03;
-        logsBloom[3] = 0x04;
     }
 
     @Test
@@ -452,7 +455,7 @@ class BlockHeaderTest {
                 headerV0.getPaidFees(), headerV0.getBitcoinMergedMiningHeader(), headerV0.getBitcoinMergedMiningMerkleProof(),
                 headerV0.getBitcoinMergedMiningCoinbaseTransaction(), headerV0.getMiningForkDetectionData(),
                 headerV0.getMinimumGasPrice(), headerV0.getUncleCount(), headerV0.isSealed(),
-                false, false, headerV0.getUmmRoot(), headerV0.getBaseEvent(), headerV0.getTxExecutionSublistsEdges(), false
+                false, false, headerV0.getUmmRoot(), headerV0.getTxExecutionSublistsEdges(), false
         );
     }
 
@@ -467,7 +470,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    void encodedV0IsTheSameForV0andV1 () {
+    void encodedV0IsTheSameForV0andV1() {
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
 
@@ -477,7 +480,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    void fullEncodedV0IsTheSameForV0andV1 () {
+    void fullEncodedV0IsTheSameForV0andV1() {
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
 
@@ -487,7 +490,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    void fullEncodedV0IsTheSameAsEncodedForHeaderMessage () {
+    void fullEncodedV0IsTheSameAsEncodedForHeaderMessage() {
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
 
@@ -495,7 +498,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    void fullEncodedV1IsTheSameAsCompressedButLogsBloomEdgesAndVersion () {
+    void fullEncodedV1IsTheSameAsCompressedButLogsBloomEdgesAndVersion() {
         // this test is added to assert that there were no changes in the rest of the elements
         BlockHeaderV1 headerV1 = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
         headerV1.setLogsBloom(logsBloom);
@@ -519,7 +522,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    void compressedEncodingV1HasSameRLPSizeAsFullEncodedV0WithoutEdges () {
+    void compressedEncodingV1HasSameRLPSizeAsFullEncodedV0WithoutEdges() {
         // this test is added to assert that the rlp header size does not change
         // in the hard fork, assuming both RSKIP 351 and RSKIP 144 are activated
         // together
@@ -562,7 +565,7 @@ class BlockHeaderTest {
         byte[] hash = headerV1.getHash().getBytes();
 
 
-        short[] otherEdges = new short[]{ 1, 2, 3, 5};
+        short[] otherEdges = new short[]{1, 2, 3, 5};
         headerV1.setTxExecutionSublistsEdges(otherEdges);
 
         Assertions.assertFalse(Arrays.equals(hash, headerV1.getHash().getBytes()));
@@ -570,7 +573,7 @@ class BlockHeaderTest {
 
     private BlockHeader createBlockHeaderWithMergedMiningFields(
             byte[] forkDetectionData,
-            boolean includeForkDetectionData, byte[] ummRoot, short[] edges){
+            boolean includeForkDetectionData, byte[] ummRoot, short[] edges) {
         return createBlockHeader(new byte[80], new byte[32], new byte[128],
                 forkDetectionData, includeForkDetectionData, ummRoot, null, edges, false);
     }
@@ -589,7 +592,7 @@ class BlockHeaderTest {
 
     private BlockHeader createBlockHeaderWithUmmRoot(byte[] ummRoot, byte[] forkDetectionData) {
         return createBlockHeader(null, null, null,
-                                 forkDetectionData, true, ummRoot,null, new short[0], true);
+                forkDetectionData, true, ummRoot, null, new short[0], true);
     }
 
     private BlockHeader createBlockHeader(byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
@@ -648,7 +651,6 @@ class BlockHeaderTest {
                 useRskip92Encoding,
                 includeForkDetectionData,
                 ummRoot,
-                baseEvent,
                 edges,
                 false);
 

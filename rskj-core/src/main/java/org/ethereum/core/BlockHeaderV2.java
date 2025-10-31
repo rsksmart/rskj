@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.core;
 
 import co.rsk.core.BlockDifficulty;
@@ -51,6 +50,23 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
                 makeExtension(compressed, extensionData, txExecutionSublistsEdges, baseEvent), compressed);
     }
 
+    private static BlockHeaderExtensionV1 makeExtension(boolean compressed,
+                                                        byte[] extensionData,
+                                                        short[] txExecutionSublistsEdges,
+                                                        byte[] baseEvent) {
+        return compressed
+                ? new BlockHeaderExtensionV2(null, null, null)
+                : new BlockHeaderExtensionV2(extensionData, txExecutionSublistsEdges, baseEvent);
+    }
+
+    @VisibleForTesting
+    public static byte[] createExtensionData(byte[] extensionHash) {
+        return RLP.encodeList(
+                RLP.encodeByte((byte) 0x2),
+                RLP.encodeElement(extensionHash)
+        );
+    }
+
     @Override
     public byte getVersion() {
         return 0x2;
@@ -68,7 +84,7 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
             throw new SealedBlockHeaderException("trying to alter baseEvent data of a sealed block");
         }
 
-        if(baseEvent.length > BASE_EVENT_MAX_SIZE) {
+        if (baseEvent.length > BASE_EVENT_MAX_SIZE) {
             throw new FieldMaxSizeBlockHeaderException("baseEvent length cannot exceed 128 bytes");
         }
         this.hash = null;
@@ -84,16 +100,7 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
 
     @Override
     public void setExtension(BlockHeaderExtension extension) {
-        super.setExtension((BlockHeaderExtensionV2) extension);
-    }
-
-    private static BlockHeaderExtensionV1 makeExtension(boolean compressed,
-                                                        byte[] extensionData,
-                                                        short[] txExecutionSublistsEdges,
-                                                        byte[] baseEvent) {
-        return compressed
-                ? new BlockHeaderExtensionV2(null, null, null)
-                : new BlockHeaderExtensionV2(extensionData, txExecutionSublistsEdges, baseEvent);
+        super.setExtension(extension);
     }
 
     @Override
@@ -107,13 +114,5 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
         if (!usingCompressedEncoding) {
             addBaseEvent(fieldsToEncode);
         }
-    }
-
-    @VisibleForTesting
-    public static byte[] createExtensionData(byte[] extensionHash) {
-        return RLP.encodeList(
-                RLP.encodeByte((byte) 0x2),
-                RLP.encodeElement(extensionHash)
-        );
     }
 }

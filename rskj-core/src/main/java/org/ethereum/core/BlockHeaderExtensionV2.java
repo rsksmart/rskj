@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.core;
 
 import org.ethereum.util.ByteUtil;
@@ -33,6 +32,25 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
     public BlockHeaderExtensionV2(byte[] logsBloom, short[] edges, byte[] baseEvent) {
         super(logsBloom, edges);
         this.baseEvent = baseEvent;
+    }
+
+    public static BlockHeaderExtensionV2 fromEncoded(byte[] encoded) {
+        RLPList rlpExtension = RLP.decodeList(encoded);
+        byte[] logsBloom = rlpExtension.get(0).getRLPData();
+        byte[] baseEvent = rlpExtension.get(1).getRLPData();
+
+        return new BlockHeaderExtensionV2(
+                logsBloom,
+                rlpExtension.size() == 3 ? toEdges(rlpExtension.get(2).getRLPRawData()) : null,
+                baseEvent
+        );
+    }
+
+    private static short[] toEdges(byte[] rlpData) {
+        if (rlpData == null) {
+            return null;
+        }
+        return ByteUtil.rlpToShorts(rlpData);
     }
 
     @Override
@@ -57,24 +75,5 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
             fieldToEncodeList.add(RLP.encodeElement(new byte[0]));
         }
         super.addElementsEncoded(fieldToEncodeList);
-    }
-
-    public static BlockHeaderExtensionV2 fromEncoded(byte[] encoded) {
-        RLPList rlpExtension = RLP.decodeList(encoded);
-        byte[] logsBloom = rlpExtension.get(0).getRLPData();
-        byte[] baseEvent = rlpExtension.get(1).getRLPData();
-
-        return new BlockHeaderExtensionV2(
-                logsBloom,
-                rlpExtension.size() == 3 ? toEdges(rlpExtension.get(2).getRLPRawData()) : null,
-                baseEvent
-        );
-    }
-
-    private static short[] toEdges(byte[] rlpData) {
-        if (rlpData == null) {
-            return null;
-        }
-        return ByteUtil.rlpToShorts(rlpData);
     }
 }

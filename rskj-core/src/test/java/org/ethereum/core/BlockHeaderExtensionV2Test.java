@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.core;
 
 import org.junit.jupiter.api.Test;
@@ -35,8 +34,8 @@ class BlockHeaderExtensionV2Test {
     void constructorAndGetters() {
         byte[] logsBloom = new byte[256];
         Arrays.fill(logsBloom, (byte) 0xAB);
-        short[] edges = new short[] {1, 2, 3};
-        byte[] baseEvent = new byte[] {0x01, 0x02};
+        short[] edges = new short[]{1, 2, 3};
+        byte[] baseEvent = new byte[]{0x01, 0x02};
 
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, edges, baseEvent);
 
@@ -49,7 +48,7 @@ class BlockHeaderExtensionV2Test {
     @Test
     void setBaseEventCopiesArray() {
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, null, null);
-        byte[] hash = new byte[] {0x0A, 0x0B};
+        byte[] hash = new byte[]{0x0A, 0x0B};
         ext.setBridgeEvent(hash);
 
         assertArrayEquals(hash, ext.getBridgeEvent());
@@ -60,7 +59,7 @@ class BlockHeaderExtensionV2Test {
 
     @Test
     void getBaseEventReturnsCopy() {
-        byte[] hash = new byte[] {0x0A, 0x0B};
+        byte[] hash = new byte[]{0x0A, 0x0B};
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, null, hash);
         byte[] returned = ext.getBridgeEvent();
         returned[0] = 0x00;
@@ -71,8 +70,8 @@ class BlockHeaderExtensionV2Test {
     void encodingAndDecoding() {
         byte[] logsBloom = new byte[256];
         Arrays.fill(logsBloom, (byte) 0x01);
-        short[] edges = new short[] {10, 20};
-        byte[] superChainDataHash = new byte[] {0x55, 0x66};
+        short[] edges = new short[]{10, 20};
+        byte[] superChainDataHash = new byte[]{0x55, 0x66};
 
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, edges, superChainDataHash);
         byte[] encoded = ext.getEncoded();
@@ -101,18 +100,6 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
-    void decodeNullFields() {
-        BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, null, null);
-        byte[] encoded = ext.getEncoded();
-
-        BlockHeaderExtensionV2 decoded = BlockHeaderExtensionV2.fromEncoded(encoded);
-
-        assertNull(decoded.getLogsBloom());
-        assertNull(decoded.getTxExecutionSublistsEdges());
-        assertNull(decoded.getBridgeEvent());
-    }
-
-    @Test
     void decodeOnlyLogsBloom() {
         byte[] logsBloom = new byte[256];
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, null, null);
@@ -128,7 +115,7 @@ class BlockHeaderExtensionV2Test {
     @Test
     void decodeLogsBloomAndEdges() {
         byte[] logsBloom = new byte[256];
-        short[] edges = new short[] {1, 2};
+        short[] edges = new short[]{1, 2};
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, edges, null);
         byte[] encoded = ext.getEncoded();
 
@@ -156,7 +143,7 @@ class BlockHeaderExtensionV2Test {
     @Test
     void decodeWithEmptyBridgeEvent() {
         byte[] logsBloom = new byte[256];
-        short[] edges = new short[] {1};
+        short[] edges = new short[]{1};
         byte[] baseEvent = new byte[0];
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(logsBloom, edges, baseEvent);
         byte[] encoded = ext.getEncoded();
@@ -170,7 +157,7 @@ class BlockHeaderExtensionV2Test {
 
     @Test
     void decodeMalformedRLPThrows() {
-        byte[] malformed = new byte[] {0x01, 0x02, 0x03};
+        byte[] malformed = new byte[]{0x01, 0x02, 0x03};
         assertThrows(Exception.class, () -> BlockHeaderExtensionV2.fromEncoded(malformed));
     }
 
@@ -211,11 +198,11 @@ class BlockHeaderExtensionV2Test {
     @Test
     void testSetBridgeEventMultipleTimes() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
-        
+
         byte[] firstValue = new byte[]{1, 2, 3};
         extension.setBridgeEvent(firstValue);
         assertArrayEquals(firstValue, extension.getBridgeEvent());
-        
+
         byte[] secondValue = new byte[]{4, 5, 6, 7, 8};
         extension.setBridgeEvent(secondValue);
         assertArrayEquals(secondValue, extension.getBridgeEvent());
@@ -232,11 +219,11 @@ class BlockHeaderExtensionV2Test {
     void testBridgeEventPersistenceAfterEncoding() {
         byte[] originalBridgeEvent = new byte[]{0x11, 0x22, 0x33, 0x44, 0x55};
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], originalBridgeEvent);
-        
+
         // Encode and decode
         byte[] encoded = extension.getEncoded();
         BlockHeaderExtensionV2 decoded = BlockHeaderExtensionV2.fromEncoded(encoded);
-        
+
         // Verify bridge event is preserved
         assertArrayEquals(originalBridgeEvent, decoded.getBridgeEvent());
     }

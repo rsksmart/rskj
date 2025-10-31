@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.core;
 
 import co.rsk.config.MiningConfig;
@@ -39,13 +38,34 @@ import java.util.List;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
+    public static final int NUMBER_OF_EXTRA_HEADER_FIELDS = 3;
     private static final int RLP_HEADER_SIZE = 20;
     private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 23;
-
     private final ActivationConfig activationConfig;
 
     public BlockFactory(ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
+    }
+
+    private static BigInteger parseBigInteger(byte[] bytes) {
+        return bytes == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(bytes);
+    }
+
+    private static List<Transaction> parseTxs(RLPList txTransactions) {
+        List<Transaction> parsedTxs = new ArrayList<>();
+
+        for (int i = 0; i < txTransactions.size(); i++) {
+            RLPElement transactionRaw = txTransactions.get(i);
+            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
+
+            if (tx.isRemascTransaction(i, txTransactions.size())) {
+                // It is the remasc transaction
+                tx = new RemascTransaction(transactionRaw.getRLPData());
+            }
+            parsedTxs.add(tx);
+        }
+
+        return Collections.unmodifiableList(parsedTxs);
     }
 
     public BlockHeaderBuilder getBlockHeaderBuilder() {
@@ -62,7 +82,7 @@ public class BlockFactory {
 
     private Block decodeBlock(byte[] rawData, boolean sealed) {
         RLPList block = RLP.decodeList(rawData);
-        if (block.size() != 3) {
+        if (block.size() != NUMBER_OF_EXTRA_HEADER_FIELDS) {
             throw new IllegalArgumentException("A block must have 3 exactly items");
         }
 
@@ -77,7 +97,7 @@ public class BlockFactory {
 
         for (int k = 0; k < uncleHeadersRlp.size(); k++) {
             RLPElement element = uncleHeadersRlp.get(k);
-            BlockHeader uncleHeader = decodeHeader((RLPList)element, false, sealed);
+            BlockHeader uncleHeader = decodeHeader((RLPList) element, false, sealed);
             uncleList.add(uncleHeader);
         }
 
@@ -102,7 +122,7 @@ public class BlockFactory {
         byte[] unclesHash = rlpHeader.get(1).getRLPData();
         byte[] coinBaseBytes = rlpHeader.get(2).getRLPData();
         RskAddress coinbase = RLP.parseRskAddress(coinBaseBytes);
-        byte[] stateRoot = rlpHeader.get(3).getRLPData();
+        byte[] stateRoot = rlpHeader.get(NUMBER_OF_EXTRA_HEADER_FIELDS).getRLPData();
         if (stateRoot == null) {
             stateRoot = EMPTY_TRIE_HASH;
         }
@@ -163,16 +183,16 @@ public class BlockFactory {
         }
 
         short[] txExecutionSublistsEdges = null;
-
-        if ((!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) &&
-                (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))) {
-            txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
-        }
-
         byte[] baseEvent = null;
-        if ((!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) &&
-                (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber))) {
-            baseEvent = rlpHeader.get(r++).getRLPRawData();
+
+        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) {
+            if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
+                txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
+            }
+
+            if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber)) {
+                baseEvent = rlpHeader.get(r++).getRLPRawData();
+            }
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -181,7 +201,7 @@ public class BlockFactory {
         if (rlpHeader.size() > r) {
             bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
             bitcoinMergedMiningMerkleProof = rlpHeader.get(r++).getRLPRawData();
-            bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r++).getRLPData();
+            bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r).getRLPData();
         }
 
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, blockNumber);
@@ -242,7 +262,7 @@ public class BlockFactory {
                     paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                     bitcoinMergedMiningCoinbaseTransaction, new byte[0],
                     minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                    ummRoot, baseEvent, txExecutionSublistsEdges, compressed
+                    ummRoot, txExecutionSublistsEdges, compressed
             );
         }
 
@@ -276,30 +296,9 @@ public class BlockFactory {
         }
 
         if (compressed) {
-            return 3 - preParallelSizeAdjustment - preBaseEventSizeAdjustmentRSKIP535; // remove version, edges and baseEvent size if existent
+            return NUMBER_OF_EXTRA_HEADER_FIELDS - preParallelSizeAdjustment - preBaseEventSizeAdjustmentRSKIP535; // remove version, edges and baseEvent size if existent
         }
 
         return 0;
-    }
-
-    private static BigInteger parseBigInteger(byte[] bytes) {
-        return bytes == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(bytes);
-    }
-
-    private static List<Transaction> parseTxs(RLPList txTransactions) {
-        List<Transaction> parsedTxs = new ArrayList<>();
-
-        for (int i = 0; i < txTransactions.size(); i++) {
-            RLPElement transactionRaw = txTransactions.get(i);
-            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
-
-            if (tx.isRemascTransaction(i, txTransactions.size())) {
-                // It is the remasc transaction
-                tx = new RemascTransaction(transactionRaw.getRLPData());
-            }
-            parsedTxs.add(tx);
-        }
-
-        return Collections.unmodifiableList(parsedTxs);
     }
 }
