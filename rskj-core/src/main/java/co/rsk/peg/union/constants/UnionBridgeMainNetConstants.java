@@ -20,7 +20,7 @@ public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
 
         // TODO: Replace with actual initial locking cap value and increments multiplier
         BigInteger oneRbtc = BigInteger.TEN.pow(18); // 1 RBTC = 1000000000000000000 wei
-        initialLockingCap = new Coin(oneRbtc).multiply(BigInteger.valueOf(200));
+        initialLockingCap = new Coin(oneRbtc);
         lockingCapIncrementsMultiplier = 2;
 
         changeUnionBridgeContractAddressAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(ZERO_ADDRESS);

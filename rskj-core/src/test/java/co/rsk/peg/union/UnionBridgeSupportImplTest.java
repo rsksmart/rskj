@@ -1050,11 +1050,11 @@ class UnionBridgeSupportImplTest {
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
-        Coin amountToRequest = new Coin(oneEth.multiply(BigInteger.TEN)); // 10 RBTC
+        Coin amountToRequest = new Coin(oneEth.divide(BigInteger.TEN)); // 0.1 RBTC
         UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountToRequest);
         assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
-        Coin amountToRelease = new Coin(oneEth.multiply(BigInteger.TWO)); // 2 RBTC
+        Coin amountToRelease = new Coin(oneEth.divide(BigInteger.TEN)); // 0.1 RBTC
         when(rskTx.getValue()).thenReturn(amountToRelease);
 
         // act
@@ -1363,9 +1363,10 @@ class UnionBridgeSupportImplTest {
     @MethodSource("unionBridgeConstantsProvider")
     void save_whenWeisTransferredBalanceIsIncreased_shouldSave(UnionBridgeConstants unionBridgeConstants){
         BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
-        Coin storedWeisTransferredAmount = new Coin(oneEth);
+        Coin storedWeisTransferredAmount = new Coin(oneEth).divide(BigInteger.TWO);
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(unionBridgeConstants).build();
+            .withConstants(unionBridgeConstants)
+            .build();
         when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeConstants.getAddress());
 
         // to simulate the case where weis transferred balance is already stored
@@ -1375,7 +1376,7 @@ class UnionBridgeSupportImplTest {
             BridgeSerializationUtils::serializeRskCoin
         );
 
-        Coin amountRequested = new Coin(oneEth).multiply(BigInteger.TWO);
+        Coin amountRequested = new Coin(oneEth).divide(BigInteger.TEN);
         UnionResponseCode actualRequestUnionRbtcResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
         assertEquals(UnionResponseCode.SUCCESS,  actualRequestUnionRbtcResponseCode);
 
