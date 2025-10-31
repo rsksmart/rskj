@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
@@ -99,9 +98,6 @@ public class BlockExecutor {
     private final Set<RskAddress> concurrentContractsDisallowed;
 
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
-    private boolean registerProgramResults;
-    private long minSequentialSetGasLimit;
-
     /**
      * An array of ExecutorService's of size `Constants.getTransactionExecutionThreads()`. Each parallel list uses an executor
      * at specific index of this array, so that threads chosen by thread pools cannot be "reused" for executing parallel
@@ -109,6 +105,8 @@ public class BlockExecutor {
      * on some circumstances.
      */
     private final ExecutorService[] execServices;
+    private final long minSequentialSetGasLimit;
+    private boolean registerProgramResults;
 
     public BlockExecutor(
             RepositoryLocator repositoryLocator,
@@ -214,7 +212,7 @@ public class BlockExecutor {
                 Repository repo = repositoryLocator.startTrackingAt(header);
                 if (repo != null) {
                     RskAddress address = PrecompiledContracts.BRIDGE_ADDR;
-                    DataWord key = UnionBridgeStorageIndexKey.BASE_EVENT.getKey(); // tbd
+                    DataWord key = UnionBridgeStorageIndexKey.BASE_EVENT.getKey();
                     byte[] baseEvent = repo.getStorageBytes(address, key);
                     if (baseEvent == null) {
                         baseEvent = EMPTY_BYTE_ARRAY;
@@ -224,7 +222,7 @@ public class BlockExecutor {
             } catch (Exception e) {
                 // If repository access fails, just skip setting baseEvent
                 // This can happen in test environments or when repository is not available
-                logger.info("Failed to set baseEvent in block header. {}", e.getMessage());
+                logger.warn("Failed to set baseEvent in block header. {}", e.getMessage());
             }
         }
     }
@@ -345,11 +343,11 @@ public class BlockExecutor {
      * Execute a block while saving the execution trace in the trace processor
      */
     public BlockResult traceBlock(ProgramTraceProcessor programTraceProcessor,
-                           int vmTraceOptions,
-                           Block block,
-                           BlockHeader parent,
-                           boolean discardInvalidTxs,
-                           boolean ignoreReadyToExecute) {
+                                  int vmTraceOptions,
+                                  Block block,
+                                  BlockHeader parent,
+                                  boolean discardInvalidTxs,
+                                  boolean ignoreReadyToExecute) {
         return execute(Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs,
                 ignoreReadyToExecute, false);
     }
@@ -873,7 +871,7 @@ public class BlockExecutor {
         receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
         receipt.setTransaction(tx);
         List<LogInfo> logs = txExecutor.getVMLogs();
-        if(logs!= null) {
+        if (logs != null) {
             for (int i = 0; i < logs.size(); i++) {
                 LogInfo log = logs.get(i);
                 log.setLogIndex(i + logIndexOffset);
@@ -887,7 +885,7 @@ public class BlockExecutor {
 
     private BlockResult getBlockResultAndLogExecutionInterrupted(Block block, Metric metric, Transaction tx) {
         logger.warn("block: [{}]/[{}] execution interrupted because of invalid tx: [{}]",
-                    block.getNumber(), block.getHash(), tx.getHash());
+                block.getNumber(), block.getHash(), tx.getHash());
         profiler.stop(metric);
         return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
     }
@@ -931,7 +929,7 @@ public class BlockExecutor {
      * its core pool size is zero and maximum pool size is unbounded, while each thead created has keep-alive time - 15 mins.
      */
     private static final class ThreadPoolExecutorImpl extends ThreadPoolExecutor {
-        private static final long KEEP_ALIVE_TIME_IN_SECS = 15*60L; /* 15 minutes */
+        private static final long KEEP_ALIVE_TIME_IN_SECS = 15 * 60L; /* 15 minutes */
 
         public ThreadPoolExecutorImpl(int parallelListIndex) {
             super(0, Integer.MAX_VALUE,

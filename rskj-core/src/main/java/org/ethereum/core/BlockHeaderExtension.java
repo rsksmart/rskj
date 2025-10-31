@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.core;
 
 import org.ethereum.util.RLP;
@@ -25,12 +24,6 @@ import org.ethereum.util.RLPList;
 import java.util.Objects;
 
 public interface BlockHeaderExtension {
-    byte[] getEncoded();
-
-    byte[] getHash();
-
-    byte getVersion();
-
     static byte[] toEncoded(BlockHeaderExtension extension) {
         if (!(Objects.requireNonNull(extension) instanceof BlockHeaderExtensionV1)) {
             throw new IllegalArgumentException("Unknown extension");
@@ -62,4 +55,10 @@ public interface BlockHeaderExtension {
         }
         throw new IllegalArgumentException("Unknown extension with version: " + version);
     }
+
+    byte[] getEncoded();
+
+    byte[] getHash();
+
+    byte getVersion();
 }

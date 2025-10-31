@@ -41,7 +41,6 @@ class BlockHeaderV1Test {
                 false,
                 false,
                 null,
-                null,
                 new short[0],
                 false
         );
@@ -57,7 +56,7 @@ class BlockHeaderV1Test {
     @Test
     void setsExtension() {
         byte[] bloom = TestUtils.generateBytes("bloom", 256);
-        short[] edges = new short[]{ 1, 2, 3, 4 };
+        short[] edges = new short[]{1, 2, 3, 4};
         BlockHeaderV1 header = createBlockHeader(bloom);
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(bloom, edges);
         header.setExtension(extension);

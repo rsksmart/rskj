@@ -48,7 +48,7 @@ class BlockHeaderV2Test {
     }
 
     @Test
-    void testGetAndSetSuperChainDataHash() {
+    void testGetAndSetBaseEvent() {
         // given
         BlockHeaderV2 header = createHeaderV2();
         byte[] hash = new byte[]{1, 2, 3, 4};
@@ -59,7 +59,7 @@ class BlockHeaderV2Test {
     }
 
     @Test
-    void testSetSuperChainDataHashThrowsIfSealed() {
+    void testSetBaseEventThrowsIfSealed() {
         // given
         BlockHeaderV2 header = createHeaderV2();
         header.seal();
@@ -253,20 +253,20 @@ class BlockHeaderV2Test {
     void testSetBaseEventMultipleTimes() {
         // given
         BlockHeaderV2 header = createHeaderV2();
-        
+
         // when
         // Set baseEvent multiple times
         byte[] firstBaseEvent = new byte[]{1, 2, 3};
         header.setBaseEvent(firstBaseEvent);
         // then
         assertArrayEquals(firstBaseEvent, header.getBaseEvent());
-        
+
         // when
         byte[] secondBaseEvent = new byte[]{4, 5, 6, 7};
         header.setBaseEvent(secondBaseEvent);
         // then
         assertArrayEquals(secondBaseEvent, header.getBaseEvent());
-        
+
         // when
         byte[] thirdBaseEvent = new byte[]{8, 9};
         header.setBaseEvent(thirdBaseEvent);
@@ -279,7 +279,7 @@ class BlockHeaderV2Test {
         // given
         BlockHeaderV2 header = createHeaderV2();
         header.seal();
-        
+
         // when / then
         assertThrows(SealedBlockHeaderException.class, () -> {
             header.setBaseEvent(new byte[]{1, 2, 3});
@@ -291,11 +291,11 @@ class BlockHeaderV2Test {
         // given
         BlockHeaderV2 header = createHeaderV2();
         byte[] expectedBaseEvent = new byte[]{0x01, 0x02, 0x03, 0x04, 0x05};
-        
+
         // when
         header.getExtension().setBridgeEvent(expectedBaseEvent);
         byte[] result = header.getBaseEvent();
-        
+
         // then
         assertArrayEquals(expectedBaseEvent, result);
     }
@@ -306,18 +306,18 @@ class BlockHeaderV2Test {
         BlockHeaderV2 header = createHeaderV2();
         byte[] originalBaseEvent = new byte[]{(byte) 0xAA, (byte) 0xBB, (byte) 0xCC};
         header.setBaseEvent(originalBaseEvent);
-        
+
         // and a new extension with different baseEvent
         BlockHeaderExtensionV2 newExtension = new BlockHeaderExtensionV2(
-            new byte[256], // logsBloom
-            new short[]{1, 2, 3}, // txExecutionSublistsEdges
-            new byte[]{(byte) 0xDD, (byte) 0xEE, (byte) 0xFF} // different baseEvent
+                new byte[256], // logsBloom
+                new short[]{1, 2, 3}, // txExecutionSublistsEdges
+                new byte[]{(byte) 0xDD, (byte) 0xEE, (byte) 0xFF} // different baseEvent
         );
-        
+
         // when
         header.setExtension(newExtension);
         byte[] result = header.getBaseEvent();
-        
+
         // then
         assertArrayEquals(new byte[]{(byte) 0xDD, (byte) 0xEE, (byte) 0xFF}, result);
     }

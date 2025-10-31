@@ -27,24 +27,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class BlockHeaderV0 extends BlockHeader {
-    // block header for blocks before rskip351
-    @Override
-    public byte getVersion() {
-        return 0x0;
-    }
-
-    @Override
-    public BlockHeaderExtension getExtension() {
-        return null;
-    } // block header v0 has no extension
-
-    @Override
-    public void setExtension(BlockHeaderExtension extension) {
-        // block header v0 has no extension
-    }
-
+    private final byte[] baseEvent;
     private short[] txExecutionSublistsEdges;
-    private byte[] baseEvent;
 
     public BlockHeaderV0(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                          byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
@@ -62,6 +46,22 @@ public class BlockHeaderV0 extends BlockHeader {
                 useRskip92Encoding, includeForkDetectionData, ummRoot);
         this.txExecutionSublistsEdges = txExecutionSublistsEdges != null ? Arrays.copyOf(txExecutionSublistsEdges, txExecutionSublistsEdges.length) : null;
         this.baseEvent = baseEvent != null ? Arrays.copyOf(baseEvent, baseEvent.length) : null;
+    }
+
+    // block header for blocks before rskip351
+    @Override
+    public byte getVersion() {
+        return 0x0;
+    }
+
+    @Override
+    public BlockHeaderExtension getExtension() {
+        return null;
+    } // block header v0 has no extension
+
+    @Override
+    public void setExtension(BlockHeaderExtension extension) {
+        // block header v0 has no extension
     }
 
     // logs bloom is stored in the extension data
@@ -99,11 +99,12 @@ public class BlockHeaderV0 extends BlockHeader {
     public void setBaseEvent(byte[] baseEvent) {
         /* A sealed block header is immutable, cannot be changed */
         if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter super chain data hash");
+            throw new SealedBlockHeaderException("trying to alter baseEvent");
         }
-        this.hash = null;
 
-        this.baseEvent = baseEvent;
+        if (baseEvent != null) {
+            throw new UnsupportedOperationException("Block header v0 does not support base event");
+        }
     }
 
     @Override

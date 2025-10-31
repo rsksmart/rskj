@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.core;
 
 import co.rsk.core.BlockDifficulty;
@@ -38,15 +37,15 @@ public class BlockHeaderV1 extends BlockHeader {
                          Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                          byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                          Coin minimumGasPrice, int uncleCount, boolean sealed,
-                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, byte[] baseEvent, short[] txExecutionSublistsEdges, boolean compressed) {
-        this(parentHash,unclesHash, coinbase, stateRoot,
+                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, short[] txExecutionSublistsEdges, boolean compressed) {
+        this(parentHash, unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, compressed ? extensionData : null, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount, sealed,
                 useRskip92Encoding, includeForkDetectionData, ummRoot,
-        makeExtension(compressed, extensionData, txExecutionSublistsEdges, baseEvent), compressed);
+                makeExtension(compressed, extensionData, txExecutionSublistsEdges), compressed);
     }
 
     public BlockHeaderV1(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
@@ -57,7 +56,7 @@ public class BlockHeaderV1 extends BlockHeader {
                          Coin minimumGasPrice, int uncleCount, boolean sealed,
                          boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot,
                          BlockHeaderExtensionV1 extension, boolean compressed) {
-        super(parentHash,unclesHash, coinbase, stateRoot,
+        super(parentHash, unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, compressed ? extensionData : null, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
@@ -70,13 +69,6 @@ public class BlockHeaderV1 extends BlockHeader {
             this.extensionData = createExtensionData(extension);
         }
     }
-    @Override
-    public byte getVersion() { return 0x1; }
-
-    @Override
-    public BlockHeaderExtensionV1 getExtension() { return this.extension; }
-    @Override
-    public void setExtension(BlockHeaderExtension extension) { this.extension = (BlockHeaderExtensionV1) extension; }
 
     @VisibleForTesting
     public static byte[] createExtensionData(BlockHeaderExtension extension) {
@@ -88,11 +80,25 @@ public class BlockHeaderV1 extends BlockHeader {
 
     private static BlockHeaderExtensionV1 makeExtension(boolean compressed,
                                                         byte[] extensionData,
-                                                        short[] txExecutionSublistsEdges,
-                                                        byte[] baseEvent) {
+                                                        short[] txExecutionSublistsEdges) {
         return compressed
                 ? new BlockHeaderExtensionV1(null, null)
                 : new BlockHeaderExtensionV1(extensionData, txExecutionSublistsEdges);
+    }
+
+    @Override
+    public byte getVersion() {
+        return 0x1;
+    }
+
+    @Override
+    public BlockHeaderExtensionV1 getExtension() {
+        return this.extension;
+    }
+
+    @Override
+    public void setExtension(BlockHeaderExtension extension) {
+        this.extension = (BlockHeaderExtensionV1) extension;
     }
 
     protected void updateExtensionData() {
@@ -100,7 +106,9 @@ public class BlockHeaderV1 extends BlockHeader {
     }
 
     @Override
-    public byte[] getLogsBloom() { return this.extension.getLogsBloom(); }
+    public byte[] getLogsBloom() {
+        return this.extension.getLogsBloom();
+    }
 
     @Override
     public void setLogsBloom(byte[] logsBloom) {
@@ -114,7 +122,9 @@ public class BlockHeaderV1 extends BlockHeader {
     }
 
     @Override
-    public short[] getTxExecutionSublistsEdges() { return this.extension.getTxExecutionSublistsEdges(); }
+    public short[] getTxExecutionSublistsEdges() {
+        return this.extension.getTxExecutionSublistsEdges();
+    }
 
     @Override
     public void setTxExecutionSublistsEdges(short[] edges) {
@@ -135,7 +145,7 @@ public class BlockHeaderV1 extends BlockHeader {
     @Override
     public void setBaseEvent(byte[] baseEvent) {
         if (baseEvent != null) {
-            throw new UnsupportedOperationException("Block header v1 does not support bridge event");
+            throw new UnsupportedOperationException("Block header v1 does not support base event");
         }
     }
 
