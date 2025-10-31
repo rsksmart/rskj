@@ -23,7 +23,7 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
         lockingCapIncrementsMultiplier = 2;
 
         changeUnionBridgeContractAddressAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("c38c7f0bcdf679dd360dee652d83be7d5b386956")
+            new RskAddress("54fdb399cf235c9b0d464ab4055af9251883bbfe")
         );
 
         // TODO: Replace with actual authorizers

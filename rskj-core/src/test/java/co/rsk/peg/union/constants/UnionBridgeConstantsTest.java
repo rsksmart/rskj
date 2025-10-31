@@ -22,7 +22,7 @@ class UnionBridgeConstantsTest {
     private static Stream<Arguments> changeUnionAddressAuthorizerProvider() {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), ZERO_ADDRESS),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), new RskAddress("c38c7f0bcdf679dd360dee652d83be7d5b386956")),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), new RskAddress("54fdb399cf235c9b0d464ab4055af9251883bbfe")),
             Arguments.of(UnionBridgeRegTestConstants.getInstance(), new RskAddress("6c9dfd950bf748bb26f893f7e5f693c7f60a8f85"))
         );
     }
