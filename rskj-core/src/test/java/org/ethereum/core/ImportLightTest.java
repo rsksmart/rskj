@@ -112,4 +112,3 @@ class ImportLightTest {
         return blockchain;
     }
 }
-

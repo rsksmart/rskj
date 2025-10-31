@@ -804,5 +804,3 @@ public enum OpCode {
         }
     }
 }
-
-

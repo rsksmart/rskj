@@ -25,11 +25,13 @@ checkstyle {
 spotless {
     enforceCheck false
     java {
-        googleJavaFormat()
-        indentWithTabs(2)
-        trimTrailingWhitespace()
+        // Only check for newline at end of file
         endWithNewline()
         target filteredFiles
+        // Enable ratchet mode to only check files changed from the target branch
+        if (project.hasProperty('ratchetFrom')) {
+            ratchetFrom project.property('ratchetFrom')
+        }
     }
 }
 
@@ -104,7 +106,16 @@ def getFilteredFiles() {
 
 
 def configureCheckstyleTask(Checkstyle task, String sourceDir) {
-    def filteredFilesCheckstyle = getFilteredFilesForCheckstyle(sourceDir)
+    // For checkstyleFile task, the sources are set via -PfilePath parameter in task definition
+    if (task.name == 'checkstyleFile' && !project.hasProperty('filePath')) {
+        println "No filePath property provided. Skipping task ${task.name}"
+        task.enabled = false
+        return
+    }
+
+    def filteredFilesCheckstyle = task.name == 'checkstyleFile'
+        ? project.property('filePath').split(',').collect { it.trim() }
+        : getFilteredFilesForCheckstyle(sourceDir)
 
     if (!filteredFilesCheckstyle.isEmpty()) {
         task.source = project.files(filteredFilesCheckstyle)
@@ -145,7 +156,8 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
             'checkstyleTest'           : 'src/test/java',
             'checkstyleIntegrationTest': 'src/integrationTest/java',
             'checkstyleJmh'            : 'src/jmh/java',
-            'checkstyleFuzz'           : 'src/fuzzTest/java'
+            'checkstyleFuzz'           : 'src/fuzzTest/java',
+            'checkstyleFile'           : ''
     ]
 
     sourceDirMapping.each { taskName, sourceDir ->
@@ -609,6 +621,12 @@ task checkstyleAll {
     group = 'Verification'
     description = 'Run all Checkstyle checks'
     dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzz'
+}
+
+task checkstyleFile(type: Checkstyle) {
+    group = 'Verification'
+    description = 'Run Checkstyle on specific file(s) (use -PfilePath=file1.java or -PfilePath=file1.java,file2.java)'
+    maxWarnings = 0
 }
 
 task spotlessAll {

@@ -227,4 +227,3 @@ class NestedContractsTest {
                 null);
     }
 }
-

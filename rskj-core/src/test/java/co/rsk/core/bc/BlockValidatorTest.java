@@ -771,5 +771,3 @@ class BlockValidatorTest {
         Assertions.assertTrue(validator.isValid(block));
     }
 }
-
-

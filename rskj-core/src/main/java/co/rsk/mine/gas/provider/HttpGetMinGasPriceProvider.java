@@ -91,4 +91,3 @@ public class HttpGetMinGasPriceProvider extends StableMinGasPriceProvider {
     }
 
 }
-
