@@ -6,6 +6,8 @@ on:
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches: [ "master", "*-rc" ]
+  push:
+    branches: [ "master", "*-rc" ]
   workflow_dispatch:
     inputs:
       rit-branch:
@@ -117,6 +119,7 @@ jobs:
 
       - name: Sanitize Github Variables
         id: sanitize-github-variables
+        if: github.event_name == 'pull_request'
         env:
           GITHUB_EVENT_PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
         run: |
@@ -125,7 +128,7 @@ jobs:
           echo "SAFE_PULL_REQUEST_TITLE=$SAFE_PULL_REQUEST_TITLE" >> $GITHUB_ENV
 
       - name: Run Rootstock Integration Tests
-        uses: rsksmart/rootstock-integration-tests@2ec21fe275cc7fc2c6a3fddad4de84462b1ffe6c
+        uses: rsksmart/rootstock-integration-tests@main
         with:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
@@ -133,7 +136,7 @@ jobs:
           repo-owner: ${{ env.REPO_OWNER }}
 
       - name: Send Slack Notification on Success
-        if: ${{ success() && github.event.pull_request.head.repo.owner.login == 'rsksmart' }}
+        if: ${{ success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart' }}
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           method: chat.postMessage
@@ -161,7 +164,7 @@ jobs:
             }
 
       - name: Send Slack Notification on Failure
-        if: ${{ failure() && github.event.pull_request.head.repo.owner.login == 'rsksmart' }}
+        if: ${{ failure() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart' }}
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           method: chat.postMessage
