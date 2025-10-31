@@ -158,6 +158,21 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getBoolean("miner.client.autoMine");
     }
 
+    public boolean minerClientTimedMine() {
+        return configFromFiles.getBoolean("miner.client.timedMine");
+    }
+
+    public Duration minerClientMedianBlockTime() {
+        return configFromFiles.getDuration("miner.client.medianBlockTime");
+    }
+
+    // Tx Load generator configuration
+    public boolean txLoadEnabled() { return getBoolean("txLoad.enabled", false); }
+    public long txLoadBlockTargetGas() { return getLong("txLoad.blockTargetGas", getTargetGasLimit()); }
+    public long txLoadPrimaryTxGas() { return getLong("txLoad.primaryTxGas", 9_000_000L); }
+    public String txLoadProfile() { return getString("txLoad.profile", "intrinsic"); }
+    public String txLoadSenderSeed() { return getString("txLoad.senderSeed", "txload_default_seed"); }
+
     public boolean isMinerServerEnabled() {
         return configFromFiles.getBoolean("miner.server.enabled");
     }
@@ -172,6 +187,20 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean updateWorkOnNewTransaction() {
         return getBoolean("miner.server.updateWorkOnNewTransaction", false);
+    }
+
+    public boolean minerServerSkipPowValidation() {
+        return getBoolean("miner.server.skipPowValidation", false);
+    }
+
+    public long simulatedWireDelayMillis() {
+        // Value like "100 ms" in HOCON maps to a duration; use getDuration when stored as duration
+        // Fallback to 0 if missing
+        try {
+            return configFromFiles.getDuration("wire.simulatedDelay").toMillis();
+        } catch (Exception e) {
+            return 0L;
+        }
     }
 
     public long minerMinGasPrice() {

@@ -934,7 +934,13 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (minerClient == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            if (rskSystemProperties.minerClientAutoMine()) {
+            if (rskSystemProperties.minerClientTimedMine()) {
+                minerClient = new TimedMinerClient(
+                        getMinerServer(),
+                        rskSystemProperties.minerClientMedianBlockTime(),
+                        rskSystemProperties.minerServerSkipPowValidation()
+                );
+            } else if (rskSystemProperties.minerClientAutoMine()) {
                 minerClient = new AutoMinerClient(getMinerServer(), getRskSystemProperties().getBitcoinjNetworkConstants());
             } else {
                 minerClient = new MinerClientImpl(
@@ -1052,6 +1058,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             }
         }
 
+        // Synthetic tx load generator
+        if (getRskSystemProperties().txLoadEnabled() && getRskSystemProperties().minerClientTimedMine()) {
+            internalServices.add(getTxLoadGeneratorService());
+        }
+
         NodeBlockProcessor nodeBlockProcessor = getNodeBlockProcessor();
         if (nodeBlockProcessor instanceof InternalService) {
             internalServices.add((InternalService) nodeBlockProcessor);
@@ -1079,6 +1090,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         internalServices.add(getExecutionBlockRetriever());
 
         return Collections.unmodifiableList(internalServices);
+    }
+
+    private co.rsk.txload.TxLoadGeneratorService getTxLoadGeneratorService() {
+        return new co.rsk.txload.TxLoadGeneratorService(
+                getRskSystemProperties(),
+                getRsk(),
+                getWallet(),
+                getTransactionPool(),
+                getBlockchain()
+        );
     }
 
     public synchronized GenesisLoader getGenesisLoader() {

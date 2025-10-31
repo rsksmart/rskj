@@ -1,0 +1,7 @@
+#sudo vim /etc/sysconfig/rsk
+
+JAVA_OPTS=-Xms3G -Xmx5G -Dlogback.configurationFile=/etc/rsk/logback.xml -Dkeyvalue.datasource=rocksdb
+-Ddatabase.dir=/var/lib/rsk/database/regtest -Dlogging=DEBUG -Drsk.conf.file=/home/ubuntu/node.conf
+
+RSKJ_CLASS=co.rsk.Start
+RSKJ_OPTS=--regtest
