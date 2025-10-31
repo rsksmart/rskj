@@ -3414,7 +3414,7 @@ class BridgeTest {
 
         private static final RskAddress unionBridgeAddress = unionBridgeMainNetConstants.getAddress();
 
-        private static final RskAddress changeTestnetUnionAddressAuthorizer = new RskAddress("c38c7f0bcdf679dd360dee652d83be7d5b386956");
+        private static final RskAddress changeTestnetUnionAddressAuthorizer = new RskAddress("54fdb399cf235c9b0d464ab4055af9251883bbfe");
 
         private static final RskAddress increaseLockingCapAuthorizer = RskAddress.ZERO_ADDRESS;
         private static final RskAddress setTransferPermissionsAuthorizer = RskAddress.ZERO_ADDRESS;
