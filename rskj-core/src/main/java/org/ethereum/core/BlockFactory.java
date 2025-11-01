@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.core;
 
 import co.rsk.config.MiningConfig;
@@ -39,13 +38,34 @@ import java.util.List;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
-    private static final int RLP_HEADER_SIZE = 19;
-    private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 22;
-
+    public static final int NUMBER_OF_EXTRA_HEADER_FIELDS = 3;
+    private static final int RLP_HEADER_SIZE = 20;
+    private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 23;
     private final ActivationConfig activationConfig;
 
     public BlockFactory(ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
+    }
+
+    private static BigInteger parseBigInteger(byte[] bytes) {
+        return bytes == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(bytes);
+    }
+
+    private static List<Transaction> parseTxs(RLPList txTransactions) {
+        List<Transaction> parsedTxs = new ArrayList<>();
+
+        for (int i = 0; i < txTransactions.size(); i++) {
+            RLPElement transactionRaw = txTransactions.get(i);
+            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
+
+            if (tx.isRemascTransaction(i, txTransactions.size())) {
+                // It is the remasc transaction
+                tx = new RemascTransaction(transactionRaw.getRLPData());
+            }
+            parsedTxs.add(tx);
+        }
+
+        return Collections.unmodifiableList(parsedTxs);
     }
 
     public BlockHeaderBuilder getBlockHeaderBuilder() {
@@ -62,7 +82,7 @@ public class BlockFactory {
 
     private Block decodeBlock(byte[] rawData, boolean sealed) {
         RLPList block = RLP.decodeList(rawData);
-        if (block.size() != 3) {
+        if (block.size() != NUMBER_OF_EXTRA_HEADER_FIELDS) {
             throw new IllegalArgumentException("A block must have 3 exactly items");
         }
 
@@ -77,7 +97,7 @@ public class BlockFactory {
 
         for (int k = 0; k < uncleHeadersRlp.size(); k++) {
             RLPElement element = uncleHeadersRlp.get(k);
-            BlockHeader uncleHeader = decodeHeader((RLPList)element, false, sealed);
+            BlockHeader uncleHeader = decodeHeader((RLPList) element, false, sealed);
             uncleList.add(uncleHeader);
         }
 
@@ -102,7 +122,7 @@ public class BlockFactory {
         byte[] unclesHash = rlpHeader.get(1).getRLPData();
         byte[] coinBaseBytes = rlpHeader.get(2).getRLPData();
         RskAddress coinbase = RLP.parseRskAddress(coinBaseBytes);
-        byte[] stateRoot = rlpHeader.get(3).getRLPData();
+        byte[] stateRoot = rlpHeader.get(NUMBER_OF_EXTRA_HEADER_FIELDS).getRLPData();
         if (stateRoot == null) {
             stateRoot = EMPTY_TRIE_HASH;
         }
@@ -163,10 +183,16 @@ public class BlockFactory {
         }
 
         short[] txExecutionSublistsEdges = null;
+        byte[] baseEvent = null;
 
-        if ((!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) &&
-                (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))) {
-            txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
+        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) {
+            if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
+                txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
+            }
+
+            if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber)) {
+                baseEvent = rlpHeader.get(r++).getRLPRawData();
+            }
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -175,7 +201,7 @@ public class BlockFactory {
         if (rlpHeader.size() > r) {
             bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
             bitcoinMergedMiningMerkleProof = rlpHeader.get(r++).getRLPRawData();
-            bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r++).getRLPData();
+            bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r).getRLPData();
         }
 
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, blockNumber);
@@ -185,7 +211,7 @@ public class BlockFactory {
         return createBlockHeader(compressed, sealed, parentHash, unclesHash,
                 coinBaseBytes, coinbase, stateRoot, txTrieRoot, receiptTrieRoot, extensionData,
                 difficultyBytes, difficulty, glBytes, blockNumber, gasUsed, timestamp, extraData,
-                paidFees, minimumGasPriceBytes, minimumGasPrice, uncleCount, ummRoot, version, txExecutionSublistsEdges,
+                paidFees, minimumGasPriceBytes, minimumGasPrice, uncleCount, ummRoot, baseEvent, version, txExecutionSublistsEdges,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 useRskip92Encoding, includeForkDetectionData);
     }
@@ -193,7 +219,7 @@ public class BlockFactory {
     private BlockHeader createBlockHeader(boolean compressed, boolean sealed, byte[] parentHash, byte[] unclesHash,
                                           byte[] coinBaseBytes, RskAddress coinbase, byte[] stateRoot, byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData,
                                           byte[] difficultyBytes, BlockDifficulty difficulty, byte[] glBytes, long blockNumber, long gasUsed, long timestamp, byte[] extraData,
-                                          Coin paidFees, byte[] minimumGasPriceBytes, Coin minimumGasPrice, int uncleCount, byte[] ummRoot, byte version, short[] txExecutionSublistsEdges,
+                                          Coin paidFees, byte[] minimumGasPriceBytes, Coin minimumGasPrice, int uncleCount, byte[] ummRoot, byte[] baseEvent, byte version, short[] txExecutionSublistsEdges,
                                           byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof, byte[] bitcoinMergedMiningCoinbaseTransaction,
                                           boolean useRskip92Encoding, boolean includeForkDetectionData) {
         if (blockNumber == Genesis.NUMBER) {
@@ -216,6 +242,18 @@ public class BlockFactory {
                     stateRoot);
         }
 
+        if (version == 2) {
+            return new BlockHeaderV2(
+                    parentHash, unclesHash, coinbase, stateRoot,
+                    txTrieRoot, receiptTrieRoot, extensionData, difficulty,
+                    blockNumber, glBytes, gasUsed, timestamp, extraData,
+                    paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                    bitcoinMergedMiningCoinbaseTransaction, new byte[0],
+                    minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
+                    ummRoot, baseEvent, txExecutionSublistsEdges, compressed
+            );
+        }
+
         if (version == 1) {
             return new BlockHeaderV1(
                     parentHash, unclesHash, coinbase, stateRoot,
@@ -235,51 +273,32 @@ public class BlockFactory {
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, new byte[0],
                 minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                ummRoot, txExecutionSublistsEdges
+                ummRoot, baseEvent, txExecutionSublistsEdges
         );
     }
 
     private boolean canBeDecoded(RLPList rlpHeader, long blockNumber, boolean compressed) {
         int preUmmHeaderSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? 0 : 1;
         int preParallelSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 0 : 1;
-        int preRSKIP351SizeAdjustment = getRSKIP351SizeAdjustment(blockNumber, compressed, preParallelSizeAdjustment);
+        int prebaseEventSizeAdjustmentRSKIP535 = activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber) ? 0 : 1;
+        int preRSKIP351SizeAdjustment = getRSKIP351SizeAdjustment(blockNumber, compressed, preParallelSizeAdjustment, prebaseEventSizeAdjustmentRSKIP535);
 
-        int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment;
-        int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment;
+        int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - prebaseEventSizeAdjustmentRSKIP535;
+        int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - prebaseEventSizeAdjustmentRSKIP535;
 
         return rlpHeader.size() == expectedSize || rlpHeader.size() == expectedSizeMM;
     }
 
-    private int getRSKIP351SizeAdjustment(long blockNumber, boolean compressed, int preParallelSizeAdjustment) {
+    private int getRSKIP351SizeAdjustment(long blockNumber, boolean compressed, int preParallelSizeAdjustment,
+                                          int preBaseEventSizeAdjustmentRSKIP535) {
         if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
             return 1; // remove version
         }
 
         if (compressed) {
-            return 2 - preParallelSizeAdjustment; // remove version and edges if existent
+            return NUMBER_OF_EXTRA_HEADER_FIELDS - preParallelSizeAdjustment - preBaseEventSizeAdjustmentRSKIP535; // remove version, edges and baseEvent size if existent
         }
 
         return 0;
-    }
-
-    private static BigInteger parseBigInteger(byte[] bytes) {
-        return bytes == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(bytes);
-    }
-
-    private static List<Transaction> parseTxs(RLPList txTransactions) {
-        List<Transaction> parsedTxs = new ArrayList<>();
-
-        for (int i = 0; i < txTransactions.size(); i++) {
-            RLPElement transactionRaw = txTransactions.get(i);
-            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
-
-            if (tx.isRemascTransaction(i, txTransactions.size())) {
-                // It is the remasc transaction
-                tx = new RemascTransaction(transactionRaw.getRLPData());
-            }
-            parsedTxs.add(tx);
-        }
-
-        return Collections.unmodifiableList(parsedTxs);
     }
 }

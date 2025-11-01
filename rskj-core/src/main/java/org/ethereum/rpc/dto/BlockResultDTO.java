@@ -29,7 +29,11 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.IntStream;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
@@ -63,6 +67,7 @@ public class BlockResultDTO {
     private final String paidFees;
     private final String cumulativeDifficulty;
     private final short[] rskPteEdges;
+    private final String baseEvent;
 
     private BlockResultDTO(
             Long number,
@@ -91,7 +96,8 @@ public class BlockResultDTO {
             byte[] bitcoinMergedMiningMerkleProof,
             byte[] hashForMergedMining,
             Coin paidFees,
-            short[] rskPteEdges) {
+            short[] rskPteEdges,
+            byte[] baseEvent) {
         this.number = number != null ? HexUtils.toQuantityJsonHex(number) : null;
         this.hash = hash != null ? hash.toJsonString() : null;
         this.parentHash = parentHash.toJsonString();
@@ -125,6 +131,7 @@ public class BlockResultDTO {
         this.paidFees = paidFees != null ? HexUtils.toQuantityJsonHex(paidFees.getBytes()) : null;
 
         this.rskPteEdges = copyOfArrayOrNull(rskPteEdges);
+        this.baseEvent = baseEvent != null && baseEvent.length > 0 ? HexUtils.toUnformattedJsonHex(baseEvent) : null;
     }
 
     public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore, boolean skipRemasc, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
@@ -153,9 +160,9 @@ public class BlockResultDTO {
         // Useful for geth integration
         byte[] transactionsRoot = skipRemasc &&
                 b.getTransactionsList().size() == 1 &&
-                b.getTransactionsList().get(0).isRemascTransaction(0,1) ?
-                    EMPTY_TRIE_HASH :
-                    b.getTxTrieRoot();
+                b.getTransactionsList().get(0).isRemascTransaction(0, 1) ?
+                EMPTY_TRIE_HASH :
+                b.getTxTrieRoot();
 
         return new BlockResultDTO(
                 isPending ? null : b.getNumber(),
@@ -184,22 +191,28 @@ public class BlockResultDTO {
                 b.getBitcoinMergedMiningMerkleProof(),
                 b.getHashForMergedMining(),
                 b.getFeesPaidToMiner(),
-                b.getHeader().getTxExecutionSublistsEdges()
+                b.getHeader().getTxExecutionSublistsEdges(),
+                b.getHeader().getBaseEvent()
         );
     }
 
     private static Object toTransactionResult(int transactionIndex, Block block, boolean fullTx, boolean skipRemasc, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
         Transaction transaction = block.getTransactionsList().get(transactionIndex);
 
-        if(skipRemasc && transaction.isRemascTransaction(transactionIndex, block.getTransactionsList().size())) {
+        if (skipRemasc && transaction.isRemascTransaction(transactionIndex, block.getTransactionsList().size())) {
             return null;
         }
-        
-        if(fullTx) {
+
+        if (fullTx) {
             return new TransactionResultDTO(block, transactionIndex, transaction, zeroSignatureIfRemasc, signatureCache);
         }
 
         return transaction.getHash().toJsonString();
+    }
+
+    @Nullable
+    private static short[] copyOfArrayOrNull(short[] array) {
+        return array != null ? Arrays.copyOf(array, array.length) : null;
     }
 
     public String getNumber() {
@@ -254,7 +267,9 @@ public class BlockResultDTO {
         return totalDifficulty;
     }
 
-    public String getCumulativeDifficulty() { return cumulativeDifficulty; }
+    public String getCumulativeDifficulty() {
+        return cumulativeDifficulty;
+    }
 
     public String getExtraData() {
         return extraData;
@@ -280,7 +295,9 @@ public class BlockResultDTO {
         return Collections.unmodifiableList(transactions);
     }
 
-    public List<String> getUncles() { return Collections.unmodifiableList(uncles); }
+    public List<String> getUncles() {
+        return Collections.unmodifiableList(uncles);
+    }
 
     public String getMinimumGasPrice() {
         return minimumGasPrice;
@@ -310,8 +327,7 @@ public class BlockResultDTO {
         return copyOfArrayOrNull(rskPteEdges);
     }
 
-    @Nullable
-    private static short[] copyOfArrayOrNull(short[] array) {
-        return array != null ? Arrays.copyOf(array, array.length) : null;
+    public String getBaseEvent() {
+        return baseEvent;
     }
 }
