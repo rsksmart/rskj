@@ -24,6 +24,9 @@ import org.ethereum.util.RLPList;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
 
@@ -58,22 +61,18 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
         return 0x2;
     }
 
-    public byte[] getBridgeEvent() {
+    public byte[] getBaseEvent() {
         return baseEvent != null ? Arrays.copyOf(baseEvent, baseEvent.length) : null;
     }
 
-    public void setBridgeEvent(byte[] baseEvent) {
+    public void setBaseEvent(byte[] baseEvent) {
         this.baseEvent = baseEvent != null ? Arrays.copyOf(baseEvent, baseEvent.length) : null;
     }
 
     @Override
     protected void addElementsEncoded(List<byte[]> fieldToEncodeList) {
-        byte[] internalBridgeEvent = this.getBridgeEvent();
-        if (internalBridgeEvent != null) {
-            fieldToEncodeList.add(RLP.encodeElement(internalBridgeEvent));
-        } else {
-            fieldToEncodeList.add(RLP.encodeElement(new byte[0]));
-        }
+        byte[] internalBridgeEvent = this.getBaseEvent();
+        fieldToEncodeList.add(RLP.encodeElement(Objects.requireNonNullElseGet(internalBridgeEvent, () -> EMPTY_BYTE_ARRAY)));
         super.addElementsEncoded(fieldToEncodeList);
     }
 }

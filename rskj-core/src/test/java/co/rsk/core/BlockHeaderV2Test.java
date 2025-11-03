@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.core;
 
 import org.ethereum.TestUtils;
@@ -293,7 +292,7 @@ class BlockHeaderV2Test {
         byte[] expectedBaseEvent = new byte[]{0x01, 0x02, 0x03, 0x04, 0x05};
 
         // when
-        header.getExtension().setBridgeEvent(expectedBaseEvent);
+        header.getExtension().setBaseEvent(expectedBaseEvent);
         byte[] result = header.getBaseEvent();
 
         // then

@@ -74,7 +74,7 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
 
     @Override
     public byte[] getBaseEvent() {
-        return this.getExtension().getBridgeEvent();
+        return this.getExtension().getBaseEvent();
     }
 
     @Override
@@ -89,7 +89,7 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
         }
         this.hash = null;
 
-        this.getExtension().setBridgeEvent(baseEvent);
+        this.getExtension().setBaseEvent(baseEvent);
         this.updateExtensionData();
     }
 

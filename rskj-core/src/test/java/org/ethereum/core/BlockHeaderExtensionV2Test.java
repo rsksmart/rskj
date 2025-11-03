@@ -41,7 +41,7 @@ class BlockHeaderExtensionV2Test {
 
         assertArrayEquals(logsBloom, ext.getLogsBloom());
         assertArrayEquals(edges, ext.getTxExecutionSublistsEdges());
-        assertArrayEquals(baseEvent, ext.getBridgeEvent());
+        assertArrayEquals(baseEvent, ext.getBaseEvent());
         assertEquals(0x2, ext.getVersion());
     }
 
@@ -49,21 +49,21 @@ class BlockHeaderExtensionV2Test {
     void setBaseEventCopiesArray() {
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, null, null);
         byte[] hash = new byte[]{0x0A, 0x0B};
-        ext.setBridgeEvent(hash);
+        ext.setBaseEvent(hash);
 
-        assertArrayEquals(hash, ext.getBridgeEvent());
+        assertArrayEquals(hash, ext.getBaseEvent());
         // Mutate original array to check for defensive copy
         hash[0] = 0x00;
-        assertNotEquals(hash[0], ext.getBridgeEvent()[0]);
+        assertNotEquals(hash[0], ext.getBaseEvent()[0]);
     }
 
     @Test
     void getBaseEventReturnsCopy() {
         byte[] hash = new byte[]{0x0A, 0x0B};
         BlockHeaderExtensionV2 ext = new BlockHeaderExtensionV2(null, null, hash);
-        byte[] returned = ext.getBridgeEvent();
+        byte[] returned = ext.getBaseEvent();
         returned[0] = 0x00;
-        assertNotEquals(returned[0], ext.getBridgeEvent()[0]);
+        assertNotEquals(returned[0], ext.getBaseEvent()[0]);
     }
 
     @Test
@@ -80,7 +80,7 @@ class BlockHeaderExtensionV2Test {
 
         assertArrayEquals(logsBloom, decoded.getLogsBloom());
         assertArrayEquals(edges, decoded.getTxExecutionSublistsEdges());
-        assertArrayEquals(superChainDataHash, decoded.getBridgeEvent());
+        assertArrayEquals(superChainDataHash, decoded.getBaseEvent());
     }
 
     @Test
@@ -91,7 +91,7 @@ class BlockHeaderExtensionV2Test {
 
         assertNull(decoded.getLogsBloom());
         assertNull(decoded.getTxExecutionSublistsEdges());
-        assertNull(decoded.getBridgeEvent());
+        assertNull(decoded.getBaseEvent());
     }
 
     @Test
@@ -109,7 +109,7 @@ class BlockHeaderExtensionV2Test {
 
         assertArrayEquals(logsBloom, decoded.getLogsBloom());
         assertNull(decoded.getTxExecutionSublistsEdges());
-        assertNull(decoded.getBridgeEvent());
+        assertNull(decoded.getBaseEvent());
     }
 
     @Test
@@ -123,7 +123,7 @@ class BlockHeaderExtensionV2Test {
 
         assertArrayEquals(logsBloom, decoded.getLogsBloom());
         assertArrayEquals(edges, decoded.getTxExecutionSublistsEdges());
-        assertNull(decoded.getBridgeEvent());
+        assertNull(decoded.getBaseEvent());
     }
 
     @Test
@@ -136,7 +136,7 @@ class BlockHeaderExtensionV2Test {
         BlockHeaderExtensionV2 decoded = BlockHeaderExtensionV2.fromEncoded(encoded);
 
         assertArrayEquals(logsBloom, decoded.getLogsBloom());
-        assertArrayEquals(baseEvent, decoded.getBridgeEvent());
+        assertArrayEquals(baseEvent, decoded.getBaseEvent());
         assertNull(decoded.getTxExecutionSublistsEdges());
     }
 
@@ -152,7 +152,7 @@ class BlockHeaderExtensionV2Test {
 
         assertArrayEquals(logsBloom, decoded.getLogsBloom());
         assertArrayEquals(edges, decoded.getTxExecutionSublistsEdges());
-        assertNull(decoded.getBridgeEvent());
+        assertNull(decoded.getBaseEvent());
     }
 
     @Test
@@ -162,57 +162,57 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
-    void testSetBridgeEventWithNull() {
+    void testSetBaseEventWithNull() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
-        extension.setBridgeEvent(null);
-        assertNull(extension.getBridgeEvent());
+        extension.setBaseEvent(null);
+        assertNull(extension.getBaseEvent());
     }
 
     @Test
-    void testSetBridgeEventWithEmptyArray() {
+    void testSetBaseEventWithEmptyArray() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
         byte[] emptyArray = new byte[0];
-        extension.setBridgeEvent(emptyArray);
-        assertArrayEquals(emptyArray, extension.getBridgeEvent());
+        extension.setBaseEvent(emptyArray);
+        assertArrayEquals(emptyArray, extension.getBaseEvent());
     }
 
     @Test
-    void testSetBridgeEventWithLargeValue() {
+    void testSetBaseEventWithLargeValue() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
         byte[] largeValue = new byte[1024];
         for (int i = 0; i < 1024; i++) {
             largeValue[i] = (byte) (i % 256);
         }
-        extension.setBridgeEvent(largeValue);
-        assertArrayEquals(largeValue, extension.getBridgeEvent());
+        extension.setBaseEvent(largeValue);
+        assertArrayEquals(largeValue, extension.getBaseEvent());
     }
 
     @Test
-    void testSetBridgeEventWithSpecialBytes() {
+    void testSetBaseEventWithSpecialBytes() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
         byte[] specialBytes = new byte[]{0x00, (byte) 0xFF, (byte) 0x80, (byte) 0x7F};
-        extension.setBridgeEvent(specialBytes);
-        assertArrayEquals(specialBytes, extension.getBridgeEvent());
+        extension.setBaseEvent(specialBytes);
+        assertArrayEquals(specialBytes, extension.getBaseEvent());
     }
 
     @Test
-    void testSetBridgeEventMultipleTimes() {
+    void testSetBaseEventMultipleTimes() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
 
         byte[] firstValue = new byte[]{1, 2, 3};
-        extension.setBridgeEvent(firstValue);
-        assertArrayEquals(firstValue, extension.getBridgeEvent());
+        extension.setBaseEvent(firstValue);
+        assertArrayEquals(firstValue, extension.getBaseEvent());
 
         byte[] secondValue = new byte[]{4, 5, 6, 7, 8};
-        extension.setBridgeEvent(secondValue);
-        assertArrayEquals(secondValue, extension.getBridgeEvent());
+        extension.setBaseEvent(secondValue);
+        assertArrayEquals(secondValue, extension.getBaseEvent());
     }
 
     @Test
-    void testGetBridgeEventReturnsCorrectValue() {
+    void testGetBaseEventReturnsCorrectValue() {
         byte[] expectedBridgeEvent = new byte[]{(byte) 0xAA, (byte) 0xBB, (byte) 0xCC, (byte) 0xDD};
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], expectedBridgeEvent);
-        assertArrayEquals(expectedBridgeEvent, extension.getBridgeEvent());
+        assertArrayEquals(expectedBridgeEvent, extension.getBaseEvent());
     }
 
     @Test
@@ -225,14 +225,14 @@ class BlockHeaderExtensionV2Test {
         BlockHeaderExtensionV2 decoded = BlockHeaderExtensionV2.fromEncoded(encoded);
 
         // Verify bridge event is preserved
-        assertArrayEquals(originalBridgeEvent, decoded.getBridgeEvent());
+        assertArrayEquals(originalBridgeEvent, decoded.getBaseEvent());
     }
 
     @Test
     void testBridgeEventWithZeroBytes() {
         byte[] zeroBytes = new byte[32];
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], zeroBytes);
-        assertArrayEquals(zeroBytes, extension.getBridgeEvent());
+        assertArrayEquals(zeroBytes, extension.getBaseEvent());
     }
 
     @Test
@@ -242,7 +242,7 @@ class BlockHeaderExtensionV2Test {
             onesBytes[i] = (byte) 0xFF;
         }
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], onesBytes);
-        assertArrayEquals(onesBytes, extension.getBridgeEvent());
+        assertArrayEquals(onesBytes, extension.getBaseEvent());
     }
 
     @Test
@@ -253,6 +253,6 @@ class BlockHeaderExtensionV2Test {
             maxSizeValue[i] = (byte) (i % 256);
         }
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], maxSizeValue);
-        assertArrayEquals(maxSizeValue, extension.getBridgeEvent());
+        assertArrayEquals(maxSizeValue, extension.getBaseEvent());
     }
 }
