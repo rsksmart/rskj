@@ -59,11 +59,13 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
     private final Constants constants;
     private final ActivationConfig activationConfig;
     private boolean fallbackMiningEnabled = true;
+    private final boolean skipPowValidation;
 
     public ProofOfWorkRule(RskSystemProperties config) {
         this.activationConfig = config.getActivationConfig();
         this.constants = config.getNetworkConstants();
         this.bridgeConstants = constants.getBridgeConstants();
+        this.skipPowValidation = config.minerServerSkipPowValidation();
     }
 
     @VisibleForTesting
@@ -114,6 +116,10 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
 
     @Override
     public boolean isValid(BlockHeader header) {
+        if (skipPowValidation) {
+            logger.trace("Skipping PoW validation by configuration for header {}", header.getPrintableHash());
+            return true;
+        }
         // TODO: refactor this an move it to another class. Change the Global ProofOfWorkRule to AuthenticationRule.
         // TODO: Make ProofOfWorkRule one of the classes that inherits from AuthenticationRule.
         if (isFallbackMiningPossibleAndBlockSigned(header)) {
