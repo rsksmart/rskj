@@ -18,6 +18,7 @@
  */
 package org.ethereum.vm.program;
 
+import co.rsk.core.types.bytes.BytesSlice;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.CallCreate;
@@ -194,7 +195,7 @@ public class ProgramResult {
         return callCreateList;
     }
 
-    public void addCallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value) {
+    public void addCallCreate(BytesSlice data, byte[] destination, long gasLimit, byte[] value) {
         getCallCreateList().add(new CallCreate(data, destination, gasLimit, value));
     }
 

@@ -21,6 +21,8 @@
 
 package org.ethereum.crypto.cryptohash;
 
+import co.rsk.core.types.bytes.BytesSlice;
+
 /**
  * <p>This interface documents the API for a hash function. This
  * interface somewhat mimics the standard {@code
@@ -88,7 +90,7 @@ public interface Digest {
 	 *
 	 * @param inbuf   the data bytes
 	 */
-	public void update(byte[] inbuf);
+	public void update(BytesSlice inbuf);
 
 	/**
 	 * Insert some more bytes.
@@ -97,7 +99,7 @@ public interface Digest {
 	 * @param off     the data offset in {@code inbuf}
 	 * @param len     the data length (in bytes)
 	 */
-	public void update(byte[] inbuf, int off, int len);
+	public void update(BytesSlice inbuf, int off, int len);
 
 	/**
 	 * Finalize the current hash computation and return the hash value

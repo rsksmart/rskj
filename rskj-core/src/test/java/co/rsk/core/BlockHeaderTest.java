@@ -371,7 +371,7 @@ class BlockHeaderTest {
                 header.getHash();
             }
 
-            hashUtilMocked.verify(() -> HashUtil.keccak256(ArgumentMatchers.any()));
+            hashUtilMocked.verify(() -> HashUtil.keccak256((byte[]) ArgumentMatchers.any()));
         }
     }
 

@@ -6,7 +6,7 @@ on:
       - "master"
       - "*-rc"
   pull_request:
-    types: [opened, reopened, synchronize]
+    types: [ opened, reopened, synchronize ]
     branches:
       - "**"
 
@@ -216,12 +216,12 @@ jobs:
           java -Drsk.conf.file=./rsk-integration-test.conf -cp ../rskj-core/build/libs/rskj-core-"$version"-all.jar co.rsk.Start --regtest & rskpid=$!
 
           tries=0
-          MAX_TRIES=10
+          MAX_TRIES=20
           while [ $tries -lt $MAX_TRIES ]; do
             nc -z 127.0.0.1 4444 && break
             echo "Waiting for RskJ..."
             tries=$((tries+1))
-            sleep 1
+            sleep 5
           done
 
           if [ $tries -eq $MAX_TRIES ]; then
