@@ -18,6 +18,8 @@
 
 package co.rsk.core.types.bytes;
 
+import org.ethereum.util.ByteUtil;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -62,9 +64,41 @@ public interface HexPrintableBytes extends PrintableBytes {
         return toPrintableString(SIMPLE_JSON_HEX_FORMATTER);
     }
 
-    String toHexString(int off, int length);
+    default String toHexString(int off, int length) {
+        return toHexStringV2(off, length);
+    }
 
-    String toHexString();
+    default String toHexString() {
+        return toHexString(0, length());
+    }
+
+    /**
+     * This is a bit optimized version of {@link ByteUtil#toHexString(byte[], int, int)},
+     * which does not use a third-party library.
+     *
+     * @param offset the start index of the bytes to be converted to hexadecimal.
+     *               It must be non-negative and less than the length of the bytes.
+     *               Otherwise, an {@link IndexOutOfBoundsException} will be thrown.
+     * @param length the number of bytes to be converted to hexadecimal.
+     *               It must be non-negative and less than the length of the bytes.
+     *               Otherwise, an {@link IndexOutOfBoundsException} will be thrown.
+     *
+     * @return the hexadecimal representation of the bytes in the range of {@code offset} and {@code length}.
+     */
+    default String toHexStringV2(int offset, int length) {
+        if (offset < 0 || length < 0 || Long.sum(offset, length) > length()) {
+            throw new IndexOutOfBoundsException("invalid 'offset' and/or 'length': " + offset + "; " + length);
+        }
+
+        int endIndex = offset + length;
+        StringBuilder sb = new StringBuilder(length * 2);
+        for (int i = offset; i < endIndex; i++) {
+            byte b = byteAt(i);
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+            sb.append(Character.forDigit((b & 0xF), 16));
+        }
+        return sb.toString();
+    }
 }
 
 class PrintableBytesHexFormatter implements PrintableBytes.Formatter<HexPrintableBytes> {
@@ -72,7 +106,7 @@ class PrintableBytesHexFormatter implements PrintableBytes.Formatter<HexPrintabl
     @Override
     public String toFormattedString(@Nonnull HexPrintableBytes printableBytes, int off, int length) {
         int bytesLen = Objects.requireNonNull(printableBytes).length();
-        if (off + length > bytesLen) {
+        if (off < 0 || length < 0 || Long.sum(off, length) > bytesLen) {
             throw new IndexOutOfBoundsException("invalid 'off' and/or 'length': " + off + "; " + length);
         }
 

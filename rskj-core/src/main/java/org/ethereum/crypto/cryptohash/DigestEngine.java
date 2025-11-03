@@ -21,6 +21,9 @@
 
 package org.ethereum.crypto.cryptohash;
 
+import co.rsk.core.types.bytes.Bytes;
+import co.rsk.core.types.bytes.BytesSlice;
+
 /**
  * <p>This class is a template which can be used to implement hash
  * functions. It takes care of some of the API, and also provides an
@@ -141,7 +144,8 @@ public abstract class DigestEngine implements Digest {
 	/** @see org.ethereum.crypto.cryptohash.Digest */
 	public byte[] digest(byte[] input)
 	{
-		update(input, 0, input.length);
+		BytesSlice bytesSlice = Bytes.of(input);
+		update(bytesSlice, 0, bytesSlice.length());
 		return digest();
 	}
 
@@ -181,21 +185,20 @@ public abstract class DigestEngine implements Digest {
 	}
 
 	/** @see org.ethereum.crypto.cryptohash.Digest */
-	public void update(byte[] input)
+	public void update(BytesSlice input)
 	{
-		update(input, 0, input.length);
+		update(input, 0, input.length());
 	}
 
 	/** @see org.ethereum.crypto.cryptohash.Digest */
-	public void update(byte[] input, int offset, int len)
+	public void update(BytesSlice input, int offset, int len)
 	{
 		while (len > 0) {
 			int copyLen = blockLen - inputLen;
 			if (copyLen > len) {
                 copyLen = len;
             }
-			System.arraycopy(input, offset, inputBuf, inputLen,
-				copyLen);
+			input.arraycopy(offset, inputBuf, inputLen, copyLen);
 			offset += copyLen;
 			inputLen += copyLen;
 			len -= copyLen;

@@ -21,6 +21,7 @@ package org.ethereum.vm.program.invoke;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.bytes.Bytes;
+import co.rsk.core.types.bytes.BytesSlice;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.SignatureCache;
@@ -138,7 +139,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
         byte[] minGasPrice = minimumGasPrice != null ? minimumGasPrice.getBytes() : ByteUtil.EMPTY_BYTE_ARRAY;
 
-        return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), txGasPrice.getBytes(), gas, callValue.getBytes(), data,
+        return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), txGasPrice.getBytes(), gas, callValue.getBytes(), Bytes.of(data),
                 lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit, minGasPrice,
                 repository, blockStore);
     }
@@ -150,7 +151,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
     public ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
                                              DataWord inValue,
                                              long inGas,
-                                             Coin balanceInt, byte[] dataIn,
+                                             Coin balanceInt, BytesSlice dataIn,
                                              Repository repository, BlockStore blockStore,
                                              boolean isStaticCall, boolean byTestingSuite) {
 
@@ -163,7 +164,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         long agas = inGas;
         DataWord callValue = inValue;
 
-        byte[] data = dataIn;
+        BytesSlice data = dataIn;
         DataWord lastHash = program.getPrevHash();
         DataWord coinbase = program.getCoinbase();
         DataWord timestamp = program.getTimestamp();
@@ -198,7 +199,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     txGasPrice.longValue(),
                     agas,
                     Bytes.of(callValue.getNoLeadZeroesData()),
-                    data == null ? "" : ByteUtil.toHexString(data),
+                    data == null ? "" : data.toHexString(),
                     Bytes.of(lastHash.getData()),
                     Bytes.of(coinbase.getLast20Bytes()),
                     timestamp.longValue(),

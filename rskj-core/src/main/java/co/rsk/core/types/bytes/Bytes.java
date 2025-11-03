@@ -23,7 +23,6 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 
 /**
@@ -166,16 +165,6 @@ class BytesImpl implements Bytes {
     @Override
     public void arraycopy(int srcPos, byte[] dest, int destPos, int length) {
         System.arraycopy(byteArray, srcPos, dest, destPos, length);
-    }
-
-    @Override
-    public String toHexString() {
-        return ByteUtil.toHexString(byteArray);
-    }
-
-    @Override
-    public String toHexString(int off, int length) {
-        return ByteUtil.toHexString(byteArray, off, length);
     }
 
     @Nonnull
