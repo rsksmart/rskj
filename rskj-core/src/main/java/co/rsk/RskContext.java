@@ -1905,7 +1905,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             difficultyCalculator = new DifficultyCalculator(
                     rskSystemProperties.getActivationConfig(),
-                    rskSystemProperties.getNetworkConstants()
+                    rskSystemProperties.getNetworkConstants(),
+                    rskSystemProperties.isDifficultyMetricsEnabled()
             );
         }
 

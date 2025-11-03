@@ -26,14 +26,23 @@ import org.ethereum.core.BlockHeader;
 import java.math.BigInteger;
 
 import static org.ethereum.util.BIUtil.max;
+import co.rsk.metrics.DifficultyMetricsRecorder;
 
 public class DifficultyCalculator {
     private final ActivationConfig activationConfig;
     private final Constants constants;
+    private final boolean isDifficultyMetricsEnabled;
 
     public DifficultyCalculator(ActivationConfig activationConfig, Constants constants) {
         this.activationConfig = activationConfig;
         this.constants = constants;
+        this.isDifficultyMetricsEnabled = false;
+    }
+
+    public DifficultyCalculator(ActivationConfig activationConfig, Constants constants, boolean isDifficultyMetricsEnabled) {
+        this.activationConfig = activationConfig;
+        this.constants = constants;
+        this.isDifficultyMetricsEnabled = isDifficultyMetricsEnabled;
     }
 
     public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
@@ -45,7 +54,11 @@ public class DifficultyCalculator {
             }
         }
 
-        return getBlockDifficulty(header, parentHeader);
+        BlockDifficulty blockDifficulty = getBlockDifficulty(header, parentHeader);
+        if (isDifficultyMetricsEnabled) {
+            DifficultyMetricsRecorder.getInstance().addBlock(header, blockDifficulty, parentHeader.getDifficulty());
+        }
+        return blockDifficulty;
     }
 
     private BlockDifficulty getBlockDifficulty(
