@@ -129,8 +129,7 @@ public class BlockExecutorTest {
     public static Account createAccount(String seed) {
         byte[] privateKeyBytes = HashUtil.keccak256(seed.getBytes());
         ECKey key = ECKey.fromPrivate(privateKeyBytes);
-        Account account = new Account(key);
-        return account;
+        return new Account(key);
     }
 
     private static Transaction createStrangeTransaction(
