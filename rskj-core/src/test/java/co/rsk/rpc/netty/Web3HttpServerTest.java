@@ -859,7 +859,6 @@ class Web3HttpServerTest {
     private class SmokeTestBuilder {
         private final List<ModuleDescription> modules = Collections.singletonList(
                 new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
-        private final Function<Config, Config> decorator = null;
         private final String mockResult = MOCK_RESULT;
         private final String method = WEB3_SHA3_METHOD;
         private final int maxBatchSize = 5;
