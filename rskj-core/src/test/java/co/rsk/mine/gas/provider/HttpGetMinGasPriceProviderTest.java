@@ -29,8 +29,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
@@ -75,9 +75,9 @@ class HttpGetMinGasPriceProviderTest {
 
         // when
         // First call should fetch and cache the value
-        provider.getMinGasPrice();
-        // Second call should use the cached value
         provider.getMinGasPrice(true);
+        // Second call should use the cached value
+        provider.getMinGasPrice();
 
         // then
         verify(httpClient, times(1)).doGet(anyString());
@@ -138,6 +138,8 @@ class HttpGetMinGasPriceProviderTest {
         when(config.getHttpGetConfig()).thenReturn(webConfig);
         when(config.getMinStableGasPrice()).thenReturn(4265280000000L);
         when(config.getRefreshRate()).thenReturn(Duration.ofSeconds(30));
+        when(config.getMinValidPrice()).thenReturn(1000L);
+        when(config.getMaxValidPrice()).thenReturn(100000L);
         return config;
     }
 
