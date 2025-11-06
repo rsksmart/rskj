@@ -163,12 +163,24 @@ public class PrecompiledContracts {
     private final RemascConfig remascConfig;
 
     public PrecompiledContracts(RskSystemProperties config,
-            BridgeSupportFactory bridgeSupportFactory,
-            SignatureCache signatureCache) {
+                                BridgeSupportFactory bridgeSupportFactory,
+                                SignatureCache signatureCache) {
         this.config = config;
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.signatureCache = signatureCache;
         this.remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
+    }
+
+    protected RskSystemProperties getConfig() {
+        return config;
+    }
+
+    protected BridgeSupportFactory getBridgeSupportFactory() {
+        return bridgeSupportFactory;
+    }
+
+    protected SignatureCache getSignatureCache() {
+        return signatureCache;
     }
 
     public boolean precompiledContactExists(RskAddress address) {
@@ -269,7 +281,7 @@ public class PrecompiledContracts {
          */
         @Deprecated
         public final void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore,
-                ReceiptStore receiptStore, List<LogInfo> logs) {
+                               ReceiptStore receiptStore, List<LogInfo> logs) {
             PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
                     .transaction(tx)
                     .executionBlock(executionBlock)

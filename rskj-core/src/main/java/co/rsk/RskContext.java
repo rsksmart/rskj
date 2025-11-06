@@ -527,7 +527,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (stateOverrideApplier == null) {
-            stateOverrideApplier = new DefaultStateOverrideApplier();
+            stateOverrideApplier = new DefaultStateOverrideApplier(getRskSystemProperties().getActivationConfig(), getPrecompiledContracts());
         }
 
         return stateOverrideApplier;
@@ -593,7 +593,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (reversibleTransactionExecutor == null) {
             reversibleTransactionExecutor = new ReversibleTransactionExecutor(
                     getRepositoryLocator(),
-                    getTransactionExecutorFactory()
+                    getTransactionExecutorFactory(),
+                    getPrecompiledContracts()
             );
         }
 
@@ -860,7 +861,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockExecutor(),
                     getExecutionBlockRetriever(),
                     getBlockTxSignatureCache(),
-                    getRskSystemProperties()
+                    rskSystemProperties
             );
         }
 
