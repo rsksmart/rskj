@@ -3416,8 +3416,8 @@ class BridgeTest {
 
         private static final RskAddress changeTestnetUnionAddressAuthorizer = new RskAddress("54fdb399cf235c9b0d464ab4055af9251883bbfe");
 
-        private static final RskAddress increaseLockingCapAuthorizer = RskAddress.ZERO_ADDRESS;
-        private static final RskAddress setTransferPermissionsAuthorizer = RskAddress.ZERO_ADDRESS;
+        private static final RskAddress increaseLockingCapAuthorizer = new RskAddress("1a8109af0f019ED3045Fbcdf45E5e90d6b6AAfaF");
+        private static final RskAddress setTransferPermissionsAuthorizer = new RskAddress("8db1F83E8119E4Dce5bC708ec2f4390FFd910B19");
 
         private static final RskAddress unauthorizedCaller = new RskAddress("0000000000000000000000000000000000000001");
         private static final byte[] superEvent = new byte []{(byte) 0x123456};
