@@ -168,7 +168,7 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 new PrecompiledContracts(config, null, null),
                 true,
-                new DefaultStateOverrideApplier());
+                new DefaultStateOverrideApplier(config.getActivationConfig(), new PrecompiledContracts(config, null, null)));
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
 
@@ -203,7 +203,7 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 new PrecompiledContracts(config, null, null),
                 false,
-                new DefaultStateOverrideApplier());
+                new DefaultStateOverrideApplier(config.getActivationConfig(), new PrecompiledContracts(config, null, null)));
 
         // When
         RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
@@ -248,6 +248,7 @@ class EthModuleTest {
         PrecompiledContracts precompiledContractsMock = mock(PrecompiledContracts.class);
         when(precompiledContractsMock.getContractForAddress(forBlockMock, addressInDataWordForm)).thenReturn(precompiledContractMock);
 
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
@@ -265,8 +266,7 @@ class EthModuleTest {
                 activationConfigMock,
                 precompiledContractsMock,
                 true,
-                new DefaultStateOverrideApplier());
-
+                new DefaultStateOverrideApplier(config.getActivationConfig(), new PrecompiledContracts(config, null, null)));
         // When
         RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
             eth.call(callArgumentsParam, blockIdentifierParam, accountOverrideList);
@@ -323,7 +323,7 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 new PrecompiledContracts(config, null, null),
                 true,
-                new DefaultStateOverrideApplier());
+                new DefaultStateOverrideApplier(config.getActivationConfig(), new PrecompiledContracts(config, null, null)));
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
 
