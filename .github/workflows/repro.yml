@@ -5,9 +5,9 @@ on:
     branches:
       - "master"
     tags:
-      - "*-rc"
+      - "*"
   pull_request:
-    types: [opened]
+    types: [ opened, reopened, synchronize ]
     branches:
       - "master"
 
