@@ -264,6 +264,19 @@ public class SyncProcessor implements SyncEventsHandler {
         }
     }
 
+    public void processStateChunkResponse(Peer peer, SnapStateChunkV2ResponseMessage responseMessage) {
+        peersInformation.getOrRegisterPeer(peer);
+
+        long messageId = responseMessage.getId();
+        MessageType messageType = responseMessage.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
+            syncState.onSnapStateChunk(peer, responseMessage);
+        } else {
+            notifyUnexpectedMessageToPeerScoring(peer, "snap state chunk");
+        }
+    }
+
     @Override
     public void sendSkeletonRequest(Peer peer, long height) {
         logger.debug("Send skeleton request to node {} height {}", peer.getPeerNodeID(), height);
@@ -318,7 +331,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @Override
     public void startSnapCapablePeerSelection() {
-        logger.info("Start peer selection");
+        logger.info("Start snap peer selection");
         setSyncState(new SnapCapablePeerSelectionSyncState(this, syncConfiguration, peersInformation, blockHeaderValidationRule, difficultyRule));
     }
 

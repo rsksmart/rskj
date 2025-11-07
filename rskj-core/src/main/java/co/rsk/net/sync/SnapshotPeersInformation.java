@@ -19,6 +19,7 @@ package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
+import co.rsk.scoring.EventType;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,4 +37,5 @@ public interface SnapshotPeersInformation {
     Optional<Peer> getBestPeer(Set<NodeID> exclude);
     Optional<Peer> getBestSnapPeer(Set<NodeID> exclude);
     SyncPeerStatus getOrRegisterPeer(Peer peer);
+    void processSyncingError(Peer peer, EventType eventType, String message, Object... arguments);
 }

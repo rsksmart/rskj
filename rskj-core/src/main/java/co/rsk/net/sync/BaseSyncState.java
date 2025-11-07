@@ -18,10 +18,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.Peer;
-import co.rsk.net.messages.BodyResponseMessage;
-import co.rsk.net.messages.SnapBlocksResponseMessage;
-import co.rsk.net.messages.SnapStateChunkResponseMessage;
-import co.rsk.net.messages.SnapStatusResponseMessage;
+import co.rsk.net.messages.*;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
@@ -79,6 +76,9 @@ public abstract class BaseSyncState implements SyncState {
 
     @Override
     public void onSnapStateChunk(Peer peer, SnapStateChunkResponseMessage responseMessage) { /* empty */ }
+
+    @Override
+    public void onSnapStateChunk(Peer peer, SnapStateChunkV2ResponseMessage responseMessage) { /* empty */ }
 
     @Override
     public void onEnter() { /* empty */ }

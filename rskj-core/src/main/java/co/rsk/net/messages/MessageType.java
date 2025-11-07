@@ -294,6 +294,18 @@ public enum MessageType {
             return SnapBlocksResponseMessage.decodeMessage(blockFactory, list);
         }
     },
+    SNAP_STATE_CHUNK_V2_REQUEST_MESSAGE(26) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapStateChunkV2RequestMessage.decodeMessage(list);
+        }
+    },
+    SNAP_STATE_CHUNK_V2_RESPONSE_MESSAGE(27) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapStateChunkV2ResponseMessage.decodeMessage(list);
+        }
+    },
     ;
 
     private final int type;

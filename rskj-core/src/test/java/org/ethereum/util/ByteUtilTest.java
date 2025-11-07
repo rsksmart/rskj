@@ -519,4 +519,61 @@ class ByteUtilTest {
         short[] shorts = new short[]{ 1, 2, 3, 5, 8, 13 };
         Assertions.assertArrayEquals(shorts, ByteUtil.rlpToShorts(RLP.decode2(ByteUtil.shortsToRLP(shorts)).get(0).getRLPData()));
     }
+
+    @Test
+    void testCheckMaxArrayLength_ValidArray() {
+        byte[] array = new byte[]{1, 2, 3};
+        
+        // Should not throw any exception when within or equal to limit
+        Assertions.assertDoesNotThrow(() -> ByteUtil.checkMaxArrayLength(array, 5));
+        Assertions.assertDoesNotThrow(() -> ByteUtil.checkMaxArrayLength(array, 3));
+        
+        // Empty array should always pass
+        byte[] emptyArray = new byte[0];
+        Assertions.assertDoesNotThrow(() -> ByteUtil.checkMaxArrayLength(emptyArray, 0));
+        Assertions.assertDoesNotThrow(() -> ByteUtil.checkMaxArrayLength(emptyArray, 10));
+    }
+
+    @Test
+    void testCheckMaxArrayLength_ArrayExceedsLimit() {
+        byte[] array = new byte[]{1, 2, 3, 4, 5};
+        
+        IllegalArgumentException exception = Assertions.assertThrows(
+            IllegalArgumentException.class, 
+            () -> ByteUtil.checkMaxArrayLength(array, 3)
+        );
+        
+        Assertions.assertEquals(
+            "Byte array length 5 exceeds maximum allowed length 3", 
+            exception.getMessage()
+        );
+    }
+
+    @Test
+    void testCheckMaxArrayLength_NullArray() {
+        Assertions.assertThrows(
+            NullPointerException.class, 
+            () -> ByteUtil.checkMaxArrayLength(null, 5)
+        );
+    }
+
+    @Test
+    void testCheckMaxArrayLength_ZeroMaxLength() {
+        byte[] emptyArray = new byte[0];
+        byte[] nonEmptyArray = new byte[]{1};
+        
+        // Empty array with zero max length should pass
+        Assertions.assertDoesNotThrow(() -> ByteUtil.checkMaxArrayLength(emptyArray, 0));
+        
+        // Non-empty array with zero max length should fail
+        IllegalArgumentException exception = Assertions.assertThrows(
+            IllegalArgumentException.class, 
+            () -> ByteUtil.checkMaxArrayLength(nonEmptyArray, 0)
+        );
+        
+        Assertions.assertEquals(
+            "Byte array length 1 exceeds maximum allowed length 0", 
+            exception.getMessage()
+        );
+    }
 }

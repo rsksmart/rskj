@@ -163,8 +163,8 @@ public class OkHttpClientTestFixture {
         Objects.requireNonNull(fromToAddresses);
 
         String gas = "0x9C40";
-        String gasPrice = "0x10";
-        String value = "0x500";
+        String gasPrice = "0x1";
+        String value = "0x1";
 
         String[] placeholders = new String[]{
                 "<ADDRESS_FROM>", "<ADDRESS_TO>", "<GAS>",
