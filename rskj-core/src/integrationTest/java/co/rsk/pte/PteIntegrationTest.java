@@ -127,9 +127,7 @@ class PteIntegrationTest {
                         Future<Map<Integer, String>> future = getBlocksAsync();
 
                         try {
-
                             blocksResponseMap.put("asyncBlocksResult", future.get());
-
                         } catch (ExecutionException | InterruptedException e) {
                             Assertions.fail(e);
                         }
@@ -166,7 +164,13 @@ class PteIntegrationTest {
         }
 
         Assertions.assertTrue(pteFound);
-
+        txResponseMap.values().forEach(r -> {
+            try {
+                r.body().close();
+            } catch (IOException e) {
+                Assertions.fail(e);
+            }
+        });
     }
 
     private Response getBlockByNumber(String number) throws IOException {
@@ -186,7 +190,7 @@ class PteIntegrationTest {
             Map<Integer, String> results = new HashMap<>();
 
             for (int i = 0; i < MAX_BLOCKS_TO_GET; i++) {
-                String response = getBlockByNumber("0x" + String.format("%02x", i)).body().string();
+                String response = OkHttpClientTestFixture.responseBody(getBlockByNumber("0x" + String.format("%02x", i)));
 
                 results.put(i, response);
                 Thread.sleep(500);
