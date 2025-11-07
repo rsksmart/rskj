@@ -48,7 +48,7 @@ jobs:
 
       - name: Build
         run: |
-          ./gradlew --no-daemon clean build -x test -x checkstyleAll
+          ./gradlew --no-daemon clean build -x test -x check
 
       - name: Echo SHA256 checksums of JAR files
         run: |
