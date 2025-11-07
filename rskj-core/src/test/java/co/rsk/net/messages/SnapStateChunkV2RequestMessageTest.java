@@ -24,8 +24,14 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class SnapStateChunkV2RequestMessageTest {
 
@@ -271,4 +277,4 @@ class SnapStateChunkV2RequestMessageTest {
         assertArrayEquals(blockHash, message.getBlockHash());
         assertArrayEquals(fromKey, message.getFromKey());
     }
-} 
+}

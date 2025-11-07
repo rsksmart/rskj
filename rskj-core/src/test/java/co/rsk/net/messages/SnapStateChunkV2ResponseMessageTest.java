@@ -25,8 +25,15 @@ import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class SnapStateChunkV2ResponseMessageTest {
 
@@ -232,4 +239,4 @@ class SnapStateChunkV2ResponseMessageTest {
         
         return new TrieChunk(keyValues, TrieChunk.Proof.EMPTY);
     }
-} 
+}

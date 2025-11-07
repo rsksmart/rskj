@@ -22,7 +22,11 @@ import org.ethereum.datasource.HashMapDB;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TrieGetNextChunkTest {
 
@@ -264,4 +268,4 @@ class TrieGetNextChunkTest {
             assertEquals(chunk1.keyValues().size(), chunk2.keyValues().size());
         }
     }
-} 
+}
