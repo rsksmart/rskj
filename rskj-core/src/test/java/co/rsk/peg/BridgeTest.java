@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.core.RskAddress.ZERO_ADDRESS;
 import static co.rsk.peg.PegTestUtils.createHash3;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import static org.junit.jupiter.api.Assertions.*;
@@ -3414,10 +3415,13 @@ class BridgeTest {
 
         private static final RskAddress unionBridgeAddress = unionBridgeMainNetConstants.getAddress();
 
-        private static final RskAddress changeTestnetUnionAddressAuthorizer = new RskAddress("c38c7f0bcdf679dd360dee652d83be7d5b386956");
+        private static final RskAddress changeTestnetUnionAddressAuthorizer = new RskAddress("54fdb399cf235c9b0d464ab4055af9251883bbfe");
 
-        private static final RskAddress increaseLockingCapAuthorizer = RskAddress.ZERO_ADDRESS;
-        private static final RskAddress setTransferPermissionsAuthorizer = RskAddress.ZERO_ADDRESS;
+        private static final RskAddress increaseLockingCapAuthorizerMainnet = ZERO_ADDRESS;
+        private static final RskAddress setTransferPermissionsAuthorizerMainnet = ZERO_ADDRESS;
+
+        private static final RskAddress increaseLockingCapAuthorizerTestnet = new RskAddress("1a8109af0f019ED3045Fbcdf45E5e90d6b6AAfaF");
+        private static final RskAddress setTransferPermissionsAuthorizerTestnet = new RskAddress("8db1F83E8119E4Dce5bC708ec2f4390FFd910B19");
 
         private static final RskAddress unauthorizedCaller = new RskAddress("0000000000000000000000000000000000000001");
         private static final byte[] superEvent = new byte []{(byte) 0x123456};
@@ -3691,6 +3695,13 @@ class BridgeTest {
             );
         }
 
+        private static Stream<Arguments> testnetAndMainnetConstantsProvider() {
+            return Stream.of(
+                Arguments.of(Constants.testnet2(ActivationConfigsForTest.all())),
+                Arguments.of(Constants.mainnet())
+            );
+        }
+
         @ParameterizedTest()
         @MethodSource("constantsProvider")
         void getUnionBridgeContractAddress_afterRSKIP502_shouldReturnAddress(Constants constants) throws VMException {
@@ -3740,23 +3751,30 @@ class BridgeTest {
             assertEquals(expectedLockingCap, actualLockingCap);
         }
 
-        @Test
-        void increaseUnionBridgeLockingCap_beforeRSKIP502_shouldFail() {
+        @ParameterizedTest()
+        @MethodSource("testnetAndMainnetConstantsProvider")
+        void increaseUnionBridgeLockingCap_beforeRSKIP502_shouldFail(Constants constants) {
             bridge = bridgeBuilder
                 .activationConfig(ActivationConfigsForTest.lovell700())
+                .constants(constants)
                 .build();
-            when(rskTx.getSender(any())).thenReturn(increaseLockingCapAuthorizer);
+            setupIncreaseLockingCapAuthorizer(constants);
 
             byte[] data = Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.encode(newLockingCap.asBigInteger());
 
             assertThrows(VMException.class, () -> bridge.execute(data));
         }
 
-        @Test
-        void increaseUnionBridgeLockingCap_afterRSKIP502_whenMeetRequirements_shouldReturnSuccess()
+        @ParameterizedTest()
+        @MethodSource("testnetAndMainnetConstantsProvider")
+        void increaseUnionBridgeLockingCap_afterRSKIP502_whenMeetRequirements_shouldReturnSuccess(Constants constants)
             throws VMException {
             // Arrange
-            when(rskTx.getSender(any())).thenReturn(increaseLockingCapAuthorizer);
+            bridge = bridgeBuilder
+                .constants(constants)
+                .build();
+            setupIncreaseLockingCapAuthorizer(constants);
+
             UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(expectedResponseCode);
 
@@ -3772,11 +3790,22 @@ class BridgeTest {
             assertEquals(UnionResponseCode.SUCCESS.getCode(), actualUnionResponseCode);
         }
 
-        @Test
-        void increaseUnionBridgeLockingCap_afterRSKIP502_whenNewLockingCapSurpassingMaxIncrement_shouldReturnInvalidLockingCapCode()
+        private void setupIncreaseLockingCapAuthorizer(Constants constants) {
+            boolean isMainnet = constants.getChainId() == Constants.MAINNET_CHAIN_ID;
+            RskAddress increaseLockingCapAuthorizer = isMainnet ? increaseLockingCapAuthorizerMainnet : increaseLockingCapAuthorizerTestnet;
+            when(rskTx.getSender(any())).thenReturn(increaseLockingCapAuthorizer);
+        }
+
+        @ParameterizedTest()
+        @MethodSource("testnetAndMainnetConstantsProvider")
+        void increaseUnionBridgeLockingCap_afterRSKIP502_whenNewLockingCapSurpassingMaxIncrement_shouldReturnInvalidLockingCapCode(Constants constants)
             throws VMException {
             // Arrange
-            when(rskTx.getSender(any())).thenReturn(increaseLockingCapAuthorizer);
+            bridge = bridgeBuilder
+                .constants(constants)
+                .build();
+            setupIncreaseLockingCapAuthorizer(constants);
+
             UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(
                 expectedResponseCode);
@@ -3794,11 +3823,16 @@ class BridgeTest {
             assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
         }
 
-        @Test
-        void increaseUnionBridgeLockingCap_afterRSKIP502_whenSendingZero_shouldReturnInvalidLockingCapCode()
+        @ParameterizedTest()
+        @MethodSource("testnetAndMainnetConstantsProvider")
+        void increaseUnionBridgeLockingCap_afterRSKIP502_whenSendingZero_shouldReturnInvalidLockingCapCode(Constants constants)
             throws VMException {
             // Arrange
-            when(rskTx.getSender(any())).thenReturn(increaseLockingCapAuthorizer);
+            bridge = bridgeBuilder
+                .constants(constants)
+                .build();
+            setupIncreaseLockingCapAuthorizer(constants);
+
             UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(
                 expectedResponseCode);
@@ -3831,11 +3865,16 @@ class BridgeTest {
             verify(unionBridgeSupport, never()).increaseLockingCap(any(), any());
         }
 
-        @Test
-        void increaseUnionBridgeLockingCap_afterRSKIP502_emptyArgument_shouldFail() throws VMException {
+        @ParameterizedTest()
+        @MethodSource("testnetAndMainnetConstantsProvider")
+        void increaseUnionBridgeLockingCap_afterRSKIP502_emptyArgument_shouldFail(Constants constants) throws VMException {
             // Arrange
+            bridge = bridgeBuilder
+                .constants(constants)
+                .build();
+            setupIncreaseLockingCapAuthorizer(constants);
+
             UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
-            when(rskTx.getSender(any())).thenReturn(increaseLockingCapAuthorizer);
 
             // when no argument is passed, the default value assigned to the arg is a big integer of zero
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), eq(co.rsk.core.Coin.ZERO))).thenReturn(expectedResponseCode);
@@ -4008,13 +4047,15 @@ class BridgeTest {
             verify(unionBridgeSupport, times(1)).releaseUnionRbtc(rskTx);
             verify(repository, times(1)).transfer(BRIDGE_ADDR, unionBridgeMainNetConstantsAddress, amountToRelease);
         }
-        
-        @Test
-        void setUnionBridgeTransferPermissions_beforeRSKIP502_shouldFail() {
+
+        @ParameterizedTest()
+        @MethodSource("testnetAndMainnetConstantsProvider")
+        void setUnionBridgeTransferPermissions_beforeRSKIP502_shouldFail(Constants constants) {
             bridge = bridgeBuilder
                 .activationConfig(ActivationConfigsForTest.lovell700())
+                .constants(constants)
                 .build();
-            when(rskTx.getSender(any())).thenReturn(setTransferPermissionsAuthorizer);
+            setupTransferPermissionsAuthorizer(constants);
 
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
             byte[] data = function.encode(true, true);
@@ -4023,12 +4064,18 @@ class BridgeTest {
             assertTrue(actualException.getMessage().contains(String.format("Invalid data given: %s",
                 Bytes.of(data))));
         }
-        
-        @Test
-        void setUnionBridgeTransferPermissions_whenValidArgs_shouldSetTransferPermissions() throws VMException {
+
+        @ParameterizedTest()
+        @MethodSource("testnetAndMainnetConstantsProvider")
+        void setUnionBridgeTransferPermissions_whenValidArgs_shouldSetTransferPermissions(Constants constants) throws VMException {
             // Arrange
+            bridge = bridgeBuilder
+                .constants(constants)
+                .build();
+            setupTransferPermissionsAuthorizer(constants);
+
             UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
-            when(rskTx.getSender(any())).thenReturn(setTransferPermissionsAuthorizer);
+
             when(unionBridgeSupport.setTransferPermissions(any(), anyBoolean(),
                 anyBoolean())).thenReturn(expectedResponseCode);
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
@@ -4045,11 +4092,22 @@ class BridgeTest {
             verify(unionBridgeSupport, times(1)).setTransferPermissions(any(Transaction.class), eq(true), eq(false));
         }
 
-        @Test
-        void setUnionBridgeTransferPermissions_whenEmptyArguments_shouldAssumeArgAsFalseAndProcessed() throws VMException {
-            // Arrange
-            UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
+        private void setupTransferPermissionsAuthorizer(Constants constants) {
+            boolean isMainnet = constants.getChainId() == Constants.MAINNET_CHAIN_ID;
+            RskAddress setTransferPermissionsAuthorizer = isMainnet ? setTransferPermissionsAuthorizerMainnet : setTransferPermissionsAuthorizerTestnet;
             when(rskTx.getSender(any())).thenReturn(setTransferPermissionsAuthorizer);
+        }
+
+        @ParameterizedTest()
+        @MethodSource("testnetAndMainnetConstantsProvider")
+        void setUnionBridgeTransferPermissions_whenEmptyArguments_shouldAssumeArgAsFalseAndProcessed(Constants constants) throws VMException {
+            // Arrange
+            bridge = bridgeBuilder
+                .constants(constants)
+                .build();
+            setupTransferPermissionsAuthorizer(constants);
+
+            UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
             // when no argument is passed, the default value assigned to the arg is false
             when(unionBridgeSupport.setTransferPermissions(any(), eq(false), eq(false))).thenReturn(expectedResponseCode);
 
@@ -4067,9 +4125,14 @@ class BridgeTest {
             verify(unionBridgeSupport, times(1)).setTransferPermissions(any(Transaction.class), eq(false), eq(false));
         }
 
-        @Test
-        void setUnionBridgeTransferPermissions_whenNotAuthorized_shouldReturnUnauthorizedCode() {
+        @ParameterizedTest()
+        @MethodSource("testnetAndMainnetConstantsProvider")
+        void setUnionBridgeTransferPermissions_whenNotAuthorized_shouldReturnUnauthorizedCode(Constants constants) {
             // Arrange
+            bridge = bridgeBuilder
+                .constants(constants)
+                .build();
+
             when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
 
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
