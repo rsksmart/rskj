@@ -2779,7 +2779,8 @@ class Web3ImplTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null
+                null,
+                0
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), signatureCache);
         DebugTracer debugTracer = new RskTracer(null, null, null, null);
@@ -2903,7 +2904,8 @@ class Web3ImplTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null
+                null,
+                0
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugTracer debugTracer = new RskTracer(null, null, null, null);
@@ -2973,7 +2975,8 @@ class Web3ImplTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugTracer debugTracer = new RskTracer(null, null, null, null);
         TraceProvider traceProvider = new TraceProvider(List.of(debugTracer));

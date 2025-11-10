@@ -29,23 +29,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
-
 public class AccountOverride {
 
+    private final RskAddress address;
     private BigInteger balance;
     private Long nonce;
     private byte[] code;
     private Map<DataWord, DataWord> state;
     private Map<DataWord, DataWord> stateDiff;
-    private RskAddress address;
     private RskAddress movePrecompileToAddress;
 
     public AccountOverride(RskAddress address) {
-        if (address == null) {
-            throw invalidParamError("Address cannot be null");
-        }
         this.address = address;
     }
 
@@ -54,9 +48,6 @@ public class AccountOverride {
     }
 
     public void setBalance(BigInteger balance) {
-        if (balance.compareTo(BigInteger.ZERO) < 0) {
-            throw invalidParamError("Balance must be equal or bigger than zero");
-        }
         this.balance = balance;
     }
 
@@ -65,9 +56,6 @@ public class AccountOverride {
     }
 
     public void setNonce(Long nonce) {
-        if (nonce < 0) {
-            throw invalidParamError("Nonce must be equal or bigger than zero");
-        }
         this.nonce = nonce;
     }
 
@@ -100,38 +88,42 @@ public class AccountOverride {
     }
 
     public void setMovePrecompileToAddress(RskAddress movePrecompileToAddress) {
-        throw unimplemented("Move precompile to address is not supported yet");
+        this.movePrecompileToAddress = movePrecompileToAddress;
+    }
+
+    public RskAddress getMovePrecompileToAddress() {
+        return movePrecompileToAddress;
     }
 
     public AccountOverride fromAccountOverrideParam(AccountOverrideParam accountOverrideParam) {
 
-        if (accountOverrideParam.getMovePrecompileToAddress() != null) {
-            this.setMovePrecompileToAddress(accountOverrideParam.getMovePrecompileToAddress().getAddress());
+        if (accountOverrideParam.movePrecompileToAddress() != null) {
+            this.setMovePrecompileToAddress(accountOverrideParam.movePrecompileToAddress().getAddress());
         }
 
-        if (accountOverrideParam.getBalance() != null) {
-            this.setBalance(HexUtils.stringHexToBigInteger(accountOverrideParam.getBalance().getHexNumber()));
+        if (accountOverrideParam.balance() != null) {
+            this.setBalance(HexUtils.stringHexToBigInteger(accountOverrideParam.balance().getHexNumber()));
         }
 
-        if (accountOverrideParam.getNonce() != null) {
-            this.setNonce(HexUtils.jsonHexToLong(accountOverrideParam.getNonce().getHexNumber()));
+        if (accountOverrideParam.nonce() != null) {
+            this.setNonce(HexUtils.jsonHexToLong(accountOverrideParam.nonce().getHexNumber()));
         }
 
-        if (accountOverrideParam.getCode() != null) {
-            this.setCode(accountOverrideParam.getCode().getRawDataBytes());
+        if (accountOverrideParam.code() != null) {
+            this.setCode(accountOverrideParam.code().getRawDataBytes());
         }
 
-        if (accountOverrideParam.getState() != null) {
+        if (accountOverrideParam.state() != null) {
             Map<DataWord, DataWord> newState = new HashMap<>();
-            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getState().entrySet()) {
+            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.state().entrySet()) {
                 newState.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
             }
             this.setState(newState);
         }
 
-        if (accountOverrideParam.getStateDiff() != null) {
+        if (accountOverrideParam.stateDiff() != null) {
             Map<DataWord, DataWord> newStateDiff = new HashMap<>();
-            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getStateDiff().entrySet()) {
+            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.stateDiff().entrySet()) {
                 newStateDiff.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
             }
             this.setStateDiff(newStateDiff);

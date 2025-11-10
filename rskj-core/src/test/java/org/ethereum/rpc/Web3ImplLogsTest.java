@@ -1077,7 +1077,8 @@ class Web3ImplLogsTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null
+                null,
+                0
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugTracer debugTracer = new RskTracer(null, null, null, null);

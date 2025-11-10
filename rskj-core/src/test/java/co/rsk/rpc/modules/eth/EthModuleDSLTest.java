@@ -91,7 +91,7 @@ class EthModuleDSLTest {
     }
 
     @Test
-    void testCall_StateOverride_stateIsOverride() throws DslProcessorException, FileNotFoundException {
+    void testCall_StateOverride_stateIsOverridden() throws DslProcessorException, FileNotFoundException {
         // When
         World world = new World();
         // given a deployed contract with stored state = 10
@@ -135,14 +135,14 @@ class EthModuleDSLTest {
      * }
      */
     @Test
-    void testCall_StateOverride_codeOverride() throws DslProcessorException, FileNotFoundException {
+    void testCall_StateOverride_codeIsOverridden() throws DslProcessorException, FileNotFoundException {
         // Given
         // This is the runtime bytecode of the contract above to override the original contract
         String runtimeByteCode = "0x6103e760005260206000f3";
         World world = new World();
 
         // given a deployed contract with original bytecode returning 10 from get()
-        String contractAddress =deployContractAndGetAddressFromDsl("dsl/eth_module/simple_contract.txt",world);
+        String contractAddress = deployContractAndGetAddressFromDsl("dsl/eth_module/simple_contract.txt",world);
 
         EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
         final CallArguments args = new CallArguments();
@@ -169,7 +169,7 @@ class EthModuleDSLTest {
     }
 
     @Test
-    void testCall_StateOverride_balanceOverride()throws DslProcessorException, FileNotFoundException {
+    void testCall_StateOverride_balanceIsOverridden()throws DslProcessorException, FileNotFoundException {
         // Given
         long defaultBalance = 30000L;
         World world = new World();
