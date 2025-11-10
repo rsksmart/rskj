@@ -36,12 +36,12 @@ import java.util.Set;
 
 public class ByteUtil {
 
-    private ByteUtil() {
-    }
-
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     public static final BytesSlice EMPTY_BYTES_SLICE = Bytes.of(EMPTY_BYTE_ARRAY);
     public static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
+
+    private ByteUtil() {
+    }
 
     /**
      * Creates a copy of bytes and appends b to the end of it
