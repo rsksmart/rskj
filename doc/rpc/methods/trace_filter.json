@@ -1,0 +1,169 @@
+{
+  "name": "trace_filter",
+  "summary": "Returns traces matching the given filter",
+  "description": "Filters traces by block range and optionally by sender/receiver addresses, with pagination support. The maximum number of traces per request is configurable via 'rpc.trace.maxTracesPerRequest' (default: 10000). Note: fromBlock must be less than or equal to toBlock.",
+  "params": [
+    {
+      "name": "traceFilterRequest",
+      "required": true,
+      "description": "Filter object to match traces",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "fromBlock": {
+            "description": "Starting block for the trace filter (inclusive). Can be a block number (hex string) or tag ('earliest', 'latest', 'pending'). Defaults to 'earliest'.",
+            "type": "string",
+            "pattern": "^0x[a-fA-F0-9]+$|earliest|latest|pending"
+          },
+          "toBlock": {
+            "description": "Ending block for the trace filter (inclusive). Can be a block number (hex string) or tag ('earliest', 'latest', 'pending'). Defaults to 'latest'.",
+            "type": "string",
+            "pattern": "^0x[a-fA-F0-9]+$|earliest|latest|pending"
+          },
+          "fromAddress": {
+            "description": "Array of sender addresses to filter. Only traces from these addresses will be included.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            }
+          },
+          "toAddress": {
+            "description": "Array of recipient addresses to filter. Only traces to these addresses will be included.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            }
+          },
+          "after": {
+            "description": "Number of traces to skip from the result set (for pagination). Must be non-negative and cannot exceed the configured maximum (default: 10000). Defaults to 0.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "count": {
+            "description": "Maximum number of traces to return (for pagination). Cannot exceed the configured maximum (default: 10000). If not specified, defaults to the configured maximum.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          }
+        }
+      }
+    }
+  ],
+  "result": {
+    "name": "traces",
+    "description": "Array of transaction traces matching the filter criteria",
+    "schema": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "object",
+            "description": "Action performed in the trace (e.g., call, create)"
+          },
+          "blockHash": {
+            "type": "string",
+            "description": "Hash of the block containing this trace"
+          },
+          "blockNumber": {
+            "type": "integer",
+            "description": "Number of the block containing this trace"
+          },
+          "result": {
+            "type": "object",
+            "description": "Result of the action execution"
+          },
+          "subtraces": {
+            "type": "integer",
+            "description": "Number of sub-traces created by this trace"
+          },
+          "traceAddress": {
+            "type": "array",
+            "description": "Position of this trace in the call tree",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "transactionHash": {
+            "type": "string",
+            "description": "Hash of the transaction containing this trace"
+          },
+          "transactionPosition": {
+            "type": "integer",
+            "description": "Position of the transaction in the block"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of trace (e.g., 'call', 'create', 'suicide')"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if the trace failed"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "tracesByBlockRange",
+      "params": [
+        {
+          "name": "traceFilterRequest",
+          "value": {
+            "fromBlock": "0x1",
+            "toBlock": "0x2"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": [
+          {
+            "action": {
+              "callType": "call",
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x0000000000000000000000000000000001000008",
+              "gas": "0x0",
+              "input": "0x",
+              "value": "0x0"
+            },
+            "blockHash": "0x2422043c4210153a91b974edcd8091b7f40f1cc8ec082ce2a47bc9c613811256",
+            "blockNumber": 1,
+            "transactionHash": "0x4aa0649fdc1a4b0e07b64c26e43138400c84d6a127d0242027226b7ade17a53e",
+            "transactionPosition": 0,
+            "type": "call",
+            "subtraces": 0,
+            "traceAddress": [],
+            "result": {
+              "gasUsed": "0x0",
+              "output": "0x"
+            }
+          },
+          {
+            "action": {
+              "callType": "call",
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x0000000000000000000000000000000001000008",
+              "gas": "0x0",
+              "input": "0x",
+              "value": "0x0"
+            },
+            "blockHash": "0x6ea4991b1f506297188f864c05e231e4f5b57341f52c5a1fc6cb81b29e0b523a",
+            "blockNumber": 2,
+            "transactionHash": "0x2508efeddbab2f46ce53e0fb5ed61df9ac1ce696311941207833d7365194dacd",
+            "transactionPosition": 0,
+            "type": "call",
+            "subtraces": 0,
+            "traceAddress": [],
+            "result": {
+              "gasUsed": "0x0",
+              "output": "0x"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
