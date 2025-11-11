@@ -22,7 +22,7 @@ class UnionBridgeConstantsTest {
     private static Stream<Arguments> changeUnionAddressAuthorizerProvider() {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), ZERO_ADDRESS),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), new RskAddress("c38c7f0bcdf679dd360dee652d83be7d5b386956")),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), new RskAddress("54fdb399cf235c9b0d464ab4055af9251883bbfe")),
             Arguments.of(UnionBridgeRegTestConstants.getInstance(), new RskAddress("6c9dfd950bf748bb26f893f7e5f693c7f60a8f85"))
         );
     }
@@ -59,7 +59,7 @@ class UnionBridgeConstantsTest {
     private static Stream<Arguments> unionBridgeChangeLockingCapAuthorizerProvider() {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), ZERO_ADDRESS),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), ZERO_ADDRESS),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), new RskAddress("1a8109af0f019ED3045Fbcdf45E5e90d6b6AAfaF")),
             Arguments.of(UnionBridgeRegTestConstants.getInstance(), new RskAddress("8f8185858643e08b07df4701d8546406b7bf22e4"))
         );
     }
@@ -80,7 +80,7 @@ class UnionBridgeConstantsTest {
     private static Stream<Arguments> unionBridgeChangeTransferPermissionsAuthorizerProvider() {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), ZERO_ADDRESS),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), ZERO_ADDRESS),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), new RskAddress("8db1F83E8119E4Dce5bC708ec2f4390FFd910B19")),
             Arguments.of(UnionBridgeRegTestConstants.getInstance(), new RskAddress("af0fd16c15d0286fd78db5fe89412c00d3de3cf4"))
         );
     }
@@ -126,16 +126,18 @@ class UnionBridgeConstantsTest {
     private static Stream<Arguments> unionLockingCapInitialValueProvider() {
         Coin oneEth = new Coin(BigInteger.TEN.pow(18)); // 1 ETH = 1000000000000000000 wei
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(200L))),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(200L))),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(200L)))
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), oneEth),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), oneEth),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), oneEth)
         );
     }
 
     @ParameterizedTest
     @MethodSource("unionLockingCapInitialValueProvider")
-    void getInitialLockingCap_ok(UnionBridgeConstants unionBridgeConstants,
-        Coin expectedInitialLockingCap) {
+    void getInitialLockingCap_ok(
+        UnionBridgeConstants unionBridgeConstants,
+        Coin expectedInitialLockingCap
+    ) {
         // Act
         Coin actualInitialLockingCap = unionBridgeConstants.getInitialLockingCap();
 
