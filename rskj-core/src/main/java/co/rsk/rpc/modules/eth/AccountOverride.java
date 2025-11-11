@@ -108,10 +108,6 @@ public class AccountOverride {
 
     public AccountOverride fromAccountOverrideParam(AccountOverrideParam accountOverrideParam) {
 
-        if (accountOverrideParam.getMovePrecompileToAddress() != null) {
-            this.setMovePrecompileToAddress(accountOverrideParam.getMovePrecompileToAddress().getAddress());
-        }
-
         if (accountOverrideParam.getBalance() != null) {
             this.setBalance(HexUtils.stringHexToBigInteger(accountOverrideParam.getBalance().getHexNumber()));
         }
@@ -138,6 +134,10 @@ public class AccountOverride {
                 newStateDiff.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
             }
             this.setStateDiff(newStateDiff);
+        }
+
+        if (accountOverrideParam.getMovePrecompileToAddress() != null) {
+            this.setMovePrecompileToAddress(accountOverrideParam.getMovePrecompileToAddress().getAddress());
         }
 
         return this;

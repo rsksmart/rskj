@@ -22,8 +22,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.PrecompiledContractsOverride;
+import org.ethereum.vm.OverrideablePrecompiledContracts;
 
 import java.math.BigInteger;
 import java.util.Iterator;
@@ -33,25 +32,13 @@ import java.util.Optional;
 public class DefaultStateOverrideApplier implements StateOverrideApplier {
 
     private final ActivationConfig activationConfig;
-    private final PrecompiledContracts precompiledContracts;
 
-    public DefaultStateOverrideApplier(ActivationConfig activationConfig, PrecompiledContracts precompiledContracts) {
+    public DefaultStateOverrideApplier(ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
-        this.precompiledContracts = precompiledContracts;
     }
 
     @Override
-    public void applyToRepository(Block block, Repository repository, AccountOverride accountOverride, PrecompiledContractsOverride precompiledContractsOverride) {
-        ActivationConfig.ForBlock blockActivations = activationConfig.forBlock(block.getNumber());
-
-        if (accountOverride.getMovePrecompileToAddress() != null && accountOverride.getAddress() != null && precompiledContractsOverride != null) {
-            if (precompiledContractsOverride.contains(accountOverride.getAddress())) {
-                throw new IllegalStateException(String.format("Account %s has already been overridden by a precompile", accountOverride.getAddress().toHexString()));
-            }
-
-            final var pcc = precompiledContracts.getContractForAddress(blockActivations, DataWord.valueFromHex(accountOverride.getAddress().toHexString()));
-            precompiledContractsOverride.addOverride(accountOverride.getMovePrecompileToAddress(), pcc);
-        }
+    public void applyToRepository(Block block, Repository repository, AccountOverride accountOverride, OverrideablePrecompiledContracts overrideablePrecompiledContracts) {
 
         if (accountOverride.getBalance() != null) {
             Coin storedValue = Optional.ofNullable(repository.getBalance(accountOverride.getAddress())).orElse(Coin.ZERO);
@@ -65,9 +52,11 @@ public class DefaultStateOverrideApplier implements StateOverrideApplier {
         if (accountOverride.getCode() != null) {
             repository.saveCode(accountOverride.getAddress(), accountOverride.getCode());
         }
+
         if (accountOverride.getStateDiff() != null && accountOverride.getState() != null) {
             throw new IllegalStateException("AccountOverride.stateDiff and AccountOverride.state cannot be set at the same time");
         }
+
         if (accountOverride.getState() != null) {
             Iterator<DataWord> keys = repository.getStorageKeys(accountOverride.getAddress());
             while (keys.hasNext()) {
@@ -83,6 +72,16 @@ public class DefaultStateOverrideApplier implements StateOverrideApplier {
                 repository.addStorageRow(accountOverride.getAddress(), entry.getKey(), entry.getValue());
             }
         }
+
+        if (overrideablePrecompiledContracts != null && accountOverride.getMovePrecompileToAddress() != null && accountOverride.getAddress() != null) {
+            if (overrideablePrecompiledContracts.isOverridden(accountOverride.getAddress())) {
+                throw new IllegalStateException(String.format("Account %s has already been overridden by a precompile", accountOverride.getAddress().toHexString()));
+            }
+
+            ActivationConfig.ForBlock blockActivations = activationConfig.forBlock(block.getNumber());
+            overrideablePrecompiledContracts.addOverride(accountOverride.getAddress(), accountOverride.getMovePrecompileToAddress(), blockActivations);
+        }
+
     }
 
 }

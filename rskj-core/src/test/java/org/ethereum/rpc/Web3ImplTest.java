@@ -2776,8 +2776,6 @@ class Web3ImplTest {
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                config.getActivationConfig(),
-                null,
                 false,
                 null
         );
@@ -2900,8 +2898,6 @@ class Web3ImplTest {
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                config.getActivationConfig(),
-                null,
                 false,
                 null
         );
@@ -2970,8 +2966,6 @@ class Web3ImplTest {
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                config.getActivationConfig(),
-                null,
                 false,
                 null);
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
