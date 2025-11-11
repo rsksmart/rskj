@@ -401,8 +401,6 @@ class Web3ImplScoringTest {
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                config.getActivationConfig(),
-                null,
                 false,
                 null
         );

@@ -51,13 +51,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by patogallaiovlabs on 28/10/2020.
- *
+ * <p>
  * The aim of this class is to test how it behaves when calling nested contracts through different ways.
  * 1 - Call contract through the interface: ContractA(addressA).buy(amount)
  * 2 - Call contract encoding abi call: addressA.call(abi.encodeWithSignature("buy(uint256)", amount))
- *
+ * <p>
  * In (1) it should revert all the calls, since Solidity add "iszero" checks to all the calls. While in (2) it should not
- * revert, because we are taking care of the call, and the result its not handled.
+ * revert, because we are taking care of the call, and the result it's not handled.
  *
  */
 class NestedContractsTest {
@@ -221,8 +221,6 @@ class NestedContractsTest {
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                null,
-                null,
                 false,
                 null);
     }
