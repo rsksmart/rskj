@@ -147,4 +147,8 @@ public abstract class BridgeConstants {
     }
 
     public int getBlockWithTooMuchChainWorkHeight() { return blockWithTooMuchChainWorkHeight; }
+
+    public int getMigrationOutputsSizeForFirstTx() {
+        return 50;
+    }
 }

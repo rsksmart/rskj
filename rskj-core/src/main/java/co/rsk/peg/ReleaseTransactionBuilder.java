@@ -151,12 +151,28 @@ public class ReleaseTransactionBuilder {
         }, String.format("sending %s in svp fund transaction", svpFundTxOutputsValue));
     }
 
+    @Deprecated(since = "8.0.0")
+    /*
+     * @deprecated Use buildMigrationTransaction(Coin migrationValue, Address destinationAddress, int numberOfOutputs) instead.
+     */
     public BuildResult buildMigrationTransaction(Coin migrationValue, Address destinationAddress) {
+        return buildMigrationTransaction(migrationValue, destinationAddress, 1);
+    }
+
+    public BuildResult buildMigrationTransaction(Coin migrationValue, Address destinationAddress, int numberOfOutputs) {
         return buildWithConfiguration((SendRequest sr) -> {
             if (!activations.isActive(ConsensusRule.RSKIP376)){
                 sr.tx.setVersion(BTC_TX_VERSION_1);
             }
-            sr.tx.addOutput(migrationValue, destinationAddress);
+            if (numberOfOutputs == 1) {
+                sr.tx.addOutput(migrationValue, destinationAddress);
+            } else {
+                Coin amountPerOutput = migrationValue.divide(numberOfOutputs);
+                for (int i = 0; i < numberOfOutputs; i++) {
+                    sr.tx.addOutput(amountPerOutput, destinationAddress);
+                }
+            }
+
             sr.changeAddress = destinationAddress;
         }, String.format("sending %s in migration transaction", migrationValue));
     }

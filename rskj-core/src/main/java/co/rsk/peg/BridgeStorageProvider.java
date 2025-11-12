@@ -876,6 +876,10 @@ public class BridgeStorageProvider {
         repository.addStorageBytes(contractAddress, addressKey, data);
     }
 
+    public boolean isFirstMigrationTx() {
+        return true;
+    }
+
     private interface RepositoryDeserializer<T> {
         T deserialize(byte[] data) throws IOException;
     }

@@ -3072,7 +3072,12 @@ public class BridgeSupport {
                 getFeePerKb(),
                 activations
             );
-            ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(expectedMigrationValue, destinationAddress);
+            // TODO: this RSKIP should be changed for the correct one
+            int outputsSize = 1;
+            if (activations.isActive(RSKIP536) && provider.isFirstMigrationTx()) {
+                outputsSize = bridgeConstants.getMigrationOutputsSizeForFirstTx();
+            }
+            ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(expectedMigrationValue, destinationAddress, outputsSize);
 
             switch (result.getResponseCode()) {
                 case SUCCESS -> {
