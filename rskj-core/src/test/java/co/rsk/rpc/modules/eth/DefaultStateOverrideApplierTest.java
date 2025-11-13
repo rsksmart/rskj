@@ -32,7 +32,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -61,7 +60,7 @@ class DefaultStateOverrideApplierTest {
     @BeforeEach
     void setup() {
         final var testSystemProperties = new TestSystemProperties();
-        stateOverrideApplier = new DefaultStateOverrideApplier(testSystemProperties.getActivationConfig(), new PrecompiledContracts(testSystemProperties, null, null));
+        stateOverrideApplier = new DefaultStateOverrideApplier(testSystemProperties.getActivationConfig());
         address = TestUtils.generateAddress("address");
 
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
