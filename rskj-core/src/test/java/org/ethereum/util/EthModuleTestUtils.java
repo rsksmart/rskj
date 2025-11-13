@@ -60,8 +60,9 @@ public class EthModuleTestUtils {
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                new PrecompiledContracts(config, world.getBridgeSupportFactory(), world.getBlockTxSignatureCache()),
                 config.getAllowCallStateOverride(),
-                new DefaultStateOverrideApplier(config.getActivationConfig(), new PrecompiledContracts(config, null, null)));
+                new DefaultStateOverrideApplier(config.getActivationConfig()));
     }
 
     public static EthModuleGasEstimation buildBasicEthModuleForGasEstimation(World world) {
@@ -111,7 +112,7 @@ public class EthModuleTestUtils {
                                        boolean allowCallStateOverride, StateOverrideApplier stateOverrideApplier) {
             super(bridgeConstants, chainId, blockchain, transactionPool, reversibleTransactionExecutor,
                     executionBlockRetriever, repositoryLocator, ethModuleWallet, ethModuleTransaction,
-                    bridgeSupportFactory, gasEstimationCap, gasCap, allowCallStateOverride, stateOverrideApplier);
+                    bridgeSupportFactory, gasEstimationCap, gasCap, null, allowCallStateOverride, stateOverrideApplier); // TODO -> Review this
         }
 
         private ProgramResult estimationResult;

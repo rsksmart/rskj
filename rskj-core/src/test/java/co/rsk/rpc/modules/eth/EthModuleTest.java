@@ -36,7 +36,6 @@ import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
@@ -50,7 +49,6 @@ import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
-import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.hamcrest.MatcherAssert;
@@ -97,10 +95,10 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
-        PrecompiledContracts precompiledContractsMock = mock(PrecompiledContracts.class);
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, null, null, signatureCache);
 
         StateOverrideApplier stateOverrideApplierMock = mock(DefaultStateOverrideApplier.class);
-        when(stateOverrideApplierMock.getPrecompiledContracts()).thenReturn(precompiledContractsMock);
 
         EthModule eth = new EthModule(
                 null,
@@ -112,10 +110,10 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 stateOverrideApplierMock);
 
@@ -151,8 +149,11 @@ class EthModuleTest {
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, null, null, signatureCache);
 
         EthModule eth = new EthModule(
                 null,
@@ -164,12 +165,12 @@ class EthModuleTest {
                 repositoryLocator,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 true,
-                new DefaultStateOverrideApplier(config.getActivationConfig(), new PrecompiledContracts(config, null, null)));
+                new DefaultStateOverrideApplier(config.getActivationConfig()));
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
 
@@ -201,8 +202,9 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
                 false,
-                new DefaultStateOverrideApplier(config.getActivationConfig(), new PrecompiledContracts(config, null, null)));
+                new DefaultStateOverrideApplier(config.getActivationConfig()));
 
         // When
         RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
@@ -302,8 +304,13 @@ class EthModuleTest {
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, null, null, signatureCache);
+
+        PrecompiledContracts precompiledContractsMock = new PrecompiledContracts(config, bridgeSupportFactory, signatureCache);
 
         EthModule eth = new EthModule(
                 null,
@@ -315,12 +322,12 @@ class EthModuleTest {
                 repositoryLocator,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                precompiledContractsMock,
                 true,
-                new DefaultStateOverrideApplier(config.getActivationConfig(), new PrecompiledContracts(config, null, null)));
+                new DefaultStateOverrideApplier(config.getActivationConfig()));
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
 
@@ -351,6 +358,9 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
@@ -361,10 +371,10 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -402,6 +412,9 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
@@ -412,10 +425,10 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -454,6 +467,9 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 0,
@@ -464,10 +480,10 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -629,6 +645,7 @@ class EthModuleTest {
                 ),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
                 false,
                 null
         );
@@ -653,6 +670,7 @@ class EthModuleTest {
                 mock(BridgeSupportFactory.class),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                mock(PrecompiledContracts.class),
                 false,
                 mock(DefaultStateOverrideApplier.class)
         );
@@ -679,6 +697,9 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
@@ -689,10 +710,10 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -727,6 +748,9 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
@@ -737,10 +761,10 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -776,6 +800,9 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
@@ -786,10 +813,10 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -839,6 +866,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
                 false,
                 null);
 
@@ -886,6 +914,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
                 false,
                 null);
 
@@ -931,6 +960,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
                 false,
                 null);
 
@@ -979,6 +1009,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
                 false,
                 null);
 
@@ -1123,6 +1154,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
                 false,
                 null);
 
@@ -1153,6 +1185,7 @@ class EthModuleTest {
                 new BridgeSupportFactory(null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
                 false,
                 null);
 
@@ -1191,6 +1224,7 @@ class EthModuleTest {
                 new BridgeSupportFactory(null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
                 false,
                 null);
 
@@ -1227,6 +1261,7 @@ class EthModuleTest {
                 new BridgeSupportFactory(null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
                 false,
                 null);
 
