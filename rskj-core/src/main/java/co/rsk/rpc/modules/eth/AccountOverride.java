@@ -33,12 +33,13 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
 
 public class AccountOverride {
 
+    private final RskAddress address;
+
     private BigInteger balance;
     private Long nonce;
     private byte[] code;
     private Map<DataWord, DataWord> state;
     private Map<DataWord, DataWord> stateDiff;
-    private RskAddress address;
     private RskAddress movePrecompileToAddress;
 
     public AccountOverride(RskAddress address) {
