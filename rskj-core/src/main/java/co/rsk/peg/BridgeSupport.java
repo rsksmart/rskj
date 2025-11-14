@@ -829,7 +829,7 @@ public class BridgeSupport {
      */
     private void registerNewUtxos(BtcTransaction btcTx) throws IOException {
         // Outputs to the active federation
-        Wallet activeFederationWallet = getActiveFederationWallet(true);
+        Wallet activeFederationWallet = getActiveFederationWallet(false);
         List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(
             activeFederationWallet
         );
