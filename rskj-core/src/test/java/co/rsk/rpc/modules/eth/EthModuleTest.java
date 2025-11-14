@@ -215,8 +215,8 @@ class EthModuleTest {
         assertEquals(-32602, exception.getCode());
         assertEquals("State override is not allowed", exception.getMessage());
     }
-/*
-    @Test
+
+    /*@Test
     void testCall_whenCalledWithAccountOverrideOverPrecompileContractAddress_throwsExceptionAsExpected() {
         // Given
         RskAddress address = TestUtils.generateAddress("test");
@@ -278,8 +278,8 @@ class EthModuleTest {
         assertEquals("Precompiled contracts can not be overridden", exception.getMessage());
         verify(activationConfigMock, times(1)).forBlock(blockNumber);
         verify(precompiledContractsMock, times(1)).getContractForAddress(forBlockMock, addressInDataWordForm);
-    }
-*/
+    }*/
+
     @Test
     void callSmokeTestWithAccountOverrideAndBlockFinalStateIsNotNull() {
         // Given
