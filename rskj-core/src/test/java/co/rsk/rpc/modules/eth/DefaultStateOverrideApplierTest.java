@@ -23,26 +23,30 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.IReadWrittenKeysTracker;
 import co.rsk.core.bc.ReadWrittenKeysTracker;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.TestUtils;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
+import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.OverrideablePrecompiledContracts;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class DefaultStateOverrideApplierTest {
+
+    private final TestSystemProperties testSystemProperties = new TestSystemProperties();
 
     private static final BigInteger DEFAULT_BALANCE = BigInteger.valueOf(1000);
     private static final byte[] DEFAULT_CODE = TestUtils.generateBytes(1, 10);
@@ -52,14 +56,12 @@ class DefaultStateOverrideApplierTest {
     private static final DataWord DEFAULT_STORAGE_VALUE_ONE = DataWord.valueOf(100);
     private static final DataWord DEFAULT_STORAGE_VALUE_TWO = DataWord.valueOf(200);
 
-    private AccountOverride accountOverride;
     private MutableRepository repository;
     private RskAddress address;
     private DefaultStateOverrideApplier stateOverrideApplier;
 
     @BeforeEach
     void setup() {
-        final var testSystemProperties = new TestSystemProperties();
         stateOverrideApplier = new DefaultStateOverrideApplier(testSystemProperties.getActivationConfig());
         address = TestUtils.generateAddress("address");
 
@@ -69,8 +71,6 @@ class DefaultStateOverrideApplierTest {
         repository = new MutableRepository(mutableTrie, tracker);
 
         populateRepository(repository, address);
-
-        accountOverride = new AccountOverride(address);
     }
 
     private void populateRepository(Repository repository, RskAddress address) {
@@ -84,11 +84,13 @@ class DefaultStateOverrideApplierTest {
     @Test
     void applyWithBalance() {
         // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
         BigInteger balance = BigInteger.TEN;
         accountOverride.setBalance(balance);
 
         // When
-        stateOverrideApplier.applyToRepository(Mockito.mock(Block.class), repository, accountOverride, null);
+        stateOverrideApplier.applyToRepository(mock(Block.class), repository, accountOverride, null);
 
         // Then
         assertEquals(accountOverride.getBalance(), repository.getBalance(address).asBigInteger());
@@ -97,11 +99,13 @@ class DefaultStateOverrideApplierTest {
     @Test
     void applyWithNonce() {
         // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
         long nonce = 7L;
         accountOverride.setNonce(nonce);
 
         // When
-        stateOverrideApplier.applyToRepository(Mockito.mock(Block.class), repository, accountOverride, null);
+        stateOverrideApplier.applyToRepository(mock(Block.class), repository, accountOverride, null);
 
         // Then
         assertEquals(accountOverride.getNonce(), repository.getNonce(address).longValue());
@@ -110,11 +114,13 @@ class DefaultStateOverrideApplierTest {
     @Test
     void applyWithCode() {
         // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
         byte[] code = new byte[]{0x1, 0x2};
         accountOverride.setCode(code);
 
         // When
-        stateOverrideApplier.applyToRepository(Mockito.mock(Block.class), repository, accountOverride, null);
+        stateOverrideApplier.applyToRepository(mock(Block.class), repository, accountOverride, null);
 
         // Then
         assertArrayEquals(accountOverride.getCode(), repository.getCode(address));
@@ -123,6 +129,8 @@ class DefaultStateOverrideApplierTest {
     @Test
     void applyWithStateMustResetOtherValues() {
         // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
         Map<DataWord, DataWord> state = new HashMap<>();
         state.put(DEFAULT_STORAGE_KEY_ONE, DataWord.valueOf(10));
         accountOverride.setState(state);
@@ -131,7 +139,7 @@ class DefaultStateOverrideApplierTest {
         assertNotNull(repository.getStorageValue(address, DEFAULT_STORAGE_KEY_TWO));
 
         // Add an existing key to ensure it is cleared
-        stateOverrideApplier.applyToRepository(Mockito.mock(Block.class), repository, accountOverride, null);
+        stateOverrideApplier.applyToRepository(mock(Block.class), repository, accountOverride, null);
         assertEquals(accountOverride.getState().get(DEFAULT_STORAGE_KEY_ONE), repository.getStorageValue(address, DEFAULT_STORAGE_KEY_ONE));
         assertNull(repository.getStorageValue(address, DEFAULT_STORAGE_KEY_TWO));
     }
@@ -139,13 +147,15 @@ class DefaultStateOverrideApplierTest {
     @Test
     void applyWithStateDiffDoNotAlterOtherValues() {
         // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
         Map<DataWord, DataWord> stateDiff = new HashMap<>();
         stateDiff.put(DEFAULT_STORAGE_KEY_ONE, DataWord.valueOf(10));
         accountOverride.setStateDiff(stateDiff);
 
         // When
         // Add an existing key to ensure it is cleared
-        stateOverrideApplier.applyToRepository(Mockito.mock(Block.class), repository, accountOverride, null);
+        stateOverrideApplier.applyToRepository(mock(Block.class), repository, accountOverride, null);
 
         // Then
         assertEquals(accountOverride.getStateDiff().get(DEFAULT_STORAGE_KEY_ONE), repository.getStorageValue(address, DEFAULT_STORAGE_KEY_ONE));
@@ -155,6 +165,8 @@ class DefaultStateOverrideApplierTest {
     @Test
     void applyStateAndStateDiffThrowsException() {
         // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
         Map<DataWord, DataWord> state = new HashMap<>();
         state.put(DEFAULT_STORAGE_KEY_ONE, DataWord.valueOf(10));
         accountOverride.setStateDiff(state);
@@ -162,8 +174,72 @@ class DefaultStateOverrideApplierTest {
 
         // Then
         assertThrows(IllegalStateException.class, () -> {
-            stateOverrideApplier.applyToRepository(Mockito.mock(Block.class), repository, accountOverride, null);
+            stateOverrideApplier.applyToRepository(mock(Block.class), repository, accountOverride, null);
         });
+    }
+
+    @Test
+    void applyWithMovePrecompileTo_happyPath() {
+        // Given
+        RskAddress precompileAddress = new RskAddress("0x0000000000000000000000000000000000000004");
+        RskAddress movePrecompileTo = new RskAddress("0x0000000000000000000000000000000000000001");
+
+        DataWord precompileAddressInDataWord = DataWord.valueFromHex(precompileAddress.toHexString());
+        DataWord movePrecompileToInDataWord = DataWord.valueFromHex(movePrecompileTo.toHexString());
+
+        AccountOverride accountOverride = new AccountOverride(precompileAddress);
+        accountOverride.setMovePrecompileToAddress(movePrecompileTo);
+
+        PrecompiledContracts precompiledContracts = getPrecompiledContracts();
+
+        OverrideablePrecompiledContracts overrideablePrecompiledContracts = new OverrideablePrecompiledContracts(precompiledContracts);
+
+        long blockNumber = 1L;
+        Block blockMock = mock(Block.class);
+        when(blockMock.getNumber()).thenReturn(blockNumber);
+
+        // When
+        stateOverrideApplier.applyToRepository(blockMock, repository, accountOverride, overrideablePrecompiledContracts);
+
+        // Then
+        assertEquals(overrideablePrecompiledContracts.getContractForAddress(testSystemProperties.getActivationConfig().forBlock(blockNumber), precompileAddressInDataWord), overrideablePrecompiledContracts.getContractForAddress(testSystemProperties.getActivationConfig().forBlock(blockNumber), movePrecompileToInDataWord));
+    }
+
+    @Test
+    void applyWithMovePrecompileTo_alreadyOverriddenContract_throwsExceptionAsExpected() {
+        // Given
+        RskAddress precompileAddress = new RskAddress("0x0000000000000000000000000000000000000004");
+        RskAddress movePrecompileTo = new RskAddress("0x0000000000000000000000000000000000000001");
+
+        AccountOverride accountOverride = new AccountOverride(precompileAddress);
+        accountOverride.setMovePrecompileToAddress(movePrecompileTo);
+
+        PrecompiledContracts precompiledContracts = getPrecompiledContracts();
+
+        OverrideablePrecompiledContracts overrideablePrecompiledContracts = new OverrideablePrecompiledContracts(precompiledContracts);
+
+        long blockNumber = 1L;
+        Block blockMock = mock(Block.class);
+        when(blockMock.getNumber()).thenReturn(blockNumber);
+
+        // When
+        stateOverrideApplier.applyToRepository(blockMock, repository, accountOverride, overrideablePrecompiledContracts);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            // This is the second time calling the exact same method so the contract should be already overridden
+            stateOverrideApplier.applyToRepository(blockMock, repository, accountOverride, overrideablePrecompiledContracts);
+        });
+
+        // Then
+        assertEquals("Account " + precompileAddress.toHexString() + " has already been overridden by a precompile", exception.getMessage());
+    }
+
+    private PrecompiledContracts getPrecompiledContracts() {
+        TestSystemProperties config = new TestSystemProperties();
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, null, null, signatureCache);
+        return new PrecompiledContracts(config, bridgeSupportFactory, signatureCache);
     }
 
 }
