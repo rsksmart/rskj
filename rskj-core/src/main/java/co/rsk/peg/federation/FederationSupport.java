@@ -260,4 +260,8 @@ public interface FederationSupport {
     void updateFederationCreationBlockHeights();
 
     void save();
+
+    boolean isInMigrationAge();
+
+    boolean isPastMigrationAge();
 }

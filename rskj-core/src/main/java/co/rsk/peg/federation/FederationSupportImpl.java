@@ -907,4 +907,25 @@ public class FederationSupportImpl implements FederationSupport {
     public void save() {
         provider.save(constants.getBtcParams(), activations);
     }
+
+    @Override
+    public boolean isInMigrationAge() {
+        Federation activeFederation = getActiveFederation();
+        long federationActivationAge = constants.getFederationActivationAge(activations);
+        long federationAge = rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber();
+        long ageBegin = federationActivationAge + constants.getFundsMigrationAgeSinceActivationBegin();
+        long ageEnd = federationActivationAge + constants.getFundsMigrationAgeSinceActivationEnd(activations);
+
+        return federationAge > ageBegin && federationAge < ageEnd;
+    }
+
+    @Override
+    public boolean isPastMigrationAge() {
+        Federation federation = getActiveFederation();
+        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
+        long ageEnd = constants.getFederationActivationAge(activations) +
+            constants.getFundsMigrationAgeSinceActivationEnd(activations);
+
+        return federationAge >= ageEnd;
+    }
 }

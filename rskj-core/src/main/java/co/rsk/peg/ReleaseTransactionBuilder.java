@@ -167,9 +167,18 @@ public class ReleaseTransactionBuilder {
             if (numberOfOutputs == 1) {
                 sr.tx.addOutput(migrationValue, destinationAddress);
             } else {
+                // TODO: Discuss rules to calculate the amount per output
                 Coin amountPerOutput = migrationValue.divide(numberOfOutputs);
+
+                Coin totalOutputValues = amountPerOutput.multiply(numberOfOutputs);
+                Coin remainder = migrationValue.subtract(totalOutputValues);
                 for (int i = 0; i < numberOfOutputs; i++) {
                     sr.tx.addOutput(amountPerOutput, destinationAddress);
+                }
+
+                // Add remainder to the last output
+                if (remainder.isGreaterThan(Coin.ZERO)) {
+                    sr.tx.getOutput(numberOfOutputs - 1).setValue(amountPerOutput.add(remainder));
                 }
             }
 

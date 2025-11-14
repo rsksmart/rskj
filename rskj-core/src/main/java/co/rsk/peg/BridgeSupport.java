@@ -40,7 +40,6 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
-import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
@@ -830,7 +829,7 @@ public class BridgeSupport {
      */
     private void registerNewUtxos(BtcTransaction btcTx) throws IOException {
         // Outputs to the active federation
-        Wallet activeFederationWallet = getActiveFederationWallet(false);
+        Wallet activeFederationWallet = getActiveFederationWallet(true);
         List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(
             activeFederationWallet
         );
@@ -1243,60 +1242,63 @@ public class BridgeSupport {
         federationSupport.updateFederationCreationBlockHeights();
     }
 
-    private void processFundsMigration(Transaction rskTx) throws IOException {
-        Wallet retiringFederationWallet = activations.isActive(RSKIP294) ?
-            getRetiringFederationWallet(true, bridgeConstants.getMaxInputsPerPegoutTransaction()) :
-            getRetiringFederationWallet(true);
+    public boolean hasMinimumFundsToMigrate(@Nullable Wallet retiringFederationWallet) {
+        // This value is set according to the average 500 bytes transaction size
+        Coin minimumFundsToMigrate = getFeePerKb().divide(2);
+        return retiringFederationWallet != null
+            && retiringFederationWallet.getBalance().isGreaterThan(minimumFundsToMigrate);
+    }
 
-        List<UTXO> availableUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
-        Federation activeFederation = getActiveFederation();
+    private void logFundsMigrationPhase(Coin retiringBalance) {
+        boolean isInMigrationAge = federationSupport.isInMigrationAge();
 
-        if (federationIsInMigrationAge(activeFederation)) {
-            long federationAge = rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber();
+        if (isInMigrationAge) {
+            long federationAge = rskExecutionBlock.getNumber() - getActiveFederation().getCreationBlockNumber();
             logger.trace("[processFundsMigration] Active federation (age={}) is in migration age.", federationAge);
-            if (hasMinimumFundsToMigrate(retiringFederationWallet)){
-                Coin retiringFederationBalance = retiringFederationWallet.getBalance();
-                String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
-                logger.info(
-                    "[processFundsMigration] Retiring federation has funds to migrate: {}.",
-                    retiringFederationBalanceInFriendlyFormat
-                );
+        } else {
+            logger.info(
+                "[processFundsMigration] Federation is past migration age and will try to migrate remaining balance: {}.",
+                retiringBalance.toFriendlyString()
+            );
+        }
+    }
 
-                migrateFunds(
-                    rskTx.getHash(),
-                    retiringFederationWallet,
-                    activeFederation.getAddress(),
-                    availableUTXOs
-                );
-            }
+    private void processFundsMigration(Transaction rskTx) throws IOException {
+        // Build the retiring federation wallet depending on the activation state
+        Wallet retiringFederationWallet = activations.isActive(RSKIP294)
+            ? getRetiringFederationWallet(true, bridgeConstants.getMaxInputsPerPegoutTransaction())
+            : getRetiringFederationWallet(true);
+
+        // If there's no retiring federation, nothing to do
+        if (retiringFederationWallet == null) {
+            return;
         }
 
-        if (retiringFederationWallet != null && federationIsPastMigrationAge(activeFederation)) {
-            if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
-                Coin retiringFederationBalance = retiringFederationWallet.getBalance();
-                String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
-                logger.info(
-                    "[processFundsMigration] Federation is past migration age and will try to migrate remaining balance: {}.",
-                    retiringFederationBalanceInFriendlyFormat
-                );
+        List<UTXO> availableUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
+        boolean federationIsPastMigrationAge = federationSupport.isPastMigrationAge();
 
-                try {
-                    migrateFunds(
-                        rskTx.getHash(),
-                        retiringFederationWallet,
-                        activeFederation.getAddress(),
-                        availableUTXOs
-                    );
-                } catch (Exception e) {
-                    logger.error(
-                        "[processFundsMigration] Unable to complete retiring federation migration. Balance left: {} in {}",
-                        retiringFederationWallet.getBalance().toFriendlyString(),
-                        getRetiringFederationAddress()
-                    );
-                    panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
-                }
-            }
+        // Log current phase/status once with a dedicated helper
+        Coin retiringFederationBalance = retiringFederationWallet.getBalance();
+        logFundsMigrationPhase(retiringFederationBalance);
 
+        // If not yet past migration age, only proceed when there are enough funds to cover fees
+        if (!federationIsPastMigrationAge && !hasMinimumFundsToMigrate(retiringFederationWallet)) {
+            return;
+        }
+
+        logger.info(
+            "[processFundsMigration] Retiring federation has funds to migrate: {}.",
+            retiringFederationBalance.toFriendlyString()
+        );
+
+        migrateFunds(
+            rskTx.getHash(),
+            retiringFederationWallet,
+            availableUTXOs
+        );
+
+        // If we're already past migration age, finalize the migration and clear the retired federation data
+        if (federationIsPastMigrationAge) {
             logger.info(
                 "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
                 availableUTXOs.size()
@@ -1305,45 +1307,16 @@ public class BridgeSupport {
         }
     }
 
-    private boolean federationIsInMigrationAge(Federation federation) {
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
-
-        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
-        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        long ageBegin = federationActivationAge + federationConstants.getFundsMigrationAgeSinceActivationBegin();
-        long ageEnd = federationActivationAge + federationConstants.getFundsMigrationAgeSinceActivationEnd(activations);
-
-        return federationAge > ageBegin && federationAge < ageEnd;
-    }
-
-    private boolean federationIsPastMigrationAge(Federation federation) {
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
-
-        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        long ageEnd = federationConstants.getFederationActivationAge(activations) +
-            federationConstants.getFundsMigrationAgeSinceActivationEnd(activations);
-
-        return federationAge >= ageEnd;
-    }
-
-    private boolean hasMinimumFundsToMigrate(@Nullable Wallet retiringFederationWallet) {
-        // This value is set according to the average 500 bytes transaction size
-        Coin minimumFundsToMigrate = getFeePerKb().divide(2);
-        return retiringFederationWallet != null
-                && retiringFederationWallet.getBalance().isGreaterThan(minimumFundsToMigrate);
-    }
-
     private void migrateFunds(
         Keccak256 rskTxHash,
         Wallet retiringFederationWallet,
-        Address activeFederationAddress,
         List<UTXO> utxosToUse
     ) throws IOException {
-
+        Address activeFederationAddress = getActiveFederationAddress();
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
-        Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
-        BtcTransaction migrationTransaction = createResult.getLeft();
-        List<UTXO> selectedUTXOs = createResult.getRight();
+        Pair<BtcTransaction, List<UTXO>> migrationTxResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
+        BtcTransaction migrationTransaction = migrationTxResult.getLeft();
+        List<UTXO> selectedUTXOs = migrationTxResult.getRight();
 
         logger.debug(
             "[migrateFunds] consumed {} UTXOs.",
@@ -3073,11 +3046,14 @@ public class BridgeSupport {
                 activations
             );
             // TODO: this RSKIP should be changed for the correct one
-            int outputsSize = 1;
+            int migrationOutputCount = 1;
             if (activations.isActive(RSKIP536) && provider.isFirstMigrationTx()) {
-                outputsSize = bridgeConstants.getMigrationOutputsSizeForFirstTx();
+                int migrationMaxOutputSize = bridgeConstants.getMigrationMaxOutputsSize();
+                Coin migrationMinOutputValue = bridgeConstants.getMinimumPegoutTxValue();
+                migrationOutputCount = calculateOutputCount(expectedMigrationValue, migrationMinOutputValue,
+                    migrationMaxOutputSize);
             }
-            ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(expectedMigrationValue, destinationAddress, outputsSize);
+            ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(expectedMigrationValue, destinationAddress, migrationOutputCount);
 
             switch (result.getResponseCode()) {
                 case SUCCESS -> {
@@ -3097,6 +3073,25 @@ public class BridgeSupport {
                 case INSUFFICIENT_MONEY, EXCEED_MAX_TRANSACTION_SIZE, COULD_NOT_ADJUST_DOWNWARDS ->
                     expectedMigrationValue = expectedMigrationValue.divide(2);
             }
+        }
+    }
+
+
+    private int calculateOutputCount(Coin total, Coin minPerOutput, int migrationTxMaxOutputCount) {
+        // If total is below the minimum per output, we can only produce 1 output.
+        if (total.isLessThan(minPerOutput)) {
+            return 1;
+        }
+
+        long maxByAmount = total.divide(minPerOutput);        // floor(total / min)
+        int allowed = (int) Math.min(migrationTxMaxOutputCount, Math.max(1, maxByAmount));
+
+        if (allowed >= 10) {
+            return (allowed / 10) * 10;                         // prefer multiples of 10
+        } else if (allowed >= 5) {
+            return (allowed / 5) * 5;                           // else multiples of 5
+        } else {
+            return allowed;                                     // otherwise 1..4 as-is
         }
     }
 
