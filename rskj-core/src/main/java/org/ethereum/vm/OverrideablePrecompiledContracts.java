@@ -21,11 +21,14 @@ package org.ethereum.vm;
 import co.rsk.core.RskAddress;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class OverrideablePrecompiledContracts extends PrecompiledContracts {
     private final Map<RskAddress, PrecompiledContract> overriddenPrecompileContracts = new HashMap<>();
+    private final List<RskAddress> overriddenContracts = new ArrayList<>();
 
     public OverrideablePrecompiledContracts(PrecompiledContracts basePrecompiledContracts) {
         super(basePrecompiledContracts.getConfig(), basePrecompiledContracts.getBridgeSupportFactory(), basePrecompiledContracts.getSignatureCache());
@@ -50,9 +53,10 @@ public class OverrideablePrecompiledContracts extends PrecompiledContracts {
         }
 
         overriddenPrecompileContracts.put(targetAddress, precompiledContract);
+        overriddenContracts.add(originalAddress);
     }
 
     public boolean isOverridden(RskAddress address) {
-        return overriddenPrecompileContracts.entrySet().stream().anyMatch(precompiled -> precompiled.getValue().contractAddress == address);
+        return overriddenContracts.stream().anyMatch(a -> a.equals(address));
     }
 }
