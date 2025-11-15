@@ -24,6 +24,7 @@ import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.util.HexUtils;
 import org.ethereum.core.Account;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.CallArguments;
@@ -91,7 +92,7 @@ class EthModuleDSLTest {
     }
 
     @Test
-    void testCall_StateOverride_stateIsOverride() throws DslProcessorException, FileNotFoundException {
+    void testCall_StateOverride_stateIsOverridden() throws DslProcessorException, FileNotFoundException {
         // When
         World world = new World();
         // given a deployed contract with stored state = 10
@@ -135,7 +136,7 @@ class EthModuleDSLTest {
      * }
      */
     @Test
-    void testCall_StateOverride_codeOverride() throws DslProcessorException, FileNotFoundException {
+    void testCall_StateOverride_codeIsOverridden() throws DslProcessorException, FileNotFoundException {
         // Given
         // This is the runtime bytecode of the contract above to override the original contract
         String runtimeByteCode = "0x6103e760005260206000f3";
@@ -169,7 +170,7 @@ class EthModuleDSLTest {
     }
 
     @Test
-    void testCall_StateOverride_balanceOverride()throws DslProcessorException, FileNotFoundException {
+    void testCall_StateOverride_balanceIsOverridden()throws DslProcessorException, FileNotFoundException {
         // Given
         long defaultBalance = 30000L;
         World world = new World();
@@ -201,6 +202,69 @@ class EthModuleDSLTest {
         String result2 = eth.call(callArgumentsParam, blockIdentifierParam, List.of(accountOverride));
         // then the returned balance is 30000
         assertEquals(defaultBalance, HexUtils.jsonHexToInt(result2));
+    }
+
+    @Test
+    void testCall_StateOverride_precompiledContractIsMoved() throws DslProcessorException, FileNotFoundException {
+
+        // Given
+
+        String falseInHex = "0x0000000000000000000000000000000000000000000000000000000000000000";
+        String trueInHex = "0x0000000000000000000000000000000000000000000000000000000000000001";
+
+        // Test Setup
+
+        DslParser parser = DslParser.fromResource("dsl/eth_module/test_state_override_move_precompiled.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Account acc = world.getAccountByName("acc1");
+        RskAddress identityPrecompiledAddress = new RskAddress("0x0000000000000000000000000000000000000004");
+        RskAddress movePrecompiledTo = new RskAddress("0x0000000000000000000000000000000000000001");
+
+        // Test Steps
+
+        // 0. Check that DatacopyCaller contract was deployed correctly
+        Block block01 = world.getBlockByName("b01");
+        Assertions.assertNotNull(block01);
+        Assertions.assertEquals(1, block01.getTransactionsList().size());
+
+        String contractAddress = world.getTransactionByName("tx01").getContractAddress().toHexString();
+
+        // 1. Check that checkOriginalDatacopyWorksAsExpected (0xb7deb48b) is executed correctly
+
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+
+        CallArguments args = new CallArguments();
+        args.setFrom(acc.getAddress().toHexString());
+        args.setTo("0x" + contractAddress);
+        args.setData("0xb7deb48b"); // Call checkOriginalDatacopyWorksAsExpected() function
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        String result = eth.call(callArgumentsParam, blockIdentifierParam);
+        assertEquals(trueInHex, result);
+
+        // 2. Check that checkOverriddenDatacopyWorksAsExpected (0x1cf61a8b) returns "false" before overriding
+
+        CallArguments args2 = new CallArguments();
+        args2.setFrom(acc.getAddress().toHexString());
+        args2.setTo("0x" + contractAddress);
+        args2.setData("0x1cf61a8b"); // Call checkOverriddenDatacopyWorksAsExpected() function
+        CallArgumentsParam callArgumentsParam2 = TransactionFactoryHelper.toCallArgumentsParam(args2);
+
+        String result2 = eth.call(callArgumentsParam2, blockIdentifierParam);
+        assertEquals(falseInHex, result2);
+
+        // 3. Check that checkOverriddenDatacopyWorksAsExpected (0x1cf61a8b) returns "true" after overriding
+
+        AccountOverride accountOverride = new AccountOverride(identityPrecompiledAddress);
+        accountOverride.setMovePrecompileToAddress(movePrecompiledTo);
+
+        String result3 = eth.call(callArgumentsParam2, blockIdentifierParam, List.of(accountOverride));
+        assertEquals(trueInHex, result3);
+
     }
 
     private String deployContractAndGetAddressFromDsl(String dslContractPath, World world) throws DslProcessorException, FileNotFoundException{
