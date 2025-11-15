@@ -26,6 +26,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.util.ListArrayUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import org.ethereum.core.exception.SealedBlockHeaderException;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -54,6 +55,8 @@ public abstract class BlockHeader {
     public abstract void setLogsBloom(byte[] logsBloom);
     public abstract short[] getTxExecutionSublistsEdges(); // Edges of the transaction execution lists
     public abstract void setTxExecutionSublistsEdges(short[] edges);
+    public abstract byte[] getBaseEvent();
+    public abstract void setBaseEvent(byte[] baseEvent);
 
     // called after encoding the header, used to add elements at the end
     public abstract void addExtraFieldsToEncodedHeader(boolean usingCompressedEncoding, List<byte[]> fieldsToEncode);
@@ -394,10 +397,17 @@ public abstract class BlockHeader {
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
     }
 
-    public void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
+    protected void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
         short[] txExecutionSublistsEdges = this.getTxExecutionSublistsEdges();
         if (txExecutionSublistsEdges != null) {
             fieldsToEncode.add(ByteUtil.shortsToRLP(txExecutionSublistsEdges));
+        }
+    }
+
+    protected void addBaseEvent(List<byte[]> fieldsToEncode) {
+        byte[] baseEvent = this.getBaseEvent();
+        if (baseEvent != null) {
+            fieldsToEncode.add(RLP.encodeElement(baseEvent));
         }
     }
 
@@ -465,6 +475,7 @@ public abstract class BlockHeader {
         toStringBuff.append("  extraData=").append(toHexStringOrEmpty(extraData)).append(suffix);
         toStringBuff.append("  minGasPrice=").append(minimumGasPrice).append(suffix);
         toStringBuff.append("  txExecutionSublistsEdges=").append(Arrays.toString(this.getTxExecutionSublistsEdges())).append(suffix);
+        toStringBuff.append("  baseEvent=").append(toHexStringOrEmpty(this.getBaseEvent())).append(suffix);
 
         return toStringBuff.toString();
     }

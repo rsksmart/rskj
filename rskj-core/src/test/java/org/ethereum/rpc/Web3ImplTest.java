@@ -21,7 +21,12 @@ import co.rsk.Flusher;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.*;
+import co.rsk.core.Coin;
+import co.rsk.core.ReversibleTransactionExecutor;
+import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.Wallet;
+import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.crypto.Keccak256;
@@ -68,7 +73,20 @@ import co.rsk.util.TestContract;
 import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockHeaderBuilder;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -83,12 +101,26 @@ import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
-import org.ethereum.rpc.Simples.*;
+import org.ethereum.rpc.Simples.SimpleChannelManager;
+import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
+import org.ethereum.rpc.Simples.SimpleEthereum;
+import org.ethereum.rpc.Simples.SimpleMinerClient;
+import org.ethereum.rpc.Simples.SimplePeerServer;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.rpc.parameters.*;
+import org.ethereum.rpc.parameters.BlockHashParam;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.BlockRefParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataParam;
+import org.ethereum.rpc.parameters.HexDurationParam;
+import org.ethereum.rpc.parameters.HexIndexParam;
+import org.ethereum.rpc.parameters.HexKeyParam;
+import org.ethereum.rpc.parameters.HexNumberParam;
+import org.ethereum.rpc.parameters.TxHashParam;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
@@ -104,14 +136,33 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by Ruben Altman on 09/06/2016.
@@ -238,7 +289,7 @@ class Web3ImplTest {
 
         Object result = web3.eth_syncing();
 
-        assertTrue(result instanceof SyncingResult, "Node is syncing, must return sync manager");
+        assertInstanceOf(SyncingResult.class, result, "Node is syncing, must return sync manager");
         assertEquals(0, ((SyncingResult) result).getHighestBlock().compareTo("0x5"), "Highest block is 5");
         assertEquals(0, ((SyncingResult) result).getCurrentBlock().compareTo("0x0"), "Simple blockchain starts from genesis block");
     }
@@ -1178,7 +1229,7 @@ class Web3ImplTest {
         Web3Impl web3 = createWeb3WithMocks(ethModuleMock);
 
         Transaction mockTransaction1 = mockTransactionFrom("0x63a15ed8c3b83efc744f2e0a7824a00846c21860");
-        List<Transaction> allTransactions = Arrays.asList(mockTransaction1);
+        List<Transaction> allTransactions = List.of(mockTransaction1);
 
         when(ethModuleMock.ethPendingTransactions()).thenReturn(allTransactions);
 
@@ -1729,7 +1780,7 @@ class Web3ImplTest {
         blockE.setBitcoinMergedMiningHeader(new byte[]{0x05});
         assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockE));
 
-        List<BlockHeader> blockFUncles = Arrays.asList(blockE.getHeader());
+        List<BlockHeader> blockFUncles = Collections.singletonList(blockE.getHeader());
         Block blockF = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
                 .trieStore(world.getTrieStore()).difficulty(10).parent(blockD).uncles(blockFUncles).build();
         blockF.setBitcoinMergedMiningHeader(new byte[]{0x06});
@@ -1798,7 +1849,7 @@ class Web3ImplTest {
         assertEquals(1, blockE.getTransactionsList().size());
         Assertions.assertFalse(Arrays.equals(blockC.getTxTrieRoot(), blockE.getTxTrieRoot()));
 
-        List<BlockHeader> blockFUncles = Arrays.asList(blockE.getHeader());
+        List<BlockHeader> blockFUncles = Collections.singletonList(blockE.getHeader());
         Block blockF = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
                 .trieStore(world.getTrieStore()).difficulty(10).parent(blockD).uncles(blockFUncles).build();
         blockF.setBitcoinMergedMiningHeader(new byte[]{0x06});
@@ -1863,7 +1914,7 @@ class Web3ImplTest {
         blockE.setBitcoinMergedMiningHeader(new byte[]{0x05});
         assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockE));
 
-        List<BlockHeader> blockFUncles = Arrays.asList(blockE.getHeader());
+        List<BlockHeader> blockFUncles = Collections.singletonList(blockE.getHeader());
         Block blockF = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
                 .trieStore(world.getTrieStore()).difficulty(10).parent(blockD).uncles(blockFUncles).build();
         blockF.setBitcoinMergedMiningHeader(new byte[]{0x06});
@@ -1929,7 +1980,7 @@ class Web3ImplTest {
         assertEquals(1, blockE.getTransactionsList().size());
         Assertions.assertFalse(Arrays.equals(blockC.getTxTrieRoot(), blockE.getTxTrieRoot()));
 
-        List<BlockHeader> blockFUncles = Arrays.asList(blockE.getHeader());
+        List<BlockHeader> blockFUncles = Collections.singletonList(blockE.getHeader());
         Block blockF = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
                 .trieStore(world.getTrieStore()).difficulty(10).parent(blockD).uncles(blockFUncles).build();
         blockF.setBitcoinMergedMiningHeader(new byte[]{0x06});
@@ -3107,6 +3158,7 @@ class Web3ImplTest {
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> toInvoke.apply(blockRef));
     }
+
     private void assertNonBlockHashByBlockRefWhenCanonical(Function<BlockRefParam, String> toInvoke) {
         final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
         Map<String, String> blockRef = new HashMap<String, String>() {
@@ -3130,6 +3182,7 @@ class Web3ImplTest {
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> toInvoke.apply(blockRef));
     }
+
     private void assertNonBlockHashByBlockRefParamWhenIsNotCanonical(Function<BlockRefParam, String> toInvoke) {
         final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
         Map<String, String> blockRef = new HashMap<String, String>() {
@@ -3152,6 +3205,7 @@ class Web3ImplTest {
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> toInvoke.apply(blockRef));
     }
+
     private void assertNonCanonicalBlockHashByBlockRefParamWhenCanonical(Block block, Function<BlockRefParam, String> toInvoke) {
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
@@ -3205,7 +3259,8 @@ class Web3ImplTest {
         };
 
         BlockRefParam blockRefParam = new BlockRefParam(blockRef);
-        assertEquals(expected, toInvoke.apply(blockRefParam));    }
+        assertEquals(expected, toInvoke.apply(blockRefParam));
+    }
 
     private void assertCanonicalBlockHashWhenNotCanonical(String expected, Block block, Function<Map, String> toInvoke) {
         Map<String, String> blockRef = new HashMap<String, String>() {
@@ -3248,25 +3303,6 @@ class Web3ImplTest {
         };
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> toInvoke.apply(blockRef));
-    }
-
-    //Chain Param Object creations
-    private class ChainParams {
-        private final Web3Impl web3;
-        private final String accountAddress;
-        private final Block block;
-        private CallArguments argsForCall; // for call tests could be null
-
-        private ChainParams(World world, String accountAddress, Block block) {
-            this.web3 = createWeb3(world);
-            this.accountAddress = accountAddress;
-            this.block = block;
-        }
-
-        private ChainParams(World world, String accountAddress, Block block, CallArguments argsForCall) {
-            this(world, accountAddress, block);
-            this.argsForCall = argsForCall;
-        }
     }
 
     private ChainParams chainWithAccount10kBalance(boolean isCanonicalBlock) {
@@ -3411,5 +3447,103 @@ class Web3ImplTest {
 
         assertEquals("0x0", txReceipt.getType());
         assertEquals("0x0", txResult.getType());
+    }
+
+    @Test
+    void eth_getBlockByNumber_returnsBaseEventInJsonResponse() {
+        // given
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        // when
+        createBlockWithBaseEvent(world, new byte[]{0x01, 0x02, 0x03});
+        BlockResultDTO result = web3.eth_getBlockByNumber(new BlockIdentifierParam("latest"), false);
+
+        // then
+        assertNotNull(result.getBaseEvent());
+        assertEquals("0x010203", result.getBaseEvent());
+    }
+
+    @Test
+    void eth_getBlockByHash_returnsBaseEventInJsonResponse() {
+        // given
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+        Block block = createBlockWithBaseEvent(world, new byte[]{0x04, 0x05, 0x06});
+        String blockHash = block.getHashJsonString();
+
+        // when
+        BlockHashParam blockHashParam = new BlockHashParam(blockHash);
+        BlockResultDTO result = web3.eth_getBlockByHash(blockHashParam, false);
+
+        // then
+        assertNotNull(result.getBaseEvent());
+        assertEquals("0x040506", result.getBaseEvent());
+    }
+
+    @Test
+    void eth_getBlockByNumber_returnsNullWhenBaseEventNotSet() {
+        // given
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        // when
+        createBlockWithBaseEvent(world, new byte[0]);
+        BlockResultDTO result = web3.eth_getBlockByNumber(new BlockIdentifierParam("latest"), false);
+
+        // then
+        assertNull(result.getBaseEvent());
+    }
+
+    private Block createBlockWithBaseEvent(World world, byte[] baseEvent) {
+        final Block genesis = world.getBlockChain().getBestBlock();
+
+        // Create a block with baseEvent using BlockHeaderBuilder
+        BlockHeaderBuilder headerBuilder = new BlockHeaderBuilder(config.getActivationConfig())
+                .setParentHash(genesis.getHash().getBytes())
+                .setUnclesHash(genesis.getUnclesHash())
+                .setCoinbase(genesis.getCoinbase())
+                .setStateRoot(genesis.getStateRoot())
+                .setTxTrieRoot(genesis.getTxTrieRoot())
+                .setReceiptTrieRoot(genesis.getReceiptsRoot())
+                .setLogsBloom(genesis.getHeader().getLogsBloom())
+                .setDifficulty(genesis.getDifficulty())
+                .setNumber(genesis.getNumber() + 1)
+                .setGasLimit(genesis.getGasLimit())
+                .setGasUsed(genesis.getGasUsed())
+                .setTimestamp(genesis.getTimestamp() + 1)
+                .setExtraData(genesis.getExtraData())
+                .setBitcoinMergedMiningHeader(genesis.getBitcoinMergedMiningHeader())
+                .setBitcoinMergedMiningMerkleProof(genesis.getBitcoinMergedMiningMerkleProof())
+                .setBitcoinMergedMiningCoinbaseTransaction(genesis.getBitcoinMergedMiningCoinbaseTransaction())
+                .setMergedMiningForkDetectionData(genesis.getHeader().getMiningForkDetectionData())
+                .setMinimumGasPrice(genesis.getMinimumGasPrice())
+                .setUncleCount(genesis.getHeader().getUncleCount())
+                .setBaseEvent(baseEvent);
+
+        BlockHeader header = headerBuilder.build();
+        Block block = new Block(header, Collections.emptyList(), Collections.emptyList(), false, true);
+
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block));
+        return block;
+    }
+
+    //Chain Param Object creations
+    private class ChainParams {
+        private final Web3Impl web3;
+        private final String accountAddress;
+        private final Block block;
+        private CallArguments argsForCall; // for call tests could be null
+
+        private ChainParams(World world, String accountAddress, Block block) {
+            this.web3 = createWeb3(world);
+            this.accountAddress = accountAddress;
+            this.block = block;
+        }
+
+        private ChainParams(World world, String accountAddress, Block block, CallArguments argsForCall) {
+            this(world, accountAddress, block);
+            this.argsForCall = argsForCall;
+        }
     }
 }

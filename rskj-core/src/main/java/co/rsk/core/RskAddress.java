@@ -19,10 +19,8 @@
 package co.rsk.core;
 
 import co.rsk.core.exception.InvalidRskAddressException;
-import com.google.common.primitives.UnsignedBytes;
-
 import co.rsk.util.HexUtils;
-
+import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
@@ -41,18 +39,15 @@ public class RskAddress {
      * This is the size of an RSK address in bytes.
      */
     public static final int LENGTH_IN_BYTES = 20;
-
-    private static final RskAddress NULL_ADDRESS = new RskAddress();
     //
     public static final RskAddress ZERO_ADDRESS = new RskAddress("0000000000000000000000000000000000000000");
-
     /**
      * This compares using the lexicographical order of the sender unsigned bytes.
      */
     public static final Comparator<RskAddress> LEXICOGRAPHICAL_COMPARATOR = Comparator.comparing(
             RskAddress::getBytes,
             UnsignedBytes.lexicographicalComparator());
-
+    private static final RskAddress NULL_ADDRESS = new RskAddress();
     private final byte[] bytes;
 
     /**
@@ -77,7 +72,7 @@ public class RskAddress {
             throw new InvalidRskAddressException(String.format("An RSK address must be %d bytes long", LENGTH_IN_BYTES));
         }
 
-        this.bytes = bytes;
+        this.bytes = Arrays.copyOf(bytes, bytes.length);
     }
 
     /**
@@ -95,7 +90,7 @@ public class RskAddress {
     }
 
     public byte[] getBytes() {
-        return bytes;
+        return Arrays.copyOf(bytes, bytes.length);
     }
 
     public String toHexString() {
