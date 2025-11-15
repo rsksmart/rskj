@@ -33,7 +33,6 @@ import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.HexUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.CallTransaction;
@@ -50,9 +49,9 @@ import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
-import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.OverrideablePrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,7 +87,6 @@ public class EthModule
     private final byte chainId;
     private final long gasEstimationCap;
     private final long gasCallCap;
-    private final ActivationConfig activationConfig;
     private final PrecompiledContracts precompiledContracts;
     private final boolean allowCallStateOverride;
     private final StateOverrideApplier stateOverrideApplier;
@@ -106,7 +104,6 @@ public class EthModule
             BridgeSupportFactory bridgeSupportFactory,
             long gasEstimationCap,
             long gasCallCap,
-            ActivationConfig activationConfig,
             PrecompiledContracts precompiledContracts,
             boolean allowCallStateOverride,
             StateOverrideApplier stateOverrideApplier) {
@@ -122,7 +119,6 @@ public class EthModule
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.gasEstimationCap = gasEstimationCap;
         this.gasCallCap = gasCallCap;
-        this.activationConfig = activationConfig;
         this.precompiledContracts = precompiledContracts;
         this.allowCallStateOverride = allowCallStateOverride;
         this.stateOverrideApplier = stateOverrideApplier;
@@ -159,14 +155,15 @@ public class EthModule
         ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
         Block block = result.getBlock();
 
-        MutableRepository mutableRepository = prepareRepository(result, block, shouldPerformStateOverride, accountOverrideList);
+        OverrideablePrecompiledContracts overrideablePrecompiledContracts = new OverrideablePrecompiledContracts(precompiledContracts);
+        MutableRepository mutableRepository = prepareRepository(result, block, shouldPerformStateOverride, accountOverrideList, overrideablePrecompiledContracts);
 
         CallArguments callArgs = argsParam.toCallArguments();
 
         String hReturn = null;
         try {
             ProgramResult programResult = mutableRepository != null ?
-                    callConstant(callArgs, block, mutableRepository) :
+                    callConstant(callArgs, block, mutableRepository, overrideablePrecompiledContracts) :
                     callConstant(callArgs, block);
 
             handleTransactionRevertIfHappens(programResult);
@@ -186,7 +183,8 @@ public class EthModule
     private MutableRepository prepareRepository(ExecutionBlockRetriever.Result result,
                                                 Block block,
                                                 boolean shouldPerformStateOverride,
-                                                List<AccountOverride> accountOverrideList) {
+                                                List<AccountOverride> accountOverrideList,
+                                                OverrideablePrecompiledContracts overrideablePrecompiledContracts) {
         MutableRepository mutableRepository = null;
 
         if (result.getFinalState() != null) {
@@ -197,19 +195,15 @@ public class EthModule
             if (mutableRepository == null) {
                 mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
             }
-            applyStateOverride(block, mutableRepository, accountOverrideList);
+            applyStateOverride(block, mutableRepository, accountOverrideList, overrideablePrecompiledContracts);
         }
 
         return mutableRepository;
     }
 
-    private void applyStateOverride(Block block, MutableRepository mutableRepository, List<AccountOverride> accountOverrideList) {
-        ActivationConfig.ForBlock blockActivations = activationConfig.forBlock(block.getNumber());
+    private void applyStateOverride(Block block, MutableRepository mutableRepository, List<AccountOverride> accountOverrideList, OverrideablePrecompiledContracts overrideablePrecompiledContracts) {
         for (AccountOverride accountOverride : accountOverrideList) {
-            if (precompiledContracts.getContractForAddress(blockActivations, DataWord.valueFromHex(accountOverride.getAddress().toHexString())) != null) {
-                throw invalidParamError("Precompiled contracts can not be overridden");
-            }
-            stateOverrideApplier.applyToRepository(mutableRepository, accountOverride);
+            stateOverrideApplier.applyToRepository(block, mutableRepository, accountOverride, overrideablePrecompiledContracts);
         }
     }
 
@@ -356,7 +350,7 @@ public class EthModule
         );
     }
 
-    public ProgramResult callConstant(CallArguments args, Block executionBlock, RepositorySnapshot snapshot) {
+    public ProgramResult callConstant(CallArguments args, Block executionBlock, RepositorySnapshot snapshot, PrecompiledContracts precompiledContracts) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction(
                 snapshot,
@@ -367,7 +361,8 @@ public class EthModule
                 hexArgs.getToAddress(),
                 hexArgs.getValue(),
                 hexArgs.getData(),
-                hexArgs.getFromAddress()
+                hexArgs.getFromAddress(),
+                precompiledContracts
         );
     }
 
