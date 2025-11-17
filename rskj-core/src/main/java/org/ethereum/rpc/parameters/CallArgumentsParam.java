@@ -128,6 +128,21 @@ public class CallArgumentsParam {
         return callArguments;
     }
 
+    @Override
+    public String toString() {
+        return "CallArguments{" +
+                "from='" + from + '\'' +
+                ", to='" + to + '\'' +
+                ", gas='" + gas + '\'' +
+                ", gasLimit='" + gasLimit + '\'' +
+                ", gasPrice='" + gasPrice + '\'' +
+                ", value='" + value + '\'' +
+                ", data='" + data + '\'' +
+                ", nonce='" + nonce + '\'' +
+                ", chainId='" + chainId + '\'' +
+                '}';
+    }
+
     public static class Deserializer extends StdDeserializer<CallArgumentsParam> {
         private static final long serialVersionUID = 1L;
 
