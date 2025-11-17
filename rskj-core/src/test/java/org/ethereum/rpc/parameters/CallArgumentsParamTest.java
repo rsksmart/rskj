@@ -1,3 +1,20 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2025 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.ethereum.rpc.parameters;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -246,5 +263,45 @@ public class CallArgumentsParamTest {
         assertNull(callArgumentsParam.getData());
         assertNull(callArgumentsParam.getNonce());
         assertNull(callArgumentsParam.getChainId());
+    }
+
+    @Test
+    public void testToStringWithNoArgsParams() throws JsonProcessingException {
+        String callArgumentsInput = "{ }";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+        CallArgumentsParam callArgumentsParam = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
+
+        String result = callArgumentsParam.toString();
+
+        assertTrue(result.contains("from="));
+        assertTrue(result.contains("to="));
+        assertTrue(result.contains("gas="));
+        assertTrue(result.contains("gasPrice="));
+        assertTrue(result.contains("nonce="));
+        assertTrue(result.contains("chainId="));
+    }
+
+    @Test
+    public void testToStringIncludesFields() throws JsonProcessingException {
+        String callArgumentsInput = "{\n" +
+                "            \"from\": \"" + FROM + "\"," +
+                "            \"to\" : \"" + TO + "\"," +
+                "            \"gas\": \"" + GAS + "\"," +
+                "            \"gasPrice\":\"" + GAS_PRICE + "\"," +
+                "            \"nonce\": \"" + NONCE + "\", " +
+                "            \"chainId\": \"" + CHAIN_ID + "\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+        CallArgumentsParam callArgumentsParam = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
+
+        String result = callArgumentsParam.toString();
+
+        assertTrue(result.contains("from="));
+        assertTrue(result.contains("to="));
+        assertTrue(result.contains("gas="));
+        assertTrue(result.contains("gasPrice="));
+        assertTrue(result.contains("nonce="));
+        assertTrue(result.contains("chainId="));
     }
 }
