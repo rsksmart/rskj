@@ -137,7 +137,7 @@ public class CallArgumentsParam {
                 ", gasLimit='" + gasLimit + '\'' +
                 ", gasPrice='" + gasPrice + '\'' +
                 ", value='" + value + '\'' +
-                ", data='" + data + '\'' +
+                ", data='" + (data != null ? data.getHex() : null) + '\'' +
                 ", nonce='" + nonce + '\'' +
                 ", chainId='" + chainId + '\'' +
                 '}';
