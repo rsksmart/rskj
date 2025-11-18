@@ -47,6 +47,7 @@ import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -393,18 +394,23 @@ class Web3ImplScoringTest {
         Wallet wallet = WalletFactory.createWallet();
         TestSystemProperties config = new TestSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null,
+                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(),
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
         EthModule em = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), world.getBlockChain(), null,
                 null, new ExecutionBlockRetriever(world.getBlockChain(), null, null),
                 null, new EthModuleWalletEnabled(wallet, world.getTransactionPool(), world.getBlockTxSignatureCache()), null,
-                new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                null,
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, bridgeSupportFactory, world.getBlockTxSignatureCache()),
                 false,
-                null
-        );
+                null);
+
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), new ReceivedTxSignatureCache());
         DebugTracer debugTracer = new RskTracer(null, null, null, null);
         TraceProvider traceProvider = new TraceProvider(List.of(debugTracer));

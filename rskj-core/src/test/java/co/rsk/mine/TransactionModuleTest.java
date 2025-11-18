@@ -644,6 +644,11 @@ class TransactionModuleTest {
 
         final RepositoryBtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
                 config.getNetworkConstants().getBridgeConstants().getBtcParams());
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(),
+                config.getActivationConfig(), signatureCache);
+
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
                 reversibleTransactionExecutor1, new ExecutionBlockRetriever(blockchain, null, null),
@@ -653,7 +658,8 @@ class TransactionModuleTest {
                         config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                null,
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 new DefaultStateOverrideApplier(config.getActivationConfig())
         );

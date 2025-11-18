@@ -7,8 +7,8 @@ checkOriginalDatacopyWorksAsExpected calls datacopy (The Identity Precompiled Co
 - Returns false otherwise (THIS SHOULD NEVER HAPPEN)
 
 checkOverriddenDatacopyWorksAsExpected calls datacopy on the address 0x01 (where ecrecover is originally located)
-if movePrecompiledTo was excecuted previously for the identity contract on 0x01
-- Return true if data copy was excecuted correctly
+if movePrecompiledTo was executed previously for the identity contract on 0x01
+- Return true if data copy was executed correctly
 - Return false otherwise (THIS SHOULD NEVER HAPPEN EITHER, as movePrecompiledTo should work correctly)
 
 // SPDX-License-Identifier: UNLICENSED

@@ -21,12 +21,15 @@ package org.ethereum.vm;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSupportFactory;
+import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.SignatureCache;
 import org.junit.jupiter.api.Test;
 
+import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR_STR;
+import static org.ethereum.vm.PrecompiledContracts.REMASC_ADDR_STR;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OverrideablePrecompiledContractsTest {
@@ -118,6 +121,48 @@ class OverrideablePrecompiledContractsTest {
 
         // Then
         assertEquals("Account " + movePrecompileTo.toHexString() + " is already overridden", exception.getMessage());
+    }
+
+    @Test
+    void isMovableContract_addressIsMovable_executesAsExpected() {
+        // Given
+        RskAddress testAdddress = TestUtils.generateAddress("testAddress");
+
+        // When
+        boolean isMovable = overrideablePrecompiledContracts.isMovableContract(testAdddress);
+
+        // Then
+        assertTrue(isMovable);
+    }
+
+    @Test
+    void isMovableContract_addressIsNotMovable_executesAsExpected() {
+        // Given
+        RskAddress bridgeAddress = new RskAddress(BRIDGE_ADDR_STR);
+        RskAddress remascAddress = new RskAddress(REMASC_ADDR_STR);
+
+        // When
+        boolean isBridgeMovable = overrideablePrecompiledContracts.isMovableContract(bridgeAddress);
+        boolean isRemascMovable = overrideablePrecompiledContracts.isMovableContract(remascAddress);
+
+        // Then
+        assertFalse(isBridgeMovable);
+        assertFalse(isRemascMovable);
+    }
+
+    @Test
+    void isMovableContract_borderCases_executesAsExpected() {
+        // Given
+        RskAddress bridgeAddress = new RskAddress("0x" + BRIDGE_ADDR_STR);
+        RskAddress remascAddress = new RskAddress("0x" + REMASC_ADDR_STR);
+
+        // When
+        boolean isBridgeMovable = overrideablePrecompiledContracts.isMovableContract(bridgeAddress);
+        boolean isRemascMovable = overrideablePrecompiledContracts.isMovableContract(remascAddress);
+
+        // Then
+        assertFalse(isBridgeMovable);
+        assertFalse(isRemascMovable);
     }
 
     private PrecompiledContracts getPrecompiledContracts() {

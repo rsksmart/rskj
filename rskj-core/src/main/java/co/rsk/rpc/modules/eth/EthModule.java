@@ -33,6 +33,7 @@ import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.HexUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.CallTransaction;
@@ -49,6 +50,7 @@ import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.OverrideablePrecompiledContracts;
@@ -87,6 +89,7 @@ public class EthModule
     private final byte chainId;
     private final long gasEstimationCap;
     private final long gasCallCap;
+    private final ActivationConfig activationConfig;
     private final PrecompiledContracts precompiledContracts;
     private final boolean allowCallStateOverride;
     private final StateOverrideApplier stateOverrideApplier;
@@ -104,6 +107,7 @@ public class EthModule
             BridgeSupportFactory bridgeSupportFactory,
             long gasEstimationCap,
             long gasCallCap,
+            ActivationConfig activationConfig,
             PrecompiledContracts precompiledContracts,
             boolean allowCallStateOverride,
             StateOverrideApplier stateOverrideApplier) {
@@ -119,6 +123,7 @@ public class EthModule
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.gasEstimationCap = gasEstimationCap;
         this.gasCallCap = gasCallCap;
+        this.activationConfig = activationConfig;
         this.precompiledContracts = precompiledContracts;
         this.allowCallStateOverride = allowCallStateOverride;
         this.stateOverrideApplier = stateOverrideApplier;
@@ -155,7 +160,8 @@ public class EthModule
         ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
         Block block = result.getBlock();
 
-        OverrideablePrecompiledContracts overrideablePrecompiledContracts = new OverrideablePrecompiledContracts(precompiledContracts);
+        OverrideablePrecompiledContracts overrideablePrecompiledContracts = getOverridablePrecompiledContracts();
+
         MutableRepository mutableRepository = prepareRepository(result, block, shouldPerformStateOverride, accountOverrideList, overrideablePrecompiledContracts);
 
         CallArguments callArgs = argsParam.toCallArguments();
@@ -202,7 +208,20 @@ public class EthModule
     }
 
     private void applyStateOverride(Block block, MutableRepository mutableRepository, List<AccountOverride> accountOverrideList, OverrideablePrecompiledContracts overrideablePrecompiledContracts) {
+        ActivationConfig.ForBlock blockActivations = activationConfig.forBlock(block.getNumber());
+        // Get all addresses that have modifications but are not precompiled contracts
+        // (We're assuming that If "movePrecompiledTo" is present, then the address should be a precompiled,
+        // and if it's not, validations will take care of it)
+        List<RskAddress> dirtyAddresses = accountOverrideList.stream().
+                filter(accountOverride -> accountOverride.getMovePrecompileToAddress() == null)
+                .map(AccountOverride::getAddress)
+                .toList();
         for (AccountOverride accountOverride : accountOverrideList) {
+            PrecompiledContracts.PrecompiledContract precompiledContract = overrideablePrecompiledContracts
+                    .getContractForAddress(blockActivations, DataWord.valueFromHex(accountOverride.getAddress().toHexString()));
+            if (precompiledContract != null) {
+                stateOverrideApplier.validateOperationOverPrecompiledContract(accountOverride, dirtyAddresses);
+            }
             stateOverrideApplier.applyToRepository(block, mutableRepository, accountOverride, overrideablePrecompiledContracts);
         }
     }
@@ -417,4 +436,9 @@ public class EthModule
             throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason, revertData);
         }
     }
+
+    public OverrideablePrecompiledContracts getOverridablePrecompiledContracts() {
+        return new OverrideablePrecompiledContracts(precompiledContracts);
+    }
+
 }

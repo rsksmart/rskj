@@ -18,6 +18,7 @@
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -26,8 +27,11 @@ import org.ethereum.vm.OverrideablePrecompiledContracts;
 
 import java.math.BigInteger;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class DefaultStateOverrideApplier implements StateOverrideApplier {
 
@@ -35,6 +39,19 @@ public class DefaultStateOverrideApplier implements StateOverrideApplier {
 
     public DefaultStateOverrideApplier(ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
+    }
+
+    @Override
+    public void validateOperationOverPrecompiledContract(AccountOverride accountOverride, List<RskAddress> dirtyAddresses) {
+        // If there's state changes, then is an invalid operation
+        if (containsStateChange(accountOverride)) {
+            throw invalidParamError("Precompiled contracts can not be overridden");
+        }
+
+        // If the destination is dirty, then is an invalid operation
+        if (dirtyAddresses.stream().anyMatch(address -> address.equals(accountOverride.getMovePrecompileToAddress()))) {
+            throw invalidParamError("Precompiled contracts can not be moved to an overridden address");
+        }
     }
 
     @Override
@@ -73,7 +90,11 @@ public class DefaultStateOverrideApplier implements StateOverrideApplier {
             }
         }
 
-        if (overrideablePrecompiledContracts != null && accountOverride.getMovePrecompileToAddress() != null && accountOverride.getAddress() != null) {
+        if (overrideablePrecompiledContracts != null && accountOverride.getMovePrecompileToAddress() != null) {
+            if (!overrideablePrecompiledContracts.isMovableContract(accountOverride.getAddress())) {
+                throw new IllegalStateException(String.format("Account %s can not be moved", accountOverride.getAddress().toHexString()));
+            }
+
             if (overrideablePrecompiledContracts.isOverridden(accountOverride.getAddress())) {
                 throw new IllegalStateException(String.format("Account %s has already been overridden by a precompile", accountOverride.getAddress().toHexString()));
             }
@@ -82,6 +103,12 @@ public class DefaultStateOverrideApplier implements StateOverrideApplier {
             overrideablePrecompiledContracts.addOverride(accountOverride.getAddress(), accountOverride.getMovePrecompileToAddress(), blockActivations);
         }
 
+    }
+
+    private boolean containsStateChange(AccountOverride accountOverride) {
+        boolean containsStateChange = accountOverride.getBalance() != null || accountOverride.getNonce() != null || accountOverride.getCode() != null;
+        boolean containsStateDiff = accountOverride.getState() != null || accountOverride.getStateDiff() != null;
+        return containsStateChange || containsStateDiff;
     }
 
 }

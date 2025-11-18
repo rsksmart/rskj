@@ -2819,15 +2819,17 @@ class Web3ImplTest {
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null,
+                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
                 null, new ExecutionBlockRetriever(blockchain, null, null),
                 null, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache), null,
-                new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                null,
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null
         );
@@ -2953,6 +2955,7 @@ class Web3ImplTest {
                 bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null
@@ -3023,6 +3026,7 @@ class Web3ImplTest {
                 bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);

@@ -265,6 +265,15 @@ class EthModuleDSLTest {
         String result3 = eth.call(callArgumentsParam2, blockIdentifierParam, List.of(accountOverride));
         assertEquals(trueInHex, result3);
 
+        // 4. Do another call with state override to another address, and check on the same address
+        // used in Step 3, it must return "false" as contract is not moved there anymore.
+
+        AccountOverride newAccountOverride = new AccountOverride(identityPrecompiledAddress);
+        accountOverride.setMovePrecompileToAddress(new RskAddress("0x0000000000000000000000000000000000000002"));
+
+        String result4 = eth.call(callArgumentsParam2, blockIdentifierParam, List.of(newAccountOverride));
+        assertEquals(falseInHex, result4);
+
     }
 
     private String deployContractAndGetAddressFromDsl(String dslContractPath, World world) throws DslProcessorException, FileNotFoundException{

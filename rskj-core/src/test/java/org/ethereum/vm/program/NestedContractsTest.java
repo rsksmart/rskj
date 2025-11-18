@@ -221,6 +221,7 @@ class NestedContractsTest {
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 new PrecompiledContracts(config, world.getBridgeSupportFactory(), world.getBlockTxSignatureCache()),
                 false,
                 null);
