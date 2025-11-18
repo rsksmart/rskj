@@ -39,7 +39,7 @@ class VMFuzzTest {
     private VmConfig vmConfig = config.getVmConfig();
     private ProgramInvokeMockImpl invoke;
     private BytecodeCompiler compiler;
-    // see what makes more sense here
+
     private final long DEFAULT_TIMEOUT = 10;
     private final long DEFAULT_GAS = 6_800_000L;
 
@@ -368,23 +368,25 @@ class VMFuzzTest {
 
         try {
             future.get(timeout, TimeUnit.SECONDS);
+        } catch (TimeoutException te) {
+            future.cancel(true);
+            throw te;
         } finally {
             executor.shutdown();
+            try {
+                if (!executor.awaitTermination(2, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                    executor.awaitTermination(2, TimeUnit.SECONDS);
+                }
+            } catch (InterruptedException ie) {
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
     private Program executeCode(String code, int nsteps) {
         return executeCodeWithActivationConfig(compiler.compile(code), nsteps, mock(ActivationConfig.ForBlock.class));
-    }
-
-    private void testCode(byte[] code, int nsteps, String expected) {
-        Program program = executeCodeWithActivationConfig(code, nsteps, mock(ActivationConfig.ForBlock.class));
-
-        assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
-    }
-
-    private Program executeCodeWithActivationConfig(String code, int nsteps, ActivationConfig.ForBlock activations) {
-        return executeCodeWithActivationConfig(compiler.compile(code), nsteps, activations);
     }
 
     private Program executeCodeWithActivationConfig(byte[] code, int nsteps, ActivationConfig.ForBlock activations) {
