@@ -1242,11 +1242,9 @@ public class BridgeSupport {
         federationSupport.updateFederationCreationBlockHeights();
     }
 
-    public boolean hasMinimumFundsToMigrate(@Nullable Wallet retiringFederationWallet) {
-        // This value is set according to the average 500 bytes transaction size
+    private boolean hasMinimumFundsToMigrate(Wallet retiringFederationWallet) {
         Coin minimumFundsToMigrate = getFeePerKb().divide(2);
-        return retiringFederationWallet != null
-            && retiringFederationWallet.getBalance().isGreaterThan(minimumFundsToMigrate);
+        return retiringFederationWallet.getBalance().isGreaterThan(minimumFundsToMigrate);
     }
 
     private void logFundsMigrationPhase(Coin retiringBalance) {
