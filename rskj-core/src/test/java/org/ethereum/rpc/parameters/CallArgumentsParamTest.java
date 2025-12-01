@@ -274,12 +274,8 @@ public class CallArgumentsParamTest {
 
         String result = callArgumentsParam.toString();
 
-        assertTrue(result.contains("from="));
-        assertTrue(result.contains("to="));
-        assertTrue(result.contains("gas="));
-        assertTrue(result.contains("gasPrice="));
-        assertTrue(result.contains("nonce="));
-        assertTrue(result.contains("chainId="));
+        String expected = "CallArguments{from='null', to='null', gas='null', gasLimit='null', gasPrice='null', value='null', data='null', nonce='null', chainId='null'}";
+        assertEquals(expected, result);
     }
 
     @Test
@@ -297,11 +293,7 @@ public class CallArgumentsParamTest {
 
         String result = callArgumentsParam.toString();
 
-        assertTrue(result.contains("from="));
-        assertTrue(result.contains("to="));
-        assertTrue(result.contains("gas="));
-        assertTrue(result.contains("gasPrice="));
-        assertTrue(result.contains("nonce="));
-        assertTrue(result.contains("chainId="));
+        String expected = "CallArguments{from='7986b3df570230288501eea3d890bd66948c9b79', to='e7b8e91401bf4d1669f54dc5f98109d7efbc4eea', gas='0x76c0', gasLimit='null', gasPrice='0x9184e72a000', value='null', data='null', nonce='0x1', chainId='0x539'}";
+        assertEquals(expected, result);
     }
 }
