@@ -26,7 +26,7 @@ jobs:
   rootstock-integration-tests:
     name: Rootstock Integration Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 45
     steps:
       - name: Checkout Repository # Step needed to access the PR description using github CLI
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #v5.0.0
