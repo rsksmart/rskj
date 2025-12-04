@@ -1,13 +1,34 @@
 package co.rsk.rpc.netty;
 
-import static org.ethereum.TestUtils.waitFor;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import co.rsk.jsonrpc.JsonRpcError;
+import co.rsk.rpc.CorsConfiguration;
+import co.rsk.rpc.ModuleDescription;
+import co.rsk.util.JacksonParserUtil;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.googlecode.jsonrpc4j.ErrorResolver;
+import com.squareup.okhttp.MediaType;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigValueFactory;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import org.ethereum.rpc.Web3;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -22,38 +43,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
-import org.ethereum.rpc.Web3;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.googlecode.jsonrpc4j.ErrorResolver;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigObject;
-import com.typesafe.config.ConfigValueFactory;
-
-import co.rsk.config.TestSystemProperties;
-import co.rsk.jsonrpc.JsonRpcError;
-import co.rsk.rpc.CorsConfiguration;
-import co.rsk.rpc.ModuleDescription;
-import co.rsk.util.JacksonParserUtil;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import static org.ethereum.TestUtils.waitFor;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class Web3HttpServerTest {
 
@@ -612,8 +608,6 @@ class Web3HttpServerTest {
 
         int randomPort = getAvailablePort();
 
-        TestSystemProperties testSystemProperties = decorator == null ? new TestSystemProperties()
-                : new TestSystemProperties(decorator);
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", rpcAddress, rpcHost);
         JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder().maxBatchRequestsSize(5)
                 .rpcModules(filteredModules).build();
