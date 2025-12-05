@@ -648,9 +648,10 @@ class BridgeSupportSvpTest {
             // Arrange
             arrangeSvpFundTransactionUnsigned();
 
+            byte[] scriptSig = {};
             BtcTransaction pegout = PegoutTransactionBuilder.builder()
                 .withActiveFederation(activeFederation)
-                .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN)
+                .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN, scriptSig)
                 .withChangeAmount(Coin.COIN.multiply(10))
                 .withSignatures(activeFederationKeys)
                 .build();
@@ -1021,10 +1022,10 @@ class BridgeSupportSvpTest {
             // arrange
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
-
+            byte[] scriptSig = {};
             BtcTransaction pegout = PegoutTransactionBuilder.builder()
                 .withActiveFederation(activeFederation)
-                .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN)
+                .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN, scriptSig)
                 .withChangeAmount(Coin.COIN.multiply(10))
                 .withSignatures(activeFederationKeys)
                 .build();

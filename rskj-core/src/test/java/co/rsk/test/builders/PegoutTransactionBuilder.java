@@ -49,11 +49,11 @@ public class PegoutTransactionBuilder {
         return this;
     }
 
-    public PegoutTransactionBuilder withInput(Sha256Hash spendTxHash, int outputIndex, Coin value) {
+    public PegoutTransactionBuilder withInput(Sha256Hash spendTxHash, int outputIndex, Coin value, byte[] script) {
         TransactionInput input = new TransactionInput(
             networkParameters,
             null,
-            new byte[]{},
+            script,
             new TransactionOutPoint(networkParameters, outputIndex, spendTxHash),
             value
         );

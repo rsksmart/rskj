@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeUtils.calculateSignedSegwitBtcTxVirtualSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_1;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,6 +44,7 @@ import java.util.Collections;
 import java.util.List;
 
 import co.rsk.peg.federation.*;
+import co.rsk.test.builders.PegoutTransactionBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.jupiter.api.Assertions;
@@ -60,7 +62,8 @@ class ReleaseTransactionBuilderTest {
     private final Coin feePerKb = Coin.MILLICOIN.multiply(2);
     private final Federation activeP2shErpFederation = P2shErpFederationBuilder.builder().build();
     private final Script activeFederationP2SHScript = activeP2shErpFederation.getP2SHScript();
-    private final Federation p2shP2wshErpProposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+    private final List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(20);
+    private final Federation p2shP2wshErpProposedFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(keys).build();
     private Wallet wallet;
     private ReleaseTransactionBuilder builder;
     private Federation federation;
@@ -355,6 +358,53 @@ class ReleaseTransactionBuilderTest {
     }
 
     @Test
+    void createPegoutTransaction_with210Inputs_with50Outputs_shouldHaveASizeAboveMaximumBtcStandardSize() {
+        // arrange
+        int numberOfInputs = 210;
+
+        // act
+        BtcTransaction pegoutTx = createPegoutTransactionWith50Outputs(p2shP2wshErpProposedFederation, keys, numberOfInputs);
+        int size = calculateSignedSegwitBtcTxVirtualSize(pegoutTx);
+
+        // assert
+        assertTrue(size > BtcTransaction.MAX_STANDARD_TX_SIZE);
+    }
+
+    @Test
+    void createPegoutTransaction_with150Inputs_with50Outputs_shouldHaveASizeBelowMaximumBtcStandardSize() {
+        // arrange
+        int numberOfInputs = 150;
+
+        // act
+        BtcTransaction pegoutTx = createPegoutTransactionWith50Outputs(p2shP2wshErpProposedFederation, keys, numberOfInputs);
+        int size = calculateSignedSegwitBtcTxVirtualSize(pegoutTx);
+        // assert
+        assertTrue(size < BtcTransaction.MAX_STANDARD_TX_SIZE);
+    }
+
+    private BtcTransaction createPegoutTransactionWith50Outputs(Federation activeFederation, List<BtcECKey> keys, int numberOfInputs) {
+        List<UTXO> utxos = getNUtxos(activeFederation.getP2SHScript(), numberOfInputs);
+
+        PegoutTransactionBuilder pegoutTransactionBuilder = PegoutTransactionBuilder.builder()
+            .withNetworkParameters(btcMainNetParams)
+            .withSignatures(keys)
+            .withActiveFederation(activeFederation);
+
+        byte[] outputScript = activeFederation.getP2SHScript().getProgram();
+        for (int i = 0; i < utxos.size(); i++) {
+            pegoutTransactionBuilder = pegoutTransactionBuilder.withInput(BitcoinTestUtils.createHash(i), 0, utxos.get(i).getValue(), outputScript);
+        }
+
+        int numberOfOutputs = 49; // The 50th transaction output will be the change output
+        for (int i = 0; i < numberOfOutputs; i++) {
+            Address recipient = BitcoinTestUtils.createP2PKHAddress(btcMainNetParams, "address" + i);
+            pegoutTransactionBuilder = pegoutTransactionBuilder.withOutput(Coin.SATOSHI, recipient);
+        }
+
+        return pegoutTransactionBuilder.build();
+    }
+
+    @Test
     void buildMigrationTransaction_withAFederationWithEnoughUTXOs_afterRSKIP376_shouldReturnACorrectMigrationTx_withVersion2() {
         // Arrange
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
@@ -567,8 +617,7 @@ class ReleaseTransactionBuilderTest {
         assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
     }
 
-    private static List<UTXO> getUtxos(Script outputScript) {
-        int numberOfUtxos = 2;
+    private static List<UTXO> getNUtxos(Script outputScript, int numberOfUtxos) {
         Coin value = Coin.COIN;
         ArrayList<UTXO> utxos = new ArrayList<>(numberOfUtxos);
         for (int i = 0; i < numberOfUtxos; i++) {
@@ -583,6 +632,10 @@ class ReleaseTransactionBuilderTest {
             utxos.add(utxo);
         }
         return utxos;
+    }
+
+    private static List<UTXO> getUtxos(Script outputScript) {
+        return getNUtxos(outputScript, 2);
     }
 
     @Test
