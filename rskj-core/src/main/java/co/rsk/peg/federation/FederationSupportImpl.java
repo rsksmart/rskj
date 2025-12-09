@@ -179,15 +179,15 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    @Nullable
-    public Federation getRetiringFederation() {
+    public Optional<Federation> getRetiringFederation() {
         StorageFederationReference retiringFederationReference = getRetiringFederationReference();
 
         if (retiringFederationReference != StorageFederationReference.OLD) {
-            return null; // TODO Make this method Optional to avoid returning null
+            return Optional.empty();
         }
 
-        return provider.getOldFederation(constants, activations);
+        Federation oldFederation = provider.getOldFederation(constants, activations);
+        return Optional.of(oldFederation);
     }
 
     /**
@@ -222,61 +222,50 @@ public class FederationSupportImpl implements FederationSupport {
 
     @Override
     public Address getRetiringFederationAddress() {
-        Federation retiringFederation = getRetiringFederation();
-        if (retiringFederation == null) {
-            return null;
-        }
+        Optional<Federation> retiringFederation = getRetiringFederation();
+        return retiringFederation.map(Federation::getAddress).orElse(null);
 
-        return retiringFederation.getAddress();
     }
 
     @Override
     public int getRetiringFederationSize() {
-        Federation retiringFederation = getRetiringFederation();
-        if (retiringFederation == null) {
-            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
-        }
+        Optional<Federation> retiringFederation = getRetiringFederation();
+        return retiringFederation.map(Federation::getSize)
+            .orElseGet(FederationChangeResponseCode.FEDERATION_NON_EXISTENT::getCode);
 
-        return retiringFederation.getSize();
     }
 
     @Override
     public int getRetiringFederationThreshold() {
-        Federation retiringFederation = getRetiringFederation();
-        if (retiringFederation == null) {
-            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
-        }
+        Optional<Federation> retiringFederation = getRetiringFederation();
+        return retiringFederation.map(Federation::getNumberOfSignaturesRequired)
+            .orElseGet(FederationChangeResponseCode.FEDERATION_NON_EXISTENT::getCode);
 
-        return retiringFederation.getNumberOfSignaturesRequired();
     }
 
     @Override
     public Instant getRetiringFederationCreationTime() {
-        Federation retiringFederation = getRetiringFederation();
-        if (retiringFederation == null) {
-            return null;
-        }
+        Optional<Federation> retiringFederation = getRetiringFederation();
+        return retiringFederation.map(Federation::getCreationTime).orElse(null);
 
-        return retiringFederation.getCreationTime();
     }
 
     @Override
     public long getRetiringFederationCreationBlockNumber() {
-        Federation retiringFederation = getRetiringFederation();
-        if (retiringFederation == null) {
-            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
-        }
-        return retiringFederation.getCreationBlockNumber();
+        Optional<Federation> retiringFederation = getRetiringFederation();
+        long nonExistentFederationErrorCode = FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
+        return retiringFederation.map(Federation::getCreationBlockNumber)
+            .orElse(nonExistentFederationErrorCode);
     }
 
     @Override
     public byte[] getRetiringFederatorBtcPublicKey(int index) {
-        Federation retiringFederation = getRetiringFederation();
-        if (retiringFederation == null) {
+        Optional<Federation> retiringFederation = getRetiringFederation();
+        if (retiringFederation.isEmpty()) {
             return null;
         }
 
-        List<BtcECKey> publicKeys = retiringFederation.getBtcPublicKeys();
+        List<BtcECKey> publicKeys = retiringFederation.get().getBtcPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
             throw new IndexOutOfBoundsException(String.format("Retiring federator index must be between 0 and %d", publicKeys.size() - 1));
@@ -287,12 +276,11 @@ public class FederationSupportImpl implements FederationSupport {
 
     @Override
     public byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
-        Federation retiringFederation = getRetiringFederation();
-        if (retiringFederation == null) {
-            return null;
-        }
+        Optional<Federation> retiringFederation = getRetiringFederation();
+        return retiringFederation
+            .map(federation -> getFederationMemberPublicKeyOfType(federation.getMembers(), index, keyType, "Retiring federator"))
+            .orElse(null);
 
-        return getFederationMemberPublicKeyOfType(retiringFederation.getMembers(), index, keyType, "Retiring federator");
     }
 
     @Override
@@ -305,7 +293,7 @@ public class FederationSupportImpl implements FederationSupport {
         FederationContext.FederationContextBuilder federationContextBuilder = FederationContext.builder();
         federationContextBuilder.withActiveFederation(getActiveFederation());
 
-        Optional.ofNullable(getRetiringFederation())
+        getRetiringFederation()
             .ifPresent(federationContextBuilder::withRetiringFederation);
 
         provider.getLastRetiredFederationP2SHScript(activations)
@@ -570,7 +558,7 @@ public class FederationSupportImpl implements FederationSupport {
             return FederationChangeResponseCode.EXISTING_FEDERATION_AWAITING_ACTIVATION.getCode();
         }
 
-        if (getRetiringFederation() != null) {
+        if (getRetiringFederation().isPresent()) {
             logger.warn("[createPendingFederation] There is an existing retiring federation.");
             return FederationChangeResponseCode.RETIRING_FEDERATION_ALREADY_EXISTS.getCode();
         }
