@@ -3629,7 +3629,9 @@ public class BridgeSupportIT {
                 return expectedWallet;
             });
 
-            Assertions.assertSame(expectedWallet, bridgeSupport.getRetiringFederationWallet(false));
+            Optional<Wallet> retiringFederationWalletOptional = bridgeSupport.getRetiringFederationWallet(false);
+            Assertions.assertTrue(retiringFederationWalletOptional.isPresent());
+            Assertions.assertSame(expectedWallet, retiringFederationWalletOptional.get());
         }
     }
 

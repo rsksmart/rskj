@@ -282,7 +282,7 @@ public class BridgeSupport {
 
     /**
      * Get the wallet for the currently active federation
-     * @return A BTC wallet for the currently active federation
+     * @return An Optional containing a BTC wallet for the currently active federation
      *
      * @param shouldConsiderFlyoverUTXOs Whether to consider flyover UTXOs
      */
@@ -302,20 +302,20 @@ public class BridgeSupport {
     /**
      * Get the wallet for the currently retiring federation
      * or null if there's currently no retiring federation
-     * @return A BTC wallet for the currently active federation
      *
      * @param shouldConsiderFlyoverUTXOs Whether to consider flyover UTXOs
+     * @return An optional containing a BTC wallet for the currently active federation
      */
-    protected Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
+    protected Optional<Wallet> getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         List<UTXO> retiringFederationBtcUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
         return getRetiringFederationWallet(shouldConsiderFlyoverUTXOs, retiringFederationBtcUTXOs.size());
     }
 
-    private Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs, int utxosSizeLimit) {
+    private Optional<Wallet> getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs, int utxosSizeLimit) {
         Optional<Federation> federation = getRetiringFederation();
         if (federation.isEmpty()) {
             logger.debug("[getRetiringFederationWallet] No retiring federation found");
-            return null;
+            return Optional.empty();
         }
 
         List<UTXO> utxos = federationSupport.getRetiringFederationBtcUTXOs();
@@ -325,13 +325,14 @@ public class BridgeSupport {
         }
 
         logger.debug("[getRetiringFederationWallet] Fetching retiring federation spend wallet");
-        return BridgeUtils.getFederationSpendWallet(
+        Wallet federationWallet = BridgeUtils.getFederationSpendWallet(
             btcContext,
             federation.get(),
             utxos,
             shouldConsiderFlyoverUTXOs,
             provider
         );
+        return Optional.of(federationWallet);
     }
 
     /**
@@ -848,9 +849,9 @@ public class BridgeSupport {
         logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the active federation", outputsToTheActiveFederation.size());
 
         // Outputs to the retiring federation (if any)
-        Wallet retiringFederationWallet = getRetiringFederationWallet(false);
-        if (retiringFederationWallet != null) {
-            List<TransactionOutput> outputsToTheRetiringFederation = btcTx.getWalletOutputs(retiringFederationWallet);
+        Optional<Wallet> retiringFederationWallet = getRetiringFederationWallet(false);
+        if (retiringFederationWallet.isPresent()) {
+            List<TransactionOutput> outputsToTheRetiringFederation = btcTx.getWalletOutputs(retiringFederationWallet.get());
             for (TransactionOutput output : outputsToTheRetiringFederation) {
                 UTXO utxo = new UTXO(
                     btcTx.getHash(),
@@ -1244,10 +1245,15 @@ public class BridgeSupport {
     }
 
     private void processFundsMigration(Transaction rskTx) throws IOException {
-        Wallet retiringFederationWallet = activations.isActive(RSKIP294) ?
+        Optional<Wallet> retiringFederationWalletOptional = activations.isActive(RSKIP294) ?
             getRetiringFederationWallet(true, bridgeConstants.getMaxInputsPerPegoutTransaction()) :
             getRetiringFederationWallet(true);
 
+        if (retiringFederationWalletOptional.isEmpty()) {
+            return;
+        }
+
+        Wallet retiringFederationWallet = retiringFederationWalletOptional.get();
         List<UTXO> availableUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
         Federation activeFederation = getActiveFederation();
 
@@ -1271,7 +1277,7 @@ public class BridgeSupport {
             }
         }
 
-        if (retiringFederationWallet != null && federationIsPastMigrationAge(activeFederation)) {
+        if (federationIsPastMigrationAge(activeFederation)) {
             if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
                 Coin retiringFederationBalance = retiringFederationWallet.getBalance();
                 String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
@@ -1326,11 +1332,10 @@ public class BridgeSupport {
         return federationAge >= ageEnd;
     }
 
-    private boolean hasMinimumFundsToMigrate(@Nullable Wallet retiringFederationWallet) {
+    private boolean hasMinimumFundsToMigrate(Wallet retiringFederationWallet) {
         // This value is set according to the average 500 bytes transaction size
         Coin minimumFundsToMigrate = getFeePerKb().divide(2);
-        return retiringFederationWallet != null
-                && retiringFederationWallet.getBalance().isGreaterThan(minimumFundsToMigrate);
+        return retiringFederationWallet.getBalance().isGreaterThan(minimumFundsToMigrate);
     }
 
     private void migrateFunds(
@@ -3424,9 +3429,9 @@ public class BridgeSupport {
         logger.debug("[computeTotalAmountSent] Amount sent to the active federation {}", amountToActive);
 
         Coin amountToRetiring = Coin.ZERO;
-        Wallet retiringFederationWallet = getRetiringFederationWallet(false);
-        if (retiringFederationWallet != null) {
-            amountToRetiring = btcTx.getValueSentToMe(retiringFederationWallet);
+        Optional<Wallet> retiringFederationWallet = getRetiringFederationWallet(false);
+        if (retiringFederationWallet.isPresent()) {
+            amountToRetiring = btcTx.getValueSentToMe(retiringFederationWallet.get());
         }
         logger.debug("[computeTotalAmountSent] Amount sent to the retiring federation {}", amountToRetiring);
 
