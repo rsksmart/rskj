@@ -38,9 +38,11 @@ import java.util.List;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
-    public static final int NUMBER_OF_EXTRA_HEADER_FIELDS = 3;
-    private static final int RLP_HEADER_SIZE = 20;
-    private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 23;
+
+    private static final int NUMBER_OF_EXTRA_HEADER_FIELDS = 3;
+    private static final int RLP_BASE_HEADER_SIZE = 16;
+    private static final int RLP_BASE_HEADER_SIZE_WITH_MERGED_MINING = 19;
+
     private final ActivationConfig activationConfig;
 
     public BlockFactory(ActivationConfig activationConfig) {
@@ -118,11 +120,14 @@ public class BlockFactory {
     }
 
     private BlockHeader decodeHeader(RLPList rlpHeader, boolean compressed, boolean sealed) {
+
         byte[] parentHash = rlpHeader.get(0).getRLPData();
         byte[] unclesHash = rlpHeader.get(1).getRLPData();
+
         byte[] coinBaseBytes = rlpHeader.get(2).getRLPData();
         RskAddress coinbase = RLP.parseRskAddress(coinBaseBytes);
-        byte[] stateRoot = rlpHeader.get(NUMBER_OF_EXTRA_HEADER_FIELDS).getRLPData();
+
+        byte[] stateRoot = rlpHeader.get(3).getRLPData();
         if (stateRoot == null) {
             stateRoot = EMPTY_TRIE_HASH;
         }
@@ -138,36 +143,39 @@ public class BlockFactory {
         }
 
         byte[] extensionData = rlpHeader.get(6).getRLPData(); // rskip351: logs bloom when decoding extended, list(version, hash(extension)) when compressed
+
         byte[] difficultyBytes = rlpHeader.get(7).getRLPData();
         BlockDifficulty difficulty = RLP.parseBlockDifficulty(difficultyBytes);
 
         byte[] nrBytes = rlpHeader.get(8).getRLPData();
-        byte[] glBytes = rlpHeader.get(9).getRLPData();
-        byte[] guBytes = rlpHeader.get(10).getRLPData();
-        byte[] tsBytes = rlpHeader.get(11).getRLPData();
-
         long blockNumber = parseBigInteger(nrBytes).longValueExact();
 
-        long gasUsed = parseBigInteger(guBytes).longValueExact();
-        long timestamp = parseBigInteger(tsBytes).longValueExact();
-
-        byte[] extraData = rlpHeader.get(12).getRLPData();
-
-        Coin paidFees = RLP.parseCoin(rlpHeader.get(13).getRLPData());
-        byte[] minimumGasPriceBytes = rlpHeader.get(14).getRLPData();
-        Coin minimumGasPrice = RLP.parseSignedCoinNonNullZero(minimumGasPriceBytes);
-
-        if (!canBeDecoded(rlpHeader, blockNumber, compressed)) {
+        if (!canBeDecoded(rlpHeader.size(), blockNumber, compressed)) {
             throw new IllegalArgumentException(String.format(
                     "Invalid block header size: %d",
                     rlpHeader.size()
             ));
         }
 
-        int r = 15;
+        byte[] glBytes = rlpHeader.get(9).getRLPData();
 
-        byte[] ucBytes = rlpHeader.get(r++).getRLPData();
+        byte[] guBytes = rlpHeader.get(10).getRLPData();
+        long gasUsed = parseBigInteger(guBytes).longValueExact();
+
+        byte[] tsBytes = rlpHeader.get(11).getRLPData();
+        long timestamp = parseBigInteger(tsBytes).longValueExact();
+
+        byte[] extraData = rlpHeader.get(12).getRLPData();
+
+        Coin paidFees = RLP.parseCoin(rlpHeader.get(13).getRLPData());
+
+        byte[] minimumGasPriceBytes = rlpHeader.get(14).getRLPData();
+        Coin minimumGasPrice = RLP.parseSignedCoinNonNullZero(minimumGasPriceBytes);
+
+        byte[] ucBytes = rlpHeader.get(15).getRLPData();
         int uncleCount = parseBigInteger(ucBytes).intValueExact();
+
+        int r = 16; // Variable Index Counter
 
         byte[] ummRoot = null;
         if (activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber)) {
@@ -175,7 +183,6 @@ public class BlockFactory {
         }
 
         byte version = 0x0;
-
         if (activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
             version = compressed
                     ? RLP.decodeList(extensionData).get(0).getRLPData()[0]
@@ -184,7 +191,6 @@ public class BlockFactory {
 
         short[] txExecutionSublistsEdges = null;
         byte[] baseEvent = null;
-
         if (activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) && !compressed) {
             if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
                 txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
@@ -277,28 +283,30 @@ public class BlockFactory {
         );
     }
 
-    private boolean canBeDecoded(RLPList rlpHeader, long blockNumber, boolean compressed) {
-        int preUmmHeaderSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? 0 : 1;
-        int preParallelSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 0 : 1;
-        int prebaseEventSizeAdjustmentRSKIP535 = activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber) ? 0 : 1;
-        int preRSKIP351SizeAdjustment = getRSKIP351SizeAdjustment(blockNumber, compressed, preParallelSizeAdjustment, prebaseEventSizeAdjustmentRSKIP535);
+    private boolean canBeDecoded(int rlpHeaderSize, long blockNumber, boolean compressed) {
+        int extraFields = 0;
 
-        int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - prebaseEventSizeAdjustmentRSKIP535;
-        int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - prebaseEventSizeAdjustmentRSKIP535;
+        extraFields += activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? 1 : 0;
+        extraFields += getHeaderExtensionFields(blockNumber, compressed);
 
-        return rlpHeader.size() == expectedSize || rlpHeader.size() == expectedSizeMM;
+        int expectedSize = RLP_BASE_HEADER_SIZE + extraFields;
+        int expectedSizeMM = RLP_BASE_HEADER_SIZE_WITH_MERGED_MINING + extraFields;
+
+        return rlpHeaderSize == expectedSize || rlpHeaderSize == expectedSizeMM;
     }
 
-    private int getRSKIP351SizeAdjustment(long blockNumber, boolean compressed, int preParallelSizeAdjustment,
-                                          int preBaseEventSizeAdjustmentRSKIP535) {
-        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
-            return 1; // remove version
+    private int getHeaderExtensionFields(long blockNumber, boolean compressed) {
+        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || compressed) {
+            return 0;
         }
 
-        if (compressed) {
-            return NUMBER_OF_EXTRA_HEADER_FIELDS - preParallelSizeAdjustment - preBaseEventSizeAdjustmentRSKIP535; // remove version, edges and baseEvent size if existent
-        }
+        // At this point, Bock Header Extension (RSKIP351) is activated and compressed is false
 
-        return 0;
+        int extraFields = 1; // version
+        extraFields += activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 1 : 0; // txExecutionSublistsEdges
+        extraFields += activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber) ? 1 : 0; // baseEvent
+
+        return extraFields;
     }
+
 }
