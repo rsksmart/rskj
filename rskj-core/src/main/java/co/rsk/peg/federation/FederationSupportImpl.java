@@ -304,13 +304,11 @@ public class FederationSupportImpl implements FederationSupport {
 
     @Override
     public List<UTXO> getRetiringFederationBtcUTXOs() {
-        switch (getRetiringFederationReference()) {
-            case OLD:
-                return provider.getOldFederationBtcUTXOs();
-            case NONE:
-            default:
-                return Collections.emptyList();
+        if (getRetiringFederationReference() == StorageFederationReference.OLD) {
+            return provider.getOldFederationBtcUTXOs();
         }
+
+        return Collections.emptyList();
     }
 
     @Nullable
