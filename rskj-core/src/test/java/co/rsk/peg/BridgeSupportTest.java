@@ -458,10 +458,12 @@ class BridgeSupportTest {
 
         @Test
         void getRetiringFederation() {
-            Optional<Federation> retiringFederation = Optional.of(federation);
-            when(federationSupport.getRetiringFederation()).thenReturn(retiringFederation);
-            assertTrue(bridgeSupport.getRetiringFederation().isPresent());
-            assertThat(bridgeSupport.getRetiringFederation().get(), is(federation));
+            Optional<Federation> expectedRetiringFederation = Optional.of(federation);
+            when(federationSupport.getRetiringFederation()).thenReturn(expectedRetiringFederation);
+
+            Optional<Federation> actualRetiringFederation = bridgeSupport.getRetiringFederation();
+            assertTrue(actualRetiringFederation.isPresent());
+            assertThat(actualRetiringFederation.get(), is(federation));
         }
 
         @Test
