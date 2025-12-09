@@ -185,7 +185,7 @@ public class BlockFactory {
         short[] txExecutionSublistsEdges = null;
         byte[] baseEvent = null;
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) && !compressed) {
+        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) {
             if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
                 txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
             }
