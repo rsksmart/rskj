@@ -1270,9 +1270,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederation")
-        void getRetiringFederation_returnsNull() {
-            Federation retiringFederation = federationSupport.getRetiringFederation();
-            assertThat(retiringFederation, is(nullValue()));
+        void getRetiringFederation_returnsEmpty() {
+            Optional<Federation> retiringFederation = federationSupport.getRetiringFederation();
+            assertTrue(retiringFederation.isEmpty());
         }
 
         @Test
@@ -1359,9 +1359,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederation")
-        void getRetiringFederation_returnsNull() {
-            Federation retiringFederation = federationSupport.getRetiringFederation();
-            assertThat(retiringFederation, is(nullValue()));
+        void getRetiringFederation_returnsEmpty() {
+            Optional<Federation> retiringFederation = federationSupport.getRetiringFederation();
+            assertTrue(retiringFederation.isEmpty());
         }
 
         @Test
@@ -1475,7 +1475,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederation")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederation_withNewFederationNotActive_returnsNull(
+        void getRetiringFederation_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1489,8 +1489,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Federation retiringFederation = federationSupport.getRetiringFederation();
-            assertThat(retiringFederation, is(nullValue()));
+            Optional<Federation> retiringFederation = federationSupport.getRetiringFederation();
+            assertTrue(retiringFederation.isEmpty());
         }
 
         @ParameterizedTest
@@ -1510,8 +1510,9 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Federation retiringFederation = federationSupport.getRetiringFederation();
-            assertThat(retiringFederation, is(oldFederation));
+            Optional<Federation> retiringFederation = federationSupport.getRetiringFederation();
+            assertTrue(retiringFederation.isPresent());
+            assertThat(retiringFederation.get(), is(oldFederation));
         }
 
         @ParameterizedTest

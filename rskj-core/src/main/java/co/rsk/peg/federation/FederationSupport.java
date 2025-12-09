@@ -76,10 +76,10 @@ public interface FederationSupport {
     /**
      * Returns the currently retiring federation.
      * See getRetiringFederationReference() for details.
+     *
      * @return the retiring federation.
      */
-    @Nullable
-    Federation getRetiringFederation();
+    Optional<Federation> getRetiringFederation();
 
     /**
      * Returns the retiring federation bitcoin address.
