@@ -3065,7 +3065,13 @@ public class BridgeSupport {
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
             // Migration transaction is created only and only if there is a retiring federation.
-            Federation retiringFederation = getRetiringFederation().get();
+            // It's impossible to reach this point without a retiring federation.
+            Optional<Federation> retiringFederationOptional = getRetiringFederation();
+            if (retiringFederationOptional.isEmpty()) {
+                throw new NoSuchElementException("No retiring federation is present. Transaction cannot be created.");
+            }
+            Federation retiringFederation = retiringFederationOptional.get();
+
             ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
                 networkParameters,
                 originWallet,
