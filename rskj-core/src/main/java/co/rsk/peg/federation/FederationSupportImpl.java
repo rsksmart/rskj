@@ -224,7 +224,6 @@ public class FederationSupportImpl implements FederationSupport {
     public Address getRetiringFederationAddress() {
         Optional<Federation> retiringFederation = getRetiringFederation();
         return retiringFederation.map(Federation::getAddress).orElse(null);
-
     }
 
     @Override
@@ -232,7 +231,6 @@ public class FederationSupportImpl implements FederationSupport {
         Optional<Federation> retiringFederation = getRetiringFederation();
         return retiringFederation.map(Federation::getSize)
             .orElseGet(FederationChangeResponseCode.FEDERATION_NON_EXISTENT::getCode);
-
     }
 
     @Override
@@ -240,14 +238,12 @@ public class FederationSupportImpl implements FederationSupport {
         Optional<Federation> retiringFederation = getRetiringFederation();
         return retiringFederation.map(Federation::getNumberOfSignaturesRequired)
             .orElseGet(FederationChangeResponseCode.FEDERATION_NON_EXISTENT::getCode);
-
     }
 
     @Override
     public Instant getRetiringFederationCreationTime() {
         Optional<Federation> retiringFederation = getRetiringFederation();
         return retiringFederation.map(Federation::getCreationTime).orElse(null);
-
     }
 
     @Override
@@ -280,7 +276,6 @@ public class FederationSupportImpl implements FederationSupport {
         return retiringFederation
             .map(federation -> getFederationMemberPublicKeyOfType(federation.getMembers(), index, keyType, "Retiring federator"))
             .orElse(null);
-
     }
 
     @Override
