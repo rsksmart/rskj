@@ -312,8 +312,8 @@ public class BridgeSupport {
     }
 
     private Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs, int utxosSizeLimit) {
-        Federation federation = getRetiringFederation();
-        if (federation == null) {
+        Optional<Federation> federation = getRetiringFederation();
+        if (federation.isEmpty()) {
             logger.debug("[getRetiringFederationWallet] No retiring federation found");
             return null;
         }
@@ -327,7 +327,7 @@ public class BridgeSupport {
         logger.debug("[getRetiringFederationWallet] Fetching retiring federation spend wallet");
         return BridgeUtils.getFederationSpendWallet(
             btcContext,
-            federation,
+            federation.get(),
             utxos,
             shouldConsiderFlyoverUTXOs,
             provider
@@ -1773,14 +1773,15 @@ public class BridgeSupport {
     }
 
     private Optional<Federation> getFederationFromPublicKey(BtcECKey federatorPublicKey) {
-        Federation retiringFederation = getRetiringFederation();
+        Optional<Federation> retiringFederation = getRetiringFederation();
         Federation activeFederation = getActiveFederation();
 
         if (activeFederation.hasBtcPublicKey(federatorPublicKey)) {
             return Optional.of(activeFederation);
         }
-        if (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorPublicKey)) {
-            return Optional.of(retiringFederation);
+
+        if (retiringFederation.isPresent() && retiringFederation.get().hasBtcPublicKey(federatorPublicKey)) {
+            return retiringFederation;
         }
 
         return Optional.empty();
@@ -1971,10 +1972,10 @@ public class BridgeSupport {
                 logger.debug("[sign] Tx input {} for tx {} signed.", i, releaseCreationRskTxHash);
                 signed = true;
             } catch (IllegalStateException e) {
-                Federation retiringFederation = getRetiringFederation();
+                Optional<Federation> retiringFederation = getRetiringFederation();
                 if (getActiveFederation().hasBtcPublicKey(federatorBtcPublicKey)) {
                     logger.debug("[sign] A member of the active federation is trying to sign a tx of the retiring one");
-                } else if (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorBtcPublicKey)) {
+                } else if (retiringFederation.isPresent() && retiringFederation.get().hasBtcPublicKey(federatorBtcPublicKey)) {
                     logger.debug("[sign] A member of the retiring federation is trying to sign a tx of the active one");
                 }
                 return false;
@@ -2332,8 +2333,7 @@ public class BridgeSupport {
         return federationSupport.getActiveFederation();
     }
 
-    @Nullable
-    public Federation getRetiringFederation() {
+    public Optional<Federation> getRetiringFederation() {
         return federationSupport.getRetiringFederation();
     }
 
@@ -2782,14 +2782,14 @@ public class BridgeSupport {
 
         FlyoverFederationInformation flyoverActiveFederationInformation = createFlyoverFederationInformation(flyoverDerivationHash);
         Address flyoverActiveFederationAddress = flyoverActiveFederationInformation.getFlyoverFederationAddress(networkParameters);
-        Federation retiringFederation = getRetiringFederation();
+        Optional<Federation> retiringFederation = getRetiringFederation();
         Optional<FlyoverFederationInformation> flyoverRetiringFederationInformation = Optional.empty();
 
         List<Address> addresses = new ArrayList<>(2);
         addresses.add(flyoverActiveFederationAddress);
 
-        if (activations.isActive(RSKIP293) && retiringFederation != null) {
-            flyoverRetiringFederationInformation = Optional.of(createFlyoverFederationInformation(flyoverDerivationHash, retiringFederation));
+        if (activations.isActive(RSKIP293) && retiringFederation.isPresent()) {
+            flyoverRetiringFederationInformation = Optional.of(createFlyoverFederationInformation(flyoverDerivationHash, retiringFederation.get()));
             Address flyoverRetiringFederationAddress = flyoverRetiringFederationInformation.get().getFlyoverFederationAddress(
                 networkParameters
             );
@@ -3064,10 +3064,12 @@ public class BridgeSupport {
         Coin expectedMigrationValue = originWallet.getBalance();
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
+            // Migration transaction is created only and only if there is a retiring federation.
+            Federation retiringFederation = getRetiringFederation().get();
             ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
                 networkParameters,
                 originWallet,
-                getRetiringFederation().getFormatVersion(),
+                retiringFederation.getFormatVersion(),
                 destinationAddress,
                 getFeePerKb(),
                 activations
@@ -3157,9 +3159,12 @@ public class BridgeSupport {
         }
 
         // and then against retiring fed
-        Federation retiringFederation = getRetiringFederation();
-        if (retiringFederation != null && outputsMatchFederation(btcTx, retiringFederation)) {
-            return retiringFederation;
+        Optional<Federation> retiringFederationOptional = getRetiringFederation();
+        if (retiringFederationOptional.isPresent()) {
+            Federation retiringFederation = retiringFederationOptional.get();
+            if (outputsMatchFederation(btcTx, retiringFederation)) {
+                return retiringFederation;
+            }
         }
 
         throw new IllegalStateException("Couldn't extract federation from btcTx outputs.");
@@ -3201,9 +3206,12 @@ public class BridgeSupport {
             return activeFederation;
         }
 
-        Federation retiringFederation = getRetiringFederation();
-        if (retiringFederation != null && outputsMatchFlyoverFederation(btcTx, retiringFederation, flyoverDerivationHash)) {
-            return retiringFederation;
+        Optional<Federation> retiringFederationOptional = getRetiringFederation();
+        if (retiringFederationOptional.isPresent()) {
+            Federation retiringFederation = retiringFederationOptional.get();
+            if (outputsMatchFlyoverFederation(btcTx, retiringFederation, flyoverDerivationHash)) {
+                return retiringFederation;
+            }
         }
 
         throw new IllegalStateException("Couldn't extract federation from btcTx outputs.");

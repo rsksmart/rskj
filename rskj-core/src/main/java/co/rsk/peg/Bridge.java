@@ -1605,8 +1605,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return (self, args) -> {
             boolean isFromActiveFed = BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache);
 
-            Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
-            boolean isFromRetiringFed = retiringFederation != null && BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation, self.signatureCache);
+            Optional<Federation> retiringFederation = self.bridgeSupport.getRetiringFederation();
+            boolean isFromRetiringFed = retiringFederation.isPresent() && BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation.get(), self.signatureCache);
 
             if (!isFromActiveFed && !isFromRetiringFed) {
                 String errorMessage = String.format(
@@ -1625,8 +1625,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return (self, args) -> {
             boolean isFromActiveFed = BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache);
 
-            Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
-            boolean isFromRetiringFed = retiringFederation != null && BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation, self.signatureCache);
+            Optional<Federation> retiringFederation = self.bridgeSupport.getRetiringFederation();
+            boolean isFromRetiringFed = retiringFederation.isPresent() && BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation.get(), self.signatureCache);
 
             Optional<Federation> proposedFederation = self.bridgeSupport.getProposedFederation();
             boolean isFromProposedFed = proposedFederation.isPresent() && BridgeUtils.isFromFederateMember(self.rskTx, proposedFederation.get(), self.signatureCache);

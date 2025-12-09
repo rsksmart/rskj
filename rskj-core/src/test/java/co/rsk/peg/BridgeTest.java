@@ -876,7 +876,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(null).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.empty()).when(bridgeSupportMock).getRetiringFederation();
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         RskAddress txSender = new RskAddress(key.getAddress());
@@ -911,7 +911,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(retiringFederation).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.of(retiringFederation)).when(bridgeSupportMock).getRetiringFederation();
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         RskAddress txSender = new RskAddress(key.getAddress());
@@ -946,7 +946,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(null).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.empty()).when(bridgeSupportMock).getRetiringFederation();
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         RskAddress txSender = new RskAddress(key.getAddress());
@@ -990,7 +990,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(retiringFederation).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.of(retiringFederation)).when(bridgeSupportMock).getRetiringFederation();
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         RskAddress txSender = new RskAddress(key.getAddress());
