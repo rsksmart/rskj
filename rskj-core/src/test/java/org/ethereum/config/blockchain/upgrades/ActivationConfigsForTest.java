@@ -202,7 +202,9 @@ public class ActivationConfigsForTest {
     }
 
     private static List<ConsensusRule> getVetiverRskips() {
-        return new ArrayList<>(); // TBD
+        return new ArrayList<>(List.of(
+            ConsensusRule.RSKIP535
+        ));
     }
 
     public static ActivationConfig genesis() {
