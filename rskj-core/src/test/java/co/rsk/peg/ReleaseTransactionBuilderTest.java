@@ -91,7 +91,7 @@ class ReleaseTransactionBuilderTest {
         Script p2SHScript = activeFederation.getP2SHScript();
         List<UTXO> utxos = getUtxos(p2SHScript);
 
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(btcMainNetParams),
             activeFederation,
             utxos,
@@ -237,7 +237,7 @@ class ReleaseTransactionBuilderTest {
     }
 
     private ReleaseTransactionBuilder getReleaseTransactionBuilderForMainnet(List<UTXO> utxos) {
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
@@ -306,7 +306,7 @@ class ReleaseTransactionBuilderTest {
     void buildMigrationTransaction_withAFederationWithEnoughUTXOs_beforeRSKIP376_shouldReturnACorrectMigrationTx_withVersion1() {
         // Arrange
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
@@ -358,7 +358,7 @@ class ReleaseTransactionBuilderTest {
     void buildMigrationTransaction_withAFederationWithEnoughUTXOs_afterRSKIP376_shouldReturnACorrectMigrationTx_withVersion2() {
         // Arrange
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
@@ -436,7 +436,7 @@ class ReleaseTransactionBuilderTest {
     void buildMigrationTransaction_transferringZeroBalance_withAFederationWithoutUTXOs_shouldReturnDustySendRequestedResponseCode() {
         // Arrange
         List<UTXO> utxos = Collections.emptyList();
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
@@ -492,7 +492,7 @@ class ReleaseTransactionBuilderTest {
     void buildMigrationTransaction_withNullDestinationAddress_shouldThrowNullPointerException() {
         // Arrange
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
@@ -540,7 +540,7 @@ class ReleaseTransactionBuilderTest {
         Script p2SHScript = nonStandardErpFederation.getP2SHScript();
         List<UTXO> utxos = getUtxos(p2SHScript);
 
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(btcMainNetParams),
             nonStandardErpFederation,
             utxos,
@@ -870,7 +870,7 @@ class ReleaseTransactionBuilderTest {
             new UTXO(mockUTXOHash("3"), 0, Coin.CENT.times(3), 0, false, federation.getP2SHScript())
         );
 
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             Context.getOrCreate(regtestParameters),
             federation,
             utxos,
@@ -935,7 +935,7 @@ class ReleaseTransactionBuilderTest {
             new UTXO(mockUTXOHash("3"), 0, Coin.CENT.times(3), 0, false, federation.getP2SHScript())
         );
 
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             Context.getOrCreate(regtestParameters),
             federation,
             utxos,
@@ -992,7 +992,7 @@ class ReleaseTransactionBuilderTest {
             new UTXO(mockUTXOHash("2"), 0, Coin.COIN, 0, false, federation.getP2SHScript())
         );
 
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             Context.getOrCreate(regtestParameters),
             federation,
             utxos,
@@ -1028,7 +1028,7 @@ class ReleaseTransactionBuilderTest {
             new UTXO(mockUTXOHash("3"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript())
         );
 
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             Context.getOrCreate(regtestParameters),
             federation,
             utxos,
@@ -1056,7 +1056,7 @@ class ReleaseTransactionBuilderTest {
             new UTXO(mockUTXOHash("4"), 0, Coin.CENT, 0, false, federation.getP2SHScript())
         );
 
-        Wallet newWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet newWallet = BridgeUtils.getFederationSpendWallet(
             Context.getOrCreate(regtestParameters),
             federation,
             newUtxos,
@@ -1085,7 +1085,7 @@ class ReleaseTransactionBuilderTest {
 
         List<UTXO> utxos = PegTestUtils.createUTXOs(600, federation.getAddress());
 
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             Context.getOrCreate(regtestParameters),
             federation,
             utxos,
@@ -1151,7 +1151,7 @@ class ReleaseTransactionBuilderTest {
             new UTXO(mockUTXOHash("2"), 0, Coin.COIN, 0, false, federation.getP2SHScript())
         );
 
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             Context.getOrCreate(regtestParameters),
             federation,
             utxos,
@@ -1204,7 +1204,7 @@ class ReleaseTransactionBuilderTest {
             new UTXO(mockUTXOHash("2"), 0, Coin.COIN, 0, false, federation.getP2SHScript())
         );
 
-        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+        BridgeBtcWallet thisWallet = BridgeUtils.getFederationSpendWallet(
             Context.getOrCreate(regtestParameters),
             federation,
             utxos,

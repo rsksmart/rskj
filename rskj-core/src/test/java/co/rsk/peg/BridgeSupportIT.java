@@ -1076,7 +1076,7 @@ public class BridgeSupportIT {
                 any(List.class),
                 anyBoolean(),
                 any()
-            )).thenReturn(mock(Wallet.class));
+            )).thenReturn(mock(BridgeBtcWallet.class));
 
             Repository repository = createRepository();
             Repository track = repository.startTracking();
@@ -3562,7 +3562,7 @@ public class BridgeSupportIT {
         when(federationStorageProvider.getNewFederation(any(), any())).thenReturn(expectedFederation);
         Object expectedUtxos = federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks);
 
-        final Wallet expectedWallet = mock(Wallet.class);
+        final BridgeBtcWallet expectedWallet = mock(BridgeBtcWallet.class);
         try (MockedStatic<BridgeUtils> bridgeUtilsMocked = mockStatic(BridgeUtils.class)) {
             bridgeUtilsMocked.when(() -> BridgeUtils.getFederationSpendWallet(any(), any(), any(), anyBoolean(), any())).then((InvocationOnMock m) -> {
                 assertEquals(m.<Context>getArgument(0), expectedContext);
@@ -3620,7 +3620,7 @@ public class BridgeSupportIT {
         when(federationStorageProvider.getOldFederation(any(), any())).thenReturn(expectedFederation);
         Object expectedUtxos = federationStorageProvider.getOldFederationBtcUTXOs();
 
-        final Wallet expectedWallet = mock(Wallet.class);
+        final BridgeBtcWallet expectedWallet = mock(BridgeBtcWallet.class);
         try (MockedStatic<BridgeUtils> bridgeUtilsMocked = mockStatic(BridgeUtils.class)) {
             bridgeUtilsMocked.when(() -> BridgeUtils.getFederationSpendWallet(any(), any(), any(), anyBoolean(), any())).then((InvocationOnMock m) -> {
                 assertEquals(m.<Context>getArgument(0), expectedContext);

@@ -101,7 +101,7 @@ public final class BridgeUtils {
         return wallet;
     }
 
-    public static Wallet getFederationSpendWallet(
+    public static BridgeBtcWallet getFederationSpendWallet(
         Context btcContext,
         Federation federation,
         List<UTXO> utxos,
@@ -117,14 +117,14 @@ public final class BridgeUtils {
         );
     }
 
-    public static Wallet getFederationsSpendWallet(
+    public static BridgeBtcWallet getFederationsSpendWallet(
         Context btcContext,
         List<Federation> federations,
         List<UTXO> utxos,
         boolean isFlyoverCompatible,
         BridgeStorageProvider storageProvider
     ) {
-        Wallet wallet;
+        BridgeBtcWallet wallet;
         if (isFlyoverCompatible) {
             wallet = new FlyoverCompatibleBtcWalletWithStorage(btcContext, federations, storageProvider);
         } else {

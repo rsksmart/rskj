@@ -1344,7 +1344,7 @@ class BridgeUtilsTest {
         mockedUtxos.add(mock(UTXO.class));
         mockedUtxos.add(mock(UTXO.class));
 
-        Wallet wallet = BridgeUtils.getFederationSpendWallet(mockedBtcContext, federation, mockedUtxos, isFlyoverCompatible, null);
+        BridgeBtcWallet wallet = BridgeUtils.getFederationSpendWallet(mockedBtcContext, federation, mockedUtxos, isFlyoverCompatible, null);
 
         if (isFlyoverCompatible) {
             Assertions.assertEquals(FlyoverCompatibleBtcWalletWithStorage.class, wallet.getClass());

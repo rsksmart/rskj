@@ -282,11 +282,11 @@ public class BridgeSupport {
 
     /**
      * Get the wallet for the currently active federation
-     * @return A BTC wallet for the currently active federation
      *
      * @param shouldConsiderFlyoverUTXOs Whether to consider flyover UTXOs
+     * @return A BTC wallet for the currently active federation
      */
-    public Wallet getActiveFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
+    public BridgeBtcWallet getActiveFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         Federation federation = getActiveFederation();
         List<UTXO> utxos = federationSupport.getActiveFederationBtcUTXOs();
 
@@ -306,12 +306,12 @@ public class BridgeSupport {
      *
      * @param shouldConsiderFlyoverUTXOs Whether to consider flyover UTXOs
      */
-    protected Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
+    protected BridgeBtcWallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         List<UTXO> retiringFederationBtcUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
         return getRetiringFederationWallet(shouldConsiderFlyoverUTXOs, retiringFederationBtcUTXOs.size());
     }
 
-    private Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs, int utxosSizeLimit) {
+    private BridgeBtcWallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs, int utxosSizeLimit) {
         Federation federation = getRetiringFederation();
         if (federation == null) {
             logger.debug("[getRetiringFederationWallet] No retiring federation found");
@@ -341,7 +341,7 @@ public class BridgeSupport {
      * limited to the given list of UTXOs
      *
      */
-    public Wallet getUTXOBasedWalletForLiveFederations(List<UTXO> utxos, boolean isFlyoverCompatible) {
+    public BridgeBtcWallet getUTXOBasedWalletForLiveFederations(List<UTXO> utxos, boolean isFlyoverCompatible) {
         return BridgeUtils.getFederationsSpendWallet(
             btcContext,
             federationSupport.getLiveFederations(),
@@ -830,7 +830,7 @@ public class BridgeSupport {
      */
     private void registerNewUtxos(BtcTransaction btcTx) throws IOException {
         // Outputs to the active federation
-        Wallet activeFederationWallet = getActiveFederationWallet(false);
+        BridgeBtcWallet activeFederationWallet = getActiveFederationWallet(false);
         List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(
             activeFederationWallet
         );
@@ -848,7 +848,7 @@ public class BridgeSupport {
         logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the active federation", outputsToTheActiveFederation.size());
 
         // Outputs to the retiring federation (if any)
-        Wallet retiringFederationWallet = getRetiringFederationWallet(false);
+        BridgeBtcWallet retiringFederationWallet = getRetiringFederationWallet(false);
         if (retiringFederationWallet != null) {
             List<TransactionOutput> outputsToTheRetiringFederation = btcTx.getWalletOutputs(retiringFederationWallet);
             for (TransactionOutput output : outputsToTheRetiringFederation) {
@@ -1148,7 +1148,7 @@ public class BridgeSupport {
     }
 
     private ReleaseTransactionBuilder.BuildResult buildSvpFundTransaction(Federation proposedFederation) {
-        Wallet activeFederationWallet = getActiveFederationWallet(true);
+        BridgeBtcWallet activeFederationWallet = getActiveFederationWallet(true);
         Federation activeFederation = getActiveFederation();
         ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
             btcContext.getParams(),
@@ -1244,7 +1244,7 @@ public class BridgeSupport {
     }
 
     private void processFundsMigration(Transaction rskTx) throws IOException {
-        Wallet retiringFederationWallet = activations.isActive(RSKIP294) ?
+        BridgeBtcWallet retiringFederationWallet = activations.isActive(RSKIP294) ?
             getRetiringFederationWallet(true, bridgeConstants.getMaxInputsPerPegoutTransaction()) :
             getRetiringFederationWallet(true);
 
@@ -1335,7 +1335,7 @@ public class BridgeSupport {
 
     private void migrateFunds(
         Keccak256 rskTxHash,
-        Wallet retiringFederationWallet,
+        BridgeBtcWallet retiringFederationWallet,
         Address activeFederationAddress,
         List<UTXO> utxosToUse
     ) throws IOException {
@@ -1368,7 +1368,7 @@ public class BridgeSupport {
      * @param rskTx
      */
     private void processPegoutRequests(Transaction rskTx) {
-        final Wallet activeFederationWallet;
+        final BridgeBtcWallet activeFederationWallet;
         final ReleaseRequestQueue pegoutRequests;
         final List<UTXO> availableUTXOs;
         final PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
@@ -2679,7 +2679,7 @@ public class BridgeSupport {
         // One more pegout to estimate what the fee would be for with an extra pegout if requested
         releaseRequestListCopy.add(new ReleaseRequestQueue.Entry(new BtcECKey().toAddress(this.networkParameters), Coin.valueOf(1, 0)));
 
-        Wallet activeFederationWallet = getActiveFederationWallet(true);
+        BridgeBtcWallet activeFederationWallet = getActiveFederationWallet(true);
         Federation activeFederation = getActiveFederation();
 
         ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
@@ -3060,7 +3060,7 @@ public class BridgeSupport {
         return manager.getCheckpointBefore(time);
     }
 
-    private Pair<BtcTransaction, List<UTXO>> createMigrationTransaction(Wallet originWallet, Address destinationAddress) {
+    private Pair<BtcTransaction, List<UTXO>> createMigrationTransaction(BridgeBtcWallet originWallet, Address destinationAddress) {
         Coin expectedMigrationValue = originWallet.getBalance();
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
@@ -3421,7 +3421,7 @@ public class BridgeSupport {
         logger.debug("[computeTotalAmountSent] Amount sent to the active federation {}", amountToActive);
 
         Coin amountToRetiring = Coin.ZERO;
-        Wallet retiringFederationWallet = getRetiringFederationWallet(false);
+        BridgeBtcWallet retiringFederationWallet = getRetiringFederationWallet(false);
         if (retiringFederationWallet != null) {
             amountToRetiring = btcTx.getValueSentToMe(retiringFederationWallet);
         }
