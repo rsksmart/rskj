@@ -74,12 +74,12 @@ public abstract class BlockHeader {
     private byte[] stateRoot;
     /* The SHA3 256-bit hash of the root node of the trie structure
      * populated with each transaction in the transaction
-     * list portion, the trie is populate by [key, val] --> [rlp(index), rlp(tx_recipe)]
+     * list portion, the trie is populated by [key, val] --> [rlp(index), rlp(tx_recipe)]
      * of the block */
     private byte[] txTrieRoot;
     /* The SHA3 256-bit hash of the root node of the trie structure
      * populated with each transaction recipe in the transaction recipes
-     * list portion, the trie is populate by [key, val] --> [rlp(index), rlp(tx_recipe)]
+     * list portion, the trie is populated by [key, val] --> [rlp(index), rlp(tx_recipe)]
      * of the block */
     private byte[] receiptTrieRoot;
     /**
@@ -102,7 +102,7 @@ public abstract class BlockHeader {
     private Coin paidFees;
 
     /* An arbitrary byte array containing data relevant to this block.
-     * With the exception of the genesis block, this must be 32 bytes or fewer */
+     * Except the genesis block, this must be 32 bytes or fewer */
     private final byte[] extraData;
 
     /* The 80-byte bitcoin block header for merged mining */

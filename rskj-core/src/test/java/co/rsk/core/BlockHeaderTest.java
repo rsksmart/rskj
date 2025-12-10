@@ -675,8 +675,8 @@ class BlockHeaderTest {
                 sealed,
                 useRskip92Encoding,
                 includeForkDetectionData,
-                ummRoot,
-                edges);
+                ummRoot
+        );
     }
 
     private byte[] concatenate(byte[] left, byte[] right) {

@@ -38,8 +38,7 @@ class BlockHeaderV0Test {
                 false,
                 false,
                 false,
-                null,
-                edges
+                null
         );
     }
 

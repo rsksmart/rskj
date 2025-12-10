@@ -36,15 +36,13 @@ public class BlockHeaderV0 extends BlockHeader {
         // block header v0 has no extension
     }
 
-    private short[] txExecutionSublistsEdges;
-
     public BlockHeaderV0(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
         byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
         long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
         Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
         byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
         Coin minimumGasPrice, int uncleCount, boolean sealed,
-        boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, short[] txExecutionSublistsEdges) {
+        boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot) {
         super(parentHash,unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, logsBloom, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
@@ -52,7 +50,6 @@ public class BlockHeaderV0 extends BlockHeader {
                 bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount, sealed,
                 useRskip92Encoding, includeForkDetectionData, ummRoot);
-        this.txExecutionSublistsEdges = txExecutionSublistsEdges != null ? Arrays.copyOf(txExecutionSublistsEdges, txExecutionSublistsEdges.length) : null;
     }
 
     // logs bloom is stored in the extension data
@@ -69,11 +66,10 @@ public class BlockHeaderV0 extends BlockHeader {
     }
 
     @Override
-    public short[] getTxExecutionSublistsEdges() { return this.txExecutionSublistsEdges != null ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length) : null; }
+    public short[] getTxExecutionSublistsEdges() { return null; }
 
     @Override
     public void setTxExecutionSublistsEdges(short[] edges) {
-        this.txExecutionSublistsEdges =  edges != null? Arrays.copyOf(edges, edges.length) : null;
     }
 
     @Override
