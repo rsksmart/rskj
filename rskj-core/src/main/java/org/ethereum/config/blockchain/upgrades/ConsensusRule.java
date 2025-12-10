@@ -112,6 +112,7 @@ public enum ConsensusRule {
     RSKIP529("rskip529"), // New storage cells in Bridge native contract for base and super events info
     RSKIP535("rskip535"), // BaseEvent for the union bridge
     RSKIP536("rskip536"), // Additional methods for BlockHeader precompiled contract
+    RSKIP540("rskip540"), // Bridge method `getEstimatedFeesForNextPegOutEvent` improvements and new parameterized method
     ;
 
     private final String configKey;
