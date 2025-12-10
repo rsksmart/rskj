@@ -61,6 +61,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.security.Key;
 import java.security.SignatureException;
 import java.time.Instant;
 import java.util.*;
@@ -2638,9 +2639,6 @@ public class BridgeSupport {
     }
 
     public Coin getEstimatedFeesForNextPegOutEvent() throws IOException {
-        //  This method returns the fees of a peg-out transaction containing (N+2) outputs and 2 inputs,
-        //  where N is the number of peg-outs requests waiting in the queue.
-
         int pegoutRequestsCount = getQueuedPegoutsCount();
 
         if (!activations.isActive(ConsensusRule.RSKIP385) &&
@@ -2653,15 +2651,20 @@ public class BridgeSupport {
         }
 
         return getEstimatedFeesFromPegoutTransactionSimulation();
-
     }
 
     private Coin getEstimatedFeesFromInputsAndOutputsCount() throws IOException {
-
+        //  This method returns the fees of a peg-out transaction containing (N+2) outputs and 2 inputs,
+        //  where N is the number of peg-outs requests waiting in the queue.
         int outputsCount = getQueuedPegoutsCount() + 2;
         int inputsCount = 2;
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, getActiveFederation(), inputsCount, outputsCount);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(
+            activations,
+            getActiveFederation(),
+            inputsCount,
+            outputsCount
+        );
 
         Coin feePerKB = getFeePerKb();
 
@@ -2673,11 +2676,15 @@ public class BridgeSupport {
     private Coin getEstimatedFeesFromPegoutTransactionSimulation() throws IOException {
         ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
         List<ReleaseRequestQueue.Entry> releaseRequestListCopy = new ArrayList<>(
-            releaseRequestQueue.getEntries().stream()
-                .map(rr -> new ReleaseRequestQueue.Entry(rr.getDestination(), rr.getAmount())).toList());
+            releaseRequestQueue.getEntries()
+                .stream()
+                .map(rr -> new ReleaseRequestQueue.Entry(rr.getDestination(), rr.getAmount()))
+                .toList()
+        );
 
         // One more pegout to estimate what the fee would be for with an extra pegout if requested
-        releaseRequestListCopy.add(new ReleaseRequestQueue.Entry(new BtcECKey().toAddress(this.networkParameters), Coin.valueOf(1, 0)));
+        ReleaseRequestQueue.Entry extraPegoutRequest = createExtraPegoutRequestForFeeEstimation();
+        releaseRequestListCopy.add(extraPegoutRequest);
 
         Wallet activeFederationWallet = getActiveFederationWallet(true);
         Federation activeFederation = getActiveFederation();
@@ -2695,8 +2702,9 @@ public class BridgeSupport {
 
         if(buildResult.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
             logger.debug(
-                "[getEstimatedFeesFromPegoutTransactionSimulation] Simulated pegout btc transaction failed to be created with response code: {}. Cannot simulate a pegout btc release transaction. Will fallback to old logic."
-            , buildResult.getResponseCode());
+                "[getEstimatedFeesFromPegoutTransactionSimulation] Simulated pegout btc transaction failed to be created with response code: {}. Cannot simulate a pegout btc release transaction. Will fallback to old logic.",
+                buildResult.getResponseCode()
+            );
             return getEstimatedFeesFromInputsAndOutputsCount();
         }
 
@@ -2704,6 +2712,18 @@ public class BridgeSupport {
         Coin outputSum = buildResult.getBtcTx().getOutputSum();
 
         return inputSum.minus(outputSum);
+    }
+
+    private ReleaseRequestQueue.Entry createExtraPegoutRequestForFeeEstimation() {
+        Coin extraPegoutValue = activations.isActive(RSKIP540) ?
+            bridgeConstants.getMinimumPegoutTxValue() :
+            Coin.valueOf(1, 0);
+
+        // Just a random destination address to complete the entry, won't have any effect on the estimation
+        BtcECKey key = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+        Address destination = key.toAddress(networkParameters);
+
+        return new ReleaseRequestQueue.Entry(destination, extraPegoutValue);
     }
 
     public BigInteger registerFlyoverBtcTransaction(
