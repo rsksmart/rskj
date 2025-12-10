@@ -185,7 +185,8 @@ public class BlockFactory {
         short[] txExecutionSublistsEdges = null;
         byte[] baseEvent = null;
 
-        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) {
+        // Compressed headers don't have the txExecutionSublistsEdges and baseEvent fields
+        if (!isCompressed(blockNumber, compressed)) {
             if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
                 txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
             }
@@ -214,6 +215,17 @@ public class BlockFactory {
                 paidFees, minimumGasPriceBytes, minimumGasPrice, uncleCount, ummRoot, baseEvent, version, txExecutionSublistsEdges,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 useRskip92Encoding, includeForkDetectionData);
+    }
+
+    private boolean isCompressed(long blockNumber, boolean compressedFlag) {
+        // RSKIP-351 is what introduced the possibility of compressed headers
+        // before that, all headers were uncompressed
+        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
+            return false;
+        }
+
+        // After RSKIP-351, we can trust the compressed flag
+        return compressedFlag;
     }
 
     private BlockHeader createBlockHeader(boolean compressed, boolean sealed, byte[] parentHash, byte[] unclesHash,
