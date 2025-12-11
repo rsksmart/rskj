@@ -100,9 +100,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
-/**
- * Created by ajlopez on 29/07/2016.
- */
 public class BlockExecutorTest {
     private static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
     private static final boolean RSKIP_126_IS_ACTIVE = true;
@@ -110,7 +107,6 @@ public class BlockExecutorTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final ActivationConfig activationConfig = spy(config.getActivationConfig());
-    private final BlockFactory BLOCK_FACTORY = new BlockFactory(activationConfig);
 
     @TempDir
     public Path tempDir;
@@ -171,7 +167,7 @@ public class BlockExecutorTest {
     }
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         RskTestFactory objects = new RskTestFactory(tempDir, config);
         blockchain = objects.getBlockchain();
         trieStore = objects.getTrieStore();
@@ -1484,6 +1480,7 @@ public class BlockExecutorTest {
         doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
         doReturn(activeRskip126).when(activationConfig).isActive(eq(RSKIP126), anyLong());
 
+        BlockFactory blockFactory = new BlockFactory(activationConfig);
 
         StateRootHandler stateRootHandler = new StateRootHandler(cfg.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
 
@@ -1496,17 +1493,18 @@ public class BlockExecutorTest {
         BlockTxSignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
         return new BlockExecutor(
-                new RepositoryLocator(store, stateRootHandler),
-                new TransactionExecutorFactory(
-                        cfg,
-                        null,
-                        null,
-                        BLOCK_FACTORY,
-                        new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(cfg, bridgeSupportFactory, signatureCache),
-                        signatureCache
-                ),
-                cfg);
+            new RepositoryLocator(store, stateRootHandler),
+            new TransactionExecutorFactory(
+                cfg,
+                null,
+                null,
+                blockFactory,
+                new ProgramInvokeFactoryImpl(),
+                new PrecompiledContracts(cfg, bridgeSupportFactory, signatureCache),
+                signatureCache
+            ),
+            cfg
+        );
     }
 
     @ParameterizedTest
@@ -1639,18 +1637,19 @@ public class BlockExecutorTest {
             Assertions.assertInstanceOf(BlockHeaderV2.class, block.getHeader(), "Block should have BlockHeaderV2 header when RSKIP535 is active");
 
             // Create a real repository with the expected baseEvent value
-            byte[] expectedBaseEvent = new byte[]{0x01, 0x02, 0x03, 0x04, 0x05};
-            Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
-            repository.startTracking();
+            byte[] baseEvent = new byte[128];
+            Arrays.fill(baseEvent, (byte) 0xFF);
+            Repository mutableRepository = new MutableRepository(trieStore, new Trie(trieStore));
+            mutableRepository.startTracking();
 
             // Set the baseEvent in the repository at the bridge address
             RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
             DataWord baseEventKey = UnionBridgeStorageIndexKey.BASE_EVENT.getKey();
-            repository.addStorageBytes(bridgeAddress, baseEventKey, expectedBaseEvent);
-            repository.commit();
+            mutableRepository.addStorageBytes(bridgeAddress, baseEventKey, baseEvent);
+            mutableRepository.commit();
 
             // Update the parent block's state root to include our repository changes
-            parent.setStateRoot(repository.getRoot());
+            parent.setStateRoot(mutableRepository.getRoot());
 
             // when
             BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
@@ -1659,7 +1658,7 @@ public class BlockExecutorTest {
             BlockResult result = executor.executeAndFill(block, parent.getHeader());
             Assertions.assertNotNull(result);
             Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
-            Assertions.assertArrayEquals(expectedBaseEvent, result.getBlock().getBaseEvent(),
+            Assertions.assertArrayEquals(baseEvent, result.getBlock().getBaseEvent(),
                     "BaseEvent should be set from repository when RSKIP535 is active");
         } else {
             // when RSKIP535 is not active, we should have a different header type
@@ -1677,17 +1676,19 @@ public class BlockExecutorTest {
     }
 
     @Test
-    void executeBlockWithBaseEventFromRepository_WhenRepositoryIsNull() {
+    void executeBlockWithBaseEventFromRepository_WhenNoBaseEventIsSet_ShouldNotFail() {
         // given
+        doReturn(true).when(activationConfig).isActive(eq(ConsensusRule.RSKIP535), anyLong());
+
         // Create a block with BlockHeaderV2
         Block parent = blockchain.getBestBlock();
         Block block = new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(parent);
 
         // Create a real repository but don't set any baseEvent
-        Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
-        repository.startTracking();
-        repository.commit();
-        parent.setStateRoot(repository.getRoot());
+        Repository mutableRepository = new MutableRepository(trieStore, new Trie(trieStore));
+        mutableRepository.startTracking();
+        mutableRepository.commit();
+        parent.setStateRoot(mutableRepository.getRoot());
 
         BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
 
@@ -1699,38 +1700,6 @@ public class BlockExecutorTest {
         Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
         Assertions.assertArrayEquals(EMPTY_BYTE_ARRAY, result.getBlock().getBaseEvent(),
                 "BaseEvent should be set to empty array when repository has no baseEvent");
-    }
-
-    @Test
-    void executeBlockWithBaseEventFromRepository_WhenRepositoryThrowsException() {
-        // given
-        doReturn(true).when(activationConfig).isActive(eq(ConsensusRule.RSKIP535), anyLong());
-
-        Block parent = blockchain.getBestBlock();
-        Block block = new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(parent);
-
-        // Create a real repository with baseEvent data
-        Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
-        repository.startTracking();
-        RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
-        DataWord baseEventKey = UnionBridgeStorageIndexKey.BASE_EVENT.getKey();
-        byte[] expectedBaseEvent = new byte[]{0x01, 0x02, 0x03, 0x04, 0x05};
-        repository.addStorageBytes(bridgeAddress, baseEventKey, expectedBaseEvent);
-        repository.commit();
-        parent.setStateRoot(repository.getRoot());
-
-        // Create BlockExecutor with real repository
-        BlockExecutor executor = buildBlockExecutor(trieStore, true, RSKIP_126_IS_ACTIVE);
-
-        // when
-        BlockResult result = executor.executeAndFill(block, parent.getHeader());
-
-        // then
-        Assertions.assertNotNull(result);
-        Assertions.assertNotSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
-        // When repository has baseEvent, it should be retrieved correctly
-        Assertions.assertArrayEquals(expectedBaseEvent, result.getBlock().getBaseEvent(),
-                "BaseEvent should be retrieved from repository when available");
     }
 
     public static class TestObjects {
