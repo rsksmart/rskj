@@ -3060,8 +3060,8 @@ public class BridgeSupport {
         return manager.getCheckpointBefore(time);
     }
 
-    private Pair<BtcTransaction, List<UTXO>> createMigrationTransaction(Wallet originWallet, Address destinationAddress) {
-        Coin expectedMigrationValue = originWallet.getBalance();
+    private Pair<BtcTransaction, List<UTXO>> createMigrationTransaction(Wallet retiringFederationWallet, Address destinationAddress) {
+        Coin expectedMigrationValue = retiringFederationWallet.getBalance();
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
             // Migration transaction is created only and only if there is a retiring federation.
@@ -3070,7 +3070,7 @@ public class BridgeSupport {
 
             ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
                 networkParameters,
-                originWallet,
+                retiringFederationWallet,
                 retiringFederation.getFormatVersion(),
                 destinationAddress,
                 getFeePerKb(),
