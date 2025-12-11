@@ -28,7 +28,10 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.peg.union.UnionBridgeStorageIndexKey;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.peg.union.UnionBridgeStorageProvider;
+import co.rsk.peg.union.UnionBridgeStorageProviderImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -76,7 +79,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.toHexString;
 
 /**
@@ -200,30 +202,28 @@ public class BlockExecutor {
         header.setPaidFees(result.getPaidFees());
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
         header.setTxExecutionSublistsEdges(result.getTxEdges());
-        setBaseEventIfRskip535IsActive(block, header);
+        setBaseEvent(header);
 
         block.flushRLP();
         profiler.stop(metric);
     }
 
-    private void setBaseEventIfRskip535IsActive(Block block, BlockHeader header) {
-        if (block != null && header != null && activationConfig.isActive(ConsensusRule.RSKIP535, block.getNumber())) {
-            try {
-                Repository repo = repositoryLocator.startTrackingAt(header);
-                if (repo != null) {
-                    RskAddress address = PrecompiledContracts.BRIDGE_ADDR;
-                    DataWord key = UnionBridgeStorageIndexKey.BASE_EVENT.getKey();
-                    byte[] baseEvent = repo.getStorageBytes(address, key);
-                    if (baseEvent == null) {
-                        baseEvent = EMPTY_BYTE_ARRAY;
-                    }
-                    header.setBaseEvent(baseEvent);
-                }
-            } catch (Exception e) {
-                // If repository access fails, just skip setting baseEvent
-                // This can happen in test environments or when repository is not available
-                logger.warn("Failed to set baseEvent in block header. {}", e.getMessage());
-            }
+    private void setBaseEvent(BlockHeader header) {
+        if (header.getVersion() < 2) {
+            return;
+        }
+        try {
+            Repository repo = repositoryLocator.startTrackingAt(header);
+            StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repo);
+            UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(bridgeStorageAccessor);
+            byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
+
+            header.setBaseEvent(baseEvent);
+        } catch (IllegalArgumentException e) {
+            // If repository access fails, just skip setting baseEvent
+            // This can happen in test environments or when repository is not available
+            logger.warn("Failed to set baseEvent in block header. {}", e.getMessage());
+            // TODO: Double check why this exception might be thrown and what the expected behaviour should be
         }
     }
 
