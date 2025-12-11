@@ -3161,15 +3161,9 @@ public class BridgeSupport {
         }
 
         // and then against retiring fed
-        Optional<Federation> retiringFederationOptional = getRetiringFederation();
-        if (retiringFederationOptional.isPresent()) {
-            Federation retiringFederation = retiringFederationOptional.get();
-            if (outputsMatchFederation(btcTx, retiringFederation)) {
-                return retiringFederation;
-            }
-        }
-
-        throw new IllegalStateException("Couldn't extract federation from btcTx outputs.");
+        return getRetiringFederation()
+            .filter(retiringFed -> outputsMatchFederation(btcTx, retiringFed))
+            .orElseThrow(() -> new IllegalStateException("Couldn't extract federation from btcTx outputs."));
     }
 
     private boolean outputsMatchFederation(BtcTransaction btcTx, Federation federation) {
@@ -3208,15 +3202,9 @@ public class BridgeSupport {
             return activeFederation;
         }
 
-        Optional<Federation> retiringFederationOptional = getRetiringFederation();
-        if (retiringFederationOptional.isPresent()) {
-            Federation retiringFederation = retiringFederationOptional.get();
-            if (outputsMatchFlyoverFederation(btcTx, retiringFederation, flyoverDerivationHash)) {
-                return retiringFederation;
-            }
-        }
-
-        throw new IllegalStateException("Couldn't extract federation from btcTx outputs.");
+        return getRetiringFederation()
+            .filter(retiringFed -> outputsMatchFlyoverFederation(btcTx, retiringFed, flyoverDerivationHash))
+            .orElseThrow(() -> new IllegalStateException("Couldn't extract flyover federation from btcTx outputs."));
     }
 
     private boolean outputsMatchFlyoverFederation(BtcTransaction btcTx, Federation federation, Keccak256 flyoverDerivationHash) {
