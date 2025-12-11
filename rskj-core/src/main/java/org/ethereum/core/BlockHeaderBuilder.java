@@ -34,8 +34,11 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class BlockHeaderBuilder {
-
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
+
+    private static final byte BLOCK_HEADER_V1_VERSION = 0x1;
+    private static final byte BLOCK_HEADER_V2_VERSION = 0x2;
+
     private final ActivationConfig activationConfig;
     private byte[] parentHash;
     private byte[] unclesHash;
@@ -384,5 +387,75 @@ public class BlockHeaderBuilder {
                     false, useRskip92Encoding,
                     includeForkDetectionData, ummRoot, baseEvent, txExecutionSublistsEdges);
         };
+    }
+
+    public BlockHeader build(boolean compressed, boolean sealed) {
+        if (number == Genesis.NUMBER) {
+            return new GenesisHeader(
+                parentHash,
+                unclesHash,
+                logsBloom,
+                difficulty.getBytes(),
+                number,
+                gasLimit,
+                gasUsed,
+                timestamp,
+                extraData,
+                bitcoinMergedMiningHeader,
+                bitcoinMergedMiningMerkleProof,
+                bitcoinMergedMiningCoinbaseTransaction,
+                minimumGasPrice.getBytes(),
+                useRskip92Encoding,
+                coinbase.getBytes(),
+                stateRoot);
+        }
+        byte version = activationConfig.getHeaderVersion(number);
+
+        if (version == BLOCK_HEADER_V2_VERSION) {
+            return new BlockHeaderV2(
+                parentHash, unclesHash, coinbase,
+                stateRoot, txTrieRoot, receiptTrieRoot,
+                logsBloom, difficulty, number,
+                gasLimit, gasUsed, timestamp, extraData, paidFees,
+                bitcoinMergedMiningHeader,
+                bitcoinMergedMiningMerkleProof,
+                bitcoinMergedMiningCoinbaseTransaction,
+                mergedMiningForkDetectionData,
+                minimumGasPrice, uncleCount,
+                sealed, useRskip92Encoding,
+                includeForkDetectionData, ummRoot, baseEvent, txExecutionSublistsEdges,
+                compressed);
+        }
+
+        if (version == BLOCK_HEADER_V1_VERSION) {
+            return new BlockHeaderV1(
+                parentHash, unclesHash, coinbase,
+                stateRoot, txTrieRoot, receiptTrieRoot,
+                logsBloom, difficulty, number,
+                gasLimit, gasUsed, timestamp, extraData, paidFees,
+                bitcoinMergedMiningHeader,
+                bitcoinMergedMiningMerkleProof,
+                bitcoinMergedMiningCoinbaseTransaction,
+                mergedMiningForkDetectionData,
+                minimumGasPrice, uncleCount,
+                sealed, useRskip92Encoding,
+                includeForkDetectionData, ummRoot, txExecutionSublistsEdges,
+                compressed
+            );
+        }
+
+        return new BlockHeaderV0(
+            parentHash, unclesHash, coinbase,
+            stateRoot, txTrieRoot, receiptTrieRoot,
+            logsBloom, difficulty, number,
+            gasLimit, gasUsed, timestamp, extraData, paidFees,
+            bitcoinMergedMiningHeader,
+            bitcoinMergedMiningMerkleProof,
+            bitcoinMergedMiningCoinbaseTransaction,
+            mergedMiningForkDetectionData,
+            minimumGasPrice, uncleCount,
+            sealed, useRskip92Encoding,
+            includeForkDetectionData, ummRoot, baseEvent,
+            txExecutionSublistsEdges);
     }
 }
