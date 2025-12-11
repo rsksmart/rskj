@@ -3200,7 +3200,7 @@ public class BridgeSupport {
 
         return getRetiringFederation()
             .filter(retiringFed -> outputsMatchFlyoverFederation(btcTx, retiringFed, flyoverDerivationHash))
-            .orElseThrow(() -> new IllegalStateException("Couldn't extract flyover federation from btcTx outputs."));
+            .orElseThrow(() -> new IllegalStateException("Couldn't extract federation from btcTx outputs."));
     }
 
     private boolean outputsMatchFlyoverFederation(BtcTransaction btcTx, Federation federation, Keccak256 flyoverDerivationHash) {
