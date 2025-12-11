@@ -2514,7 +2514,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
@@ -2541,7 +2541,7 @@ class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
 
         federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsRegtest)
+            .withFederationConstants(federationConstantsMainnet)
             .withFederationStorageProvider(federationStorageProviderMock)
             .withRskExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
@@ -2577,7 +2577,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         FederationArgs newFederationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembers(1),
@@ -2601,7 +2601,7 @@ class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
 
         federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsRegtest)
+            .withFederationConstants(federationConstantsMainnet)
             .withFederationStorageProvider(federationStorageProviderMock)
             .withRskExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
@@ -2641,7 +2641,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         FederationArgs newFederationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembers(1),
@@ -2667,7 +2667,7 @@ class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
 
         federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsRegtest)
+            .withFederationConstants(federationConstantsMainnet)
             .withFederationStorageProvider(federationStorageProviderMock)
             .withRskExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
@@ -2703,7 +2703,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         FederationArgs newFederationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembers(1),
@@ -2727,7 +2727,7 @@ class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
 
         federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsRegtest)
+            .withFederationConstants(federationConstantsMainnet)
             .withFederationStorageProvider(federationStorageProviderMock)
             .withRskExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
