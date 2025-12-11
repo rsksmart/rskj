@@ -74,10 +74,11 @@ public interface FederationSupport {
     void clearRetiredFederation();
 
     /**
-     * Returns the currently retiring federation.
+     * Returns the currently retiring federation, if it exists.
      * See getRetiringFederationReference() for details.
      *
-     * @return the retiring federation.
+     * @return An {@link Optional} containing the retiring federation,
+     * or an empty {@link Optional} if no retiring federation exists.
      */
     Optional<Federation> getRetiringFederation();
 
