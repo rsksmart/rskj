@@ -1257,9 +1257,7 @@ public class BridgeSupport {
         List<UTXO> availableUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
         Federation activeFederation = getActiveFederation();
 
-        if (federationIsInMigrationAge(activeFederation)) {
-            long federationAge = rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber();
-            logger.trace("[processFundsMigration] Active federation (age={}) is in migration age.", federationAge);
+        if (federationSupport.federationIsInMigrationAge(activeFederation)) {
             if (hasMinimumFundsToMigrate(retiringFederationWallet)){
                 Coin retiringFederationBalance = retiringFederationWallet.getBalance();
                 String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
@@ -1311,21 +1309,14 @@ public class BridgeSupport {
         }
     }
 
-    private boolean federationIsInMigrationAge(Federation federation) {
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
-
-        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
-        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        long ageBegin = federationActivationAge + federationConstants.getFundsMigrationAgeSinceActivationBegin();
-        long ageEnd = federationActivationAge + federationConstants.getFundsMigrationAgeSinceActivationEnd(activations);
-
-        return federationAge > ageBegin && federationAge < ageEnd;
+    private long getFederationAge(Federation federation) {
+        return rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
     }
 
     private boolean federationIsPastMigrationAge(Federation federation) {
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
 
-        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
+        long federationAge = getFederationAge(federation);
         long ageEnd = federationConstants.getFederationActivationAge(activations) +
             federationConstants.getFundsMigrationAgeSinceActivationEnd(activations);
 

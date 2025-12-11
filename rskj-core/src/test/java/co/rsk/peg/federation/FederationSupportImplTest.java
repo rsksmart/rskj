@@ -2500,6 +2500,84 @@ class FederationSupportImplTest {
         assertArrayEquals(expectedPublicKey, actualPublicKey.get());
     }
 
+    @Nested
+    @Tag("Federation is in migration age")
+    class FederationIsInMigrationAge {
+        private static final long NEW_FEDERATION_CREATION_BLOCK = 100L;
+        private static final long FEDERATION_ACTIVATION_AGE = federationMainnetConstants.getFederationActivationAge(allActivations);
+        private static final long FUNDS_MIGRATION_AGE_SINCE_ACTIVATION_BEGIN = federationMainnetConstants.getFundsMigrationAgeSinceActivationBegin();
+        private static final long AGE_TO_BEGIN_MIGRATION = FEDERATION_ACTIVATION_AGE + FUNDS_MIGRATION_AGE_SINCE_ACTIVATION_BEGIN;
+        private static final Federation newFederation = P2shP2wshErpFederationBuilder.builder().withCreationBlockNumber(NEW_FEDERATION_CREATION_BLOCK).build();
+
+        @BeforeEach
+        void setUp() {
+            storageProvider = new FederationStorageProviderImpl(storageAccessor);
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .build();
+        }
+
+        @Test
+        void federationIsInMigrationAge_whenCurrentBlockIsBeforeMigrationAge_shouldReturnFalse() {
+            // Arrange
+            storageProvider.setNewFederation(newFederation);
+
+            long executionBlockNumber = NEW_FEDERATION_CREATION_BLOCK + AGE_TO_BEGIN_MIGRATION;
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(executionBlockNumber);
+
+            FederationSupport aFederationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .build();
+
+            // Act & Assert
+            assertFalse(aFederationSupport.federationIsInMigrationAge(newFederation));
+        }
+
+        @Test
+        void federationIsInMigrationAge_whenCurrentBlockIsOneBlockAfterMigrationAge_shouldReturnTrue() {
+            // Arrange
+            storageProvider.setNewFederation(newFederation);
+
+            long executionBlockNumber = NEW_FEDERATION_CREATION_BLOCK + AGE_TO_BEGIN_MIGRATION + 1;
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(executionBlockNumber);
+
+            FederationSupport aFederationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .build();
+
+            // Act & Assert
+            assertTrue(aFederationSupport.federationIsInMigrationAge(newFederation));
+        }
+
+        @Test
+        void federationIsInMigrationAge_whenCurrentBlockIsAfterMigrationAge_shouldReturnFalse() {
+            // Arrange
+            storageProvider.setNewFederation(newFederation);
+
+            long fundsMigrationAgeSinceActivationEnd = federationMainnetConstants.getFundsMigrationAgeSinceActivationEnd(allActivations);
+            long executionBlockNumber = NEW_FEDERATION_CREATION_BLOCK + AGE_TO_BEGIN_MIGRATION + fundsMigrationAgeSinceActivationEnd;
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(executionBlockNumber);
+
+            FederationSupport aFederationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .build();
+
+            assertFalse(aFederationSupport.federationIsInMigrationAge(newFederation));
+        }
+    }
+
+
+
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
             .map(FederationMember::getRskPublicKey)
