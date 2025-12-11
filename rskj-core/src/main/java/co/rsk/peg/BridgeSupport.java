@@ -1780,11 +1780,7 @@ public class BridgeSupport {
             return Optional.of(activeFederation);
         }
 
-        if (retiringFederation.isPresent() && retiringFederation.get().hasBtcPublicKey(federatorPublicKey)) {
-            return retiringFederation;
-        }
-
-        return Optional.empty();
+        return retiringFederation.filter(federation -> federation.hasBtcPublicKey(federatorPublicKey));
     }
 
     private boolean isSvpSpendTx(Keccak256 releaseCreationRskTxHash) {
