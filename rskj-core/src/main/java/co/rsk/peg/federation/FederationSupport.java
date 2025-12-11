@@ -256,6 +256,9 @@ public interface FederationSupport {
         SignatureCache signatureCache,
         BridgeEventLogger eventLogger
     );
+
+    boolean federationIsInMigrationAge(Federation federation);
+
     long getActiveFederationCreationBlockHeight();
 
     void updateFederationCreationBlockHeights();

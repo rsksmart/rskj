@@ -817,6 +817,22 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
+    public boolean federationIsInMigrationAge(Federation federation) {
+        long federationActivationAge = constants.getFederationActivationAge(activations);
+        long ageBegin = federationActivationAge + constants.getFundsMigrationAgeSinceActivationBegin();
+        long ageEnd = federationActivationAge + constants.getFundsMigrationAgeSinceActivationEnd(activations);
+        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
+
+        boolean isInMigrationAge = ageBegin < federationAge && federationAge < ageEnd;
+
+        if (isInMigrationAge) {
+            logger.trace("[federationIsInMigrationAge] Active federation (age={}) is in migration age.", federationAge);
+        }
+
+        return isInMigrationAge;
+    }
+
+    @Override
     public long getActiveFederationCreationBlockHeight() {
         if (!activations.isActive(RSKIP186)) {
             return 0L;
