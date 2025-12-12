@@ -101,7 +101,7 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     private boolean shouldFederationBeActive(Federation federation) {
-        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
+        long federationAge = getFederationAge(federation);
         return federationAge >= constants.getFederationActivationAge(activations);
     }
 
@@ -817,12 +817,11 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public boolean federationIsInMigrationAge(Federation federation) {
+    public boolean isInMigrationAge(Federation federation) {
         long federationActivationAge = constants.getFederationActivationAge(activations);
         long ageBegin = federationActivationAge + constants.getFundsMigrationAgeSinceActivationBegin();
         long ageEnd = federationActivationAge + constants.getFundsMigrationAgeSinceActivationEnd(activations);
-        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-
+        long federationAge = getFederationAge(federation);
         boolean isInMigrationAge = ageBegin < federationAge && federationAge < ageEnd;
 
         if (isInMigrationAge) {
@@ -830,6 +829,25 @@ public class FederationSupportImpl implements FederationSupport {
         }
 
         return isInMigrationAge;
+    }
+
+    private long getFederationAge(Federation federation) {
+        return rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
+    }
+
+    @Override
+    public boolean isPastMigrationAge(Federation federation) {
+        long federationAge = getFederationAge(federation);
+        long ageEnd = constants.getFederationActivationAge(activations) +
+            constants.getFundsMigrationAgeSinceActivationEnd(activations);
+
+        boolean isPastMigrationAge = federationAge >= ageEnd;
+
+        if (isPastMigrationAge) {
+            logger.trace("[federationIsPastMigrationAge] Active federation (age={}) is past migration age.", federationAge);
+        }
+
+        return isPastMigrationAge;
     }
 
     @Override
