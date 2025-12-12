@@ -40,7 +40,6 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
-import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
@@ -64,7 +63,6 @@ import java.math.BigInteger;
 import java.security.SignatureException;
 import java.time.Instant;
 import java.util.*;
-import javax.annotation.Nullable;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -1257,25 +1255,23 @@ public class BridgeSupport {
         List<UTXO> availableUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
         Federation activeFederation = getActiveFederation();
 
-        if (federationSupport.federationIsInMigrationAge(activeFederation)) {
-            if (hasMinimumFundsToMigrate(retiringFederationWallet)){
-                Coin retiringFederationBalance = retiringFederationWallet.getBalance();
-                String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
-                logger.info(
-                    "[processFundsMigration] Retiring federation has funds to migrate: {}.",
-                    retiringFederationBalanceInFriendlyFormat
-                );
+        if (federationSupport.isInMigrationAge(activeFederation) && hasMinimumFundsToMigrate(retiringFederationWallet)) {
+            Coin retiringFederationBalance = retiringFederationWallet.getBalance();
+            String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
+            logger.info(
+                "[processFundsMigration] Retiring federation has funds to migrate: {}.",
+                retiringFederationBalanceInFriendlyFormat
+            );
 
-                migrateFunds(
-                    rskTx.getHash(),
-                    retiringFederationWallet,
-                    activeFederation.getAddress(),
-                    availableUTXOs
-                );
-            }
+            migrateFunds(
+                rskTx.getHash(),
+                retiringFederationWallet,
+                activeFederation.getAddress(),
+                availableUTXOs
+            );
         }
 
-        if (federationIsPastMigrationAge(activeFederation)) {
+        if (federationSupport.isPastMigrationAge(activeFederation)) {
             if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
                 Coin retiringFederationBalance = retiringFederationWallet.getBalance();
                 String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
@@ -1307,20 +1303,6 @@ public class BridgeSupport {
             );
             federationSupport.clearRetiredFederation();
         }
-    }
-
-    private long getFederationAge(Federation federation) {
-        return rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-    }
-
-    private boolean federationIsPastMigrationAge(Federation federation) {
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
-
-        long federationAge = getFederationAge(federation);
-        long ageEnd = federationConstants.getFederationActivationAge(activations) +
-            federationConstants.getFundsMigrationAgeSinceActivationEnd(activations);
-
-        return federationAge >= ageEnd;
     }
 
     private boolean hasMinimumFundsToMigrate(Wallet retiringFederationWallet) {
