@@ -64,7 +64,7 @@ class ReleaseTransactionBuilderTest {
     private final Script activeFederationP2SHScript = activeP2shErpFederation.getP2SHScript();
     private final List<BtcECKey> signingKeys = BitcoinTestUtils.getBtcEcKeys(20);
     private final Federation p2shP2wshErpProposedFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(signingKeys).build();
-    private final Federation p2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(signingKeys).build();
+    private final Federation activeP2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(signingKeys).build();
     private Wallet wallet;
     private ReleaseTransactionBuilder builder;
     private Federation federation;
@@ -364,7 +364,7 @@ class ReleaseTransactionBuilderTest {
         int numberOfInputs = 210;
 
         // act
-        BtcTransaction pegoutTx = createPegoutTransactionWithNInputsAnd50Outputs(p2shP2wshErpFederation, signingKeys, numberOfInputs);
+        BtcTransaction pegoutTx = createPegoutTransactionWithNInputsAnd50Outputs(activeP2shP2wshErpFederation, signingKeys, numberOfInputs);
         int size = calculateBtcTxVirtualSize(pegoutTx);
 
         // assert
@@ -377,7 +377,7 @@ class ReleaseTransactionBuilderTest {
         int numberOfInputs = 150;
 
         // act
-        BtcTransaction pegoutTx = createPegoutTransactionWithNInputsAnd50Outputs(p2shP2wshErpFederation, signingKeys, numberOfInputs);
+        BtcTransaction pegoutTx = createPegoutTransactionWithNInputsAnd50Outputs(activeP2shP2wshErpFederation, signingKeys, numberOfInputs);
         int size = calculateBtcTxVirtualSize(pegoutTx);
 
         // assert
