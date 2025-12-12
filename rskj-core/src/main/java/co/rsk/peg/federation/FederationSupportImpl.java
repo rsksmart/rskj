@@ -26,6 +26,9 @@ import org.slf4j.LoggerFactory;
 public class FederationSupportImpl implements FederationSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(FederationSupportImpl.class);
+    private static final int FEDERATION_NON_EXISTENT_CODE = FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
+    private static final int FEDERATION_CHANGE_SUCCESSFUL_CODE = FederationChangeResponseCode.SUCCESSFUL.getCode();
+    private static final int GENERIC_ERROR_CODE = FederationChangeResponseCode.GENERIC_ERROR.getCode();
 
     private enum StorageFederationReference { NONE, NEW, OLD, GENESIS }
 
@@ -249,7 +252,7 @@ public class FederationSupportImpl implements FederationSupport {
     @Override
     public long getRetiringFederationCreationBlockNumber() {
         Optional<Federation> retiringFederation = getRetiringFederation();
-        long nonExistentFederationErrorCode = FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
+        long nonExistentFederationErrorCode = FEDERATION_NON_EXISTENT_CODE;
         return retiringFederation.map(Federation::getCreationBlockNumber)
             .orElse(nonExistentFederationErrorCode);
     }
@@ -334,7 +337,7 @@ public class FederationSupportImpl implements FederationSupport {
         PendingFederation currentPendingFederation = getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
+            return FEDERATION_NON_EXISTENT_CODE;
         }
 
         return currentPendingFederation.getSize();
@@ -433,7 +436,7 @@ public class FederationSupportImpl implements FederationSupport {
             result = executeVoteFederationChangeFunction(true, callSpec, federationChangeFunction.get(), eventLogger);
         } catch (BridgeIllegalArgumentException e) {
             logger.warn("[voteFederationChange] Unexpected federation change vote exception: {}", e.getMessage());
-            result = new ABICallVoteResult(false, FederationChangeResponseCode.GENERIC_ERROR.getCode());
+            result = new ABICallVoteResult(false, GENERIC_ERROR_CODE);
         }
 
         // Return if the dry run failed, or we are on a reversible execution
@@ -446,7 +449,7 @@ public class FederationSupportImpl implements FederationSupport {
         // Register the vote. It is expected to succeed, since all previous checks succeeded
         if (!election.vote(callSpec, tx.getSender(signatureCache))) {
             logger.warn("[voteFederationChange] Unexpected federation change vote failure.");
-            return FederationChangeResponseCode.GENERIC_ERROR.getCode();
+            return GENERIC_ERROR_CODE;
         }
 
         // If enough votes have been reached, then actually execute the function
@@ -457,7 +460,7 @@ public class FederationSupportImpl implements FederationSupport {
                 result = executeVoteFederationChangeFunction(false, winnerSpec, federationChangeFunction.get(), eventLogger);
             } catch (BridgeIllegalArgumentException e) {
                 logger.warn("[voteFederationChange] Unexpected federation change vote exception: {}", e.getMessage());
-                return FederationChangeResponseCode.GENERIC_ERROR.getCode();
+                return GENERIC_ERROR_CODE;
             } finally {
                 // Clear the winner so that we don't repeat ourselves
                 election.clearWinners();
@@ -560,7 +563,7 @@ public class FederationSupportImpl implements FederationSupport {
 
         if (dryRun) {
             logger.info("[createPendingFederation] DryRun execution successful.");
-            return FederationChangeResponseCode.SUCCESSFUL.getCode();
+            return FEDERATION_CHANGE_SUCCESSFUL_CODE;
         }
 
         PendingFederation pendingFederation = new PendingFederation(Collections.emptyList());
@@ -571,7 +574,7 @@ public class FederationSupportImpl implements FederationSupport {
         provider.getFederationElection(constants.getFederationChangeAuthorizer()).clear();
 
         logger.info("[createPendingFederation] Pending federation created successfully.");
-        return FederationChangeResponseCode.SUCCESSFUL.getCode();
+        return FEDERATION_CHANGE_SUCCESSFUL_CODE;
     }
 
     private boolean pendingFederationExists() {
@@ -605,7 +608,7 @@ public class FederationSupportImpl implements FederationSupport {
 
         if (currentPendingFederation == null) {
             logger.warn("[addFederatorPublicKeyMultikey] Pending federation does not exist.");
-            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
+            return FEDERATION_NON_EXISTENT_CODE;
         }
 
         if (currentPendingFederation.getBtcPublicKeys().contains(btcKey) ||
@@ -617,7 +620,7 @@ public class FederationSupportImpl implements FederationSupport {
 
         if (dryRun) {
             logger.info("[addFederatorPublicKeyMultikey] DryRun execution successful.");
-            return FederationChangeResponseCode.SUCCESSFUL.getCode();
+            return FEDERATION_CHANGE_SUCCESSFUL_CODE;
         }
 
         FederationMember member = new FederationMember(btcKey, rskKey, mstKey);
@@ -626,7 +629,7 @@ public class FederationSupportImpl implements FederationSupport {
         provider.setPendingFederation(currentPendingFederation);
 
         logger.info("[addFederatorPublicKeyMultikey] Federator public key added successfully.");
-        return FederationChangeResponseCode.SUCCESSFUL.getCode();
+        return FEDERATION_CHANGE_SUCCESSFUL_CODE;
     }
 
     /**
@@ -804,12 +807,12 @@ public class FederationSupportImpl implements FederationSupport {
 
         if (!pendingFederationExists()) {
             logger.warn("[rollbackFederation] Pending federation does not exist.");
-            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
+            return FEDERATION_NON_EXISTENT_CODE;
         }
 
         if (dryRun) {
             logger.info("[rollbackFederation] DryRun execution successful.");
-            return FederationChangeResponseCode.SUCCESSFUL.getCode();
+            return FEDERATION_CHANGE_SUCCESSFUL_CODE;
         }
 
         provider.setPendingFederation(null);
@@ -818,7 +821,7 @@ public class FederationSupportImpl implements FederationSupport {
         provider.getFederationElection(constants.getFederationChangeAuthorizer()).clear();
 
         logger.info("[rollbackFederation] Successfully rolled back pending federation.");
-        return FederationChangeResponseCode.SUCCESSFUL.getCode();
+        return FEDERATION_CHANGE_SUCCESSFUL_CODE;
     }
 
     @Override
