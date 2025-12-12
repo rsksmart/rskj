@@ -3060,8 +3060,7 @@ public class BridgeSupport {
         Coin expectedMigrationValue = retiringFederationWallet.getBalance();
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
-            // Migration transaction is created only and only if there is a retiring federation.
-            // It's impossible to reach this point without a retiring federation.
+            // Migration transaction cannot be created if there is no retiring federation
             Federation retiringFederation = getRetiringFederation().get();
 
             ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
