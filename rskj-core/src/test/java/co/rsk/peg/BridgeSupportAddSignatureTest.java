@@ -205,7 +205,7 @@ class BridgeSupportAddSignatureTest {
         Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(activeFedArgs);
 
         when(mockFederationSupport.getActiveFederation()).thenReturn(activeFederation);
-        when(mockFederationSupport.getRetiringFederation()).thenReturn(retiringFederation);
+        when(mockFederationSupport.getRetiringFederation()).thenReturn(Optional.of(retiringFederation));
         when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
         bridgeSupport.addSignature(
@@ -255,7 +255,8 @@ class BridgeSupportAddSignatureTest {
             creationBlockNumber,
             btcRegTestParams
         );
-        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(retiringFedArgs);
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(retiringFedArgs);
+        Optional<Federation> retiringFederation = Optional.of(federation);
 
         // Creates active federation
         List<BtcECKey> activeFederationKeys = Arrays.asList(

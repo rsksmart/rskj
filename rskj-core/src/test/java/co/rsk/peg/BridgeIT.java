@@ -3329,7 +3329,7 @@ class BridgeIT {
         when(txMock.getSender(any(SignatureCache.class))).thenReturn(sender);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
+        when(bridgeSupportMock.getRetiringFederation()).thenReturn(Optional.empty());
         when(bridgeSupportMock.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants()));
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
@@ -3366,7 +3366,7 @@ class BridgeIT {
         when(txMock.getSender(any(SignatureCache.class))).thenReturn(sender);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
+        when(bridgeSupportMock.getRetiringFederation()).thenReturn(Optional.empty());
         when(bridgeSupportMock.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants()));
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
