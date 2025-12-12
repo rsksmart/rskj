@@ -671,7 +671,7 @@ public final class BridgeUtils {
         return baseSize + signingSize;
     }
 
-    public static int calculateSignedSegwitBtcTxVirtualSize(BtcTransaction btcTx) {
+    public static int calculateBtcTxVirtualSize(BtcTransaction btcTx) {
         int baseSize = 0;
         List<TransactionInput> inputs = btcTx.getInputs();
         baseSize += 1; // input count

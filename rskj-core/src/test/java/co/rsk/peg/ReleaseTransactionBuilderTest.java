@@ -18,7 +18,7 @@
 
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeUtils.calculateSignedSegwitBtcTxVirtualSize;
+import static co.rsk.peg.BridgeUtils.calculateBtcTxVirtualSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_1;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static org.junit.jupiter.api.Assertions.*;
@@ -62,8 +62,9 @@ class ReleaseTransactionBuilderTest {
     private final Coin feePerKb = Coin.MILLICOIN.multiply(2);
     private final Federation activeP2shErpFederation = P2shErpFederationBuilder.builder().build();
     private final Script activeFederationP2SHScript = activeP2shErpFederation.getP2SHScript();
-    private final List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(20);
-    private final Federation p2shP2wshErpProposedFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(keys).build();
+    private final List<BtcECKey> signingKeys = BitcoinTestUtils.getBtcEcKeys(20);
+    private final Federation p2shP2wshErpProposedFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(signingKeys).build();
+    private final Federation p2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(signingKeys).build();
     private Wallet wallet;
     private ReleaseTransactionBuilder builder;
     private Federation federation;
@@ -363,8 +364,8 @@ class ReleaseTransactionBuilderTest {
         int numberOfInputs = 210;
 
         // act
-        BtcTransaction pegoutTx = createPegoutTransactionWith50Outputs(p2shP2wshErpProposedFederation, keys, numberOfInputs);
-        int size = calculateSignedSegwitBtcTxVirtualSize(pegoutTx);
+        BtcTransaction pegoutTx = createPegoutTransactionWithNInputsAnd50Outputs(p2shP2wshErpFederation, signingKeys, numberOfInputs);
+        int size = calculateBtcTxVirtualSize(pegoutTx);
 
         // assert
         assertTrue(size > BtcTransaction.MAX_STANDARD_TX_SIZE);
@@ -376,18 +377,19 @@ class ReleaseTransactionBuilderTest {
         int numberOfInputs = 150;
 
         // act
-        BtcTransaction pegoutTx = createPegoutTransactionWith50Outputs(p2shP2wshErpProposedFederation, keys, numberOfInputs);
-        int size = calculateSignedSegwitBtcTxVirtualSize(pegoutTx);
+        BtcTransaction pegoutTx = createPegoutTransactionWithNInputsAnd50Outputs(p2shP2wshErpFederation, signingKeys, numberOfInputs);
+        int size = calculateBtcTxVirtualSize(pegoutTx);
+
         // assert
         assertTrue(size < BtcTransaction.MAX_STANDARD_TX_SIZE);
     }
 
-    private BtcTransaction createPegoutTransactionWith50Outputs(Federation activeFederation, List<BtcECKey> keys, int numberOfInputs) {
+    private BtcTransaction createPegoutTransactionWithNInputsAnd50Outputs(Federation activeFederation, List<BtcECKey> signingKeys, int numberOfInputs) {
         List<UTXO> utxos = getNUtxos(activeFederation.getP2SHScript(), numberOfInputs);
 
         PegoutTransactionBuilder pegoutTransactionBuilder = PegoutTransactionBuilder.builder()
             .withNetworkParameters(btcMainNetParams)
-            .withSignatures(keys)
+            .withSignatures(signingKeys)
             .withActiveFederation(activeFederation);
 
         byte[] outputScript = activeFederation.getP2SHScript().getProgram();
