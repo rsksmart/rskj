@@ -274,7 +274,7 @@ public class FederationSupportImpl implements FederationSupport {
     public byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
         Optional<Federation> retiringFederation = getRetiringFederation();
         return retiringFederation
-            .map(federation -> getFederationMemberPublicKeyOfType(federation.getMembers(), index, keyType, "Retiring federator"))
+            .map(retiringFed -> getFederationMemberPublicKeyOfType(retiringFed.getMembers(), index, keyType, "Retiring federator"))
             .orElse(null);
     }
 
