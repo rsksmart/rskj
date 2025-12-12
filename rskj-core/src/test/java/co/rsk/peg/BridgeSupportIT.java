@@ -3629,11 +3629,9 @@ public class BridgeSupportIT {
                 return expectedWallet;
             });
 
-            Wallet actualWallet = bridgeSupport.getRetiringFederationWallet(false)
-                .orElseThrow(
-                    () -> new IllegalStateException("Retiring federation wallet not present")
-                );
-            Assertions.assertSame(expectedWallet, actualWallet);
+            Optional<Wallet> actualRetiringFederationWallet = bridgeSupport.getRetiringFederationWallet(false);
+            Assertions.assertTrue(actualRetiringFederationWallet.isPresent());
+            Assertions.assertSame(expectedWallet, actualRetiringFederationWallet.get());
         }
     }
 
