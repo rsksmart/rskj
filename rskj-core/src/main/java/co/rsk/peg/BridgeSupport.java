@@ -282,7 +282,7 @@ public class BridgeSupport {
 
     /**
      * Get the wallet for the currently active federation
-     * @return An Optional containing a BTC wallet for the currently active federation
+     * @return A BTC wallet for the currently active federation
      *
      * @param shouldConsiderFlyoverUTXOs Whether to consider flyover UTXOs
      */
@@ -301,10 +301,10 @@ public class BridgeSupport {
 
     /**
      * Get the wallet for the currently retiring federation
-     * or null if there's currently no retiring federation
+     * or empty if there's currently no retiring federation
      *
      * @param shouldConsiderFlyoverUTXOs Whether to consider flyover UTXOs
-     * @return An optional containing a BTC wallet for the currently active federation
+     * @return An {@link Optional} containing a BTC wallet for the currently retiring federation
      */
     protected Optional<Wallet> getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         List<UTXO> retiringFederationBtcUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
