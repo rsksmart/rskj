@@ -1300,7 +1300,7 @@ public class BridgeSupport {
         List<UTXO> utxosToUse
     ) throws IOException {
         Address activeFederationAddress = getActiveFederation().getAddress();
-        logRetiringFederationBalance(retiringFederationWallet);
+        logRetiringFederationBalance(retiringFederationWallet.getBalance());
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
         BtcTransaction migrationTransaction = createResult.getLeft();
@@ -1318,8 +1318,7 @@ public class BridgeSupport {
         settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, migrationTransaction, rskTxHash, amountMigrated);
     }
 
-    private static void logRetiringFederationBalance(Wallet retiringFederationWallet) {
-        Coin retiringFederationBalance = retiringFederationWallet.getBalance();
+    private static void logRetiringFederationBalance(Coin retiringFederationBalance) {
         String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
         logger.info(
             "[migrateFunds] Retiring federation has funds to migrate: {}.",
