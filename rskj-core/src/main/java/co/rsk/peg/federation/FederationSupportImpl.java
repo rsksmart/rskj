@@ -164,14 +164,11 @@ public class FederationSupportImpl implements FederationSupport {
 
     @Override
     public List<UTXO> getActiveFederationBtcUTXOs() {
-        switch (getActiveFederationReference()) {
-            case OLD:
-                return provider.getOldFederationBtcUTXOs();
-            case NEW:
-            case GENESIS:
-            default:
-                return provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations);
+        if (getActiveFederationReference() == StorageFederationReference.OLD) {
+            return provider.getOldFederationBtcUTXOs();
         }
+
+        return provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations);
     }
 
     @Override
