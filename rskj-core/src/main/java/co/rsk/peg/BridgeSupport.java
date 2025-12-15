@@ -1255,13 +1255,6 @@ public class BridgeSupport {
         List<UTXO> availableUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
 
         if (federationSupport.isActiveFederationInMigrationAge() && hasMinimumFundsToMigrate(retiringFederationWallet)) {
-            Coin retiringFederationBalance = retiringFederationWallet.getBalance();
-            String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
-            logger.info(
-                "[processFundsMigration] Retiring federation has funds to migrate: {}.",
-                retiringFederationBalanceInFriendlyFormat
-            );
-
             migrateFunds(
                 rskTx.getHash(),
                 retiringFederationWallet,
@@ -1271,13 +1264,6 @@ public class BridgeSupport {
 
         if (federationSupport.isActiveFederationPastMigrationAge()) {
             if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
-                Coin retiringFederationBalance = retiringFederationWallet.getBalance();
-                String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
-                logger.info(
-                    "[processFundsMigration] Federation is past migration age and will try to migrate remaining balance: {}.",
-                    retiringFederationBalanceInFriendlyFormat
-                );
-
                 try {
                     migrateFunds(
                         rskTx.getHash(),
@@ -1314,6 +1300,7 @@ public class BridgeSupport {
         List<UTXO> utxosToUse
     ) throws IOException {
         Address activeFederationAddress = getActiveFederation().getAddress();
+        logRetiringFederationBalance(retiringFederationWallet);
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
         BtcTransaction migrationTransaction = createResult.getLeft();
@@ -1329,6 +1316,15 @@ public class BridgeSupport {
             .reduce(Coin.ZERO, Coin::add);
 
         settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, migrationTransaction, rskTxHash, amountMigrated);
+    }
+
+    private static void logRetiringFederationBalance(Wallet retiringFederationWallet) {
+        Coin retiringFederationBalance = retiringFederationWallet.getBalance();
+        String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
+        logger.info(
+            "[migrateFunds] Retiring federation has funds to migrate: {}.",
+            retiringFederationBalanceInFriendlyFormat
+        );
     }
 
     /**
