@@ -1253,9 +1253,8 @@ public class BridgeSupport {
 
         Wallet retiringFederationWallet = retiringFederationWalletOptional.get();
         List<UTXO> availableUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
-        Federation activeFederation = getActiveFederation();
 
-        if (federationSupport.isInMigrationAge(activeFederation) && hasMinimumFundsToMigrate(retiringFederationWallet)) {
+        if (federationSupport.isActiveFederationInMigrationAge() && hasMinimumFundsToMigrate(retiringFederationWallet)) {
             Coin retiringFederationBalance = retiringFederationWallet.getBalance();
             String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
             logger.info(
@@ -1266,12 +1265,11 @@ public class BridgeSupport {
             migrateFunds(
                 rskTx.getHash(),
                 retiringFederationWallet,
-                activeFederation.getAddress(),
                 availableUTXOs
             );
         }
 
-        if (federationSupport.isPastMigrationAge(activeFederation)) {
+        if (federationSupport.isActiveFederationPastMigrationAge()) {
             if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
                 Coin retiringFederationBalance = retiringFederationWallet.getBalance();
                 String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
@@ -1284,7 +1282,6 @@ public class BridgeSupport {
                     migrateFunds(
                         rskTx.getHash(),
                         retiringFederationWallet,
-                        activeFederation.getAddress(),
                         availableUTXOs
                     );
                 } catch (Exception e) {
@@ -1314,10 +1311,9 @@ public class BridgeSupport {
     private void migrateFunds(
         Keccak256 rskTxHash,
         Wallet retiringFederationWallet,
-        Address activeFederationAddress,
         List<UTXO> utxosToUse
     ) throws IOException {
-
+        Address activeFederationAddress = getActiveFederation().getAddress();
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
         BtcTransaction migrationTransaction = createResult.getLeft();
