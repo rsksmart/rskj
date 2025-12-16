@@ -51,7 +51,7 @@ public class ReleaseTransactionBuilder {
     public static final int BTC_TX_VERSION_1 = 1;
     public static final int BTC_TX_VERSION_2 = 2;
 
-    public class BuildResult {
+    public static class BuildResult {
         private final BtcTransaction btcTx;
         private final List<UTXO> selectedUTXOs;
         private final Response responseCode;

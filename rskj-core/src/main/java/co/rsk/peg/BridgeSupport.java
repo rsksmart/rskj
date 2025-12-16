@@ -1303,9 +1303,9 @@ public class BridgeSupport {
         logRetiringFederationBalance(retiringFederationWallet.getBalance());
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Address activeFederationAddress = getActiveFederationAddress();
-        Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
-        BtcTransaction migrationTransaction = createResult.getLeft();
-        List<UTXO> selectedUTXOs = createResult.getRight();
+        ReleaseTransactionBuilder.BuildResult migrationTransactionResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
+        BtcTransaction migrationTransaction = migrationTransactionResult.getBtcTx();
+        List<UTXO> selectedUTXOs = migrationTransactionResult.getSelectedUTXOs();
 
         logger.debug(
             "[migrateFunds] consumed {} UTXOs.",
@@ -3026,7 +3026,7 @@ public class BridgeSupport {
         return manager.getCheckpointBefore(time);
     }
 
-    private Pair<BtcTransaction, List<UTXO>> createMigrationTransaction(Wallet retiringFederationWallet, Address destinationAddress) {
+    private ReleaseTransactionBuilder.BuildResult createMigrationTransaction(Wallet retiringFederationWallet, Address destinationAddress) {
         Coin expectedMigrationValue = retiringFederationWallet.getBalance();
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
@@ -3045,11 +3045,7 @@ public class BridgeSupport {
 
             switch (result.getResponseCode()) {
                 case SUCCESS -> {
-                    BtcTransaction migrationBtcTx = result.getBtcTx();
-                    for (TransactionInput transactionInput : migrationBtcTx.getInputs()) {
-                        transactionInput.disconnect();
-                    }
-                    return Pair.of(migrationBtcTx, result.getSelectedUTXOs());
+                    return result;
                 }
 
                 case UTXO_PROVIDER_EXCEPTION ->
