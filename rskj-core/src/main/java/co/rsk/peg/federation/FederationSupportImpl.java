@@ -49,15 +49,11 @@ public class FederationSupportImpl implements FederationSupport {
 
     @Override
     public Federation getActiveFederation() {
-        switch (getActiveFederationReference()) {
-            case NEW:
-                return provider.getNewFederation(constants, activations);
-            case OLD:
-                return provider.getOldFederation(constants, activations);
-            case GENESIS:
-            default:
-                return getGenesisFederation();
-        }
+        return switch (getActiveFederationReference()) {
+            case NEW -> provider.getNewFederation(constants, activations);
+            case OLD -> provider.getOldFederation(constants, activations);
+            default -> getGenesisFederation();
+        };
     }
 
     /**
@@ -817,15 +813,16 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public boolean isInMigrationAge(Federation federation) {
+    public boolean isActiveFederationInMigrationAge() {
+        Federation activeFederation = getActiveFederation();
         long federationActivationAge = constants.getFederationActivationAge(activations);
         long ageBegin = federationActivationAge + constants.getFundsMigrationAgeSinceActivationBegin();
         long ageEnd = federationActivationAge + constants.getFundsMigrationAgeSinceActivationEnd(activations);
-        long federationAge = getFederationAge(federation);
+        long federationAge = getFederationAge(activeFederation);
         boolean isInMigrationAge = ageBegin < federationAge && federationAge < ageEnd;
 
         if (isInMigrationAge) {
-            logger.trace("[federationIsInMigrationAge] Active federation (age={}) is in migration age.", federationAge);
+            logger.trace("[isActiveFederationInMigrationAge] Active federation (age={}) is in migration age.", federationAge);
         }
 
         return isInMigrationAge;
@@ -836,15 +833,16 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public boolean isPastMigrationAge(Federation federation) {
-        long federationAge = getFederationAge(federation);
+    public boolean isActiveFederationPastMigrationAge() {
+        Federation activeFederation = getActiveFederation();
+        long federationAge = getFederationAge(activeFederation);
         long ageEnd = constants.getFederationActivationAge(activations) +
             constants.getFundsMigrationAgeSinceActivationEnd(activations);
 
         boolean isPastMigrationAge = federationAge >= ageEnd;
 
         if (isPastMigrationAge) {
-            logger.trace("[federationIsPastMigrationAge] Active federation (age={}) is past migration age.", federationAge);
+            logger.trace("[isActiveFederationPastMigrationAge] Active federation (age={}) is past migration age.", federationAge);
         }
 
         return isPastMigrationAge;

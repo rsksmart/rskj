@@ -257,9 +257,9 @@ public interface FederationSupport {
         BridgeEventLogger eventLogger
     );
 
-    boolean isInMigrationAge(Federation federation);
+    boolean isActiveFederationInMigrationAge();
 
-    boolean isPastMigrationAge(Federation federation);
+    boolean isActiveFederationPastMigrationAge();
 
     long getActiveFederationCreationBlockHeight();
 

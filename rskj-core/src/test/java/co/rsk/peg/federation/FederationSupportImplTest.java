@@ -2529,7 +2529,7 @@ class FederationSupportImplTest {
             FederationSupport aFederationSupport = setupFederationSupportAtExecutionBlock(oneBlockBeforeMigrationAgeExecutionBlockNumber);
 
             // Act & Assert
-            assertFalse(aFederationSupport.isInMigrationAge(newFederation));
+            assertFalse(aFederationSupport.isActiveFederationInMigrationAge());
         }
 
         @Test
@@ -2538,7 +2538,7 @@ class FederationSupportImplTest {
             FederationSupport aFederationSupport = setupFederationSupportAtExecutionBlock(IN_MIGRATION_AGE_EXECUTION_BLOCK_NUMBER);
 
             // Act & Assert
-            assertTrue(aFederationSupport.isInMigrationAge(newFederation));
+            assertTrue(aFederationSupport.isActiveFederationInMigrationAge());
         }
 
         @Test
@@ -2547,7 +2547,7 @@ class FederationSupportImplTest {
             FederationSupport aFederationSupport = setupFederationSupportAtExecutionBlock(IN_MIGRATION_AGE_EXECUTION_BLOCK_NUMBER);
 
             // Act & Assert
-            assertFalse(aFederationSupport.isPastMigrationAge(newFederation));
+            assertFalse(aFederationSupport.isActiveFederationPastMigrationAge());
         }
 
         @Test
@@ -2556,7 +2556,7 @@ class FederationSupportImplTest {
             FederationSupport aFederationSupport = setupFederationSupportAtExecutionBlock(ONE_BLOCK_AFTER_MIGRATION_ENDS_BLOCK_NUMBER);
 
             // Act & Assert
-            assertFalse(aFederationSupport.isInMigrationAge(newFederation));
+            assertFalse(aFederationSupport.isActiveFederationInMigrationAge());
         }
 
         @Test
@@ -2565,7 +2565,7 @@ class FederationSupportImplTest {
             FederationSupport aFederationSupport = setupFederationSupportAtExecutionBlock(ONE_BLOCK_AFTER_MIGRATION_ENDS_BLOCK_NUMBER);
 
             // Act & Assert
-            assertTrue(aFederationSupport.isPastMigrationAge(newFederation));
+            assertTrue(aFederationSupport.isActiveFederationPastMigrationAge());
         }
 
         private FederationSupport setupFederationSupportAtExecutionBlock(long executionBlockNumber) {
