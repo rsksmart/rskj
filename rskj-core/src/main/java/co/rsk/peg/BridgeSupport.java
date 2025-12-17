@@ -1263,7 +1263,8 @@ public class BridgeSupport {
         }
 
         if (federationSupport.isActiveFederationPastMigrationAge()) {
-            if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
+            boolean hasBalance = retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO);
+            if (hasBalance) {
                 try {
                     migrateFunds(
                         rskTx.getHash(),
