@@ -1318,7 +1318,7 @@ public class BridgeSupport {
         settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, migrationTransaction, rskTxHash, amountMigrated);
     }
 
-    private static void logRetiringFederationBalance(Coin retiringFederationBalance) {
+    private void logRetiringFederationBalance(Coin retiringFederationBalance) {
         String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
         logger.info(
             "[migrateFunds] Retiring federation has funds to migrate: {}.",
