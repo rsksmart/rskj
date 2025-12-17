@@ -51,29 +51,7 @@ public class ReleaseTransactionBuilder {
     public static final int BTC_TX_VERSION_1 = 1;
     public static final int BTC_TX_VERSION_2 = 2;
 
-    public static class BuildResult {
-        private final BtcTransaction btcTx;
-        private final List<UTXO> selectedUTXOs;
-        private final Response responseCode;
-
-        public BuildResult(BtcTransaction btcTx, List<UTXO> selectedUTXOs, Response responseCode) {
-            this.btcTx = btcTx;
-            this.selectedUTXOs = selectedUTXOs;
-            this.responseCode = responseCode;
-        }
-
-        public BtcTransaction getBtcTx() {
-            return btcTx;
-        }
-
-        public List<UTXO> getSelectedUTXOs() {
-            return selectedUTXOs;
-        }
-
-        public Response getResponseCode() {
-            return responseCode;
-        }
-    }
+    public record BuildResult(BtcTransaction btcTx, List<UTXO> selectedUTXOs, Response responseCode) {}
 
     private interface SendRequestConfigurator {
         void configure(SendRequest sr);
