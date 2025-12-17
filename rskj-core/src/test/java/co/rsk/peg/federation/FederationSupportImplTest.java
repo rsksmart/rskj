@@ -2511,73 +2511,67 @@ class FederationSupportImplTest {
         private static final long FUNDS_MIGRATION_AGE_SINCE_ACTIVATION_ENDS = federationMainnetConstants.getFundsMigrationAgeSinceActivationEnd(allActivations);
         private static final long ONE_BLOCK_AFTER_MIGRATION_ENDS_BLOCK_NUMBER = NEW_FEDERATION_CREATION_BLOCK + ONE_BLOCK_BEFORE_MIGRATION_BEGINS + FUNDS_MIGRATION_AGE_SINCE_ACTIVATION_ENDS;
         private static final Federation newFederation = P2shP2wshErpFederationBuilder.builder().withCreationBlockNumber(NEW_FEDERATION_CREATION_BLOCK).build();
+        private static Block executionBlock;
+        private static FederationSupport federationSupport;
 
         @BeforeEach
         void setUp() {
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
+            executionBlock = mock(Block.class);
+            storageProvider.setNewFederation(newFederation);
             federationSupport = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
                 .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
                 .build();
-            storageProvider.setNewFederation(newFederation);
         }
 
         @Test
         void federationIsInMigrationAge_whenExecutionBlockIsOneBlockBeforeMigrationAgeBegins_shouldReturnFalse() {
             // Arrange
             long oneBlockBeforeMigrationAgeExecutionBlockNumber = NEW_FEDERATION_CREATION_BLOCK + ONE_BLOCK_BEFORE_MIGRATION_BEGINS;
-            FederationSupport aFederationSupport = setupFederationSupportAtExecutionBlock(oneBlockBeforeMigrationAgeExecutionBlockNumber);
+            when(executionBlock.getNumber()).thenReturn(oneBlockBeforeMigrationAgeExecutionBlockNumber);
 
             // Act & Assert
-            assertFalse(aFederationSupport.isActiveFederationInMigrationAge());
+            assertFalse(federationSupport.isActiveFederationInMigrationAge());
         }
 
         @Test
         void federationIsInMigrationAge_whenExecutionBlockIsOneBlockAfterMigrationAgeBegins_shouldReturnFalse() {
             // Arrange
-            FederationSupport aFederationSupport = setupFederationSupportAtExecutionBlock(IN_MIGRATION_AGE_EXECUTION_BLOCK_NUMBER);
+            when(executionBlock.getNumber()).thenReturn(IN_MIGRATION_AGE_EXECUTION_BLOCK_NUMBER);
 
             // Act & Assert
-            assertTrue(aFederationSupport.isActiveFederationInMigrationAge());
+            assertTrue(federationSupport.isActiveFederationInMigrationAge());
         }
 
         @Test
         void federationIsPastMigrationAge_whenExecutionBlockIsOneBlockAfterMigrationAgeBegins_shouldReturnFalse() {
             // Arrange
-            FederationSupport aFederationSupport = setupFederationSupportAtExecutionBlock(IN_MIGRATION_AGE_EXECUTION_BLOCK_NUMBER);
+            when(executionBlock.getNumber()).thenReturn(IN_MIGRATION_AGE_EXECUTION_BLOCK_NUMBER);
 
             // Act & Assert
-            assertFalse(aFederationSupport.isActiveFederationPastMigrationAge());
+            assertFalse(federationSupport.isActiveFederationPastMigrationAge());
         }
 
         @Test
         void federationIsInMigrationAge_whenExecutionBlockIsOneBlockAfterMigrationAgeEnds_shouldReturnFalse() {
             // Arrange
-            FederationSupport aFederationSupport = setupFederationSupportAtExecutionBlock(ONE_BLOCK_AFTER_MIGRATION_ENDS_BLOCK_NUMBER);
+            when(executionBlock.getNumber()).thenReturn(ONE_BLOCK_AFTER_MIGRATION_ENDS_BLOCK_NUMBER);
 
             // Act & Assert
-            assertFalse(aFederationSupport.isActiveFederationInMigrationAge());
+            assertFalse(federationSupport.isActiveFederationInMigrationAge());
         }
 
         @Test
         void federationIsPastMigrationAge_whenExecutionBlockIsOneBlockAfterMigrationAgeEnds_shouldReturnTrue() {
             // Arrange
-            FederationSupport aFederationSupport = setupFederationSupportAtExecutionBlock(ONE_BLOCK_AFTER_MIGRATION_ENDS_BLOCK_NUMBER);
+            when(executionBlock.getNumber()).thenReturn(ONE_BLOCK_AFTER_MIGRATION_ENDS_BLOCK_NUMBER);
 
             // Act & Assert
-            assertTrue(aFederationSupport.isActiveFederationPastMigrationAge());
+            assertTrue(federationSupport.isActiveFederationPastMigrationAge());
         }
 
-        private FederationSupport setupFederationSupportAtExecutionBlock(long executionBlockNumber) {
-            Block executionBlock = mock(Block.class);
-            when(executionBlock.getNumber()).thenReturn(executionBlockNumber);
-
-            return federationSupportBuilder
-                .withFederationConstants(federationMainnetConstants)
-                .withFederationStorageProvider(storageProvider)
-                .withRskExecutionBlock(executionBlock)
-                .build();
-        }
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
