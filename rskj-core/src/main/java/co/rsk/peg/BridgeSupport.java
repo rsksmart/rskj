@@ -40,7 +40,6 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
-import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
@@ -64,7 +63,6 @@ import java.math.BigInteger;
 import java.security.SignatureException;
 import java.time.Instant;
 import java.util.*;
-import javax.annotation.Nullable;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -1255,42 +1253,22 @@ public class BridgeSupport {
 
         Wallet retiringFederationWallet = retiringFederationWalletOptional.get();
         List<UTXO> availableUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
-        Federation activeFederation = getActiveFederation();
 
-        if (federationIsInMigrationAge(activeFederation)) {
-            long federationAge = rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber();
-            logger.trace("[processFundsMigration] Active federation (age={}) is in migration age.", federationAge);
-            if (hasMinimumFundsToMigrate(retiringFederationWallet)){
-                Coin retiringFederationBalance = retiringFederationWallet.getBalance();
-                String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
-                logger.info(
-                    "[processFundsMigration] Retiring federation has funds to migrate: {}.",
-                    retiringFederationBalanceInFriendlyFormat
-                );
-
-                migrateFunds(
-                    rskTx.getHash(),
-                    retiringFederationWallet,
-                    activeFederation.getAddress(),
-                    availableUTXOs
-                );
-            }
+        if (federationSupport.isActiveFederationInMigrationAge() && hasMinimumFundsToMigrate(retiringFederationWallet)) {
+            migrateFunds(
+                rskTx.getHash(),
+                retiringFederationWallet,
+                availableUTXOs
+            );
         }
 
-        if (federationIsPastMigrationAge(activeFederation)) {
-            if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
-                Coin retiringFederationBalance = retiringFederationWallet.getBalance();
-                String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
-                logger.info(
-                    "[processFundsMigration] Federation is past migration age and will try to migrate remaining balance: {}.",
-                    retiringFederationBalanceInFriendlyFormat
-                );
-
+        if (federationSupport.isActiveFederationPastMigrationAge()) {
+            boolean hasBalance = retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO);
+            if (hasBalance) {
                 try {
                     migrateFunds(
                         rskTx.getHash(),
                         retiringFederationWallet,
-                        activeFederation.getAddress(),
                         availableUTXOs
                     );
                 } catch (Exception e) {
@@ -1311,27 +1289,6 @@ public class BridgeSupport {
         }
     }
 
-    private boolean federationIsInMigrationAge(Federation federation) {
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
-
-        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
-        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        long ageBegin = federationActivationAge + federationConstants.getFundsMigrationAgeSinceActivationBegin();
-        long ageEnd = federationActivationAge + federationConstants.getFundsMigrationAgeSinceActivationEnd(activations);
-
-        return federationAge > ageBegin && federationAge < ageEnd;
-    }
-
-    private boolean federationIsPastMigrationAge(Federation federation) {
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
-
-        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        long ageEnd = federationConstants.getFederationActivationAge(activations) +
-            federationConstants.getFundsMigrationAgeSinceActivationEnd(activations);
-
-        return federationAge >= ageEnd;
-    }
-
     private boolean hasMinimumFundsToMigrate(Wallet retiringFederationWallet) {
         // This value is set according to the average 500 bytes transaction size
         Coin minimumFundsToMigrate = getFeePerKb().divide(2);
@@ -1341,11 +1298,11 @@ public class BridgeSupport {
     private void migrateFunds(
         Keccak256 rskTxHash,
         Wallet retiringFederationWallet,
-        Address activeFederationAddress,
         List<UTXO> utxosToUse
     ) throws IOException {
-
+        logRetiringFederationBalance(retiringFederationWallet.getBalance());
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
+        Address activeFederationAddress = getActiveFederationAddress();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
         BtcTransaction migrationTransaction = createResult.getLeft();
         List<UTXO> selectedUTXOs = createResult.getRight();
@@ -1360,6 +1317,14 @@ public class BridgeSupport {
             .reduce(Coin.ZERO, Coin::add);
 
         settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, migrationTransaction, rskTxHash, amountMigrated);
+    }
+
+    private void logRetiringFederationBalance(Coin retiringFederationBalance) {
+        String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
+        logger.info(
+            "[migrateFunds] Retiring federation has funds to migrate: {}.",
+            retiringFederationBalanceInFriendlyFormat
+        );
     }
 
     /**

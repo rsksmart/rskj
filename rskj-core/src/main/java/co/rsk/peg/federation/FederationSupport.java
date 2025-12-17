@@ -9,7 +9,7 @@ import co.rsk.peg.vote.ABICallSpec;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.Nullable;
+
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 
@@ -256,6 +256,11 @@ public interface FederationSupport {
         SignatureCache signatureCache,
         BridgeEventLogger eventLogger
     );
+
+    boolean isActiveFederationInMigrationAge();
+
+    boolean isActiveFederationPastMigrationAge();
+
     long getActiveFederationCreationBlockHeight();
 
     void updateFederationCreationBlockHeights();

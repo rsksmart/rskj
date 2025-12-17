@@ -49,15 +49,11 @@ public class FederationSupportImpl implements FederationSupport {
 
     @Override
     public Federation getActiveFederation() {
-        switch (getActiveFederationReference()) {
-            case NEW:
-                return provider.getNewFederation(constants, activations);
-            case OLD:
-                return provider.getOldFederation(constants, activations);
-            case GENESIS:
-            default:
-                return getGenesisFederation();
-        }
+        return switch (getActiveFederationReference()) {
+            case NEW -> provider.getNewFederation(constants, activations);
+            case OLD -> provider.getOldFederation(constants, activations);
+            default -> getGenesisFederation();
+        };
     }
 
     /**
@@ -101,7 +97,7 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     private boolean shouldFederationBeActive(Federation federation) {
-        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
+        long federationAge = getFederationAge(federation);
         return federationAge >= constants.getFederationActivationAge(activations);
     }
 
@@ -814,6 +810,46 @@ public class FederationSupportImpl implements FederationSupport {
 
         logger.info("[rollbackFederation] Successfully rolled back pending federation.");
         return SUCCESSFUL.getCode();
+    }
+
+    @Override
+    public boolean isActiveFederationInMigrationAge() {
+        long ageBegin = getMigrationAgeStart();
+        long ageEnd = getMigrationAgeEnd();
+        Federation activeFederation = getActiveFederation();
+        long federationAge = getFederationAge(activeFederation);
+        boolean isInMigrationAge = ageBegin < federationAge && federationAge < ageEnd;
+
+        logger.trace("[isActiveFederationInMigrationAge] Active federation [address={}] [age={}], is in migration age? [{}].",
+            getActiveFederationAddress(), federationAge, isInMigrationAge);
+
+        return isInMigrationAge;
+    }
+
+    private long getMigrationAgeEnd() {
+        return constants.getFederationActivationAge(activations) + constants.getFundsMigrationAgeSinceActivationEnd(activations);
+    }
+
+    private long getMigrationAgeStart() {
+        return constants.getFederationActivationAge(activations) + constants.getFundsMigrationAgeSinceActivationBegin();
+    }
+
+    private long getFederationAge(Federation federation) {
+        return rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
+    }
+
+    @Override
+    public boolean isActiveFederationPastMigrationAge() {
+        Federation activeFederation = getActiveFederation();
+        long federationAge = getFederationAge(activeFederation);
+        long ageEnd = getMigrationAgeEnd();
+
+        boolean isPastMigrationAge = federationAge >= ageEnd;
+
+        logger.trace("[isActiveFederationPastMigrationAge] Active federation [address={}] [age={}], is past migration age? [{}].",
+            getActiveFederationAddress(), federationAge, isPastMigrationAge);
+
+        return isPastMigrationAge;
     }
 
     @Override
