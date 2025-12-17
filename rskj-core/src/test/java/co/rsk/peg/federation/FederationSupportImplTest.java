@@ -2504,20 +2504,19 @@ class FederationSupportImplTest {
     @Tag("Federation is in or past migration age")
     class FederationMigrationAge {
         private static final long NEW_FEDERATION_CREATION_BLOCK = 100L;
-        private static final long FEDERATION_ACTIVATION_AGE = federationMainnetConstants.getFederationActivationAge(allActivations);
-        private static final long FUNDS_MIGRATION_AGE_SINCE_ACTIVATION_BEGIN = federationMainnetConstants.getFundsMigrationAgeSinceActivationBegin();
-        private static final long ONE_BLOCK_BEFORE_MIGRATION_BEGINS = FEDERATION_ACTIVATION_AGE + FUNDS_MIGRATION_AGE_SINCE_ACTIVATION_BEGIN;
+        private static final long ONE_BLOCK_BEFORE_MIGRATION_BEGINS =
+            federationMainnetConstants.getFederationActivationAge(allActivations) + federationMainnetConstants.getFundsMigrationAgeSinceActivationBegin();
         private static final long IN_MIGRATION_AGE_EXECUTION_BLOCK_NUMBER = NEW_FEDERATION_CREATION_BLOCK + ONE_BLOCK_BEFORE_MIGRATION_BEGINS + 1;
-        private static final long FUNDS_MIGRATION_AGE_SINCE_ACTIVATION_ENDS = federationMainnetConstants.getFundsMigrationAgeSinceActivationEnd(allActivations);
-        private static final long ONE_BLOCK_AFTER_MIGRATION_ENDS_BLOCK_NUMBER = NEW_FEDERATION_CREATION_BLOCK + ONE_BLOCK_BEFORE_MIGRATION_BEGINS + FUNDS_MIGRATION_AGE_SINCE_ACTIVATION_ENDS;
+        private static final long ONE_BLOCK_AFTER_MIGRATION_ENDS_BLOCK_NUMBER =
+            NEW_FEDERATION_CREATION_BLOCK + ONE_BLOCK_BEFORE_MIGRATION_BEGINS + federationMainnetConstants.getFundsMigrationAgeSinceActivationEnd(allActivations);
         private static final Federation newFederation = P2shP2wshErpFederationBuilder.builder().withCreationBlockNumber(NEW_FEDERATION_CREATION_BLOCK).build();
         private static Block executionBlock;
         private static FederationSupport federationSupport;
 
         @BeforeEach
         void setUp() {
-            storageProvider = new FederationStorageProviderImpl(storageAccessor);
             executionBlock = mock(Block.class);
+            storageProvider = new FederationStorageProviderImpl(storageAccessor);
             storageProvider.setNewFederation(newFederation);
             federationSupport = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
