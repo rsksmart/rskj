@@ -115,11 +115,11 @@ class ReleaseTransactionBuilderTest {
             pegoutRecipient,
             pegoutAmount
         );
-        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
 
-        Coin inputsValue = result.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Coin inputsValue = result.selectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
 
-        TransactionOutput changeOutput = result.getBtcTx().getOutput(1);
+        TransactionOutput changeOutput = result.btcTx().getOutput(1);
 
         // Second output should be the change output to the Federation
         assertEquals(activeFederation.getAddress(), changeOutput.getAddressFromP2SH(btcMainNetParams));
@@ -145,10 +145,10 @@ class ReleaseTransactionBuilderTest {
 
         // Assert
         ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.SUCCESS;
-        ReleaseTransactionBuilder.Response actualResponseCode = svpFundTransactionUnsignedBuildResult.getResponseCode();
+        ReleaseTransactionBuilder.Response actualResponseCode = svpFundTransactionUnsignedBuildResult.responseCode();
         assertEquals(expectedResponseCode, actualResponseCode);
 
-        BtcTransaction svpFundTransactionUnsigned = svpFundTransactionUnsignedBuildResult.getBtcTx();
+        BtcTransaction svpFundTransactionUnsigned = svpFundTransactionUnsignedBuildResult.btcTx();
         int numberOfOutputs = 3; // 1 for the federation, 1 for the flyover federation, and 1 for the change
         assertEquals(numberOfOutputs, svpFundTransactionUnsigned.getOutputs().size());
         TransactionOutput actualFirstOutput = svpFundTransactionUnsigned.getOutput(0);
@@ -162,7 +162,7 @@ class ReleaseTransactionBuilderTest {
         Address flyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcMainNetParams, proposedFlyoverPrefix, p2shP2wshErpProposedFederation);
         assertEquals(flyoverFederationAddress, actualSecondOutput.getAddressFromP2SH(btcMainNetParams));
 
-        List<UTXO> selectedUTXOs = svpFundTransactionUnsignedBuildResult.getSelectedUTXOs();
+        List<UTXO> selectedUTXOs = svpFundTransactionUnsignedBuildResult.selectedUTXOs();
         List<UTXO> expectedSelectedUTXOs = List.of(utxos.get(0)); // First UTXO is enough to cover the svpFundTxOutputsValue
         assertEquals(expectedSelectedUTXOs, selectedUTXOs);
     }
@@ -184,13 +184,13 @@ class ReleaseTransactionBuilderTest {
 
         // Assert
         ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY;
-        ReleaseTransactionBuilder.Response actualResponseCode = svpFundTransactionUnsignedBuildResult.getResponseCode();
+        ReleaseTransactionBuilder.Response actualResponseCode = svpFundTransactionUnsignedBuildResult.responseCode();
         assertEquals(expectedResponseCode, actualResponseCode);
 
-        List<UTXO> selectedUTXOs = svpFundTransactionUnsignedBuildResult.getSelectedUTXOs();
+        List<UTXO> selectedUTXOs = svpFundTransactionUnsignedBuildResult.selectedUTXOs();
         assertNull(selectedUTXOs);
 
-        BtcTransaction btcTx = svpFundTransactionUnsignedBuildResult.getBtcTx();
+        BtcTransaction btcTx = svpFundTransactionUnsignedBuildResult.btcTx();
         assertNull(btcTx);
     }
 
@@ -211,13 +211,13 @@ class ReleaseTransactionBuilderTest {
 
         // Assert
         ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
-        ReleaseTransactionBuilder.Response actualResponseCode = svpFundTransactionUnsignedBuildResult.getResponseCode();
+        ReleaseTransactionBuilder.Response actualResponseCode = svpFundTransactionUnsignedBuildResult.responseCode();
         assertEquals(expectedResponseCode, actualResponseCode);
 
-        List<UTXO> selectedUTXOs = svpFundTransactionUnsignedBuildResult.getSelectedUTXOs();
+        List<UTXO> selectedUTXOs = svpFundTransactionUnsignedBuildResult.selectedUTXOs();
         assertNull(selectedUTXOs);
 
-        BtcTransaction btcTx = svpFundTransactionUnsignedBuildResult.getBtcTx();
+        BtcTransaction btcTx = svpFundTransactionUnsignedBuildResult.btcTx();
         assertNull(btcTx);
     }
 
@@ -335,10 +335,10 @@ class ReleaseTransactionBuilderTest {
 
         // Assert
         ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.SUCCESS;
-        ReleaseTransactionBuilder.Response actualResponseCode = migrationTransactionUnsignedBuildResult.getResponseCode();
+        ReleaseTransactionBuilder.Response actualResponseCode = migrationTransactionUnsignedBuildResult.responseCode();
         assertEquals(expectedResponseCode, actualResponseCode);
 
-        BtcTransaction migrationTransactionUnsigned = migrationTransactionUnsignedBuildResult.getBtcTx();
+        BtcTransaction migrationTransactionUnsigned = migrationTransactionUnsignedBuildResult.btcTx();
 
         int expectedNumberOfInputs = utxos.size(); // All UTXOs should be migrated
         assertEquals(expectedNumberOfInputs, migrationTransactionUnsigned.getInputs().size());
@@ -386,10 +386,10 @@ class ReleaseTransactionBuilderTest {
 
         // Assert
         ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.SUCCESS;
-        ReleaseTransactionBuilder.Response actualResponseCode = migrationTransactionUnsignedBuildResult.getResponseCode();
+        ReleaseTransactionBuilder.Response actualResponseCode = migrationTransactionUnsignedBuildResult.responseCode();
         assertEquals(expectedResponseCode, actualResponseCode);
 
-        BtcTransaction migrationTransactionUnsigned = migrationTransactionUnsignedBuildResult.getBtcTx();
+        BtcTransaction migrationTransactionUnsigned = migrationTransactionUnsignedBuildResult.btcTx();
 
         int expectedNumberOfInputs = utxos.size(); // All UTXOs should be migrated
         assertEquals(expectedNumberOfInputs, migrationTransactionUnsigned.getInputs().size());
@@ -422,13 +422,13 @@ class ReleaseTransactionBuilderTest {
 
         // Assert
         ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY;
-        ReleaseTransactionBuilder.Response actualResponseCode = migrationTransactionUnsignedBuildResult.getResponseCode();
+        ReleaseTransactionBuilder.Response actualResponseCode = migrationTransactionUnsignedBuildResult.responseCode();
         assertEquals(expectedResponseCode, actualResponseCode);
 
-        List<UTXO> selectedUTXOs = migrationTransactionUnsignedBuildResult.getSelectedUTXOs();
+        List<UTXO> selectedUTXOs = migrationTransactionUnsignedBuildResult.selectedUTXOs();
         assertNull(selectedUTXOs);
 
-        BtcTransaction btcTx = migrationTransactionUnsignedBuildResult.getBtcTx();
+        BtcTransaction btcTx = migrationTransactionUnsignedBuildResult.btcTx();
         assertNull(btcTx);
     }
 
@@ -464,13 +464,13 @@ class ReleaseTransactionBuilderTest {
 
         // Assert
         ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
-        ReleaseTransactionBuilder.Response actualResponseCode = migrationTransactionUnsignedBuildResult.getResponseCode();
+        ReleaseTransactionBuilder.Response actualResponseCode = migrationTransactionUnsignedBuildResult.responseCode();
         assertEquals(expectedResponseCode, actualResponseCode);
 
-        List<UTXO> selectedUTXOs = migrationTransactionUnsignedBuildResult.getSelectedUTXOs();
+        List<UTXO> selectedUTXOs = migrationTransactionUnsignedBuildResult.selectedUTXOs();
         assertNull(selectedUTXOs);
 
-        BtcTransaction btcTx = migrationTransactionUnsignedBuildResult.getBtcTx();
+        BtcTransaction btcTx = migrationTransactionUnsignedBuildResult.btcTx();
         assertNull(btcTx);
     }
 
@@ -564,7 +564,7 @@ class ReleaseTransactionBuilderTest {
             pegoutRecipient,
             pegoutAmount
         );
-        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
     }
 
     private static List<UTXO> getUtxos(Script outputScript) {
@@ -638,10 +638,10 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = builder.buildAmountTo(to, amount);
 
-        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
 
-        BtcTransaction tx = result.getBtcTx();
-        List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
+        BtcTransaction tx = result.btcTx();
+        List<UTXO> selectedUTXOs = result.selectedUTXOs();
 
         assertEquals(1, tx.getOutputs().size());
         assertEquals(amount, tx.getOutput(0).getValue());
@@ -669,7 +669,7 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = builder.buildAmountTo(to, amount);
 
-        assertEquals(ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY, result.responseCode());
         verify(wallet, never()).getWatchedAddresses();
         verify(wallet, never()).getUTXOProvider();
     }
@@ -683,7 +683,7 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = builder.buildAmountTo(to, amount);
 
-        assertEquals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS, result.responseCode());
         verify(wallet, never()).getWatchedAddresses();
         verify(wallet, never()).getUTXOProvider();
     }
@@ -697,7 +697,7 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = builder.buildAmountTo(to, amount);
 
-        assertEquals(ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE, result.responseCode());
         verify(wallet, never()).getWatchedAddresses();
         verify(wallet, never()).getUTXOProvider();
     }
@@ -740,7 +740,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder.BuildResult result = builder.buildAmountTo(to, amount);
         verify(wallet, times(1)).completeTx(any(SendRequest.class));
 
-        assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.responseCode());
     }
 
     @Test
@@ -784,7 +784,7 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = builder.buildEmptyWalletTo(to);
 
-        assertEquals(ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY, result.responseCode());
         verify(wallet, never()).getWatchedAddresses();
         verify(wallet, never()).getUTXOProvider();
     }
@@ -797,7 +797,7 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = builder.buildEmptyWalletTo(to);
 
-        assertEquals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS, result.responseCode());
         verify(wallet, never()).getWatchedAddresses();
         verify(wallet, never()).getUTXOProvider();
     }
@@ -810,7 +810,7 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = builder.buildEmptyWalletTo(to);
 
-        assertEquals(ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE, result.responseCode());
         verify(wallet, never()).getWatchedAddresses();
         verify(wallet, never()).getUTXOProvider();
     }
@@ -854,7 +854,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder.BuildResult result = builder.buildEmptyWalletTo(to);
         verify(wallet, times(1)).completeTx(any(SendRequest.class));
 
-        assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.responseCode());
     }
 
     @Test
@@ -889,10 +889,10 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(pegoutRequests);
 
-        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
 
-        BtcTransaction tx = result.getBtcTx();
-        List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
+        BtcTransaction tx = result.btcTx();
+        List<UTXO> selectedUTXOs = result.selectedUTXOs();
 
         assertEquals(2, selectedUTXOs.size());
 
@@ -954,10 +954,10 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(pegoutRequests);
 
-        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
 
-        BtcTransaction tx = result.getBtcTx();
-        List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
+        BtcTransaction tx = result.btcTx();
+        List<UTXO> selectedUTXOs = result.selectedUTXOs();
 
         assertEquals(3, selectedUTXOs.size());
 
@@ -1011,7 +1011,7 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(pegoutRequests);
 
-        assertEquals(ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY, result.responseCode());
     }
 
     @Test
@@ -1047,7 +1047,7 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(pegoutRequests);
 
-        assertEquals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS, result.responseCode());
 
         List<UTXO> newUtxos = Arrays.asList(
             new UTXO(mockUTXOHash("1"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript()),
@@ -1075,7 +1075,7 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult newResult = releaseTransactionBuilder.buildBatchedPegouts(pegoutRequests);
 
-        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, newResult.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, newResult.responseCode());
     }
 
     @Test
@@ -1104,7 +1104,7 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(pegoutRequests);
 
-        assertEquals(ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE, result.responseCode());
     }
 
     @Test
@@ -1139,7 +1139,7 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = builder.buildBatchedPegouts(pegoutRequests);
 
-        assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.responseCode());
         verify(wallet, times(1)).completeTx(any(SendRequest.class));
     }
 
@@ -1174,9 +1174,9 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(entries);
 
-        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
 
-        BtcTransaction btcTx = result.getBtcTx();
+        BtcTransaction btcTx = result.btcTx();
 
         int outputSize = btcTx.getOutputs().size();
         Coin totalFee = btcTx.getFee();
@@ -1187,7 +1187,7 @@ class ReleaseTransactionBuilderTest {
         assertEquals(testEntry1.getAmount().minus(btcTx.getOutput(0).getValue())
             .add(testEntry2.getAmount().minus(btcTx.getOutput(1).getValue())), totalFee);
 
-        Coin inputsValue = result.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Coin inputsValue = result.selectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
         Coin totalPegoutAmount = entries.stream().map(ReleaseRequestQueue.Entry::getAmount).reduce(Coin.ZERO, Coin::add);
 
         TransactionOutput changeOutput = btcTx.getOutput(outputSize - 1); // last output
@@ -1228,9 +1228,9 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(entries);
 
-        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
 
-        BtcTransaction btcTx = result.getBtcTx();
+        BtcTransaction btcTx = result.btcTx();
 
         int outputSize = btcTx.getOutputs().size();
         Coin totalFee = btcTx.getFee();
@@ -1244,7 +1244,7 @@ class ReleaseTransactionBuilderTest {
             .add(testEntry2.getAmount().minus(btcTx.getOutput(1).getValue()))
             .add(testEntry3.getAmount().minus(btcTx.getOutput(2).getValue())), totalFee);
 
-        Coin inputsValue = result.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Coin inputsValue = result.selectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
         Coin totalPegoutAmount = entries.stream().map(ReleaseRequestQueue.Entry::getAmount).reduce(Coin.ZERO, Coin::add);
 
         TransactionOutput changeOutput = btcTx.getOutput(outputSize - 1); // last output
@@ -1301,10 +1301,10 @@ class ReleaseTransactionBuilderTest {
 
         ReleaseTransactionBuilder.BuildResult result = thisBuilder.buildEmptyWalletTo(to);
 
-        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
+        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
 
-        BtcTransaction tx = result.getBtcTx();
-        List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
+        BtcTransaction tx = result.btcTx();
+        List<UTXO> selectedUTXOs = result.selectedUTXOs();
 
         assertEquals(1, tx.getOutputs().size());
         assertEquals(Coin.FIFTY_COINS, tx.getOutput(0).getValue());
