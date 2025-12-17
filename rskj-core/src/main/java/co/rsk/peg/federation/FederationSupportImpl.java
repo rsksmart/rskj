@@ -846,7 +846,7 @@ public class FederationSupportImpl implements FederationSupport {
 
         boolean isPastMigrationAge = federationAge >= ageEnd;
 
-        logger.trace("[isActiveFederationInMigrationAge] Active federation [address={}] [age={}], is past migration age? [{}].",
+        logger.trace("[isActiveFederationPastMigrationAge] Active federation [address={}] [age={}], is past migration age? [{}].",
             getActiveFederationAddress(), federationAge, isPastMigrationAge);
 
         return isPastMigrationAge;
