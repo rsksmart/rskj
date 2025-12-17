@@ -814,9 +814,9 @@ public class FederationSupportImpl implements FederationSupport {
 
     @Override
     public boolean isActiveFederationInMigrationAge() {
-        Federation activeFederation = getActiveFederation();
         long ageBegin = getMigrationAgeStart();
         long ageEnd = getMigrationAgeEnd();
+        Federation activeFederation = getActiveFederation();
         long federationAge = getFederationAge(activeFederation);
         boolean isInMigrationAge = ageBegin < federationAge && federationAge < ageEnd;
 
