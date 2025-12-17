@@ -1300,9 +1300,9 @@ public class BridgeSupport {
         Wallet retiringFederationWallet,
         List<UTXO> utxosToUse
     ) throws IOException {
-        Address activeFederationAddress = getActiveFederation().getAddress();
         logRetiringFederationBalance(retiringFederationWallet.getBalance());
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
+        Address activeFederationAddress = getActiveFederationAddress();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
         BtcTransaction migrationTransaction = createResult.getLeft();
         List<UTXO> selectedUTXOs = createResult.getRight();
