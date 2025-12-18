@@ -64,7 +64,6 @@ import java.security.SignatureException;
 import java.time.Instant;
 import java.util.*;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -1124,13 +1123,13 @@ public class BridgeSupport {
     private void processSvpFundTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation) {
         try {
             ReleaseTransactionBuilder.BuildResult svpFundTransactionUnsignedBuildResult = buildSvpFundTransaction(proposedFederation);
-            ReleaseTransactionBuilder.Response responseCode = svpFundTransactionUnsignedBuildResult.getResponseCode();
+            ReleaseTransactionBuilder.Response responseCode = svpFundTransactionUnsignedBuildResult.responseCode();
             if (responseCode != ReleaseTransactionBuilder.Response.SUCCESS) {
                 logger.warn("[processSvpFundTransactionUnsigned] Couldn't create svp fund transaction. Got {} response code", responseCode);
                 return;
             }
 
-            BtcTransaction svpFundTransactionUnsigned = svpFundTransactionUnsignedBuildResult.getBtcTx();
+            BtcTransaction svpFundTransactionUnsigned = svpFundTransactionUnsignedBuildResult.btcTx();
             provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
@@ -1303,9 +1302,9 @@ public class BridgeSupport {
         logRetiringFederationBalance(retiringFederationWallet.getBalance());
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Address activeFederationAddress = getActiveFederationAddress();
-        Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
-        BtcTransaction migrationTransaction = createResult.getLeft();
-        List<UTXO> selectedUTXOs = createResult.getRight();
+        ReleaseTransactionBuilder.BuildResult migrationTransactionResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
+        BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
+        List<UTXO> selectedUTXOs = migrationTransactionResult.selectedUTXOs();
 
         logger.debug(
             "[migrateFunds] consumed {} UTXOs.",
@@ -1461,7 +1460,7 @@ public class BridgeSupport {
                 pegoutRequest.getAmount()
             );
 
-            if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
+            if (result.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
             // Couldn't build a pegout transaction to release these funds
             // Log the event and return false so that the request remains in the
             // queue for future processing.
@@ -1470,11 +1469,11 @@ public class BridgeSupport {
                     "Couldn't build a pegout transaction for <{}, {}>. Reason: {}",
                     pegoutRequest.getDestination().toBase58(),
                     pegoutRequest.getAmount(),
-                    result.getResponseCode());
+                    result.responseCode());
                 return false;
             }
 
-            BtcTransaction generatedTransaction = result.getBtcTx();
+            BtcTransaction generatedTransaction = result.btcTx();
             Keccak256 pegoutCreationTxHash = pegoutRequest.getRskTxHash();
             settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, generatedTransaction, pegoutCreationTxHash, pegoutRequest.getAmount());
 
@@ -1514,27 +1513,27 @@ public class BridgeSupport {
             logger.info("[processPegoutsInBatch] going to create a batched pegout transaction for {} requests, total amount {}", pegoutEntries.size(), totalPegoutValue);
             ReleaseTransactionBuilder.BuildResult result = txBuilder.buildBatchedPegouts(pegoutEntries);
 
-            while (pegoutEntries.size() > 1 && result.getResponseCode() == ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE) {
+            while (pegoutEntries.size() > 1 && result.responseCode() == ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE) {
                 logger.info("[processPegoutsInBatch] Max size exceeded, going to divide {} requests in half", pegoutEntries.size());
                 int firstHalfSize = pegoutEntries.size() / 2;
                 pegoutEntries = pegoutEntries.subList(0, firstHalfSize);
                 result = txBuilder.buildBatchedPegouts(pegoutEntries);
             }
 
-            if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
+            if (result.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
                 logger.warn(
                     "Couldn't build a pegout BTC tx for {} pending requests (total amount: {}), Reason: {}",
                     pegoutRequests.getEntries().size(),
                     totalPegoutValue,
-                    result.getResponseCode());
+                    result.responseCode());
                 return;
             }
 
             logger.info(
                 "[processPegoutsInBatch] pegouts processed with btcTx hash {} and response code {}",
-                result.getBtcTx().getHash(), result.getResponseCode());
+                result.btcTx().getHash(), result.responseCode());
 
-            BtcTransaction batchPegoutTransaction = result.getBtcTx();
+            BtcTransaction batchPegoutTransaction = result.btcTx();
             Keccak256 batchPegoutCreationTxHash = rskTx.getHash();
 
             settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, totalPegoutValue);
@@ -2659,15 +2658,15 @@ public class BridgeSupport {
 
         ReleaseTransactionBuilder.BuildResult buildResult = txBuilder.buildBatchedPegouts(releaseRequestListCopy);
 
-        if(buildResult.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
+        if(buildResult.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
             logger.debug(
                 "[getEstimatedFeesFromPegoutTransactionSimulation] Simulated pegout btc transaction failed to be created with response code: {}. Cannot simulate a pegout btc release transaction. Will fallback to old logic."
-            , buildResult.getResponseCode());
+            , buildResult.responseCode());
             return getEstimatedFeesFromInputsAndOutputsCount();
         }
 
-        Coin inputSum = buildResult.getBtcTx().getInputSum();
-        Coin outputSum = buildResult.getBtcTx().getOutputSum();
+        Coin inputSum = buildResult.btcTx().getInputSum();
+        Coin outputSum = buildResult.btcTx().getOutputSum();
 
         return inputSum.minus(outputSum);
     }
@@ -3026,7 +3025,7 @@ public class BridgeSupport {
         return manager.getCheckpointBefore(time);
     }
 
-    private Pair<BtcTransaction, List<UTXO>> createMigrationTransaction(Wallet retiringFederationWallet, Address destinationAddress) {
+    private ReleaseTransactionBuilder.BuildResult createMigrationTransaction(Wallet retiringFederationWallet, Address destinationAddress) {
         Coin expectedMigrationValue = retiringFederationWallet.getBalance();
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
@@ -3043,13 +3042,9 @@ public class BridgeSupport {
             );
             ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(expectedMigrationValue, destinationAddress);
 
-            switch (result.getResponseCode()) {
+            switch (result.responseCode()) {
                 case SUCCESS -> {
-                    BtcTransaction migrationBtcTx = result.getBtcTx();
-                    for (TransactionInput transactionInput : migrationBtcTx.getInputs()) {
-                        transactionInput.disconnect();
-                    }
-                    return Pair.of(migrationBtcTx, result.getSelectedUTXOs());
+                    return result;
                 }
 
                 case UTXO_PROVIDER_EXCEPTION ->
@@ -3213,16 +3208,16 @@ public class BridgeSupport {
         );
 
         ReleaseTransactionBuilder.BuildResult buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);
-        if (buildReturnResult.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
+        if (buildReturnResult.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
             logger.warn(
                 "[generateRejectionReleaseFromFederation] Rejecting peg-in tx could not be built due to {}: Btc peg-in txHash {}. Refund to address: {}. RskTxHash: {}. Value: {}",
-                buildReturnResult.getResponseCode(),
+                buildReturnResult.responseCode(),
                 btcTx.getHash(),
                 btcRefundAddress,
                 rskTxHash,
                 totalAmount
             );
-            panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s. Reason %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount, buildReturnResult.getResponseCode()));
+            panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s. Reason %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount, buildReturnResult.responseCode()));
             return;
         }
 
@@ -3234,7 +3229,7 @@ public class BridgeSupport {
         );
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
-        BtcTransaction refundPegoutTransaction = buildReturnResult.getBtcTx();
+        BtcTransaction refundPegoutTransaction = buildReturnResult.btcTx();
         settleReleaseRejection(pegoutsWaitingForConfirmations, refundPegoutTransaction, rskTxHash, totalAmount);
     }
 
