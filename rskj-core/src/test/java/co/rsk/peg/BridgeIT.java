@@ -1963,9 +1963,9 @@ class BridgeIT {
         Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getRetiringFederationCreationBlockNumber()).thenReturn(42L);
-
-        MatcherAssert.assertThat(bridge.getRetiringFederationCreationBlockNumber(new Object[]{}), is(42L));
+        Optional<Long> retiringFederationCreationBlockNumber = Optional.of(42L);
+        when(bridgeSupportMock.getRetiringFederationCreationBlockNumber()).thenReturn(retiringFederationCreationBlockNumber);
+        MatcherAssert.assertThat(bridge.getRetiringFederationCreationBlockNumber(new Object[]{}), is(retiringFederationCreationBlockNumber));
     }
 
     @Test
