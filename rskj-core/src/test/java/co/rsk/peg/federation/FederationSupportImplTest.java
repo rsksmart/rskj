@@ -1284,7 +1284,7 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederationSize")
-        void getRetiringFederationSize_returnsRetiringFederationNonExistentResponseCode() {
+        void getRetiringFederationSize_returnsEmpty() {
             Optional<Integer> retiringFederationSize = federationSupport.getRetiringFederationSize();
             assertTrue(retiringFederationSize.isEmpty());
         }
@@ -1373,7 +1373,7 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederationSize")
-        void getRetiringFederationSize_returnsRetiringFederationNonExistentResponseCode() {
+        void getRetiringFederationSize_returnsEmpty() {
             Optional<Integer> retiringFederationSize = federationSupport.getRetiringFederationSize();
             assertTrue(retiringFederationSize.isEmpty());
         }
@@ -1560,7 +1560,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederationSize")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederationSize_withNewFederationNotActive_returnsRetiringFederationNonExistentResponseCode(
+        void getRetiringFederationSize_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
