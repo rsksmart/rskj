@@ -1298,9 +1298,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederationCreationTime")
-        void getRetiringFederationCreationTime_returnsNull() {
-            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
-            assertThat(retiringFederationCreationTime, is(nullValue()));
+        void getRetiringFederationCreationTime_returnsEmpty() {
+            Optional<Instant> retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
+            assertTrue(retiringFederationCreationTime.isEmpty());
         }
 
         @Test
@@ -1387,9 +1387,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederationCreationTime")
-        void getRetiringFederationCreationTime_returnsNull() {
-            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
-            assertThat(retiringFederationCreationTime, is(nullValue()));
+        void getRetiringFederationCreationTime_returnsEmpty() {
+            Optional<Instant> retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
+            assertTrue(retiringFederationCreationTime.isEmpty());
         }
 
         @Test
@@ -1646,7 +1646,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederationCreationTime")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederationCreationTime_withNewFederationNotActive_returnsNull(
+        void getRetiringFederationCreationTime_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1660,8 +1660,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
-            assertThat(retiringFederationCreationTime, is(nullValue()));
+            Optional<Instant> retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
+            assertTrue(retiringFederationCreationTime.isEmpty());
         }
 
         @ParameterizedTest
@@ -1681,8 +1681,9 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
-            assertThat(retiringFederationCreationTime, is(oldFederation.getCreationTime()));
+            Optional<Instant> retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
+            assertTrue(retiringFederationCreationTime.isPresent());
+            assertThat(retiringFederationCreationTime.get(), is(oldFederation.getCreationTime()));
         }
 
         @ParameterizedTest

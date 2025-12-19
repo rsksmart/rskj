@@ -930,13 +930,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public Long getRetiringFederationCreationTime(Object[] args) {
         logger.trace("getRetiringFederationCreationTime");
 
-        Instant retiringFederationCreationTime = bridgeSupport.getRetiringFederationCreationTime();
+        Optional<Instant> retiringFederationCreationTime = bridgeSupport.getRetiringFederationCreationTime();
+        return retiringFederationCreationTime.map(this::getEpochTimeBasedOnActivation)
+            .orElse((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode());
+    }
 
-        if (retiringFederationCreationTime == null) {
-            // -1 is returned when no retiring federation
-            return -1L;
-        }
-
+    private Long getEpochTimeBasedOnActivation(Instant retiringFederationCreationTime) {
         if (!activations.isActive(ConsensusRule.RSKIP419)) {
             // Return the creation time in milliseconds from the epoch
             return retiringFederationCreationTime.toEpochMilli();

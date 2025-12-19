@@ -105,10 +105,12 @@ public interface FederationSupport {
     Optional<Integer> getRetiringFederationThreshold();
 
     /**
-     * Returns the retiring federation's creation time
-     * @return the retiring federation creation time, null if no retiring federation exists
+     * Returns the retiring currently federation's creation time, if it exists.
+     *
+     * @return An {@link Optional} containing the retiring federation creation time,
+     * or an empty {@link Optional} if no retiring federation exists.
      */
-    Instant getRetiringFederationCreationTime();
+    Optional<Instant> getRetiringFederationCreationTime();
 
     /**
      * Returns the retiring federation's creation block number

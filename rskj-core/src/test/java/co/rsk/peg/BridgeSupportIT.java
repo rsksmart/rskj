@@ -2485,7 +2485,10 @@ public class BridgeSupportIT {
         assertTrue(retiringFederationThreshold.isPresent());
         assertEquals(3, retiringFederationThreshold.get());
 
-        assertEquals(1000, bridgeSupport.getRetiringFederationCreationTime().toEpochMilli());
+        Optional<Instant> retiringFederationCreationTime = bridgeSupport.getRetiringFederationCreationTime();
+        assertTrue(retiringFederationCreationTime.isPresent());
+        assertEquals(1000, retiringFederationCreationTime.get().toEpochMilli());
+
         assertEquals(mockedOldFederation.getAddress().toString(), bridgeSupport.getRetiringFederationAddress().toString());
         List<FederationMember> members = FederationTestUtils.getFederationMembers(4);
         for (int i = 0; i < 4; i++) {
