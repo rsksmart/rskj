@@ -2358,7 +2358,7 @@ public class BridgeSupport {
         return federationSupport.getRetiringFederationCreationTime();
     }
 
-    public long getRetiringFederationCreationBlockNumber() {
+    public Optional<Long> getRetiringFederationCreationBlockNumber() {
         return federationSupport.getRetiringFederationCreationBlockNumber();
     }
 
