@@ -113,11 +113,12 @@ public interface FederationSupport {
     Optional<Instant> getRetiringFederationCreationTime();
 
     /**
-     * Returns the retiring federation's creation block number
-     * @return the retiring federation creation block number,
-     * -1 if no retiring federation exists
+     * Returns the retiring federation's creation block number, if it exists.
+     *
+     * @return An {@link Optional} containing the retiring federation's creation block number,
+     * or an empty {@link Optional} if no retiring federation exists.
      */
-    long getRetiringFederationCreationBlockNumber();
+    Optional<Long> getRetiringFederationCreationBlockNumber();
 
     /**
      * Returns the public key of the retiring federation's federator at the given index
