@@ -886,7 +886,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public Integer getRetiringFederationThreshold(Object[] args) {
         logger.trace("getRetiringFederationThreshold");
 
-        return bridgeSupport.getRetiringFederationThreshold();
+        return bridgeSupport.getRetiringFederationThreshold().orElseGet(FederationChangeResponseCode.FEDERATION_NON_EXISTENT::getCode);
     }
 
     public byte[] getRetiringFederatorPublicKey(Object[] args) {

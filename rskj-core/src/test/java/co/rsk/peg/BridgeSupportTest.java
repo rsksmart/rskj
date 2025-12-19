@@ -485,8 +485,12 @@ class BridgeSupportTest {
         void getRetiringFederationThreshold() {
             int threshold = federation.getNumberOfSignaturesRequired();
 
-            when(federationSupport.getRetiringFederationThreshold()).thenReturn(threshold);
-            assertThat(bridgeSupport.getRetiringFederationThreshold(), is(threshold));
+            Optional<Integer> thresholdOptional = Optional.of(threshold);
+            when(federationSupport.getRetiringFederationThreshold()).thenReturn(thresholdOptional);
+
+            Optional<Integer> retiringFederationThreshold = bridgeSupport.getRetiringFederationThreshold();
+            assertTrue(retiringFederationThreshold.isPresent());
+            assertThat(retiringFederationThreshold, is(thresholdOptional));
         }
 
         @Test
