@@ -89,9 +89,10 @@ public interface FederationSupport {
     Address getRetiringFederationAddress();
 
     /**
-     * Returns the retiring federation's size
+     * Returns the currently retiring federation size, if it exists.
      *
-     * @return the retiring federation size, -1 if no retiring federation exists
+     * @return An {@link Optional} containing the retiring federation size,
+     * or an empty {@link Optional} if no retiring federation exists
      */
     Optional<Integer> getRetiringFederationSize();
 
