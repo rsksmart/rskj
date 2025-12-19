@@ -1725,7 +1725,8 @@ class FederationSupportImplTest {
                 .build();
 
             Optional<Long> retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is(oldFederation.getCreationBlockNumber()));
+            assertTrue(retiringFederationCreationBlockNumber.isPresent());
+            assertThat(retiringFederationCreationBlockNumber.get(), is(oldFederation.getCreationBlockNumber()));
         }
 
         @ParameterizedTest
