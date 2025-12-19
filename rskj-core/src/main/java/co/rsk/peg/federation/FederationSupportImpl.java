@@ -221,10 +221,10 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public int getRetiringFederationSize() {
+    public Optional<Integer> getRetiringFederationSize() {
         Optional<Federation> retiringFederation = getRetiringFederation();
-        return retiringFederation.map(Federation::getSize)
-            .orElseGet(FEDERATION_NON_EXISTENT::getCode);
+        return retiringFederation.map(Federation::getSize);
+
     }
 
     @Override

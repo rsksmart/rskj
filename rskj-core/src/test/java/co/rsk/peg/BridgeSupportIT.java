@@ -2390,7 +2390,7 @@ public class BridgeSupportIT {
     void getRetiringFederationMethods_none() {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, null, null, null);
 
-        assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
+        assertTrue(bridgeSupport.getRetiringFederationSize().isEmpty());
         assertTrue(bridgeSupport.getRetiringFederationThreshold().isEmpty());
         assertNull(bridgeSupport.getRetiringFederatorBtcPublicKey(0));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
@@ -2433,7 +2433,7 @@ public class BridgeSupportIT {
             mockedBlock
         );
 
-        assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
+        assertTrue(bridgeSupport.getRetiringFederationSize().isEmpty());
         assertTrue(bridgeSupport.getRetiringFederationThreshold().isEmpty());
         assertNull(bridgeSupport.getRetiringFederatorBtcPublicKey(0));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
@@ -2477,7 +2477,9 @@ public class BridgeSupportIT {
             mockedBlock
         );
 
-        assertEquals(4, bridgeSupport.getRetiringFederationSize().intValue());
+        Optional<Integer> retiringFederationSize = bridgeSupport.getRetiringFederationSize();
+        assertTrue(retiringFederationSize.isPresent());
+        assertEquals(4, retiringFederationSize.get());
 
         Optional<Integer> retiringFederationThreshold = bridgeSupport.getRetiringFederationThreshold();
         assertTrue(retiringFederationThreshold.isPresent());

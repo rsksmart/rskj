@@ -477,8 +477,9 @@ class BridgeSupportTest {
         void getRetiringFederationSize() {
             int size = federation.getSize();
 
-            when(federationSupport.getRetiringFederationSize()).thenReturn(size);
-            assertThat(bridgeSupport.getRetiringFederationSize(), is(size));
+            Optional<Integer> federationSizeOptional = Optional.of(size);
+            when(federationSupport.getRetiringFederationSize()).thenReturn(federationSizeOptional);
+            assertThat(bridgeSupport.getRetiringFederationSize(), is(federationSizeOptional));
         }
 
         @Test
