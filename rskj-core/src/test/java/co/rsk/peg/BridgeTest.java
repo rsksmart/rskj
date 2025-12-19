@@ -2142,7 +2142,7 @@ class BridgeTest {
         // arrange
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Instant creationTime = Instant.ofEpochMilli(5000);
-        when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(creationTime);
+        when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(Optional.of(creationTime));
 
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)

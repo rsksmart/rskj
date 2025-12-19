@@ -2354,7 +2354,7 @@ public class BridgeSupport {
         return federationSupport.getRetiringFederatorPublicKeyOfType(index, keyType);
     }
 
-    public Instant getRetiringFederationCreationTime() {
+    public Optional<Instant> getRetiringFederationCreationTime() {
         return federationSupport.getRetiringFederationCreationTime();
     }
 

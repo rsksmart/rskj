@@ -233,9 +233,9 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public Instant getRetiringFederationCreationTime() {
+    public Optional<Instant> getRetiringFederationCreationTime() {
         Optional<Federation> retiringFederation = getRetiringFederation();
-        return retiringFederation.map(Federation::getCreationTime).orElse(null);
+        return retiringFederation.map(Federation::getCreationTime);
     }
 
     @Override
