@@ -2391,7 +2391,7 @@ public class BridgeSupportIT {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, null, null, null);
 
         assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
-        assertEquals(-1, bridgeSupport.getRetiringFederationThreshold().intValue());
+        assertTrue(bridgeSupport.getRetiringFederationThreshold().isEmpty());
         assertNull(bridgeSupport.getRetiringFederatorBtcPublicKey(0));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
@@ -2434,7 +2434,7 @@ public class BridgeSupportIT {
         );
 
         assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
-        assertEquals(-1, bridgeSupport.getRetiringFederationThreshold().intValue());
+        assertTrue(bridgeSupport.getRetiringFederationThreshold().isEmpty());
         assertNull(bridgeSupport.getRetiringFederatorBtcPublicKey(0));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
@@ -2478,7 +2478,11 @@ public class BridgeSupportIT {
         );
 
         assertEquals(4, bridgeSupport.getRetiringFederationSize().intValue());
-        assertEquals(3, bridgeSupport.getRetiringFederationThreshold().intValue());
+
+        Optional<Integer> retiringFederationThreshold = bridgeSupport.getRetiringFederationThreshold();
+        assertTrue(retiringFederationThreshold.isPresent());
+        assertEquals(3, retiringFederationThreshold.get());
+
         assertEquals(1000, bridgeSupport.getRetiringFederationCreationTime().toEpochMilli());
         assertEquals(mockedOldFederation.getAddress().toString(), bridgeSupport.getRetiringFederationAddress().toString());
         List<FederationMember> members = FederationTestUtils.getFederationMembers(4);

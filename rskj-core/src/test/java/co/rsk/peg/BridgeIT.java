@@ -1953,7 +1953,7 @@ class BridgeIT {
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getRetiringFederationThreshold()).thenReturn(5678);
+        when(bridgeSupportMock.getRetiringFederationThreshold()).thenReturn(Optional.of(5678));
 
         assertEquals(5678, bridge.getRetiringFederationThreshold(new Object[]{}).intValue());
     }

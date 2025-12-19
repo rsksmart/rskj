@@ -2342,7 +2342,7 @@ public class BridgeSupport {
         return federationSupport.getRetiringFederationSize();
     }
 
-    public Integer getRetiringFederationThreshold() {
+    public Optional<Integer> getRetiringFederationThreshold() {
         return federationSupport.getRetiringFederationThreshold();
     }
 
