@@ -1292,8 +1292,8 @@ class FederationSupportImplTest {
         @Test
         @Tag("getRetiringFederationThreshold")
         void getRetiringFederationThreshold_returnsRetiringFederationNonExistentResponseCode() {
-            int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+            Optional<Integer> retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
+            assertTrue(retiringFederationThreshold.isEmpty());
         }
 
         @Test
@@ -1381,8 +1381,8 @@ class FederationSupportImplTest {
         @Test
         @Tag("getRetiringFederationThreshold")
         void getRetiringFederationThreshold_returnsRetiringFederationNonExistentResponseCode() {
-            int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+            Optional<Integer> retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
+            assertTrue(retiringFederationThreshold.isEmpty());
         }
 
         @Test
@@ -1616,8 +1616,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+            Optional<Integer> retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
+            assertTrue(retiringFederationThreshold.isEmpty());
         }
 
         @ParameterizedTest
@@ -1637,8 +1637,9 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(oldFederation.getNumberOfSignaturesRequired()));
+            Optional<Integer> retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
+            assertTrue(retiringFederationThreshold.isPresent());
+            assertThat(retiringFederationThreshold.get(), is(oldFederation.getNumberOfSignaturesRequired()));
         }
 
         @ParameterizedTest
