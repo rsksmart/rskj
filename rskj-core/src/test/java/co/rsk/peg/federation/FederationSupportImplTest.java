@@ -1291,7 +1291,7 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederationThreshold")
-        void getRetiringFederationThreshold_returnsRetiringFederationNonExistentResponseCode() {
+        void getRetiringFederationThreshold_returnsEmpty() {
             Optional<Integer> retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
             assertTrue(retiringFederationThreshold.isEmpty());
         }
@@ -1380,7 +1380,7 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederationThreshold")
-        void getRetiringFederationThreshold_returnsRetiringFederationNonExistentResponseCode() {
+        void getRetiringFederationThreshold_returnsEmpty() {
             Optional<Integer> retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
             assertTrue(retiringFederationThreshold.isEmpty());
         }
@@ -1602,7 +1602,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederationThreshold")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederationThreshold_withNewFederationNotActive_returnsRetiringFederationNonExistentResponseCode(
+        void getRetiringFederationThreshold_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
