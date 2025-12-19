@@ -2338,7 +2338,7 @@ public class BridgeSupport {
         return federationSupport.getRetiringFederationAddress();
     }
 
-    public Integer getRetiringFederationSize() {
+    public Optional<Integer> getRetiringFederationSize() {
         return federationSupport.getRetiringFederationSize();
     }
 

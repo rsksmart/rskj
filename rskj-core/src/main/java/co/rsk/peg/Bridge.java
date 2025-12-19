@@ -18,6 +18,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.BridgeSerializationUtils.deserializeRskTxHash;
+import static co.rsk.peg.federation.FederationChangeResponseCode.FEDERATION_NON_EXISTENT;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP417;
 
 import co.rsk.bitcoinj.core.*;
@@ -880,7 +881,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public Integer getRetiringFederationSize(Object[] args) {
         logger.trace("getRetiringFederationSize");
 
-        return bridgeSupport.getRetiringFederationSize();
+        return bridgeSupport.getRetiringFederationSize().orElseGet(FEDERATION_NON_EXISTENT::getCode);
     }
 
     public Integer getRetiringFederationThreshold(Object[] args) {
