@@ -95,10 +95,12 @@ public interface FederationSupport {
     int getRetiringFederationSize();
 
     /**
-     * Returns the retiring federation's minimum required signatures
-     * @return the retiring federation minimum required signatures, -1 if no retiring federation exists
+     * Returns the currently retiring federation's minimum required signatures, if it exists.
+     *
+     * @return An {@link Optional} containing the retiring federation minimum required signatures,
+     * or an empty {@link Optional} if no retiring federation exists.
      */
-    int getRetiringFederationThreshold();
+    Optional<Integer> getRetiringFederationThreshold();
 
     /**
      * Returns the retiring federation's creation time
