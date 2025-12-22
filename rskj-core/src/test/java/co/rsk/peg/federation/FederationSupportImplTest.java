@@ -1277,9 +1277,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederationAddress")
-        void getRetiringFederationAddress_returnsNull() {
-            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
-            assertThat(retiringFederationAddress, is(nullValue()));
+        void getRetiringFederationAddress_returnsEmpty() {
+            Optional<Address> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertTrue(retiringFederationAddress.isEmpty());
         }
 
         @Test
@@ -1366,9 +1366,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederationAddress")
-        void getRetiringFederationAddress_returnsNull() {
-            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
-            assertThat(retiringFederationAddress, is(nullValue()));
+        void getRetiringFederationAddress_returnsEmpty() {
+            Optional<Address> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertTrue(retiringFederationAddress.isEmpty());
         }
 
         @Test
@@ -1518,7 +1518,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederationAddress")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederationAddress_withNewFederationNotActive_returnsNull(
+        void getRetiringFederationAddress_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1532,8 +1532,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
-            assertThat(retiringFederationAddress, is(nullValue()));
+            Optional<Address> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertTrue(retiringFederationAddress.isEmpty());
         }
 
         @ParameterizedTest
@@ -1553,8 +1553,9 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
-            assertThat(retiringFederationAddress, is(oldFederation.getAddress()));
+            Optional<Address> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertTrue(retiringFederationAddress.isPresent());
+            assertThat(retiringFederationAddress.get(), is(oldFederation.getAddress()));
         }
 
         @ParameterizedTest

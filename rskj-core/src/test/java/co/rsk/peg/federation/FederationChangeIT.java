@@ -879,7 +879,9 @@ class FederationChangeIT {
 
     private void assertActiveAndRetiringFederationsHaveExpectedAddress(Address expectedNewFederationAddress, Address expectedOldFederationAddress) {
         assertEquals(expectedNewFederationAddress, bridgeSupport.getActiveFederationAddress());
-        assertEquals(expectedOldFederationAddress, bridgeSupport.getRetiringFederationAddress());
+        Optional<Address> retiringFederationAddress = bridgeSupport.getRetiringFederationAddress();
+        assertTrue(retiringFederationAddress.isPresent());
+        assertEquals(expectedOldFederationAddress, retiringFederationAddress.get());
     }
 
     private void assertNextFederationCreationBlockHeight(long newFederationCreationBlockNumber) {
@@ -907,7 +909,8 @@ class FederationChangeIT {
     private void assertOnlyActiveFedIsLive(Federation newFederation) {
         // New active federation still there, retiring federation no longer there
         assertEquals(newFederation, bridgeSupport.getActiveFederation());
-        assertNull(bridgeSupport.getRetiringFederationAddress());
+        Optional<Address> retiringFederationAddress = bridgeSupport.getRetiringFederationAddress();
+        assertTrue(retiringFederationAddress.isEmpty());
     }
     
     private void assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(

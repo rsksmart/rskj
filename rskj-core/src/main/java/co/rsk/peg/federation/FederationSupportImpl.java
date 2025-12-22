@@ -215,9 +215,9 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public Address getRetiringFederationAddress() {
+    public Optional<Address> getRetiringFederationAddress() {
         Optional<Federation> retiringFederation = getRetiringFederation();
-        return retiringFederation.map(Federation::getAddress).orElse(null);
+        return retiringFederation.map(Federation::getAddress);
     }
 
     @Override
