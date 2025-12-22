@@ -469,8 +469,9 @@ class BridgeSupportTest {
         void getRetiringFederationAddress() {
             Address address = federation.getAddress();
 
-            when(federationSupport.getRetiringFederationAddress()).thenReturn(address);
-            assertThat(bridgeSupport.getRetiringFederationAddress(), is(address));
+            Optional<Address> retiringFederationAddressOptional = Optional.of(address);
+            when(federationSupport.getRetiringFederationAddress()).thenReturn(retiringFederationAddressOptional);
+            assertThat(bridgeSupport.getRetiringFederationAddress(), is(retiringFederationAddressOptional));
         }
 
         @Test

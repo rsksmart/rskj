@@ -860,14 +860,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public String getRetiringFederationAddress(Object[] args) {
         logger.trace("getRetiringFederationAddress");
 
-        Address address = bridgeSupport.getRetiringFederationAddress();
+        Optional<Address> address = bridgeSupport.getRetiringFederationAddress();
 
-        if (address == null) {
-            // When there's no address, empty string is returned
-            return "";
-        }
+        // When there's no address, empty string is returned
+        return address.map(Address::toBase58).orElse("");
 
-        return address.toBase58();
     }
 
     public Integer getRetiringFederationSize(Object[] args) {

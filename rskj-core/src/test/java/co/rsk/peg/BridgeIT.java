@@ -1969,6 +1969,25 @@ class BridgeIT {
     }
 
     @Test
+    void getRetiringFederationAddress_withNoRetiringFederation_shouldReturnEmptyString() {
+        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.getRetiringFederation()).thenReturn(Optional.empty());
+        MatcherAssert.assertThat(bridge.getRetiringFederationAddress(new Object[]{}), is(""));
+    }
+
+    @Test
+    void getRetiringFederationAddress_withRetiringFederation_shouldReturnTheCorrectRetiringFederationAddress() {
+        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        Address retiringFederationAddress = new BtcECKey().toAddress(regtestParameters);
+        when(bridgeSupportMock.getRetiringFederationAddress()).thenReturn(Optional.of(retiringFederationAddress));
+        MatcherAssert.assertThat(bridge.getRetiringFederationAddress(new Object[]{}), is(retiringFederationAddress.toBase58()));
+    }
+
+    @Test
     void getRetiringFederatorPublicKey_beforeMultikey() throws Exception {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
