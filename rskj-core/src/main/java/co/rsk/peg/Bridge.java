@@ -940,7 +940,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public long getRetiringFederationCreationBlockNumber(Object[] args) {
         logger.trace("getRetiringFederationCreationBlockNumber");
-        return bridgeSupport.getRetiringFederationCreationBlockNumber();
+        return bridgeSupport.getRetiringFederationCreationBlockNumber()
+            .orElse((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode());
     }
 
     public Integer createFederation(Object[] args) {

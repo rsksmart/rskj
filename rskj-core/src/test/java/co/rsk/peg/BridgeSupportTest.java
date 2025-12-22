@@ -507,8 +507,9 @@ class BridgeSupportTest {
         void getRetiringFederationCreationBlockNumber() {
             long creationBlockNumber = federation.getCreationBlockNumber();
 
-            when(federationSupport.getRetiringFederationCreationBlockNumber()).thenReturn(creationBlockNumber);
-            assertThat(bridgeSupport.getRetiringFederationCreationBlockNumber(), is(creationBlockNumber));
+            Optional<Long> creationBlockNumberOptional = Optional.of(creationBlockNumber);
+            when(federationSupport.getRetiringFederationCreationBlockNumber()).thenReturn(creationBlockNumberOptional);
+            assertThat(bridgeSupport.getRetiringFederationCreationBlockNumber(), is(creationBlockNumberOptional));
         }
 
         @Test

@@ -239,10 +239,9 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public long getRetiringFederationCreationBlockNumber() {
+    public Optional<Long> getRetiringFederationCreationBlockNumber() {
         Optional<Federation> retiringFederation = getRetiringFederation();
-        return retiringFederation.map(Federation::getCreationBlockNumber)
-            .orElse((long) FEDERATION_NON_EXISTENT.getCode());
+        return retiringFederation.map(Federation::getCreationBlockNumber);
     }
 
     @Override
