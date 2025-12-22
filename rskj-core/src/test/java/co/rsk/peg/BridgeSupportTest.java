@@ -498,8 +498,9 @@ class BridgeSupportTest {
         void getRetiringFederationCreationTime() {
             Instant creationTime = federation.getCreationTime();
 
-            when(federationSupport.getRetiringFederationCreationTime()).thenReturn(creationTime);
-            assertThat(bridgeSupport.getRetiringFederationCreationTime(), is(creationTime));
+            Optional<Instant> creationTimeOptional = Optional.of(creationTime);
+            when(federationSupport.getRetiringFederationCreationTime()).thenReturn(creationTimeOptional);
+            assertThat(bridgeSupport.getRetiringFederationCreationTime(), is(creationTimeOptional));
         }
 
         @Test
