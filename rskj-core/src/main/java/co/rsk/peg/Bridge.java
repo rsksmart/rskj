@@ -849,14 +849,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public Long getFederationCreationTime(Object[] args) {
         logger.trace("getFederationCreationTime");
         Instant activeFederationCreationTime = bridgeSupport.getActiveFederationCreationTime();
-
-        if (!activations.isActive(ConsensusRule.RSKIP419)) {
-            // Return the creation time in milliseconds from the epoch
-            return activeFederationCreationTime.toEpochMilli();
-        }
-
-        // Return the creation time in seconds from the epoch
-        return activeFederationCreationTime.getEpochSecond();
+        return getFederationCreationTimeEpochBasedOnActivation(activeFederationCreationTime);
     }
 
     public long getFederationCreationBlockNumber(Object[] args) {
@@ -931,11 +924,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getRetiringFederationCreationTime");
 
         Optional<Instant> retiringFederationCreationTime = bridgeSupport.getRetiringFederationCreationTime();
-        return retiringFederationCreationTime.map(this::getEpochTimeBasedOnActivation)
+        return retiringFederationCreationTime.map(this::getFederationCreationTimeEpochBasedOnActivation)
             .orElse((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode());
     }
 
-    private Long getEpochTimeBasedOnActivation(Instant retiringFederationCreationTime) {
+    private Long getFederationCreationTimeEpochBasedOnActivation(Instant retiringFederationCreationTime) {
         if (!activations.isActive(ConsensusRule.RSKIP419)) {
             // Return the creation time in milliseconds from the epoch
             return retiringFederationCreationTime.toEpochMilli();
