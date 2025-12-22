@@ -1935,7 +1935,7 @@ class BridgeIT {
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getRetiringFederationSize()).thenReturn(1234);
+        when(bridgeSupportMock.getRetiringFederationSize()).thenReturn(Optional.of(1234));
 
         assertEquals(1234, bridge.getRetiringFederationSize(new Object[]{}).intValue());
     }

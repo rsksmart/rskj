@@ -1284,9 +1284,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederationSize")
-        void getRetiringFederationSize_returnsRetiringFederationNonExistentResponseCode() {
-            int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+        void getRetiringFederationSize_returnsEmpty() {
+            Optional<Integer> retiringFederationSize = federationSupport.getRetiringFederationSize();
+            assertTrue(retiringFederationSize.isEmpty());
         }
 
         @Test
@@ -1373,9 +1373,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederationSize")
-        void getRetiringFederationSize_returnsRetiringFederationNonExistentResponseCode() {
-            int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+        void getRetiringFederationSize_returnsEmpty() {
+            Optional<Integer> retiringFederationSize = federationSupport.getRetiringFederationSize();
+            assertTrue(retiringFederationSize.isEmpty());
         }
 
         @Test
@@ -1560,7 +1560,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederationSize")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederationSize_withNewFederationNotActive_returnsRetiringFederationNonExistentResponseCode(
+        void getRetiringFederationSize_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1574,8 +1574,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+            Optional<Integer> retiringFederationSize = federationSupport.getRetiringFederationSize();
+            assertTrue(retiringFederationSize.isEmpty());
         }
 
         @ParameterizedTest
@@ -1595,8 +1595,9 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(oldFederation.getSize()));
+            Optional<Integer> retiringFederationSize = federationSupport.getRetiringFederationSize();
+            assertTrue(retiringFederationSize.isPresent());
+            assertThat(retiringFederationSize.get(), is(oldFederation.getSize()));
         }
 
         @ParameterizedTest
