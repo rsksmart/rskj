@@ -35,7 +35,14 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.GenesisHeader;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -43,7 +50,11 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.ethereum.core.Genesis.getZeroHash;
 
@@ -295,7 +306,7 @@ public class BlockGenerator {
         long blockNumber = parent.getNumber() + 1;
 
         byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
-        byte[] baseEvent = activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber) ? new byte[0] : null;
+        byte[] baseEvent = (activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber) && activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) ? new byte[0] : null;
 
         Coin coinMinGasPrice = (minGasPrice != null) ? new Coin(minGasPrice) : null;
         BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()

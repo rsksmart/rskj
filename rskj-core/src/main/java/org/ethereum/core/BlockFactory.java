@@ -160,8 +160,7 @@ public class BlockFactory {
         if (!canBeDecoded(rlpHeader, blockNumber, compressed)) {
             throw new IllegalArgumentException(String.format(
                     "Invalid block header size: %d",
-                    rlpHeader.size()
-            ));
+                    rlpHeader.size()));
         }
 
         int r = 15;
@@ -190,7 +189,8 @@ public class BlockFactory {
                 txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
             }
 
-            if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber)) {
+            // RSKIP535 requires RSKIP351 to be active for baseEvent to be decoded
+            if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber) && activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
                 baseEvent = rlpHeader.get(r++).getRLPRawData();
             }
         }
@@ -217,10 +217,14 @@ public class BlockFactory {
     }
 
     private BlockHeader createBlockHeader(boolean compressed, boolean sealed, byte[] parentHash, byte[] unclesHash,
-                                          byte[] coinBaseBytes, RskAddress coinbase, byte[] stateRoot, byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData,
-                                          byte[] difficultyBytes, BlockDifficulty difficulty, byte[] glBytes, long blockNumber, long gasUsed, long timestamp, byte[] extraData,
-                                          Coin paidFees, byte[] minimumGasPriceBytes, Coin minimumGasPrice, int uncleCount, byte[] ummRoot, byte[] baseEvent, byte version, short[] txExecutionSublistsEdges,
-                                          byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof, byte[] bitcoinMergedMiningCoinbaseTransaction,
+                                          byte[] coinBaseBytes, RskAddress coinbase, byte[] stateRoot, byte[] txTrieRoot, byte[] receiptTrieRoot,
+                                          byte[] extensionData,
+                                          byte[] difficultyBytes, BlockDifficulty difficulty, byte[] glBytes, long blockNumber, long gasUsed,
+                                          long timestamp, byte[] extraData,
+                                          Coin paidFees, byte[] minimumGasPriceBytes, Coin minimumGasPrice, int uncleCount, byte[] ummRoot,
+                                          byte[] baseEvent, byte version, short[] txExecutionSublistsEdges,
+                                          byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+                                          byte[] bitcoinMergedMiningCoinbaseTransaction,
                                           boolean useRskip92Encoding, boolean includeForkDetectionData) {
         if (blockNumber == Genesis.NUMBER) {
             return new GenesisHeader(
@@ -250,8 +254,7 @@ public class BlockFactory {
                     paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                     bitcoinMergedMiningCoinbaseTransaction, new byte[0],
                     minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                    ummRoot, baseEvent, txExecutionSublistsEdges, compressed
-            );
+                    ummRoot, baseEvent, txExecutionSublistsEdges, compressed);
         }
 
         if (version == 1) {
@@ -262,8 +265,7 @@ public class BlockFactory {
                     paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                     bitcoinMergedMiningCoinbaseTransaction, new byte[0],
                     minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                    ummRoot, txExecutionSublistsEdges, compressed
-            );
+                    ummRoot, txExecutionSublistsEdges, compressed);
         }
 
         return new BlockHeaderV0(
@@ -273,14 +275,13 @@ public class BlockFactory {
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, new byte[0],
                 minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                ummRoot, baseEvent, txExecutionSublistsEdges
-        );
+                ummRoot, baseEvent, txExecutionSublistsEdges);
     }
 
     private boolean canBeDecoded(RLPList rlpHeader, long blockNumber, boolean compressed) {
         int preUmmHeaderSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? 0 : 1;
         int preParallelSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 0 : 1;
-        int prebaseEventSizeAdjustmentRSKIP535 = activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber) ? 0 : 1;
+        int prebaseEventSizeAdjustmentRSKIP535 = (activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber) && activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) ? 0 : 1;
         int preRSKIP351SizeAdjustment = getRSKIP351SizeAdjustment(blockNumber, compressed, preParallelSizeAdjustment, prebaseEventSizeAdjustmentRSKIP535);
 
         int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - prebaseEventSizeAdjustmentRSKIP535;
