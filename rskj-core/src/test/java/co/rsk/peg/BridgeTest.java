@@ -2040,7 +2040,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Address retiringFederationAddress = Address.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
-        when(bridgeSupportMock.getRetiringFederationAddress()).thenReturn(retiringFederationAddress);
+        when(bridgeSupportMock.getRetiringFederationAddress()).thenReturn(Optional.of(retiringFederationAddress));
 
         Bridge bridge = bridgeBuilder
             .transaction(rskTxMock)
