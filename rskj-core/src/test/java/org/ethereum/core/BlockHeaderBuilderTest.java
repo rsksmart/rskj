@@ -18,10 +18,17 @@
 
 package org.ethereum.core;
 
-import co.rsk.core.BlockDifficulty;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.AdditionalMatchers.geq;
+import static org.mockito.Mockito.when;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.stream.Stream;
+
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -38,16 +45,10 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.mockito.Mockito;
 
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.AdditionalMatchers.geq;
-import static org.mockito.Mockito.when;
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 
 class BlockHeaderBuilderTest {
     private static final byte[] EMPTY_UNCLES_LIST_HASH = HashUtil.keccak256(RLP.encodeList(new byte[0]));
@@ -186,7 +187,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithDifficultyFromBytes() {
-        byte[] bDiffData = new byte[]{0, 16};
+        byte[] bDiffData = new byte[] { 0, 16 };
 
         BlockHeader header = blockHeaderBuilder
                 .setDifficultyFromBytes(bDiffData)
@@ -264,12 +265,16 @@ class BlockHeaderBuilderTest {
 
     @ParameterizedTest(name = "createHeader: when createConsensusCompliantHeader {0} and useRskip92Encoding {1} and useRSKIP351 {2} and useRSKIP535 {3} then expectedSize {4}")
     @ArgumentsSource(CreateHeaderArgumentsProvider.class)
-    void testHeaderCreationWithParameters(boolean createConsensusCompliantHeader, boolean useRskip92Encoding, boolean useRSKIP351, boolean useRSKIP535, int expectedSize) {
+    void testHeaderCreationWithParameters(boolean createConsensusCompliantHeader, boolean useRskip92Encoding,
+            boolean useRSKIP351, boolean useRSKIP535, int expectedSize) {
         BlockHeaderBuilder builderForTest;
         if (useRSKIP351)
-            builderForTest = useRSKIP535 ? this.blockHeaderBuilder : new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP535));
+            builderForTest = useRSKIP535 ? this.blockHeaderBuilder
+                    : new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP535));
         else
-            builderForTest = new BlockHeaderBuilder(useRSKIP535 ? ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351) : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351, ConsensusRule.RSKIP535));
+            builderForTest = new BlockHeaderBuilder(
+                    useRSKIP535 ? ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351)
+                            : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351, ConsensusRule.RSKIP535));
 
         byte[] btcCoinbase = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcCoinbase", 128);
         byte[] btcHeader = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcHeader", 80);
@@ -289,7 +294,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithIncludeForkDetectionDataOn() {
-        byte[] expectedForkDetectionData = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+        byte[] expectedForkDetectionData = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
         BlockHeader header = blockHeaderBuilder
                 .setCreateConsensusCompliantHeader(false)
@@ -305,7 +310,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithIncludeForkDetectionDataOff() {
-        byte[] expectedForkDetectionData = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+        byte[] expectedForkDetectionData = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
         BlockHeader header = blockHeaderBuilder
                 .setCreateConsensusCompliantHeader(false)
@@ -321,7 +326,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithIncludeForkDetectionDataOffButConsensusCompliantOn() {
-        byte[] expectedForkDetectionData = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+        byte[] expectedForkDetectionData = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
         BlockHeader header = blockHeaderBuilder
                 .setCreateConsensusCompliantHeader(true)
@@ -543,18 +548,17 @@ class BlockHeaderBuilderTest {
         public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
             return Stream.of(
                     Arguments.of(false, false, false, false, 21),
-                    Arguments.of(false, false, false, true, 22),
+                    Arguments.of(false, false, false, true, 21),
                     Arguments.of(false, true, false, false, 19),
-                    Arguments.of(false, true, false, true, 20),
+                    Arguments.of(false, true, false, true, 19),
                     Arguments.of(true, false, false, false, 19),
-                    Arguments.of(true, false, false, true, 20),
+                    Arguments.of(true, false, false, true, 19),
                     Arguments.of(false, false, true, false, 22),
                     Arguments.of(false, false, true, true, 23),
                     Arguments.of(false, true, true, false, 20),
                     Arguments.of(false, true, true, true, 21),
                     Arguments.of(true, false, true, false, 20),
-                    Arguments.of(true, false, true, true, 21)
-            );
+                    Arguments.of(true, false, true, true, 21));
         }
     }
 }

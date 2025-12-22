@@ -39,8 +39,29 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
     public static final int NUMBER_OF_EXTRA_HEADER_FIELDS = 3;
-    private static final int RLP_HEADER_SIZE = 20;
-    private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 23;
+
+    // RLP Header Field Indices (fixed positions in the RLP list)
+    private static final int PARENT_HASH_INDEX = 0;
+    private static final int UNCLES_HASH_INDEX = 1;
+    private static final int COINBASE_INDEX = 2;
+    private static final int STATE_ROOT_INDEX = 3;
+    private static final int TX_TRIE_ROOT_INDEX = 4;
+    private static final int RECEIPT_TRIE_ROOT_INDEX = 5;
+    private static final int EXTENSION_DATA_INDEX = 6;
+    private static final int DIFFICULTY_INDEX = 7;
+    private static final int NUMBER_INDEX = 8;
+    private static final int GAS_LIMIT_INDEX = 9;
+    private static final int GAS_USED_INDEX = 10;
+    private static final int TIMESTAMP_INDEX = 11;
+    private static final int EXTRA_DATA_INDEX = 12;
+    private static final int PAID_FEES_INDEX = 13;
+    private static final int MINIMUM_GAS_PRICE_INDEX = 14;
+    private static final int UNCLE_COUNT_INDEX = 15; // Starting point for variable fields
+
+    // Maximum RLP header sizes (when all optional fields are present)
+    private static final int MAX_RLP_HEADER_SIZE_WITHOUT_MINING = 20;
+    private static final int MAX_RLP_HEADER_SIZE_WITH_MINING = 23;
+
     private final ActivationConfig activationConfig;
 
     public BlockFactory(ActivationConfig activationConfig) {
@@ -108,7 +129,8 @@ public class BlockFactory {
         return newBlock(header, transactionList, uncleList, true);
     }
 
-    public Block newBlock(BlockHeader header, List<Transaction> transactionList, List<BlockHeader> uncleList, boolean sealed) {
+    public Block newBlock(BlockHeader header, List<Transaction> transactionList, List<BlockHeader> uncleList,
+                          boolean sealed) {
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, header.getNumber());
         return new Block(header, transactionList, uncleList, isRskip126Enabled, sealed);
     }
@@ -118,43 +140,45 @@ public class BlockFactory {
     }
 
     private BlockHeader decodeHeader(RLPList rlpHeader, boolean compressed, boolean sealed) {
-        byte[] parentHash = rlpHeader.get(0).getRLPData();
-        byte[] unclesHash = rlpHeader.get(1).getRLPData();
-        byte[] coinBaseBytes = rlpHeader.get(2).getRLPData();
+        byte[] parentHash = rlpHeader.get(PARENT_HASH_INDEX).getRLPData();
+        byte[] unclesHash = rlpHeader.get(UNCLES_HASH_INDEX).getRLPData();
+        byte[] coinBaseBytes = rlpHeader.get(COINBASE_INDEX).getRLPData();
         RskAddress coinbase = RLP.parseRskAddress(coinBaseBytes);
-        byte[] stateRoot = rlpHeader.get(NUMBER_OF_EXTRA_HEADER_FIELDS).getRLPData();
+        byte[] stateRoot = rlpHeader.get(STATE_ROOT_INDEX).getRLPData();
         if (stateRoot == null) {
             stateRoot = EMPTY_TRIE_HASH;
         }
 
-        byte[] txTrieRoot = rlpHeader.get(4).getRLPData();
+        byte[] txTrieRoot = rlpHeader.get(TX_TRIE_ROOT_INDEX).getRLPData();
         if (txTrieRoot == null) {
             txTrieRoot = EMPTY_TRIE_HASH;
         }
 
-        byte[] receiptTrieRoot = rlpHeader.get(5).getRLPData();
+        byte[] receiptTrieRoot = rlpHeader.get(RECEIPT_TRIE_ROOT_INDEX).getRLPData();
         if (receiptTrieRoot == null) {
             receiptTrieRoot = EMPTY_TRIE_HASH;
         }
 
-        byte[] extensionData = rlpHeader.get(6).getRLPData(); // rskip351: logs bloom when decoding extended, list(version, hash(extension)) when compressed
-        byte[] difficultyBytes = rlpHeader.get(7).getRLPData();
+        byte[] extensionData = rlpHeader.get(EXTENSION_DATA_INDEX).getRLPData(); // rskip351: logs bloom when decoding
+        // extended, list(version,
+        // hash(extension)) when compressed
+        byte[] difficultyBytes = rlpHeader.get(DIFFICULTY_INDEX).getRLPData();
         BlockDifficulty difficulty = RLP.parseBlockDifficulty(difficultyBytes);
 
-        byte[] nrBytes = rlpHeader.get(8).getRLPData();
-        byte[] glBytes = rlpHeader.get(9).getRLPData();
-        byte[] guBytes = rlpHeader.get(10).getRLPData();
-        byte[] tsBytes = rlpHeader.get(11).getRLPData();
+        byte[] nrBytes = rlpHeader.get(NUMBER_INDEX).getRLPData();
+        byte[] glBytes = rlpHeader.get(GAS_LIMIT_INDEX).getRLPData();
+        byte[] guBytes = rlpHeader.get(GAS_USED_INDEX).getRLPData();
+        byte[] tsBytes = rlpHeader.get(TIMESTAMP_INDEX).getRLPData();
 
         long blockNumber = parseBigInteger(nrBytes).longValueExact();
 
         long gasUsed = parseBigInteger(guBytes).longValueExact();
         long timestamp = parseBigInteger(tsBytes).longValueExact();
 
-        byte[] extraData = rlpHeader.get(12).getRLPData();
+        byte[] extraData = rlpHeader.get(EXTRA_DATA_INDEX).getRLPData();
 
-        Coin paidFees = RLP.parseCoin(rlpHeader.get(13).getRLPData());
-        byte[] minimumGasPriceBytes = rlpHeader.get(14).getRLPData();
+        Coin paidFees = RLP.parseCoin(rlpHeader.get(PAID_FEES_INDEX).getRLPData());
+        byte[] minimumGasPriceBytes = rlpHeader.get(MINIMUM_GAS_PRICE_INDEX).getRLPData();
         Coin minimumGasPrice = RLP.parseSignedCoinNonNullZero(minimumGasPriceBytes);
 
         if (!canBeDecoded(rlpHeader, blockNumber, compressed)) {
@@ -163,7 +187,7 @@ public class BlockFactory {
                     rlpHeader.size()));
         }
 
-        int r = 15;
+        int r = UNCLE_COUNT_INDEX;
 
         byte[] ucBytes = rlpHeader.get(r++).getRLPData();
         int uncleCount = parseBigInteger(ucBytes).intValueExact();
@@ -175,7 +199,7 @@ public class BlockFactory {
 
         byte version = 0x0;
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
+        if (isBlockHeaderCompressionEnabled(blockNumber)) {
             version = compressed
                     ? RLP.decodeList(extensionData).get(0).getRLPData()[0]
                     : rlpHeader.get(r++).getRLPData()[0];
@@ -184,15 +208,14 @@ public class BlockFactory {
         short[] txExecutionSublistsEdges = null;
         byte[] baseEvent = null;
 
-        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) {
+        if (!isBlockHeaderCompressionEnabled(blockNumber) || !compressed) {
             if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
                 txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
             }
+        }
 
-            // RSKIP535 requires RSKIP351 to be active for baseEvent to be decoded
-            if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber) && activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
-                baseEvent = rlpHeader.get(r++).getRLPRawData();
-            }
+        if (rlpHeader.size() > r && isBaseEventEnabled(blockNumber) && !compressed) {
+            baseEvent = rlpHeader.get(r++).getRLPRawData();
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -278,28 +301,96 @@ public class BlockFactory {
                 ummRoot, baseEvent, txExecutionSublistsEdges);
     }
 
+    /**
+     * Validates whether the RLP header can be decoded based on its size and the activation rules
+     * at the given block number.
+     * <p>
+     * The size calculation follows a pattern: we start with the maximum possible header size
+     * and subtract 1 for each optional field that is NOT active at this block height.
+     *
+     * @param rlpHeader   The RLP-encoded header to validate
+     * @param blockNumber The block number (used to check activation rules)
+     * @param compressed  Whether the header uses compressed encoding (RSKIP351)
+     * @return true if the header size matches expected size with or without merged
+     * mining fields
+     */
     private boolean canBeDecoded(RLPList rlpHeader, long blockNumber, boolean compressed) {
-        int preUmmHeaderSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? 0 : 1;
-        int preParallelSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 0 : 1;
-        int prebaseEventSizeAdjustmentRSKIP535 = (activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber) && activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) ? 0 : 1;
-        int preRSKIP351SizeAdjustment = getRSKIP351SizeAdjustment(blockNumber, compressed, preParallelSizeAdjustment, prebaseEventSizeAdjustmentRSKIP535);
+        int expectedSizeWithoutMining = calculateExpectedHeaderSize(blockNumber, compressed, false);
+        int expectedSizeWithMining = calculateExpectedHeaderSize(blockNumber, compressed, true);
 
-        int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - prebaseEventSizeAdjustmentRSKIP535;
-        int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - prebaseEventSizeAdjustmentRSKIP535;
-
-        return rlpHeader.size() == expectedSize || rlpHeader.size() == expectedSizeMM;
+        return rlpHeader.size() == expectedSizeWithoutMining ||
+                rlpHeader.size() == expectedSizeWithMining;
     }
 
-    private int getRSKIP351SizeAdjustment(long blockNumber, boolean compressed, int preParallelSizeAdjustment,
+    /**
+     * Calculates the expected RLP header size based on active consensus rules.
+     *
+     * @param blockNumber      The block number (used to check activation rules)
+     * @param compressed       Whether compressed encoding is used
+     * @param withMergedMining Whether to include merged mining fields in the calculation
+     * @return The expected number of RLP elements in the header
+     */
+    private int calculateExpectedHeaderSize(long blockNumber, boolean compressed, boolean withMergedMining) {
+        int baseSize = withMergedMining ? MAX_RLP_HEADER_SIZE_WITH_MINING : MAX_RLP_HEADER_SIZE_WITHOUT_MINING;
+
+        // Subtract 1 for each optional field that is NOT present
+        int adjustment = 0;
+        adjustment += isUmmAbsent(blockNumber) ? 1 : 0;
+        adjustment += isParallelAbsent(blockNumber) ? 1 : 0;
+        adjustment += isBaseEventAbsent(blockNumber) ? 1 : 0;
+        adjustment += getRSKIP351SizeAdjustment(blockNumber, compressed,
+                isParallelAbsent(blockNumber) ? 1 : 0,
+                isBaseEventAbsent(blockNumber) ? 1 : 0);
+
+        return baseSize - adjustment;
+    }
+
+    private boolean isUmmAbsent(long blockNumber) {
+        return !activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber);
+    }
+
+    private boolean isParallelAbsent(long blockNumber) {
+        return !activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber);
+    }
+
+    private boolean isBaseEventAbsent(long blockNumber) {
+        return !isBaseEventEnabled(blockNumber);
+    }
+
+    private boolean isBlockHeaderCompressionEnabled(long blockNumber) {
+        return activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber);
+    }
+
+    private boolean isBaseEventEnabled(long blockNumber) {
+        return (activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber) &&
+                isBlockHeaderCompressionEnabled(blockNumber));
+    }
+
+    /**
+     * Calculates the size adjustment for RSKIP351-related fields.
+     * <p>
+     * RSKIP351 introduces versioned block headers with optional compressed encoding.
+     * When compressed, the version, edges, and baseEvent fields are stored in an extension
+     * structure rather than as separate RLP elements.
+     *
+     * @param blockNumber                        The block number for activation config lookup
+     * @param compressed                         Whether the header is compressed
+     * @param preParallelSizeAdjustment          Adjustment for parallel execution fields (0 if present, 1 if absent)
+     * @param preBaseEventSizeAdjustmentRSKIP535 Adjustment for base event field (0 if present, 1 if absent)
+     * @return The size adjustment value
+     */
+    private int getRSKIP351SizeAdjustment(long blockNumber, boolean compressed,
+                                          int preParallelSizeAdjustment,
                                           int preBaseEventSizeAdjustmentRSKIP535) {
         if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
-            return 1; // remove version
+            return 1; // Remove version field (not present before RSKIP351)
         }
 
         if (compressed) {
-            return NUMBER_OF_EXTRA_HEADER_FIELDS - preParallelSizeAdjustment - preBaseEventSizeAdjustmentRSKIP535; // remove version, edges and baseEvent size if existent
+            // In compressed mode, version, edges, and baseEvent are stored in extension
+            return NUMBER_OF_EXTRA_HEADER_FIELDS - preParallelSizeAdjustment - preBaseEventSizeAdjustmentRSKIP535;
         }
 
-        return 0;
+        return 0; // Version field is present in full encoding
     }
 }

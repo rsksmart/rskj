@@ -331,12 +331,13 @@ public class BlockHeaderBuilder {
             }
         }
 
-
-        if (activationConfig.isActive(ConsensusRule.RSKIP144, number) && createParallelCompliantHeader && txExecutionSublistsEdges == null) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP144, number) && createParallelCompliantHeader
+                && txExecutionSublistsEdges == null) {
             txExecutionSublistsEdges = new short[0];
         }
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP535, number) && activationConfig.isActive(ConsensusRule.RSKIP351, number)) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP535, number)
+                && activationConfig.isActive(ConsensusRule.RSKIP351, number)) {
             if (baseEvent == null) {
                 baseEvent = EMPTY_BYTE_ARRAY;
             }
