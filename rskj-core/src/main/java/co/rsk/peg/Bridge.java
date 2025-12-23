@@ -884,8 +884,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getRetiringFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
-        Optional<BtcECKey> publicKey = bridgeSupport.getRetiringFederatorBtcPublicKey(index);
-        return publicKey.map(BtcECKey::getPubKey).orElse(EMPTY_BYTE_ARRAY);
+        Optional<BtcECKey> federatorBtcPublicKey = bridgeSupport.getRetiringFederatorBtcPublicKey(index);
+        return federatorBtcPublicKey.map(BtcECKey::getPubKey).orElse(EMPTY_BYTE_ARRAY);
     }
 
     public byte[] getRetiringFederatorPublicKeyOfType(Object[] args) throws VMException {
