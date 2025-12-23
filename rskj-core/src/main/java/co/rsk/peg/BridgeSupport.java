@@ -2346,7 +2346,7 @@ public class BridgeSupport {
         return federationSupport.getRetiringFederationThreshold();
     }
 
-    public byte[] getRetiringFederatorBtcPublicKey(int index) {
+    public Optional<BtcECKey> getRetiringFederatorBtcPublicKey(int index) {
         return federationSupport.getRetiringFederatorBtcPublicKey(index);
     }
 

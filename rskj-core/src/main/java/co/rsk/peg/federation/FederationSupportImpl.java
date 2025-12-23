@@ -245,10 +245,10 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public byte[] getRetiringFederatorBtcPublicKey(int index) {
+    public Optional<BtcECKey> getRetiringFederatorBtcPublicKey(int index) {
         Optional<Federation> retiringFederation = getRetiringFederation();
         if (retiringFederation.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
 
         List<BtcECKey> publicKeys = retiringFederation.get().getBtcPublicKeys();
@@ -257,7 +257,8 @@ public class FederationSupportImpl implements FederationSupport {
             throw new IndexOutOfBoundsException(String.format("Retiring federator index must be between 0 and %d", publicKeys.size() - 1));
         }
 
-        return publicKeys.get(index).getPubKey();
+        BtcECKey retiringFederatorBtcPublicKey = publicKeys.get(index);
+        return Optional.of(retiringFederatorBtcPublicKey);
     }
 
     @Override

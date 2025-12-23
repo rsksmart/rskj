@@ -1312,9 +1312,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederatorBtcPublicKey")
-        void getRetiringFederatorBtcPublicKey_returnsNull() {
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+        void getRetiringFederatorBtcPublicKey_returnsEmpty() {
+            Optional<BtcECKey> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
+            assertTrue(retiringFederatorBtcPublicKey.isEmpty());
         }
 
         @Test
@@ -1401,9 +1401,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederatorBtcPublicKey")
-        void getRetiringFederatorBtcPublicKey_returnsNull() {
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+        void getRetiringFederatorBtcPublicKey_returnsEmpty() {
+            Optional<BtcECKey> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
+            assertTrue(retiringFederatorBtcPublicKey.isEmpty());
         }
 
         @Test
@@ -1733,7 +1733,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederatorBtcPublicKey")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederatorBtcPublicKey_withNewFederationNotActive_returnsNull(
+        void getRetiringFederatorBtcPublicKey_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1747,8 +1747,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+            Optional<BtcECKey> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
+            assertTrue(retiringFederatorBtcPublicKey.isEmpty());
         }
 
         @ParameterizedTest
@@ -1768,8 +1768,10 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
-            assertThat(retiringFederatorBtcPublicKey, is(oldFederation.getBtcPublicKeys().get(0).getPubKey()));
+            Optional<BtcECKey> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
+            assertTrue(retiringFederatorBtcPublicKey.isPresent());
+            List<BtcECKey> oldFederationBtcPublicKeys = oldFederation.getBtcPublicKeys();
+            assertEquals(retiringFederatorBtcPublicKey.get(), oldFederationBtcPublicKeys.get(0));
         }
 
         @ParameterizedTest
