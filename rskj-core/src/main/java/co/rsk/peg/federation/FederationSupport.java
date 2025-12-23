@@ -1,6 +1,7 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.crypto.Keccak256;
@@ -125,10 +126,12 @@ public interface FederationSupport {
 
     /**
      * Returns the public key of the retiring federation's federator at the given index
+     *
      * @param index the retiring federator's index (zero-based)
-     * @return the retiring federator's public key, null if no retiring federation exists
+     * @return An {@link Optional} containing the retiring federator's public key,
+     * or an empty {@link Optional} if no retiring federation exists.
      */
-    byte[] getRetiringFederatorBtcPublicKey(int index);
+    Optional<BtcECKey> getRetiringFederatorBtcPublicKey(int index);
 
     /**
      * Returns the public key of the given type of the retiring federation's federator at the given index
