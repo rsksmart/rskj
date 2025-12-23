@@ -85,8 +85,9 @@ public interface FederationSupport {
     /**
      * Returns the retiring federation bitcoin address, if it exists.
      *
-     * @return An {@link Optional} containing the retiring federation address,
-     * or an empty {@link Optional} if no retiring federation exists
+     * @return An {@link Optional} containing the retiring federation
+     * bitcoin address, or an empty {@link Optional} if no retiring
+     * federation exists.
      */
     Optional<Address> getRetiringFederationAddress();
 
