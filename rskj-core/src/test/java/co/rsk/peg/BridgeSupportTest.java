@@ -517,8 +517,10 @@ class BridgeSupportTest {
         void getRetiringFederatorBtcPublicKey() {
             BtcECKey publicKey = federation.getBtcPublicKeys().get(0);
 
-            when(federationSupport.getRetiringFederatorBtcPublicKey(0)).thenReturn(publicKey.getPubKey());
-            assertThat(bridgeSupport.getRetiringFederatorBtcPublicKey(0), is(publicKey.getPubKey()));
+            Optional<BtcECKey> publicKeyOptional = Optional.of(publicKey);
+            when(federationSupport.getRetiringFederatorBtcPublicKey(0)).thenReturn(publicKeyOptional);
+            assertTrue(bridgeSupport.getRetiringFederatorBtcPublicKey(0).isPresent());
+            assertEquals(bridgeSupport.getRetiringFederatorBtcPublicKey(0).get(), publicKey);
         }
 
         @Test

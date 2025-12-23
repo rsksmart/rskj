@@ -2014,32 +2014,30 @@ class BridgeIT {
 
         Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
-        bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
-        when(bridgeSupportMock.getRetiringFederatorBtcPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
-                BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
+        BtcECKey btcEcKey = mock(BtcECKey.class);
+
+        when(bridgeSupportMock.getRetiringFederatorBtcPublicKey(any(int.class))).then((InvocationOnMock invocation) -> {
+                int argument = invocation.getArgument(0);
+                byte[] pubKey = BigInteger.valueOf(argument).toByteArray();
+                when(btcEcKey.getPubKey()).thenReturn(pubKey);
+                return Optional.of(btcEcKey);
+            });
+
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
+        assertArrayEquals(new byte[]{10}, (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
+            bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(BigInteger.valueOf(10)))
+        )[0]);
 
+        assertArrayEquals(new byte[]{20}, (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
+            bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(BigInteger.valueOf(20)))
+        )[0]);
 
-        assertTrue(Arrays.equals(new byte[]{10},
-                (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(10)}))
-                )[0]
-        ));
-
-        assertTrue(Arrays.equals(new byte[]{20},
-                (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(20)}))
-                )[0]
-        ));
-
-        assertTrue(Arrays.equals(new byte[]{1, 0},
-                (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(256)}))
-                )[0]
-        ));
+        assertArrayEquals(new byte[]{1, 0}, (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
+            bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(BigInteger.valueOf(256)))
+        )[0]);
     }
 
     @Test

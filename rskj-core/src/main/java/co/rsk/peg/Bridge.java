@@ -19,6 +19,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeSerializationUtils.deserializeRskTxHash;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP417;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
@@ -479,7 +480,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         if (shouldReturnNullOnVoidMethods()) {
             return null;
         }
-        return new byte[]{};
+        return EMPTY_BYTE_ARRAY;
     }
 
     private boolean shouldReturnNullOnVoidMethods() {
@@ -883,14 +884,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getRetiringFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
-        byte[] publicKey = bridgeSupport.getRetiringFederatorBtcPublicKey(index);
-
-        if (publicKey == null) {
-            // Empty array is returned when public key is not found or there's no retiring federation
-            return new byte[]{};
-        }
-
-        return publicKey;
+        Optional<BtcECKey> publicKey = bridgeSupport.getRetiringFederatorBtcPublicKey(index);
+        return publicKey.map(BtcECKey::getPubKey).orElse(EMPTY_BYTE_ARRAY);
     }
 
     public byte[] getRetiringFederatorPublicKeyOfType(Object[] args) throws VMException {
@@ -910,7 +905,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found or there's no retiring federation
-            return new byte[]{};
+            return EMPTY_BYTE_ARRAY;
         }
 
         return publicKey;
@@ -1015,7 +1010,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         if (hash == null) {
             // Empty array is returned when pending federation is not present
-            return new byte[]{};
+            return EMPTY_BYTE_ARRAY;
         }
 
         return hash.getBytes();
@@ -1035,7 +1030,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found
-            return new byte[]{};
+            return EMPTY_BYTE_ARRAY;
         }
 
         return publicKey;
@@ -1058,7 +1053,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found
-            return new byte[]{};
+            return EMPTY_BYTE_ARRAY;
         }
 
         return publicKey;
@@ -1190,7 +1185,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return publicKey
-            .orElse(new byte[]{});
+            .orElse(EMPTY_BYTE_ARRAY);
     }
 
     public Integer getLockWhitelistSize(Object[] args) {
@@ -1320,7 +1315,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             Optional<Script> redeemScript = bridgeSupport.getActiveFederationRedeemScript();
             logger.debug("[getActivePowpegRedeemScript] finished");
-            return redeemScript.orElse(new Script(new byte[]{})).getProgram();
+            return redeemScript.orElse(new Script(EMPTY_BYTE_ARRAY)).getProgram();
         } catch (Exception ex) {
             logger.warn("[getActivePowpegRedeemScript] something failed", ex);
             throw ex;

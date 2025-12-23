@@ -2392,7 +2392,7 @@ public class BridgeSupportIT {
 
         assertTrue(bridgeSupport.getRetiringFederationSize().isEmpty());
         assertTrue(bridgeSupport.getRetiringFederationThreshold().isEmpty());
-        assertNull(bridgeSupport.getRetiringFederatorBtcPublicKey(0));
+        assertTrue(bridgeSupport.getRetiringFederatorBtcPublicKey(0).isEmpty());
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
@@ -2435,7 +2435,7 @@ public class BridgeSupportIT {
 
         assertTrue(bridgeSupport.getRetiringFederationSize().isEmpty());
         assertTrue(bridgeSupport.getRetiringFederationThreshold().isEmpty());
-        assertNull(bridgeSupport.getRetiringFederatorBtcPublicKey(0));
+        assertTrue(bridgeSupport.getRetiringFederatorBtcPublicKey(0).isEmpty());
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
@@ -2494,9 +2494,11 @@ public class BridgeSupportIT {
         assertEquals(mockedOldFederation.getAddress().toString(), retiringFederationAddress.get().toString());
         List<FederationMember> members = FederationTestUtils.getFederationMembers(4);
         for (int i = 0; i < 4; i++) {
-            assertArrayEquals(
-                members.get(i).getBtcPublicKey().getPubKey(),
-                bridgeSupport.getRetiringFederatorBtcPublicKey(i)
+            Optional<BtcECKey> retiringFederatorBtcPublicKey = bridgeSupport.getRetiringFederatorBtcPublicKey(i);
+            assertTrue(retiringFederatorBtcPublicKey.isPresent());
+            assertEquals(
+                members.get(i).getBtcPublicKey(),
+                retiringFederatorBtcPublicKey.get()
                 );
             assertArrayEquals(
                 members.get(i).getBtcPublicKey().getPubKey(),
