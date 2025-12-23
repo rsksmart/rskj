@@ -516,11 +516,11 @@ class BridgeSupportTest {
         @Test
         void getRetiringFederatorBtcPublicKey() {
             BtcECKey publicKey = federation.getBtcPublicKeys().get(0);
+            when(federationSupport.getRetiringFederatorBtcPublicKey(0)).thenReturn(Optional.of(publicKey));
 
-            Optional<BtcECKey> publicKeyOptional = Optional.of(publicKey);
-            when(federationSupport.getRetiringFederatorBtcPublicKey(0)).thenReturn(publicKeyOptional);
-            assertTrue(bridgeSupport.getRetiringFederatorBtcPublicKey(0).isPresent());
-            assertEquals(bridgeSupport.getRetiringFederatorBtcPublicKey(0).get(), publicKey);
+            Optional<BtcECKey> retiringFederatorBtcPublicKey = bridgeSupport.getRetiringFederatorBtcPublicKey(0);
+            assertTrue(retiringFederatorBtcPublicKey.isPresent());
+            assertEquals(retiringFederatorBtcPublicKey.get(), publicKey);
         }
 
         @Test
