@@ -35,29 +35,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.ethereum.core.BlockHeaderIndex.COINBASE;
+import static org.ethereum.core.BlockHeaderIndex.DIFFICULTY;
+import static org.ethereum.core.BlockHeaderIndex.EXTENSION_DATA;
+import static org.ethereum.core.BlockHeaderIndex.EXTRA_DATA;
+import static org.ethereum.core.BlockHeaderIndex.GAS_LIMIT;
+import static org.ethereum.core.BlockHeaderIndex.GAS_USED;
+import static org.ethereum.core.BlockHeaderIndex.MINIMUM_GAS_PRICE;
+import static org.ethereum.core.BlockHeaderIndex.NUMBER;
+import static org.ethereum.core.BlockHeaderIndex.PAID_FEES;
+import static org.ethereum.core.BlockHeaderIndex.PARENT_HASH;
+import static org.ethereum.core.BlockHeaderIndex.RECEIPT_TRIE_ROOT;
+import static org.ethereum.core.BlockHeaderIndex.STATE_ROOT;
+import static org.ethereum.core.BlockHeaderIndex.TIMESTAMP;
+import static org.ethereum.core.BlockHeaderIndex.TX_TRIE_ROOT;
+import static org.ethereum.core.BlockHeaderIndex.UNCLES_HASH;
+import static org.ethereum.core.BlockHeaderIndex.UNCLE_COUNT;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
-    public static final int NUMBER_OF_EXTRA_HEADER_FIELDS = 3;
-
-    // RLP Header Field Indices (fixed positions in the RLP list)
-    private static final int PARENT_HASH_INDEX = 0;
-    private static final int UNCLES_HASH_INDEX = 1;
-    private static final int COINBASE_INDEX = 2;
-    private static final int STATE_ROOT_INDEX = 3;
-    private static final int TX_TRIE_ROOT_INDEX = 4;
-    private static final int RECEIPT_TRIE_ROOT_INDEX = 5;
-    private static final int EXTENSION_DATA_INDEX = 6;
-    private static final int DIFFICULTY_INDEX = 7;
-    private static final int NUMBER_INDEX = 8;
-    private static final int GAS_LIMIT_INDEX = 9;
-    private static final int GAS_USED_INDEX = 10;
-    private static final int TIMESTAMP_INDEX = 11;
-    private static final int EXTRA_DATA_INDEX = 12;
-    private static final int PAID_FEES_INDEX = 13;
-    private static final int MINIMUM_GAS_PRICE_INDEX = 14;
-    private static final int UNCLE_COUNT_INDEX = 15; // Starting point for variable fields
-
+    private static final int NUMBER_OF_EXTRA_HEADER_FIELDS = 3;
     // Maximum RLP header sizes (when all optional fields are present)
     private static final int MAX_RLP_HEADER_SIZE_WITHOUT_MINING = 20;
     private static final int MAX_RLP_HEADER_SIZE_WITH_MINING = 23;
@@ -72,14 +69,14 @@ public class BlockFactory {
         return bytes == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(bytes);
     }
 
-    private static List<Transaction> parseTxs(RLPList txTransactions) {
+    private static List<Transaction> parseTxs(RLPList transactionList) {
         List<Transaction> parsedTxs = new ArrayList<>();
 
-        for (int i = 0; i < txTransactions.size(); i++) {
-            RLPElement transactionRaw = txTransactions.get(i);
+        for (int i = 0; i < transactionList.size(); i++) {
+            RLPElement transactionRaw = transactionList.get(i);
             Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
 
-            if (tx.isRemascTransaction(i, txTransactions.size())) {
+            if (tx.isRemascTransaction(i, transactionList.size())) {
                 // It is the remasc transaction
                 tx = new RemascTransaction(transactionRaw.getRLPData());
             }
@@ -140,43 +137,47 @@ public class BlockFactory {
     }
 
     private BlockHeader decodeHeader(RLPList rlpHeader, boolean compressed, boolean sealed) {
-        byte[] parentHash = rlpHeader.get(PARENT_HASH_INDEX).getRLPData();
-        byte[] unclesHash = rlpHeader.get(UNCLES_HASH_INDEX).getRLPData();
-        byte[] coinBaseBytes = rlpHeader.get(COINBASE_INDEX).getRLPData();
+        byte[] parentHash = rlpHeader.get(PARENT_HASH.getIndex()).getRLPData();
+        byte[] unclesHash = rlpHeader.get(UNCLES_HASH.getIndex()).getRLPData();
+        byte[] coinBaseBytes = rlpHeader.get(COINBASE.getIndex()).getRLPData();
         RskAddress coinbase = RLP.parseRskAddress(coinBaseBytes);
-        byte[] stateRoot = rlpHeader.get(STATE_ROOT_INDEX).getRLPData();
+        byte[] stateRoot = rlpHeader.get(STATE_ROOT.getIndex()).getRLPData();
         if (stateRoot == null) {
             stateRoot = EMPTY_TRIE_HASH;
         }
 
-        byte[] txTrieRoot = rlpHeader.get(TX_TRIE_ROOT_INDEX).getRLPData();
+        byte[] txTrieRoot = rlpHeader.get(TX_TRIE_ROOT.getIndex()).getRLPData();
         if (txTrieRoot == null) {
             txTrieRoot = EMPTY_TRIE_HASH;
         }
 
-        byte[] receiptTrieRoot = rlpHeader.get(RECEIPT_TRIE_ROOT_INDEX).getRLPData();
+        byte[] receiptTrieRoot = rlpHeader.get(RECEIPT_TRIE_ROOT.getIndex()).getRLPData();
         if (receiptTrieRoot == null) {
             receiptTrieRoot = EMPTY_TRIE_HASH;
         }
 
-        byte[] extensionData = rlpHeader.get(EXTENSION_DATA_INDEX).getRLPData(); // rskip351: logs bloom when decoding extended, list(version,hash(extension)) when compressed
-        byte[] difficultyBytes = rlpHeader.get(DIFFICULTY_INDEX).getRLPData();
+        byte[] extensionData = rlpHeader.get(EXTENSION_DATA.getIndex()).getRLPData(); // rskip351: logs
+        // bloom when decoding
+        // extended,
+        // list(version,hash(extension))
+        // when compressed
+        byte[] difficultyBytes = rlpHeader.get(DIFFICULTY.getIndex()).getRLPData();
         BlockDifficulty difficulty = RLP.parseBlockDifficulty(difficultyBytes);
 
-        byte[] nrBytes = rlpHeader.get(NUMBER_INDEX).getRLPData();
-        byte[] glBytes = rlpHeader.get(GAS_LIMIT_INDEX).getRLPData();
-        byte[] guBytes = rlpHeader.get(GAS_USED_INDEX).getRLPData();
-        byte[] tsBytes = rlpHeader.get(TIMESTAMP_INDEX).getRLPData();
+        byte[] nrBytes = rlpHeader.get(NUMBER.getIndex()).getRLPData();
+        byte[] glBytes = rlpHeader.get(GAS_LIMIT.getIndex()).getRLPData();
+        byte[] guBytes = rlpHeader.get(GAS_USED.getIndex()).getRLPData();
+        byte[] tsBytes = rlpHeader.get(TIMESTAMP.getIndex()).getRLPData();
 
         long blockNumber = parseBigInteger(nrBytes).longValueExact();
 
         long gasUsed = parseBigInteger(guBytes).longValueExact();
         long timestamp = parseBigInteger(tsBytes).longValueExact();
 
-        byte[] extraData = rlpHeader.get(EXTRA_DATA_INDEX).getRLPData();
+        byte[] extraData = rlpHeader.get(EXTRA_DATA.getIndex()).getRLPData();
 
-        Coin paidFees = RLP.parseCoin(rlpHeader.get(PAID_FEES_INDEX).getRLPData());
-        byte[] minimumGasPriceBytes = rlpHeader.get(MINIMUM_GAS_PRICE_INDEX).getRLPData();
+        Coin paidFees = RLP.parseCoin(rlpHeader.get(PAID_FEES.getIndex()).getRLPData());
+        byte[] minimumGasPriceBytes = rlpHeader.get(MINIMUM_GAS_PRICE.getIndex()).getRLPData();
         Coin minimumGasPrice = RLP.parseSignedCoinNonNullZero(minimumGasPriceBytes);
 
         if (!canBeDecoded(rlpHeader, blockNumber, compressed)) {
@@ -185,7 +186,7 @@ public class BlockFactory {
                     rlpHeader.size()));
         }
 
-        int r = UNCLE_COUNT_INDEX;
+        int r = UNCLE_COUNT.getIndex();
 
         byte[] ucBytes = rlpHeader.get(r++).getRLPData();
         int uncleCount = parseBigInteger(ucBytes).intValueExact();
@@ -232,7 +233,8 @@ public class BlockFactory {
         return createBlockHeader(compressed, sealed, parentHash, unclesHash,
                 coinBaseBytes, coinbase, stateRoot, txTrieRoot, receiptTrieRoot, extensionData,
                 difficultyBytes, difficulty, glBytes, blockNumber, gasUsed, timestamp, extraData,
-                paidFees, minimumGasPriceBytes, minimumGasPrice, uncleCount, ummRoot, baseEvent, version, txExecutionSublistsEdges,
+                paidFees, minimumGasPriceBytes, minimumGasPrice, uncleCount, ummRoot, baseEvent, version,
+                txExecutionSublistsEdges,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 useRskip92Encoding, includeForkDetectionData);
     }
@@ -300,17 +302,20 @@ public class BlockFactory {
     }
 
     /**
-     * Validates whether the RLP header can be decoded based on its size and the activation rules
+     * Validates whether the RLP header can be decoded based on its size and the
+     * activation rules
      * at the given block number.
      * <p>
-     * The size calculation follows a pattern: we start with the maximum possible header size
-     * and subtract 1 for each optional field that is NOT active at this block height.
+     * The size calculation follows a pattern: we start with the maximum possible
+     * header size
+     * and subtract 1 for each optional field that is NOT active at this block
+     * height.
      *
      * @param rlpHeader   The RLP-encoded header to validate
      * @param blockNumber The block number (used to check activation rules)
      * @param compressed  Whether the header uses compressed encoding (RSKIP351)
      * @return true if the header size matches expected size with or without merged
-     * mining fields
+     *         mining fields
      */
     private boolean canBeDecoded(RLPList rlpHeader, long blockNumber, boolean compressed) {
         int expectedSizeWithoutMining = calculateExpectedHeaderSize(blockNumber, compressed, false);
@@ -325,7 +330,8 @@ public class BlockFactory {
      *
      * @param blockNumber      The block number (used to check activation rules)
      * @param compressed       Whether compressed encoding is used
-     * @param withMergedMining Whether to include merged mining fields in the calculation
+     * @param withMergedMining Whether to include merged mining fields in the
+     *                         calculation
      * @return The expected number of RLP elements in the header
      */
     private int calculateExpectedHeaderSize(long blockNumber, boolean compressed, boolean withMergedMining) {
@@ -337,7 +343,8 @@ public class BlockFactory {
             expectedFullSize -= 1;
         }
         if (!activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
-            // Parallel tx execution is not active, field txExecutionSublistsEdges is not present
+            // Parallel tx execution is not active, field txExecutionSublistsEdges is not
+            // present
             expectedFullSize -= 1;
         }
         if (!isBaseEventEnabled(blockNumber)) {
@@ -362,12 +369,14 @@ public class BlockFactory {
     /**
      * Calculates the size adjustment for RSKIP351-related fields.
      * <p>
-     * RSKIP351 introduces versioned block headers with optional compressed encoding.
-     * When compressed, the version, edges, and baseEvent fields are stored in an extension
+     * RSKIP351 introduces versioned block headers with optional compressed
+     * encoding.
+     * When compressed, the version, edges, and baseEvent fields are stored in an
+     * extension
      * structure rather than as separate RLP elements.
      *
-     * @param blockNumber                        The block number for activation config lookup
-     * @param compressed                         Whether the header is compressed
+     * @param blockNumber The block number for activation config lookup
+     * @param compressed  Whether the header is compressed
      * @return The size adjustment value
      */
     private int getRSKIP351SizeAdjustmentFromExtensionData(long blockNumber, boolean compressed) {
@@ -382,7 +391,8 @@ public class BlockFactory {
             if (!activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
                 extraHeaderFieldsToRemoveWhenCompressed -= 1;
             }
-            // If baseEvent deactivated, there is no need to remove baseEvent in the counting
+            // If baseEvent deactivated, there is no need to remove baseEvent in the
+            // counting
             if (!isBaseEventEnabled(blockNumber)) {
                 extraHeaderFieldsToRemoveWhenCompressed -= 1;
             }

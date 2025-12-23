@@ -148,6 +148,7 @@ class ActivationConfigTest {
             "    rskip502: reed810",
             "    rskip516: reed800",
             "    rskip529: reed810",
+            "    rskip535: vetiver900",
             "    rskip536: reed810",
             "}"
     ));

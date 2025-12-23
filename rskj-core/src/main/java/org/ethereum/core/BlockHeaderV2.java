@@ -79,7 +79,6 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
 
     @Override
     public void setBaseEvent(byte[] baseEvent) {
-        /* A sealed block header is immutable, cannot be changed */
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter baseEvent data of a sealed block");
         }

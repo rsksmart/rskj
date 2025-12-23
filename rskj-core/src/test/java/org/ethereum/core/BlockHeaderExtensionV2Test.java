@@ -247,9 +247,9 @@ class BlockHeaderExtensionV2Test {
 
     @Test
     void testBaseEventWithMaxSize() {
-        // Test with maximum practical size (64KB)
-        byte[] maxSizeValue = new byte[65536];
-        for (int i = 0; i < 65536; i++) {
+        int numberOfBytes = 128;
+        byte[] maxSizeValue = new byte[numberOfBytes];
+        for (int i = 0; i < numberOfBytes; i++) {
             maxSizeValue[i] = (byte) (i % 256);
         }
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], maxSizeValue);

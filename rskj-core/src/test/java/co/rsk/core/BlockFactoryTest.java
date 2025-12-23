@@ -18,26 +18,6 @@
 
 package co.rsk.core;
 
-import co.rsk.config.RskMiningConstants;
-import co.rsk.crypto.Keccak256;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.TestUtils;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockHeaderBuilder;
-import org.ethereum.core.BlockHeaderV1;
-import org.ethereum.core.Bloom;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP110;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP351;
@@ -54,6 +34,27 @@ import static org.mockito.AdditionalMatchers.lt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockHeaderBuilder;
+import org.ethereum.core.BlockHeaderV1;
+import org.ethereum.core.Bloom;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import co.rsk.config.RskMiningConstants;
+import co.rsk.crypto.Keccak256;
 
 class BlockFactoryTest {
 
@@ -317,7 +318,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    void headerIsVersion1After351Activation() {
+    void headerIsVersion1After351AndBefore535Activation() {
         long number = 20L;
         enableRskip351At(number);
         BlockHeader header = factory.getBlockHeaderBuilder().setNumber(number).build();
@@ -325,17 +326,17 @@ class BlockFactoryTest {
     }
 
     private BlockHeader testRSKIP351FullHeaderEncoding(byte[] encoded, byte expectedVersion, byte[] expectedLogsBloom,
-                                                       short[] expectedEdges) {
+            short[] expectedEdges) {
         return testRSKIP351CompressedHeaderEncoding(encoded, expectedVersion, expectedLogsBloom, expectedEdges, false);
     }
 
     private BlockHeader testRSKIP351CompressedHeaderEncoding(byte[] encoded, byte expectedVersion,
-                                                             byte[] expectedLogsBloom, short[] expectedEdges) {
+            byte[] expectedLogsBloom, short[] expectedEdges) {
         return testRSKIP351CompressedHeaderEncoding(encoded, expectedVersion, expectedLogsBloom, expectedEdges, true);
     }
 
     private BlockHeader testRSKIP351CompressedHeaderEncoding(byte[] encoded, byte expectedVersion,
-                                                             byte[] expectedLogsBloom, short[] expectedEdges, boolean compressed) {
+            byte[] expectedLogsBloom, short[] expectedEdges, boolean compressed) {
         BlockHeader decodedHeader = factory.decodeHeader(encoded, compressed);
 
         assertEquals(expectedVersion, decodedHeader.getVersion());
@@ -381,7 +382,7 @@ class BlockFactoryTest {
         logsBloom[2] = 1;
         logsBloom[3] = 1;
 
-        short[] edges = {1, 2, 3, 4};
+        short[] edges = { 1, 2, 3, 4 };
 
         BlockHeader header = factory.getBlockHeaderBuilder()
                 .setLogsBloom(logsBloom)
@@ -833,6 +834,63 @@ class BlockFactoryTest {
     }
 
     @Test
+    void decodeCompressedBlockRskip535WithoutRskip144() {
+        long number = 500L;
+        setupRskip535Test(number);
+
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 1;
+        logsBloom[1] = 1;
+        logsBloom[2] = 1;
+        logsBloom[3] = 1;
+
+        byte[] baseEvent = TestUtils.generateBytes("baseEvent", 32);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withBaseEvent(baseEvent)
+                .withLogsBloom(logsBloom)
+                .build();
+
+        byte[] encoded = header.getEncodedCompressed();
+
+        BlockHeader decodedHeader = factory.decodeHeader(encoded, true);
+
+        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(decodedHeader.getVersion(), is((byte) 0x2));
+        assertArrayEquals(header.getExtensionData(), decodedHeader.getExtensionData());
+        assertThat(decodedHeader.getTxExecutionSublistsEdges(), is((short[]) null));
+    }
+
+    @Test
+    void decodeCompressedBlockRskip535WithUMMWithoutRskip144() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIPUMM);
+
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 1;
+        logsBloom[1] = 1;
+        logsBloom[2] = 1;
+        logsBloom[3] = 1;
+
+        byte[] baseEvent = TestUtils.generateBytes("baseEvent", 32);
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withBaseEvent(baseEvent)
+                .withUmmRoot(ummRoot)
+                .withLogsBloom(logsBloom)
+                .build();
+
+        byte[] encoded = header.getEncodedCompressed();
+
+        BlockHeader decodedHeader = factory.decodeHeader(encoded, true);
+
+        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(decodedHeader.getVersion(), is((byte) 0x2));
+        assertArrayEquals(header.getExtensionData(), decodedHeader.getExtensionData());
+        assertArrayEquals(ummRoot, decodedHeader.getUmmRoot());
+        assertThat(decodedHeader.getTxExecutionSublistsEdges(), is((short[]) null));
+    }
+
+    @Test
     void decodeFullBlockRskip535WithRskip144() {
         long number = 500L;
         setupRskip535Test(number, RSKIP144);
@@ -970,13 +1028,19 @@ class BlockFactoryTest {
     /**
      * Helper method to calculate expected RLP header size based on active features.
      */
-    private int expectedHeaderSize(boolean umm, boolean version, boolean edges, boolean baseEvent, boolean mergedMining) {
+    private int expectedHeaderSize(boolean umm, boolean version, boolean edges, boolean baseEvent,
+            boolean mergedMining) {
         int size = 16; // Base fields
-        if (umm) size++;
-        if (version) size++;
-        if (edges) size++;
-        if (baseEvent) size++;
-        if (mergedMining) size++;
+        if (umm)
+            size++;
+        if (version)
+            size++;
+        if (edges)
+            size++;
+        if (baseEvent)
+            size++;
+        if (mergedMining)
+            size++;
         return size;
     }
 

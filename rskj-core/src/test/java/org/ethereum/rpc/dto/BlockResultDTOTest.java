@@ -24,6 +24,7 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ReceivedTxSignatureCache;
@@ -47,6 +48,7 @@ import java.util.stream.Collectors;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 class BlockResultDTOTest {
@@ -110,6 +112,19 @@ class BlockResultDTOTest {
     }
 
     @Test
+    void getBlockResultDTO_getBaseEvent() {
+        byte[] baseEvent = new byte[]{0x1, 0x2, 0x3};
+        Block spyBlock = spy(block);
+        BlockHeader mockHeader = mock(BlockHeader.class);
+        when(spyBlock.getHeader()).thenReturn(mockHeader);
+        when(mockHeader.getBaseEvent()).thenReturn(baseEvent);
+
+        BlockResultDTO result = BlockResultDTO.fromBlock(spyBlock, false, blockStore, false, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        Assertions.assertEquals(HexUtils.toUnformattedJsonHex(baseEvent), result.getBaseEvent());
+    }
+
+    @Test
     void getBlockResultDTOWithNullSignatureRemascAndFullTransactions() {
         BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, false, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         Assertions.assertNotNull(blockResultDTO);
@@ -124,7 +139,6 @@ class BlockResultDTOTest {
         Assertions.assertNull(remascTransaction.getR());
         Assertions.assertNull(remascTransaction.getS());
     }
-
 
     @Test
     void getBlockResultDTOWithWithZeroSignatureRemascAndFullTransactions() {
