@@ -38,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.federation.*;
@@ -63,6 +64,9 @@ import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -2007,37 +2011,56 @@ class BridgeIT {
         MatcherAssert.assertThat(bridge.getRetiringFederationAddress(EMPTY_ARGS_FOR_BRIDGE_CALLS), is(retiringFederationAddress.toBase58()));
     }
 
-    @Test
-    void getRetiringFederatorPublicKey_beforeMultikey() throws Exception {
+    private static Stream<Arguments> parametersForGetRetiringFederatorPublicKey() {
+        return Stream.of(
+            // Basic Test Cases from 1 to 4 on EIP
+            Arguments.of(10, new byte[]{10}),
+            Arguments.of(20, new byte[]{20}),
+            Arguments.of(256, new byte[]{1, 0})
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("parametersForGetRetiringFederatorPublicKey")
+    void getRetiringFederatorPublicKey_beforeMultikey(int retiringFederatorBtcPublicKeyIndex, byte[] expectedExecutionResult) throws Exception {
+        // Arrange
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
-                bridgeSupportFactoryMock, signatureCache);
+        BridgeSupport bridgeSupport = mock(BridgeSupport.class);
+        Bridge aBridge = new BridgeBuilder()
+            .bridgeSupport(bridgeSupport)
+            .activationConfig(activationConfig)
+            .contractAddress(BRIDGE_ADDRESS)
+            .constants(constants)
+            .signatureCache(signatureCache)
+            .build();
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         BtcECKey btcEcKey = mock(BtcECKey.class);
-
-        when(bridgeSupportMock.getRetiringFederatorBtcPublicKey(any(int.class))).then((InvocationOnMock invocation) -> {
+        when(bridgeSupport.getRetiringFederatorBtcPublicKey(any(int.class))).then((InvocationOnMock invocation) -> {
                 int argument = invocation.getArgument(0);
                 byte[] pubKey = BigInteger.valueOf(argument).toByteArray();
                 when(btcEcKey.getPubKey()).thenReturn(pubKey);
                 return Optional.of(btcEcKey);
             });
 
-        bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        assertArrayEquals(new byte[]{10}, (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
-            bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(BigInteger.valueOf(10)))
-        )[0]);
+        // Act
+        byte[] executionResult = executeGetRetiringFederatorPublicKeyFunction(aBridge, retiringFederatorBtcPublicKeyIndex);
 
-        assertArrayEquals(new byte[]{20}, (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
-            bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(BigInteger.valueOf(20)))
-        )[0]);
+        // Assert
+        assertGetRetiringFederatorPublicKeyExecution(expectedExecutionResult, executionResult);
+    }
 
-        assertArrayEquals(new byte[]{1, 0}, (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
-            bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(BigInteger.valueOf(256)))
-        )[0]);
+    private void assertGetRetiringFederatorPublicKeyExecution(byte[] expectedExecutionResult, byte[] executionResult) {
+        CallTransaction.Function getRetiringFederatorPublicKeyFunction = BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction();
+        byte[] actualResult = (byte[]) getRetiringFederatorPublicKeyFunction.decodeResult(executionResult)[0];
+        assertArrayEquals(expectedExecutionResult, actualResult);
+    }
+
+    private byte[] executeGetRetiringFederatorPublicKeyFunction(Bridge bridge, int federatorIndex) throws VMException {
+        CallTransaction.Function getRetiringFederatorPublicKeyFunction = BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction();
+        BigInteger indexArgument = BigInteger.valueOf(federatorIndex);
+        byte[] getRetiringFederatorPublicKeyCallEncoded = getRetiringFederatorPublicKeyFunction.encode(indexArgument);
+        return bridge.execute(getRetiringFederatorPublicKeyCallEncoded);
     }
 
     @Test
