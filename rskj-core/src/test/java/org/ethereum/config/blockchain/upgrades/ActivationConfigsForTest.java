@@ -203,13 +203,14 @@ public class ActivationConfigsForTest {
                 ConsensusRule.RSKIP351,
                 ConsensusRule.RSKIP502,
                 ConsensusRule.RSKIP529,
-                ConsensusRule.RSKIP535,
                 ConsensusRule.RSKIP536
         ));
     }
 
     private static List<ConsensusRule> getVetiverRskips() {
-        return new ArrayList<>(); // TBD
+        return new ArrayList<>(List.of(
+                ConsensusRule.RSKIP535)
+        );
     }
 
     public static ActivationConfig genesis() {

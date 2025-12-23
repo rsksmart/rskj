@@ -96,8 +96,7 @@ class CliToolsIntegrationTest {
                     String.format("-Xrpc.providers.web.http.port=%s", port)
             };
             strBaseArgs = String.join(" ", baseArgs);
-            baseJavaCmd = String.format("java %s %s", String.format("-Dlogback.configurationFile=%s", logbackXmlFile),
-                    String.format("-Drsk.conf.file=%s", rskConfFile));
+            baseJavaCmd = String.format("java %s %s", String.format("-Dlogback.configurationFile=%s", logbackXmlFile), String.format("-Drsk.conf.file=%s", rskConfFile));
         } catch (Exception e) {
             // Ensure cleanup on setup failure
             cleanupTempFiles();
@@ -114,8 +113,7 @@ class CliToolsIntegrationTest {
 
             blocksFile = createTempFile("blocks.txt");
 
-            String cmd = String.format(
-                    "%s -cp %s/%s co.rsk.cli.tools.ExportBlocks --fromBlock 0 --toBlock %s --file %s %s",
+            String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportBlocks --fromBlock 0 --toBlock %s --file %s %s",
                     baseJavaCmd, buildLibsPath, jarName, blockNumber, blocksFile, strBaseArgs);
             executeCommand(cmd, 1, TimeUnit.MINUTES);
 
@@ -128,8 +126,7 @@ class CliToolsIntegrationTest {
             String[] exportedBlocksLineParts = exportedBlocksLine.split(",");
 
             Assertions.assertFalse(exportedBlocksLines.isEmpty());
-            Assertions.assertTrue(
-                    blockInfo.transactionsNode.get(0).get("blockHash").asText().contains(exportedBlocksLineParts[1]));
+            Assertions.assertTrue(blockInfo.transactionsNode.get(0).get("blockHash").asText().contains(exportedBlocksLineParts[1]));
         } finally {
             safeDeleteFile(blocksFile);
         }
@@ -177,8 +174,7 @@ class CliToolsIntegrationTest {
         List<String> stateInfoLines = Arrays.asList(showStateInfoProc.getOutput().split("\\n"));
 
         Assertions.assertFalse(stateInfoLines.isEmpty());
-        Assertions.assertTrue(
-                stateInfoLines.stream().anyMatch(l -> l.contains(HexUtils.removeHexPrefix(blockInfo.blockHash))));
+        Assertions.assertTrue(stateInfoLines.stream().anyMatch(l -> l.contains(HexUtils.removeHexPrefix(blockInfo.blockHash))));
     }
 
     @Test
@@ -242,8 +238,7 @@ class CliToolsIntegrationTest {
 
             blocksFile = createTempFile("blocks.txt");
 
-            String cmd = String.format(
-                    "%s -cp %s/%s co.rsk.cli.tools.ExportBlocks --fromBlock 0 --toBlock 20 --file %s %s",
+            String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportBlocks --fromBlock 0 --toBlock 20 --file %s %s",
                     baseJavaCmd, buildLibsPath, jarName, blocksFile, strBaseArgs);
             executeCommand(cmd, 1, TimeUnit.MINUTES);
 
@@ -364,58 +359,47 @@ class CliToolsIntegrationTest {
 
     @Test
     void whenDbMigrateRuns_shouldMigrateLevelDbToRocksDbAndShouldStartNodeWithPrevDbKind() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName,
-                strBaseArgs);
-        CommandLineFixture.CustomProcess startProc = executeCommand(cmd, 5, TimeUnit.MINUTES);
-        validateProcessOutput(startProc, "[minerserver]");
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES, false);
 
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.DbMigrate --targetDb rocksdb %s", baseJavaCmd, buildLibsPath,
-                jarName, strBaseArgs);
-        CommandLineFixture.CustomProcess dbMigrateProc = executeCommand(cmd, 5, TimeUnit.MINUTES);
-        validateProcessOutput(dbMigrateProc, "DbMigrate finished");
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.DbMigrate --targetDb rocksdb %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        CommandLineFixture.CustomProcess dbMigrateProc = CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
         cmd = String.format("%s -cp %s/%s co.rsk.Start --regtest %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        CommandLineFixture.CustomProcess proc = CommandLineFixture.runCommand(cmd, 5, TimeUnit.MINUTES, false);
-        validateProcessOutput(proc, "[minerserver]");
+        CommandLineFixture.CustomProcess proc = CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES, false);
 
         List<String> logLines = Arrays.asList(proc.getOutput().split("\\n"));
 
-        Assertions.assertTrue(logLines.stream()
-                .anyMatch(l -> l.contains("[minerserver] [miner client]  Mined block import result is IMPORTED_BEST")));
+        Assertions.assertTrue(dbMigrateProc.getOutput().contains("DbMigrate finished"));
+        Assertions.assertTrue(logLines.stream().anyMatch(l -> l.contains("[minerserver] [miner client]  Mined block import result is IMPORTED_BEST")));
         Assertions.assertTrue(logLines.stream().noneMatch(l -> l.contains("Exception:")));
     }
 
     @Test
     void whenDbMigrateRuns_shouldMigrateLevelDbToRocksDbAndShouldStartNodeSuccessfully() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName,
-                strBaseArgs);
-        CommandLineFixture.CustomProcess startProc = executeCommand(cmd, 5, TimeUnit.MINUTES);
-        validateProcessOutput(startProc, "[minerserver]");
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.DbMigrate --targetDb rocksdb %s", baseJavaCmd, buildLibsPath,
-                jarName, strBaseArgs);
-        CommandLineFixture.CustomProcess dbMigrateProc = executeCommand(cmd, 5, TimeUnit.MINUTES);
-        validateProcessOutput(dbMigrateProc, "DbMigrate finished");
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.DbMigrate --targetDb rocksdb %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        CommandLineFixture.CustomProcess dbMigrateProc = CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
         LinkedList<String> args = Stream.of(baseArgs)
                 .map(arg -> arg.equals("-Xkeyvalue.datasource=leveldb") ? "-Xkeyvalue.datasource=rocksdb" : arg)
                 .collect(Collectors.toCollection(LinkedList::new));
 
-        cmd = String.format("%s -cp %s/%s co.rsk.Start %s", baseJavaCmd, buildLibsPath, jarName,
-                String.join(" ", args));
-        CommandLineFixture.CustomProcess proc = executeCommand(cmd, 5, TimeUnit.MINUTES);
+        cmd = String.format("%s -cp %s/%s co.rsk.Start %s", baseJavaCmd, buildLibsPath, jarName, String.join(" ", args));
+        CommandLineFixture.CustomProcess proc = CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
         List<String> logLines = Arrays.asList(proc.getOutput().split("\\n"));
 
-        Assertions.assertTrue(logLines.stream()
-                .anyMatch(l -> l.contains("[minerserver] [miner client]  Mined block import result is IMPORTED_BEST")));
+        Assertions.assertTrue(dbMigrateProc.getOutput().contains("DbMigrate finished"));
+        Assertions.assertTrue(logLines.stream().anyMatch(l -> l.contains("[minerserver] [miner client]  Mined block import result is IMPORTED_BEST")));
         Assertions.assertTrue(logLines.stream().noneMatch(l -> l.contains("Exception:")));
     }
 
     @Test
     void whenStartBootstrapRuns_shouldRunSuccessfully() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.StartBootstrap --reset %s", baseJavaCmd,
-                buildLibsPath, jarName, strBaseArgs);
+        String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.StartBootstrap --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         CommandLineFixture.CustomProcess proc = CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
         Assertions.assertTrue(proc.getOutput().contains("Identified public IP"));
@@ -424,14 +408,12 @@ class CliToolsIntegrationTest {
 
     @Test
     void whenIndexBloomsRuns_shouldIndexBlockRangeSInBLoomsDbSuccessfully() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName,
-                strBaseArgs);
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
         FileUtil.recursiveDelete(bloomsDbDir);
 
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.IndexBlooms -fb %s -tb %s %s", baseJavaCmd, buildLibsPath,
-                jarName, "earliest", "latest", strBaseArgs);
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.IndexBlooms -fb %s -tb %s %s", baseJavaCmd, buildLibsPath, jarName, "earliest", "latest", strBaseArgs);
         CommandLineFixture.CustomProcess proc = CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
         Assertions.assertTrue(proc.getOutput().contains("[c.r.c.t.IndexBlooms] [main]  Processed "));
@@ -462,8 +444,7 @@ class CliToolsIntegrationTest {
                 }
             } catch (IOException e) {
                 if (attempt == maxRetries - 1) {
-                    throw new IOException("Failed to create file " + filePath + " after " + maxRetries + " attempts",
-                            e);
+                    throw new IOException("Failed to create file " + filePath + " after " + maxRetries + " attempts", e);
                 }
                 try {
                     Thread.sleep(retryDelayMs * (attempt + 1));
@@ -478,8 +459,7 @@ class CliToolsIntegrationTest {
 
     private void writeToFile(Path filePath, String content) throws IOException {
         try {
-            Files.write(filePath, content.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE);
+            Files.write(filePath, content.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
         } catch (IOException e) {
             throw new IOException("Failed to write to file " + filePath, e);
         }
@@ -508,8 +488,7 @@ class CliToolsIntegrationTest {
                 } catch (IOException e) {
                     if (attempt == maxRetries - 1) {
                         // Log warning but don't fail the test
-                        System.err.println("Warning: Failed to delete file " + filePath + " after " + maxRetries
-                                + " attempts: " + e.getMessage());
+                        System.err.println("Warning: Failed to delete file " + filePath + " after " + maxRetries + " attempts: " + e.getMessage());
                     } else {
                         try {
                             Thread.sleep(retryDelayMs * (attempt + 1));
@@ -587,8 +566,7 @@ class CliToolsIntegrationTest {
     /**
      * Executes a command and waits for it to complete
      */
-    private CommandLineFixture.CustomProcess executeCommand(String cmd, int timeout, TimeUnit timeUnit)
-            throws InterruptedException, IOException {
+    private CommandLineFixture.CustomProcess executeCommand(String cmd, int timeout, TimeUnit timeUnit) throws InterruptedException, IOException {
         return CommandLineFixture.runCommand(cmd, timeout, timeUnit);
     }
 
@@ -604,8 +582,7 @@ class CliToolsIntegrationTest {
      * Starts RSK node and waits for it to be ready
      */
     private void startRskNode() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName,
-                strBaseArgs);
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         executeCommand(cmd, 1, TimeUnit.MINUTES);
     }
 
@@ -613,8 +590,7 @@ class CliToolsIntegrationTest {
      * Starts RSK node and waits for it to be ready with callback
      */
     private void startRskNodeWithCallback(java.util.function.Consumer<Process> callback) throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName,
-                strBaseArgs);
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         executeCommandWithCallback(cmd, 1, TimeUnit.MINUTES, callback);
     }
 

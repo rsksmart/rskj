@@ -50,7 +50,7 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
                 makeExtension(compressed, extensionData, txExecutionSublistsEdges, baseEvent), compressed);
     }
 
-    private static BlockHeaderExtensionV1 makeExtension(boolean compressed,
+    private static BlockHeaderExtensionV2 makeExtension(boolean compressed,
                                                         byte[] extensionData,
                                                         short[] txExecutionSublistsEdges,
                                                         byte[] baseEvent) {

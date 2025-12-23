@@ -199,14 +199,30 @@ class BlockHeaderV2Test {
     @Test
     void testSetBaseEventWithVeryLargeValueThrowsException() {
         // given
+        int numberOfBytes = 1024;
         BlockHeaderV2 header = createHeaderV2();
-        byte[] veryLargeBaseEvent = new byte[1024];
-        for (int i = 0; i < 1024; i++) {
+        byte[] veryLargeBaseEvent = new byte[numberOfBytes];
+        for (int i = 0; i < numberOfBytes; i++) {
             veryLargeBaseEvent[i] = (byte) (i % 256);
         }
         // when / then
         assertThrows(FieldMaxSizeBlockHeaderException.class, () -> {
             header.setBaseEvent(veryLargeBaseEvent);
+        });
+    }
+
+    @Test
+    void testSetBaseEventWithFirstLargeValueForbiddenThrowsException() {
+        // given
+        BlockHeaderV2 header = createHeaderV2();
+        int numberOfBytes = 129;
+        byte[] firstLargeValueForbidden = new byte[numberOfBytes];
+        for (int i = 0; i < numberOfBytes; i++) {
+            firstLargeValueForbidden[i] = (byte) (i % 256);
+        }
+        // when / then
+        assertThrows(FieldMaxSizeBlockHeaderException.class, () -> {
+            header.setBaseEvent(firstLargeValueForbidden);
         });
     }
 

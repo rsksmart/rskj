@@ -159,9 +159,7 @@ public class BlockFactory {
             receiptTrieRoot = EMPTY_TRIE_HASH;
         }
 
-        byte[] extensionData = rlpHeader.get(EXTENSION_DATA_INDEX).getRLPData(); // rskip351: logs bloom when decoding
-        // extended, list(version,
-        // hash(extension)) when compressed
+        byte[] extensionData = rlpHeader.get(EXTENSION_DATA_INDEX).getRLPData(); // rskip351: logs bloom when decoding extended, list(version,hash(extension)) when compressed
         byte[] difficultyBytes = rlpHeader.get(DIFFICULTY_INDEX).getRLPData();
         BlockDifficulty difficulty = RLP.parseBlockDifficulty(difficultyBytes);
 
@@ -331,30 +329,25 @@ public class BlockFactory {
      * @return The expected number of RLP elements in the header
      */
     private int calculateExpectedHeaderSize(long blockNumber, boolean compressed, boolean withMergedMining) {
-        int baseSize = withMergedMining ? MAX_RLP_HEADER_SIZE_WITH_MINING : MAX_RLP_HEADER_SIZE_WITHOUT_MINING;
-
+        // Expected size with all the optional fields present.
+        int expectedFullSize = withMergedMining ? MAX_RLP_HEADER_SIZE_WITH_MINING : MAX_RLP_HEADER_SIZE_WITHOUT_MINING;
         // Subtract 1 for each optional field that is NOT present
-        int adjustment = 0;
-        adjustment += isUmmAbsent(blockNumber) ? 1 : 0;
-        adjustment += isParallelAbsent(blockNumber) ? 1 : 0;
-        adjustment += isBaseEventAbsent(blockNumber) ? 1 : 0;
-        adjustment += getRSKIP351SizeAdjustment(blockNumber, compressed,
-                isParallelAbsent(blockNumber) ? 1 : 0,
-                isBaseEventAbsent(blockNumber) ? 1 : 0);
+        if (!activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber)) {
+            // RSKIPUMM is not active, field ummRoot is not present
+            expectedFullSize -= 1;
+        }
+        if (!activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
+            // Parallel tx execution is not active, field txExecutionSublistsEdges is not present
+            expectedFullSize -= 1;
+        }
+        if (!isBaseEventEnabled(blockNumber)) {
+            // baseEvent is not enabled, field baseEvent is not present
+            expectedFullSize -= 1;
+        }
+        expectedFullSize -= getRSKIP351SizeAdjustmentFromExtensionData(blockNumber, compressed);
 
-        return baseSize - adjustment;
-    }
+        return expectedFullSize;
 
-    private boolean isUmmAbsent(long blockNumber) {
-        return !activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber);
-    }
-
-    private boolean isParallelAbsent(long blockNumber) {
-        return !activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber);
-    }
-
-    private boolean isBaseEventAbsent(long blockNumber) {
-        return !isBaseEventEnabled(blockNumber);
     }
 
     private boolean isBlockHeaderCompressionEnabled(long blockNumber) {
@@ -375,20 +368,25 @@ public class BlockFactory {
      *
      * @param blockNumber                        The block number for activation config lookup
      * @param compressed                         Whether the header is compressed
-     * @param preParallelSizeAdjustment          Adjustment for parallel execution fields (0 if present, 1 if absent)
-     * @param preBaseEventSizeAdjustmentRSKIP535 Adjustment for base event field (0 if present, 1 if absent)
      * @return The size adjustment value
      */
-    private int getRSKIP351SizeAdjustment(long blockNumber, boolean compressed,
-                                          int preParallelSizeAdjustment,
-                                          int preBaseEventSizeAdjustmentRSKIP535) {
+    private int getRSKIP351SizeAdjustmentFromExtensionData(long blockNumber, boolean compressed) {
         if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
             return 1; // Remove version field (not present before RSKIP351)
         }
 
         if (compressed) {
             // In compressed mode, version, edges, and baseEvent are stored in extension
-            return NUMBER_OF_EXTRA_HEADER_FIELDS - preParallelSizeAdjustment - preBaseEventSizeAdjustmentRSKIP535;
+            int extraHeaderFieldsToRemoveWhenCompressed = NUMBER_OF_EXTRA_HEADER_FIELDS;
+            // If PTE deactivated, there is no need to remove edges in the counting
+            if (!activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
+                extraHeaderFieldsToRemoveWhenCompressed -= 1;
+            }
+            // If baseEvent deactivated, there is no need to remove baseEvent in the counting
+            if (!isBaseEventEnabled(blockNumber)) {
+                extraHeaderFieldsToRemoveWhenCompressed -= 1;
+            }
+            return extraHeaderFieldsToRemoveWhenCompressed;
         }
 
         return 0; // Version field is present in full encoding

@@ -18,17 +18,10 @@
 
 package org.ethereum.core;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.AdditionalMatchers.geq;
-import static org.mockito.Mockito.when;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.stream.Stream;
-
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -45,10 +38,16 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.mockito.Mockito;
 
-import co.rsk.core.BlockDifficulty;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.AdditionalMatchers.geq;
+import static org.mockito.Mockito.when;
 
 class BlockHeaderBuilderTest {
     private static final byte[] EMPTY_UNCLES_LIST_HASH = HashUtil.keccak256(RLP.encodeList(new byte[0]));
@@ -537,7 +536,7 @@ class BlockHeaderBuilderTest {
     }
 
     @Test
-    void createHeaderWithVersion2AfterRskip351() {
+    void createHeaderWithVersion2AfterRskip535() {
         // RSKIP351 = 0
         BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.all()).build();
         assertEquals((byte) 0x2, header.getVersion());

@@ -141,7 +141,7 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
-    void decodeWithEmptyBridgeEvent() {
+    void decodeWithEmptyBaseEvent() {
         byte[] logsBloom = new byte[256];
         short[] edges = new short[]{1};
         byte[] baseEvent = new byte[0];
@@ -210,33 +210,33 @@ class BlockHeaderExtensionV2Test {
 
     @Test
     void testGetBaseEventReturnsCorrectValue() {
-        byte[] expectedBridgeEvent = new byte[]{(byte) 0xAA, (byte) 0xBB, (byte) 0xCC, (byte) 0xDD};
-        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], expectedBridgeEvent);
-        assertArrayEquals(expectedBridgeEvent, extension.getBaseEvent());
+        byte[] expectedBaseEvent = new byte[]{(byte) 0xAA, (byte) 0xBB, (byte) 0xCC, (byte) 0xDD};
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], expectedBaseEvent);
+        assertArrayEquals(expectedBaseEvent, extension.getBaseEvent());
     }
 
     @Test
-    void testBridgeEventPersistenceAfterEncoding() {
-        byte[] originalBridgeEvent = new byte[]{0x11, 0x22, 0x33, 0x44, 0x55};
-        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], originalBridgeEvent);
+    void testBaseEventPersistenceAfterEncoding() {
+        byte[] originalBaseEvent = new byte[]{0x11, 0x22, 0x33, 0x44, 0x55};
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], originalBaseEvent);
 
         // Encode and decode
         byte[] encoded = extension.getEncoded();
         BlockHeaderExtensionV2 decoded = BlockHeaderExtensionV2.fromEncoded(encoded);
 
-        // Verify bridge event is preserved
-        assertArrayEquals(originalBridgeEvent, decoded.getBaseEvent());
+        // Verify baseEvent is preserved
+        assertArrayEquals(originalBaseEvent, decoded.getBaseEvent());
     }
 
     @Test
-    void testBridgeEventWithZeroBytes() {
+    void testBaseEventWithZeroBytes() {
         byte[] zeroBytes = new byte[32];
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], zeroBytes);
         assertArrayEquals(zeroBytes, extension.getBaseEvent());
     }
 
     @Test
-    void testBridgeEventWithAllOnesBytes() {
+    void testBaseEventWithAllOnesBytes() {
         byte[] onesBytes = new byte[16];
         for (int i = 0; i < 16; i++) {
             onesBytes[i] = (byte) 0xFF;
@@ -246,7 +246,7 @@ class BlockHeaderExtensionV2Test {
     }
 
     @Test
-    void testBridgeEventWithMaxSize() {
+    void testBaseEventWithMaxSize() {
         // Test with maximum practical size (64KB)
         byte[] maxSizeValue = new byte[65536];
         for (int i = 0; i < 65536; i++) {
