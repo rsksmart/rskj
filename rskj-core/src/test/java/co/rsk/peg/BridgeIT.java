@@ -166,6 +166,7 @@ class BridgeIT {
     private static final String ERR_NOT_FROM_ACTIVE_OR_RETIRING_FED = "The sender is not a member of the active or retiring federations";
     private static final String ERR_NOT_FROM_ACTIVE_RETIRING_OR_PROPOSED_FED = "The sender is not a member of the active, retiring, or proposed federations";
     private static final Object[] EMPTY_ARGS_FOR_BRIDGE_CALLS = {};
+    private static final BridgeBuilder bridgeBuilder = new BridgeBuilder();
 
     private TestSystemProperties config = new TestSystemProperties();
     private Constants constants;
@@ -175,6 +176,8 @@ class BridgeIT {
     private SignatureCache signatureCache;
     private Bridge bridge;
     private Repository track;
+    private BridgeSupport bridgeSupport;
+
 
     @BeforeEach
     void resetConfigToRegTest() {
@@ -186,6 +189,7 @@ class BridgeIT {
         blockFactory = new BlockFactory(activationConfig);
         activationConfigAll = ActivationConfigsForTest.all().forBlock(0);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        bridgeSupport = mock(BridgeSupport.class);
     }
 
     @Test
@@ -1973,8 +1977,7 @@ class BridgeIT {
     @Test
     void getRetiringFederationAddress_withNoRetiringFederation_shouldReturnEmptyString() {
         // Arrange
-        BridgeSupport bridgeSupport = mock(BridgeSupport.class);
-        Bridge aBridge = new BridgeBuilder()
+        bridge = bridgeBuilder
             .contractAddress(BRIDGE_ADDRESS)
             .constants(constants)
             .activationConfig(activationConfig)
@@ -1984,14 +1987,13 @@ class BridgeIT {
         when(bridgeSupport.getRetiringFederation()).thenReturn(Optional.empty());
 
         // Act & Assert
-        MatcherAssert.assertThat(aBridge.getRetiringFederationAddress(EMPTY_ARGS_FOR_BRIDGE_CALLS), is(""));
+        MatcherAssert.assertThat(bridge.getRetiringFederationAddress(EMPTY_ARGS_FOR_BRIDGE_CALLS), is(""));
     }
 
     @Test
     void getRetiringFederationAddress_withRetiringFederation_shouldReturnTheCorrectRetiringFederationAddress() {
         // Arrange
-        BridgeSupport bridgeSupport = mock(BridgeSupport.class);
-        Bridge aBridge = new BridgeBuilder()
+        bridge = bridgeBuilder
             .contractAddress(BRIDGE_ADDRESS)
             .constants(constants)
             .activationConfig(activationConfig)
@@ -2002,7 +2004,7 @@ class BridgeIT {
         when(bridgeSupport.getRetiringFederationAddress()).thenReturn(Optional.of(retiringFederationAddress));
 
         // Act & Assert
-        MatcherAssert.assertThat(aBridge.getRetiringFederationAddress(EMPTY_ARGS_FOR_BRIDGE_CALLS), is(retiringFederationAddress.toBase58()));
+        MatcherAssert.assertThat(bridge.getRetiringFederationAddress(EMPTY_ARGS_FOR_BRIDGE_CALLS), is(retiringFederationAddress.toBase58()));
     }
 
     @Test
