@@ -1271,11 +1271,10 @@ public class BridgeSupport {
                         availableUTXOs
                     );
                 } catch (Exception e) {
-                    // Funds cannot be migrated if there is no retiring federation
                     logger.error(
                         "[processFundsMigration] Unable to complete retiring federation migration. Balance left: {} in {}",
                         retiringFederationWallet.getBalance().toFriendlyString(),
-                        getRetiringFederationAddress().get()
+                        retiringFederationWallet.getWatchedAddresses()
                     );
                     panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
                 }
