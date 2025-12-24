@@ -48,4 +48,3 @@ public enum BlockHeaderIndex {
         return index;
     }
 }
-
