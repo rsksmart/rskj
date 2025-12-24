@@ -18,6 +18,26 @@
 
 package co.rsk.core;
 
+import co.rsk.config.RskMiningConstants;
+import co.rsk.crypto.Keccak256;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockHeaderBuilder;
+import org.ethereum.core.BlockHeaderV1;
+import org.ethereum.core.Bloom;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP110;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP351;
@@ -34,27 +54,6 @@ import static org.mockito.AdditionalMatchers.lt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.TestUtils;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockHeaderBuilder;
-import org.ethereum.core.BlockHeaderV1;
-import org.ethereum.core.Bloom;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import co.rsk.config.RskMiningConstants;
-import co.rsk.crypto.Keccak256;
 
 class BlockFactoryTest {
 
@@ -831,6 +830,8 @@ class BlockFactoryTest {
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(decodedHeader.getVersion(), is((byte) 0x2));
         assertArrayEquals(header.getExtensionData(), decodedHeader.getExtensionData());
+        assertThat(decodedHeader.getTxExecutionSublistsEdges(), is((short[]) null));
+        assertThat(decodedHeader.getBaseEvent(), is((byte[]) null));
     }
 
     @Test
@@ -858,6 +859,7 @@ class BlockFactoryTest {
         assertThat(decodedHeader.getVersion(), is((byte) 0x2));
         assertArrayEquals(header.getExtensionData(), decodedHeader.getExtensionData());
         assertThat(decodedHeader.getTxExecutionSublistsEdges(), is((short[]) null));
+        assertThat(decodedHeader.getBaseEvent(), is((byte[]) null));
     }
 
     @Test
@@ -888,6 +890,7 @@ class BlockFactoryTest {
         assertArrayEquals(header.getExtensionData(), decodedHeader.getExtensionData());
         assertArrayEquals(ummRoot, decodedHeader.getUmmRoot());
         assertThat(decodedHeader.getTxExecutionSublistsEdges(), is((short[]) null));
+        assertThat(decodedHeader.getBaseEvent(), is((byte[]) null));
     }
 
     @Test

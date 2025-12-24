@@ -202,7 +202,7 @@ public class BlockExecutor {
         header.setPaidFees(result.getPaidFees());
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
         header.setTxExecutionSublistsEdges(result.getTxEdges());
-        setBaseEvent(block, header);
+        setBaseEvent(block, header); //TODO: Move this to a specific class that will deal with header and will have repository
 
         block.flushRLP();
         profiler.stop(metric);

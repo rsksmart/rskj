@@ -84,7 +84,7 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
         }
 
         if (baseEvent.length > BASE_EVENT_MAX_SIZE) {
-            throw new FieldMaxSizeBlockHeaderException("baseEvent length cannot exceed 128 bytes");
+            throw new FieldMaxSizeBlockHeaderException(String.format("baseEvent length cannot exceed %d bytes", BASE_EVENT_MAX_SIZE));
         }
         this.hash = null;
 

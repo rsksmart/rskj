@@ -18,10 +18,12 @@
  */
 package org.ethereum.core;
 
+import org.ethereum.core.exception.FieldMaxSizeBlockHeaderException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
+import static org.ethereum.core.BlockHeaderV2.BASE_EVENT_MAX_SIZE;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -179,12 +181,19 @@ class BlockHeaderExtensionV2Test {
     @Test
     void testSetBaseEventWithLargeValue() {
         BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
-        byte[] largeValue = new byte[1024];
-        for (int i = 0; i < 1024; i++) {
+        byte[] largeValue = new byte[BASE_EVENT_MAX_SIZE];
+        for (int i = 0; i < BASE_EVENT_MAX_SIZE; i++) {
             largeValue[i] = (byte) (i % 256);
         }
         extension.setBaseEvent(largeValue);
         assertArrayEquals(largeValue, extension.getBaseEvent());
+    }
+
+    @Test
+    void testSetBaseEventExceedingMaxSizeThrowsException() {
+        BlockHeaderExtensionV2 extension = new BlockHeaderExtensionV2(new byte[256], new short[0], new byte[0]);
+        byte[] oversizedValue = new byte[BASE_EVENT_MAX_SIZE + 1];
+        assertThrows(FieldMaxSizeBlockHeaderException.class, () -> extension.setBaseEvent(oversizedValue));
     }
 
     @Test

@@ -18,6 +18,7 @@
  */
 package org.ethereum.core;
 
+import org.ethereum.core.exception.FieldMaxSizeBlockHeaderException;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -26,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import static org.ethereum.core.BlockHeaderV2.BASE_EVENT_MAX_SIZE;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
@@ -66,6 +68,9 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
     }
 
     public void setBaseEvent(byte[] baseEvent) {
+        if (baseEvent != null && baseEvent.length > BASE_EVENT_MAX_SIZE) {
+            throw new FieldMaxSizeBlockHeaderException("baseEvent length cannot exceed " + BASE_EVENT_MAX_SIZE + " bytes");
+        }
         this.baseEvent = baseEvent != null ? Arrays.copyOf(baseEvent, baseEvent.length) : null;
     }
 

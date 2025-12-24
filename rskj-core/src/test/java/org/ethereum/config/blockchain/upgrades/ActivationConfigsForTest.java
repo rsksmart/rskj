@@ -42,15 +42,15 @@ public class ActivationConfigsForTest {
 
     private static List<ConsensusRule> getOrchidRskips() {
         return new ArrayList<>(Arrays.asList(
-                ConsensusRule.RSKIP85,
-                ConsensusRule.RSKIP87,
-                ConsensusRule.RSKIP88,
-                ConsensusRule.RSKIP89,
-                ConsensusRule.RSKIP90,
-                ConsensusRule.RSKIP91,
-                ConsensusRule.RSKIP92,
-                ConsensusRule.RSKIP97,
-                ConsensusRule.RSKIP98
+            ConsensusRule.RSKIP85,
+            ConsensusRule.RSKIP87,
+            ConsensusRule.RSKIP88,
+            ConsensusRule.RSKIP89,
+            ConsensusRule.RSKIP90,
+            ConsensusRule.RSKIP91,
+            ConsensusRule.RSKIP92,
+            ConsensusRule.RSKIP97,
+            ConsensusRule.RSKIP98
         ));
     }
 
@@ -63,17 +63,17 @@ public class ActivationConfigsForTest {
 
     private static List<ConsensusRule> getWasabi100Rskips() {
         return new ArrayList<>(Arrays.asList(
-                ConsensusRule.RSKIP103,
-                ConsensusRule.RSKIP106,
-                ConsensusRule.RSKIP110,
-                ConsensusRule.RSKIP119,
-                ConsensusRule.RSKIP120,
-                ConsensusRule.RSKIP122,
-                ConsensusRule.RSKIP123,
-                ConsensusRule.RSKIP124,
-                ConsensusRule.RSKIP125,
-                ConsensusRule.RSKIP126,
-                ConsensusRule.RSKIP132
+            ConsensusRule.RSKIP103,
+            ConsensusRule.RSKIP106,
+            ConsensusRule.RSKIP110,
+            ConsensusRule.RSKIP119,
+            ConsensusRule.RSKIP120,
+            ConsensusRule.RSKIP122,
+            ConsensusRule.RSKIP123,
+            ConsensusRule.RSKIP124,
+            ConsensusRule.RSKIP125,
+            ConsensusRule.RSKIP126,
+            ConsensusRule.RSKIP132
         ));
     }
 
@@ -93,123 +93,123 @@ public class ActivationConfigsForTest {
 
     private static List<ConsensusRule> getPapyrus200Rskips() {
         return new ArrayList<>(Arrays.asList(
-                ConsensusRule.RSKIP134,
-                ConsensusRule.RSKIP137,
-                ConsensusRule.RSKIP140,
-                ConsensusRule.RSKIP143,
-                ConsensusRule.RSKIP146,
-                ConsensusRule.RSKIP150,
-                ConsensusRule.RSKIP151,
-                ConsensusRule.RSKIP152,
-                ConsensusRule.RSKIP156,
-                ConsensusRule.RSKIPUMM
+            ConsensusRule.RSKIP134,
+            ConsensusRule.RSKIP137,
+            ConsensusRule.RSKIP140,
+            ConsensusRule.RSKIP143,
+            ConsensusRule.RSKIP146,
+            ConsensusRule.RSKIP150,
+            ConsensusRule.RSKIP151,
+            ConsensusRule.RSKIP152,
+            ConsensusRule.RSKIP156,
+            ConsensusRule.RSKIPUMM
         ));
     }
 
     private static List<ConsensusRule> getIris300Rskips() {
         return new ArrayList<>(Arrays.asList(
-                ConsensusRule.RSKIP153,
-                ConsensusRule.RSKIP169,
-                ConsensusRule.RSKIP170,
-                ConsensusRule.RSKIP171,
-                ConsensusRule.RSKIP174,
-                ConsensusRule.RSKIP176,
-                ConsensusRule.RSKIP179,
-                ConsensusRule.RSKIP180,
-                ConsensusRule.RSKIP181,
-                ConsensusRule.RSKIP185,
-                ConsensusRule.RSKIP186,
-                ConsensusRule.RSKIP191,
-                ConsensusRule.RSKIP197,
-                ConsensusRule.RSKIP199,
-                ConsensusRule.RSKIP200,
-                ConsensusRule.RSKIP201,
-                ConsensusRule.RSKIP218,
-                ConsensusRule.RSKIP219,
-                ConsensusRule.RSKIP220
+            ConsensusRule.RSKIP153,
+            ConsensusRule.RSKIP169,
+            ConsensusRule.RSKIP170,
+            ConsensusRule.RSKIP171,
+            ConsensusRule.RSKIP174,
+            ConsensusRule.RSKIP176,
+            ConsensusRule.RSKIP179,
+            ConsensusRule.RSKIP180,
+            ConsensusRule.RSKIP181,
+            ConsensusRule.RSKIP185,
+            ConsensusRule.RSKIP186,
+            ConsensusRule.RSKIP191,
+            ConsensusRule.RSKIP197,
+            ConsensusRule.RSKIP199,
+            ConsensusRule.RSKIP200,
+            ConsensusRule.RSKIP201,
+            ConsensusRule.RSKIP218,
+            ConsensusRule.RSKIP219,
+            ConsensusRule.RSKIP220
         ));
     }
 
     private static List<ConsensusRule> getHop400Rskips() {
         return new ArrayList<>(Arrays.asList(
-                ConsensusRule.RSKIP271,
-                ConsensusRule.RSKIP284,
-                ConsensusRule.RSKIP290,
-                ConsensusRule.RSKIP293,
-                ConsensusRule.RSKIP294,
-                ConsensusRule.RSKIP297
+            ConsensusRule.RSKIP271,
+            ConsensusRule.RSKIP284,
+            ConsensusRule.RSKIP290,
+            ConsensusRule.RSKIP293,
+            ConsensusRule.RSKIP294,
+            ConsensusRule.RSKIP297
         ));
     }
 
     private static List<ConsensusRule> getHop401Rskips() {
         return new ArrayList<>(Arrays.asList(
-                ConsensusRule.RSKIP353,
-                ConsensusRule.RSKIP357
+            ConsensusRule.RSKIP353,
+            ConsensusRule.RSKIP357
         ));
     }
 
     private static List<ConsensusRule> getFingerroot500Rskips() {
         return new ArrayList<>(Arrays.asList(
-                ConsensusRule.RSKIP252,
-                ConsensusRule.RSKIP326,
-                ConsensusRule.RSKIP374,
-                ConsensusRule.RSKIP375,
-                ConsensusRule.RSKIP377,
-                ConsensusRule.RSKIP383,
-                ConsensusRule.RSKIP385
+            ConsensusRule.RSKIP252,
+            ConsensusRule.RSKIP326,
+            ConsensusRule.RSKIP374,
+            ConsensusRule.RSKIP375,
+            ConsensusRule.RSKIP377,
+            ConsensusRule.RSKIP383,
+            ConsensusRule.RSKIP385
         ));
     }
 
     private static List<ConsensusRule> getArrowhead600Rskips() {
         return new ArrayList<>(Arrays.asList(
-                ConsensusRule.RSKIP203,
-                ConsensusRule.RSKIP376,
-                ConsensusRule.RSKIP379,
-                ConsensusRule.RSKIP398,
-                ConsensusRule.RSKIP400,
-                ConsensusRule.RSKIP415,
-                ConsensusRule.RSKIP417
+            ConsensusRule.RSKIP203,
+            ConsensusRule.RSKIP376,
+            ConsensusRule.RSKIP379,
+            ConsensusRule.RSKIP398,
+            ConsensusRule.RSKIP400,
+            ConsensusRule.RSKIP415,
+            ConsensusRule.RSKIP417
         ));
     }
 
     private static List<ConsensusRule> getArrowhead631Rskips() {
         return new ArrayList<>(Collections.singletonList(
-                ConsensusRule.RSKIP434
+            ConsensusRule.RSKIP434
         ));
     }
 
     private static List<ConsensusRule> getLovell700Rskips() {
         return new ArrayList<>(Arrays.asList(
-                ConsensusRule.RSKIP419,
-                ConsensusRule.RSKIP427,
-                ConsensusRule.RSKIP428,
-                ConsensusRule.RSKIP438,
-                ConsensusRule.RSKIP454,
-                ConsensusRule.RSKIP459,
-                ConsensusRule.RSKIP460
+            ConsensusRule.RSKIP419,
+            ConsensusRule.RSKIP427,
+            ConsensusRule.RSKIP428,
+            ConsensusRule.RSKIP438,
+            ConsensusRule.RSKIP454,
+            ConsensusRule.RSKIP459,
+            ConsensusRule.RSKIP460
         ));
     }
 
     private static List<ConsensusRule> getReed800Rskips() {
         return new ArrayList<>(List.of(
-                ConsensusRule.RSKIP305,
-                ConsensusRule.RSKIP516
+            ConsensusRule.RSKIP305,
+            ConsensusRule.RSKIP516
         ));
     }
 
     private static List<ConsensusRule> getReed810Rskips() {
         return new ArrayList<>(List.of(
-                ConsensusRule.RSKIP144,
-                ConsensusRule.RSKIP351,
-                ConsensusRule.RSKIP502,
-                ConsensusRule.RSKIP529,
-                ConsensusRule.RSKIP536
+            ConsensusRule.RSKIP144,
+            ConsensusRule.RSKIP351,
+            ConsensusRule.RSKIP502,
+            ConsensusRule.RSKIP529,
+            ConsensusRule.RSKIP536
         ));
     }
 
     private static List<ConsensusRule> getVetiverRskips() {
         return new ArrayList<>(List.of(
-                ConsensusRule.RSKIP535)
+            ConsensusRule.RSKIP535)
         );
     }
 

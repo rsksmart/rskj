@@ -58,6 +58,7 @@ public class BlockFactory {
     // Maximum RLP header sizes (when all optional fields are present)
     private static final int MAX_RLP_HEADER_SIZE_WITHOUT_MINING = 20;
     private static final int MAX_RLP_HEADER_SIZE_WITH_MINING = 23;
+    private static final int NUMBER_OF_ELEMENTS_IN_BLOCK_RLP = 3;
 
     private final ActivationConfig activationConfig;
 
@@ -100,7 +101,7 @@ public class BlockFactory {
 
     private Block decodeBlock(byte[] rawData, boolean sealed) {
         RLPList block = RLP.decodeList(rawData);
-        if (block.size() != NUMBER_OF_EXTRA_HEADER_FIELDS) {
+        if (block.size() != NUMBER_OF_ELEMENTS_IN_BLOCK_RLP) {
             throw new IllegalArgumentException("A block must have 3 exactly items");
         }
 
@@ -207,11 +208,12 @@ public class BlockFactory {
         short[] txExecutionSublistsEdges = null;
         byte[] baseEvent = null;
 
-        if (!isBlockHeaderCompressionEnabled(blockNumber) || !compressed) {
-            if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
+        if ((!isBlockHeaderCompressionEnabled(blockNumber) || !compressed)
+            && rlpHeader.size() > r
+            && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
                 txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
             }
-        }
+
 
         if (rlpHeader.size() > r && isBaseEventEnabled(blockNumber) && !compressed) {
             baseEvent = rlpHeader.get(r++).getRLPRawData();

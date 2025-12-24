@@ -10,13 +10,13 @@ import java.util.Optional;
 
 public class BridgeEventsTestUtils {
 
-    public static List<DataWord> getEncodedTopics(CallTransaction.Function baseEvent, Object... args) {
-        byte[][] encodedTopicsInBytes = baseEvent.encodeEventTopics(args);
+    public static List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
+        byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
         return LogInfo.byteArrayToList(encodedTopicsInBytes);
     }
 
-    public static byte[] getEncodedData(CallTransaction.Function baseEvent, Object... args) {
-        return baseEvent.encodeEventData(args);
+    public static byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
+        return bridgeEvent.encodeEventData(args);
     }
 
     public static Optional<LogInfo> getLogsTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
