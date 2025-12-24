@@ -1274,7 +1274,7 @@ public class BridgeSupport {
                     logger.error(
                         "[processFundsMigration] Unable to complete retiring federation migration. Balance left: {} in {}",
                         retiringFederationWallet.getBalance().toFriendlyString(),
-                        getRetiringFederationAddress()
+                        retiringFederationWallet.getWatchedAddresses()
                     );
                     panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
                 }
@@ -2334,7 +2334,7 @@ public class BridgeSupport {
         return federationSupport.getActiveFederationCreationBlockNumber();
     }
 
-    public Address getRetiringFederationAddress() {
+    public Optional<Address> getRetiringFederationAddress() {
         return federationSupport.getRetiringFederationAddress();
     }
 
