@@ -530,14 +530,17 @@ class BridgeSupportTest {
             ECKey rskKey = member.getRskPublicKey();
             ECKey mstKey = member.getMstPublicKey();
 
-            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)).thenReturn(btcKey.getPubKey());
-            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC), is(btcKey.getPubKey()));
+            Optional<byte[]> retiringFederatorBtcPubKey = Optional.of(btcKey.getPubKey());
+            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)).thenReturn(retiringFederatorBtcPubKey);
+            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC), is(retiringFederatorBtcPubKey));
 
-            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)).thenReturn(rskKey.getPubKey());
-            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK), is(rskKey.getPubKey()));
+            Optional<byte[]> retiringFederatorRskPubKey = Optional.of(rskKey.getPubKey());
+            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)).thenReturn(retiringFederatorRskPubKey);
+            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK), is(retiringFederatorRskPubKey));
 
-            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(mstKey.getPubKey());
-            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(mstKey.getPubKey()));
+            Optional<byte[]> retiringFederatorMstPubKey = Optional.of(mstKey.getPubKey());
+            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(retiringFederatorMstPubKey);
+            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(retiringFederatorMstPubKey));
         }
 
         @Test

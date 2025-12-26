@@ -1319,15 +1319,15 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederatorPublicKeyOfType")
-        void getRetiringFederatorPublicKeyOfType_returnsNull() {
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+        void getRetiringFederatorPublicKeyOfType_returnsEmpty() {
+            Optional<byte[]> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertTrue(retiringFederatorBtcPublicKey.isEmpty());
 
-            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(retiringFederatorRskPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertTrue(retiringFederatorRskPublicKey.isEmpty());
 
-            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(retiringFederatorMstPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertTrue(retiringFederatorMstPublicKey.isEmpty());
         }
 
         @Test
@@ -1408,15 +1408,15 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederatorPublicKeyOfType")
-        void getRetiringFederatorPublicKeyOfType_returnsNull() {
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+        void getRetiringFederatorPublicKeyOfType_returnsEmpty() {
+            Optional<byte[]> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertTrue(retiringFederatorBtcPublicKey.isEmpty());
 
-            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(retiringFederatorRskPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertTrue(retiringFederatorRskPublicKey.isEmpty());
 
-            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(retiringFederatorMstPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertTrue(retiringFederatorMstPublicKey.isEmpty());
         }
 
         @Test
@@ -1818,7 +1818,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederatorPublicKeyOfType")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederatorPublicKeyOfType_withNewFederationNotActive_returnsNull(
+        void getRetiringFederatorPublicKeyOfType_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1832,14 +1832,14 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertTrue(retiringFederatorBtcPublicKey.isEmpty());
 
-            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(retiringFederatorRskPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertTrue(retiringFederatorRskPublicKey.isEmpty());
 
-            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(retiringFederatorMstPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertTrue(retiringFederatorMstPublicKey.isEmpty());
         }
 
         @ParameterizedTest
@@ -1873,14 +1873,17 @@ class FederationSupportImplTest {
             // so we should first assert that
             assertThat(federatorFromOldFederationMstPublicKey, is(federatorFromOldFederationRskPublicKey));
 
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(retiringFederatorBtcPublicKey, is(federatorFromOldFederationBtcPublicKey.getPubKey()));
+            Optional<byte[]> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertTrue(retiringFederatorBtcPublicKey.isPresent());
+            assertThat(retiringFederatorBtcPublicKey.get(), is(federatorFromOldFederationBtcPublicKey.getPubKey()));
 
-            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(retiringFederatorRskPublicKey, is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
+            Optional<byte[]> retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertTrue(retiringFederatorRskPublicKey.isPresent());
+            assertThat(retiringFederatorRskPublicKey.get(), is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
 
-            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(retiringFederatorMstPublicKey, is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
+            Optional<byte[]> retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertTrue(retiringFederatorMstPublicKey.isPresent());
+            assertThat(retiringFederatorMstPublicKey.get(), is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
         }
 
         @ParameterizedTest
@@ -1918,14 +1921,17 @@ class FederationSupportImplTest {
             // so we should first assert that
             assertThat(federatorFromOldFederationMstPublicKey, is(federatorFromOldFederationRskPublicKey));
 
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(retiringFederatorBtcPublicKey, is(federatorFromOldFederationBtcPublicKey.getPubKey()));
+            Optional<byte[]> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertTrue(retiringFederatorBtcPublicKey.isPresent());
+            assertThat(retiringFederatorBtcPublicKey.get(), is(federatorFromOldFederationBtcPublicKey.getPubKey()));
 
-            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(retiringFederatorRskPublicKey, is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
+            Optional<byte[]> retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertTrue(retiringFederatorRskPublicKey.isPresent());
+            assertThat(retiringFederatorRskPublicKey.get(), is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
 
-            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(retiringFederatorMstPublicKey, is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
+            Optional<byte[]> retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertTrue(retiringFederatorMstPublicKey.isPresent());
+            assertThat(retiringFederatorMstPublicKey.get(), is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
         }
 
         @ParameterizedTest
@@ -1962,14 +1968,17 @@ class FederationSupportImplTest {
             ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederationMembers(oldFederationWithRskAndMstKeys.getMembers()).get(0);
             ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederationMembers(oldFederationWithRskAndMstKeys.getMembers()).get(0);
 
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(retiringFederatorBtcPublicKey, is(federatorFromOldFederationBtcPublicKey.getPubKey()));
+            Optional<byte[]> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertTrue(retiringFederatorBtcPublicKey.isPresent());
+            assertThat(retiringFederatorBtcPublicKey.get(), is(federatorFromOldFederationBtcPublicKey.getPubKey()));
 
-            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(retiringFederatorRskPublicKey, is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
+            Optional<byte[]> retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertTrue(retiringFederatorRskPublicKey.isPresent());
+            assertThat(retiringFederatorRskPublicKey.get(), is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
 
-            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(retiringFederatorMstPublicKey, is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
+            Optional<byte[]> retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertTrue(retiringFederatorMstPublicKey.isPresent());
+            assertThat(retiringFederatorMstPublicKey.get(), is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
         }
 
         @ParameterizedTest
