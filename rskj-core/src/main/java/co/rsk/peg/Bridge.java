@@ -896,7 +896,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         FederationMember.KeyType keyType;
         try {
             keyType = FederationMember.KeyType.byValue((String) args[1]);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             logger.warn("Exception in getRetiringFederatorPublicKeyOfType", e);
             throw new VMException("Exception in getRetiringFederatorPublicKeyOfType", e);
         }
