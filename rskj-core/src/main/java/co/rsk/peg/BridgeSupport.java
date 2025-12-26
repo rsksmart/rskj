@@ -2350,7 +2350,7 @@ public class BridgeSupport {
         return federationSupport.getRetiringFederatorBtcPublicKey(index);
     }
 
-    public byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
+    public Optional<byte[]> getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
         return federationSupport.getRetiringFederatorPublicKeyOfType(index, keyType);
     }
 

@@ -2393,9 +2393,9 @@ public class BridgeSupportIT {
         assertTrue(bridgeSupport.getRetiringFederationSize().isEmpty());
         assertTrue(bridgeSupport.getRetiringFederationThreshold().isEmpty());
         assertTrue(bridgeSupport.getRetiringFederatorBtcPublicKey(0).isEmpty());
-        assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
-        assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
-        assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
+        assertTrue(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC).isEmpty());
+        assertTrue(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK).isEmpty());
+        assertTrue(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST).isEmpty());
     }
 
     @Test
@@ -2436,9 +2436,9 @@ public class BridgeSupportIT {
         assertTrue(bridgeSupport.getRetiringFederationSize().isEmpty());
         assertTrue(bridgeSupport.getRetiringFederationThreshold().isEmpty());
         assertTrue(bridgeSupport.getRetiringFederatorBtcPublicKey(0).isEmpty());
-        assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
-        assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
-        assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
+        assertTrue(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC).isEmpty());
+        assertTrue(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK).isEmpty());
+        assertTrue(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST).isEmpty());
     }
 
     @Test
@@ -2500,17 +2500,22 @@ public class BridgeSupportIT {
                 members.get(i).getBtcPublicKey(),
                 retiringFederatorBtcPublicKey.get()
                 );
+            Optional<byte[]> btcRetiringFederatorPublicKey = bridgeSupport.getRetiringFederatorPublicKeyOfType(i, KeyType.BTC);
+            assertTrue(btcRetiringFederatorPublicKey.isPresent());
             assertArrayEquals(
                 members.get(i).getBtcPublicKey().getPubKey(),
-                bridgeSupport.getRetiringFederatorPublicKeyOfType(i, KeyType.BTC)
+                btcRetiringFederatorPublicKey.get()
                 );
+            Optional<byte[]> rskRetiringFederatorPublicKey = bridgeSupport.getRetiringFederatorPublicKeyOfType(i, KeyType.RSK);
+            assertTrue(rskRetiringFederatorPublicKey.isPresent());
             assertArrayEquals(
                 members.get(i).getRskPublicKey().getPubKey(true),
-                bridgeSupport.getRetiringFederatorPublicKeyOfType(i, KeyType.RSK)
-);
+                rskRetiringFederatorPublicKey.get()
+            );
+            Optional<byte[]> mstRetiringFederatorPublicKey = bridgeSupport.getRetiringFederatorPublicKeyOfType(i, KeyType.MST);
             assertArrayEquals(
                 members.get(i).getMstPublicKey().getPubKey(true),
-                bridgeSupport.getRetiringFederatorPublicKeyOfType(i, KeyType.MST)
+                mstRetiringFederatorPublicKey.get()
             );
         }
     }
