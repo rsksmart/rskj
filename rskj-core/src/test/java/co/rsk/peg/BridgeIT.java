@@ -2055,6 +2055,7 @@ class BridgeIT {
 
     @Test
     void getRetiringFederatorPublicKey_afterMultikey() throws Exception {
+        // Arrange
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
         bridge = bridgeBuilder
@@ -2067,7 +2068,10 @@ class BridgeIT {
 
         int retiringFederatorIndex = 10;
 
+        // Act
         byte[] getBtcRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyFunction(bridge, retiringFederatorIndex);
+
+        // Assert
         Assertions.assertNull(getBtcRetiringFederatorPublicKeyResult);
         verify(bridgeSupport, never()).getRetiringFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class));
     }
@@ -2086,6 +2090,7 @@ class BridgeIT {
 
     @Test
     void getRetiringFederatorPublicKeyOfType_beforeMultikey() throws Exception {
+        // Arrange
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
         bridge = bridgeBuilder
@@ -2098,6 +2103,7 @@ class BridgeIT {
 
         int retiringFederatorIndex = 10;
 
+        // Act & Assert
         byte[] getBtcRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyOfTypeFunction(bridge, retiringFederatorIndex, FederationMember.KeyType.BTC);
         Assertions.assertNull(getBtcRetiringFederatorPublicKeyResult);
 
@@ -2138,6 +2144,7 @@ class BridgeIT {
         Optional<byte[]> retiringFederatorMstPubKey = Optional.of(mstPublicKey.getPubKey());
         when(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(retiringFederatorMstPubKey);
 
+        // Act & Assert
         byte[] getBtcRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyOfTypeFunction(bridge, federatorIndex, FederationMember.KeyType.BTC);
         assertGetRetiringFederatorPublicKeyOfTypeExecution(btcPublicKey.getPubKey(), getBtcRetiringFederatorPublicKeyResult);
 
@@ -2163,6 +2170,7 @@ class BridgeIT {
 
         int federatorIndex = 0;
 
+        // Act & Assert
         byte[] getBtcRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyOfTypeFunction(bridge, federatorIndex, FederationMember.KeyType.BTC);
         assertGetRetiringFederatorPublicKeyOfTypeExecution(EMPTY_BYTE_ARRAY, getBtcRetiringFederatorPublicKeyResult);
 
