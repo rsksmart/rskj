@@ -3029,9 +3029,7 @@ public class BridgeSupport {
         Coin expectedMigrationValue = retiringFederationWallet.getBalance();
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
-            // Migration transaction cannot be created if there is no retiring federation
-            Federation retiringFederation = getRetiringFederation().get();
-
+            Federation retiringFederation = getRetiringFederation().orElseThrow(() -> new IllegalStateException("No retiring federation is present"));
             ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
                 networkParameters,
                 retiringFederationWallet,
