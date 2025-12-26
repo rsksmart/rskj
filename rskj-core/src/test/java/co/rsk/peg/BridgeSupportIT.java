@@ -2513,6 +2513,7 @@ public class BridgeSupportIT {
                 rskRetiringFederatorPublicKey.get()
             );
             Optional<byte[]> mstRetiringFederatorPublicKey = bridgeSupport.getRetiringFederatorPublicKeyOfType(i, KeyType.MST);
+            assertTrue(mstRetiringFederatorPublicKey.isPresent());
             assertArrayEquals(
                 members.get(i).getMstPublicKey().getPubKey(true),
                 mstRetiringFederatorPublicKey.get()
