@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
@@ -29,12 +28,21 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.peg.union.UnionBridgeStorageProvider;
+import co.rsk.peg.union.UnionBridgeStorageProviderImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
-import org.ethereum.util.ByteUtil;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -45,12 +53,33 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
+import static org.ethereum.util.ByteUtil.toHexString;
 
 /**
  * This is a stateless class with methods to execute blocks with its transactions.
@@ -71,9 +100,6 @@ public class BlockExecutor {
     private final Set<RskAddress> concurrentContractsDisallowed;
 
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
-    private boolean registerProgramResults;
-    private long minSequentialSetGasLimit;
-
     /**
      * An array of ExecutorService's of size `Constants.getTransactionExecutionThreads()`. Each parallel list uses an executor
      * at specific index of this array, so that threads chosen by thread pools cannot be "reused" for executing parallel
@@ -81,6 +107,8 @@ public class BlockExecutor {
      * on some circumstances.
      */
     private final ExecutorService[] execServices;
+    private final long minSequentialSetGasLimit;
+    private boolean registerProgramResults;
 
     public BlockExecutor(
             RepositoryLocator repositoryLocator,
@@ -174,9 +202,31 @@ public class BlockExecutor {
         header.setPaidFees(result.getPaidFees());
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
         header.setTxExecutionSublistsEdges(result.getTxEdges());
+        setBaseEvent(block, header); //TODO: Move this to a specific class that will deal with header and will have repository
 
         block.flushRLP();
         profiler.stop(metric);
+    }
+
+    private void setBaseEvent(Block block, BlockHeader header) {
+        if (header.getVersion() < 2) {
+            return;
+        }
+        if (activationConfig.isActive(ConsensusRule.RSKIP535, block.getNumber()) && activationConfig.isActive(ConsensusRule.RSKIP351, block.getNumber())) {
+            try {
+                Repository repo = repositoryLocator.startTrackingAt(header);
+                StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repo);
+                UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(bridgeStorageAccessor);
+                byte[] baseEvent = unionBridgeStorageProvider.getBaseEvent();
+
+                header.setBaseEvent(baseEvent);
+            } catch (IllegalArgumentException e) {
+                // If repository access fails, just skip setting baseEvent
+                // This can happen in test environments or when repository is not available
+                logger.warn("Failed to set baseEvent in block header. {}", e.getMessage());
+                // TODO: Double check why this exception might be thrown and what the expected behaviour should be
+            }
+        }
     }
 
     /**
@@ -295,11 +345,11 @@ public class BlockExecutor {
      * Execute a block while saving the execution trace in the trace processor
      */
     public BlockResult traceBlock(ProgramTraceProcessor programTraceProcessor,
-                           int vmTraceOptions,
-                           Block block,
-                           BlockHeader parent,
-                           boolean discardInvalidTxs,
-                           boolean ignoreReadyToExecute) {
+                                  int vmTraceOptions,
+                                  Block block,
+                                  BlockHeader parent,
+                                  boolean discardInvalidTxs,
+                                  boolean ignoreReadyToExecute) {
         return execute(Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs,
                 ignoreReadyToExecute, false);
     }
@@ -523,7 +573,7 @@ public class BlockExecutor {
 
         // Review collision
         if (readWrittenKeysTracker.detectCollision()) {
-            logger.warn("block: [{}]/[{}] execution failed. Block data: [{}]", block.getNumber(), block.getHash(), ByteUtil.toHexString(block.getEncoded()));
+            logger.warn("block: [{}]/[{}] execution failed. Block data: [{}]", block.getNumber(), block.getHash(), toHexString(block.getEncoded()));
             profiler.stop(metric);
             return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
         }
@@ -823,7 +873,7 @@ public class BlockExecutor {
         receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
         receipt.setTransaction(tx);
         List<LogInfo> logs = txExecutor.getVMLogs();
-        if(logs!= null) {
+        if (logs != null) {
             for (int i = 0; i < logs.size(); i++) {
                 LogInfo log = logs.get(i);
                 log.setLogIndex(i + logIndexOffset);
@@ -837,7 +887,7 @@ public class BlockExecutor {
 
     private BlockResult getBlockResultAndLogExecutionInterrupted(Block block, Metric metric, Transaction tx) {
         logger.warn("block: [{}]/[{}] execution interrupted because of invalid tx: [{}]",
-                    block.getNumber(), block.getHash(), tx.getHash());
+                block.getNumber(), block.getHash(), tx.getHash());
         profiler.stop(metric);
         return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
     }
@@ -881,7 +931,7 @@ public class BlockExecutor {
      * its core pool size is zero and maximum pool size is unbounded, while each thead created has keep-alive time - 15 mins.
      */
     private static final class ThreadPoolExecutorImpl extends ThreadPoolExecutor {
-        private static final long KEEP_ALIVE_TIME_IN_SECS = 15*60L; /* 15 minutes */
+        private static final long KEEP_ALIVE_TIME_IN_SECS = 15 * 60L; /* 15 minutes */
 
         public ThreadPoolExecutorImpl(int parallelListIndex) {
             super(0, Integer.MAX_VALUE,

@@ -19,11 +19,17 @@
 package org.ethereum.config.blockchain.upgrades;
 
 import com.typesafe.config.ConfigFactory;
-import java.util.*;
+import org.ethereum.config.SystemProperties;
+
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
-import org.ethereum.config.SystemProperties;
 
 @SuppressWarnings({"squid:S2187"}) // used from another class
 public class ActivationConfigsForTest {
@@ -202,7 +208,9 @@ public class ActivationConfigsForTest {
     }
 
     private static List<ConsensusRule> getVetiverRskips() {
-        return new ArrayList<>(); // TBD
+        return new ArrayList<>(List.of(
+            ConsensusRule.RSKIP535)
+        );
     }
 
     public static ActivationConfig genesis() {
@@ -419,7 +427,9 @@ public class ActivationConfigsForTest {
         return enableTheseDisableThose(rskips, except);
     }
 
-    public static ActivationConfig reed810() { return reed810(Collections.emptyList()); }
+    public static ActivationConfig reed810() {
+        return reed810(Collections.emptyList());
+    }
 
     public static ActivationConfig reed810(List<ConsensusRule> except) {
         List<ConsensusRule> rskips = new ArrayList<>();
@@ -443,7 +453,9 @@ public class ActivationConfigsForTest {
         return enableTheseDisableThose(rskips, except);
     }
 
-    public static ActivationConfig vetiver900() { return vetiver900(Collections.emptyList()); }
+    public static ActivationConfig vetiver900() {
+        return vetiver900(Collections.emptyList());
+    }
 
     public static ActivationConfig vetiver900(List<ConsensusRule> except) {
         List<ConsensusRule> rskips = new ArrayList<>();
@@ -486,12 +498,12 @@ public class ActivationConfigsForTest {
      * @return
      */
     public static ActivationConfig enableTheseDisableThose(
-        List<ConsensusRule> enableThese,
-        @Nullable List<ConsensusRule> disableThose) {
+            List<ConsensusRule> enableThese,
+            @Nullable List<ConsensusRule> disableThose) {
 
         Map<ConsensusRule, Long> consensusRules = EnumSet.allOf(ConsensusRule.class)
-            .stream()
-            .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
+                .stream()
+                .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
         for (ConsensusRule consensusRule : enableThese) {
             consensusRules.put(consensusRule, 0L);
         }
@@ -506,8 +518,8 @@ public class ActivationConfigsForTest {
 
     public static ActivationConfig allBut(ConsensusRule... upgradesToDisable) {
         Map<ConsensusRule, Long> consensusRules = EnumSet.allOf(ConsensusRule.class)
-            .stream()
-            .collect(Collectors.toMap(Function.identity(), ignored -> 0L));
+                .stream()
+                .collect(Collectors.toMap(Function.identity(), ignored -> 0L));
         for (ConsensusRule consensusRule : upgradesToDisable) {
             consensusRules.put(consensusRule, -1L);
         }
@@ -517,8 +529,8 @@ public class ActivationConfigsForTest {
 
     public static ActivationConfig only(ConsensusRule... upgradesToEnable) {
         Map<ConsensusRule, Long> consensusRules = EnumSet.allOf(ConsensusRule.class)
-            .stream()
-            .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
+                .stream()
+                .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
         for (ConsensusRule consensusRule : upgradesToEnable) {
             consensusRules.put(consensusRule, 0L);
         }
@@ -528,8 +540,8 @@ public class ActivationConfigsForTest {
 
     public static ActivationConfig bridgeUnitTest() {
         Map<ConsensusRule, Long> allDisabled = EnumSet.allOf(ConsensusRule.class)
-            .stream()
-            .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
+                .stream()
+                .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
         allDisabled.put(ConsensusRule.ARE_BRIDGE_TXS_PAID, 10L);
 
         return new ActivationConfig(allDisabled);

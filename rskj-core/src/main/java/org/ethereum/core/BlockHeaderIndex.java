@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2025 RSK Labs Ltd.
  * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,11 +19,32 @@
 
 package org.ethereum.core;
 
-/**
- * Created by ajlopez on 09/03/2017.
- */
-public class TransactionException extends RuntimeException {
-    public TransactionException(String msg) {
-        super(msg);
+// RLP Header Field Indices (fixed positions in the RLP list)
+public enum BlockHeaderIndex {
+    PARENT_HASH(0),
+    UNCLES_HASH(1),
+    COINBASE(2),
+    STATE_ROOT(3),
+    TX_TRIE_ROOT(4),
+    RECEIPT_TRIE_ROOT(5),
+    EXTENSION_DATA(6),
+    DIFFICULTY(7),
+    NUMBER(8),
+    GAS_LIMIT(9),
+    GAS_USED(10),
+    TIMESTAMP(11),
+    EXTRA_DATA(12),
+    PAID_FEES(13),
+    MINIMUM_GAS_PRICE(14),
+    UNCLE_COUNT(15);
+
+    private final int index;
+
+    BlockHeaderIndex(int index) {
+        this.index = index;
+    }
+
+    public int getIndex() {
+        return index;
     }
 }

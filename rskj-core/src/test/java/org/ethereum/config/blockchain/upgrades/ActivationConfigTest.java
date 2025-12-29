@@ -18,13 +18,21 @@
 
 package org.ethereum.config.blockchain.upgrades;
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigValueFactory;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Test;
+
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP103;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP351;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP535;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP98;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.values;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import com.typesafe.config.*;
-import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Test;
 
 class ActivationConfigTest {
     private static final Config BASE_CONFIG = ConfigFactory.parseString(String.join("\n",
@@ -140,6 +148,7 @@ class ActivationConfigTest {
         "    rskip502: reed810",
         "    rskip516: reed800",
         "    rskip529: reed810",
+        "    rskip535: vetiver900",
         "    rskip536: reed810",
         "}"
     ));
@@ -148,7 +157,7 @@ class ActivationConfigTest {
     void readBaseConfig() {
         ActivationConfig config = ActivationConfig.read(BASE_CONFIG);
 
-        for (ConsensusRule value : ConsensusRule.values()) {
+        for (ConsensusRule value : values()) {
             MatcherAssert.assertThat(config.isActive(value, 42), is(true));
         }
     }
@@ -160,8 +169,8 @@ class ActivationConfigTest {
             .withValue("consensusRules.rskip98", ConfigValueFactory.fromAnyRef("orchid060"))
         );
 
-        for (ConsensusRule value : ConsensusRule.values()) {
-            if (value == ConsensusRule.RSKIP98 || value == ConsensusRule.RSKIP103) {
+        for (ConsensusRule value : values()) {
+            if (value == RSKIP98 || value == RSKIP103) {
                 MatcherAssert.assertThat(config.isActive(value, 100), is(false));
             } else {
                 MatcherAssert.assertThat(config.isActive(value, 100), is(true));
@@ -175,8 +184,8 @@ class ActivationConfigTest {
             BASE_CONFIG.withValue("consensusRules.rskip85", ConfigValueFactory.fromAnyRef(200))
         );
 
-        for (ConsensusRule value : ConsensusRule.values()) {
-            if (value == ConsensusRule.RSKIP85) {
+        for (ConsensusRule value : values()) {
+            if (value == RSKIP85) {
                 MatcherAssert.assertThat(config.isActive(value, 100), is(false));
             } else {
                 MatcherAssert.assertThat(config.isActive(value, 100), is(true));
@@ -210,13 +219,19 @@ class ActivationConfigTest {
 
     @Test
     void headerVersion0() {
-        ActivationConfig config = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351);
+        ActivationConfig config = ActivationConfigsForTest.allBut(RSKIP351, RSKIP535);
         assertEquals((byte) 0x0, config.getHeaderVersion(10));
     }
 
     @Test
     void headerVersion1() {
-        ActivationConfig config = ActivationConfigsForTest.all();
+        ActivationConfig config = ActivationConfigsForTest.allBut(RSKIP535);
         assertEquals((byte) 0x1, config.getHeaderVersion(10));
+    }
+
+    @Test
+    void headerVersion2() {
+        ActivationConfig config = ActivationConfigsForTest.all();
+        assertEquals((byte) 0x2, config.getHeaderVersion(10));
     }
 }
