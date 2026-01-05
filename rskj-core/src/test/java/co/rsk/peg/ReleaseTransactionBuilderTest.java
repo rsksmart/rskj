@@ -372,9 +372,9 @@ class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    void createPegoutTransaction_with150Inputs_with50Outputs_shouldHaveASizeBelowMaximumBtcStandardSize() {
+    void createPegoutTransaction_with200Inputs_with50Outputs_shouldHaveASizeBelowMaximumBtcStandardSize() {
         // arrange
-        int numberOfInputs = 150;
+        int numberOfInputs = 200;
 
         // act
         BtcTransaction pegoutTx = createPegoutTransactionWithNInputsAnd50Outputs(activeP2shP2wshErpFederation, signingKeys, numberOfInputs);
