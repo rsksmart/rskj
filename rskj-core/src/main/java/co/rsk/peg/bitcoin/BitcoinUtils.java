@@ -98,6 +98,33 @@ public class BitcoinUtils {
         }
     }
 
+    public static int calculateBtcTxVirtualSize(BtcTransaction btcTx) {
+        int baseSize = 0;
+        List<TransactionInput> inputs = btcTx.getInputs();
+        baseSize += 1; // input count
+        for (TransactionInput input : inputs) {
+            baseSize += input.bitcoinSerialize().length;
+        }
+
+        List<TransactionOutput> outputs = btcTx.getOutputs();
+        baseSize += 1; // output count
+        for (TransactionOutput output : outputs) {
+            baseSize += output.bitcoinSerialize().length;
+        }
+
+        baseSize += 4; // version
+        baseSize += 4; // locktime
+
+        int totalSize = btcTx.bitcoinSerialize().length;
+        return calculateVirtualBytes(totalSize, baseSize);
+    }
+
+    // As described in BIP141
+    public static int calculateVirtualBytes(int totalSize, int baseSize) {
+        int txWeight = totalSize + (baseSize * 3);
+        return txWeight / 4;
+    }
+
     private static Optional<Script> extractRedeemScriptFromInputWitness(TransactionWitness txInputWitness) {
         int witnessSize = txInputWitness.getPushCount();
         int redeemScriptIndex = witnessSize - 1;

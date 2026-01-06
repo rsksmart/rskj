@@ -18,9 +18,9 @@
 
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeUtils.calculateBtcTxVirtualSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_1;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinUtils.calculateBtcTxVirtualSize;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
