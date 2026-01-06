@@ -19,6 +19,8 @@
 package co.rsk.mine;
 
 import org.ethereum.config.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 
@@ -27,6 +29,8 @@ import java.math.BigInteger;
  * This class calculates next block gas limit
  */
 public class GasLimitCalculator {
+
+    private static final Logger logger = LoggerFactory.getLogger(GasLimitCalculator.class);
 
     private final Constants constants;
 
@@ -62,13 +66,13 @@ public class GasLimitCalculator {
                 if (targetGasLimit.compareTo(newGasLimit) > 0) {
                     newGasLimit = targetGasLimit;
                 }
-                return newGasLimit;
+                return logAndReturn(newGasLimit, parentGasLimit, targetGasLimit);
             } else {
                 newGasLimit = newGasLimit.add(deltaMax);
                 if (targetGasLimit.compareTo(newGasLimit) < 0) {
                     newGasLimit = targetGasLimit;
                 }
-                return newGasLimit;
+                return logAndReturn(newGasLimit, parentGasLimit, targetGasLimit);
             }
         }
 
@@ -98,6 +102,19 @@ public class GasLimitCalculator {
            newGasLimit = parentGasLimit;
        }
 
+        return logAndReturn(newGasLimit, parentGasLimit, targetGasLimit);
+    }
+
+    private BigInteger logAndReturn(BigInteger newGasLimit, BigInteger parentGasLimit, BigInteger targetGasLimit) {
+        String change = "SAME";
+        int comparison = newGasLimit.compareTo(parentGasLimit);
+        if (comparison > 0) {
+            change = "INCREASED";
+        } else if (comparison < 0) {
+            change = "DECREASED";
+        }
+
+        logger.info("Gas Limit Calculation: Parent: {}, Target: {}, New: {}, Change: {}", parentGasLimit, targetGasLimit, newGasLimit, change);
         return newGasLimit;
     }
 }
