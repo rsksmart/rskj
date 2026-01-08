@@ -20,10 +20,19 @@ package co.rsk.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.squareup.okhttp.*;
+import com.squareup.okhttp.MediaType;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.net.ssl.*;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.URL;
 import java.security.cert.CertificateException;
@@ -48,40 +57,44 @@ public class OkHttpClientTestFixture {
             "0xec4ddeb4380ad69b3e509baad9f158cdf4e4681d"
     );
 
-    public static final String GET_BLOCK_CONTENT = "[{\n" +
-            "    \"method\": \"eth_getBlockByNumber\",\n" +
-            "    \"params\": [\n" +
-            "        \"<BLOCK_NUM_OR_TAG>\",\n" +
-            "        true\n" +
-            "    ],\n" +
-            "    \"id\": 1,\n" +
-            "    \"jsonrpc\": \"2.0\"\n" +
-            "}]";
+    public static final String GET_BLOCK_CONTENT = """
+            [{
+                "method": "eth_getBlockByNumber",
+                "params": [
+                    "<BLOCK_NUM_OR_TAG>",
+                    true
+                ],
+                "id": 1,
+                "jsonrpc": "2.0"
+            }]
+            """;
 
-    public static final String ETH_GET_BLOCK_BY_NUMBER =
-            "{\n" +
-            "    \"method\": \"eth_getBlockByNumber\",\n" +
-            "    \"params\": [\n" +
-            "        \"<BLOCK_NUM_OR_TAG>\",\n" +
-            "        true\n" +
-            "    ],\n" +
-            "    \"id\": 1,\n" +
-            "    \"jsonrpc\": \"2.0\"\n" +
-            "}";
+    public static final String ETH_GET_BLOCK_BY_NUMBER = """
+            {
+                "method": "eth_getBlockByNumber",
+                "params": [
+                    "<BLOCK_NUM_OR_TAG>",
+                    true
+                ],
+                "id": 1,
+                "jsonrpc": "2.0"
+            }
+            """;
 
-    public static final String ETH_SEND_TRANSACTION =
-            "{\n" +
-            "    \"jsonrpc\": \"2.0\",\n" +
-            "    \"method\": \"eth_sendTransaction\",\n" +
-            "    \"id\": 1,\n" +
-            "    \"params\": [{\n" +
-            "        \"from\": \"<ADDRESS_FROM>\",\n" +
-            "        \"to\": \"<ADDRESS_TO>\",\n" +
-            "        \"gas\": \"<GAS>\",\n" +
-            "        \"gasPrice\": \"<GAS_PRICE>\",\n" +
-            "        \"value\": \"<VALUE>\"\n" +
-            "    }]\n" +
-            "}";
+    public static final String ETH_SEND_TRANSACTION = """
+            {
+                "jsonrpc": "2.0",
+                "method": "eth_sendTransaction",
+                "id": 1,
+                "params": [{
+                    "from": "<ADDRESS_FROM>",
+                    "to": "<ADDRESS_TO>",
+                    "gas": "<GAS>",
+                    "gasPrice": "<GAS_PRICE>",
+                    "value": "<VALUE>"
+                }]
+            }
+            """;
 
     private OkHttpClientTestFixture() {
     }
@@ -95,11 +108,13 @@ public class OkHttpClientTestFixture {
                         @Override
                         public void checkClientTrusted(X509Certificate[] chain,
                                                        String authType) throws CertificateException {
+                            // We don't want to verify client certificates in test
                         }
 
                         @Override
                         public void checkServerTrusted(X509Certificate[] chain,
                                                        String authType) throws CertificateException {
+                            // We don't want to check server trusted in test
                         }
 
                         @Override

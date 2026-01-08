@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
  */
 public class BlockUtils {
     private static final long MAX_BLOCK_PROCESS_TIME_NANOSECONDS = 60_000_000_000L;
+    public static final int SEQUENTIAL_THREAD_COUNT = 1;
 
     private BlockUtils() { }
 
@@ -147,7 +148,7 @@ public class BlockUtils {
     public static long getSublistGasLimit(Block block, boolean forSequentialTxSet, long minSequentialSetGasLimit) {
         long blockGasLimit = GasCost.toGas(block.getGasLimit());
         int parallelSublistCount = Constants.getTransactionExecutionThreads();
-        int totalSublistCount = parallelSublistCount + 1;
+        int totalSublistCount = parallelSublistCount + SEQUENTIAL_THREAD_COUNT;
 
         /*
         This if determines which distribution approach will be performed. If the result of multiplying the minSequentialSetGasLimit

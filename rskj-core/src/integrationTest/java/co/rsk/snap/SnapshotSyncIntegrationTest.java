@@ -18,7 +18,11 @@
  */
 package co.rsk.snap;
 
-import co.rsk.util.*;
+import co.rsk.util.FilesHelper;
+import co.rsk.util.HexUtils;
+import co.rsk.util.IntegrationTestUtils;
+import co.rsk.util.OkHttpClientTestFixture;
+import co.rsk.util.RskjConfigurationFileFixture;
 import co.rsk.util.cli.NodeIntegrationTestCommandLine;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.squareup.okhttp.Response;
@@ -38,12 +42,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static co.rsk.util.FilesHelper.readBytesFromFile;
 import static co.rsk.util.OkHttpClientTestFixture.FromToAddressPair.of;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SnapshotSyncIntegrationTest {
@@ -72,7 +76,7 @@ class SnapshotSyncIntegrationTest {
 
     @AfterEach
     void tearDown() throws InterruptedException {
-        for (NodeIntegrationTestCommandLine node : Stream.of(clientNode, serverNode).filter(Objects::nonNull).collect(Collectors.toList())) {
+        for (NodeIntegrationTestCommandLine node : Stream.of(clientNode, serverNode).filter(Objects::nonNull).toList()) {
             node.killNode();
         }
     }
@@ -86,7 +90,7 @@ class SnapshotSyncIntegrationTest {
         String rskConfFileChangedServer = configureServerWithGeneratedInformation(serverDbDir);
         serverNode = new NodeIntegrationTestCommandLine(rskConfFileChangedServer, "--regtest");
         serverNode.startNode();
-        ThreadTimerHelper.waitForSeconds(60);
+        IntegrationTestUtils.waitFor(60, SECONDS);
         generateBlocks();
 
         JsonNode serverBestBlockResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portServerRpc, "latest");
@@ -120,7 +124,7 @@ class SnapshotSyncIntegrationTest {
                     System.out.println("We will try again in 20 seconds.");
                 }
             }
-            ThreadTimerHelper.waitForSeconds(20);
+            IntegrationTestUtils.waitFor(20, SECONDS);
         }
 
         assertTrue(isClientSynced);

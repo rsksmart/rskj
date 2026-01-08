@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
  * Copyright (C) 2024 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,22 +17,29 @@
  */
 package co.rsk.util;
 
-import java.util.concurrent.CountDownLatch;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.ServerSocket;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
-public class ThreadTimerHelper {
+import static org.awaitility.Awaitility.await;
 
-    public static void waitForSeconds(int amountOfSeconds) throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
+public final class IntegrationTestUtils {
 
-        new Thread(() -> {
-            try {
-                Thread.sleep(amountOfSeconds * 1000);
-                latch.countDown();
-            } catch (InterruptedException e) {
-                System.out.println("Some error happened: " + e.getLocalizedMessage());
-            }
-        }).start();
+    private IntegrationTestUtils() {
+    }
 
-        latch.await();
+    public static int findFreePort() {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            socket.setReuseAddress(true);
+            return socket.getLocalPort();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static void waitFor(long amount, TimeUnit unit) {
+        await().pollDelay(Duration.ofNanos(unit.toNanos(amount))).until(() -> true);
     }
 }
