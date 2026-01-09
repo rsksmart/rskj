@@ -876,7 +876,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(null).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.empty()).when(bridgeSupportMock).getRetiringFederation();
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         RskAddress txSender = new RskAddress(key.getAddress());
@@ -911,7 +911,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(retiringFederation).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.of(retiringFederation)).when(bridgeSupportMock).getRetiringFederation();
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         RskAddress txSender = new RskAddress(key.getAddress());
@@ -946,7 +946,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(null).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.empty()).when(bridgeSupportMock).getRetiringFederation();
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         RskAddress txSender = new RskAddress(key.getAddress());
@@ -990,7 +990,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(retiringFederation).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.of(retiringFederation)).when(bridgeSupportMock).getRetiringFederation();
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         RskAddress txSender = new RskAddress(key.getAddress());
@@ -2040,7 +2040,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Address retiringFederationAddress = Address.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
-        when(bridgeSupportMock.getRetiringFederationAddress()).thenReturn(retiringFederationAddress);
+        when(bridgeSupportMock.getRetiringFederationAddress()).thenReturn(Optional.of(retiringFederationAddress));
 
         Bridge bridge = bridgeBuilder
             .transaction(rskTxMock)
@@ -2142,7 +2142,7 @@ class BridgeTest {
         // arrange
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Instant creationTime = Instant.ofEpochMilli(5000);
-        when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(creationTime);
+        when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(Optional.of(creationTime));
 
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)

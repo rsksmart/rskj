@@ -1270,64 +1270,64 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederation")
-        void getRetiringFederation_returnsNull() {
-            Federation retiringFederation = federationSupport.getRetiringFederation();
-            assertThat(retiringFederation, is(nullValue()));
+        void getRetiringFederation_returnsEmpty() {
+            Optional<Federation> retiringFederation = federationSupport.getRetiringFederation();
+            assertTrue(retiringFederation.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederationAddress")
-        void getRetiringFederationAddress_returnsNull() {
-            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
-            assertThat(retiringFederationAddress, is(nullValue()));
+        void getRetiringFederationAddress_returnsEmpty() {
+            Optional<Address> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertTrue(retiringFederationAddress.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederationSize")
-        void getRetiringFederationSize_returnsRetiringFederationNonExistentResponseCode() {
-            int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+        void getRetiringFederationSize_returnsEmpty() {
+            Optional<Integer> retiringFederationSize = federationSupport.getRetiringFederationSize();
+            assertTrue(retiringFederationSize.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederationThreshold")
-        void getRetiringFederationThreshold_returnsRetiringFederationNonExistentResponseCode() {
-            int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+        void getRetiringFederationThreshold_returnsEmpty() {
+            Optional<Integer> retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
+            assertTrue(retiringFederationThreshold.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederationCreationTime")
-        void getRetiringFederationCreationTime_returnsNull() {
-            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
-            assertThat(retiringFederationCreationTime, is(nullValue()));
+        void getRetiringFederationCreationTime_returnsEmpty() {
+            Optional<Instant> retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
+            assertTrue(retiringFederationCreationTime.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederationCreationBlockNumber")
-        void getRetiringFederationCreationBlockNumber_returnsRetiringFederationNonExistentResponseCode() {
-            long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+        void getRetiringFederationCreationBlockNumber_returnsEmpty() {
+            Optional<Long> retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
+            assertTrue(retiringFederationCreationBlockNumber.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederatorBtcPublicKey")
-        void getRetiringFederatorBtcPublicKey_returnsNull() {
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+        void getRetiringFederatorBtcPublicKey_returnsEmpty() {
+            Optional<BtcECKey> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
+            assertTrue(retiringFederatorBtcPublicKey.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederatorPublicKeyOfType")
-        void getRetiringFederatorPublicKeyOfType_returnsNull() {
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+        void getRetiringFederatorPublicKeyOfType_returnsEmpty() {
+            Optional<byte[]> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertTrue(retiringFederatorBtcPublicKey.isEmpty());
 
-            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(retiringFederatorRskPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertTrue(retiringFederatorRskPublicKey.isEmpty());
 
-            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(retiringFederatorMstPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertTrue(retiringFederatorMstPublicKey.isEmpty());
         }
 
         @Test
@@ -1359,64 +1359,64 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederation")
-        void getRetiringFederation_returnsNull() {
-            Federation retiringFederation = federationSupport.getRetiringFederation();
-            assertThat(retiringFederation, is(nullValue()));
+        void getRetiringFederation_returnsEmpty() {
+            Optional<Federation> retiringFederation = federationSupport.getRetiringFederation();
+            assertTrue(retiringFederation.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederationAddress")
-        void getRetiringFederationAddress_returnsNull() {
-            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
-            assertThat(retiringFederationAddress, is(nullValue()));
+        void getRetiringFederationAddress_returnsEmpty() {
+            Optional<Address> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertTrue(retiringFederationAddress.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederationSize")
-        void getRetiringFederationSize_returnsRetiringFederationNonExistentResponseCode() {
-            int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+        void getRetiringFederationSize_returnsEmpty() {
+            Optional<Integer> retiringFederationSize = federationSupport.getRetiringFederationSize();
+            assertTrue(retiringFederationSize.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederationThreshold")
-        void getRetiringFederationThreshold_returnsRetiringFederationNonExistentResponseCode() {
-            int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+        void getRetiringFederationThreshold_returnsEmpty() {
+            Optional<Integer> retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
+            assertTrue(retiringFederationThreshold.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederationCreationTime")
-        void getRetiringFederationCreationTime_returnsNull() {
-            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
-            assertThat(retiringFederationCreationTime, is(nullValue()));
+        void getRetiringFederationCreationTime_returnsEmpty() {
+            Optional<Instant> retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
+            assertTrue(retiringFederationCreationTime.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederationCreationBlockNumber")
-        void getRetiringFederationCreationBlockNumber_returnsRetiringFederationNonExistentResponseCode() {
-            long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+        void getRetiringFederationCreationBlockNumber_returnsEmpty() {
+            Optional<Long> retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
+            assertTrue(retiringFederationCreationBlockNumber.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederatorBtcPublicKey")
-        void getRetiringFederatorBtcPublicKey_returnsNull() {
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+        void getRetiringFederatorBtcPublicKey_returnsEmpty() {
+            Optional<BtcECKey> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
+            assertTrue(retiringFederatorBtcPublicKey.isEmpty());
         }
 
         @Test
         @Tag("getRetiringFederatorPublicKeyOfType")
-        void getRetiringFederatorPublicKeyOfType_returnsNull() {
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+        void getRetiringFederatorPublicKeyOfType_returnsEmpty() {
+            Optional<byte[]> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertTrue(retiringFederatorBtcPublicKey.isEmpty());
 
-            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(retiringFederatorRskPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertTrue(retiringFederatorRskPublicKey.isEmpty());
 
-            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(retiringFederatorMstPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertTrue(retiringFederatorMstPublicKey.isEmpty());
         }
 
         @Test
@@ -1475,7 +1475,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederation")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederation_withNewFederationNotActive_returnsNull(
+        void getRetiringFederation_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1489,8 +1489,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Federation retiringFederation = federationSupport.getRetiringFederation();
-            assertThat(retiringFederation, is(nullValue()));
+            Optional<Federation> retiringFederation = federationSupport.getRetiringFederation();
+            assertTrue(retiringFederation.isEmpty());
         }
 
         @ParameterizedTest
@@ -1510,14 +1510,15 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Federation retiringFederation = federationSupport.getRetiringFederation();
-            assertThat(retiringFederation, is(oldFederation));
+            Optional<Federation> retiringFederation = federationSupport.getRetiringFederation();
+            assertTrue(retiringFederation.isPresent());
+            assertThat(retiringFederation.get(), is(oldFederation));
         }
 
         @ParameterizedTest
         @Tag("getRetiringFederationAddress")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederationAddress_withNewFederationNotActive_returnsNull(
+        void getRetiringFederationAddress_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1531,8 +1532,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
-            assertThat(retiringFederationAddress, is(nullValue()));
+            Optional<Address> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertTrue(retiringFederationAddress.isEmpty());
         }
 
         @ParameterizedTest
@@ -1552,14 +1553,15 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
-            assertThat(retiringFederationAddress, is(oldFederation.getAddress()));
+            Optional<Address> retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertTrue(retiringFederationAddress.isPresent());
+            assertThat(retiringFederationAddress.get(), is(oldFederation.getAddress()));
         }
 
         @ParameterizedTest
         @Tag("getRetiringFederationSize")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederationSize_withNewFederationNotActive_returnsRetiringFederationNonExistentResponseCode(
+        void getRetiringFederationSize_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1573,8 +1575,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+            Optional<Integer> retiringFederationSize = federationSupport.getRetiringFederationSize();
+            assertTrue(retiringFederationSize.isEmpty());
         }
 
         @ParameterizedTest
@@ -1594,14 +1596,15 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(oldFederation.getSize()));
+            Optional<Integer> retiringFederationSize = federationSupport.getRetiringFederationSize();
+            assertTrue(retiringFederationSize.isPresent());
+            assertThat(retiringFederationSize.get(), is(oldFederation.getSize()));
         }
 
         @ParameterizedTest
         @Tag("getRetiringFederationThreshold")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederationThreshold_withNewFederationNotActive_returnsRetiringFederationNonExistentResponseCode(
+        void getRetiringFederationThreshold_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1615,8 +1618,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+            Optional<Integer> retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
+            assertTrue(retiringFederationThreshold.isEmpty());
         }
 
         @ParameterizedTest
@@ -1636,14 +1639,15 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(oldFederation.getNumberOfSignaturesRequired()));
+            Optional<Integer> retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
+            assertTrue(retiringFederationThreshold.isPresent());
+            assertThat(retiringFederationThreshold.get(), is(oldFederation.getNumberOfSignaturesRequired()));
         }
 
         @ParameterizedTest
         @Tag("getRetiringFederationCreationTime")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederationCreationTime_withNewFederationNotActive_returnsNull(
+        void getRetiringFederationCreationTime_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1657,8 +1661,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
-            assertThat(retiringFederationCreationTime, is(nullValue()));
+            Optional<Instant> retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
+            assertTrue(retiringFederationCreationTime.isEmpty());
         }
 
         @ParameterizedTest
@@ -1678,14 +1682,15 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
-            assertThat(retiringFederationCreationTime, is(oldFederation.getCreationTime()));
+            Optional<Instant> retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
+            assertTrue(retiringFederationCreationTime.isPresent());
+            assertThat(retiringFederationCreationTime.get(), is(oldFederation.getCreationTime()));
         }
 
         @ParameterizedTest
         @Tag("getRetiringFederationCreationBlockNumber")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederationCreationBlockNumber_withNewFederationNotActive_returnsRetiringFederationNonExistentResponseCode(
+        void getRetiringFederationCreationBlockNumber_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1699,8 +1704,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
+            Optional<Long> retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
+            assertTrue(retiringFederationCreationBlockNumber.isEmpty());
         }
 
         @ParameterizedTest
@@ -1720,14 +1725,15 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is(oldFederation.getCreationBlockNumber()));
+            Optional<Long> retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
+            assertTrue(retiringFederationCreationBlockNumber.isPresent());
+            assertThat(retiringFederationCreationBlockNumber.get(), is(oldFederation.getCreationBlockNumber()));
         }
 
         @ParameterizedTest
         @Tag("getRetiringFederatorBtcPublicKey")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederatorBtcPublicKey_withNewFederationNotActive_returnsNull(
+        void getRetiringFederatorBtcPublicKey_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1741,8 +1747,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+            Optional<BtcECKey> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
+            assertTrue(retiringFederatorBtcPublicKey.isEmpty());
         }
 
         @ParameterizedTest
@@ -1762,8 +1768,10 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
-            assertThat(retiringFederatorBtcPublicKey, is(oldFederation.getBtcPublicKeys().get(0).getPubKey()));
+            Optional<BtcECKey> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
+            assertTrue(retiringFederatorBtcPublicKey.isPresent());
+            List<BtcECKey> oldFederationBtcPublicKeys = oldFederation.getBtcPublicKeys();
+            assertEquals(retiringFederatorBtcPublicKey.get(), oldFederationBtcPublicKeys.get(0));
         }
 
         @ParameterizedTest
@@ -1810,7 +1818,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederatorPublicKeyOfType")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederatorPublicKeyOfType_withNewFederationNotActive_returnsNull(
+        void getRetiringFederatorPublicKeyOfType_withNewFederationNotActive_returnsEmpty(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1824,14 +1832,14 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertTrue(retiringFederatorBtcPublicKey.isEmpty());
 
-            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(retiringFederatorRskPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertTrue(retiringFederatorRskPublicKey.isEmpty());
 
-            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(retiringFederatorMstPublicKey, is(nullValue()));
+            Optional<byte[]> retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertTrue(retiringFederatorMstPublicKey.isEmpty());
         }
 
         @ParameterizedTest
@@ -1865,14 +1873,17 @@ class FederationSupportImplTest {
             // so we should first assert that
             assertThat(federatorFromOldFederationMstPublicKey, is(federatorFromOldFederationRskPublicKey));
 
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(retiringFederatorBtcPublicKey, is(federatorFromOldFederationBtcPublicKey.getPubKey()));
+            Optional<byte[]> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertTrue(retiringFederatorBtcPublicKey.isPresent());
+            assertThat(retiringFederatorBtcPublicKey.get(), is(federatorFromOldFederationBtcPublicKey.getPubKey()));
 
-            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(retiringFederatorRskPublicKey, is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
+            Optional<byte[]> retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertTrue(retiringFederatorRskPublicKey.isPresent());
+            assertThat(retiringFederatorRskPublicKey.get(), is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
 
-            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(retiringFederatorMstPublicKey, is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
+            Optional<byte[]> retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertTrue(retiringFederatorMstPublicKey.isPresent());
+            assertThat(retiringFederatorMstPublicKey.get(), is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
         }
 
         @ParameterizedTest
@@ -1910,14 +1921,17 @@ class FederationSupportImplTest {
             // so we should first assert that
             assertThat(federatorFromOldFederationMstPublicKey, is(federatorFromOldFederationRskPublicKey));
 
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(retiringFederatorBtcPublicKey, is(federatorFromOldFederationBtcPublicKey.getPubKey()));
+            Optional<byte[]> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertTrue(retiringFederatorBtcPublicKey.isPresent());
+            assertThat(retiringFederatorBtcPublicKey.get(), is(federatorFromOldFederationBtcPublicKey.getPubKey()));
 
-            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(retiringFederatorRskPublicKey, is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
+            Optional<byte[]> retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertTrue(retiringFederatorRskPublicKey.isPresent());
+            assertThat(retiringFederatorRskPublicKey.get(), is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
 
-            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(retiringFederatorMstPublicKey, is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
+            Optional<byte[]> retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertTrue(retiringFederatorMstPublicKey.isPresent());
+            assertThat(retiringFederatorMstPublicKey.get(), is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
         }
 
         @ParameterizedTest
@@ -1954,14 +1968,17 @@ class FederationSupportImplTest {
             ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederationMembers(oldFederationWithRskAndMstKeys.getMembers()).get(0);
             ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederationMembers(oldFederationWithRskAndMstKeys.getMembers()).get(0);
 
-            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(retiringFederatorBtcPublicKey, is(federatorFromOldFederationBtcPublicKey.getPubKey()));
+            Optional<byte[]> retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertTrue(retiringFederatorBtcPublicKey.isPresent());
+            assertThat(retiringFederatorBtcPublicKey.get(), is(federatorFromOldFederationBtcPublicKey.getPubKey()));
 
-            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(retiringFederatorRskPublicKey, is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
+            Optional<byte[]> retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertTrue(retiringFederatorRskPublicKey.isPresent());
+            assertThat(retiringFederatorRskPublicKey.get(), is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
 
-            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(retiringFederatorMstPublicKey, is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
+            Optional<byte[]> retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertTrue(retiringFederatorMstPublicKey.isPresent());
+            assertThat(retiringFederatorMstPublicKey.get(), is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
         }
 
         @ParameterizedTest
@@ -2497,6 +2514,79 @@ class FederationSupportImplTest {
         // Assert
         assertTrue(actualPublicKey.isPresent());
         assertArrayEquals(expectedPublicKey, actualPublicKey.get());
+    }
+
+    @Nested
+    @Tag("Federation is in or past migration age")
+    class FederationMigrationAge {
+        private static final long NEW_FEDERATION_CREATION_BLOCK = 100L;
+        private static final long ONE_BLOCK_BEFORE_MIGRATION_BEGINS =
+            federationMainnetConstants.getFederationActivationAge(allActivations) + federationMainnetConstants.getFundsMigrationAgeSinceActivationBegin();
+        private static final long IN_MIGRATION_AGE_EXECUTION_BLOCK_NUMBER = NEW_FEDERATION_CREATION_BLOCK + ONE_BLOCK_BEFORE_MIGRATION_BEGINS + 1;
+        private static final long ONE_BLOCK_AFTER_MIGRATION_ENDS_BLOCK_NUMBER =
+            NEW_FEDERATION_CREATION_BLOCK + ONE_BLOCK_BEFORE_MIGRATION_BEGINS + federationMainnetConstants.getFundsMigrationAgeSinceActivationEnd(allActivations);
+        private static final Federation newFederation = P2shP2wshErpFederationBuilder.builder().withCreationBlockNumber(NEW_FEDERATION_CREATION_BLOCK).build();
+        private static Block executionBlock;
+        private static FederationSupport federationSupport;
+
+        @BeforeEach
+        void setUp() {
+            executionBlock = mock(Block.class);
+            storageProvider = new FederationStorageProviderImpl(storageAccessor);
+            storageProvider.setNewFederation(newFederation);
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .build();
+        }
+
+        @Test
+        void federationIsInMigrationAge_whenExecutionBlockIsOneBlockBeforeMigrationAgeBegins_shouldReturnFalse() {
+            // Arrange
+            long oneBlockBeforeMigrationAgeExecutionBlockNumber = NEW_FEDERATION_CREATION_BLOCK + ONE_BLOCK_BEFORE_MIGRATION_BEGINS;
+            when(executionBlock.getNumber()).thenReturn(oneBlockBeforeMigrationAgeExecutionBlockNumber);
+
+            // Act & Assert
+            assertFalse(federationSupport.isActiveFederationInMigrationAge());
+        }
+
+        @Test
+        void federationIsInMigrationAge_whenExecutionBlockIsOneBlockAfterMigrationAgeBegins_shouldReturnFalse() {
+            // Arrange
+            when(executionBlock.getNumber()).thenReturn(IN_MIGRATION_AGE_EXECUTION_BLOCK_NUMBER);
+
+            // Act & Assert
+            assertTrue(federationSupport.isActiveFederationInMigrationAge());
+        }
+
+        @Test
+        void federationIsPastMigrationAge_whenExecutionBlockIsOneBlockAfterMigrationAgeBegins_shouldReturnFalse() {
+            // Arrange
+            when(executionBlock.getNumber()).thenReturn(IN_MIGRATION_AGE_EXECUTION_BLOCK_NUMBER);
+
+            // Act & Assert
+            assertFalse(federationSupport.isActiveFederationPastMigrationAge());
+        }
+
+        @Test
+        void federationIsInMigrationAge_whenExecutionBlockIsOneBlockAfterMigrationAgeEnds_shouldReturnFalse() {
+            // Arrange
+            when(executionBlock.getNumber()).thenReturn(ONE_BLOCK_AFTER_MIGRATION_ENDS_BLOCK_NUMBER);
+
+            // Act & Assert
+            assertFalse(federationSupport.isActiveFederationInMigrationAge());
+        }
+
+        @Test
+        void federationIsPastMigrationAge_whenExecutionBlockIsOneBlockAfterMigrationAgeEnds_shouldReturnTrue() {
+            // Arrange
+            when(executionBlock.getNumber()).thenReturn(ONE_BLOCK_AFTER_MIGRATION_ENDS_BLOCK_NUMBER);
+
+            // Act & Assert
+            assertTrue(federationSupport.isActiveFederationPastMigrationAge());
+        }
+
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
