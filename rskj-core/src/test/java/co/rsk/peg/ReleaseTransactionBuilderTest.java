@@ -392,9 +392,8 @@ class ReleaseTransactionBuilderTest {
             .withSignatures(signingKeys)
             .withActiveFederation(activeFederation);
 
-        byte[] outputScript = activeFederation.getP2SHScript().getProgram();
         for (int i = 0; i < utxos.size(); i++) {
-            pegoutTransactionBuilder = pegoutTransactionBuilder.withInput(BitcoinTestUtils.createHash(i), 0, utxos.get(i).getValue(), outputScript);
+            pegoutTransactionBuilder = pegoutTransactionBuilder.withInput(BitcoinTestUtils.createHash(i), 0, utxos.get(i).getValue());
         }
 
         int numberOfOutputs = 49; // The 50th transaction output will be the change output

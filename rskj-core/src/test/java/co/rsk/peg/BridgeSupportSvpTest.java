@@ -651,7 +651,7 @@ class BridgeSupportSvpTest {
 
             BtcTransaction pegout = PegoutTransactionBuilder.builder()
                 .withActiveFederation(activeFederation)
-                .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN, EMPTY_SCRIPT_SIG)
+                .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN)
                 .withChangeAmount(Coin.COIN.multiply(10))
                 .withSignatures(activeFederationKeys)
                 .build();
@@ -1024,7 +1024,7 @@ class BridgeSupportSvpTest {
             setUpForTransactionRegistration(svpSpendTransaction);
             BtcTransaction pegout = PegoutTransactionBuilder.builder()
                 .withActiveFederation(activeFederation)
-                .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN, EMPTY_SCRIPT_SIG)
+                .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN)
                 .withChangeAmount(Coin.COIN.multiply(10))
                 .withSignatures(activeFederationKeys)
                 .build();
