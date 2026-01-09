@@ -40,6 +40,8 @@ public final class IntegrationTestUtils {
     }
 
     public static void waitFor(long amount, TimeUnit unit) {
-        await().pollDelay(Duration.ofNanos(unit.toNanos(amount))).until(() -> true);
+        Duration delay = Duration.ofNanos(unit.toNanos(amount));
+        Duration timeout = delay.plusMillis(1);
+        await().atMost(timeout).pollDelay(delay).until(() -> true);
     }
 }
