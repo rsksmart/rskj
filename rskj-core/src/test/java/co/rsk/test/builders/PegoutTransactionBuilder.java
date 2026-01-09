@@ -28,7 +28,7 @@ public class PegoutTransactionBuilder {
         this.signingKeys = defaultKeys;
 
         this.networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
-        this.changeAmount = Coin.COIN.div(2);
+        this.changeAmount = Coin.ZERO; //.div(2);
         this.signTransaction = false;
 
         this.inputs = new ArrayList<>();
@@ -89,7 +89,7 @@ public class PegoutTransactionBuilder {
 
         addInputsToTransaction(pegoutTransaction);
         addOutputsToTransaction(pegoutTransaction);
-        addChangeOutput(pegoutTransaction);
+//        addChangeOutput(pegoutTransaction);
 
         return pegoutTransaction;
     }
