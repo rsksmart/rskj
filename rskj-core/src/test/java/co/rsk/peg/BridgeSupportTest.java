@@ -458,56 +458,69 @@ class BridgeSupportTest {
 
         @Test
         void getRetiringFederation() {
-            when(federationSupport.getRetiringFederation()).thenReturn(federation);
-            assertThat(bridgeSupport.getRetiringFederation(), is(federation));
+            when(federationSupport.getRetiringFederation()).thenReturn(Optional.of(federation));
+
+            Optional<Federation> actualRetiringFederation = bridgeSupport.getRetiringFederation();
+            assertTrue(actualRetiringFederation.isPresent());
+            assertThat(actualRetiringFederation.get(), is(federation));
         }
 
         @Test
         void getRetiringFederationAddress() {
             Address address = federation.getAddress();
 
-            when(federationSupport.getRetiringFederationAddress()).thenReturn(address);
-            assertThat(bridgeSupport.getRetiringFederationAddress(), is(address));
+            Optional<Address> retiringFederationAddressOptional = Optional.of(address);
+            when(federationSupport.getRetiringFederationAddress()).thenReturn(retiringFederationAddressOptional);
+            assertThat(bridgeSupport.getRetiringFederationAddress(), is(retiringFederationAddressOptional));
         }
 
         @Test
         void getRetiringFederationSize() {
             int size = federation.getSize();
 
-            when(federationSupport.getRetiringFederationSize()).thenReturn(size);
-            assertThat(bridgeSupport.getRetiringFederationSize(), is(size));
+            Optional<Integer> federationSizeOptional = Optional.of(size);
+            when(federationSupport.getRetiringFederationSize()).thenReturn(federationSizeOptional);
+            assertThat(bridgeSupport.getRetiringFederationSize(), is(federationSizeOptional));
         }
 
         @Test
         void getRetiringFederationThreshold() {
             int threshold = federation.getNumberOfSignaturesRequired();
 
-            when(federationSupport.getRetiringFederationThreshold()).thenReturn(threshold);
-            assertThat(bridgeSupport.getRetiringFederationThreshold(), is(threshold));
+            Optional<Integer> thresholdOptional = Optional.of(threshold);
+            when(federationSupport.getRetiringFederationThreshold()).thenReturn(thresholdOptional);
+
+            Optional<Integer> retiringFederationThreshold = bridgeSupport.getRetiringFederationThreshold();
+            assertTrue(retiringFederationThreshold.isPresent());
+            assertThat(retiringFederationThreshold, is(thresholdOptional));
         }
 
         @Test
         void getRetiringFederationCreationTime() {
             Instant creationTime = federation.getCreationTime();
 
-            when(federationSupport.getRetiringFederationCreationTime()).thenReturn(creationTime);
-            assertThat(bridgeSupport.getRetiringFederationCreationTime(), is(creationTime));
+            Optional<Instant> creationTimeOptional = Optional.of(creationTime);
+            when(federationSupport.getRetiringFederationCreationTime()).thenReturn(creationTimeOptional);
+            assertThat(bridgeSupport.getRetiringFederationCreationTime(), is(creationTimeOptional));
         }
 
         @Test
         void getRetiringFederationCreationBlockNumber() {
             long creationBlockNumber = federation.getCreationBlockNumber();
 
-            when(federationSupport.getRetiringFederationCreationBlockNumber()).thenReturn(creationBlockNumber);
-            assertThat(bridgeSupport.getRetiringFederationCreationBlockNumber(), is(creationBlockNumber));
+            Optional<Long> creationBlockNumberOptional = Optional.of(creationBlockNumber);
+            when(federationSupport.getRetiringFederationCreationBlockNumber()).thenReturn(creationBlockNumberOptional);
+            assertThat(bridgeSupport.getRetiringFederationCreationBlockNumber(), is(creationBlockNumberOptional));
         }
 
         @Test
         void getRetiringFederatorBtcPublicKey() {
             BtcECKey publicKey = federation.getBtcPublicKeys().get(0);
+            when(federationSupport.getRetiringFederatorBtcPublicKey(0)).thenReturn(Optional.of(publicKey));
 
-            when(federationSupport.getRetiringFederatorBtcPublicKey(0)).thenReturn(publicKey.getPubKey());
-            assertThat(bridgeSupport.getRetiringFederatorBtcPublicKey(0), is(publicKey.getPubKey()));
+            Optional<BtcECKey> retiringFederatorBtcPublicKey = bridgeSupport.getRetiringFederatorBtcPublicKey(0);
+            assertTrue(retiringFederatorBtcPublicKey.isPresent());
+            assertEquals(retiringFederatorBtcPublicKey.get(), publicKey);
         }
 
         @Test
@@ -517,14 +530,17 @@ class BridgeSupportTest {
             ECKey rskKey = member.getRskPublicKey();
             ECKey mstKey = member.getMstPublicKey();
 
-            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)).thenReturn(btcKey.getPubKey());
-            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC), is(btcKey.getPubKey()));
+            Optional<byte[]> retiringFederatorBtcPubKey = Optional.of(btcKey.getPubKey());
+            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)).thenReturn(retiringFederatorBtcPubKey);
+            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC), is(retiringFederatorBtcPubKey));
 
-            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)).thenReturn(rskKey.getPubKey());
-            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK), is(rskKey.getPubKey()));
+            Optional<byte[]> retiringFederatorRskPubKey = Optional.of(rskKey.getPubKey());
+            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)).thenReturn(retiringFederatorRskPubKey);
+            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK), is(retiringFederatorRskPubKey));
 
-            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(mstKey.getPubKey());
-            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(mstKey.getPubKey()));
+            Optional<byte[]> retiringFederatorMstPubKey = Optional.of(mstKey.getPubKey());
+            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(retiringFederatorMstPubKey);
+            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(retiringFederatorMstPubKey));
         }
 
         @Test
@@ -2511,7 +2527,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
@@ -2538,7 +2554,7 @@ class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
 
         federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsRegtest)
+            .withFederationConstants(federationConstantsMainnet)
             .withFederationStorageProvider(federationStorageProviderMock)
             .withRskExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
@@ -2574,7 +2590,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         FederationArgs newFederationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembers(1),
@@ -2598,7 +2614,7 @@ class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
 
         federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsRegtest)
+            .withFederationConstants(federationConstantsMainnet)
             .withFederationStorageProvider(federationStorageProviderMock)
             .withRskExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
@@ -2638,7 +2654,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         FederationArgs newFederationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembers(1),
@@ -2664,7 +2680,7 @@ class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
 
         federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsRegtest)
+            .withFederationConstants(federationConstantsMainnet)
             .withFederationStorageProvider(federationStorageProviderMock)
             .withRskExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
@@ -2700,7 +2716,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         FederationArgs newFederationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembers(1),
@@ -2724,7 +2740,7 @@ class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
 
         federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsRegtest)
+            .withFederationConstants(federationConstantsMainnet)
             .withFederationStorageProvider(federationStorageProviderMock)
             .withRskExecutionBlock(rskCurrentBlock)
             .withActivations(activations)

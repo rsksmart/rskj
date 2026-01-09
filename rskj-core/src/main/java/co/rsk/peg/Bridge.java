@@ -19,6 +19,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeSerializationUtils.deserializeRskTxHash;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP417;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
@@ -479,7 +480,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         if (shouldReturnNullOnVoidMethods()) {
             return null;
         }
-        return new byte[]{};
+        return EMPTY_BYTE_ARRAY;
     }
 
     private boolean shouldReturnNullOnVoidMethods() {
@@ -849,14 +850,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public Long getFederationCreationTime(Object[] args) {
         logger.trace("getFederationCreationTime");
         Instant activeFederationCreationTime = bridgeSupport.getActiveFederationCreationTime();
-
-        if (!activations.isActive(ConsensusRule.RSKIP419)) {
-            // Return the creation time in milliseconds from the epoch
-            return activeFederationCreationTime.toEpochMilli();
-        }
-
-        // Return the creation time in seconds from the epoch
-        return activeFederationCreationTime.getEpochSecond();
+        return getFederationCreationTimeEpochBasedOnActivation(activeFederationCreationTime);
     }
 
     public long getFederationCreationBlockNumber(Object[] args) {
@@ -866,41 +860,32 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public String getRetiringFederationAddress(Object[] args) {
         logger.trace("getRetiringFederationAddress");
+        Optional<Address> address = bridgeSupport.getRetiringFederationAddress();
 
-        Address address = bridgeSupport.getRetiringFederationAddress();
+        // When there's no address, empty string is returned
+        return address.map(Address::toBase58).orElse("");
 
-        if (address == null) {
-            // When there's no address, empty string is returned
-            return "";
-        }
-
-        return address.toBase58();
     }
 
     public Integer getRetiringFederationSize(Object[] args) {
         logger.trace("getRetiringFederationSize");
 
-        return bridgeSupport.getRetiringFederationSize();
+        return bridgeSupport.getRetiringFederationSize()
+            .orElseGet(FederationChangeResponseCode.FEDERATION_NON_EXISTENT::getCode);
     }
 
     public Integer getRetiringFederationThreshold(Object[] args) {
         logger.trace("getRetiringFederationThreshold");
 
-        return bridgeSupport.getRetiringFederationThreshold();
+        return bridgeSupport.getRetiringFederationThreshold().orElseGet(FederationChangeResponseCode.FEDERATION_NON_EXISTENT::getCode);
     }
 
     public byte[] getRetiringFederatorPublicKey(Object[] args) {
         logger.trace("getRetiringFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
-        byte[] publicKey = bridgeSupport.getRetiringFederatorBtcPublicKey(index);
-
-        if (publicKey == null) {
-            // Empty array is returned when public key is not found or there's no retiring federation
-            return new byte[]{};
-        }
-
-        return publicKey;
+        Optional<BtcECKey> federatorBtcPublicKey = bridgeSupport.getRetiringFederatorBtcPublicKey(index);
+        return federatorBtcPublicKey.map(BtcECKey::getPubKey).orElse(EMPTY_BYTE_ARRAY);
     }
 
     public byte[] getRetiringFederatorPublicKeyOfType(Object[] args) throws VMException {
@@ -911,31 +896,24 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         FederationMember.KeyType keyType;
         try {
             keyType = FederationMember.KeyType.byValue((String) args[1]);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             logger.warn("Exception in getRetiringFederatorPublicKeyOfType", e);
             throw new VMException("Exception in getRetiringFederatorPublicKeyOfType", e);
         }
 
-        byte[] publicKey = bridgeSupport.getRetiringFederatorPublicKeyOfType(index, keyType);
-
-        if (publicKey == null) {
-            // Empty array is returned when public key is not found or there's no retiring federation
-            return new byte[]{};
-        }
-
-        return publicKey;
+        Optional<byte[]> publicKey = bridgeSupport.getRetiringFederatorPublicKeyOfType(index, keyType);
+        return publicKey.orElse(EMPTY_BYTE_ARRAY);
     }
 
     public Long getRetiringFederationCreationTime(Object[] args) {
         logger.trace("getRetiringFederationCreationTime");
 
-        Instant retiringFederationCreationTime = bridgeSupport.getRetiringFederationCreationTime();
+        Optional<Instant> retiringFederationCreationTime = bridgeSupport.getRetiringFederationCreationTime();
+        return retiringFederationCreationTime.map(this::getFederationCreationTimeEpochBasedOnActivation)
+            .orElse((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode());
+    }
 
-        if (retiringFederationCreationTime == null) {
-            // -1 is returned when no retiring federation
-            return -1L;
-        }
-
+    private Long getFederationCreationTimeEpochBasedOnActivation(Instant retiringFederationCreationTime) {
         if (!activations.isActive(ConsensusRule.RSKIP419)) {
             // Return the creation time in milliseconds from the epoch
             return retiringFederationCreationTime.toEpochMilli();
@@ -947,7 +925,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public long getRetiringFederationCreationBlockNumber(Object[] args) {
         logger.trace("getRetiringFederationCreationBlockNumber");
-        return bridgeSupport.getRetiringFederationCreationBlockNumber();
+        return bridgeSupport.getRetiringFederationCreationBlockNumber()
+            .orElse((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode());
     }
 
     public Integer createFederation(Object[] args) {
@@ -1025,7 +1004,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         if (hash == null) {
             // Empty array is returned when pending federation is not present
-            return new byte[]{};
+            return EMPTY_BYTE_ARRAY;
         }
 
         return hash.getBytes();
@@ -1045,7 +1024,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found
-            return new byte[]{};
+            return EMPTY_BYTE_ARRAY;
         }
 
         return publicKey;
@@ -1068,7 +1047,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found
-            return new byte[]{};
+            return EMPTY_BYTE_ARRAY;
         }
 
         return publicKey;
@@ -1200,7 +1179,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return publicKey
-            .orElse(new byte[]{});
+            .orElse(EMPTY_BYTE_ARRAY);
     }
 
     public Integer getLockWhitelistSize(Object[] args) {
@@ -1330,7 +1309,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             Optional<Script> redeemScript = bridgeSupport.getActiveFederationRedeemScript();
             logger.debug("[getActivePowpegRedeemScript] finished");
-            return redeemScript.orElse(new Script(new byte[]{})).getProgram();
+            return redeemScript.orElse(new Script(EMPTY_BYTE_ARRAY)).getProgram();
         } catch (Exception ex) {
             logger.warn("[getActivePowpegRedeemScript] something failed", ex);
             throw ex;
@@ -1605,8 +1584,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return (self, args) -> {
             boolean isFromActiveFed = BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache);
 
-            Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
-            boolean isFromRetiringFed = retiringFederation != null && BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation, self.signatureCache);
+            Optional<Federation> retiringFederation = self.bridgeSupport.getRetiringFederation();
+            boolean isFromRetiringFed = retiringFederation.isPresent() && BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation.get(), self.signatureCache);
 
             if (!isFromActiveFed && !isFromRetiringFed) {
                 String errorMessage = String.format(
@@ -1625,8 +1604,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return (self, args) -> {
             boolean isFromActiveFed = BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache);
 
-            Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
-            boolean isFromRetiringFed = retiringFederation != null && BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation, self.signatureCache);
+            Optional<Federation> retiringFederation = self.bridgeSupport.getRetiringFederation();
+            boolean isFromRetiringFed = retiringFederation.isPresent() && BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation.get(), self.signatureCache);
 
             Optional<Federation> proposedFederation = self.bridgeSupport.getProposedFederation();
             boolean isFromProposedFed = proposedFederation.isPresent() && BridgeUtils.isFromFederateMember(self.rskTx, proposedFederation.get(), self.signatureCache);

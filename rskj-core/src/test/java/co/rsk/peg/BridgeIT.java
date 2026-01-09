@@ -21,6 +21,7 @@ import static co.rsk.bitcoinj.core.Utils.uint32ToByteStreamLE;
 import static co.rsk.peg.federation.FederationStorageIndexKey.*;
 import static co.rsk.peg.federation.FederationTestUtils.REGTEST_FEDERATION_PRIVATE_KEYS;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -42,6 +43,7 @@ import java.util.function.BiFunction;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.federation.*;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.test.builders.BridgeBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
@@ -164,6 +166,8 @@ class BridgeIT {
     private static final String DATA = "80af2871";
     private static final String ERR_NOT_FROM_ACTIVE_OR_RETIRING_FED = "The sender is not a member of the active or retiring federations";
     private static final String ERR_NOT_FROM_ACTIVE_RETIRING_OR_PROPOSED_FED = "The sender is not a member of the active, retiring, or proposed federations";
+    private static final Object[] EMPTY_ARGS_FOR_BRIDGE_CALLS = {};
+    private static final BridgeBuilder bridgeBuilder = new BridgeBuilder();
 
     private TestSystemProperties config = new TestSystemProperties();
     private Constants constants;
@@ -173,6 +177,8 @@ class BridgeIT {
     private SignatureCache signatureCache;
     private Bridge bridge;
     private Repository track;
+    private BridgeSupport bridgeSupport;
+
 
     @BeforeEach
     void resetConfigToRegTest() {
@@ -184,6 +190,7 @@ class BridgeIT {
         blockFactory = new BlockFactory(activationConfig);
         activationConfigAll = ActivationConfigsForTest.all().forBlock(0);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        bridgeSupport = mock(BridgeSupport.class);
     }
 
     @Test
@@ -429,7 +436,7 @@ class BridgeIT {
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
-        Integer previousHeight = bridge.getBtcBlockchainBestChainHeight(new Object[]{});
+        Integer previousHeight = bridge.getBtcBlockchainBestChainHeight(EMPTY_ARGS_FOR_BRIDGE_CALLS);
 
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(regtestParameters, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, Utils.encodeCompactBits(regtestParameters.getMaxTarget()), 1, new ArrayList<>())
                 .cloneAsHeader();
@@ -445,7 +452,7 @@ class BridgeIT {
 
         track.commit();
 
-        assertEquals(previousHeight, bridge.getBtcBlockchainBestChainHeight(new Object[]{}));
+        assertEquals(previousHeight, bridge.getBtcBlockchainBestChainHeight(EMPTY_ARGS_FOR_BRIDGE_CALLS));
         // TODO improve test
         Assertions.assertNotNull(track.getRoot());
     }
@@ -1787,7 +1794,7 @@ class BridgeIT {
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getActiveFederationSize()).thenReturn(1234);
 
-        assertEquals(1234, bridge.getFederationSize(new Object[]{}).intValue());
+        assertEquals(1234, bridge.getFederationSize(EMPTY_ARGS_FOR_BRIDGE_CALLS).intValue());
     }
 
     @Test
@@ -1805,7 +1812,7 @@ class BridgeIT {
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getActiveFederationThreshold()).thenReturn(5678);
 
-        assertEquals(5678, bridge.getFederationThreshold(new Object[]{}).intValue());
+        assertEquals(5678, bridge.getFederationThreshold(EMPTY_ARGS_FOR_BRIDGE_CALLS).intValue());
     }
 
     @Test
@@ -1815,7 +1822,7 @@ class BridgeIT {
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getActiveFederationCreationBlockNumber()).thenReturn(42L);
 
-        MatcherAssert.assertThat(bridge.getFederationCreationBlockNumber(new Object[]{}), is(42L));
+        MatcherAssert.assertThat(bridge.getFederationCreationBlockNumber(EMPTY_ARGS_FOR_BRIDGE_CALLS), is(42L));
     }
 
     @Test
@@ -1935,9 +1942,9 @@ class BridgeIT {
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getRetiringFederationSize()).thenReturn(1234);
+        when(bridgeSupportMock.getRetiringFederationSize()).thenReturn(Optional.of(1234));
 
-        assertEquals(1234, bridge.getRetiringFederationSize(new Object[]{}).intValue());
+        assertEquals(1234, bridge.getRetiringFederationSize(EMPTY_ARGS_FOR_BRIDGE_CALLS).intValue());
     }
 
     @Test
@@ -1953,9 +1960,9 @@ class BridgeIT {
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getRetiringFederationThreshold()).thenReturn(5678);
+        when(bridgeSupportMock.getRetiringFederationThreshold()).thenReturn(Optional.of(5678));
 
-        assertEquals(5678, bridge.getRetiringFederationThreshold(new Object[]{}).intValue());
+        assertEquals(5678, bridge.getRetiringFederationThreshold(EMPTY_ARGS_FOR_BRIDGE_CALLS).intValue());
     }
 
     @Test
@@ -1963,111 +1970,227 @@ class BridgeIT {
         Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getRetiringFederationCreationBlockNumber()).thenReturn(42L);
-
-        MatcherAssert.assertThat(bridge.getRetiringFederationCreationBlockNumber(new Object[]{}), is(42L));
+        long retiringFederationCreationBlockNumber = 42L;
+        when(bridgeSupportMock.getRetiringFederationCreationBlockNumber()).thenReturn(Optional.of(retiringFederationCreationBlockNumber));
+        MatcherAssert.assertThat(bridge.getRetiringFederationCreationBlockNumber(EMPTY_ARGS_FOR_BRIDGE_CALLS), is(retiringFederationCreationBlockNumber));
     }
 
     @Test
-    void getRetiringFederatorPublicKey_beforeMultikey() throws Exception {
+    void getRetiringFederationAddress_withNoRetiringFederation_shouldReturnEmptyString() {
+        // Arrange
+        bridge = bridgeBuilder
+            .contractAddress(BRIDGE_ADDRESS)
+            .constants(constants)
+            .activationConfig(activationConfig)
+            .signatureCache(signatureCache)
+            .bridgeSupport(bridgeSupport)
+            .build();
+        when(bridgeSupport.getRetiringFederation()).thenReturn(Optional.empty());
+
+        // Act & Assert
+        MatcherAssert.assertThat(bridge.getRetiringFederationAddress(EMPTY_ARGS_FOR_BRIDGE_CALLS), is(""));
+    }
+
+    @Test
+    void getRetiringFederationAddress_withRetiringFederation_shouldReturnTheCorrectRetiringFederationAddress() {
+        // Arrange
+        bridge = bridgeBuilder
+            .contractAddress(BRIDGE_ADDRESS)
+            .constants(constants)
+            .activationConfig(activationConfig)
+            .signatureCache(signatureCache)
+            .bridgeSupport(bridgeSupport)
+            .build();
+        Address retiringFederationAddress = new BtcECKey().toAddress(regtestParameters);
+        when(bridgeSupport.getRetiringFederationAddress()).thenReturn(Optional.of(retiringFederationAddress));
+
+        // Act & Assert
+        MatcherAssert.assertThat(bridge.getRetiringFederationAddress(EMPTY_ARGS_FOR_BRIDGE_CALLS), is(retiringFederationAddress.toBase58()));
+    }
+
+    @Test()
+    void getRetiringFederatorPublicKey_beforeMultikey_withARetiringFederation_shouldReturnTheCorrectRetiringFederatorPublicKeyBytes() throws Exception {
+        // Arrange
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
-                bridgeSupportFactoryMock, signatureCache);
-        bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
+        bridge = bridgeBuilder
+            .bridgeSupport(bridgeSupport)
+            .activationConfig(activationConfig)
+            .contractAddress(BRIDGE_ADDRESS)
+            .constants(constants)
+            .signatureCache(signatureCache)
+            .build();
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
-        when(bridgeSupportMock.getRetiringFederatorBtcPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
-                BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
-        bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
+        int retiringFederatorBtcPublicKeyIndex = 0;
+        BtcECKey retiringFederatorBtcPublicKey = RETIRING_FEDERATION_KEYS.get(retiringFederatorBtcPublicKeyIndex);
+        when(bridgeSupport.getRetiringFederatorBtcPublicKey(retiringFederatorBtcPublicKeyIndex)).thenReturn(Optional.of(retiringFederatorBtcPublicKey));
 
+        // Act
+        byte[] executionResult = executeGetRetiringFederatorPublicKeyFunction(bridge, retiringFederatorBtcPublicKeyIndex);
 
-        assertTrue(Arrays.equals(new byte[]{10},
-                (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(10)}))
-                )[0]
-        ));
+        // Assert
+        assertGetRetiringFederatorPublicKeyExecution(retiringFederatorBtcPublicKey.getPubKey(), executionResult);
+    }
 
-        assertTrue(Arrays.equals(new byte[]{20},
-                (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(20)}))
-                )[0]
-        ));
+    @Test()
+    void getRetiringFederatorPublicKey_beforeMultikey_withoutARetiringFederation_shouldReturnAnEmptyByteArray() throws Exception {
+        // Arrange
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
-        assertTrue(Arrays.equals(new byte[]{1, 0},
-                (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(256)}))
-                )[0]
-        ));
+        bridge = bridgeBuilder
+            .bridgeSupport(bridgeSupport)
+            .activationConfig(activationConfig)
+            .contractAddress(BRIDGE_ADDRESS)
+            .constants(constants)
+            .signatureCache(signatureCache)
+            .build();
+
+        // Act
+        int retiringFederatorBtcPublicKeyIndex = 0;
+        byte[] executionResult = executeGetRetiringFederatorPublicKeyFunction(bridge, retiringFederatorBtcPublicKeyIndex);
+
+        // Assert
+        assertGetRetiringFederatorPublicKeyExecution(EMPTY_BYTE_ARRAY, executionResult);
     }
 
     @Test
     void getRetiringFederatorPublicKey_afterMultikey() throws Exception {
+        // Arrange
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
-                bridgeSupportFactoryMock, signatureCache);
+        bridge = bridgeBuilder
+            .bridgeSupport(bridgeSupport)
+            .activationConfig(activationConfig)
+            .contractAddress(BRIDGE_ADDRESS)
+            .constants(constants)
+            .signatureCache(signatureCache)
+            .build();
 
-        bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        int retiringFederatorIndex = 10;
 
-        Assertions.assertNull(bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(10)})));
-        verify(bridgeSupportMock, never()).getRetiringFederatorBtcPublicKey(any(int.class));
+        // Act
+        byte[] getBtcRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyFunction(bridge, retiringFederatorIndex);
+
+        // Assert
+        Assertions.assertNull(getBtcRetiringFederatorPublicKeyResult);
+        verify(bridgeSupport, never()).getRetiringFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class));
+    }
+
+    private void assertGetRetiringFederatorPublicKeyExecution(byte[] expectedExecutionResult, byte[] executionResult) {
+        CallTransaction.Function getRetiringFederatorPublicKeyFunction = BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction();
+        byte[] actualResult = (byte[]) getRetiringFederatorPublicKeyFunction.decodeResult(executionResult)[0];
+        assertArrayEquals(expectedExecutionResult, actualResult);
+    }
+
+    private byte[] executeGetRetiringFederatorPublicKeyFunction(Bridge bridge, int federatorIndex) throws VMException {
+        CallTransaction.Function getRetiringFederatorPublicKeyFunction = BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction();
+        byte[] getRetiringFederatorPublicKeyCallEncoded = getRetiringFederatorPublicKeyFunction.encode(federatorIndex);
+        return bridge.execute(getRetiringFederatorPublicKeyCallEncoded);
     }
 
     @Test
     void getRetiringFederatorPublicKeyOfType_beforeMultikey() throws Exception {
+        // Arrange
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
-                bridgeSupportFactoryMock, signatureCache);
+        bridge = bridgeBuilder
+            .bridgeSupport(bridgeSupport)
+            .activationConfig(activationConfig)
+            .contractAddress(BRIDGE_ADDRESS)
+            .constants(constants)
+            .signatureCache(signatureCache)
+            .build();
 
-        bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        int retiringFederatorIndex = 10;
 
-        assertNull(bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().encode(new Object[]{BigInteger.valueOf(10), "btc"})));
-        verify(bridgeSupportMock, never()).getRetiringFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class));
+        // Act & Assert
+        byte[] getBtcRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyOfTypeFunction(bridge, retiringFederatorIndex, FederationMember.KeyType.BTC);
+        Assertions.assertNull(getBtcRetiringFederatorPublicKeyResult);
+
+        byte[] getRskRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyOfTypeFunction(bridge, retiringFederatorIndex, FederationMember.KeyType.RSK);
+        Assertions.assertNull(getRskRetiringFederatorPublicKeyResult);
+
+        byte[] getMstRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyOfTypeFunction(bridge, retiringFederatorIndex, FederationMember.KeyType.MST);
+        Assertions.assertNull(getMstRetiringFederatorPublicKeyResult);
+
+        verify(bridgeSupport, never()).getRetiringFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class));
     }
 
     @Test
-    void getRetiringFederatorPublicKeyOfType_afterMultikey() throws Exception {
+    void getRetiringFederatorPublicKeyOfType_afterMultikey_withRetiringFederation_shouldReturnTheCorrectRetiringFederationPublicKeys() throws Exception {
+        // Arrange
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
-                bridgeSupportFactoryMock, signatureCache);
+        bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .contractAddress(BRIDGE_ADDRESS)
+            .constants(constants)
+            .signatureCache(signatureCache)
+            .bridgeSupport(bridgeSupport)
+            .build();
 
-        bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
+        int federatorIndex = 0;
+        FederationMember retiringFederationMember = RETIRING_FEDERATION.getMembers().get(federatorIndex);
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
-        when(bridgeSupportMock.getRetiringFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class))).then((InvocationOnMock invocation) ->
-                BigInteger.valueOf(invocation.<Number>getArgument(0).longValue()).toString()
-                        .concat((invocation.<FederationMember.KeyType>getArgument(1)).getValue()).getBytes()
-        );
-        bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
+        BtcECKey btcPublicKey = retiringFederationMember.getBtcPublicKey();
+        Optional<byte[]> retiringFederatorBtcPubKey = Optional.of(btcPublicKey.getPubKey());
+        when(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)).thenReturn(retiringFederatorBtcPubKey);
 
-        assertTrue(Arrays.equals("10btc".getBytes(),
-                (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().encode(new Object[]{BigInteger.valueOf(10), "btc"}))
-                )[0]
-        ));
+        ECKey rskPublicKey = retiringFederationMember.getRskPublicKey();
+        Optional<byte[]> retiringFederatorRskPubKey = Optional.of(rskPublicKey.getPubKey());
+        when(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)).thenReturn(retiringFederatorRskPubKey);
 
-        assertTrue(Arrays.equals("105rsk".getBytes(),
-                (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().encode(new Object[]{BigInteger.valueOf(105), "rsk"}))
-                )[0]
-        ));
+        ECKey mstPublicKey = retiringFederationMember.getMstPublicKey();
+        Optional<byte[]> retiringFederatorMstPubKey = Optional.of(mstPublicKey.getPubKey());
+        when(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(retiringFederatorMstPubKey);
 
-        assertTrue(Arrays.equals("232mst".getBytes(),
-                (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().encode(new Object[]{BigInteger.valueOf(232), "mst"}))
-                )[0]
-        ));
+        // Act & Assert
+        byte[] getBtcRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyOfTypeFunction(bridge, federatorIndex, FederationMember.KeyType.BTC);
+        assertGetRetiringFederatorPublicKeyOfTypeExecution(btcPublicKey.getPubKey(), getBtcRetiringFederatorPublicKeyResult);
+
+        byte[] getRskRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyOfTypeFunction(bridge, federatorIndex, FederationMember.KeyType.RSK);
+        assertGetRetiringFederatorPublicKeyOfTypeExecution(rskPublicKey.getPubKey(), getRskRetiringFederatorPublicKeyResult);
+
+        byte[] getMstRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyOfTypeFunction(bridge, federatorIndex, FederationMember.KeyType.MST);
+        assertGetRetiringFederatorPublicKeyOfTypeExecution(mstPublicKey.getPubKey(), getMstRetiringFederatorPublicKeyResult);
+    }
+
+    @Test
+    void getRetiringFederatorPublicKeyOfType_afterMultikey_withoutARetiringFederation_shouldReturnTheCorrectRetiringFederationPublicKeys() throws Exception {
+        // Arrange
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
+
+        bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .contractAddress(BRIDGE_ADDRESS)
+            .constants(constants)
+            .signatureCache(signatureCache)
+            .bridgeSupport(bridgeSupport)
+            .build();
+
+        int federatorIndex = 0;
+
+        // Act & Assert
+        byte[] getBtcRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyOfTypeFunction(bridge, federatorIndex, FederationMember.KeyType.BTC);
+        assertGetRetiringFederatorPublicKeyOfTypeExecution(EMPTY_BYTE_ARRAY, getBtcRetiringFederatorPublicKeyResult);
+
+        byte[] getRskRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyOfTypeFunction(bridge, federatorIndex, FederationMember.KeyType.RSK);
+        assertGetRetiringFederatorPublicKeyOfTypeExecution(EMPTY_BYTE_ARRAY, getRskRetiringFederatorPublicKeyResult);
+
+        byte[] getMstRetiringFederatorPublicKeyResult = executeGetRetiringFederatorPublicKeyOfTypeFunction(bridge, federatorIndex, FederationMember.KeyType.MST);
+        assertGetRetiringFederatorPublicKeyOfTypeExecution(EMPTY_BYTE_ARRAY, getMstRetiringFederatorPublicKeyResult);
+    }
+
+    private byte[] executeGetRetiringFederatorPublicKeyOfTypeFunction(Bridge bridge, int federatorIndex, FederationMember.KeyType keyType) throws VMException {
+        CallTransaction.Function getRetiringFederatorPublicKeyOfTypeFunction = BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
+        byte[] getRetiringFederatorPublicKeyCallEncoded = getRetiringFederatorPublicKeyOfTypeFunction.encode(federatorIndex, keyType.getValue());
+        return bridge.execute(getRetiringFederatorPublicKeyCallEncoded);
+    }
+
+    private void assertGetRetiringFederatorPublicKeyOfTypeExecution(byte[] expectedExecutionResult, byte[] executionResult) {
+        CallTransaction.Function getRetiringFederatorPublicKeyFunction = BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
+        byte[] actualResult = (byte[]) getRetiringFederatorPublicKeyFunction.decodeResult(executionResult)[0];
+        assertArrayEquals(expectedExecutionResult, actualResult);
     }
 
     @Test
@@ -2085,7 +2208,7 @@ class BridgeIT {
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getPendingFederationSize()).thenReturn(1234);
 
-        assertEquals(1234, bridge.getPendingFederationSize(new Object[]{}).intValue());
+        assertEquals(1234, bridge.getPendingFederationSize(EMPTY_ARGS_FOR_BRIDGE_CALLS).intValue());
     }
 
     @Test
@@ -2197,7 +2320,7 @@ class BridgeIT {
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("create", new byte[][]{}))).thenReturn(123);
 
-        assertEquals(123, bridge.createFederation(new Object[]{}).intValue());
+        assertEquals(123, bridge.createFederation(EMPTY_ARGS_FOR_BRIDGE_CALLS).intValue());
     }
 
     @Test
@@ -2351,7 +2474,7 @@ class BridgeIT {
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("rollback", new byte[][]{}))).thenReturn(456);
 
-        assertEquals(456, bridge.rollbackFederation(new Object[]{}).intValue());
+        assertEquals(456, bridge.rollbackFederation(EMPTY_ARGS_FOR_BRIDGE_CALLS).intValue());
     }
 
     @Test
@@ -2368,7 +2491,7 @@ class BridgeIT {
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getLockWhitelistSize()).thenReturn(1234);
 
-        assertEquals(1234, bridge.getLockWhitelistSize(new Object[]{}).intValue());
+        assertEquals(1234, bridge.getLockWhitelistSize(EMPTY_ARGS_FOR_BRIDGE_CALLS).intValue());
     }
 
     @Test
@@ -2659,7 +2782,7 @@ class BridgeIT {
         when(bridgeSupportMock.getFeePerKb())
                 .thenReturn(Coin.valueOf(12345678901234L));
 
-        assertEquals(12345678901234L, bridge.getFeePerKb(new Object[]{}));
+        assertEquals(12345678901234L, bridge.getFeePerKb(EMPTY_ARGS_FOR_BRIDGE_CALLS));
     }
 
     @Test
@@ -2768,7 +2891,7 @@ class BridgeIT {
 
         bridge.init(tx, getGenesisBlock(), null, null, null, null);
 
-        byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
+        byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(EMPTY_ARGS_FOR_BRIDGE_CALLS);
         bridge.execute(data);
 
         verify(bridgeSupportMock, times(1)).getActiveFederationAddress();
@@ -2793,7 +2916,7 @@ class BridgeIT {
 
         bridge.init(tx, getGenesisBlock(), null, null, null, null);
 
-        byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
+        byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(EMPTY_ARGS_FOR_BRIDGE_CALLS);
         String result = (String) BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().decodeResult(bridge.execute(data))[0];
         assertEquals(expectedResult.toBase58(), result);
         bridge.execute(data);
@@ -2818,7 +2941,7 @@ class BridgeIT {
             when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
             bridge.init(tx, getGenesisBlock(), null, null, null, null);
 
-            byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
+            byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(EMPTY_ARGS_FOR_BRIDGE_CALLS);
             bridge.execute(data);
             fail();
         } catch (VMException e) {
@@ -3329,7 +3452,7 @@ class BridgeIT {
         when(txMock.getSender(any(SignatureCache.class))).thenReturn(sender);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
+        when(bridgeSupportMock.getRetiringFederation()).thenReturn(Optional.empty());
         when(bridgeSupportMock.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants()));
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
@@ -3366,7 +3489,7 @@ class BridgeIT {
         when(txMock.getSender(any(SignatureCache.class))).thenReturn(sender);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
+        when(bridgeSupportMock.getRetiringFederation()).thenReturn(Optional.empty());
         when(bridgeSupportMock.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants()));
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
@@ -3474,7 +3597,7 @@ class BridgeIT {
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getBtcBlockchainInitialBlockHeight()).thenReturn(1234);
 
-        assertEquals(1234, bridge.getBtcBlockchainInitialBlockHeight(new Object[]{}).intValue());
+        assertEquals(1234, bridge.getBtcBlockchainInitialBlockHeight(EMPTY_ARGS_FOR_BRIDGE_CALLS).intValue());
     }
 
     private BtcTransaction createTransaction() {
