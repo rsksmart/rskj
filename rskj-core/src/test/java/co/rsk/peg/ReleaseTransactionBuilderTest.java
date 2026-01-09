@@ -22,6 +22,7 @@ import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_1;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.signInput;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -441,7 +442,6 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void createRealTransactionInTestnet() {
-
         BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
         NetworkParameters btcTestNetParams = bridgeTestNetConstants.getBtcParams();
         FederationConstants federationConstants = bridgeTestNetConstants.getFederationConstants();
@@ -473,6 +473,9 @@ class ReleaseTransactionBuilderTest {
 
         Address recipient = Address.fromBase58(btcTestNetParams, "mi2KEWHb9WUBLBm4LCTUx75jWCSr68uxRr");
         BtcTransaction btcTx = createRealBtcTransactionWith200InputsAnd50Outputs(rawPrevBtcTx, myP2shP2wshErpFederation, theSigningKeys, btcTestNetParams, recipient);
+        BtcTransaction btcTx2 = createRealBtcTransactionWith200InputsAnd50Outputs2(rawPrevBtcTx, myP2shP2wshErpFederation, theSigningKeys, btcTestNetParams, recipient);
+
+        assertArrayEquals(btcTx.bitcoinSerialize(), btcTx2.bitcoinSerialize());
         System.out.println("Transaction hex:");
         System.out.println(Hex.toHexString(btcTx.bitcoinSerialize()));
     }
@@ -539,6 +542,60 @@ class ReleaseTransactionBuilderTest {
                 int sigIndex = getSigInsertionIndex(btcTx, inputIndex, sigHash, keyToSign);
                 signInput(btcTx, inputIndex, txSignature, sigIndex, outputScript);
             }
+        }
+
+        return btcTx;
+    }
+
+    private BtcTransaction createRealBtcTransactionWith200InputsAnd50Outputs2(byte[] rawPrevBtcTx, ErpFederation activeFederation, List<BtcECKey> signingKeys, NetworkParameters networkParameters, Address recipient) {
+        BtcTransaction prevBtcTx = new BtcTransaction(networkParameters, rawPrevBtcTx);
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+
+        Coin value = prevBtcTx.getOutput(1).getValue();
+        int numberOfInputs = prevBtcTx.getOutputs().size() - 1;
+        Coin totalInputValue = value.multiply(numberOfInputs);
+        System.out.println("totalInputValue: " + totalInputValue);
+
+        int numberOfOutputs = 50;
+        Coin sendingValue = totalInputValue.div(numberOfOutputs);
+        System.out.println("sendingValue: " + sendingValue);
+
+        for (int i = 0; i < numberOfOutputs; i++) {
+            Coin remainingValue = sendingValue.subtract(Coin.valueOf(1000));
+            btcTx.addOutput(remainingValue, recipient);
+        }
+
+        Sha256Hash spendTxHash = prevBtcTx.getHash();
+        for (int prevOutputIndex = 0; prevOutputIndex < prevBtcTx.getOutputs().size() - 1; prevOutputIndex++) {
+            TransactionInput transactionInput = new TransactionInput(
+                networkParameters,
+                null,
+                activeFederation.getRedeemScript().getProgram(),
+                new TransactionOutPoint(networkParameters, prevOutputIndex, spendTxHash),
+                value
+            );
+
+            btcTx.addInput(transactionInput);
+        }
+
+        int inputIndex = 0;
+        for (TransactionInput input : btcTx.getInputs()) {
+            BitcoinUtils.addSpendingFederationBaseScript(
+                btcTx,
+                inputIndex,
+                activeFederation.getRedeemScript(),
+                activeFederation.getFormatVersion()
+            );
+
+            Coin inputValue = input.getValue();
+            BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(
+                btcTx,
+                inputIndex,
+                inputValue,
+                signingKeys
+            );
+
+            inputIndex++;
         }
 
         return btcTx;
