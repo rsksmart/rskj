@@ -14,7 +14,7 @@
         <Target>System.out</Target>
         <encoder>
             <Pattern>
-                %date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}] [%thread]%replace( [%mdc{}]){' \[\]', ''}  %m%n
+                %date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}] [%thread]%replace( [%mdc{}]){' \[\]', ''} %m%n
             </Pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
@@ -27,7 +27,7 @@
         <Target>System.out</Target>
         <encoder>
             <Pattern>
-                %date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}] [%thread]%replace( [%mdc{}]){' \[\]', ''}  %m%n
+                %date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}] [%thread]%replace( [%mdc{}]){' \[\]', ''} %m%n
             </Pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
@@ -41,7 +41,7 @@
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <!-- we use the replace pattern to allow wrapping mdc keys in [] while avoiding outputting an empty [] if none -->
             <Pattern>
-                %date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}] [%thread]%replace( [%mdc{}]){' \[\]', ''}  %m%n
+                %date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}] [%thread]%replace( [%mdc{}]){' \[\]', ''} %m%n
             </Pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -53,6 +53,13 @@
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>${logging:-TRACE}</level>
         </filter>
+    </appender>
+
+    <appender name="PEGOUT-FILE-AUDIT"  class="ch.qos.logback.core.FileAppender">
+        <file>${logging.dir:-./logs}/pegout-audit.log</file>
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
     </appender>
 
     <!-- Loggers -->
@@ -103,23 +110,26 @@
     <logger name="co.rsk.db.migration.OrchidToUnitrieMigrator" level="INFO"/>
     <logger name="co.rsk.db.migration.MissingOrchidStorageKeysProvider" level="INFO"/>
     <logger name="blooms" level="INFO"/>
-    <logger name="triestore" level="INFO" />
-    <logger name="btcBlockStore" level="INFO" />
-    <logger name="secp256k1" level="INFO" />
-    <logger name="altbn128" level="INFO" />
-    <logger name="co.rsk.net.discovery.PeerExplorer" level="INFO" />
-    <logger name="co.rsk.net.discovery.NodeChallengeManager" level="INFO" />
-    <logger name="co.rsk.RskContext" level="INFO" />
+    <logger name="triestore" level="INFO"/>
+    <logger name="btcBlockStore" level="INFO"/>
+    <logger name="secp256k1" level="INFO"/>
+    <logger name="altbn128" level="INFO"/>
+    <logger name="co.rsk.net.discovery.PeerExplorer" level="INFO"/>
+    <logger name="co.rsk.net.discovery.NodeChallengeManager" level="INFO"/>
+    <logger name="co.rsk.RskContext" level="INFO"/>
 
     <!-- Use INFO or upper levels for production environments. -->
-    <logger name="com.googlecode.jsonrpc4j" level="INFO" />
+    <logger name="com.googlecode.jsonrpc4j" level="INFO"/>
 
     <!-- Logger for CLI tools -->
-    <logger name="clitool" level="DEBUG" additivity="false" >
+    <logger name="clitool" level="DEBUG" additivity="false">
         <appender-ref ref="STDOUT_CLI_TOOL"/>
         <appender-ref ref="FILE-AUDIT"/>
     </logger>
 
+    <logger name="pegout.audit"  level="INFO" additivity="false">
+        <appender-ref ref="PEGOUT-FILE-AUDIT"/>
+    </logger>
     <!-- Root logger -->
     <root level="DEBUG">
         <appender-ref ref="stdout"/>

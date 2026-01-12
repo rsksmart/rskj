@@ -21,6 +21,9 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.crypto.Keccak256;
 import com.google.common.primitives.UnsignedBytes;
+import org.ethereum.core.Transaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,6 +36,9 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public class PegoutsWaitingForConfirmations {
+
+    private static final Logger pegoutAudit = LoggerFactory.getLogger("pegout.audit");
+
     public static class Entry {
         // Compares entries using the lexicographical order of the btc tx's serialized bytes
         public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<Entry>() {
@@ -124,8 +130,17 @@ public class PegoutsWaitingForConfirmations {
      * @param minimumConfirmations the minimum desired confirmations for the slice elements.
      * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
      */
-    public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations) {
-        return entries.stream().filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations)).findFirst();
+    public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Transaction rskTx, Integer minimumConfirmations) {
+        List<Entry> confirmed = entries.stream()
+                .filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations))
+                .toList();
+
+        Optional<Entry> first = confirmed.stream().findFirst();
+
+        if (confirmed.size() > 1) {
+            savePegOutTransaction(currentBlockNumber, rskTx, first.get());
+        }
+        return first;
     }
 
     public boolean removeEntry(Entry entry){
@@ -134,5 +149,22 @@ public class PegoutsWaitingForConfirmations {
 
     private boolean hasEnoughConfirmations(Entry entry, Long currentBlockNumber, Integer minimumConfirmations) {
         return (currentBlockNumber - entry.getPegoutCreationRskBlockNumber()) >= minimumConfirmations;
+    }
+
+    private void savePegOutTransaction(
+            Long blockId,
+            Transaction rskTx,
+            Entry entry
+    ) {
+        if (blockId == null) throw new IllegalArgumentException("blockId must not be null");
+        if (rskTx == null)  throw new IllegalArgumentException("rskTx must not be null");
+        if (entry == null)  throw new IllegalArgumentException("entry must not be null");
+
+        pegoutAudit.info(
+                "{}:{}:{}",
+                blockId,
+                rskTx.getHash().toHexString(),
+                entry.getBtcTransaction().getHashAsString()
+        );
     }
 }

@@ -20,7 +20,11 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.test.builders.AccountBuilder;
+import co.rsk.test.builders.TransactionBuilder;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Account;
+import org.ethereum.core.Transaction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -148,13 +152,13 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void getNextPegoutWithEnoughConfirmations_no_matches() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(9L, 5);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(9L, createTransaction(),5);
         Assertions.assertFalse(result.isPresent());
     }
 
     @Test
     void getNextPegoutWithEnoughConfirmations_ok() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, createTransaction(), 5);
         Assertions.assertTrue(result.isPresent());
         Assertions.assertTrue(set.removeEntry(result.get()));
         Assertions.assertFalse(set.removeEntry(result.get()));
@@ -163,7 +167,7 @@ class PegoutsWaitingForConfirmationsTest {
     @Test
     void getNextPegoutWithEnoughConfirmation_multipleMatch() {
         int size = set.getEntries().size();
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, createTransaction(),5);
         Assertions.assertTrue(result.isPresent());
         Assertions.assertTrue(set.removeEntry(result.get()));
         Assertions.assertFalse(set.removeEntry(result.get()));
@@ -197,5 +201,16 @@ class PegoutsWaitingForConfirmationsTest {
         BtcTransaction result = mock(BtcTransaction.class);
         when(result.bitcoinSerialize()).thenReturn(Hex.decode(serializationHex));
         return result;
+    }
+
+    private static Transaction createTransaction() {
+        int number = 0;
+        AccountBuilder acbuilder = new AccountBuilder();
+        acbuilder.name("sender" + number);
+        Account sender = acbuilder.build();
+        acbuilder.name("receiver" + number);
+        Account receiver = acbuilder.build();
+        TransactionBuilder txbuilder = new TransactionBuilder();
+        return txbuilder.sender(sender).receiver(receiver).value(BigInteger.valueOf(1000)).build();
     }
 }
