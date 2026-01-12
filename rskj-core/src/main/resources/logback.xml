@@ -127,7 +127,7 @@
         <appender-ref ref="FILE-AUDIT"/>
     </logger>
 
-    <logger name="pegout.audit"  level="INFO" additivity="false">
+    <logger name="pegout.audit"  level="INFO" additivity="true">
         <appender-ref ref="PEGOUT-FILE-AUDIT"/>
     </logger>
     <!-- Root logger -->
