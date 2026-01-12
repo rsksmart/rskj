@@ -17,6 +17,7 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.bitcoin.BitcoinUtils.calculateVirtualBytes;
 import static co.rsk.peg.bitcoin.BitcoinUtils.inputHasWitness;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
@@ -669,33 +670,6 @@ public final class BridgeUtils {
         int baseSize = calculateTxBaseSize(tx, inputsCount, false);
         int signingSize = getSigningSize(federation.getNumberOfSignaturesRequired(), inputsCount);
         return baseSize + signingSize;
-    }
-
-    public static int calculateBtcTxVirtualSize(BtcTransaction btcTx) {
-        int baseSize = 0;
-        List<TransactionInput> inputs = btcTx.getInputs();
-        baseSize += 1; // input count
-        for (TransactionInput input : inputs) {
-            baseSize += input.bitcoinSerialize().length;
-        }
-
-        List<TransactionOutput> outputs = btcTx.getOutputs();
-        baseSize += 1; // output count
-        for (TransactionOutput output : outputs) {
-            baseSize += output.bitcoinSerialize().length;
-        }
-
-        baseSize += 4; // version
-        baseSize += 4; // locktime
-
-        int totalSize = btcTx.bitcoinSerialize().length;
-        return calculateVirtualBytes(totalSize, baseSize);
-    }
-
-    // As described in BIP141
-    private static int calculateVirtualBytes(int totalSize, int baseSize) {
-        int txWeight = totalSize + (baseSize * 3);
-        return txWeight / 4;
     }
 
     private static int calculateSegwitTxSize(Federation federation, int inputsCount, int outputsCount) {
