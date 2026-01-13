@@ -37,7 +37,7 @@
 
     <!-- File appender -->
     <appender name="FILE-AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${logging.dir:-./logs}/rsk.log</file>
+        <file>/var/log/rsk/rsk.log</file>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <!-- we use the replace pattern to allow wrapping mdc keys in [] while avoiding outputting an empty [] if none -->
             <Pattern>
@@ -56,7 +56,7 @@
     </appender>
 
     <appender name="PEGOUT-FILE-AUDIT"  class="ch.qos.logback.core.FileAppender">
-        <file>${logging.dir:-./logs}/pegout-audit.log</file>
+        <file>/var/log/rsk/pegout-audit.log</file>
         <encoder>
             <pattern>%msg%n</pattern>
         </encoder>
