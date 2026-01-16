@@ -1,26 +1,35 @@
 package co.rsk.peg;
 
 import co.rsk.RskTestUtils;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.db.MutableTrieCache;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.storage.InMemoryStorage;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
+import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Block;
+import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.db.MutableRepository;
+import org.ethereum.vm.PrecompiledContracts;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -28,20 +37,32 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static co.rsk.peg.PegTestUtils.BTC_TX_LEGACY_VERSION;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createUTXO;
+import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class BridgeSupportProcessFundsMigrationTest {
+
+    private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+    private static final FederationConstants federationConstants = bridgeMainnetConstants.getFederationConstants();
+    private static final NetworkParameters networkParams = bridgeMainnetConstants.getBtcParams();
+    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
+    private static final StandardMultiSigFederationBuilder standardMultiSigFederationBuilder = StandardMultiSigFederationBuilder.builder();
+    public static final ECKey arbitrarySenderKey = RskTestUtils.getEcKeyFromSeed("sender");
+    private StorageAccessor bridgeStorageAccessor;
+    private FeePerKbSupport feePerKbSupport;
+    private FederationStorageProviderImpl federationStorageProvider;
+    private BridgeStorageProvider bridgeStorageProvider;
+    private BridgeEventLogger bridgeEventLogger;
 
     private static Stream<Arguments> processFundMigrationArgsProvider() {
         BridgeMainNetConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
@@ -114,6 +135,139 @@ class BridgeSupportProcessFundsMigrationTest {
         ).flatMap(Function.identity());
     }
 
+    @BeforeEach
+    void setUp() {
+        feePerKbSupport = mock(FeePerKbSupport.class);
+
+        bridgeEventLogger = mock(BridgeEventLogger.class);
+        bridgeStorageProvider = new BridgeStorageProvider(
+            createRepository(),
+            PrecompiledContracts.BRIDGE_ADDR,
+            networkParams,
+            activations
+        );
+        bridgeStorageAccessor = new InMemoryStorage();
+        federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+    }
+
+    @Test
+    void processFundsMigration_withRetiringGenesisFederationAndNewMultisigFederation_inMigrationAge_shouldMigrateFunds() throws IOException {
+        // Arrange
+        long newFederationCreationBlockNumber = 5L;
+        Federation newFederation = standardMultiSigFederationBuilder
+            .withCreationTime(Instant.EPOCH)
+            .withCreationBlockNumber(newFederationCreationBlockNumber)
+            .withNetworkParameters(networkParams)
+            .build();
+
+        Federation retiringFederation = FederationTestUtils.getGenesisFederation(federationConstants);
+        int numberOfUtxos = 1;
+        int valuePerOutput = 150_000;
+        List<UTXO> retiringFederationUtxos = generateRetiringFederationUTXOs(retiringFederation.getAddress(), numberOfUtxos, valuePerOutput);
+
+        federationStorageProvider.setOldFederation(retiringFederation);
+        federationStorageProvider.setNewFederation(newFederation);
+
+        Block rskCurrentBlock = getBlockInMigrationAge(newFederationCreationBlockNumber);
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
+            .withFederationConstants(federationConstants)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withRskExecutionBlock(rskCurrentBlock)
+            .withActivations(activations)
+            .build();
+
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+            .withBridgeConstants(bridgeMainnetConstants)
+            .withProvider(bridgeStorageProvider)
+            .withEventLogger(bridgeEventLogger)
+            .withExecutionBlock(rskCurrentBlock)
+            .withActivations(activations)
+            .withFeePerKbSupport(feePerKbSupport)
+            .withFederationSupport(federationSupport)
+            .build();
+
+        // Act
+        callUpdateCollections(bridgeSupport);
+
+        // Assert
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingConfirmation = bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntriesWithHash();
+        assertEquals(1, pegoutsWaitingConfirmation.size());
+
+        PegoutsWaitingForConfirmations.Entry pegoutWaitingForConfirmation = pegoutsWaitingConfirmation.iterator().next();
+        BtcTransaction btcTransaction = pegoutWaitingForConfirmation.getBtcTransaction();
+        assertEquals(1, btcTransaction.getOutputs().size());
+
+        TransactionOutput output = btcTransaction.getOutput(0);
+        Coin fees = btcTransaction.getFee();
+        Coin outputValue = output.getValue();
+        Coin totalValueSent = outputValue.add(fees);
+        Coin oldFederationUtxosValue = calculateUtxosTotalValue(retiringFederationUtxos);
+        assertEquals(totalValueSent, oldFederationUtxosValue);
+
+        Address actualMigrationTransactionDestination = output.getAddressFromP2SH(networkParams);
+        Address expectedMigrationTransactionDestination = newFederation.getAddress();
+        assertEquals(actualMigrationTransactionDestination, expectedMigrationTransactionDestination);
+
+        assertTheReleaseOutpointValuesAreCorrect(btcTransaction, numberOfUtxos, retiringFederationUtxos);
+
+        // TODO(juli): // provider.setPegoutTxSigHash(pegoutTxSigHash.get()); <- idem
+    }
+
+    private Coin calculateUtxosTotalValue(List<UTXO> retiringFederationUtxos) {
+        return retiringFederationUtxos
+            .stream()
+            .map(UTXO::getValue)
+            .reduce(Coin.ZERO, Coin::add);
+    }
+
+    private void assertTheReleaseOutpointValuesAreCorrect(BtcTransaction btcTransaction, int numberOfUtxos, List<UTXO> retiringFederationUtxos) {
+        Optional<List<Coin>> releaseOutpointsValues = bridgeStorageProvider.getReleaseOutpointsValues(btcTransaction.getHash());
+        assertTrue(releaseOutpointsValues.isPresent());
+        List<Coin> outpointsValues = releaseOutpointsValues.get();
+        assertEquals(numberOfUtxos, outpointsValues.size());
+        for (int i = 0; i < numberOfUtxos; i++) {
+            assertEquals(retiringFederationUtxos.get(i).getValue(), outpointsValues.get(i));
+        }
+    }
+
+    private List<UTXO> generateRetiringFederationUTXOs(Address retiringFederationAddress, int numberOfUtxos, int valuePerOutput) {
+        List<UTXO> retiringFederationUtxos = getOldFederationUtxos(numberOfUtxos, valuePerOutput, retiringFederationAddress);
+        byte[] serializeUTXOList = BridgeSerializationUtils.serializeUTXOList(retiringFederationUtxos);
+        bridgeStorageAccessor.saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), serializeUTXOList);
+        return retiringFederationUtxos;
+    }
+
+    private Block getBlockInMigrationAge(long newFederationCreationBlockNumber) {
+        Block block = mock(Block.class);
+        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
+        long federationInMigrationAgeHeight = newFederationCreationBlockNumber + federationActivationAge +
+            federationConstants.getFundsMigrationAgeSinceActivationBegin() + 1;
+        when(block.getNumber()).thenReturn(federationInMigrationAgeHeight);
+        return block;
+    }
+
+    private void callUpdateCollections(BridgeSupport bridgeSupport) throws IOException {
+        Transaction updateCollectionsTx = buildUpdateCollectionsTransaction();
+        updateCollectionsTx.sign(arbitrarySenderKey.getPrivKeyBytes());
+        bridgeSupport.updateCollections(updateCollectionsTx);
+    }
+
+    private static List<UTXO> getOldFederationUtxos(int numberOfUtxos, int valuePerOutput, Address oldFederationAddress) {
+        int index = 0;
+        List<UTXO> oldFederationUtxos = new ArrayList<>();
+        for (int i = 0; i < numberOfUtxos; i++) {
+            int nHash = i + 1;
+            Coin value = Coin.valueOf(valuePerOutput);
+            oldFederationUtxos.add(createUTXO(nHash, index, value, oldFederationAddress));
+        }
+        return oldFederationUtxos;
+    }
+
+    public static Repository createRepository() {
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+    }
+
     @ParameterizedTest
     @MethodSource("processFundMigrationArgsProvider")
     void test_processFundsMigration(
@@ -125,8 +279,8 @@ class BridgeSupportProcessFundsMigrationTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
         Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
-        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
 
+        long federationActivationAge = federationConstants.getFederationActivationAge(activations); // cambia si es FINGERROOT, yo lo dejaria activo total lo que cambia es el activation age
         long federationCreationBlockNumber = 5L;
         long federationInMigrationAgeHeight = federationCreationBlockNumber + federationActivationAge +
             federationConstants.getFundsMigrationAgeSinceActivationBegin() + 1;
@@ -162,7 +316,7 @@ class BridgeSupportProcessFundsMigrationTest {
             .withFederationConstants(federationConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(rskCurrentBlock)
-            .withActivations(activations)
+            .withActivations(activations) // solo para decodear non-standard
             .build();
 
         BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
@@ -185,7 +339,7 @@ class BridgeSupportProcessFundsMigrationTest {
         when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration);
 
         Transaction updateCollectionsTx = buildUpdateCollectionsTransaction();
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        ECKey senderKey = arbitrarySenderKey;
         updateCollectionsTx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(updateCollectionsTx);
 
@@ -199,7 +353,7 @@ class BridgeSupportProcessFundsMigrationTest {
             verify(federationStorageProvider, times(1)).setOldFederation(null);
         }
 
-        if (activations.isActive(ConsensusRule.RSKIP146)) {
+        if (activations.isActive(ConsensusRule.RSKIP146)) { // Papyrus
             // Should have been logged with the migrated UTXO
             PegoutsWaitingForConfirmations.Entry entry = (PegoutsWaitingForConfirmations.Entry) provider.getPegoutsWaitingForConfirmations()
                 .getEntriesWithHash()
@@ -210,7 +364,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 Coin.COIN
             );
 
-            if (activations.isActive(ConsensusRule.RSKIP376)){
+            if (activations.isActive(ConsensusRule.RSKIP376)){ // Arrowhead
                 assertEquals(BTC_TX_VERSION_2, entry.getBtcTransaction().getVersion());
             } else {
                 assertEquals(BTC_TX_LEGACY_VERSION, entry.getBtcTransaction().getVersion());
