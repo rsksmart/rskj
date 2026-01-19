@@ -17,6 +17,7 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
 import static co.rsk.peg.PegTestUtils.createFederation;
 import static co.rsk.peg.federation.FederationTestUtils.REGTEST_FEDERATION_PRIVATE_KEYS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -4392,10 +4393,6 @@ public class BridgeSupportIT {
         when(currentStored.getHeader()).thenReturn(currentBlock);
         when(btcBlockStore.getChainHead()).thenReturn(currentStored);
         when(currentStored.getHeight()).thenReturn(headHeight);
-    }
-
-    public static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
     private FederationStorageProvider createFederationStorageProvider(Repository repository) {
