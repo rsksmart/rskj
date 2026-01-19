@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
  * This class contains static values of messages on the network. These message
  * will always be the same and therefore don't need to be created each time.
  *
- * @author Roman Mandeleil
+ * @author Roman Mandeleil, Dieguito
  * @since 13.04.14
  */
 public class StaticMessages {
@@ -83,7 +83,7 @@ public class StaticMessages {
         }
         String phrase = config.helloPhrase();
 
-        return String.format("Ethereum(J)/v%s/%s/%s/Java/%s", numberVersion, system,
+        return String.format("RSK(J)/v%s/%s/%s/Java/%s", numberVersion, system,
                 config.projectVersionModifier().equalsIgnoreCase("release") ? "Release" : "Dev", phrase);
     }
 }
