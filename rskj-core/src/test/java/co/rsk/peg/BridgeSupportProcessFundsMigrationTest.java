@@ -188,23 +188,30 @@ class BridgeSupportProcessFundsMigrationTest {
             .withFederationSupport(federationSupport)
             .build();
 
+
         // Act
         callUpdateCollections(bridgeSupport);
 
         // Assert
+
         Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingConfirmation = bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntriesWithHash();
         assertEquals(1, pegoutsWaitingConfirmation.size());
 
         PegoutsWaitingForConfirmations.Entry pegoutWaitingForConfirmation = pegoutsWaitingConfirmation.iterator().next();
         BtcTransaction btcTransaction = pegoutWaitingForConfirmation.getBtcTransaction();
-        assertEquals(1, btcTransaction.getOutputs().size());
 
+        List<TransactionInput> inputs = btcTransaction.getInputs();
+        assertEquals(retiringFederationUtxos.size(), inputs.size());
+
+        assertUtxosWereIncludedAsInputs(retiringFederationUtxos, inputs);
+
+        assertEquals(1, btcTransaction.getOutputs().size());
         TransactionOutput output = btcTransaction.getOutput(0);
         Coin fees = btcTransaction.getFee();
         Coin outputValue = output.getValue();
         Coin totalValueSent = outputValue.add(fees);
-        Coin oldFederationUtxosValue = calculateUtxosTotalValue(retiringFederationUtxos);
-        assertEquals(totalValueSent, oldFederationUtxosValue);
+        Coin retiringFederationUtxosValue = calculateUtxosTotalValue(retiringFederationUtxos);
+        assertEquals(totalValueSent, retiringFederationUtxosValue);
 
         Address actualMigrationTransactionDestination = output.getAddressFromP2SH(networkParams);
         Address expectedMigrationTransactionDestination = newFederation.getAddress();
@@ -213,6 +220,21 @@ class BridgeSupportProcessFundsMigrationTest {
         assertTheReleaseOutpointValuesAreCorrect(btcTransaction, numberOfUtxos, retiringFederationUtxos);
 
         // TODO(juli): // provider.setPegoutTxSigHash(pegoutTxSigHash.get()); <- idem
+    }
+
+    private static void assertUtxosWereIncludedAsInputs(List<UTXO> utxos, List<TransactionInput> inputs) {
+        boolean utxoIncludedInTx = true;
+        for (UTXO utxo : utxos) {
+            utxoIncludedInTx &= inputs.stream().anyMatch(input ->
+                inputSpendsUtxo(input, utxo)
+            );
+        }
+        assertTrue(utxoIncludedInTx);
+    }
+
+    private static boolean inputSpendsUtxo(TransactionInput input, UTXO utxo) {
+        return input.getOutpoint().getHash().equals(utxo.getHash()) &&
+            input.getOutpoint().getIndex() == utxo.getIndex();
     }
 
     private Coin calculateUtxosTotalValue(List<UTXO> utxos) {
