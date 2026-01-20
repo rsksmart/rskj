@@ -23,6 +23,7 @@ import static co.rsk.peg.PegUtils.getFlyoverDerivationHash;
 import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_1;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -34,6 +35,7 @@ import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.bitcoin.RedeemScriptCreationException;
 import co.rsk.peg.constants.BridgeConstants;
@@ -49,6 +51,7 @@ import java.util.Collections;
 import java.util.List;
 
 import co.rsk.peg.federation.*;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.test.builders.PegoutTransactionBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -385,8 +388,6 @@ class ReleaseTransactionBuilderTest {
         BtcTransaction pegoutTx = createPegoutTransactionWithNInputsAnd50Outputs(activeP2shP2wshErpFederation, signingKeys, numberOfInputs);
         int size = calculateBtcTxVirtualSize(pegoutTx);
 
-        System.out.println("Size: " + size);
-
         // assert
         assertTrue(size < BtcTransaction.MAX_STANDARD_TX_SIZE);
     }
@@ -394,10 +395,7 @@ class ReleaseTransactionBuilderTest {
     @Test
     void createPegoutTransaction_with200FlyoverInputs_with50Outputs_shouldHaveASizeBelowMaximumBtcStandardSize() {
         // arrange
-        int numberOfInputs = 200;
-
         Script federationRedeemScript = activeP2shP2wshErpFederation.getRedeemScript();
-
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainNetParams, "userRefundBtcAddress");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainNetParams, "lpBtcAddress");
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
@@ -415,25 +413,51 @@ class ReleaseTransactionBuilderTest {
             federationRedeemScript
         );
 
-        PegoutTransactionBuilder pegoutTransactionBuilder = PegoutTransactionBuilder.builder()
-            .withNetworkParameters(btcMainNetParams)
-            .withSignatures(signingKeys)
-            .withActiveFederation(activeP2shP2wshErpFederation);
-
         Script flyoverP2SH = getFlyoverFederationOutputScript(flyoverRedeemScript, activeP2shP2wshErpFederation.getFormatVersion());
-        List<UTXO> utxos = getNUtxos(activeP2shP2wshErpFederation.getP2SHScript(), numberOfInputs);
-        for (int i = 0; i < utxos.size(); i++) {
-            pegoutTransactionBuilder = pegoutTransactionBuilder.withInput(BitcoinTestUtils.createHash(i), 0, utxos.get(i).getValue(), flyoverP2SH.getProgram());
+        int numberOfInputs = 200;
+        List<UTXO> utxos = getNUtxos(flyoverP2SH, numberOfInputs);
+        BtcTransaction spendTx = new BtcTransaction(btcMainNetParams);
+
+        int inputIndex = 0;
+        BtcTransaction fundTx = new BtcTransaction(btcMainNetParams);
+        for (UTXO utxo : utxos) {
+            Coin inputValue = utxo.getValue();
+            TransactionInput input = new TransactionInput(
+                btcMainNetParams,
+                fundTx,
+                EMPTY_BYTE_ARRAY,
+                new TransactionOutPoint(
+                    btcMainNetParams,
+                    utxo.getIndex(),
+                    utxo.getHash()
+                ),
+                inputValue
+            );
+            spendTx.addInput(input);
+            BitcoinUtils.addSpendingFederationBaseScript(
+                spendTx,
+                inputIndex,
+                flyoverRedeemScript,
+                activeP2shP2wshErpFederation.getFormatVersion()
+            );
+
+            BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(
+                spendTx,
+                inputIndex,
+                inputValue,
+                signingKeys
+            );
+
+            inputIndex++;
         }
 
+        Coin outputValue = Coin.SATOSHI;
+        Address recipient = BitcoinTestUtils.createP2PKHAddress(btcMainNetParams, "address");
         for (int i = 0; i < 50; i++) {
-            Address recipient = BitcoinTestUtils.createP2PKHAddress(btcMainNetParams, "address" + i);
-            pegoutTransactionBuilder = pegoutTransactionBuilder.withOutput(Coin.SATOSHI, recipient);
+            spendTx.addOutput(outputValue, recipient);
         }
 
-        BtcTransaction pegoutTx = pegoutTransactionBuilder.build();
-
-        int size = calculateBtcTxVirtualSize(pegoutTx);
+        int size = calculateBtcTxVirtualSize(spendTx);
         System.out.println("Size: " + size);
 
         // assert
