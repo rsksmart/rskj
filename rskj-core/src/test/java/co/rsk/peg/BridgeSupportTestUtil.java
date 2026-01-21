@@ -31,6 +31,7 @@ import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
@@ -41,6 +42,19 @@ import org.ethereum.vm.PrecompiledContracts;
 public final class BridgeSupportTestUtil {
     public static Repository createRepository() {
         return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+    }
+
+    public static Transaction buildUpdateCollectionsTx(byte chainId) {
+        var nonce = 3;
+        var value = 0;
+        var gasPrice = BigInteger.valueOf(0);
+        var gasLimit = BigInteger.valueOf(100000);
+        var rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
+            gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
+            Bridge.UPDATE_COLLECTIONS, chainId);
+        var randomKey = BtcECKey.fromPrivate(Hex.decode("45c5b07fc1a6f58892615b7c31dca6c96db58c4bbc538a6b8a22999aaa860c32"));
+        rskTx.sign(randomKey.getPrivKeyBytes());
+        return rskTx;
     }
 
     public static PartialMerkleTree createValidPmtForTransactions(List<BtcTransaction> btcTransactions, NetworkParameters networkParameters) {

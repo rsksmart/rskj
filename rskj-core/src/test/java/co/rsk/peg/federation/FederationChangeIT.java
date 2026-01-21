@@ -39,7 +39,6 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -71,7 +70,7 @@ class FederationChangeIT {
     private static final int NEW_FEDERATION_THRESHOLD = NEW_FEDERATION_MEMBERS_SIZE / 2 + 1;
     private static final List<FederationMember> NEW_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembersWithBtcKeys(NEW_FEDERATION_MEMBERS_KEYS);
     private static final SignatureCache SIGNATURE_CACHE = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
-    private static final Transaction UPDATE_COLLECTIONS_TX = buildUpdateCollectionsTx();
+    private static final Transaction UPDATE_COLLECTIONS_TX = buildUpdateCollectionsTx(Constants.MAINNET_CHAIN_ID);
     private static final Transaction FIRST_AUTHORIZED_TX = TransactionUtils.getTransactionFromCaller(SIGNATURE_CACHE, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
     private static final Transaction SECOND_AUTHORIZED_TX = TransactionUtils.getTransactionFromCaller(SIGNATURE_CACHE, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
 
@@ -832,19 +831,6 @@ class FederationChangeIT {
         return federation instanceof ErpFederation ?
             ((ErpFederation) federation).getDefaultP2SHScript() :
             federation.getP2SHScript();
-    }
-
-    private static Transaction buildUpdateCollectionsTx() {
-        var nonce = 3;
-        var value = 0;
-        var gasPrice = BigInteger.valueOf(0);
-        var gasLimit = BigInteger.valueOf(100000);
-        var rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
-                gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
-                Bridge.UPDATE_COLLECTIONS, Constants.MAINNET_CHAIN_ID);
-        var randomKey = BtcECKey.fromPrivate(Hex.decode("45c5b07fc1a6f58892615b7c31dca6c96db58c4bbc538a6b8a22999aaa860c32"));
-        rskTx.sign(randomKey.getPrivKeyBytes());
-        return rskTx;
     }
 
     private void signInputs(BtcTransaction transaction, List<BtcECKey> keysToSign) {
