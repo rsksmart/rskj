@@ -19,6 +19,7 @@ package co.rsk.rpc.modules.eth;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.core.Coin;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
@@ -28,6 +29,7 @@ import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.HexUtils;
@@ -42,8 +44,12 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.dto.ProofResultDTO;
+import org.ethereum.rpc.dto.StorageProofDTO;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
@@ -74,8 +80,9 @@ public class EthModule
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
-    private static final CallTransaction.Function ERROR_ABI_FUNCTION = CallTransaction.Function.fromSignature("Error", "string");
-    private static final byte[] ERROR_ABI_FUNCTION_SIGNATURE = ERROR_ABI_FUNCTION.encodeSignature(); //08c379a0
+    private static final CallTransaction.Function ERROR_ABI_FUNCTION = CallTransaction.Function.fromSignature("Error",
+            "string");
+    private static final byte[] ERROR_ABI_FUNCTION_SIGNATURE = ERROR_ABI_FUNCTION.encodeSignature(); // 08c379a0
 
     private final Blockchain blockchain;
     private final TransactionPool transactionPool;
@@ -152,7 +159,8 @@ public class EthModule
         return call(argsParam, bnOrId, Collections.emptyList());
     }
 
-    public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId, List<AccountOverride> accountOverrideList) {
+    public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId,
+            List<AccountOverride> accountOverrideList) {
         boolean shouldPerformStateOverride = accountOverrideList != null && !accountOverrideList.isEmpty();
 
         validateStateOverrideAllowance(shouldPerformStateOverride);
@@ -247,8 +255,7 @@ public class EthModule
                     hexArgs.getValue(),
                     hexArgs.getData(),
                     hexArgs.getFromAddress(),
-                    snapshot
-            );
+                    snapshot);
 
             ProgramResult res = executor.getResult();
             handleTransactionRevertIfHappens(res);
@@ -266,9 +273,9 @@ public class EthModule
     }
 
     protected String internalEstimateGas(ProgramResult reversibleExecutionResult) {
-        long estimatedGas = reversibleExecutionResult.getMovedRemainingGasToChild() ?
-                reversibleExecutionResult.getGasUsed() + reversibleExecutionResult.getDeductedRefund() :
-                reversibleExecutionResult.getMaxGasUsed();
+        long estimatedGas = reversibleExecutionResult.getMovedRemainingGasToChild()
+                ? reversibleExecutionResult.getGasUsed() + reversibleExecutionResult.getDeductedRefund()
+                : reversibleExecutionResult.getMaxGasUsed();
 
         if (reversibleExecutionResult.isCallWithValuePerformed()) {
             estimatedGas += GasCost.STIPEND_CALL;
@@ -299,7 +306,7 @@ public class EthModule
     }
 
     public String chainId() {
-        return HexUtils.toJsonHex(new byte[]{chainId});
+        return HexUtils.toJsonHex(new byte[] { chainId });
     }
 
     public String getCode(HexAddressParam address, String blockId) {
@@ -330,6 +337,142 @@ public class EthModule
                 LOGGER.debug("eth_getCode({}, {}): {}", addr.toHexString(), blockId, s);
             }
         }
+    }
+
+    /**
+     * Returns the account and storage values with Merkle proofs.
+     *
+     * @param address        The address of the account
+     * @param storageKeys    List of storage keys to prove
+     * @param blockId        Block identifier (number, hash, or
+     *                       "latest"/"earliest"/"pending")
+     * @param useRlpEncoding If true, encode proof nodes with RLP for Ethereum
+     *                       compatibility
+     * @return ProofResultDTO containing account info and Merkle proofs
+     */
+    public ProofResultDTO getProof(RskAddress address, List<DataWord> storageKeys, String blockId,
+            boolean useRlpEncoding) {
+        if (blockId == null) {
+            throw new NullPointerException("blockId cannot be null");
+        }
+
+        try {
+            // Get repository for the block (Repository extends RepositorySnapshot and has
+            // getTrie())
+            Repository repository = getRepository(blockId);
+            if (repository == null) {
+                throw invalidParamError("Block not found: " + blockId);
+            }
+
+            // Get account state
+            Coin balance = repository.getBalance(address);
+            java.math.BigInteger nonce = repository.getNonce(address);
+            Keccak256 codeHash = repository.getCodeHashStandard(address);
+
+            // Get the trie for proof generation
+            Trie trie = repository.getTrie();
+            TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+            // Generate account proof
+            byte[] accountKey = trieKeyMapper.getAccountKey(address);
+            List<Trie> accountNodes = trie.getNodes(accountKey);
+            String[] accountProof = encodeProofNodes(accountNodes, useRlpEncoding);
+
+            // Calculate storage hash (root of storage subtrie)
+            String storageHash = calculateStorageHash(trie, trieKeyMapper, address);
+
+            // Generate storage proofs
+            StorageProofDTO[] storageProofs = new StorageProofDTO[storageKeys.size()];
+            for (int i = 0; i < storageKeys.size(); i++) {
+                DataWord key = storageKeys.get(i);
+                storageProofs[i] = generateStorageProof(trie, trieKeyMapper, address, key, repository, useRlpEncoding);
+            }
+
+            // Use keccak256 of empty array for non-existent accounts' code hash
+            String codeHashHex = codeHash != null ? codeHash.toJsonString()
+                    : HexUtils.toUnformattedJsonHex(MutableRepository.KECCAK_256_OF_EMPTY_ARRAY.getBytes());
+
+            return ProofResultDTO.builder()
+                    .address(address.toJsonString())
+                    .accountProof(accountProof)
+                    .balance(HexUtils.toQuantityJsonHex(balance.asBigInteger()))
+                    .codeHash(codeHashHex)
+                    .nonce(HexUtils.toQuantityJsonHex(nonce))
+                    .storageHash(storageHash)
+                    .storageProof(storageProofs)
+                    .build();
+        } catch (RskJsonRpcRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Error generating proof for address {}", address, e);
+            throw invalidParamError("Error generating proof: " + e.getMessage());
+        }
+    }
+
+    private Repository getRepository(String blockId) {
+        switch (blockId.toLowerCase()) {
+            case "pending":
+                // For pending, we can't get a proper trie, use latest instead
+                return (Repository) repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+            case "earliest":
+                return (Repository) repositoryLocator.snapshotAt(blockchain.getBlockByNumber(0).getHeader());
+            case "latest":
+                return (Repository) repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+            default:
+                try {
+                    long blockNumber = HexUtils.stringHexToBigInteger(blockId).longValue();
+                    Block requestedBlock = blockchain.getBlockByNumber(blockNumber);
+                    if (requestedBlock != null) {
+                        return (Repository) repositoryLocator.snapshotAt(requestedBlock.getHeader());
+                    }
+                    return null;
+                } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                    throw invalidParamError("invalid blocknumber " + blockId);
+                }
+        }
+    }
+
+    private String[] encodeProofNodes(List<Trie> nodes, boolean useRlpEncoding) {
+        if (nodes == null || nodes.isEmpty()) {
+            return new String[0];
+        }
+
+        if (useRlpEncoding) {
+            return ProofEncoder.encodeProofNodesRlp(nodes);
+        } else {
+            return ProofEncoder.encodeProofNodes(nodes);
+        }
+    }
+
+    private String calculateStorageHash(Trie trie, TrieKeyMapper trieKeyMapper, RskAddress address) {
+        byte[] storagePrefix = trieKeyMapper.getAccountStoragePrefixKey(address);
+        Trie storageRootNode = trie.find(storagePrefix);
+
+        if (storageRootNode == null) {
+            return HexUtils.toUnformattedJsonHex(HashUtil.EMPTY_TRIE_HASH);
+        }
+
+        return storageRootNode.getHash().toJsonString();
+    }
+
+    private StorageProofDTO generateStorageProof(Trie trie, TrieKeyMapper trieKeyMapper, RskAddress address,
+            DataWord storageKey, AccountInformationProvider repository,
+            boolean useRlpEncoding) {
+        // Get storage value
+        DataWord value = repository.getStorageValue(address, storageKey);
+        String valueHex = value != null ? HexUtils.toQuantityJsonHex(value.getData()) : "0x0";
+
+        // Get the full trie key for this storage slot
+        byte[] trieKey = trieKeyMapper.getAccountStorageKey(address, storageKey);
+
+        // Generate proof nodes
+        List<Trie> proofNodes = trie.getNodes(trieKey);
+        String[] proof = encodeProofNodes(proofNodes, useRlpEncoding);
+
+        // Format the storage key as 32-byte hex
+        String keyHex = HexUtils.toUnformattedJsonHex(storageKey.getData());
+
+        return new StorageProofDTO(keyHex, valueHex, proof);
     }
 
     private AccountInformationProvider getAccountInformationProvider(String id) {
@@ -365,8 +508,7 @@ public class EthModule
                 hexArgs.getToAddress(),
                 hexArgs.getValue(),
                 hexArgs.getData(),
-                hexArgs.getFromAddress()
-        );
+                hexArgs.getFromAddress());
     }
 
     public ProgramResult callConstant(CallArguments args, Block executionBlock, RepositorySnapshot snapshot, PrecompiledContracts precompiledContracts) {
