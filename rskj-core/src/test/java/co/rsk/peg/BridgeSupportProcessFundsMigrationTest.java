@@ -153,12 +153,6 @@ class BridgeSupportProcessFundsMigrationTest {
     @Test
     void processFundsMigration_withRetiringGenesisFederationAndNewMultisigFederation_inMigrationAge_shouldMigrateFunds() throws IOException {
         // Arrange
-        long newFederationCreationBlockNumber = 5L;
-        Federation newFederation = standardMultiSigFederationBuilder
-            .withCreationBlockNumber(newFederationCreationBlockNumber)
-            .withNetworkParameters(networkParams)
-            .build();
-
         Federation retiringFederation = FederationTestUtils.getGenesisFederation(federationConstants);
         int numberOfUtxos = 1;
         Coin valuePerOutput = Coin.valueOf(1_500_000);
@@ -167,6 +161,12 @@ class BridgeSupportProcessFundsMigrationTest {
         List<UTXO> retiringFederationUtxos = createUTXOs(numberOfUtxos, valuePerOutput, retiringFederationAddress);
         byte[] serializeUTXOList = BridgeSerializationUtils.serializeUTXOList(retiringFederationUtxos);
         bridgeStorageAccessor.saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), serializeUTXOList);
+
+        long newFederationCreationBlockNumber = 5L;
+        Federation newFederation = standardMultiSigFederationBuilder
+            .withCreationBlockNumber(newFederationCreationBlockNumber)
+            .withNetworkParameters(networkParams)
+            .build();
 
         federationStorageProvider.setOldFederation(retiringFederation);
         federationStorageProvider.setNewFederation(newFederation);
@@ -193,21 +193,20 @@ class BridgeSupportProcessFundsMigrationTest {
         callUpdateCollections(bridgeSupport);
 
         // Assert
-
         Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingConfirmation = bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntriesWithHash();
         assertEquals(1, pegoutsWaitingConfirmation.size());
 
         PegoutsWaitingForConfirmations.Entry pegoutWaitingForConfirmation = pegoutsWaitingConfirmation.iterator().next();
-        BtcTransaction btcTransaction = pegoutWaitingForConfirmation.getBtcTransaction();
+        BtcTransaction pegoutTx = pegoutWaitingForConfirmation.getBtcTransaction();
 
-        List<TransactionInput> inputs = btcTransaction.getInputs();
+        List<TransactionInput> inputs = pegoutTx.getInputs();
         assertEquals(retiringFederationUtxos.size(), inputs.size());
 
-        assertUtxosWereIncludedAsInputs(retiringFederationUtxos, inputs);
+        assertAllUtxosWereIncludedAsInputs(retiringFederationUtxos, inputs);
 
-        assertEquals(1, btcTransaction.getOutputs().size());
-        TransactionOutput output = btcTransaction.getOutput(0);
-        Coin fees = btcTransaction.getFee();
+        assertEquals(1, pegoutTx.getOutputs().size());
+        TransactionOutput output = pegoutTx.getOutput(0);
+        Coin fees = pegoutTx.getFee();
         Coin outputValue = output.getValue();
         Coin totalValueSent = outputValue.add(fees);
         Coin retiringFederationUtxosValue = calculateUtxosTotalValue(retiringFederationUtxos);
@@ -217,12 +216,11 @@ class BridgeSupportProcessFundsMigrationTest {
         Address expectedMigrationTransactionDestination = newFederation.getAddress();
         assertEquals(actualMigrationTransactionDestination, expectedMigrationTransactionDestination);
 
-        assertTheReleaseOutpointValuesAreCorrect(btcTransaction, numberOfUtxos, retiringFederationUtxos);
-
+        assertTheReleaseOutpointValuesAreCorrect(pegoutTx, numberOfUtxos, retiringFederationUtxos);
         // TODO(juli): // provider.setPegoutTxSigHash(pegoutTxSigHash.get()); <- idem
     }
 
-    private static void assertUtxosWereIncludedAsInputs(List<UTXO> utxos, List<TransactionInput> inputs) {
+    private static void assertAllUtxosWereIncludedAsInputs(List<UTXO> utxos, List<TransactionInput> inputs) {
         boolean utxoIncludedInTx = true;
         for (UTXO utxo : utxos) {
             utxoIncludedInTx &= inputs.stream().anyMatch(input ->
@@ -278,7 +276,7 @@ class BridgeSupportProcessFundsMigrationTest {
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
         Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
 
-        long federationActivationAge = federationConstants.getFederationActivationAge(activations); // cambia si es FINGERROOT, yo lo dejaria activo total lo que cambia es el activation age
+        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
         long federationCreationBlockNumber = 5L;
         long federationInMigrationAgeHeight = federationCreationBlockNumber + federationActivationAge +
             federationConstants.getFundsMigrationAgeSinceActivationBegin() + 1;
@@ -314,7 +312,7 @@ class BridgeSupportProcessFundsMigrationTest {
             .withFederationConstants(federationConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(rskCurrentBlock)
-            .withActivations(activations) // solo para decodear non-standard
+            .withActivations(activations)
             .build();
 
         BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
@@ -349,7 +347,7 @@ class BridgeSupportProcessFundsMigrationTest {
             verify(federationStorageProvider, times(1)).setOldFederation(null);
         }
 
-        if (activations.isActive(ConsensusRule.RSKIP146)) { // Papyrus
+        if (activations.isActive(ConsensusRule.RSKIP146)) {
             // Should have been logged with the migrated UTXO
             PegoutsWaitingForConfirmations.Entry entry = (PegoutsWaitingForConfirmations.Entry) provider.getPegoutsWaitingForConfirmations()
                 .getEntriesWithHash()
@@ -360,7 +358,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 Coin.COIN
             );
 
-            if (activations.isActive(ConsensusRule.RSKIP376)){ // Arrowhead
+            if (activations.isActive(ConsensusRule.RSKIP376)){
                 assertEquals(BTC_TX_VERSION_2, entry.getBtcTransaction().getVersion());
             } else {
                 assertEquals(BTC_TX_LEGACY_VERSION, entry.getBtcTransaction().getVersion());
