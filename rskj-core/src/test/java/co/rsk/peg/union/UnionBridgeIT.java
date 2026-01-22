@@ -1,5 +1,6 @@
 package co.rsk.peg.union;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.BridgeEvents.*;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
@@ -101,7 +102,7 @@ class UnionBridgeIT {
     @BeforeAll
     void lovellSetup() {
         ForBlock lovellActivationsForBlock = lovellActivations.forBlock(0);
-        repository = BridgeSupportTestUtil.createRepository();
+        repository = createRepository();
         repository.addBalance(BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeMainNetConstants.getMaxRbtc()));
         storageAccessor = new BridgeStorageAccessorImpl(repository);
 

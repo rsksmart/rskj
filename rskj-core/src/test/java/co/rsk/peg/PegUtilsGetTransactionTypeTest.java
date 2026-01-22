@@ -1,6 +1,6 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript;
 import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
