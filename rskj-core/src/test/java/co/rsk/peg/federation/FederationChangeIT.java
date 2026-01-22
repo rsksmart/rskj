@@ -1,5 +1,6 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
@@ -197,7 +198,7 @@ class FederationChangeIT {
     }
 
     private void setUp() throws Exception {
-        repository = BridgeSupportTestUtil.createRepository();
+        repository = createRepository();
         repository.addBalance(BRIDGE_ADDRESS, co.rsk.core.Coin.fromBitcoin(BRIDGE_CONSTANTS.getMaxRbtc()));
 
         bridgeStorageProvider =
