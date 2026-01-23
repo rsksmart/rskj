@@ -2,6 +2,8 @@ package co.rsk.peg;
 
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
+import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
+import static co.rsk.peg.ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createUTXO;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -213,6 +215,60 @@ class ReleaseTransactionBuilderPocTest {
 
         // Assert
         assertEquals(COULD_NOT_ADJUST_DOWNWARDS, releaseTransactionResult.responseCode());
+    }
+
+    @ParameterizedTest()
+    @MethodSource("federationProvider")
+    void buildBatchedPegouts_whenInsufficientFundsForPegoutRequests_shouldReturnInsufficientMoney(Federation federation) {
+        // Arrange
+        Address federationAddress = federation.getAddress();
+        Coin utxoAmount = minimumPegoutTxValue.divide(2);
+        List<UTXO> utxos = createUTXOs(1, utxoAmount, federationAddress);
+        Wallet wallet = buildWallet(federation, utxos);
+        int federationFormatVersion = federation.getFormatVersion();
+
+        ReleaseTransactionBuilder releaseTransactionBuilder = releaseTransactionTestBuilder
+            .withWallet(wallet)
+            .withFederationFormatVersion(federationFormatVersion)
+            .withChangeAddress(federationAddress)
+            .build();
+
+        List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(2, minimumPegoutTxValue);
+
+        // Act
+        BuildResult releaseTransactionResult = releaseTransactionBuilder.buildBatchedPegouts(pegoutRequests);
+
+        // Assert
+        assertEquals(INSUFFICIENT_MONEY, releaseTransactionResult.responseCode());
+        assertNull(releaseTransactionResult.btcTx());
+    }
+
+    @ParameterizedTest()
+    @MethodSource("federationProvider")
+    void buildBatchedPegouts_whenEstimatedFeeIsTooHigh_shouldReturnDustySendRequested(Federation federation) {
+        // Arrange
+        Address federationAddress = federation.getAddress();
+        Coin smallAmount = Coin.SATOSHI.multiply(1000);
+        List<UTXO> utxos = createUTXOs(1, smallAmount, federationAddress);
+        Wallet wallet = buildWallet(federation, utxos);
+        int federationFormatVersion = federation.getFormatVersion();
+
+        Coin excessivelyHighFeePerKb = Coin.COIN.multiply(10);
+        ReleaseTransactionBuilder releaseTransactionBuilder = releaseTransactionTestBuilder
+            .withWallet(wallet)
+            .withFederationFormatVersion(federationFormatVersion)
+            .withChangeAddress(federationAddress)
+            .withFeePerKb(excessivelyHighFeePerKb)
+            .build();
+
+        List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1, smallAmount.divide(2));
+
+        // Act
+        BuildResult releaseTransactionResult = releaseTransactionBuilder.buildBatchedPegouts(pegoutRequests);
+
+        // Assert
+        assertEquals(DUSTY_SEND_REQUESTED, releaseTransactionResult.responseCode());
+        assertNull(releaseTransactionResult.btcTx());
     }
 
     private void assertReleaseTransactionNumberOfOutputs(BtcTransaction releaseTransaction, int expectedNumberOfOutputs) {
