@@ -3,6 +3,7 @@ package co.rsk.peg;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
+import static co.rsk.peg.ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createUTXO;
 import static org.junit.jupiter.api.Assertions.*;
@@ -271,6 +272,31 @@ class ReleaseTransactionBuilderPocTest {
         assertNull(releaseTransactionResult.btcTx());
     }
 
+    @ParameterizedTest()
+    @MethodSource("standardMultisigAndP2shErpFederationProvider")
+    void buildBatchedPegouts_when200UtxosToPay50PegoutRequests_shouldReturnExceedMaxTransactionSize(Federation federation) {
+        // Arrange
+        Address federationAddress = federation.getAddress();
+        List<UTXO> utxos = createUTXOs(200, minimumPeginTxValue, federationAddress);
+        Wallet wallet = buildWallet(federation, utxos);
+        int federationFormatVersion = federation.getFormatVersion();
+
+        ReleaseTransactionBuilder releaseTransactionBuilder = releaseTransactionTestBuilder
+            .withWallet(wallet)
+            .withFederationFormatVersion(federationFormatVersion)
+            .withChangeAddress(federationAddress)
+            .build();
+
+        List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(50, minimumPegoutTxValue);
+
+        // Act
+        BuildResult releaseTransactionResult = releaseTransactionBuilder.buildBatchedPegouts(pegoutRequests);
+
+        // Assert
+        assertEquals(EXCEED_MAX_TRANSACTION_SIZE, releaseTransactionResult.responseCode());
+        assertNull(releaseTransactionResult.btcTx());
+    }
+
     private void assertReleaseTransactionNumberOfOutputs(BtcTransaction releaseTransaction, int expectedNumberOfOutputs) {
         int actualNumberOfOutputs = releaseTransaction.getOutputs().size();
         assertEquals(expectedNumberOfOutputs, actualNumberOfOutputs);
@@ -347,6 +373,13 @@ class ReleaseTransactionBuilderPocTest {
             Arguments.of(standardFederation),
             Arguments.of(p2shErpFederation),
             Arguments.of(p2wshErpFederation)
+        );
+    }
+
+    private static Stream<Arguments> standardMultisigAndP2shErpFederationProvider() {
+        return Stream.of(
+            Arguments.of(standardFederation),
+            Arguments.of(p2shErpFederation)
         );
     }
 
