@@ -116,6 +116,15 @@ public class BitcoinTestUtils {
         return utxos;
     }
 
+    public static List<UTXO> createUTXOs(int numberOfUtxos, Coin value, Address receiver) {
+        List<UTXO> utxos = new ArrayList<>();
+        for (int i = 0; i < numberOfUtxos; i++) {
+            utxos.add(createUTXO(i + 1, 0, value, receiver));
+        }
+
+        return utxos;
+    }
+
     public static BtcTransaction createBtcTransactionWithOutputToAddress(
         NetworkParameters networkParameters,
         Coin amount,
