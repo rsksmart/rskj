@@ -1,4 +1,4 @@
-package co.rsk.peg;
+package co.rsk.test.builders;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;

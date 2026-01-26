@@ -28,6 +28,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.simples.SimpleRskTransaction;
+import co.rsk.test.builders.UTXOBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;

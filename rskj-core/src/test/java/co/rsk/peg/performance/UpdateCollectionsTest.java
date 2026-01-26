@@ -30,6 +30,8 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationTestUtils;
 import java.util.Collections;
+
+import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;

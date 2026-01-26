@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import co.rsk.peg.UTXOBuilder;
+import co.rsk.test.builders.UTXOBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;

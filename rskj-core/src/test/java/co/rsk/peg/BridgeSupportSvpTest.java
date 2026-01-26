@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.IntStream;
 
+import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;

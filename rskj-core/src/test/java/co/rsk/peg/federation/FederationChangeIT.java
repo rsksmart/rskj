@@ -39,6 +39,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.IntStream;
 
+import co.rsk.test.builders.UTXOBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -817,9 +818,10 @@ class FederationChangeIT {
         for (int i = 1; i < howMany; i++) {
             Sha256Hash utxoHash = BitcoinTestUtils.createHash(i);
             UTXO utxo = UTXOBuilder.builder()
-                    .withTransactionHash(utxoHash)
-                    .withOutputScript(outputScript)
-                    .build();
+                .withTransactionHash(utxoHash)
+                .withOutputScript(outputScript)
+                .withValue(Coin.COIN)
+                .build();
             utxos.add(utxo);
         }
 

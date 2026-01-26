@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.List;
 
 import co.rsk.peg.federation.*;
+import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.jupiter.api.Assertions;
