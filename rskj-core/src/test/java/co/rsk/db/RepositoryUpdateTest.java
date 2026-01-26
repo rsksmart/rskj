@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import static co.rsk.RskTestUtils.createRepository;
+
 /**
  * Created by SerAdmin on 9/26/2018.
  */
@@ -31,7 +33,7 @@ class RepositoryUpdateTest {
 
         details.put(DataWord.ONE, DataWord.valueOf(42));
 
-        Repository repo = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        Repository repo = createRepository();
         updateContractDetails(repo, address, details);
 
         byte[] value = repo.getStorageBytes(address,DataWord.ONE);
@@ -49,7 +51,7 @@ class RepositoryUpdateTest {
         details.put(DataWord.ONE, DataWord.valueOf(42));
         details.put(DataWord.ONE, DataWord.ZERO);
 
-        Repository repo = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        Repository repo = createRepository();
         updateContractDetails(repo, address, details);
         repo.commit();
 
@@ -65,7 +67,7 @@ class RepositoryUpdateTest {
         details.putBytes(DataWord.ONE, new byte[] { 0x01, 0x02, 0x03 });
         details.putBytes(DataWord.ONE, null);
 
-        Repository repo = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        Repository repo = createRepository();
         updateContractDetails(repo, address, details);
         repo.commit();
 

@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.BridgeSerializationUtils.deserializeOutpointsValues;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 import static org.ethereum.TestUtils.assertThrows;
@@ -32,14 +33,9 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.constants.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStore;
-import co.rsk.trie.TrieStoreImpl;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
@@ -50,8 +46,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -3027,12 +3021,6 @@ class BridgeStorageProviderTest {
 
         return tx;
     }
-
-    private static Repository createRepository() {
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, new Trie(trieStore))));
-    }
-
     private BridgeStorageProvider createBridgeStorageProvider(Repository repository, NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
         return new BridgeStorageProvider(repository, bridgeAddress, networkParameters, activations);
     }
