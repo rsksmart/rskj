@@ -23,10 +23,10 @@ import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASE_REQUEST_QUEUE_WITH_TXHASH;
 import static co.rsk.peg.BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
-import static co.rsk.peg.PegTestUtils.createUTXO;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -2572,7 +2572,12 @@ class BridgeSupportTest {
             .build();
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
-        sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
+        Script outputScript = ScriptBuilder.createOutputScript(oldFederation.getAddress());
+        UTXO utxo = UTXOBuilder.builder()
+            .withOutputScript(outputScript)
+            .withHeight(10)
+            .build();
+        sufficientUTXOsForMigration1.add(utxo);
         when(federationStorageProviderMock.getOldFederationBtcUTXOs())
             .thenReturn(sufficientUTXOsForMigration1);
 
@@ -2632,7 +2637,12 @@ class BridgeSupportTest {
             .build();
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
-        sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
+        Script outputScript = ScriptBuilder.createOutputScript(oldFederation.getAddress());
+        UTXO utxo = UTXOBuilder.builder()
+            .withOutputScript(outputScript)
+            .withHeight(10)
+            .build();
+        sufficientUTXOsForMigration1.add(utxo);
         when(federationStorageProviderMock.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration1);
 
         bridgeSupport.updateCollections(tx);
@@ -2698,7 +2708,12 @@ class BridgeSupportTest {
             .build();
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
-        sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
+        Script outputScript = ScriptBuilder.createOutputScript(oldFederation.getAddress());
+        UTXO utxo = UTXOBuilder.builder()
+            .withOutputScript(outputScript)
+            .withHeight(10)
+            .build();
+        sufficientUTXOsForMigration1.add(utxo);
         when(federationStorageProviderMock.getOldFederationBtcUTXOs())
             .thenReturn(sufficientUTXOsForMigration1);
 
@@ -2758,7 +2773,12 @@ class BridgeSupportTest {
             .build();
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
-        sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
+        Script outputScript = ScriptBuilder.createOutputScript(oldFederation.getAddress());
+        UTXO utxo = UTXOBuilder.builder()
+            .withOutputScript(outputScript)
+            .withHeight(10)
+            .build();
+        sufficientUTXOsForMigration1.add(utxo);
         when(federationStorageProviderMock.getOldFederationBtcUTXOs())
             .thenReturn(sufficientUTXOsForMigration1);
 
@@ -2828,7 +2848,12 @@ class BridgeSupportTest {
             .build();
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
-        sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
+        Script outputScript = ScriptBuilder.createOutputScript(oldFederation.getAddress());
+        UTXO utxo = UTXOBuilder.builder()
+            .withOutputScript(outputScript)
+            .withHeight(10)
+            .build();
+        sufficientUTXOsForMigration1.add(utxo);
 
         when(federationStorageProviderMock.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration1);
         when(federationStorageProviderMock.getNextFederationCreationBlockHeight(any())).thenReturn(Optional.of(1L));
@@ -2888,7 +2913,12 @@ class BridgeSupportTest {
             .build();
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
-        sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
+        Script outputScript = ScriptBuilder.createOutputScript(oldFederation.getAddress());
+        UTXO utxo = UTXOBuilder.builder()
+            .withOutputScript(outputScript)
+            .withHeight(10)
+            .build();
+        sufficientUTXOsForMigration1.add(utxo);
         when(federationStorageProviderMock.getOldFederationBtcUTXOs())
             .thenReturn(sufficientUTXOsForMigration1);
 
@@ -8039,10 +8069,14 @@ class BridgeSupportTest {
 
         private void setUpReleaseRequests() {
             // save utxos in active federation wallet
+            Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
+            UTXOBuilder utxoBuilder = UTXOBuilder.builder()
+                .withOutputScript(outputScript)
+                .withHeight(10);
             List<UTXO> activeFederationUTXOs = List.of(
-                BitcoinTestUtils.createUTXO(1, 0, outpointValue1, activeFederation.getAddress()),
-                BitcoinTestUtils.createUTXO(2, 0, outpointValue2, activeFederation.getAddress()),
-                BitcoinTestUtils.createUTXO(3, 0, outpointValue3, activeFederation.getAddress())
+                utxoBuilder.withTransactionHash(createHash(1)).withValue(outpointValue1).build(),
+                utxoBuilder.withTransactionHash(createHash(2)).withValue(outpointValue2).build(),
+                utxoBuilder.withTransactionHash(createHash(3)).withValue(outpointValue3).build()
             );
             bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
@@ -8412,14 +8446,12 @@ class BridgeSupportTest {
 
         List<UTXO> utxosToMigrate = new ArrayList<>();
         for (int i = 0; i < utxosToCreate; i++) {
-            utxosToMigrate.add(new UTXO(
-                BitcoinTestUtils.createHash(i),
-                0,
-                Coin.COIN,
-                0,
-                false,
-                oldFed.getP2SHScript())
-            );
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(createHash(i))
+                .withHeight(10)
+                .withOutputScript(oldFed.getP2SHScript())
+                .build();
+            utxosToMigrate.add(utxo);
         }
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(Collections.emptySet());
@@ -8501,10 +8533,13 @@ class BridgeSupportTest {
 
         private void setUp(Federation retiringFederation, Federation activeFederation) {
             federationStorageProvider.setOldFederation(retiringFederation);
+            Address proposedFederationAddress = retiringFederation.getAddress();
+            Script outputScript = ScriptBuilder.createOutputScript(proposedFederationAddress);
+            UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript).withHeight(10);
             retiringFederationUTXOs = Arrays.asList(
-                BitcoinTestUtils.createUTXO(1, 0, utxos.get(0), retiringFederation.getAddress()),
-                BitcoinTestUtils.createUTXO(2, 0, utxos.get(1), retiringFederation.getAddress()),
-                BitcoinTestUtils.createUTXO(3, 0, utxos.get(2), retiringFederation.getAddress())
+                utxoBuilder.withTransactionHash(createHash(1)).withValue(utxos.get(0)).build(),
+                utxoBuilder.withTransactionHash(createHash(2)).withValue(utxos.get(1)).build(),
+                utxoBuilder.withTransactionHash(createHash(3)).withValue(utxos.get(2)).build()
             );
             bridgeStorageAccessor.saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), retiringFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
@@ -8877,11 +8912,19 @@ class BridgeSupportTest {
         ReleaseRequestQueue.Entry pegoutRequest3 = new ReleaseRequestQueue.Entry(pegoutDestinationAddress3, minPegoutValue.add(Coin.valueOf(2000)));
         ReleaseRequestQueue.Entry bigPegoutRequest = new ReleaseRequestQueue.Entry(pegoutDestinationAddress4, Coin.COIN.multiply(10));
 
-        UTXO p2shFedUtxo1 = createUTXO(Coin.valueOf(8, 0), p2shFed.getAddress());
-        UTXO p2shFedBigUtxoUtxo = createUTXO(Coin.valueOf(13, 0), p2shFed.getAddress());
+        Script p2shOutputScript = ScriptBuilder.createOutputScript(p2shFed.getAddress());
+        UTXOBuilder p2shUtxoBuilder = UTXOBuilder.builder()
+            .withOutputScript(p2shOutputScript)
+            .withHeight(10);
+        UTXO p2shFedUtxo1 = p2shUtxoBuilder.withValue(Coin.valueOf(8, 0)).build();
+        UTXO p2shFedBigUtxoUtxo = p2shUtxoBuilder.withValue(Coin.valueOf(13, 0)).build();;
 
-        UTXO p2shP2wshFedUtxo1 = createUTXO(Coin.valueOf(8, 0), p2shP2wshFed.getAddress());
-        UTXO p2shP2wshFedBigUtxo = createUTXO(Coin.valueOf(13, 0), p2shP2wshFed.getAddress());
+        Script p2shP2wshOutputScript = ScriptBuilder.createOutputScript(p2shP2wshFed.getAddress());
+        UTXOBuilder p2shP2wshUtxoBuilder = UTXOBuilder.builder()
+            .withOutputScript(p2shP2wshOutputScript)
+            .withHeight(10);
+        UTXO p2shP2wshFedUtxo1 = p2shP2wshUtxoBuilder.withValue(Coin.valueOf(8, 0)).build();
+        UTXO p2shP2wshFedBigUtxo = p2shP2wshUtxoBuilder.withValue(Coin.valueOf(13, 0)).build();;
 
         return Stream.of(
             // active fed is p2sh and there are 0 pegout requests
@@ -9276,26 +9319,26 @@ class BridgeSupportTest {
 
         // Configure existing utxos in both federations
         if (amountInOldFed != null) {
-            UTXO utxo = new UTXO(
-                Sha256Hash.wrap(TestUtils.generateBytes("amountInOldFed",32)),
-                0,
-                amountInOldFed,
-                1,
-                false,
-                new Script(new byte[]{})
-            );
+            Script outputScript = new Script(EMPTY_BYTE_ARRAY);
+            Sha256Hash transactionHash = Sha256Hash.wrap(TestUtils.generateBytes("amountInOldFed", 32));
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(transactionHash)
+                .withValue(amountInOldFed)
+                .withHeight(1)
+                .withOutputScript(outputScript)
+                .build();
             federationStorageProvider.getOldFederationBtcUTXOs().add(utxo);
             currentFunds = currentFunds.add(amountInOldFed);
         }
         if (amountInNewFed != null) {
-            UTXO utxo = new UTXO(
-                Sha256Hash.wrap(TestUtils.generateBytes("amountInNewFed",32)),
-                0,
-                amountInNewFed,
-                1,
-                false,
-                new Script(new byte[]{})
-            );
+            Script outputScript = new Script(EMPTY_BYTE_ARRAY);
+            Sha256Hash transactionHash = Sha256Hash.wrap(TestUtils.generateBytes("amountInNewFed", 32));
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(transactionHash)
+                .withValue(amountInNewFed)
+                .withHeight(1)
+                .withOutputScript(outputScript)
+                .build();
             federationStorageProvider.getNewFederationBtcUTXOs(bridgeConstants.getBtcParams(), activations).add(utxo);
             currentFunds = currentFunds.add(amountInNewFed);
         }

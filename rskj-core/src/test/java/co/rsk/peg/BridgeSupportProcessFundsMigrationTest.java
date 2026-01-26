@@ -4,6 +4,8 @@ import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -176,12 +178,16 @@ class BridgeSupportProcessFundsMigrationTest {
             .build();
 
         List<UTXO> sufficientUTXOsForMigration = new ArrayList<>();
-        sufficientUTXOsForMigration.add(PegTestUtils.createUTXO(
-            0,
-            0,
-            Coin.COIN,
-            oldFederation.getAddress()
-        ));
+
+
+        Script outputScript = ScriptBuilder.createOutputScript(oldFederation.getAddress());
+        UTXO utxo = UTXOBuilder.builder()
+            .withHeight(10)
+            .withOutputScript(outputScript)
+            .build();
+        sufficientUTXOsForMigration.add(
+            utxo
+        );
         when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration);
 
         Transaction updateCollectionsTx = buildUpdateCollectionsTransaction();

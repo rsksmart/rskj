@@ -1972,8 +1972,9 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddress4);
 
         List<UTXO> expectedResult = new ArrayList<>();
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 0, Coin.COIN));
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 1, Coin.ZERO));
+        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withTransactionHash(btcTx.getHash()).withHeight(10);
+        expectedResult.add(utxoBuilder.withTransactionIndex(0).withValue(Coin.COIN).build());
+        expectedResult.add(utxoBuilder.withTransactionIndex(1).withValue(Coin.ZERO).build());
 
         List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,
@@ -2035,8 +2036,11 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
 
         List<UTXO> expectedResult = new ArrayList<>();
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 1, Coin.COIN));
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 2, Coin.ZERO));
+        UTXOBuilder utxoBuilder = UTXOBuilder.builder()
+            .withTransactionHash(btcTx.getHash())
+            .withHeight(10);
+        expectedResult.add(utxoBuilder.withTransactionIndex(1).withValue(Coin.COIN).build());
+        expectedResult.add(utxoBuilder.withTransactionIndex(2).withValue(Coin.ZERO).build());
 
         List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,
@@ -2072,11 +2076,14 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddress4);
 
         List<UTXO> expectedResult = new ArrayList<>();
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 0, Coin.COIN));
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 1, Coin.ZERO));
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 2, Coin.COIN));
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 3, Coin.COIN));
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 4, Coin.COIN));
+        UTXOBuilder utxoBuilder = UTXOBuilder.builder()
+            .withTransactionHash(btcTx.getHash())
+            .withHeight(10);
+        expectedResult.add(utxoBuilder.withTransactionIndex(0).withValue(Coin.COIN).build());
+        expectedResult.add(utxoBuilder.withTransactionIndex(1).withValue(Coin.ZERO).build());
+        expectedResult.add(utxoBuilder.withTransactionIndex(2).withValue(Coin.COIN).build());
+        expectedResult.add(utxoBuilder.withTransactionIndex(3).withValue(Coin.COIN).build());
+        expectedResult.add(utxoBuilder.withTransactionIndex(4).withValue(Coin.COIN).build());
 
         List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,
