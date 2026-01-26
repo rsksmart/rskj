@@ -8918,7 +8918,7 @@ class BridgeSupportTest {
             .withOutputScript(p2shOutputScript)
             .withHeight(10);
         UTXO p2shFedUtxo1 = p2shUtxoBuilder.withValue(Coin.valueOf(8, 0)).build();
-        UTXO p2shFedBigUtxoUtxo = p2shUtxoBuilder.withValue(Coin.valueOf(13, 0)).build();;
+        UTXO p2shFedBigUtxoUtxo = p2shUtxoBuilder.withValue(Coin.valueOf(13, 0)).build();
 
         Script p2shP2wshOutputScript = ScriptBuilder.createOutputScript(p2shP2wshFed.getAddress());
         UTXOBuilder p2shP2wshUtxoBuilder = UTXOBuilder.builder()
