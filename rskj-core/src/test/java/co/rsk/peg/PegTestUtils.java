@@ -244,7 +244,7 @@ public final class PegTestUtils {
         List<UTXO> utxos = new ArrayList<>();
         for (int i = 0; i < amount; i++) {
             UTXO utxo = UTXOBuilder.builder()
-                    .withTransactionHash(createHash(i))
+                    .withTransactionHash(createHash(i+1))
                     .withOutputScript(outputScript)
                     .build();
             utxos.add(utxo);

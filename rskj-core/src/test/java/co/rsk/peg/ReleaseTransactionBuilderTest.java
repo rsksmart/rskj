@@ -855,9 +855,9 @@ class ReleaseTransactionBuilderTest {
         Script outputScript = federation.getP2SHScript();
         UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript);
         List<UTXO> utxos = Arrays.asList(
-            utxoBuilder.withTransactionHash(mockUTXOHash("1")).withValue(Coin.COIN).build(),
-            utxoBuilder.withTransactionHash(mockUTXOHash("2")).withValue(Coin.FIFTY_COINS).build(),
-            utxoBuilder.withTransactionHash(mockUTXOHash("3")).withValue(Coin.CENT.times(3)).build()
+            utxoBuilder.withTransactionHash(mockUTXOHash("1")).withTransactionIndex(0).withValue(Coin.COIN).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("2")).withTransactionIndex(2).withValue(Coin.FIFTY_COINS).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("3")).withTransactionIndex(0).withValue(Coin.CENT.times(3)).build()
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
@@ -983,8 +983,8 @@ class ReleaseTransactionBuilderTest {
             .withOutputScript(federation.getP2SHScript());
 
         List<UTXO> utxos = Arrays.asList(
-            utxoBuilder.withTransactionHash(mockUTXOHash("1")).build(),
-            utxoBuilder.withTransactionHash(mockUTXOHash("2")).build()
+            utxoBuilder.withTransactionHash(mockUTXOHash("1")).withValue(Coin.COIN).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("2")).withValue(Coin.COIN).build()
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(

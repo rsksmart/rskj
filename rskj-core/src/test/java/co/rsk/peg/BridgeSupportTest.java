@@ -8924,7 +8924,7 @@ class BridgeSupportTest {
             .withOutputScript(p2shP2wshOutputScript)
             .withHeight(10);
         UTXO p2shP2wshFedUtxo1 = p2shP2wshUtxoBuilder.withValue(Coin.valueOf(8, 0)).build();
-        UTXO p2shP2wshFedBigUtxo = p2shP2wshUtxoBuilder.withValue(Coin.valueOf(13, 0)).build();;
+        UTXO p2shP2wshFedBigUtxo = p2shP2wshUtxoBuilder.withValue(Coin.valueOf(13, 0)).build();
 
         return Stream.of(
             // active fed is p2sh and there are 0 pegout requests
