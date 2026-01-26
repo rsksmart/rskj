@@ -269,7 +269,7 @@ class EthModuleDSLTest {
         // used in Step 3, it must return "false" as contract is not moved there anymore.
 
         AccountOverride newAccountOverride = new AccountOverride(identityPrecompiledAddress);
-        accountOverride.setMovePrecompileToAddress(new RskAddress("0x0000000000000000000000000000000000000002"));
+        newAccountOverride.setMovePrecompileToAddress(new RskAddress("0x0000000000000000000000000000000000000002"));
 
         String result4 = eth.call(callArgumentsParam2, blockIdentifierParam, List.of(newAccountOverride));
         assertEquals(falseInHex, result4);
