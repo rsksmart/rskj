@@ -73,6 +73,8 @@ class BridgeSupportReleaseBtcTest {
     private static final NetworkParameters NETWORK_PARAMETERS = BRIDGE_CONSTANTS.getBtcParams();
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
 
+    private final UTXOBuilder utxoBuilder = UTXOBuilder.builder();
+
     private Federation activeFederation;
     private Repository repository;
     private BridgeEventLogger eventLogger;
@@ -83,6 +85,7 @@ class BridgeSupportReleaseBtcTest {
     private BridgeSupportBuilder bridgeSupportBuilder;
     private SignatureCache signatureCache;
     private FeePerKbSupport feePerKbSupport;
+
 
     @BeforeEach
     void setUpOnEachTest() {
@@ -931,7 +934,7 @@ class BridgeSupportReleaseBtcTest {
 
         List<UTXO> utxos = new ArrayList<>();
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript).withHeight(10);
+        utxoBuilder.withOutputScript(outputScript).withHeight(10);
         utxos.add(utxoBuilder.withTransactionHash(createHash(1)).withTransactionIndex(0).build());
         utxos.add(utxoBuilder.withTransactionHash(createHash(2)).withTransactionIndex(1).build());
 
@@ -970,7 +973,7 @@ class BridgeSupportReleaseBtcTest {
 
         List<UTXO> utxos = new ArrayList<>();
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript).withHeight(10);
+        utxoBuilder.withOutputScript(outputScript).withHeight(10);
         utxos.add(utxoBuilder.withTransactionHash(createHash(1)).withTransactionIndex(0).build());
         utxos.add(utxoBuilder.withTransactionHash(createHash(2)).withTransactionIndex(1).build());
 
@@ -1021,7 +1024,7 @@ class BridgeSupportReleaseBtcTest {
         List<UTXO> utxos = new ArrayList<>();
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
         Coin value = Coin.COIN.multiply(2);
-        UTXO utxo = UTXOBuilder.builder()
+        UTXO utxo = utxoBuilder
             .withTransactionHash(createHash(1))
             .withValue(value)
             .withHeight(10)
@@ -1058,7 +1061,7 @@ class BridgeSupportReleaseBtcTest {
     void check_wallet_balance_after_hop_process_no_requests() throws IOException {
         List<UTXO> utxos = new ArrayList<>();
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript).withHeight(10);
+        utxoBuilder.withOutputScript(outputScript).withHeight(10);
         utxos.add(utxoBuilder.withTransactionHash(createHash(1)).withTransactionIndex(0).withValue(Coin.COIN.multiply(4)).build());
         utxos.add(utxoBuilder.withTransactionHash(createHash(2)).withTransactionIndex(1).withValue(Coin.COIN.multiply(4)).build());
         utxos.add(utxoBuilder.withTransactionHash(createHash(3)).withTransactionIndex(2).withValue(Coin.COIN.multiply(3)).build());
@@ -1095,7 +1098,7 @@ class BridgeSupportReleaseBtcTest {
     void check_wallet_balance_after_hop_process_all_requests_when_utxos_available() throws IOException {
         List<UTXO> utxos = new ArrayList<>();
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript).withHeight(10);
+        utxoBuilder.withOutputScript(outputScript).withHeight(10);
         utxos.add(utxoBuilder.withTransactionHash(createHash(1)).withTransactionIndex(0).withValue(Coin.COIN.multiply(4)).build());
         utxos.add(utxoBuilder.withTransactionHash(createHash(2)).withTransactionIndex(1).withValue(Coin.COIN.multiply(4)).build());
         utxos.add(utxoBuilder.withTransactionHash(createHash(3)).withTransactionIndex(2).withValue(Coin.COIN.multiply(3)).build());
@@ -1597,7 +1600,7 @@ class BridgeSupportReleaseBtcTest {
      *********************************/
 
     private UTXO buildUTXO() {
-        return UTXOBuilder.builder()
+        return utxoBuilder
             .withTransactionHash(createHash(11))
             .withValue(Coin.COIN.multiply(2))
             .withHeight(1)

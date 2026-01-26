@@ -79,12 +79,15 @@ class BridgeUtilsTest {
     private static final String DATA = "80af2871";
     private static final byte[] MISSING_SIGNATURE = new byte[0];
 
+    private final UTXOBuilder utxoBuilder = UTXOBuilder.builder();
+
     private Constants constants;
     private ActivationConfig activationConfig;
     private ActivationConfig.ForBlock activations;
     private BridgeConstants bridgeConstantsRegtest;
     private BridgeConstants bridgeConstantsMainnet;
     private NetworkParameters networkParameters;
+
 
     @BeforeEach
     void setupConfig() {
@@ -1973,7 +1976,7 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddress4);
 
         List<UTXO> expectedResult = new ArrayList<>();
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withTransactionHash(btcTx.getHash()).withHeight(10);
+        utxoBuilder.withTransactionHash(btcTx.getHash()).withHeight(10);
         expectedResult.add(utxoBuilder.withTransactionIndex(0).withValue(Coin.COIN).build());
         expectedResult.add(utxoBuilder.withTransactionIndex(1).withValue(Coin.ZERO).build());
 
@@ -2037,7 +2040,7 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
 
         List<UTXO> expectedResult = new ArrayList<>();
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder()
+        utxoBuilder
             .withTransactionHash(btcTx.getHash())
             .withHeight(10);
         expectedResult.add(utxoBuilder.withTransactionIndex(1).withValue(Coin.COIN).build());
@@ -2077,7 +2080,8 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddress4);
 
         List<UTXO> expectedResult = new ArrayList<>();
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder()
+
+        utxoBuilder
             .withTransactionHash(btcTx.getHash())
             .withHeight(10);
         expectedResult.add(utxoBuilder.withTransactionIndex(0).withValue(Coin.COIN).build());

@@ -79,6 +79,7 @@ class BridgeSupportSvpTest {
     private static final CallTransaction.Function commitFederationFailedEvent = BridgeEvents.COMMIT_FEDERATION_FAILED.getEvent();
 
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
+    private final UTXOBuilder utxoBuilder = UTXOBuilder.builder();
 
     private final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeys(9);
     private final List<BtcECKey> proposedFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
@@ -138,7 +139,7 @@ class BridgeSupportSvpTest {
         federationStorageProvider.setNewFederation(activeFederation);
 
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-        UTXOBuilder builder = UTXOBuilder.builder().withOutputScript(outputScript).withHeight(10);
+        UTXOBuilder builder = utxoBuilder.withOutputScript(outputScript).withHeight(10);
         List<UTXO> activeFederationUTXOs = Arrays.asList(
             builder.withTransactionHash(createHash(1)).withValue(svpFundTxOutpointsValues.get(0)).build(),
             builder.withTransactionHash(createHash(2)).withValue(svpFundTxOutpointsValues.get(1)).build(),
@@ -467,7 +468,7 @@ class BridgeSupportSvpTest {
             federationStorageProvider.setNewFederation(activeFederation);
 
             Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-            UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript).withHeight(10);
+            utxoBuilder.withOutputScript(outputScript).withHeight(10);
             List<UTXO> activeFederationUTXOs = Arrays.asList(
                 utxoBuilder.withTransactionHash(createHash(1)).withValue(svpFundTxOutpointsValues.get(0)).build(),
                 utxoBuilder.withTransactionHash(createHash(2)).withValue(svpFundTxOutpointsValues.get(1)).build(),
