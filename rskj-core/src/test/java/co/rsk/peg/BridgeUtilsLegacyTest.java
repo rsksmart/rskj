@@ -404,7 +404,6 @@ class BridgeUtilsLegacyTest {
 
     @Test
     void getUTXOsSentToAddress_multiple_utxos_sent_to_given_address() {
-
         Function<BtcTransaction, List<UTXO>> expectedResult = btcTx -> {
             UTXOBuilder utxoBuilder = UTXOBuilder.builder()
                 .withHeight(10)

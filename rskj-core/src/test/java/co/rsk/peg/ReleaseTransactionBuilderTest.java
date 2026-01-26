@@ -1047,7 +1047,6 @@ class ReleaseTransactionBuilderTest {
 
         assertEquals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS, result.responseCode());
 
-
         List<UTXO> newUtxos = Arrays.asList(
             utxoBuilder.withTransactionHash(mockUTXOHash("1")).withValue(Coin.MILLICOIN).build(),
             utxoBuilder.withTransactionHash(mockUTXOHash("2")).withValue(Coin.MILLICOIN).build(),

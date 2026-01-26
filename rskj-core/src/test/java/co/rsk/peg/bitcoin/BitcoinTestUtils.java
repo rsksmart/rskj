@@ -99,7 +99,7 @@ public class BitcoinTestUtils {
         List<UTXO> utxos = new ArrayList<>();
         for (int i = 0; i < amount; i++) {
             UTXO utxo = utxoBuilder
-                    .withTransactionHash(createHash(i+1))
+                    .withTransactionHash(createHash(i + 1))
                     .build();
             utxos.add(utxo);
         }
@@ -113,7 +113,7 @@ public class BitcoinTestUtils {
         List<UTXO> utxos = new ArrayList<>();
         for (int i = 0; i < amount; i++) {
             UTXO utxo = utxoBuilder
-                .withTransactionHash(createHash(i+1))
+                .withTransactionHash(createHash(i + 1))
                 .build();
             utxos.add(utxo);
         }
