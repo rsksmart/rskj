@@ -179,7 +179,6 @@ class BridgeSupportProcessFundsMigrationTest {
 
         List<UTXO> sufficientUTXOsForMigration = new ArrayList<>();
 
-
         Script outputScript = ScriptBuilder.createOutputScript(oldFederation.getAddress());
         UTXO utxo = UTXOBuilder.builder()
             .withHeight(10)
