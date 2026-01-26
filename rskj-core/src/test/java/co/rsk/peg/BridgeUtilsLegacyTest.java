@@ -353,7 +353,11 @@ class BridgeUtilsLegacyTest {
     void getUTXOsSentToAddress_one_utxo_sent_to_given_address() {
         Function<BtcTransaction, List<UTXO>> expectedResult = btcTx -> {
             List<UTXO> expectedUTXOs = new ArrayList<>();
-            expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 0, Coin.COIN));
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(btcTx.getHash())
+                .withHeight(10)
+                .build();
+            expectedUTXOs.add(utxo);
             return expectedUTXOs;
         };
 
@@ -400,11 +404,15 @@ class BridgeUtilsLegacyTest {
 
     @Test
     void getUTXOsSentToAddress_multiple_utxos_sent_to_given_address() {
+
         Function<BtcTransaction, List<UTXO>> expectedResult = btcTx -> {
+            UTXOBuilder utxoBuilder = UTXOBuilder.builder()
+                .withHeight(10)
+                .withTransactionHash(btcTx.getHash());
             List<UTXO> expectedUTXOs = new ArrayList<>();
-            expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 6, Coin.COIN));
-            expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 7, Coin.COIN));
-            expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 8, Coin.COIN));
+            expectedUTXOs.add(utxoBuilder.withTransactionIndex(6).build());
+            expectedUTXOs.add(utxoBuilder.withTransactionIndex(7).build());
+            expectedUTXOs.add(utxoBuilder.withTransactionIndex(8).build());
             return expectedUTXOs;
         };
 

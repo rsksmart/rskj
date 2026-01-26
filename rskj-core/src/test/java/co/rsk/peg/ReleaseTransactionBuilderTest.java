@@ -20,6 +20,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_1;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createUTXOs;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -569,20 +570,7 @@ class ReleaseTransactionBuilderTest {
 
     private static List<UTXO> getUtxos(Script outputScript) {
         int numberOfUtxos = 2;
-        Coin value = Coin.COIN;
-        ArrayList<UTXO> utxos = new ArrayList<>(numberOfUtxos);
-        for (int i = 0; i < numberOfUtxos; i++) {
-            UTXO utxo = new UTXO(
-                BitcoinTestUtils.createHash(i+1),
-                0,
-                value,
-                0,
-                false,
-                outputScript
-            );
-            utxos.add(utxo);
-        }
-        return utxos;
+        return createUTXOs(numberOfUtxos, outputScript);
     }
 
     @Test
@@ -864,10 +852,12 @@ class ReleaseTransactionBuilderTest {
         ReleaseRequestQueue.Entry testEntry3 = createTestEntry(789, 5);
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
+        Script outputScript = federation.getP2SHScript();
+        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript);
         List<UTXO> utxos = Arrays.asList(
-            new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("2"), 2, Coin.FIFTY_COINS, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("3"), 0, Coin.CENT.times(3), 0, false, federation.getP2SHScript())
+            utxoBuilder.withTransactionHash(mockUTXOHash("1")).withValue(Coin.COIN).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("2")).withValue(Coin.FIFTY_COINS).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("3")).withValue(Coin.CENT.times(3)).build()
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
@@ -929,10 +919,12 @@ class ReleaseTransactionBuilderTest {
         );
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
+        Script outputScript = federation.getP2SHScript();
+        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript);
         List<UTXO> utxos = Arrays.asList(
-            new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("2"), 2, Coin.FIFTY_COINS, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("3"), 0, Coin.CENT.times(3), 0, false, federation.getP2SHScript())
+            utxoBuilder.withTransactionHash(mockUTXOHash("1")).withTransactionIndex(0).withValue(Coin.COIN).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("2")).withTransactionIndex(2).withValue(Coin.FIFTY_COINS).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("3")).withTransactionIndex(0).withValue(Coin.CENT.times(3)).build()
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
@@ -987,9 +979,12 @@ class ReleaseTransactionBuilderTest {
         ReleaseRequestQueue.Entry testEntry3 = createTestEntry(789, Coin.COIN);
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
+        UTXOBuilder utxoBuilder = UTXOBuilder.builder()
+            .withOutputScript(federation.getP2SHScript());
+
         List<UTXO> utxos = Arrays.asList(
-            new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("2"), 0, Coin.COIN, 0, false, federation.getP2SHScript())
+            utxoBuilder.withTransactionHash(mockUTXOHash("1")).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("2")).build()
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
@@ -1022,10 +1017,13 @@ class ReleaseTransactionBuilderTest {
         ReleaseRequestQueue.Entry testEntry3 = createTestEntry(789, Coin.MILLICOIN);
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
+        UTXOBuilder utxoBuilder = UTXOBuilder.builder()
+            .withOutputScript(federation.getP2SHScript())
+            .withValue(Coin.MILLICOIN);
         List<UTXO> utxos = Arrays.asList(
-            new UTXO(mockUTXOHash("1"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("2"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("3"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript())
+            utxoBuilder.withTransactionHash(mockUTXOHash("1")).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("2")).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("3")).build()
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
@@ -1049,11 +1047,12 @@ class ReleaseTransactionBuilderTest {
 
         assertEquals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS, result.responseCode());
 
+
         List<UTXO> newUtxos = Arrays.asList(
-            new UTXO(mockUTXOHash("1"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("2"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("3"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("4"), 0, Coin.CENT, 0, false, federation.getP2SHScript())
+            utxoBuilder.withTransactionHash(mockUTXOHash("1")).withValue(Coin.MILLICOIN).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("2")).withValue(Coin.MILLICOIN).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("3")).withValue(Coin.MILLICOIN).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("4")).withValue(Coin.CENT).build()
         );
 
         Wallet newWallet = BridgeUtils.getFederationSpendWallet(
@@ -1083,7 +1082,7 @@ class ReleaseTransactionBuilderTest {
 
         List<ReleaseRequestQueue.Entry> pegoutRequests = createTestEntries(600);
 
-        List<UTXO> utxos = PegTestUtils.createUTXOs(600, federation.getAddress());
+        List<UTXO> utxos = createUTXOs(600, federation.getAddress());
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             Context.getOrCreate(regtestParameters),
@@ -1146,9 +1145,11 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void test_verifyTXFeeIsSpentEquallyForBatchedPegouts_two_pegouts() {
+        Script outputScript = federation.getP2SHScript();
+        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript);
         List<UTXO> utxos = Arrays.asList(
-            new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("2"), 0, Coin.COIN, 0, false, federation.getP2SHScript())
+            utxoBuilder.withTransactionHash(mockUTXOHash("1")).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("2")).build()
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
@@ -1199,9 +1200,11 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void test_VerifyTXFeeIsSpentEquallyForBatchedPegouts_three_pegouts() {
+        Script outputScript = federation.getP2SHScript();
+        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript);
         List<UTXO> utxos = Arrays.asList(
-            new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("2"), 0, Coin.COIN, 0, false, federation.getP2SHScript())
+            utxoBuilder.withTransactionHash(mockUTXOHash("1")).build(),
+            utxoBuilder.withTransactionHash(mockUTXOHash("2")).build()
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
@@ -1379,14 +1382,13 @@ class ReleaseTransactionBuilderTest {
     }
 
     private UTXO mockUTXO(String generator, long index, Coin value) {
-        return new UTXO(
-            mockUTXOHash(generator),
-            index,
-            value,
-            10,
-            false,
-            null
-        );
+        return UTXOBuilder.builder()
+            .withTransactionHash(mockUTXOHash(generator))
+            .withTransactionIndex(index)
+            .withValue(value)
+            .withHeight(10)
+            .withOutputScript(null)
+            .build();
     }
 
     private Sha256Hash mockUTXOHash(String generator) {

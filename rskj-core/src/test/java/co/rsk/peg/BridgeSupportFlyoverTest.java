@@ -23,6 +23,7 @@ import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
 import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -3545,7 +3546,10 @@ class BridgeSupportFlyoverTest {
         );
 
         List<UTXO> utxoList = new ArrayList<>();
-        UTXO utxo = new UTXO(tx.getHash(), 0, Coin.COIN, 0, false, flyoverP2SH);
+        UTXO utxo = UTXOBuilder.builder()
+            .withTransactionHash(tx.getHash())
+            .withOutputScript(flyoverP2SH)
+            .build();
         utxoList.add(utxo);
 
         Wallet obtainedWallet = bridgeSupport.getFlyoverWallet(btcContext, utxoList, Collections.singletonList(flyoverFederationInformation));
@@ -3619,7 +3623,13 @@ class BridgeSupportFlyoverTest {
 
         List<UTXO> utxos = new ArrayList<>();
         Sha256Hash utxoHash = BitcoinTestUtils.createHash(1);
-        UTXO utxo = new UTXO(utxoHash, 0, Coin.COIN.multiply(2), 0, false, new Script(new byte[]{}));
+        Coin value = Coin.COIN.multiply(2);
+        Script outputScript = new Script(EMPTY_BYTE_ARRAY);
+        UTXO utxo = UTXOBuilder.builder()
+            .withTransactionHash(utxoHash)
+            .withValue(value)
+            .withOutputScript(outputScript)
+            .build();
         utxos.add(utxo);
 
         Assertions.assertEquals(0, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());

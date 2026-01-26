@@ -815,9 +815,12 @@ class FederationChangeIT {
 
         var howMany = 50;
         for (int i = 1; i < howMany; i++) {
-            Coin value = Coin.COIN;
             Sha256Hash utxoHash = BitcoinTestUtils.createHash(i);
-            utxos.add(new UTXO(utxoHash, 0, value, 0, false, outputScript));
+            UTXO utxo = UTXOBuilder.builder()
+                    .withTransactionHash(utxoHash)
+                    .withOutputScript(outputScript)
+                    .build();
+            utxos.add(utxo);
         }
 
         return utxos;

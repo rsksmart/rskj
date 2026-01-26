@@ -136,10 +136,12 @@ class BridgeSupportSvpTest {
             .build();
         federationStorageProvider.setNewFederation(activeFederation);
 
+        Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
+        UTXOBuilder builder = UTXOBuilder.builder().withOutputScript(outputScript).withHeight(10);
         List<UTXO> activeFederationUTXOs = Arrays.asList(
-            BitcoinTestUtils.createUTXO(1, 0, svpFundTxOutpointsValues.get(0), activeFederation.getAddress()),
-            BitcoinTestUtils.createUTXO(2, 0, svpFundTxOutpointsValues.get(1), activeFederation.getAddress()),
-            BitcoinTestUtils.createUTXO(3, 0, svpFundTxOutpointsValues.get(2), activeFederation.getAddress())
+            builder.withTransactionHash(createHash(1)).withValue(svpFundTxOutpointsValues.get(0)).build(),
+            builder.withTransactionHash(createHash(2)).withValue(svpFundTxOutpointsValues.get(1)).build(),
+            builder.withTransactionHash(createHash(3)).withValue(svpFundTxOutpointsValues.get(2)).build()
         );
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
@@ -462,10 +464,13 @@ class BridgeSupportSvpTest {
                 .withMembersBtcPublicKeys(activeFederationMembersBtcPublicKeys)
                 .build();
             federationStorageProvider.setNewFederation(activeFederation);
+
+            Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
+            UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript).withHeight(10);
             List<UTXO> activeFederationUTXOs = Arrays.asList(
-                BitcoinTestUtils.createUTXO(1, 0, svpFundTxOutpointsValues.get(0), activeFederation.getAddress()),
-                BitcoinTestUtils.createUTXO(2, 0, svpFundTxOutpointsValues.get(1), activeFederation.getAddress()),
-                BitcoinTestUtils.createUTXO(3, 0, svpFundTxOutpointsValues.get(2), activeFederation.getAddress())
+                utxoBuilder.withTransactionHash(createHash(1)).withValue(svpFundTxOutpointsValues.get(0)).build(),
+                utxoBuilder.withTransactionHash(createHash(2)).withValue(svpFundTxOutpointsValues.get(1)).build(),
+                utxoBuilder.withTransactionHash(createHash(3)).withValue(svpFundTxOutpointsValues.get(2)).build()
             );
             bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
