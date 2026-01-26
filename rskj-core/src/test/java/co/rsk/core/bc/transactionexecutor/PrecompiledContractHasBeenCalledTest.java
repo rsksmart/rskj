@@ -392,8 +392,8 @@ NEGATIVE CASES, IF A REGULAR CONTRACT IS CALLED, FLAG SHOULD BE FALSE, SAME FOR 
     }
 
     private static Repository getRepository() {
-        Repository aRepository = createRepository();
-        return aRepository.startTracking();
+        Repository repository = createRepository();
+        return repository.startTracking();
     }
 }
 
