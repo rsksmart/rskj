@@ -63,6 +63,7 @@ class ReleaseTransactionBuilderTest {
     private final Federation activeP2shErpFederation = P2shErpFederationBuilder.builder().build();
     private final Script activeFederationP2SHScript = activeP2shErpFederation.getP2SHScript();
     private final Federation p2shP2wshErpProposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+    private final UTXOBuilder utxoBuilder = UTXOBuilder.builder();
     private Wallet wallet;
     private ReleaseTransactionBuilder builder;
     private Federation federation;
@@ -854,7 +855,7 @@ class ReleaseTransactionBuilderTest {
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
         Script outputScript = federation.getP2SHScript();
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript);
+        utxoBuilder.withOutputScript(outputScript);
         List<UTXO> utxos = Arrays.asList(
             utxoBuilder.withTransactionHash(mockUTXOHash("1")).withTransactionIndex(0).withValue(Coin.COIN).build(),
             utxoBuilder.withTransactionHash(mockUTXOHash("2")).withTransactionIndex(2).withValue(Coin.FIFTY_COINS).build(),
@@ -921,7 +922,7 @@ class ReleaseTransactionBuilderTest {
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
         Script outputScript = federation.getP2SHScript();
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript);
+        utxoBuilder.withOutputScript(outputScript);
         List<UTXO> utxos = Arrays.asList(
             utxoBuilder.withTransactionHash(mockUTXOHash("1")).withTransactionIndex(0).withValue(Coin.COIN).build(),
             utxoBuilder.withTransactionHash(mockUTXOHash("2")).withTransactionIndex(2).withValue(Coin.FIFTY_COINS).build(),
@@ -980,7 +981,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseRequestQueue.Entry testEntry3 = createTestEntry(789, Coin.COIN);
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder()
+        utxoBuilder
             .withOutputScript(federation.getP2SHScript());
 
         List<UTXO> utxos = Arrays.asList(
@@ -1018,7 +1019,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseRequestQueue.Entry testEntry3 = createTestEntry(789, Coin.MILLICOIN);
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder()
+        utxoBuilder
             .withOutputScript(federation.getP2SHScript())
             .withValue(Coin.MILLICOIN);
         List<UTXO> utxos = Arrays.asList(
@@ -1146,7 +1147,7 @@ class ReleaseTransactionBuilderTest {
     @Test
     void test_verifyTXFeeIsSpentEquallyForBatchedPegouts_two_pegouts() {
         Script outputScript = federation.getP2SHScript();
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript);
+        utxoBuilder.withOutputScript(outputScript);
         List<UTXO> utxos = Arrays.asList(
             utxoBuilder.withTransactionHash(mockUTXOHash("1")).build(),
             utxoBuilder.withTransactionHash(mockUTXOHash("2")).build()
@@ -1201,7 +1202,7 @@ class ReleaseTransactionBuilderTest {
     @Test
     void test_VerifyTXFeeIsSpentEquallyForBatchedPegouts_three_pegouts() {
         Script outputScript = federation.getP2SHScript();
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript);
+        utxoBuilder.withOutputScript(outputScript);
         List<UTXO> utxos = Arrays.asList(
             utxoBuilder.withTransactionHash(mockUTXOHash("1")).build(),
             utxoBuilder.withTransactionHash(mockUTXOHash("2")).build()
@@ -1382,7 +1383,7 @@ class ReleaseTransactionBuilderTest {
     }
 
     private UTXO mockUTXO(String generator, long index, Coin value) {
-        return UTXOBuilder.builder()
+        return utxoBuilder
             .withTransactionHash(mockUTXOHash(generator))
             .withTransactionIndex(index)
             .withValue(value)

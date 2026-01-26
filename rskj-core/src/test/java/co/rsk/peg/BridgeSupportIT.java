@@ -115,8 +115,10 @@ public class BridgeSupportIT {
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
 
+
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
     private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
+    private final UTXOBuilder utxoBuilder = UTXOBuilder.builder();
 
     private static final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private static final BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
@@ -611,7 +613,7 @@ public class BridgeSupportIT {
         int transactionIndex = 1;
         Coin value = Coin.valueOf(12, 0);
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
-        UTXO utxo = UTXOBuilder.builder()
+        UTXO utxo = utxoBuilder
             .withTransactionHash(transactionHash)
             .withTransactionIndex(transactionIndex)
             .withValue(value)
@@ -698,7 +700,7 @@ public class BridgeSupportIT {
 
         Coin value = Coin.valueOf(1000000);
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
-        UTXO utxo = UTXOBuilder.builder()
+        UTXO utxo = utxoBuilder
             .withTransactionHash(BitcoinTestUtils.createHash(1))
             .withTransactionIndex(1)
             .withValue(value)
@@ -789,7 +791,7 @@ public class BridgeSupportIT {
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN.multiply(7));
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
-        UTXO utxo = UTXOBuilder.builder()
+        UTXO utxo = utxoBuilder
             .withTransactionHash(BitcoinTestUtils.createHash(1))
             .withTransactionIndex(1)
             .withValue(Coin.CENT)
@@ -927,7 +929,7 @@ public class BridgeSupportIT {
             .build();
 
         Script outputScript = ScriptBuilder.createOutputScript(oldFederation.getAddress());
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder().withTransactionIndex(1).withOutputScript(outputScript);
+        utxoBuilder.withTransactionIndex(1).withOutputScript(outputScript);
         // One MICROCOIN is less than half the fee per kb, which is the minimum funds to migrate,
         // and so it won't be removed from the old federation UTXOs list for migration.
         List<UTXO> unsufficientUTXOsForMigration1 = new ArrayList<>();
@@ -996,7 +998,7 @@ public class BridgeSupportIT {
 
         Coin value = Coin.COIN.add(Coin.valueOf(100));
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
-        UTXO utxo = UTXOBuilder.builder()
+        UTXO utxo = utxoBuilder
             .withTransactionHash(BitcoinTestUtils.createHash(1))
             .withTransactionIndex(1)
             .withValue(value)
