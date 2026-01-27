@@ -9,7 +9,6 @@ import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
-import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -60,8 +59,7 @@ class ReceiveHeaderTest extends BridgePerformanceTestCase {
                         NetworkParameters btcParams = constants.getBridgeConstants().getBtcParams();
                         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                                 (Repository) environment.getBenchmarkedRepository(),
-                                PrecompiledContracts.BRIDGE_ADDR,
-                                btcParams,
+                            btcParams,
                                 activationConfig.forBlock(0)
                         );
 

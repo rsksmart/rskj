@@ -162,7 +162,6 @@ class BridgeSupportSvpTest {
         repository = createRepository();
         bridgeStorageProvider = new BridgeStorageProvider(
             repository,
-            bridgeContractAddress,
             btcMainnetParams,
             allActivations
         );

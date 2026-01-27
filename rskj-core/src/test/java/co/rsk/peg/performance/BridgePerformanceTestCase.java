@@ -225,8 +225,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 Repository repository = benchmarkerTrack.startTracking();
                 storageProvider = new BridgeStorageProvider(
                         repository,
-                        PrecompiledContracts.BRIDGE_ADDR,
-                        bridgeConstants.getBtcParams(),
+                    bridgeConstants.getBtcParams(),
                         activationConfig.forBlock((long) executionIndex)
                 );
                 BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(

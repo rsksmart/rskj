@@ -1634,7 +1634,6 @@ class BridgeSupportReleaseBtcTest {
     private BridgeStorageProvider initProvider() {
         return new BridgeStorageProvider(
             repository,
-            BRIDGE_ADDRESS,
             NETWORK_PARAMETERS,
             ACTIVATIONS_ALL
         );
