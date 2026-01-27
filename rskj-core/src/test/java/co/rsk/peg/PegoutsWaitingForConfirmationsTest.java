@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
@@ -42,11 +43,11 @@ class PegoutsWaitingForConfirmationsTest {
     @BeforeEach
     void createSet() {
         setEntries = new HashSet<>(Arrays.asList(
-            new PegoutsWaitingForConfirmations.Entry(createTransaction(2, Coin.valueOf(150)), 32L),
-            new PegoutsWaitingForConfirmations.Entry(createTransaction(5, Coin.COIN), 100L),
-            new PegoutsWaitingForConfirmations.Entry(createTransaction(4, Coin.FIFTY_COINS), 7L),
-            new PegoutsWaitingForConfirmations.Entry(createTransaction(3, Coin.MILLICOIN), 10L),
-            new PegoutsWaitingForConfirmations.Entry(createTransaction(8, Coin.CENT.times(5)), 5L)
+                new PegoutsWaitingForConfirmations.Entry(createTransaction(2, Coin.valueOf(150)), 32L),
+                new PegoutsWaitingForConfirmations.Entry(createTransaction(5, Coin.COIN), 100L),
+                new PegoutsWaitingForConfirmations.Entry(createTransaction(4, Coin.FIFTY_COINS), 7L),
+                new PegoutsWaitingForConfirmations.Entry(createTransaction(3, Coin.MILLICOIN), 10L),
+                new PegoutsWaitingForConfirmations.Entry(createTransaction(8, Coin.CENT.times(5)), 5L)
         ));
         set = new PegoutsWaitingForConfirmations(setEntries);
     }
@@ -148,13 +149,17 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void getNextPegoutWithEnoughConfirmations_no_matches() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(9L, 5);
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        String rskTransactionHexHash = PegTestUtils.createHash3(0).toHexString();
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(9L, 5, rskTransactionHexHash, params.getId());
         Assertions.assertFalse(result.isPresent());
     }
 
     @Test
     void getNextPegoutWithEnoughConfirmations_ok() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5);
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        String rskTransactionHexHash = PegTestUtils.createHash3(0).toHexString();
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, rskTransactionHexHash, params.getId());
         Assertions.assertTrue(result.isPresent());
         Assertions.assertTrue(set.removeEntry(result.get()));
         Assertions.assertFalse(set.removeEntry(result.get()));
@@ -162,12 +167,14 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void getNextPegoutWithEnoughConfirmation_multipleMatch() {
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        String rskTransactionHexHash = PegTestUtils.createHash3(0).toHexString();
         int size = set.getEntries().size();
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, rskTransactionHexHash, params.getId());
         Assertions.assertTrue(result.isPresent());
         Assertions.assertTrue(set.removeEntry(result.get()));
         Assertions.assertFalse(set.removeEntry(result.get()));
-        Assertions.assertEquals(set.getEntries().size(), size-1);
+        Assertions.assertEquals(set.getEntries().size(), size - 1);
     }
 
     private BtcTransaction createTransaction(int toPk, Coin value) {
@@ -197,5 +204,77 @@ class PegoutsWaitingForConfirmationsTest {
         BtcTransaction result = mock(BtcTransaction.class);
         when(result.bitcoinSerialize()).thenReturn(Hex.decode(serializationHex));
         return result;
+    }
+
+    /**
+     * Verifies that when multiple pegouts have enough confirmations and the
+     * execution network supports historical pegout transactions (e.g. TESTNET),
+     * the selected pegout corresponds to the BTC transaction hash provided by
+     * {@link HistoricalPegoutTransactions#get(String, String)} for the given
+     * RSK transaction hash.
+     *
+     * This test mocks the historical lookup to ensure deterministic selection
+     * without relying on the real historical mapping.
+     */
+    @Test
+    void getNextPegoutWithEnoughConfirmations_multiple_matches_historicalNetwork() {
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+        String rskTransactionHexHash = "2d1b35c663d6c0c02380aba68e656cdc61cb7d412c31b19d330b637b4957a64c";
+        BtcTransaction transaction = createTransaction(80, Coin.CENT.times(5));
+        set.add(transaction, 5L);
+        try (var mocked = Mockito.mockStatic(HistoricalPegoutTransactions.class)) {
+            mocked.when(() -> HistoricalPegoutTransactions.get(rskTransactionHexHash, params.getId())).thenReturn(Optional.of(transaction.getHashAsString()));
+
+            Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, rskTransactionHexHash, params.getId());
+            Assertions.assertTrue(result.isPresent());
+            Assertions.assertEquals(transaction.getHashAsString(), result.get().getBtcTransaction().getHashAsString());
+        }
+    }
+
+    /**
+     * Verifies that when running on a network that supports historical pegout
+     * transactions (e.g. TESTNET), and no historical pegout entry exists for
+     * the given RSK transaction hash, the method fails fast by throwing an
+     * {@link IllegalStateException}, as required by the protocol invariant.
+     */
+    @Test
+    void getNextPegoutWithEnoughConfirmations_historicalNetwork_missingHistoricalEntry() {
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+        set.add(createTransaction(80, Coin.CENT.times(5)), 5L);
+        Assertions.assertThrows(IllegalStateException.class, () -> set.getNextPegoutWithEnoughConfirmations(10L, 5, "nonExistingRskTxHash", params.getId())
+        );
+    }
+
+    /**
+     * Verifies that when exactly one pegout has enough confirmations,
+     * it is returned directly even on a historical network.
+     */
+    @Test
+    void getNextPegoutWithEnoughConfirmations_singleMatch_historicalNetwork() {
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, "rskHash", params.getId());
+        Assertions.assertTrue(result.isPresent());
+
+        params = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
+        result = set.getNextPegoutWithEnoughConfirmations(10L, 5, "rskHash", params.getId());
+        Assertions.assertTrue(result.isPresent());
+    }
+
+    /**
+     * Verifies that for networks without historical pegout support,
+     * the first eligible pegout is returned even when multiple matches exist.
+     */
+    @Test
+    void getNextPegoutWithEnoughConfirmations_nonHistoricalNetwork_multipleMatches() {
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+
+        set.add( createTransaction(11, Coin.CENT.times(5)), 5L);
+        set.add( createTransaction(12, Coin.CENT.times(5)), 5L);
+
+        Optional<PegoutsWaitingForConfirmations.Entry> result =
+                set.getNextPegoutWithEnoughConfirmations(
+                        10L, 5, "rskHash", params.getId());
+
+        Assertions.assertTrue(result.isPresent());
     }
 }

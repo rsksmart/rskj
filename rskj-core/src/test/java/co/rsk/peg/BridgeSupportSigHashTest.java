@@ -3,6 +3,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -11,6 +12,7 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
+import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -95,7 +97,10 @@ class BridgeSupportSigHashTest {
             .build();
 
         // Act
-        bridgeSupport.updateCollections(mock(Transaction.class));
+        Transaction tx = mock(Transaction.class);
+        Keccak256 txHash = TestUtils.generateHash("txHash");
+        when(tx.getHash()).thenReturn(txHash);
+        bridgeSupport.updateCollections(tx);
 
         // Assertions
 

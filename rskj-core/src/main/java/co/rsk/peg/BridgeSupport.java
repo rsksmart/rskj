@@ -1582,11 +1582,7 @@ public class BridgeSupport {
         // TODO: add only one btc transaction at a time
         // TODO: (at least at this stage).
         Optional<PegoutsWaitingForConfirmations.Entry> nextPegoutWithEnoughConfirmations = pegoutsWaitingForConfirmations
-            .getNextPegoutWithEnoughConfirmations(
-                rskExecutionBlock.getNumber(),
-                bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations()
-            );
-
+                .getNextPegoutWithEnoughConfirmations(rskExecutionBlock.getNumber(), bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(), rskTx.getHash().toHexString(), bridgeConstants.getBtcParams().getId());
         if (nextPegoutWithEnoughConfirmations.isEmpty()) {
             return;
         }

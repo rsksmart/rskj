@@ -8476,7 +8476,10 @@ class BridgeSupportTest {
         // Ensure a new transaction is created after each call to updateCollections
         // until the expected number is reached
         for (int i = 0; i < expectedTransactions; i++) {
-            bridgeSupport.updateCollections(mock(Transaction.class));
+            Transaction tx = mock(Transaction.class);
+            Keccak256 txHash = TestUtils.generateHash("txHash");
+            when(tx.getHash()).thenReturn(txHash);
+            bridgeSupport.updateCollections(tx);
             assertEquals(i + 1, pegoutsWaitingForConfirmations.getEntries().size());
         }
         assertTrue(utxosToMigrate.isEmpty()); // Migrated UTXOs are removed from the list

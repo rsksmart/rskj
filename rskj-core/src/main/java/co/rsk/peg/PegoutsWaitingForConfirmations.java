@@ -19,11 +19,13 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Representation of a queue of BTC release
@@ -120,13 +122,80 @@ public class PegoutsWaitingForConfirmations {
      * Optionally supply a maximum slice size to limit the output
      * size.
      * Sliced items are also removed from the set (thus the name, slice).
+     * For Testnet/Mainnet, returns the entry matching the historical pegout for {@code rskTransactionHexHash} when multiple entries exists.
      * @param currentBlockNumber the current execution block number (height).
      * @param minimumConfirmations the minimum desired confirmations for the slice elements.
+     * @param rskTransactionHexHash the RSK transaction hex hash that is used as the key for historical pegout's transactions.
+     * @param networkId the networkId in which this code is being executed.
      * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
+     * @throws IllegalStateException if a required historical pegout mapping is missing or inconsistent with confirmed entries
      */
-    public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations) {
-        return entries.stream().filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations)).findFirst();
+    public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations,
+                                                                String rskTransactionHexHash,
+                                                                String networkId) {
+        Stream<Entry> eligibleStream = entries.stream().filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations));
+        List<Entry> confirmedPegoutTransactions = eligibleStream.toList();
+        if (confirmedPegoutTransactions.isEmpty()){
+            return Optional.empty();
+        }
+        if (confirmedPegoutTransactions.size() == 1 ||  !isNetworkWithHistoricalPegoutTransactions(networkId)) {
+            return Optional.of(confirmedPegoutTransactions.get(0));
+        }
+        return Optional.of(getHistoricalPegoutTransaction(currentBlockNumber, rskTransactionHexHash, confirmedPegoutTransactions, networkId));
     }
+
+
+    /**
+     * Determines whether the given network supports historical pegout transaction
+     * resolution.
+     *
+     * @param networkId the network identifier
+     * @return {@code true} if the network is Testnet or Mainnet; {@code false} otherwise
+     */
+
+    private boolean isNetworkWithHistoricalPegoutTransactions(String networkId) {
+        return NetworkParameters.ID_TESTNET.equals(networkId) || NetworkParameters.ID_MAINNET.equals(networkId);
+    }
+
+    /**
+     * Resolves and returns the pegout entry that matches the historical pegout
+     * transaction associated with the given RSK transaction hash.
+     *
+     * <p>This method assumes that multiple confirmed pegout transactions exist and that
+     * the network supports historical pegout resolution.</p>
+     *
+     * @param currentBlockNumber the current execution block height
+     * @param rskTransactionHexHash the RSK transaction hash used to look up the historical mapping
+     * @param confirmedPegoutTransactions the list of pegout entries with sufficient confirmations
+     * @param networkId the network identifier
+     * @return the pegout entry whose Bitcoin transaction hash matches the historical mapping
+     * @throws IllegalStateException if no historical mapping exists or if the mapped transaction is not found among confirmed entries.
+     */
+    private  Entry getHistoricalPegoutTransaction(Long currentBlockNumber, String rskTransactionHexHash, List<Entry> confirmedPegoutTransactions, String networkId)  {
+        String historicalPegoutTransactionHash = HistoricalPegoutTransactions.get(rskTransactionHexHash, networkId).orElseThrow(() -> noHistoricalPegoutEntry(currentBlockNumber, rskTransactionHexHash));
+        for (Entry entry : confirmedPegoutTransactions) {
+            if (historicalPegoutTransactionHash.equals(entry.getBtcTransaction().getHashAsString())){
+                return entry;
+            }
+        }
+        // This should be unreachable by protocol invariant
+        throw historicalPegoutTransactionHashMismatch(currentBlockNumber, rskTransactionHexHash, historicalPegoutTransactionHash);
+    }
+
+    private static RuntimeException noHistoricalPegoutEntry(Long currentBlockNumber, String rskTransactionHexHash) {
+        return new IllegalStateException(String.format("No historical pegout transaction entry found for RSK transaction '%s' at at block %d:", rskTransactionHexHash, currentBlockNumber));
+    }
+
+    private RuntimeException historicalPegoutTransactionHashMismatch(Long currentBlockNumber, String rskTransactionHexHash, String historicalPegoutTransactionHash) {
+        return new IllegalStateException(
+                String.format(
+                        "Protocol invariant violation at block %d: historical pegout transaction hash '%s' for RSK tx '%s' "
+                                + "was not found among confirmed pegout transactions.",
+                        currentBlockNumber, historicalPegoutTransactionHash, rskTransactionHexHash
+                )
+        );
+    }
+
 
     public boolean removeEntry(Entry entry){
         return entries.remove(entry);
