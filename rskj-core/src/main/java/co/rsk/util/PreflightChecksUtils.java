@@ -28,7 +28,7 @@ public class PreflightChecksUtils {
     private static final Logger logger = LoggerFactory.getLogger(PreflightChecksUtils.class);
 
     public static final Set<Integer> SUPPORTED_JAVA_VERSIONS = Collections.unmodifiableSet(
-            new TreeSet<>(Arrays.asList(17))
+            new TreeSet<>(Arrays.asList(17, 21))
     );
 
     private final RskContext rskContext;
