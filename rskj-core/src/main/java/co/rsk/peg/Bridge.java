@@ -372,7 +372,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.bridgeSupport = bridgeSupportFactory.newInstance(
             args.getRepository(),
             rskExecutionBlock,
-            contractAddress,
             args.getLogs()
         );
     }

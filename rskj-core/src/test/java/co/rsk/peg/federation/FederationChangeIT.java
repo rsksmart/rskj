@@ -202,7 +202,7 @@ class FederationChangeIT {
         repository.addBalance(BRIDGE_ADDRESS, co.rsk.core.Coin.fromBitcoin(BRIDGE_CONSTANTS.getMaxRbtc()));
 
         bridgeStorageProvider =
-            new BridgeStorageProvider(repository, BRIDGE_ADDRESS, NETWORK_PARAMS, ACTIVATIONS);
+            new BridgeStorageProvider(repository, NETWORK_PARAMS, ACTIVATIONS);
 
         btcBlockStoreFactory =
             new RepositoryBtcBlockStoreWithCache.Factory(NETWORK_PARAMS, 100, 100);
