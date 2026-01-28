@@ -21,7 +21,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.rpc.modules.eth.AccountOverride;
 import co.rsk.util.HexUtils;
 import org.ethereum.TestUtils;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.AccountOverrideParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
@@ -30,37 +29,13 @@ import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class AccountOverrideTest {
-
-    @Test
-    void applyWithoutAddressThrowsException() {
-        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
-            new AccountOverride(null);
-        });
-        assertEquals(-32602, exception.getCode());
-        assertEquals("Address cannot be null", exception.getMessage());
-    }
-
-    @Test
-    void fromAccountOverrideParam_setMovePrecompileToAddress_throwsExceptionAsExpected() {
-        // Given
-        AccountOverride accountOverride = new AccountOverride(TestUtils.generateAddress("address"));
-        HexAddressParam hexAddressParam = new HexAddressParam(TestUtils.generateAddress("aPrecompiledAddress").toString());
-        AccountOverrideParam accountOverrideParam = new AccountOverrideParam(null, null, null, null, null, hexAddressParam);
-
-        // When
-        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
-            accountOverride.fromAccountOverrideParam(accountOverrideParam);
-        });
-
-        // Then
-        assertEquals(-32201, exception.getCode());
-        assertEquals("Move precompile to address is not supported yet", exception.getMessage());
-    }
 
     @Test
     void fromAccountOverrideParam_nullParameters_executesAsExpected() {
@@ -90,8 +65,11 @@ class AccountOverrideTest {
         HexNumberParam balance = new HexNumberParam("0x01");
         HexNumberParam nonce = new HexNumberParam("0x02");
         HexDataParam code = new HexDataParam("0x03");
+        Map<HexDataParam, HexDataParam> state = new HashMap<>();
+        state.put(new HexDataParam("0x00"), new HexDataParam("0x01"));
+        HexAddressParam movePrecompileToAddress = new HexAddressParam(TestUtils.generateAddress("aPrecompiledAddress").toString());
 
-        AccountOverrideParam accountOverrideParam = new AccountOverrideParam(balance, nonce, code, null, null, null);
+        AccountOverrideParam accountOverrideParam = new AccountOverrideParam(balance, nonce, code, state, null, movePrecompileToAddress);
 
         // When
         accountOverride = accountOverride.fromAccountOverrideParam(accountOverrideParam);
@@ -105,45 +83,9 @@ class AccountOverrideTest {
     }
 
     @Test
-    void testSetBalance_balanceLessThanZero_throwsExceptionAsExpected() {
-        // Given
-        RskAddress address = TestUtils.generateAddress("address");
-        AccountOverride accountOverride = new AccountOverride(address);
-
-        BigInteger balance = BigInteger.valueOf(-1L);
-
-        // When
-        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
-            accountOverride.setBalance(balance);
-        });
-
-        // Then
-        assertEquals(-32602, exception.getCode());
-        assertEquals("Balance must be equal or bigger than zero", exception.getMessage());
-    }
-
-    @Test
-    void testSetNonce_nonceLessThanZero_throwsExceptionAsExpected() {
-        // Given
-        RskAddress address = TestUtils.generateAddress("address");
-        AccountOverride accountOverride = new AccountOverride(address);
-
-        Long nonce = -1L;
-
-        // When
-        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
-            accountOverride.setNonce(nonce);
-        });
-
-        // Then
-        assertEquals(-32602, exception.getCode());
-        assertEquals("Nonce must be equal or bigger than zero", exception.getMessage());
-    }
-
-    @Test
     void testEqualsAndHashCode() {
         // Given
-        RskAddress address= TestUtils.generateAddress("address");
+        RskAddress address = TestUtils.generateAddress("address");
 
         AccountOverride accountOverride = new AccountOverride(address);
         accountOverride.setBalance(BigInteger.TEN);

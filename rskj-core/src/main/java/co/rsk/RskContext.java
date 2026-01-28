@@ -527,7 +527,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (stateOverrideApplier == null) {
-            stateOverrideApplier = new DefaultStateOverrideApplier();
+            stateOverrideApplier = new DefaultStateOverrideApplier(
+                    getRskSystemProperties().getMaxOverridableCodeSize(),
+                    getRskSystemProperties().getMaxStateOverrideChanges());
         }
 
         return stateOverrideApplier;
@@ -737,7 +739,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRskSystemProperties().getActivationConfig(),
                     getPrecompiledContracts(),
                     getRskSystemProperties().getAllowCallStateOverride(),
-                    getStateOverrideApplier()
+                    getStateOverrideApplier(),
+                    getRskSystemProperties().getMaxAccountOverrides()
             );
         }
 

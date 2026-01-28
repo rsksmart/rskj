@@ -114,7 +114,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
 
@@ -168,7 +169,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 new PrecompiledContracts(config, null, null),
                 true,
-                new DefaultStateOverrideApplier());
+                new DefaultStateOverrideApplier(0, 0),
+                1);
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
 
@@ -203,7 +205,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 new PrecompiledContracts(config, null, null),
                 false,
-                new DefaultStateOverrideApplier());
+                new DefaultStateOverrideApplier(0, 0),
+                0);
 
         // When
         RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
@@ -213,6 +216,48 @@ class EthModuleTest {
         // Then
         assertEquals(-32602, exception.getCode());
         assertEquals("State override is not allowed", exception.getMessage());
+    }
+
+    @Test
+    void testCall_whenCalledWithAccountOverrideListButAccountOverridesAreHigherThanMaxAllowed_throwsExceptionAsExpected() {
+        // Given
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(new CallArguments());
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+        List<AccountOverride> accountOverrideList = List.of(
+                new AccountOverride(TestUtils.generateAddress("test")),
+                new AccountOverride(TestUtils.generateAddress("test2"))
+        );
+
+        int maxAccountOverrides = 1;
+
+        EthModule eth = new EthModule(
+                null,
+                (byte) 1,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, null, null),
+                true,
+                new DefaultStateOverrideApplier(0, 0),
+                maxAccountOverrides);
+
+        // When
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            eth.call(callArgumentsParam, blockIdentifierParam, accountOverrideList);
+        });
+
+        // Then
+        assertEquals(-32602, exception.getCode());
+        assertEquals("Number of account overrides exceeded. Max " + maxAccountOverrides, exception.getMessage());
     }
 
     @Test
@@ -265,7 +310,8 @@ class EthModuleTest {
                 activationConfigMock,
                 precompiledContractsMock,
                 true,
-                new DefaultStateOverrideApplier());
+                new DefaultStateOverrideApplier(0, 0),
+                1);
 
         // When
         RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
@@ -323,7 +369,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 new PrecompiledContracts(config, null, null),
                 true,
-                new DefaultStateOverrideApplier());
+                new DefaultStateOverrideApplier(0, 0),
+                1);
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
 
@@ -371,7 +418,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
 
@@ -424,7 +472,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
 
@@ -478,7 +527,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
 
@@ -641,7 +691,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null
+                null,
+                0
         );
 
         HexAddressParam addressParam = new HexAddressParam(TestUtils.generateAddress("addr").toHexString());
@@ -667,7 +718,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                mock(DefaultStateOverrideApplier.class)
+                mock(DefaultStateOverrideApplier.class),
+                0
         );
         assertThat(eth.chainId(), is("0x21"));
     }
@@ -709,7 +761,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
@@ -759,7 +812,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
@@ -810,7 +864,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
@@ -861,7 +916,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
@@ -910,7 +966,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
@@ -957,7 +1014,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
@@ -1007,7 +1065,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
@@ -1153,7 +1212,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         List<Transaction> result = ethModule.ethPendingTransactions();
 
@@ -1185,7 +1245,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         Transaction mockTransaction1 = createMockTransaction("0x63a15ed8c3b83efc744f2e0a7824a00846c21860");
         Transaction mockTransaction2 = createMockTransaction( "0xa3a15ed8c3b83efc744f2e0a7824a00846c21860");
@@ -1225,7 +1286,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         Transaction mockTransaction1 = createMockTransaction("0x63a15ed8c3b83efc744f2e0a7824a00846c21860");
         Transaction mockTransaction2 = createMockTransaction("0x13a15ed8c3b83efc744f2e0a7824a00846c21860");
@@ -1263,7 +1325,8 @@ class EthModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null);
+                null,
+                0);
 
         List<Transaction> result = ethModule.ethPendingTransactions();
 

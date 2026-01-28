@@ -29,6 +29,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,11 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.ethereum.TestUtils.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class DefaultStateOverrideApplierTest {
 
@@ -49,10 +54,9 @@ class DefaultStateOverrideApplierTest {
     private static final DataWord DEFAULT_STORAGE_VALUE_ONE = DataWord.valueOf(100);
     private static final DataWord DEFAULT_STORAGE_VALUE_TWO = DataWord.valueOf(200);
 
-    private AccountOverride accountOverride;
     private MutableRepository repository;
     private RskAddress address;
-    private final DefaultStateOverrideApplier stateOverrideApplier = new DefaultStateOverrideApplier();
+    private final DefaultStateOverrideApplier stateOverrideApplier = new DefaultStateOverrideApplier(2, 1);
 
     @BeforeEach
     void setup() {
@@ -64,8 +68,6 @@ class DefaultStateOverrideApplierTest {
         repository = new MutableRepository(mutableTrie, tracker);
 
         populateRepository(repository, address);
-
-        accountOverride = new AccountOverride(address);
     }
 
     private void populateRepository(Repository repository, RskAddress address) {
@@ -77,47 +79,172 @@ class DefaultStateOverrideApplierTest {
     }
 
     @Test
-    void applyWithBalance() {
+    void applyToRepository_addressIsNull_throwsExceptionAsExpected() {
         // Given
+        AccountOverride accountOverride = new AccountOverride(null);
+
+        // When
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            stateOverrideApplier.applyToRepository(repository, accountOverride);
+        });
+
+        // Then
+        assertEquals(-32602, exception.getCode());
+        assertEquals("Address cannot be null", exception.getMessage());
+    }
+
+    @Test
+    void applyToRepository_applyStateAndStateDiffTogether_throwsExceptionAsExpected() {
+        // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
+        Map<DataWord, DataWord> state = new HashMap<>();
+        state.put(DEFAULT_STORAGE_KEY_ONE, DataWord.valueOf(10));
+
+        accountOverride.setStateDiff(state);
+        accountOverride.setState(state);
+
+        // When
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            stateOverrideApplier.applyToRepository(repository, accountOverride);
+        });
+
+        // Then
+        assertEquals(-32602, exception.getCode());
+        assertEquals("AccountOverride.stateDiff and AccountOverride.state cannot be set at the same time", exception.getMessage());
+    }
+
+    @Test
+    void applyToRepository_balanceLessThanZero_throwsExceptionAsExpected() {
+        // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
+        BigInteger balance = BigInteger.valueOf(-1L);
+        accountOverride.setBalance(balance);
+
+        // When
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            stateOverrideApplier.applyToRepository(repository, accountOverride);
+        });
+
+        // Then
+        assertEquals(-32602, exception.getCode());
+        assertEquals("Balance must be equal or bigger than zero", exception.getMessage());
+    }
+
+    @Test
+    void applyToRepository_validBalance_executesAsExpected() {
+        // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
         BigInteger balance = BigInteger.TEN;
         accountOverride.setBalance(balance);
 
         // When
-        stateOverrideApplier.applyToRepository(repository,accountOverride);
+        stateOverrideApplier.applyToRepository(repository, accountOverride);
 
         // Then
         assertEquals(accountOverride.getBalance(), repository.getBalance(address).asBigInteger());
     }
 
     @Test
-    void applyWithNonce() {
+    void applyToRepository_nonceLessThanZero_throwsExceptionAsExpected() {
         // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
+        Long nonce = -1L;
+        accountOverride.setNonce(nonce);
+
+        // When
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            stateOverrideApplier.applyToRepository(repository, accountOverride);
+        });
+
+        // Then
+        assertEquals(-32602, exception.getCode());
+        assertEquals("Nonce must be equal or bigger than zero", exception.getMessage());
+    }
+
+    @Test
+    void applyToRepository_validNonce_executesAsExpected() {
+        // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
         long nonce = 7L;
         accountOverride.setNonce(nonce);
 
         // When
-        stateOverrideApplier.applyToRepository(repository,accountOverride);
+        stateOverrideApplier.applyToRepository(repository, accountOverride);
 
         // Then
         assertEquals(accountOverride.getNonce(), repository.getNonce(address).longValue());
     }
 
     @Test
-    void applyWithCode() {
+    void applyToRepository_codeSizeBiggerThanMax_throwsExceptionAsExpected() {
         // Given
+        int maxOverridableCodeSize = 1;
+        StateOverrideApplier stateOverrideApplier1 = new DefaultStateOverrideApplier(1, 0);
+
+        AccountOverride accountOverride = new AccountOverride(address);
+
+        byte[] code = "01".getBytes(); // Two Bytes
+        accountOverride.setCode(code);
+
+        // When
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            stateOverrideApplier1.applyToRepository(repository, accountOverride);
+        });
+
+        // Then
+        assertEquals(-32602, exception.getCode());
+        assertEquals("Code length in bytes exceeded. Max " + maxOverridableCodeSize, exception.getMessage());
+    }
+
+    @Test
+    void applyToRepository_validCode_executesAsExpected() {
+        // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
         byte[] code = new byte[]{0x1, 0x2};
         accountOverride.setCode(code);
 
         // When
-        stateOverrideApplier.applyToRepository(repository,accountOverride);
+        stateOverrideApplier.applyToRepository(repository, accountOverride);
 
         // Then
         assertArrayEquals(accountOverride.getCode(), repository.getCode(address));
     }
 
     @Test
-    void applyWithStateMustResetOtherValues() {
+    void applyToRepository_stateSizeBiggerThanMax_throwsExceptionAsExpected() {
         // Given
+        int maxStateOverrideChanges = 1;
+        StateOverrideApplier stateOverrideApplier1 = new DefaultStateOverrideApplier(0, maxStateOverrideChanges);
+
+        AccountOverride accountOverride = new AccountOverride(address);
+
+        Map<DataWord, DataWord> state = new HashMap<>();
+        state.put(DataWord.valueOf(0), DataWord.ZERO);
+        state.put(DataWord.valueOf(1), DataWord.ONE);
+
+        accountOverride.setState(state);
+
+        // When
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            stateOverrideApplier1.applyToRepository(repository, accountOverride);
+        });
+
+        // Then
+        assertEquals(-32602, exception.getCode());
+        assertEquals("Number of state changes exceeded. Max " + maxStateOverrideChanges, exception.getMessage());
+    }
+
+    @Test
+    void applyToRepository_validState_MustResetOtherValues() {
+        // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
         Map<DataWord, DataWord> state = new HashMap<>();
         state.put(DEFAULT_STORAGE_KEY_ONE, DataWord.valueOf(10));
         accountOverride.setState(state);
@@ -126,21 +253,23 @@ class DefaultStateOverrideApplierTest {
         assertNotNull(repository.getStorageValue(address, DEFAULT_STORAGE_KEY_TWO));
 
         // Add an existing key to ensure it is cleared
-        stateOverrideApplier.applyToRepository(repository,accountOverride);
+        stateOverrideApplier.applyToRepository(repository, accountOverride);
         assertEquals(accountOverride.getState().get(DEFAULT_STORAGE_KEY_ONE), repository.getStorageValue(address, DEFAULT_STORAGE_KEY_ONE));
         assertNull(repository.getStorageValue(address, DEFAULT_STORAGE_KEY_TWO));
     }
 
     @Test
-    void applyWithStateDiffDoNotAlterOtherValues() {
+    void applyToRepository_validStateDiff_DoNotAlterOtherValues() {
         // Given
+        AccountOverride accountOverride = new AccountOverride(address);
+
         Map<DataWord, DataWord> stateDiff = new HashMap<>();
         stateDiff.put(DEFAULT_STORAGE_KEY_ONE, DataWord.valueOf(10));
         accountOverride.setStateDiff(stateDiff);
 
         // When
         // Add an existing key to ensure it is cleared
-        stateOverrideApplier.applyToRepository(repository,accountOverride);
+        stateOverrideApplier.applyToRepository(repository, accountOverride);
 
         // Then
         assertEquals(accountOverride.getStateDiff().get(DEFAULT_STORAGE_KEY_ONE), repository.getStorageValue(address, DEFAULT_STORAGE_KEY_ONE));
@@ -148,17 +277,21 @@ class DefaultStateOverrideApplierTest {
     }
 
     @Test
-    void applyStateAndStateDiffThrowsException(){
+    void fromAccountOverrideParam_setMovePrecompileToAddress_throwsExceptionAsExpected() {
         // Given
-        Map<DataWord, DataWord> state = new HashMap<>();
-        state.put(DEFAULT_STORAGE_KEY_ONE, DataWord.valueOf(10));
-        accountOverride.setStateDiff(state);
-        accountOverride.setState(state);
+        AccountOverride accountOverride = new AccountOverride(address);
 
-        // Then
-        assertThrows(IllegalStateException.class, () -> {
+        RskAddress movePrecompileToAddress = TestUtils.generateAddress("aPrecompiledAddress");
+        accountOverride.setMovePrecompileToAddress(movePrecompileToAddress);
+
+        // When
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
             stateOverrideApplier.applyToRepository(repository, accountOverride);
         });
+
+        // Then
+        assertEquals(-32201, exception.getCode());
+        assertEquals("Move precompile to address is not supported yet", exception.getMessage());
     }
 
 }

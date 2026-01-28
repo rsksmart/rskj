@@ -65,7 +65,8 @@ public class HexNumberParam implements Serializable {
     }
 
     public static boolean isHexNumberLengthValid(String hex) {
-        return hex != null && hex.length() <= MAX_HEX_NUM_LEN;
+        int maxLength = (HexUtils.hasHexPrefix(hex)) ? MAX_HEX_NUM_LEN : HEX_NUM_BYTE_LENGTH * 2;
+        return hex != null && hex.length() <= maxLength;
     }
 
     public static class Deserializer extends StdDeserializer<HexNumberParam> {

@@ -99,6 +99,9 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_GAS_ESTIMATION_CAP = "rpc.gasEstimationCap";
     private static final String PROPERTY_RPC_CALL_GAS_CAP = "rpc.callGasCap";
     private static final String PROPERTY_RPC_ALLOW_CALL_STATE_OVERRIDE = "rpc.allowCallStateOverride";
+    private static final String PROPERTY_RPC_MAX_ACCOUNT_OVERRIDES = "rpc.maxAccountOverrides";
+    private static final String PROPERTY_RPC_MAX_OVERRIDABLE_CODE_SIZE = "rpc.maxOverridableCodeSize";
+    private static final String PROPERTY_RPC_MAX_STATE_OVERRIDE_CHANGES = "rpc.maxStateOverrideChanges";
     private static final String PROPERTY_RPC_MAX_RESPONSE_SIZE = "rpc.maxResponseSize";
     private static final String PROPERTY_RPC_MIN_GAS_PRICE_MULTIPLIER = "rpc.minGasPriceMultiplier";
     private static final String PROPERTY_RPC_TRACE_MAX_TRACES_PER_REQUEST = "rpc.trace.maxTracesPerRequest";
@@ -813,6 +816,30 @@ public abstract class SystemProperties {
         }
 
         return configFromFiles.getBoolean(PROPERTY_RPC_ALLOW_CALL_STATE_OVERRIDE);
+    }
+
+    public int getMaxAccountOverrides() {
+        if (!configFromFiles.hasPath(PROPERTY_RPC_MAX_ACCOUNT_OVERRIDES)) {
+            return 0;
+        }
+
+        return configFromFiles.getInt(PROPERTY_RPC_MAX_ACCOUNT_OVERRIDES);
+    }
+
+    public int getMaxOverridableCodeSize() {
+        if (!configFromFiles.hasPath(PROPERTY_RPC_MAX_OVERRIDABLE_CODE_SIZE)) {
+            return 0;
+        }
+
+        return configFromFiles.getInt(PROPERTY_RPC_MAX_OVERRIDABLE_CODE_SIZE);
+    }
+
+    public int getMaxStateOverrideChanges() {
+        if (!configFromFiles.hasPath(PROPERTY_RPC_MAX_STATE_OVERRIDE_CHANGES)) {
+            return 0;
+        }
+
+        return configFromFiles.getInt(PROPERTY_RPC_MAX_STATE_OVERRIDE_CHANGES);
     }
 
     public double getMinGasPriceMultiplier() {

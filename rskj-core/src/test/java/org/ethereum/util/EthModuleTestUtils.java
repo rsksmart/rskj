@@ -64,7 +64,8 @@ public class EthModuleTestUtils {
                 config.getActivationConfig(),
                 new PrecompiledContracts(config, null, null),
                 config.getAllowCallStateOverride(),
-                new DefaultStateOverrideApplier());
+                new DefaultStateOverrideApplier(config.getMaxOverridableCodeSize(), config.getMaxStateOverrideChanges()),
+                config.getMaxAccountOverrides());
     }
 
     public static EthModuleGasEstimation buildBasicEthModuleForGasEstimation(World world) {
@@ -87,7 +88,8 @@ public class EthModuleTestUtils {
                 null,
                 null,
                 false,
-                null);
+                null,
+                0);
     }
 
     private static TransactionExecutorFactory buildBasicExecutorFactory(World world, TestSystemProperties config) {
@@ -114,10 +116,12 @@ public class EthModuleTestUtils {
                                        EthModuleWallet ethModuleWallet, EthModuleTransaction ethModuleTransaction,
                                        BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap, long gasCap,
                                        ActivationConfig activationConfig, PrecompiledContracts precompiledContracts,
-                                       boolean allowCallStateOverride, StateOverrideApplier stateOverrideApplier) {
+                                       boolean allowCallStateOverride, StateOverrideApplier stateOverrideApplier,
+                                       int maxAccountOverrides) {
             super(bridgeConstants, chainId, blockchain, transactionPool, reversibleTransactionExecutor,
                     executionBlockRetriever, repositoryLocator, ethModuleWallet, ethModuleTransaction,
-                    bridgeSupportFactory, gasEstimationCap, gasCap, activationConfig, precompiledContracts, allowCallStateOverride, stateOverrideApplier);
+                    bridgeSupportFactory, gasEstimationCap, gasCap, activationConfig, precompiledContracts,
+                    allowCallStateOverride, stateOverrideApplier, maxAccountOverrides);
         }
 
         private ProgramResult estimationResult;

@@ -31,47 +31,9 @@ import java.util.Map;
 import java.util.function.Function;
 
 @JsonDeserialize(using = AccountOverrideParam.Deserializer.class)
-public class AccountOverrideParam {
-
-    private final HexNumberParam balance;
-    private final HexNumberParam nonce;
-    private final HexDataParam code;
-    private final Map<HexDataParam, HexDataParam> state;
-    private final Map<HexDataParam, HexDataParam> stateDiff;
-    private final HexAddressParam movePrecompileToAddress;
-
-    public AccountOverrideParam(HexNumberParam balance, HexNumberParam nonce, HexDataParam code, Map<HexDataParam, HexDataParam> state, Map<HexDataParam, HexDataParam> stateDiff, HexAddressParam movePrecompileToAddress) {
-        this.balance = balance;
-        this.nonce = nonce;
-        this.code = code;
-        this.state = state;
-        this.stateDiff = stateDiff;
-        this.movePrecompileToAddress = movePrecompileToAddress;
-    }
-
-    public HexNumberParam getBalance() {
-        return balance;
-    }
-
-    public HexNumberParam getNonce() {
-        return nonce;
-    }
-
-    public HexDataParam getCode() {
-        return code;
-    }
-
-    public Map<HexDataParam, HexDataParam> getState() {
-        return state;
-    }
-
-    public Map<HexDataParam, HexDataParam> getStateDiff() {
-        return stateDiff;
-    }
-
-    public HexAddressParam getMovePrecompileToAddress() {
-        return movePrecompileToAddress;
-    }
+public record AccountOverrideParam(HexNumberParam balance, HexNumberParam nonce, HexDataParam code,
+                                   Map<HexDataParam, HexDataParam> state, Map<HexDataParam, HexDataParam> stateDiff,
+                                   HexAddressParam movePrecompileToAddress) {
 
     public static class Deserializer extends StdDeserializer<AccountOverrideParam> {
 
