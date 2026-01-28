@@ -146,11 +146,17 @@ public class OkHttpClientTestFixture {
 
     public static JsonNode getJsonResponseForGetBestBlockMessage(int port, String blockNumOrTag) throws IOException {
         Response response = sendJsonRpcGetBlockMessage(port, blockNumOrTag);
-        return new ObjectMapper().readTree(response.body().string());
+        return new ObjectMapper().readTree(OkHttpClientTestFixture.responseBody(response));
     }
 
     public static String getEnvelopedMethodCalls(String... methodCall) {
         return "[\n" + String.join(",\n", methodCall) + "]";
+    }
+
+    public static String responseBody(Response response) throws IOException {
+        try (var body = response.body()) {
+            return body.string();
+        }
     }
 
     public static Response sendBulkTransactions(int rpcPort, FromToAddressPair... fromToAddresses) throws IOException {

@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 package co.rsk.net.sync;
 
 import co.rsk.net.Peer;
@@ -46,7 +47,7 @@ public class CheckingBestHeaderSyncState extends BaseSelectedPeerSyncState {
     }
 
     @Override
-    public void newBlockHeaders(Peer peer, List<BlockHeader> chunk){
+    public void newBlockHeaders(Peer peer, List<BlockHeader> chunk) {
         BlockHeader header = chunk.get(0);
         boolean unexpectedHeader = !ByteUtil.fastEquals(header.getHash().getBytes(), miniChunk.getHash());
         if (unexpectedHeader) {

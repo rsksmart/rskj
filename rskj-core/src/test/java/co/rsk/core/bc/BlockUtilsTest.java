@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.NetBlockStore;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.config.Constants;
@@ -220,5 +221,156 @@ class BlockUtilsTest {
 
         long expectedParallelLimit = 3_333_336L;
         assertEquals(expectedParallelLimit, BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit));
+    }
+
+    @Test
+    void getSnapCheckpointBlockNumber_WithExactMultipleOfCheckpointNumber() {
+        SyncConfiguration syncConfig = mock(SyncConfiguration.class);
+        when(syncConfig.getChunkSize()).thenReturn(192);
+        when(syncConfig.getMaxSkeletonChunks()).thenReturn(20);
+
+        // Test with bestBlockNumber = 10000 (exact multiple of 5000)
+        long bestBlockNumber = 10000;
+        long expected = 10000 - (192 * 20); // 10000 - 3840 = 6160
+        assertEquals(expected, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, syncConfig));
+    }
+
+    @Test
+    void getSnapCheckpointBlockNumber_WithNonExactMultipleOfCheckpointNumber() {
+        SyncConfiguration syncConfig = mock(SyncConfiguration.class);
+        when(syncConfig.getChunkSize()).thenReturn(192);
+        when(syncConfig.getMaxSkeletonChunks()).thenReturn(20);
+
+        // Test with bestBlockNumber = 12500 (not exact multiple of 5000)
+        // Should round down to 10000, then subtract checkpoint distance
+        long bestBlockNumber = 12500;
+        long expected = 10000 - (192 * 20); // 10000 - 3840 = 6160
+        assertEquals(expected, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, syncConfig));
+    }
+
+    @Test
+    void getSnapCheckpointBlockNumber_WithBestBlockNumberLessThanCheckpointDistance() {
+        SyncConfiguration syncConfig = mock(SyncConfiguration.class);
+        when(syncConfig.getChunkSize()).thenReturn(192);
+        when(syncConfig.getMaxSkeletonChunks()).thenReturn(20);
+
+        // Test with bestBlockNumber = 3000 (less than checkpoint distance of 3840)
+        long bestBlockNumber = 3000;
+        long expected = 0; // Math.max(0, 0 - 3840) = 0
+        assertEquals(expected, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, syncConfig));
+    }
+
+    @Test
+    void getSnapCheckpointBlockNumber_WithBestBlockNumberEqualToCheckpointDistance() {
+        SyncConfiguration syncConfig = mock(SyncConfiguration.class);
+        when(syncConfig.getChunkSize()).thenReturn(192);
+        when(syncConfig.getMaxSkeletonChunks()).thenReturn(20);
+
+        // Test with bestBlockNumber = 3840 (equal to checkpoint distance)
+        long bestBlockNumber = 3840;
+        long expected = 0; // Math.max(0, 0 - 3840) = 0
+        assertEquals(expected, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, syncConfig));
+    }
+
+    @Test
+    void getSnapCheckpointBlockNumber_WithZeroBestBlockNumber() {
+        SyncConfiguration syncConfig = mock(SyncConfiguration.class);
+        when(syncConfig.getChunkSize()).thenReturn(192);
+        when(syncConfig.getMaxSkeletonChunks()).thenReturn(20);
+
+        // Test with bestBlockNumber = 0
+        long bestBlockNumber = 0;
+        long expected = 0; // Math.max(0, 0 - 3840) = 0
+        assertEquals(expected, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, syncConfig));
+    }
+
+    @Test
+    void getSnapCheckpointBlockNumber_WithLargeBestBlockNumber() {
+        SyncConfiguration syncConfig = mock(SyncConfiguration.class);
+        when(syncConfig.getChunkSize()).thenReturn(192);
+        when(syncConfig.getMaxSkeletonChunks()).thenReturn(20);
+
+        // Test with a very large bestBlockNumber
+        long bestBlockNumber = 1000000;
+        long expected = 1000000 - (192 * 20); // 1000000 - 3840 = 996160
+        assertEquals(expected, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, syncConfig));
+    }
+
+    @Test
+    void getSnapCheckpointBlockNumber_WithDifferentSyncConfigurations() {
+        // Test with different chunk sizes and max skeleton chunks
+        SyncConfiguration syncConfig1 = mock(SyncConfiguration.class);
+        when(syncConfig1.getChunkSize()).thenReturn(100);
+        when(syncConfig1.getMaxSkeletonChunks()).thenReturn(10);
+
+        SyncConfiguration syncConfig2 = mock(SyncConfiguration.class);
+        when(syncConfig2.getChunkSize()).thenReturn(500);
+        when(syncConfig2.getMaxSkeletonChunks()).thenReturn(5);
+
+        long bestBlockNumber = 15000;
+
+        // With syncConfig1: checkpoint distance = 100 * 10 = 1000
+        long expected1 = 15000 - 1000; // 14000
+        assertEquals(expected1, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, syncConfig1));
+
+        // With syncConfig2: checkpoint distance = 500 * 5 = 2500
+        long expected2 = 15000 - 2500; // 12500
+        assertEquals(expected2, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, syncConfig2));
+    }
+
+    @Test
+    void getSnapCheckpointBlockNumber_WithBoundaryValues() {
+        SyncConfiguration syncConfig = mock(SyncConfiguration.class);
+        when(syncConfig.getChunkSize()).thenReturn(192);
+        when(syncConfig.getMaxSkeletonChunks()).thenReturn(20);
+
+        // Test with bestBlockNumber just below a checkpoint boundary
+        long bestBlockNumber = 4999;
+        long expected = 0 - (192 * 20); // 0 - 3840 = -3840, but Math.max(0, -3840) = 0
+        assertEquals(0, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, syncConfig));
+
+        // Test with bestBlockNumber exactly at a checkpoint boundary
+        bestBlockNumber = 5000;
+        expected = 5000 - (192 * 20); // 5000 - 3840 = 1160
+        assertEquals(expected, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, syncConfig));
+
+        // Test with bestBlockNumber just above a checkpoint boundary
+        bestBlockNumber = 5001;
+        expected = 5000 - (192 * 20); // 5000 - 3840 = 1160
+        assertEquals(expected, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, syncConfig));
+    }
+
+    @Test
+    void getSnapCheckpointBlockNumber_WithNegativeBestBlockNumber() {
+        SyncConfiguration syncConfig = mock(SyncConfiguration.class);
+        when(syncConfig.getChunkSize()).thenReturn(192);
+        when(syncConfig.getMaxSkeletonChunks()).thenReturn(20);
+
+        // Test with negative bestBlockNumber (edge case)
+        long bestBlockNumber = -1000;
+        long expected = 0; // Math.max(0, -1000 - 3840) = 0
+        assertEquals(expected, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, syncConfig));
+    }
+
+    @Test
+    void getSnapCheckpointBlockNumber_WithDefaultSyncConfiguration() {
+        // Test using the default sync configuration
+        SyncConfiguration defaultConfig = SyncConfiguration.DEFAULT;
+        long bestBlockNumber = 10000;
+        
+        // Default config has chunkSize=192 and maxSkeletonChunks=20
+        long expected = 10000 - (192 * 20); // 10000 - 3840 = 6160
+        assertEquals(expected, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, defaultConfig));
+    }
+
+    @Test
+    void getSnapCheckpointBlockNumber_WithImmediateSyncConfiguration() {
+        // Test using the immediate sync configuration for testing
+        SyncConfiguration immediateConfig = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        long bestBlockNumber = 10000;
+        
+        // Immediate config has chunkSize=192 and maxSkeletonChunks=5
+        long expected = 10000 - (192 * 5); // 10000 - 960 = 9040
+        assertEquals(expected, BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, immediateConfig));
     }
 }

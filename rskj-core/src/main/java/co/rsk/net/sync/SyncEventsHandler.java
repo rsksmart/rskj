@@ -61,7 +61,9 @@ public interface SyncEventsHandler {
 
     void backwardSyncing(Peer peer);
 
-    void startSnapSync(Peer peer);
+    void startSnapCapablePeerSelection();
+
+    void startSnapSync(Peer peer, @Nullable BlockHeader validatedHeader);
 
     void registerPendingMessage(@Nonnull MessageWithId message);
 

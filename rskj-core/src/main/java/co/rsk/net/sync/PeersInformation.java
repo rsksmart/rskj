@@ -301,7 +301,7 @@ public class PeersInformation implements SnapshotPeersInformation {
     }
 
     private boolean isSnapPeerCandidate(Map.Entry<Peer, SyncPeerStatus> entry) {
-        return syncConfiguration.getNodeIdToSnapshotTrustedPeerMap().containsKey(entry.getKey().getPeerNodeID().toString());
+        return syncConfiguration.getSnapBootNodeIds().contains(entry.getKey().getPeerNodeID());
     }
 
     private boolean isSnapPeerCandidateOrCapable(Map.Entry<Peer, SyncPeerStatus> entry) {
