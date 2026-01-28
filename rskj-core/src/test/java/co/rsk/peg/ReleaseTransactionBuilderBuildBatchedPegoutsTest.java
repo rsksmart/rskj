@@ -92,131 +92,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         dustAmount = feePerKb.div(2);
     }
 
-    private void setUpActivations(ActivationConfig.ForBlock activations) {
-        this.activations = activations;
-    }
-
-    private void setUpFeePerKb(Coin feePerKb) {
-        this.feePerKb = feePerKb;
-    }
-
-    private void setUpWallet(List<UTXO> utxos) {
-        wallet = BridgeUtils.getFederationSpendWallet(
-            BTC_CONTEXT,
-            federation,
-            utxos,
-            true,
-            bridgeStorageProvider
-        );
-    }
-
-    private ReleaseTransactionBuilder setupWalletAndCreateReleaseTransactionBuilder(
-        List<UTXO> utxos) {
-        setUpWallet(utxos);
-        return createReleaseTransactionBuilder();
-    }
-
-    protected ReleaseTransactionBuilder createReleaseTransactionBuilder() {
-        return new ReleaseTransactionBuilder(
-            BTC_MAINNET_PARAMS,
-            wallet,
-            federationFormatVersion,
-            federationAddress,
-            feePerKb,
-            activations
-        );
-    }
-
-    private void assertReleaseTransactionNumberOfOutputs(BtcTransaction releaseTransaction,
-        int expectedNumberOfOutputs) {
-        int actualNumberOfOutputs = releaseTransaction.getOutputs().size();
-        assertEquals(expectedNumberOfOutputs, actualNumberOfOutputs);
-    }
-
-    private void assertBtcTxVersionIs1(BtcTransaction releaseTransaction) {
-        assertEquals(BTC_TX_VERSION_1, releaseTransaction.getVersion());
-    }
-
-    private void assertBtcTxVersionIs2(BtcTransaction releaseTransaction) {
-        assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-    }
-
-    private void assertUserOutputs(BtcTransaction releaseTransaction, List<Entry> pegoutRequests) {
-        List<TransactionOutput> onlyUserOutputs = releaseTransaction.getOutputs().stream().filter(
-            this::isUserOutput
-        ).toList();
-
-        assertEquals(pegoutRequests.size(), onlyUserOutputs.size());
-        for (Entry pegoutRequest : pegoutRequests) {
-            assertUserOutput(pegoutRequest, onlyUserOutputs);
-        }
-    }
-
-    private boolean isUserOutput(TransactionOutput userOutput) {
-        return !userOutput.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS)
-            .equals(federationAddress);
-    }
-
-    private void assertUserOutput(Entry pegoutRequest, List<TransactionOutput> userOutputs) {
-        Optional<TransactionOutput> userOutput = userOutputs.stream().filter(
-            output -> output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS)
-                .equals(pegoutRequest.getDestination())
-        ).findFirst();
-        assertTrue(userOutput.isPresent(),
-            String.format("No matching output found for pegout request to address %s",
-                pegoutRequest.getDestination().toString()
-            )
-        );
-        assertTrue(pegoutRequest.getAmount().compareTo(userOutput.get().getValue()) > -1,
-            String.format("Output amount %s is less than requested amount %s for address %s",
-                userOutput.get().getValue().toString(),
-                pegoutRequest.getAmount().toString(),
-                pegoutRequest.getDestination().toString()
-            )
-        );
-    }
-
-    private void assertFederationChangeOutput(BtcTransaction releaseTransaction,
-        Coin expectedChangeOutputAmount) {
-        List<TransactionOutput> outputsToChangeAddress = releaseTransaction.getOutputs().stream()
-            .filter(
-                output -> output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS)
-                    .equals(federationAddress)).toList();
-        assertEquals(1, outputsToChangeAddress.size());
-
-        TransactionOutput changeOutput = outputsToChangeAddress.get(0);
-        assertTrue(changeOutput.getValue().compareTo(expectedChangeOutputAmount) < 1,
-            "Change output amount is greater than expected");
-    }
-
-    private void assertReleaseTxHasChangeAndUserOutputs(BtcTransaction releaseTransaction,
-        List<Entry> pegoutRequests, Coin expectedChangeOutputAmount) {
-        int expectedNumberOfOutputs = pegoutRequests.size() + 1;
-        assertReleaseTransactionNumberOfOutputs(releaseTransaction, expectedNumberOfOutputs);
-        assertUserOutputs(releaseTransaction, pegoutRequests);
-        assertFederationChangeOutput(releaseTransaction, expectedChangeOutputAmount);
-    }
-
-    private void assertReleaseTxHasOnlyUserOutputs(BtcTransaction releaseTransaction,
-        List<Entry> pegoutRequests) {
-        int expectedNumberOfOutputs = pegoutRequests.size();
-        assertReleaseTransactionNumberOfOutputs(releaseTransaction, expectedNumberOfOutputs);
-        assertUserOutputs(releaseTransaction, pegoutRequests);
-    }
-
-    private List<Entry> createPegoutRequests(int count, Coin amount) {
-        List<ReleaseRequestQueue.Entry> pegoutRequests = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            Address recipientAddress = BtcECKey.fromPrivate(BigInteger.valueOf(i + RECIPIENT_ADDRESS_KEY_OFFSET)).toAddress(BTC_MAINNET_PARAMS);
-            Entry pegoutEntry = new Entry(
-                recipientAddress,
-                amount
-            );
-            pegoutRequests.add(pegoutEntry);
-        }
-        return pegoutRequests;
-    }
-
     @Nested
     class StandardMultiSigFederationTests {
         @BeforeEach
@@ -1011,5 +886,130 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                     federation.getRedeemScript());
             }
         }
+    }
+
+    private void setUpActivations(ActivationConfig.ForBlock activations) {
+        this.activations = activations;
+    }
+
+    private void setUpFeePerKb(Coin feePerKb) {
+        this.feePerKb = feePerKb;
+    }
+
+    private void setUpWallet(List<UTXO> utxos) {
+        wallet = BridgeUtils.getFederationSpendWallet(
+            BTC_CONTEXT,
+            federation,
+            utxos,
+            true,
+            bridgeStorageProvider
+        );
+    }
+
+    private ReleaseTransactionBuilder setupWalletAndCreateReleaseTransactionBuilder(
+        List<UTXO> utxos) {
+        setUpWallet(utxos);
+        return createReleaseTransactionBuilder();
+    }
+
+    protected ReleaseTransactionBuilder createReleaseTransactionBuilder() {
+        return new ReleaseTransactionBuilder(
+            BTC_MAINNET_PARAMS,
+            wallet,
+            federationFormatVersion,
+            federationAddress,
+            feePerKb,
+            activations
+        );
+    }
+
+    private void assertReleaseTransactionNumberOfOutputs(BtcTransaction releaseTransaction,
+        int expectedNumberOfOutputs) {
+        int actualNumberOfOutputs = releaseTransaction.getOutputs().size();
+        assertEquals(expectedNumberOfOutputs, actualNumberOfOutputs);
+    }
+
+    private void assertBtcTxVersionIs1(BtcTransaction releaseTransaction) {
+        assertEquals(BTC_TX_VERSION_1, releaseTransaction.getVersion());
+    }
+
+    private void assertBtcTxVersionIs2(BtcTransaction releaseTransaction) {
+        assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
+    }
+
+    private void assertUserOutputs(BtcTransaction releaseTransaction, List<Entry> pegoutRequests) {
+        List<TransactionOutput> onlyUserOutputs = releaseTransaction.getOutputs().stream().filter(
+            this::isUserOutput
+        ).toList();
+
+        assertEquals(pegoutRequests.size(), onlyUserOutputs.size());
+        for (Entry pegoutRequest : pegoutRequests) {
+            assertUserOutput(pegoutRequest, onlyUserOutputs);
+        }
+    }
+
+    private boolean isUserOutput(TransactionOutput userOutput) {
+        return !userOutput.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS)
+            .equals(federationAddress);
+    }
+
+    private void assertUserOutput(Entry pegoutRequest, List<TransactionOutput> userOutputs) {
+        Optional<TransactionOutput> userOutput = userOutputs.stream().filter(
+            output -> output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS)
+                .equals(pegoutRequest.getDestination())
+        ).findFirst();
+        assertTrue(userOutput.isPresent(),
+            String.format("No matching output found for pegout request to address %s",
+                pegoutRequest.getDestination().toString()
+            )
+        );
+        assertTrue(pegoutRequest.getAmount().compareTo(userOutput.get().getValue()) > -1,
+            String.format("Output amount %s is less than requested amount %s for address %s",
+                userOutput.get().getValue().toString(),
+                pegoutRequest.getAmount().toString(),
+                pegoutRequest.getDestination().toString()
+            )
+        );
+    }
+
+    private void assertFederationChangeOutput(BtcTransaction releaseTransaction,
+        Coin expectedChangeOutputAmount) {
+        List<TransactionOutput> outputsToChangeAddress = releaseTransaction.getOutputs().stream()
+            .filter(
+                output -> output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS)
+                    .equals(federationAddress)).toList();
+        assertEquals(1, outputsToChangeAddress.size());
+
+        TransactionOutput changeOutput = outputsToChangeAddress.get(0);
+        assertTrue(changeOutput.getValue().compareTo(expectedChangeOutputAmount) < 1,
+            "Change output amount is greater than expected");
+    }
+
+    private void assertReleaseTxHasChangeAndUserOutputs(BtcTransaction releaseTransaction,
+        List<Entry> pegoutRequests, Coin expectedChangeOutputAmount) {
+        int expectedNumberOfOutputs = pegoutRequests.size() + 1;
+        assertReleaseTransactionNumberOfOutputs(releaseTransaction, expectedNumberOfOutputs);
+        assertUserOutputs(releaseTransaction, pegoutRequests);
+        assertFederationChangeOutput(releaseTransaction, expectedChangeOutputAmount);
+    }
+
+    private void assertReleaseTxHasOnlyUserOutputs(BtcTransaction releaseTransaction,
+        List<Entry> pegoutRequests) {
+        int expectedNumberOfOutputs = pegoutRequests.size();
+        assertReleaseTransactionNumberOfOutputs(releaseTransaction, expectedNumberOfOutputs);
+        assertUserOutputs(releaseTransaction, pegoutRequests);
+    }
+
+    private List<Entry> createPegoutRequests(int count, Coin amount) {
+        List<ReleaseRequestQueue.Entry> pegoutRequests = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            Address recipientAddress = BtcECKey.fromPrivate(BigInteger.valueOf(i + RECIPIENT_ADDRESS_KEY_OFFSET)).toAddress(BTC_MAINNET_PARAMS);
+            Entry pegoutEntry = new Entry(
+                recipientAddress,
+                amount
+            );
+            pegoutRequests.add(pegoutEntry);
+        }
+        return pegoutRequests;
     }
 }
