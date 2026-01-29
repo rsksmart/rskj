@@ -128,7 +128,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs1(releaseTransaction);
@@ -148,9 +148,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
-            BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
+            BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
             int expectedNumberOfUTXOs = 1;
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
@@ -170,10 +170,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
-
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
@@ -194,10 +193,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
-
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
@@ -218,7 +216,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(INSUFFICIENT_MONEY, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(INSUFFICIENT_MONEY, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
         }
 
@@ -239,7 +237,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
@@ -260,7 +258,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(DUSTY_SEND_REQUESTED, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
         }
 
@@ -279,7 +277,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
         }
 
@@ -298,7 +296,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
         }
 
@@ -318,7 +316,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
@@ -376,7 +374,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs1(releaseTransaction);
@@ -398,7 +396,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
 
             assertBtcTxVersionIs2(releaseTransaction);
@@ -419,7 +417,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
 
@@ -444,7 +442,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
@@ -467,7 +465,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(INSUFFICIENT_MONEY, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(INSUFFICIENT_MONEY, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
         }
 
@@ -488,7 +486,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
@@ -509,7 +507,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(DUSTY_SEND_REQUESTED, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
         }
 
@@ -528,7 +526,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
         }
 
@@ -547,7 +545,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
         }
 
@@ -567,7 +565,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(EXCEED_MAX_TRANSACTION_SIZE, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
         }
 
@@ -604,7 +602,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Act & Assert
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
                 NO_PEGOUT_REQUESTS);
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction pegoutBtcTx = batchedPegoutsResult.btcTx();
             assertTrue(pegoutBtcTx.getOutputs().isEmpty());
@@ -624,7 +622,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs1(releaseTransaction);
@@ -644,9 +642,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
-            BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
+            BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
@@ -664,7 +662,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
 
@@ -686,7 +684,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
@@ -709,7 +707,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(INSUFFICIENT_MONEY, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(INSUFFICIENT_MONEY, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
         }
 
@@ -730,7 +728,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
@@ -751,7 +749,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(DUSTY_SEND_REQUESTED, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
         }
 
@@ -770,10 +768,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
-
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
             assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
@@ -794,7 +791,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
         }
 
@@ -814,10 +811,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertEquals(SUCCESS, batchedPegoutsResult.responseCode());
+            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
-
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(LARGE_NUMBER_OF_UTXOS, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
@@ -982,5 +978,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             pegoutRequests.add(pegoutEntry);
         }
         return pegoutRequests;
+    }
+
+    private void assertBuildResultResponseCode(ReleaseTransactionBuilder.Response expectedResponseCode,
+        BuildResult batchedPegoutsResult) {
+        assertEquals(expectedResponseCode, batchedPegoutsResult.responseCode());
     }
 }
