@@ -115,7 +115,6 @@ public class BridgeSupportIT {
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
 
-
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
     private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
     private final UTXOBuilder utxoBuilder = UTXOBuilder.builder();

@@ -14,7 +14,6 @@ public class UTXOBuilder {
     private Script outputScript;
 
     private UTXOBuilder() {
-        // default values
         transactionHash = BitcoinTestUtils.createHash(0);
         transactionIndex = 0;
         value = Coin.COIN;

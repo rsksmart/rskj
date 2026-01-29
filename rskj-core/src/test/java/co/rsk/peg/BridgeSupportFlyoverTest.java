@@ -3547,12 +3547,11 @@ class BridgeSupportFlyoverTest {
             )
         );
 
-        List<UTXO> utxoList = new ArrayList<>();
         UTXO utxo = UTXOBuilder.builder()
             .withTransactionHash(tx.getHash())
             .withOutputScript(flyoverP2SH)
             .build();
-        utxoList.add(utxo);
+        List<UTXO> utxoList = Collections.singletonList(utxo);
 
         Wallet obtainedWallet = bridgeSupport.getFlyoverWallet(btcContext, utxoList, Collections.singletonList(flyoverFederationInformation));
 

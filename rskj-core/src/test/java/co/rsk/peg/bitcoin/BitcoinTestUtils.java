@@ -93,25 +93,21 @@ public class BitcoinTestUtils {
             .collect(Collectors.toList());
     }
 
-    public static List<UTXO> createUTXOs(int amount, Address address) {
+    public static List<UTXO> createUTXOs(int numberOfUtxos, Address address) {
         Script outputScript = ScriptBuilder.createOutputScript(address);
         UTXOBuilder utxoBuilder = UTXOBuilder.builder().withOutputScript(outputScript);
-        List<UTXO> utxos = new ArrayList<>();
-        for (int i = 0; i < amount; i++) {
-            UTXO utxo = utxoBuilder
-                    .withTransactionHash(createHash(i + 1))
-                    .build();
-            utxos.add(utxo);
-        }
-
-        return utxos;
+        return getUtxos(numberOfUtxos, utxoBuilder);
     }
 
-    public static List<UTXO> createUTXOs(int amount, Script outputScript) {
+    public static List<UTXO> createUTXOs(int numberOfUtxos, Script outputScript) {
         UTXOBuilder utxoBuilder = UTXOBuilder.builder()
             .withOutputScript(outputScript);
+        return getUtxos(numberOfUtxos, utxoBuilder);
+    }
+
+    private static List<UTXO> getUtxos(int numberOfUtxos, UTXOBuilder utxoBuilder) {
         List<UTXO> utxos = new ArrayList<>();
-        for (int i = 0; i < amount; i++) {
+        for (int i = 0; i < numberOfUtxos; i++) {
             UTXO utxo = utxoBuilder
                 .withTransactionHash(createHash(i + 1))
                 .build();
