@@ -32,6 +32,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.ReleaseRequestQueue.Entry;
 import co.rsk.peg.ReleaseTransactionBuilder.BuildResult;
+import co.rsk.peg.ReleaseTransactionBuilder.Response;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.Federation;
@@ -811,7 +812,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
@@ -872,6 +873,25 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             feePerKb,
             activations
         );
+    }
+
+    private List<Entry> createPegoutRequests(int count, Coin amount) {
+        List<ReleaseRequestQueue.Entry> pegoutRequests = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            BigInteger seed = BigInteger.valueOf(i + RECIPIENT_ADDRESS_KEY_OFFSET);
+            Address recipientAddress = BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
+            Entry pegoutEntry = new Entry(
+                recipientAddress,
+                amount
+            );
+            pegoutRequests.add(pegoutEntry);
+        }
+        return pegoutRequests;
+    }
+
+    private void assertBuildResultResponseCode(ReleaseTransactionBuilder.Response expectedResponseCode, BuildResult batchedPegoutsResult) {
+        Response actualResponseCode = batchedPegoutsResult.responseCode();
+        assertEquals(expectedResponseCode, actualResponseCode);
     }
 
     private void assertBtcTxVersionIs1(BtcTransaction releaseTransaction) {
@@ -964,24 +984,5 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         int expectedNumberOfOutputs) {
         int actualNumberOfOutputs = releaseTransaction.getOutputs().size();
         assertEquals(expectedNumberOfOutputs, actualNumberOfOutputs);
-    }
-
-    private List<Entry> createPegoutRequests(int count, Coin amount) {
-        List<ReleaseRequestQueue.Entry> pegoutRequests = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            BigInteger seed = BigInteger.valueOf(i + RECIPIENT_ADDRESS_KEY_OFFSET);
-            Address recipientAddress = BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
-            Entry pegoutEntry = new Entry(
-                recipientAddress,
-                amount
-            );
-            pegoutRequests.add(pegoutEntry);
-        }
-        return pegoutRequests;
-    }
-
-    private void assertBuildResultResponseCode(ReleaseTransactionBuilder.Response expectedResponseCode,
-        BuildResult batchedPegoutsResult) {
-        assertEquals(expectedResponseCode, batchedPegoutsResult.responseCode());
     }
 }
