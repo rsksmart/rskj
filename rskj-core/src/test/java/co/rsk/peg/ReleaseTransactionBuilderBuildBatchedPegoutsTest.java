@@ -944,21 +944,21 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
     }
 
-    private void assertFederationChangeOutput(BtcTransaction releaseTransaction,
+    private void assertFederationChangeOutputIsIncludedInReleaseTx(BtcTransaction releaseTransaction,
         Coin expectedChangeOutputAmount) {
-        List<TransactionOutput> outputsToChangeAddress = releaseTransaction.getOutputs().stream()
-            .filter(this::isFederationOutput)
+        List<TransactionOutput> outputsForFederation = releaseTransaction.getOutputs().stream()
+            .filter(this::isRecipientAddressForFederation)
             .toList();
-        assertEquals(1, outputsToChangeAddress.size());
+        assertEquals(1, outputsForFederation.size());
 
-        TransactionOutput changeOutput = outputsToChangeAddress.get(0);
-        assertTrue(changeOutput.getValue().compareTo(expectedChangeOutputAmount) < 1,
+        TransactionOutput federationChangeOutput = outputsForFederation.get(0);
+        assertTrue(federationChangeOutput.getValue().compareTo(expectedChangeOutputAmount) < 1,
             "Change output amount is greater than expected");
     }
 
-    private void assertUserOutputs(BtcTransaction releaseTransaction, List<Entry> pegoutRequests) {
+    private void assertPegoutRequestsAreIncludedInReleaseTx(BtcTransaction releaseTransaction, List<Entry> pegoutRequests) {
         List<TransactionOutput> onlyUserOutputs = releaseTransaction.getOutputs().stream().filter(
-            this::isUserOutput
+            this::isRecipientAddressForAnUser
         ).toList();
 
         assertEquals(pegoutRequests.size(), onlyUserOutputs.size());
@@ -967,12 +967,13 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
     }
 
-    private boolean isUserOutput(TransactionOutput userOutput) {
-        return !isFederationOutput(userOutput);
+    private boolean isRecipientAddressForAnUser(TransactionOutput userOutput) {
+        return !isRecipientAddressForFederation(userOutput);
     }
 
-    private boolean isFederationOutput(TransactionOutput output) {
-        return getDestinationAddress(output).equals(federationAddress);
+    private boolean isRecipientAddressForFederation(TransactionOutput output) {
+        Address recipientAddress = getDestinationAddress(output);
+        return recipientAddress.equals(federationAddress);
     }
 
     private Address getDestinationAddress(TransactionOutput transactionOutput) {
@@ -1002,15 +1003,15 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         List<Entry> pegoutRequests, Coin expectedChangeOutputAmount) {
         int expectedNumberOfOutputs = pegoutRequests.size() + 1;
         assertReleaseTransactionNumberOfOutputs(releaseTransaction, expectedNumberOfOutputs);
-        assertUserOutputs(releaseTransaction, pegoutRequests);
-        assertFederationChangeOutput(releaseTransaction, expectedChangeOutputAmount);
+        assertPegoutRequestsAreIncludedInReleaseTx(releaseTransaction, pegoutRequests);
+        assertFederationChangeOutputIsIncludedInReleaseTx(releaseTransaction, expectedChangeOutputAmount);
     }
 
     private void assertReleaseTxHasOnlyUserOutputs(BtcTransaction releaseTransaction,
         List<Entry> pegoutRequests) {
         int expectedNumberOfOutputs = pegoutRequests.size();
         assertReleaseTransactionNumberOfOutputs(releaseTransaction, expectedNumberOfOutputs);
-        assertUserOutputs(releaseTransaction, pegoutRequests);
+        assertPegoutRequestsAreIncludedInReleaseTx(releaseTransaction, pegoutRequests);
     }
 
     private List<Entry> createPegoutRequests(int count, Coin amount) {
