@@ -392,8 +392,8 @@ public class BitcoinTestUtils {
         assertArrayEquals(redeemScript.getProgram(), redeemScriptChunk.data);
     }
 
-    public static void assertWitnessScriptWithoutSignaturesHasProperFormat(TransactionWitness witness, Script redeemScript) {
-        assertBasicWitnessScriptStructure(witness, redeemScript);
+    public static void assertP2shP2wshScriptWithoutSignaturesHasProperFormat(TransactionWitness witness, Script redeemScript) {
+        assertP2shP2wshScriptSigStructure(witness, redeemScript);
 
         int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
         int startIndex = 1; // First push is OP_0, next come the signatures
@@ -405,7 +405,7 @@ public class BitcoinTestUtils {
         }
     }
 
-    public static void assertBasicWitnessScriptStructure(TransactionWitness witness, Script redeemScript) {
+    public static void assertP2shP2wshScriptSigStructure(TransactionWitness witness, Script redeemScript) {
         assertNotNull(witness);
 
         // Check size first
