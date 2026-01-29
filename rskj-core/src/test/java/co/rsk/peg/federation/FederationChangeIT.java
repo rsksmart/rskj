@@ -814,13 +814,14 @@ class FederationChangeIT {
         var outputScript = ScriptBuilder.createOutputScript(owner);
         List<UTXO> utxos = new ArrayList<>();
 
+        UTXOBuilder utxoBuilder = UTXOBuilder.builder()
+            .withOutputScript(outputScript)
+            .withValue(Coin.COIN);
         var howMany = 50;
         for (int i = 1; i < howMany; i++) {
             Sha256Hash utxoHash = BitcoinTestUtils.createHash(i);
-            UTXO utxo = UTXOBuilder.builder()
+            UTXO utxo = utxoBuilder
                 .withTransactionHash(utxoHash)
-                .withOutputScript(outputScript)
-                .withValue(Coin.COIN)
                 .build();
             utxos.add(utxo);
         }

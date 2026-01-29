@@ -86,7 +86,6 @@ class BridgeSupportReleaseBtcTest {
     private SignatureCache signatureCache;
     private FeePerKbSupport feePerKbSupport;
 
-
     @BeforeEach
     void setUpOnEachTest() {
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());

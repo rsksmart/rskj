@@ -88,7 +88,6 @@ class BridgeUtilsTest {
     private BridgeConstants bridgeConstantsMainnet;
     private NetworkParameters networkParameters;
 
-
     @BeforeEach
     void setupConfig() {
         constants = Constants.regtest();

@@ -8918,15 +8918,19 @@ class BridgeSupportTest {
         UTXOBuilder p2shUtxoBuilder = UTXOBuilder.builder()
             .withOutputScript(p2shOutputScript)
             .withHeight(10);
-        UTXO p2shFedUtxo1 = p2shUtxoBuilder.withValue(Coin.valueOf(8, 0)).build();
-        UTXO p2shFedBigUtxoUtxo = p2shUtxoBuilder.withValue(Coin.valueOf(13, 0)).build();
 
         Script p2shP2wshOutputScript = ScriptBuilder.createOutputScript(p2shP2wshFed.getAddress());
         UTXOBuilder p2shP2wshUtxoBuilder = UTXOBuilder.builder()
             .withOutputScript(p2shP2wshOutputScript)
             .withHeight(10);
-        UTXO p2shP2wshFedUtxo1 = p2shP2wshUtxoBuilder.withValue(Coin.valueOf(8, 0)).build();
-        UTXO p2shP2wshFedBigUtxo = p2shP2wshUtxoBuilder.withValue(Coin.valueOf(13, 0)).build();
+
+        Coin utxoValue = Coin.valueOf(8, 0);
+        UTXO p2shFedUtxo1 = p2shUtxoBuilder.withValue(utxoValue).build();
+        UTXO p2shP2wshFedUtxo1 = p2shP2wshUtxoBuilder.withValue(utxoValue).build();
+
+        Coin bigUtxoValue = Coin.valueOf(13, 0);
+        UTXO p2shFedBigUtxoUtxo = p2shUtxoBuilder.withValue(bigUtxoValue).build();
+        UTXO p2shP2wshFedBigUtxo = p2shP2wshUtxoBuilder.withValue(bigUtxoValue).build();
 
         return Stream.of(
             // active fed is p2sh and there are 0 pegout requests
