@@ -944,6 +944,18 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
     }
 
+    private void assertFederationChangeOutput(BtcTransaction releaseTransaction,
+        Coin expectedChangeOutputAmount) {
+        List<TransactionOutput> outputsToChangeAddress = releaseTransaction.getOutputs().stream()
+            .filter(this::isFederationOutput)
+            .toList();
+        assertEquals(1, outputsToChangeAddress.size());
+
+        TransactionOutput changeOutput = outputsToChangeAddress.get(0);
+        assertTrue(changeOutput.getValue().compareTo(expectedChangeOutputAmount) < 1,
+            "Change output amount is greater than expected");
+    }
+
     private void assertUserOutputs(BtcTransaction releaseTransaction, List<Entry> pegoutRequests) {
         List<TransactionOutput> onlyUserOutputs = releaseTransaction.getOutputs().stream().filter(
             this::isUserOutput
@@ -956,13 +968,20 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     }
 
     private boolean isUserOutput(TransactionOutput userOutput) {
-        return !userOutput.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS)
-            .equals(federationAddress);
+        return !isFederationOutput(userOutput);
+    }
+
+    private boolean isFederationOutput(TransactionOutput output) {
+        return getDestinationAddress(output).equals(federationAddress);
+    }
+
+    private Address getDestinationAddress(TransactionOutput transactionOutput) {
+        return transactionOutput.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
     }
 
     private void assertUserOutput(Entry pegoutRequest, List<TransactionOutput> userOutputs) {
         Optional<TransactionOutput> userOutput = userOutputs.stream().filter(
-            output -> output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS)
+            output -> getDestinationAddress(output)
                 .equals(pegoutRequest.getDestination())
         ).findFirst();
         assertTrue(userOutput.isPresent(),
@@ -977,19 +996,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequest.getDestination().toString()
             )
         );
-    }
-
-    private void assertFederationChangeOutput(BtcTransaction releaseTransaction,
-        Coin expectedChangeOutputAmount) {
-        List<TransactionOutput> outputsToChangeAddress = releaseTransaction.getOutputs().stream()
-            .filter(
-                output -> output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS)
-                    .equals(federationAddress)).toList();
-        assertEquals(1, outputsToChangeAddress.size());
-
-        TransactionOutput changeOutput = outputsToChangeAddress.get(0);
-        assertTrue(changeOutput.getValue().compareTo(expectedChangeOutputAmount) < 1,
-            "Change output amount is greater than expected");
     }
 
     private void assertReleaseTxHasChangeAndUserOutputs(BtcTransaction releaseTransaction,
