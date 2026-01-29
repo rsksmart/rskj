@@ -1010,7 +1010,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     private List<Entry> createPegoutRequests(int count, Coin amount) {
         List<ReleaseRequestQueue.Entry> pegoutRequests = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            Address recipientAddress = BtcECKey.fromPrivate(BigInteger.valueOf(i + RECIPIENT_ADDRESS_KEY_OFFSET)).toAddress(BTC_MAINNET_PARAMS);
+            BigInteger seed = BigInteger.valueOf(i + RECIPIENT_ADDRESS_KEY_OFFSET);
+            Address recipientAddress = BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
             Entry pegoutEntry = new Entry(
                 recipientAddress,
                 amount
