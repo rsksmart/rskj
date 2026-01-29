@@ -916,7 +916,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     private void assertPegoutRequestsAreIncludedInReleaseTx(BtcTransaction releaseTransaction,
         List<Entry> pegoutRequests) {
         List<TransactionOutput> onlyUserOutputs = releaseTransaction.getOutputs().stream().filter(
-            this::isRecipientAddressForAnUser
+            this::isRecipientAddressForAUser
         ).toList();
 
         assertEquals(pegoutRequests.size(), onlyUserOutputs.size());
@@ -925,7 +925,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
     }
 
-    private boolean isRecipientAddressForAnUser(TransactionOutput userOutput) {
+    private boolean isRecipientAddressForAUser(TransactionOutput userOutput) {
         return !isRecipientAddressForFederation(userOutput);
     }
 
