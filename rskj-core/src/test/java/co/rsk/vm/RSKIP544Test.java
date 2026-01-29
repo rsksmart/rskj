@@ -34,7 +34,6 @@ import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -105,7 +104,7 @@ class RSKIP544Test {
         assertNotEquals("0000000000000000000000000000000000000000000000000000000000000000", result);
     }
 
-    @ParameterizedTest(name = "[{index}] CREATE rejects {2}")
+    @ParameterizedTest(name = "[{index}] {2}")
     @MethodSource("efPrefixPatternsForRejection")
     void testCREATE_RejectsAllEFPrefixPatterns(String initcodeHex, int initcodeSize, String description) {
         String address = "0x0000000000000000000000000000000000001000";
@@ -131,7 +130,7 @@ class RSKIP544Test {
         assertEquals("0000000000000000000000000000000000000000000000000000000000000000", result);
     }
 
-    @ParameterizedTest(name = "[{index}] CREATE2 rejects {2}")
+    @ParameterizedTest(name = "[{index}] {2}")
     @MethodSource("efPrefixPatternsForRejection")
     void testCREATE2_RejectsAllEFPrefixPatterns(String initcodeHex, int initcodeSize, String description) {
         String address = "0x0000000000000000000000000000000000001000";
@@ -159,7 +158,7 @@ class RSKIP544Test {
         assertEquals("0000000000000000000000000000000000000000000000000000000000000000", result);
     }
 
-    @ParameterizedTest(name = "[{index}] CREATE allows {2}")
+    @ParameterizedTest(name = "[{index}] {2}")
     @MethodSource("allowedCodePatterns")
     void testCREATE_AllowsNonEFPatterns(String initcodeHex, int initcodeSize, String description) {
         String address = "0x0000000000000000000000000000000000001000";
@@ -185,7 +184,7 @@ class RSKIP544Test {
         assertNotEquals("0000000000000000000000000000000000000000000000000000000000000000", result);
     }
 
-    @ParameterizedTest(name = "[{index}] CREATE2 allows {2}")
+    @ParameterizedTest(name = "[{index}] {2}")
     @MethodSource("allowedCodePatterns")
     void testCREATE2_AllowsNonEFPatterns(String initcodeHex, int initcodeSize, String description) {
         String address = "0x0000000000000000000000000000000000001000";
@@ -213,7 +212,7 @@ class RSKIP544Test {
         assertNotEquals("0000000000000000000000000000000000000000000000000000000000000000", result);
     }
 
-    @ParameterizedTest(name = "[{index}] CREATE2 with salt {1} rejects EF")
+    @ParameterizedTest(name = "[{index}] {1}")
     @MethodSource("differentSaltValues")
     void testCREATE2_DifferentSalts_AllRejectEF(String saltHex, String description) {
         String address = "0x0000000000000000000000000000000000001000";

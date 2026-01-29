@@ -697,11 +697,11 @@ public class Program {
                 return null;
             }
 
-            if (exceedsMaxContractSize(codeLength, contractAddress, programResult, track)) {
+            if (exceedsMaxContractSize(codeLength, programResult, track)) {
                 return null;
             }
 
-            finalizeContractCreation(code, codeLength, storageCost, contractAddress, programResult, track);
+            finalizeContractCreation(code, storageCost, contractAddress, programResult, track);
         }
 
         return programResult;
@@ -741,7 +741,7 @@ public class Program {
         return false;
     }
 
-    private boolean exceedsMaxContractSize(int codeLength, RskAddress contractAddress,
+    private boolean exceedsMaxContractSize(int codeLength,
                                            ProgramResult programResult, Repository track) {
         if (codeLength > Constants.getMaxContractSize()) {
             programResult.setException(
@@ -759,7 +759,7 @@ public class Program {
         return false;
     }
 
-    private void finalizeContractCreation(byte[] code, int codeLength, long storageCost,
+    private void finalizeContractCreation(byte[] code, long storageCost,
                                           RskAddress contractAddress, ProgramResult programResult,
                                           Repository track) {
         if (programResult.getException() == null) {
