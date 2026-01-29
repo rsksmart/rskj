@@ -941,21 +941,21 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     private void assertPegoutRequestIsIncludedInUserOutputs(Entry pegoutRequest,
         List<TransactionOutput> userOutputs) {
         Optional<TransactionOutput> userOutput = userOutputs.stream().filter(
-            output -> getDestinationAddress(output)
-                .equals(pegoutRequest.getDestination())
+            output -> getDestinationAddress(output).equals(pegoutRequest.getDestination())
         ).findFirst();
         assertTrue(userOutput.isPresent(),
             String.format("No matching output found for pegout request to address %s",
                 pegoutRequest.getDestination().toString()
             )
         );
-        assertTrue(pegoutRequest.getAmount().compareTo(userOutput.get().getValue()) > -1,
-            String.format("Output amount %s is less than requested amount %s for address %s",
-                userOutput.get().getValue().toString(),
-                pegoutRequest.getAmount().toString(),
-                pegoutRequest.getDestination().toString()
-            )
-        );
+        Coin pegoutRequestAmount = pegoutRequest.getAmount();
+        Coin userOutputAmount = userOutput.get().getValue();
+        assertUserOutputAmountAfterFeesSubtractedIsBelowPegoutRequestAmount(pegoutRequestAmount, userOutputAmount);
+    }
+
+    private static void assertUserOutputAmountAfterFeesSubtractedIsBelowPegoutRequestAmount(Coin pegoutRequestAmount, Coin userOutputAmount) {
+        boolean validUserOutputAmount = pegoutRequestAmount.compareTo(userOutputAmount) > 0;
+        assertTrue(validUserOutputAmount);
     }
 
     private void assertReleaseTxHasChangeAndUserOutputs(BtcTransaction releaseTransaction,
