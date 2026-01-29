@@ -1,0 +1,39 @@
+comment
+
+// RSKIP544/EIP-3541: Verify that CREATE succeeds with 0xFE byte
+// This test verifies that only 0xEF is rejected, not other bytes like 0xFE.
+// This is a control test to ensure we're not over-blocking.
+//
+// Initcode: 60fe60005360016000f3 (10 bytes)
+//   60fe    PUSH1 0xfe
+//   6000    PUSH1 0x00
+//   53      MSTORE8 (store 0xfe at memory[0])
+//   6001    PUSH1 0x01 (size = 1 byte)
+//   6000    PUSH1 0x00 (offset = 0)
+//   f3      RETURN (return memory[0:1] = 0xfe)
+//
+// Expected: Transaction succeeds (only 0xEF is rejected)
+
+end
+
+account_new acc1 10000000000
+
+# Create transaction with initcode that returns 0xFE
+transaction_build txCreateWithFE
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 60fe60005360016000f3
+    gas 300000
+    build
+
+block_build b01
+    parent g00
+    gasLimit 6800000
+    transactions txCreateWithFE
+    build
+
+block_connect b01
+
+# Assert best block
+assert_best b01

@@ -490,25 +490,64 @@ public class TransactionExecutor {
     }
 
     private void createContract() {
-        int createdContractSize = getLength(program.getResult().getHReturn());
-        long returnDataGasValue = GasCost.multiply(GasCost.CREATE_DATA, createdContractSize);
-        if (gasLeftover < returnDataGasValue) {
+        byte[] code = program.getResult().getHReturn();
+        int codeSize = getLength(code);
+        long storageCost = GasCost.multiply(GasCost.CREATE_DATA, codeSize);
+
+        if (hasInvalidCodePrefix(code, codeSize)) {
+            return;
+        }
+
+        if (hasInsufficientGasForStorage(storageCost)) {
+            return;
+        }
+
+        if (exceedsMaxContractSize(codeSize)) {
+            return;
+        }
+
+        saveContractCode(code, storageCost);
+    }
+
+    private boolean hasInsufficientGasForStorage(long storageCost) {
+        if (gasLeftover < storageCost) {
             configureRuntimeExceptionOnProgram(
                     Program.ExceptionHelper.notEnoughSpendingGas(
                             program,
                             "No gas to return just created contract",
-                            returnDataGasValue));
-        } else if (createdContractSize > Constants.getMaxContractSize()) {
+                            storageCost));
+            return true;
+        }
+        return false;
+    }
+
+    private boolean exceedsMaxContractSize(int codeSize) {
+        if (codeSize > Constants.getMaxContractSize()) {
             configureRuntimeExceptionOnProgram(
                     Program.ExceptionHelper.tooLargeContractSize(
                             program,
                             Constants.getMaxContractSize(),
-                            createdContractSize));
-        } else {
-            gasLeftover = GasCost.subtract(gasLeftover,  returnDataGasValue);
-            program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
-            cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
+                            codeSize));
+            return true;
         }
+        return false;
+    }
+
+    private boolean hasInvalidCodePrefix(byte[] code, int codeSize) {
+        if (activations.isActive(ConsensusRule.RSKIP544) && codeSize > 0 && code[0] == (byte) 0xEF) {
+            logger.info("Contract creation rejected: code starts with 0xEF (RSKIP544), contract: [{}], tx: [{}]",
+                    tx.getContractAddress(), tx.getHash());
+            configureRuntimeExceptionOnProgram(
+                    Program.ExceptionHelper.invalidCodePrefix(program));
+            return true;
+        }
+        return false;
+    }
+
+    private void saveContractCode(byte[] code, long storageCost) {
+        gasLeftover = GasCost.subtract(gasLeftover, storageCost);
+        program.spendGas(storageCost, "CONTRACT DATA COST");
+        cacheTrack.saveCode(tx.getContractAddress(), code);
     }
 
     private void configureRuntimeExceptionOnProgram(RuntimeException e) {
