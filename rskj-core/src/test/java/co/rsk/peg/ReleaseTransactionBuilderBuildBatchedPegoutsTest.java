@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_1;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
@@ -9,13 +10,13 @@ import static co.rsk.peg.ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.SUCCESS;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat;
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertWitnessScriptWithoutSignaturesHasProperFormat;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertP2shP2wshScriptWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createUTXOs;
+import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
@@ -44,6 +45,7 @@ import java.util.List;
 import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.Repository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -81,12 +83,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     private ActivationConfig.ForBlock activations;
     private Coin feePerKb;
     private Coin dustAmount;
-    private BridgeStorageProvider bridgeStorageProvider;
 
     @BeforeEach
     void setUp() {
-        bridgeStorageProvider = mock(BridgeStorageProvider.class);
-
         setUpActivations(ALL_ACTIVATIONS);
         setUpFeePerKb(BtcTransaction.DEFAULT_TX_FEE);
         dustAmount = feePerKb.div(2);
@@ -882,7 +881,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             for (TransactionInput releaseInput : releaseTransactionInputs) {
                 int inputIndex = releaseTransactionInputs.indexOf(releaseInput);
                 TransactionWitness witness = releaseTransaction.getWitness(inputIndex);
-                assertWitnessScriptWithoutSignaturesHasProperFormat(witness,
+                assertP2shP2wshScriptWithoutSignaturesHasProperFormat(witness,
                     federation.getRedeemScript());
             }
         }
@@ -897,6 +896,14 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     }
 
     private void setUpWallet(List<UTXO> utxos) {
+        Repository repository = createRepository();
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+            repository,
+            BRIDGE_ADDR,
+            BTC_MAINNET_PARAMS,
+            activations
+        );
+
         wallet = BridgeUtils.getFederationSpendWallet(
             BTC_CONTEXT,
             federation,

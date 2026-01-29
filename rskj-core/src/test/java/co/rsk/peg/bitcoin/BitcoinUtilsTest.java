@@ -1196,7 +1196,7 @@ class BitcoinUtilsTest {
                 transaction.getInput(inputIndex).getScriptSig(),
                 redeemScript
             );
-            assertWitnessScriptWithoutSignaturesHasProperFormat(
+            assertP2shP2wshScriptWithoutSignaturesHasProperFormat(
                 transaction.getWitness(inputIndex),
                 redeemScript
             );
@@ -1260,7 +1260,7 @@ class BitcoinUtilsTest {
             int inputIndex = transactionInputs.indexOf(input);
             TransactionWitness witness = transaction.getWitness(inputIndex);
 
-            assertWitnessScriptWithoutSignaturesHasProperFormat(witness, federationRedeemScript);
+            assertP2shP2wshScriptWithoutSignaturesHasProperFormat(witness, federationRedeemScript);
             assertSegwitScriptSigContainsHashedRedeemScript(input.getScriptSig(), federationRedeemScript);
         }
     }
@@ -1368,7 +1368,7 @@ class BitcoinUtilsTest {
 
         // Check second input (segwit), does not have signatures
         TransactionWitness witness = transaction.getWitness(segwitInputIndex);
-        assertWitnessScriptWithoutSignaturesHasProperFormat(witness, p2wshFederation.getRedeemScript());
+        assertP2shP2wshScriptWithoutSignaturesHasProperFormat(witness, p2wshFederation.getRedeemScript());
         assertSegwitScriptSigContainsHashedRedeemScript(
             transaction.getInput(segwitInputIndex).getScriptSig(),
             p2wshFederation.getRedeemScript()
@@ -2072,7 +2072,7 @@ class BitcoinUtilsTest {
     }
 
     private void assertWitnessScriptWithSignaturesHasProperFormat(TransactionWitness witness, Script redeemScript) {
-        assertBasicWitnessScriptStructure(witness, redeemScript);
+        assertP2shP2wshScriptSigStructure(witness, redeemScript);
 
         int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
         int startIndex = 1; // First push is OP_0, next come the signatures
