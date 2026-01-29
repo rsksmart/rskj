@@ -127,7 +127,7 @@ class ReceiveHeadersTest extends BridgePerformanceTestCase {
                     NetworkParameters btcParams = constants.getBridgeConstants().getBtcParams();
                     BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                             (Repository) environment.getBenchmarkedRepository(),
-                        btcParams,
+                            btcParams,
                             activationConfig.forBlock(0)
                     );
 
