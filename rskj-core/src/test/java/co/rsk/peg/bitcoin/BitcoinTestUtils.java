@@ -4,6 +4,7 @@ import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
 import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHP2WSHOutputScript;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -20,7 +21,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 
 public class BitcoinTestUtils {
-    public static final byte[] EMPTY_BYTE = {};
     public static final Sha256Hash WITNESS_RESERVED_VALUE = Sha256Hash.ZERO_HASH;
 
     public static BtcECKey getBtcEcKeyFromSeed(String seed) {
@@ -395,7 +395,7 @@ public class BitcoinTestUtils {
         // An empty push for each signature required to spend
         for (int i = startIndex; i < numberOfSignaturesRequiredToSpend; i++) {
             byte[] signaturePush = witness.getPush(i);
-            assertArrayEquals(EMPTY_BYTE, signaturePush);
+            assertArrayEquals(EMPTY_BYTE_ARRAY, signaturePush);
         }
     }
 
@@ -412,14 +412,14 @@ public class BitcoinTestUtils {
 
         // first push should be OP_0 (empty byte)
         byte[] firstPush = witness.getPush(pushIndex);
-        assertArrayEquals(EMPTY_BYTE, firstPush);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, firstPush);
 
         // Skip checking the signatures, other methods will handle that depending if signatures are expected or not
         pushIndex += numberOfSignaturesRequiredToSpend;
 
         // An empty push for the OP_NOTIF param
         byte[] flowPush = witness.getPush(++pushIndex);
-        assertArrayEquals(EMPTY_BYTE, flowPush);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, flowPush);
 
         // Finally, the redeem script program
         byte[] lastPush = witness.getPush(++pushIndex);
