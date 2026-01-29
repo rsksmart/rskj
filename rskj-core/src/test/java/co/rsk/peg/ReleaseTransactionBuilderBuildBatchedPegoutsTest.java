@@ -51,6 +51,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
+
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all()
         .forBlock(0);
     private static final ActivationConfig.ForBlock PAPYRUS_ACTIVATIONS = ActivationConfigsForTest.papyrus200()
@@ -93,6 +94,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     @Nested
     class StandardMultiSigFederationTests {
+
         @BeforeEach
         void setup() {
             federation = StandardMultiSigFederationBuilder.builder().build();
@@ -118,12 +120,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                MINIMUM_PEGOUT_TX_VALUE);
-
-            Coin federationWalletBalance = wallet.getBalance();
-            Coin expectedChangeOutputAmount = federationWalletBalance.subtract(
                 MINIMUM_PEGOUT_TX_VALUE);
 
             // Act
@@ -136,19 +133,14 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs1(releaseTransaction);
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests,
-                expectedChangeOutputAmount);
+            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
         void buildBatchedPegouts_whenSinglePegoutRequest_shouldCreateReleaseTx() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-            Coin federationWalletBalance = wallet.getBalance();
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                MINIMUM_PEGOUT_TX_VALUE);
-            Coin expectedChangeOutputAmount = federationWalletBalance.subtract(
                 MINIMUM_PEGOUT_TX_VALUE);
 
             // Act
@@ -163,8 +155,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             int expectedNumberOfUTXOs = 1;
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests,
-                expectedChangeOutputAmount);
+            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -173,11 +164,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(3,
                 MINIMUM_PEGOUT_TX_VALUE);
-            Coin pegoutRequestsTotalAmount = pegoutRequests.stream().map(Entry::getAmount)
-                .reduce(Coin.ZERO, Coin::add);
-            Coin federationWalletBalance = wallet.getBalance();
-            Coin expectedChangeOutputAmount = federationWalletBalance.subtract(
-                pegoutRequestsTotalAmount);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
@@ -190,16 +176,16 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests,
-                expectedChangeOutputAmount);
+            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
         void buildBatchedPegouts_whenWalletHasExactFundsForPegoutRequests_shouldCreateReleaseTxWithNoChangeOutput() {
             int expectedNumberOfUTXOs = 1;
-            List<UTXO> federationUTXOs = createUTXOs(expectedNumberOfUTXOs, MINIMUM_PEGOUT_TX_VALUE, federationAddress);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-
+            List<UTXO> federationUTXOs = createUTXOs(expectedNumberOfUTXOs, MINIMUM_PEGOUT_TX_VALUE,
+                federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
+                federationUTXOs);
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
                 MINIMUM_PEGOUT_TX_VALUE);
 
@@ -224,7 +210,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<UTXO> federationUTXOs = createUTXOs(1, MINIMUM_PEGOUT_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(2,
                 MINIMUM_PEGIN_TX_VALUE);
 
@@ -242,9 +227,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             int expectedNumberOfUTXOs = 1;
             Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
-            List<UTXO> federationUTXOs = createUTXOs(expectedNumberOfUTXOs, utxoAmount,federationAddress);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-
+            List<UTXO> federationUTXOs = createUTXOs(expectedNumberOfUTXOs, utxoAmount,
+                federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
+                federationUTXOs);
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
                 MINIMUM_PEGOUT_TX_VALUE);
 
@@ -259,8 +245,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests,
-                DUSTY_AMOUNT_SEND_REQUESTED);
+            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -282,9 +267,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         @Test
         void buildBatchedPegouts_whenUtxosAreDustButExactToPay_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
-            List<UTXO> federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, federationAddress);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-
+            List<UTXO> federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount,
+                federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
+                federationUTXOs);
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(2,
                 MINIMUM_PEGOUT_TX_VALUE);
 
@@ -304,7 +290,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<UTXO> federationUTXOs = createUTXOs(3, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(2,
                 MINIMUM_PEGOUT_TX_VALUE);
 
@@ -324,9 +309,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             Coin pegoutRequestAmount = MINIMUM_PEGIN_TX_VALUE.multiply(4);
-            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(LARGE_NUMBER_OF_PEGOUT_REQUESTS, pegoutRequestAmount);
+            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(
+                LARGE_NUMBER_OF_PEGOUT_REQUESTS, pegoutRequestAmount);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
@@ -355,6 +340,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     @Nested
     class P2shErpFederationTests {
+
         @BeforeEach
         void setup() {
             federation = P2shErpFederationBuilder.builder().build();
@@ -382,12 +368,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                MINIMUM_PEGOUT_TX_VALUE);
-
-            Coin federationWalletBalance = wallet.getBalance();
-            Coin expectedChangeOutputAmount = federationWalletBalance.subtract(
                 MINIMUM_PEGOUT_TX_VALUE);
 
             // Act
@@ -400,20 +381,17 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs1(releaseTransaction);
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests,
-                expectedChangeOutputAmount);
+            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
         void buildBatchedPegouts_whenSinglePegoutRequest_shouldCreateReleaseTx() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-            Coin federationWalletBalance = wallet.getBalance();
-
             int expectedNumberOfUTXOs = 1;
             int numberOfPegoutRequests = 1;
-            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(numberOfPegoutRequests, MINIMUM_PEGOUT_TX_VALUE);
-            Coin expectedChangeOutputAmount = federationWalletBalance.subtract(MINIMUM_PEGOUT_TX_VALUE);
+            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(
+                numberOfPegoutRequests, MINIMUM_PEGOUT_TX_VALUE);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
@@ -426,22 +404,15 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests,
-                expectedChangeOutputAmount);
+            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
         void buildBatchedPegouts_whenMultiplePegoutRequest_shouldCreateReleaseTx() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-            Coin federationWalletBalance = wallet.getBalance();
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(3,
                 MINIMUM_PEGOUT_TX_VALUE);
-            Coin pegoutRequestsTotalAmount = pegoutRequests.stream().map(Entry::getAmount)
-                .reduce(Coin.ZERO, Coin::add);
-            Coin expectedChangeOutputAmount = federationWalletBalance.subtract(
-                pegoutRequestsTotalAmount);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
@@ -454,18 +425,17 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests,
-                expectedChangeOutputAmount);
+            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
         void buildBatchedPegouts_whenWalletHasExactFundsForPegoutRequests_shouldCreateReleaseTxWithNoChangeOutput() {
             // Arrange
             int expectedNumberOfUTXOs = 1;
-            List<UTXO> federationUTXOs = createUTXOs(expectedNumberOfUTXOs, MINIMUM_PEGOUT_TX_VALUE, federationAddress);
+            List<UTXO> federationUTXOs = createUTXOs(expectedNumberOfUTXOs, MINIMUM_PEGOUT_TX_VALUE,
+                federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
                 MINIMUM_PEGOUT_TX_VALUE);
 
@@ -489,7 +459,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<UTXO> federationUTXOs = createUTXOs(1, MINIMUM_PEGOUT_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
                 MINIMUM_PEGIN_TX_VALUE);
 
@@ -507,10 +476,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
             int expectedNumberOfUTXOs = 1;
-            List<UTXO> federationUTXOs = createUTXOs(expectedNumberOfUTXOs, utxoAmount, federationAddress);
+            List<UTXO> federationUTXOs = createUTXOs(expectedNumberOfUTXOs, utxoAmount,
+                federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
                 MINIMUM_PEGOUT_TX_VALUE);
 
@@ -525,8 +494,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests,
-                DUSTY_AMOUNT_SEND_REQUESTED);
+            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -548,10 +516,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         @Test
         void buildBatchedPegouts_whenUtxosAreDustButExactToPay_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
-            List<UTXO> federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, federationAddress);
+            List<UTXO> federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount,
+                federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(2,
                 MINIMUM_PEGOUT_TX_VALUE);
 
@@ -571,7 +539,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<UTXO> federationUTXOs = createUTXOs(3, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(2,
                 MINIMUM_PEGOUT_TX_VALUE);
 
@@ -591,9 +558,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             Coin pegoutRequestAmount = MINIMUM_PEGIN_TX_VALUE.multiply(4);
-            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(LARGE_NUMBER_OF_PEGOUT_REQUESTS, pegoutRequestAmount);
+            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(
+                LARGE_NUMBER_OF_PEGOUT_REQUESTS, pegoutRequestAmount);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
@@ -615,6 +582,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     @Nested
     class P2wshErpFederationTests {
+
         @BeforeEach
         void setup() {
             federation = P2shP2wshErpFederationBuilder.builder()
@@ -648,12 +616,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                MINIMUM_PEGOUT_TX_VALUE);
-
-            Coin federationWalletBalance = wallet.getBalance();
-            Coin expectedChangeOutputAmount = federationWalletBalance.subtract(
                 MINIMUM_PEGOUT_TX_VALUE);
 
             // Act
@@ -666,8 +629,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs1(releaseTransaction);
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests,
-                expectedChangeOutputAmount);
+            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -676,9 +638,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
                 MINIMUM_PEGOUT_TX_VALUE);
-            Coin federationWalletBalance = wallet.getBalance();
-            Coin expectedChangeOutputAmount = federationWalletBalance.subtract(
-                MINIMUM_PEGOUT_TX_VALUE);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
@@ -690,8 +649,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests,
-                expectedChangeOutputAmount);
+            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -700,11 +658,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(3,
                 MINIMUM_PEGOUT_TX_VALUE);
-            Coin pegoutRequestsTotalAmount = pegoutRequests.stream().map(Entry::getAmount)
-                .reduce(Coin.ZERO, Coin::add);
-            Coin federationWalletBalance = wallet.getBalance();
-            Coin expectedChangeOutputAmount = federationWalletBalance.subtract(
-                pegoutRequestsTotalAmount);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
@@ -717,8 +670,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests,
-                expectedChangeOutputAmount);
+            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -726,7 +678,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<UTXO> federationUTXOs = createUTXOs(1, MINIMUM_PEGOUT_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
                 MINIMUM_PEGOUT_TX_VALUE);
 
@@ -750,7 +701,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<UTXO> federationUTXOs = createUTXOs(1, utxoAmount, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(2,
                 MINIMUM_PEGOUT_TX_VALUE);
 
@@ -768,10 +718,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             int expectedNumberOfUTXOs = 1;
             Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
-            List<UTXO> federationUTXOs = createUTXOs(expectedNumberOfUTXOs, utxoAmount, federationAddress);
+            List<UTXO> federationUTXOs = createUTXOs(expectedNumberOfUTXOs, utxoAmount,
+                federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
                 MINIMUM_PEGOUT_TX_VALUE);
 
@@ -786,8 +736,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests,
-                DUSTY_AMOUNT_SEND_REQUESTED);
+            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -809,10 +758,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         @Test
         void buildBatchedPegouts_whenUtxosAreDustButExactToPay_shouldCreateReleaseTx() {
             // Arrange
-            List<UTXO> federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, federationAddress);
+            List<UTXO> federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount,
+                federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
                 MINIMUM_PEGOUT_TX_VALUE);
 
@@ -837,7 +786,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<UTXO> federationUTXOs = createUTXOs(3, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(2,
                 MINIMUM_PEGOUT_TX_VALUE);
 
@@ -857,9 +805,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 federationUTXOs);
-
             Coin pegoutRequestAmount = MINIMUM_PEGIN_TX_VALUE.multiply(4);
-            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(LARGE_NUMBER_OF_PEGOUT_REQUESTS, pegoutRequestAmount);
+            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(
+                LARGE_NUMBER_OF_PEGOUT_REQUESTS, pegoutRequestAmount);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
@@ -930,12 +878,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         );
     }
 
-    private void assertReleaseTransactionNumberOfOutputs(BtcTransaction releaseTransaction,
-        int expectedNumberOfOutputs) {
-        int actualNumberOfOutputs = releaseTransaction.getOutputs().size();
-        assertEquals(expectedNumberOfOutputs, actualNumberOfOutputs);
-    }
-
     private void assertBtcTxVersionIs1(BtcTransaction releaseTransaction) {
         assertEquals(BTC_TX_VERSION_1, releaseTransaction.getVersion());
     }
@@ -944,7 +886,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
     }
 
-    private void assertFederationChangeOutputIsIncludedInReleaseTx(BtcTransaction releaseTransaction,
+    private void assertFederationChangeOutputHasExpectedAmount(BtcTransaction releaseTransaction,
         Coin expectedChangeOutputAmount) {
         List<TransactionOutput> outputsForFederation = releaseTransaction.getOutputs().stream()
             .filter(this::isRecipientAddressForFederation)
@@ -952,18 +894,18 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         assertEquals(1, outputsForFederation.size());
 
         TransactionOutput federationChangeOutput = outputsForFederation.get(0);
-        assertTrue(federationChangeOutput.getValue().compareTo(expectedChangeOutputAmount) < 1,
-            "Change output amount is greater than expected");
+        assertEquals(expectedChangeOutputAmount, federationChangeOutput.getValue());
     }
 
-    private void assertPegoutRequestsAreIncludedInReleaseTx(BtcTransaction releaseTransaction, List<Entry> pegoutRequests) {
+    private void assertPegoutRequestsAreIncludedInReleaseTx(BtcTransaction releaseTransaction,
+        List<Entry> pegoutRequests) {
         List<TransactionOutput> onlyUserOutputs = releaseTransaction.getOutputs().stream().filter(
             this::isRecipientAddressForAnUser
         ).toList();
 
         assertEquals(pegoutRequests.size(), onlyUserOutputs.size());
         for (Entry pegoutRequest : pegoutRequests) {
-            assertUserOutput(pegoutRequest, onlyUserOutputs);
+            assertPegoutRequestIsIncludedInUserOutputs(pegoutRequest, onlyUserOutputs);
         }
     }
 
@@ -980,7 +922,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         return transactionOutput.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
     }
 
-    private void assertUserOutput(Entry pegoutRequest, List<TransactionOutput> userOutputs) {
+    private void assertPegoutRequestIsIncludedInUserOutputs(Entry pegoutRequest,
+        List<TransactionOutput> userOutputs) {
         Optional<TransactionOutput> userOutput = userOutputs.stream().filter(
             output -> getDestinationAddress(output)
                 .equals(pegoutRequest.getDestination())
@@ -1000,11 +943,18 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     }
 
     private void assertReleaseTxHasChangeAndUserOutputs(BtcTransaction releaseTransaction,
-        List<Entry> pegoutRequests, Coin expectedChangeOutputAmount) {
+        List<Entry> pegoutRequests) {
         int expectedNumberOfOutputs = pegoutRequests.size() + 1;
         assertReleaseTransactionNumberOfOutputs(releaseTransaction, expectedNumberOfOutputs);
         assertPegoutRequestsAreIncludedInReleaseTx(releaseTransaction, pegoutRequests);
-        assertFederationChangeOutputIsIncludedInReleaseTx(releaseTransaction, expectedChangeOutputAmount);
+
+        Coin totalPegoutRequestsAmount = pegoutRequests.stream().map(Entry::getAmount)
+            .reduce(Coin.ZERO, Coin::add);
+        Coin inputTotalAmount = releaseTransaction.getInputSum();
+
+        Coin expectedChangeOutputAmount = inputTotalAmount.subtract(totalPegoutRequestsAmount);
+        assertFederationChangeOutputHasExpectedAmount(releaseTransaction,
+            expectedChangeOutputAmount);
     }
 
     private void assertReleaseTxHasOnlyUserOutputs(BtcTransaction releaseTransaction,
@@ -1012,6 +962,12 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         int expectedNumberOfOutputs = pegoutRequests.size();
         assertReleaseTransactionNumberOfOutputs(releaseTransaction, expectedNumberOfOutputs);
         assertPegoutRequestsAreIncludedInReleaseTx(releaseTransaction, pegoutRequests);
+    }
+
+    private void assertReleaseTransactionNumberOfOutputs(BtcTransaction releaseTransaction,
+        int expectedNumberOfOutputs) {
+        int actualNumberOfOutputs = releaseTransaction.getOutputs().size();
+        assertEquals(expectedNumberOfOutputs, actualNumberOfOutputs);
     }
 
     private List<Entry> createPegoutRequests(int count, Coin amount) {
