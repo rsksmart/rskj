@@ -121,7 +121,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
+            int expectedNumberOfUTXOs = 1;
+            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(expectedNumberOfUTXOs,
                 MINIMUM_PEGOUT_TX_VALUE);
 
             // Act
@@ -133,6 +134,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs1(releaseTransaction);
+            assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
@@ -367,7 +369,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
+            int expectedNumberOfUTXOs = 1;
+            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(expectedNumberOfUTXOs,
                 MINIMUM_PEGOUT_TX_VALUE);
 
             // Act
@@ -379,6 +382,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs1(releaseTransaction);
+            assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
@@ -615,7 +619,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
+            int expectedNumberOfUTXOs = 1;
+            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(expectedNumberOfUTXOs,
                 MINIMUM_PEGOUT_TX_VALUE);
 
             // Act
@@ -627,6 +632,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs1(releaseTransaction);
+            assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormat(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
