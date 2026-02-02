@@ -374,7 +374,7 @@ public class BitcoinTestUtils {
         ScriptChunk firstChunk = scriptSigChunks.get(chunkIndex);
         assertEquals(OP_0, firstChunk.opcode);
 
-        // Skip checking the signatures, other methods will handle that depending if signatures are expected or not
+        // Skip checking the signatures, other methods will handle that depending on whether signatures are expected or not
         chunkIndex += numberOfSignaturesRequiredToSpend;
 
         // An empty chunk for the OP_NOTIF param
@@ -414,7 +414,7 @@ public class BitcoinTestUtils {
         byte[] firstPush = witness.getPush(pushIndex);
         assertArrayEquals(EMPTY_BYTE_ARRAY, firstPush);
 
-        // Skip checking the signatures, other methods will handle that depending if signatures are expected or not
+        // Skip checking the signatures, other methods will handle that depending on whether signatures are expected or not
         pushIndex += numberOfSignaturesRequiredToSpend;
 
         // An empty push for the OP_NOTIF param
