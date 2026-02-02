@@ -978,7 +978,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     private void assertReleaseTxHasChangeAndUserOutputs(BtcTransaction releaseTransaction,
         List<Entry> pegoutRequests) {
-        int expectedNumberOfOutputs = pegoutRequests.size() + 1;
+        int expectedNumberOfChangeOutputs = 1;
+        int expectedNumberOfOutputs = pegoutRequests.size() + expectedNumberOfChangeOutputs;
         assertReleaseTransactionNumberOfOutputs(releaseTransaction, expectedNumberOfOutputs);
         assertPegoutRequestsAreIncludedInReleaseTx(releaseTransaction, pegoutRequests);
 
