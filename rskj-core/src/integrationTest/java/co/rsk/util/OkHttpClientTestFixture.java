@@ -161,7 +161,13 @@ public class OkHttpClientTestFixture {
 
     public static JsonNode getJsonResponseForGetBestBlockMessage(int port, String blockNumOrTag) throws IOException {
         Response response = sendJsonRpcGetBlockMessage(port, blockNumOrTag);
-        return new ObjectMapper().readTree(response.body().string());
+        try {
+            return new ObjectMapper().readTree(response.body().string());
+        } finally {
+            if (response.body() != null) {
+                response.body().close();
+            }
+        }
     }
 
     public static String getEnvelopedMethodCalls(String... methodCall) {
