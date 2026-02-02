@@ -138,7 +138,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs1(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -162,7 +162,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -182,7 +182,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -206,7 +206,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -250,7 +250,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -331,11 +331,11 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(LARGE_NUMBER_OF_UTXOS, releaseInputs.size());
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
         }
 
-        private void assertReleaseTxInputsHasProperFormat(BtcTransaction releaseTransaction) {
+        private void assertReleaseTxInputsHasProperFormatAndBelongsToFederation(BtcTransaction releaseTransaction) {
             for (TransactionInput releaseInput : releaseTransaction.getInputs()) {
                 Script inputScriptSig = releaseInput.getScriptSig();
                 assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat(inputScriptSig,
@@ -390,7 +390,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs1(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -414,7 +414,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -435,7 +435,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
 
             assertBtcTxVersionIs2(releaseTransaction);
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -460,7 +460,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -504,7 +504,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -582,7 +582,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertNull(batchedPegoutsResult.btcTx());
         }
 
-        private void assertReleaseTxInputsHasProperFormat(BtcTransaction releaseTransaction) {
+        private void assertReleaseTxInputsHasProperFormatAndBelongsToFederation(BtcTransaction releaseTransaction) {
             for (TransactionInput releaseInput : releaseTransaction.getInputs()) {
                 Script inputScriptSig = releaseInput.getScriptSig();
                 assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat(inputScriptSig,
@@ -643,7 +643,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs1(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -663,7 +663,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -684,7 +684,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
 
             assertBtcTxVersionIs2(releaseTransaction);
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -705,7 +705,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -750,7 +750,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(expectedNumberOfUTXOs, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -789,7 +789,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
         }
 
@@ -833,11 +833,11 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
             assertEquals(LARGE_NUMBER_OF_UTXOS, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormat(releaseTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
         }
 
-        private void assertReleaseTxInputsHasProperFormat(BtcTransaction releaseTransaction) {
+        private void assertReleaseTxInputsHasProperFormatAndBelongsToFederation(BtcTransaction releaseTransaction) {
             List<TransactionInput> releaseTransactionInputs = releaseTransaction.getInputs();
             for (TransactionInput releaseInput : releaseTransactionInputs) {
                 int inputIndex = releaseTransactionInputs.indexOf(releaseInput);
