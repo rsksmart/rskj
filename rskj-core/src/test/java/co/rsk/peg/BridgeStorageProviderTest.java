@@ -22,7 +22,6 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.BridgeSerializationUtils.deserializeOutpointsValues;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 import static org.ethereum.TestUtils.assertThrows;
-import static org.ethereum.TestUtils.mockAddress;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -111,7 +110,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             track,
-            bridgeAddress,
             testnetBtcParams,
             activationsBeforeFork
         );
@@ -124,7 +122,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             track,
-            bridgeAddress,
             testnetBtcParams,
             activationsBeforeFork
         );
@@ -147,7 +144,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             track,
-            bridgeAddress,
             testnetBtcParams,
             activationsBeforeFork
         );
@@ -162,7 +158,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             track,
-            bridgeAddress,
             testnetBtcParams,
             activationsBeforeFork
         );
@@ -1621,7 +1616,7 @@ class BridgeStorageProviderTest {
     @Test
     void getReleaseRequestQueue_before_rskip_146_activation() throws IOException {
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), testnetBtcParams, activationsBeforeFork);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, testnetBtcParams, activationsBeforeFork);
 
         List<ReleaseRequestQueue.Entry> oldEntriesList = new ArrayList<>(Collections.singletonList(
             new ReleaseRequestQueue.Entry(
@@ -1663,7 +1658,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(
             repositoryMock,
-            mockAddress("aabbccdd"),
             testnetBtcParams,
             activations
         );
@@ -1686,7 +1680,7 @@ class BridgeStorageProviderTest {
     @Test
     void saveReleaseRequestQueue_before_rskip_146_activation() throws IOException {
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), testnetBtcParams, activationsBeforeFork);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, testnetBtcParams, activationsBeforeFork);
 
         List<ReleaseRequestQueue.Entry> oldEntriesList = new ArrayList<>(Collections.singletonList(
             new ReleaseRequestQueue.Entry(
@@ -1729,7 +1723,7 @@ class BridgeStorageProviderTest {
             BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Collections.singletonList(oldEntry))))
         );
 
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), testnetBtcParams, activations);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, testnetBtcParams, activations);
         ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
 
         releaseRequestQueue.add(Address.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
@@ -1759,7 +1753,7 @@ class BridgeStorageProviderTest {
     @Test
     void getPegoutsWaitingForConfirmations_before_rskip_146_activation() throws IOException {
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"),
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock,
             testnetBtcParams, activationsBeforeFork);
 
         Set<PegoutsWaitingForConfirmations.Entry> oldEntriesSet = new HashSet<>(Collections.singletonList(
@@ -1794,7 +1788,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(
             repositoryMock,
-            mockAddress("aabbccdd"),
             testnetBtcParams,
             activations
         );
@@ -1816,7 +1809,7 @@ class BridgeStorageProviderTest {
     @Test
     void savePegoutsWaitingForConfirmations_before_rskip_146_activations() throws IOException {
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), testnetBtcParams, activationsBeforeFork);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, testnetBtcParams, activationsBeforeFork);
 
         Set<PegoutsWaitingForConfirmations.Entry> oldEntriesSet = new HashSet<>(Collections.singletonList(
             new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(testnetBtcParams), 1L)
@@ -1855,7 +1848,7 @@ class BridgeStorageProviderTest {
         when(repositoryMock.getStorageBytes(any(),eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()))).
             thenReturn(BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(new PegoutsWaitingForConfirmations(oldEntriesSet)));
 
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), testnetBtcParams, activations);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, testnetBtcParams, activations);
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = storageProvider.getPegoutsWaitingForConfirmations();
 
         pegoutsWaitingForConfirmations.add(new SimpleBtcTransaction(
@@ -1898,7 +1891,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             track,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -1914,7 +1906,6 @@ class BridgeStorageProviderTest {
         //Reusing same storage configuration as the height doesn't affect storage configurations for releases.
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -1938,7 +1929,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsBeforeFork
         );
@@ -1973,7 +1963,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsAllForks
         );
@@ -2014,7 +2003,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsBeforeFork
         );
@@ -2037,7 +2025,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsAllForks
         );
@@ -2060,7 +2047,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsAllForks
         );
@@ -2085,7 +2071,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsBeforeFork
         );
@@ -2108,7 +2093,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsAllForks
         );
@@ -2125,7 +2109,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsBeforeFork
         );
@@ -2146,7 +2129,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsAllForks
         );
@@ -2167,7 +2149,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsBeforeFork
         );
@@ -2196,7 +2177,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsAllForks
         );
@@ -2224,7 +2204,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsBeforeFork
         );
@@ -2241,7 +2220,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsAllForks
         );
@@ -2262,7 +2240,6 @@ class BridgeStorageProviderTest {
         int blockHeight = 100;
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsAllForks
         );
@@ -2285,7 +2262,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsBeforeFork
         );
@@ -2312,7 +2288,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activationsAllForks
         );
@@ -2344,7 +2319,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2365,7 +2339,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2391,7 +2364,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2417,7 +2389,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2443,7 +2414,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2464,7 +2434,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2491,7 +2460,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2514,7 +2482,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2538,7 +2505,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2577,7 +2543,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2613,7 +2578,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2638,7 +2602,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2656,7 +2619,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2674,7 +2636,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2701,7 +2662,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2734,7 +2694,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2767,7 +2726,6 @@ class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             testnetBtcParams,
             activations
         );
@@ -2790,7 +2748,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository, bridgeAddress,
+            repository,
             testnetBtcParams, activationsBeforeFork
         );
 
@@ -2807,7 +2765,7 @@ class BridgeStorageProviderTest {
             .thenReturn(encodedTimeStamp);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository, bridgeAddress,
+            repository,
             testnetBtcParams, activationsAllForks
         );
 
@@ -2822,7 +2780,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository, bridgeAddress,
+            repository,
             testnetBtcParams, activationsAllForks
         );
 
@@ -2834,7 +2792,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository, bridgeAddress,
+            repository,
             testnetBtcParams, activationsBeforeFork
         );
 
@@ -2853,7 +2811,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository, bridgeAddress,
+            repository,
             testnetBtcParams, activationsAllForks
         );
 
@@ -2873,7 +2831,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository, bridgeAddress,
+            repository,
             testnetBtcParams, activationsAllForks
         );
 
@@ -2890,7 +2848,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository, bridgeAddress,
+            repository,
             testnetBtcParams, activationsBeforeFork
         );
 
@@ -2906,7 +2864,7 @@ class BridgeStorageProviderTest {
         when(repository.getStorageBytes(bridgeAddress, NEXT_PEGOUT_HEIGHT_KEY.getKey())).thenReturn(new byte[] { 1 });
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository, bridgeAddress,
+            repository,
             testnetBtcParams, activationsAllForks
         );
 
@@ -2921,7 +2879,7 @@ class BridgeStorageProviderTest {
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider1 = new BridgeStorageProvider(
-            track, bridgeAddress,
+            track,
             testnetBtcParams, activationsAllForks
         );
 
@@ -2932,7 +2890,7 @@ class BridgeStorageProviderTest {
         track = repository.startTracking();
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(
-            track, bridgeAddress,
+            track,
             testnetBtcParams, activationsAllForks
         );
 
@@ -2944,7 +2902,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository, bridgeAddress,
+            repository,
             testnetBtcParams, activationsBeforeFork
         );
 
@@ -2963,7 +2921,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository, bridgeAddress,
+            repository,
             testnetBtcParams, activationsAllForks
         );
 
@@ -2982,7 +2940,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(
-            repository, bridgeAddress,
+            repository,
             testnetBtcParams, activationsAllForks
         );
 
@@ -2994,7 +2952,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(
-            repository, bridgeAddress,
+            repository,
             testnetBtcParams, activationsAllForks
         );
 
@@ -3022,6 +2980,6 @@ class BridgeStorageProviderTest {
         return tx;
     }
     private BridgeStorageProvider createBridgeStorageProvider(Repository repository, NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
-        return new BridgeStorageProvider(repository, bridgeAddress, networkParameters, activations);
+        return new BridgeStorageProvider(repository, networkParameters, activations);
     }
 }
