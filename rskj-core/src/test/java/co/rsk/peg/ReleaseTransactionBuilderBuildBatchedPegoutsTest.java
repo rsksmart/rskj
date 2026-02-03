@@ -944,7 +944,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         Repository repository = createRepository();
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
             repository,
-            BRIDGE_ADDR,
             BTC_MAINNET_PARAMS,
             activations
         );
