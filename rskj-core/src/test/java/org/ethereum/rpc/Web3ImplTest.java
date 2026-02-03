@@ -2819,16 +2819,17 @@ class Web3ImplTest {
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null,
+                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
                 null, new ExecutionBlockRetriever(blockchain, null, null),
                 null, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache), null,
-                new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null
         );
@@ -2943,16 +2944,19 @@ class Web3ImplTest {
 
         Web3InformationRetriever retriever = new Web3InformationRetriever(transactionPool, blockchain, repositoryLocator, executionBlockRetriever);
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
+
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
                 new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, transactionGateway),
-                new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null
         );
@@ -3012,17 +3016,18 @@ class Web3ImplTest {
         res.setHReturn(new byte[0]);
         when(executor.executeTransaction(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(res);
         Web3InformationRetriever retriever = new Web3InformationRetriever(transactionPool, blockchain, repositoryLocator, executionBlockRetriever);
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
                 new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator,
                 new EthModuleWalletEnabled(wallet, transactionPool, signatureCache),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, null),
-                new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);

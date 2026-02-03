@@ -53,6 +53,7 @@ import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.OverrideablePrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,14 +160,16 @@ public class EthModule
         ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
         Block block = result.getBlock();
 
-        MutableRepository mutableRepository = prepareRepository(result, block, shouldPerformStateOverride, accountOverrideList);
+        OverrideablePrecompiledContracts overrideablePrecompiledContracts = getOverridablePrecompiledContracts();
+
+        MutableRepository mutableRepository = prepareRepository(result, block, shouldPerformStateOverride, accountOverrideList, overrideablePrecompiledContracts);
 
         CallArguments callArgs = argsParam.toCallArguments();
 
         String hReturn = null;
         try {
             ProgramResult programResult = mutableRepository != null ?
-                    callConstant(callArgs, block, mutableRepository) :
+                    callConstant(callArgs, block, mutableRepository, overrideablePrecompiledContracts) :
                     callConstant(callArgs, block);
 
             handleTransactionRevertIfHappens(programResult);
@@ -186,7 +189,8 @@ public class EthModule
     private MutableRepository prepareRepository(ExecutionBlockRetriever.Result result,
                                                 Block block,
                                                 boolean shouldPerformStateOverride,
-                                                List<AccountOverride> accountOverrideList) {
+                                                List<AccountOverride> accountOverrideList,
+                                                OverrideablePrecompiledContracts overrideablePrecompiledContracts) {
         MutableRepository mutableRepository = null;
 
         if (result.getFinalState() != null) {
@@ -197,19 +201,28 @@ public class EthModule
             if (mutableRepository == null) {
                 mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
             }
-            applyStateOverride(block, mutableRepository, accountOverrideList);
+            applyStateOverride(block, mutableRepository, accountOverrideList, overrideablePrecompiledContracts);
         }
 
         return mutableRepository;
     }
 
-    private void applyStateOverride(Block block, MutableRepository mutableRepository, List<AccountOverride> accountOverrideList) {
+    private void applyStateOverride(Block block, MutableRepository mutableRepository, List<AccountOverride> accountOverrideList, OverrideablePrecompiledContracts overrideablePrecompiledContracts) {
         ActivationConfig.ForBlock blockActivations = activationConfig.forBlock(block.getNumber());
+        // Get all addresses that have modifications but are not precompiled contracts
+        // (We're assuming that If "movePrecompiledTo" is present, then the address should be a precompiled,
+        // and if it's not, validations will take care of it)
+        List<RskAddress> dirtyAddresses = accountOverrideList.stream().
+                filter(accountOverride -> accountOverride.getMovePrecompileToAddress() == null)
+                .map(AccountOverride::getAddress)
+                .toList();
         for (AccountOverride accountOverride : accountOverrideList) {
-            if (precompiledContracts.getContractForAddress(blockActivations, DataWord.valueFromHex(accountOverride.getAddress().toHexString())) != null) {
-                throw invalidParamError("Precompiled contracts can not be overridden");
+            PrecompiledContracts.PrecompiledContract precompiledContract = overrideablePrecompiledContracts
+                    .getContractForAddress(blockActivations, DataWord.valueFromHex(accountOverride.getAddress().toHexString()));
+            if (precompiledContract != null) {
+                stateOverrideApplier.validateOperationOverPrecompiledContract(accountOverride, dirtyAddresses);
             }
-            stateOverrideApplier.applyToRepository(mutableRepository, accountOverride);
+            stateOverrideApplier.applyToRepository(block, mutableRepository, accountOverride, overrideablePrecompiledContracts);
         }
     }
 
@@ -356,7 +369,7 @@ public class EthModule
         );
     }
 
-    public ProgramResult callConstant(CallArguments args, Block executionBlock, RepositorySnapshot snapshot) {
+    public ProgramResult callConstant(CallArguments args, Block executionBlock, RepositorySnapshot snapshot, PrecompiledContracts precompiledContracts) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction(
                 snapshot,
@@ -367,7 +380,8 @@ public class EthModule
                 hexArgs.getToAddress(),
                 hexArgs.getValue(),
                 hexArgs.getData(),
-                hexArgs.getFromAddress()
+                hexArgs.getFromAddress(),
+                precompiledContracts
         );
     }
 
@@ -422,4 +436,9 @@ public class EthModule
             throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason, revertData);
         }
     }
+
+    public OverrideablePrecompiledContracts getOverridablePrecompiledContracts() {
+        return new OverrideablePrecompiledContracts(precompiledContracts);
+    }
+
 }
