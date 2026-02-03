@@ -21,7 +21,11 @@ package org.ethereum.config;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.core.BlockDifficulty;
-import co.rsk.peg.constants.*;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeDevNetConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeTestNetConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -58,6 +62,7 @@ public class Constants {
     private static final BigInteger DIFFICULTY_BOUND_DIVISOR = BigInteger.valueOf(50);
     private static final int NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE = 540;
     private static final long MIN_SEQUENTIAL_SET_GAS_LIMIT = 7_500_000L;
+    private static final long MIN_SEQUENTIAL_SET_GAS_LIMIT_SPLIT_FOR_PTE = 6_800_000L;
     private static final int MINIMUM_DIFFICULTY = 131072;
     private static final int TESTNET_AND_DEVNET_DURATION_LIMIT = 14;
     private static final int REGTEST_DURATION_LIMIT = 10;
@@ -330,7 +335,7 @@ public class Constants {
                 0,
                 new BridgeRegTestConstants(),
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                1_000_000L
+                MIN_SEQUENTIAL_SET_GAS_LIMIT_SPLIT_FOR_PTE
         );
     }
 
@@ -345,7 +350,7 @@ public class Constants {
                 0,
                 new BridgeRegTestConstants(federationPublicKeys),
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                1_000_000L
+                MIN_SEQUENTIAL_SET_GAS_LIMIT_SPLIT_FOR_PTE
         );
     }
 }

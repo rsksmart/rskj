@@ -18,25 +18,26 @@
 
 package org.ethereum.config;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationTestNetConstants;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ConstantsTest {
 
@@ -99,6 +100,6 @@ class ConstantsTest {
         assertEquals(7_500_000L, Constants.testnet(mock(ActivationConfig.class)).getMinSequentialSetGasLimit());
         assertEquals(7_500_000L, Constants.testnet2(mock(ActivationConfig.class)).getMinSequentialSetGasLimit());
         assertEquals(7_500_000L, Constants.devnetWithFederation().getMinSequentialSetGasLimit());
-        assertEquals(1_000_000L, Constants.regtest().getMinSequentialSetGasLimit()); // Ensure regtest remains unchanged
+        assertEquals(6_800_000L, Constants.regtest().getMinSequentialSetGasLimit());
     }
 }

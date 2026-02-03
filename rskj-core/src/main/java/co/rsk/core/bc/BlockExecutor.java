@@ -699,7 +699,7 @@ public class BlockExecutor {
         int txindex = 0;
 
         int transactionExecutionThreads = Constants.getTransactionExecutionThreads();
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) transactionExecutionThreads, block, minSequentialSetGasLimit);
+        ParallelizeTransactionHandler parallelizeTransactionHandler = ParallelizeTransactionHandler.create((short) transactionExecutionThreads, block, minSequentialSetGasLimit);
 
         int logIndexOffset = 0;
         for (Transaction tx : transactionsList) {
