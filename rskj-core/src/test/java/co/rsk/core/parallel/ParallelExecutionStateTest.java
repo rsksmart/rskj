@@ -353,6 +353,7 @@ class ParallelExecutionStateTest {
                 "\n" +
                 "block_build b01\n" +
                 "    parent g00\n" +
+                "    gasLimit 10000000\n" +
                 "    transactions tx01\n" +
                 "    build\n" +
                 "\n" +
@@ -386,6 +387,7 @@ class ParallelExecutionStateTest {
                 "\n" +
                 "block_build b01\n" +
                 "    parent g00\n" +
+                "    gasLimit 10000000\n" +
                 "    transactions tx01 tx02\n" +
                 "    build\n" +
                 "\n" +
@@ -419,6 +421,7 @@ class ParallelExecutionStateTest {
                 "\n" +
                 "block_build b01\n" +
                 "    parent g00\n" +
+                "    gasLimit 10000000\n" +
                 "    transactions tx01 tx02\n" +
                 "    build\n" +
                 "\n" +
@@ -615,7 +618,7 @@ class ParallelExecutionStateTest {
                 "\n" +
                 "block_build b01\n" +
                 "    parent g00\n" +
-                "    gasLimit 7500000\n" +
+                "    gasLimit 10000000\n" +
                 "    transactions tx01 tx02\n" +
                 "    build\n" +
                 "\n" +
@@ -646,7 +649,7 @@ class ParallelExecutionStateTest {
 
         Assertions.assertEquals(7500000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
         Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
-        Assertions.assertArrayEquals(new short[] { 1 }, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+        Assertions.assertArrayEquals(new short[] {}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
     // 3. A is in the sequential sublist: B is placed in the sequential sublist
@@ -693,7 +696,7 @@ class ParallelExecutionStateTest {
 
         Assertions.assertEquals(7500000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
         Assertions.assertEquals(3, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
-        Assertions.assertArrayEquals(new short[] { 1 }, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+        Assertions.assertArrayEquals(new short[] {}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
     // 1. A and B are in different parallel sublists with enough gas: C is placed in the sequential sublist
@@ -785,7 +788,7 @@ class ParallelExecutionStateTest {
 
         Assertions.assertEquals(7500000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
         Assertions.assertEquals(3, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
-        Assertions.assertArrayEquals(new short[] { 1, 2 }, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+        Assertions.assertArrayEquals(new short[] {}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
     // 3. A is in a parallel sublist and B is in the sequential sublist: C is placed in the sequential sublist
@@ -840,7 +843,7 @@ class ParallelExecutionStateTest {
 
         Assertions.assertEquals(7500000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
         Assertions.assertEquals(4, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
-        Assertions.assertArrayEquals(new short[] { 1, 2 }, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+        Assertions.assertArrayEquals(new short[] { 1 }, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
     @Test
@@ -856,7 +859,7 @@ class ParallelExecutionStateTest {
                 "\n" +
                 "block_build b01\n" +
                 "    parent g00\n" +
-                "    gasLimit 7500000\n" +
+                "    gasLimit 10000000\n" +
                 "    transactions tx01\n" +
                 "    build\n" +
                 "\n" +
@@ -883,7 +886,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "block_build b01\n" +
                         "    parent g00\n" +
-                        "    gasLimit 7500000\n" +
+                        "    gasLimit 10000000\n" +
                         "    transactions tx01\n" +
                         "    build\n" +
                         "\n" +
@@ -910,7 +913,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "block_build b01\n" +
                         "    parent g00\n" +
-                        "    gasLimit 7500000\n" +
+                        "    gasLimit 10000000\n" +
                         "    transactions tx01\n" +
                         "    build\n" +
                         "\n" +
@@ -937,7 +940,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "block_build b01\n" +
                         "    parent g00\n" +
-                        "    gasLimit 7500000\n" +
+                        "    gasLimit 10000000\n" +
                         "    transactions tx01\n" +
                         "    build\n" +
                         "\n" +
@@ -965,7 +968,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "block_build b01\n" +
                         "    parent g00\n" +
-                        "    gasLimit 7500000\n" +
+                        "    gasLimit 10000000\n" +
                         "    transactions tx01\n" +
                         "    build\n" +
                         "\n" +
@@ -993,7 +996,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "block_build b01\n" +
                         "    parent g00\n" +
-                        "    gasLimit 7500000\n" +
+                        "    gasLimit 10000000\n" +
                         "    transactions tx01\n" +
                         "    build\n" +
                         "\n" +
@@ -1028,7 +1031,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "block_build b01\n" +
                         "    parent g00\n" +
-                        "    gasLimit 7500000\n" +
+                        "    gasLimit 10000000\n" +
                         "    transactions tx01 tx02\n" +
                         "    build\n" +
                         "\n" +
@@ -1064,7 +1067,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "block_build b01\n" +
                         "    parent g00\n" +
-                        "    gasLimit 7500000\n" +
+                        "    gasLimit 10000000\n" +
                         "    transactions tx01 tx02\n" +
                         "    build\n" +
                         "\n" +
@@ -1100,7 +1103,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "block_build b01\n" +
                         "    parent g00\n" +
-                        "    gasLimit 7500000\n" +
+                        "    gasLimit 10000000\n" +
                         "    transactions tx01 tx02\n" +
                         "    build\n" +
                         "\n" +
@@ -1136,7 +1139,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "block_build b01\n" +
                         "    parent g00\n" +
-                        "    gasLimit 7500000\n" +
+                        "    gasLimit 10000000\n" +
                         "    transactions tx01 tx02\n" +
                         "    build\n" +
                         "\n" +
@@ -1292,7 +1295,7 @@ class ParallelExecutionStateTest {
                 "\n" +
                 "block_build b01\n" +
                 "    parent g00\n" +
-                "    gasLimit 7500000\n" +
+                "    gasLimit 10000000\n" +
                 "    transactions tx01\n" +
                 "    build\n" +
                 "\n" +

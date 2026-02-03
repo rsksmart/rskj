@@ -428,6 +428,7 @@ dependencies {
     integrationTestImplementation "${testLibs.junitSuite}"
     integrationTestImplementation "${testLibs.mockitoLib}"
     integrationTestImplementation "${testLibs.mockitoJupiter}"
+    integrationTestImplementation "${testLibs.awaitilityLib}"
     integrationTestImplementation "${testLibs.jacksonLib}"
     integrationTestImplementation "${testLibs.okhttpWsLib}"
     integrationTestImplementation "${libs.commonsLang3Lib}"
