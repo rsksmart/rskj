@@ -12,7 +12,6 @@ import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertScriptSigFromP2shErpWith
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertP2shP2wshScriptWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createUTXOs;
-import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -1013,7 +1012,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     private void assertFederationChangeOutputHasExpectedAmount(BtcTransaction releaseTransaction,
         Coin expectedChangeOutputAmount) {
         List<TransactionOutput> outputsForFederation = releaseTransaction.getOutputs().stream()
-            .filter(this::isRecipientAddressForFederation)
+            .filter(this::isFederationOutput)
             .toList();
         assertEquals(1, outputsForFederation.size());
 
@@ -1024,7 +1023,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     private void assertPegoutRequestsAreIncludedInReleaseTx(BtcTransaction releaseTransaction,
         List<Entry> pegoutRequests) {
         List<TransactionOutput> onlyUserOutputs = releaseTransaction.getOutputs().stream().filter(
-            this::isRecipientAddressForAUser
+            this::isUserOutput
         ).toList();
 
         assertEquals(pegoutRequests.size(), onlyUserOutputs.size());
@@ -1033,11 +1032,11 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
     }
 
-    private boolean isRecipientAddressForAUser(TransactionOutput userOutput) {
-        return !isRecipientAddressForFederation(userOutput);
+    private boolean isUserOutput(TransactionOutput userOutput) {
+        return !isFederationOutput(userOutput);
     }
 
-    private boolean isRecipientAddressForFederation(TransactionOutput output) {
+    private boolean isFederationOutput(TransactionOutput output) {
         Address recipientAddress = getDestinationAddress(output);
         return recipientAddress.equals(federationAddress);
     }
