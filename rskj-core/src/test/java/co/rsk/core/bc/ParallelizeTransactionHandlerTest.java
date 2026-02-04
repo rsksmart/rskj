@@ -31,7 +31,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -73,7 +80,7 @@ class ParallelizeTransactionHandlerTest {
         aWrappedKey = new ByteArrayWrapper(aKey);
         sublists = 2;
         sequentialSublistNumber = sublists;
-        handler = new ParallelizeTransactionHandler(sublists, executionBlock, minSequentialSetGasLimit);
+        handler = ParallelizeTransactionHandler.create(sublists, executionBlock, minSequentialSetGasLimit);
         tx = new TransactionBuilder().nonce(1).sender(sender).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx2 = new TransactionBuilder().nonce(1).sender(sender2).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx3 = new TransactionBuilder().nonce(1).sender(sender3).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
@@ -878,7 +885,7 @@ class ParallelizeTransactionHandlerTest {
 
         AccountBuilder accountBuilder = new AccountBuilder();
 
-        ParallelizeTransactionHandler handler = new ParallelizeTransactionHandler((short) 2, executionBlock, minSequentialSetGasLimit);
+        ParallelizeTransactionHandler handler = ParallelizeTransactionHandler.create((short) 2, executionBlock, minSequentialSetGasLimit);
 
         // write X with 800
         handler.addTransaction(
@@ -899,7 +906,7 @@ class ParallelizeTransactionHandlerTest {
         );
 
         // last write of X is in sequential because of out of gas. 800 + 300 > 1000
-        Assertions.assertArrayEquals(new short[]{ 1 }, handler.getTransactionsPerSublistInOrder());
+        Assertions.assertArrayEquals(new short[]{}, handler.getTransactionsPerSublistInOrder());
 
         // read X with 100
         handler.addTransaction(
@@ -911,7 +918,7 @@ class ParallelizeTransactionHandlerTest {
         );
 
         // should go to sequential
-        Assertions.assertArrayEquals(new short[]{ 1 }, handler.getTransactionsPerSublistInOrder());
+        Assertions.assertArrayEquals(new short[]{}, handler.getTransactionsPerSublistInOrder());
     }
 
     private HashSet<ByteArrayWrapper> createASetAndAddKeys(ByteArrayWrapper... aKey) {

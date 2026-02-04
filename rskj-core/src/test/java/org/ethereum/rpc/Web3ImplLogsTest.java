@@ -59,6 +59,7 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RskTestFactory;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -844,7 +845,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsFromBlockchainWithEventInContractCreationReturnsAsExpectedWithBlockHashFilter() throws Exception {
         addEventInContractCreation();
-        final String blockHash = "0xed4afd31173a73c4c5135aae72b940507b97605a5129790de00510894f58f5ce";
+        final String blockHash = "0x" + ByteUtil.toHexString(blockChain.getBestBlock().getHash().getBytes());
         FilterRequestParam fr = new FilterRequestParam(null, null, null, null, new BlockHashParam(blockHash));
 
         Object[] logs = web3.eth_getLogs(fr);
@@ -1066,16 +1067,18 @@ class Web3ImplLogsTest {
     private Web3Impl createWeb3() {
         Wallet wallet = WalletFactory.createWallet();
         PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null,
+                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(),
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockChain, transactionPool,
                 null, new ExecutionBlockRetriever(blockChain, null, null),
                 null, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache), null,
-                new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null
         );

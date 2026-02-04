@@ -30,16 +30,15 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
 
 public class AccountOverride {
 
+    private final RskAddress address;
     private BigInteger balance;
     private Long nonce;
     private byte[] code;
     private Map<DataWord, DataWord> state;
     private Map<DataWord, DataWord> stateDiff;
-    private RskAddress address;
     private RskAddress movePrecompileToAddress;
 
     public AccountOverride(RskAddress address) {
@@ -100,14 +99,14 @@ public class AccountOverride {
     }
 
     public void setMovePrecompileToAddress(RskAddress movePrecompileToAddress) {
-        throw unimplemented("Move precompile to address is not supported yet");
+        this.movePrecompileToAddress = movePrecompileToAddress;
+    }
+
+    public RskAddress getMovePrecompileToAddress() {
+        return movePrecompileToAddress;
     }
 
     public AccountOverride fromAccountOverrideParam(AccountOverrideParam accountOverrideParam) {
-
-        if (accountOverrideParam.getMovePrecompileToAddress() != null) {
-            this.setMovePrecompileToAddress(accountOverrideParam.getMovePrecompileToAddress().getAddress());
-        }
 
         if (accountOverrideParam.getBalance() != null) {
             this.setBalance(HexUtils.stringHexToBigInteger(accountOverrideParam.getBalance().getHexNumber()));
@@ -135,6 +134,10 @@ public class AccountOverride {
                 newStateDiff.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
             }
             this.setStateDiff(newStateDiff);
+        }
+
+        if (accountOverrideParam.getMovePrecompileToAddress() != null) {
+            this.setMovePrecompileToAddress(accountOverrideParam.getMovePrecompileToAddress().getAddress());
         }
 
         return this;
