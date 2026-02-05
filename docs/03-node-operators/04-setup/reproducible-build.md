@@ -109,10 +109,10 @@ if you run into any problems, ensure you're running the commands on the right fo
 :::
 
 This may take several minutes to complete. What is done is:
-- Place in the RSKj repository root because we need Gradle and the project.
-- Runs the [secure chain verification process](/node-operators/setup/security-chain/).
-- Compile a reproducible RSKj node.
-- `./gradlew clean build -x test` builds without running tests.
+- Place in the RSKj repository root because we need Gradle and the project
+- Runs the [secure chain verification process](/node-operators/setup/security-chain/)
+- Compile a reproducible RSKj node
+- `./gradlew clean build -x test` builds without running tests
 
 
 ## Verify Build
