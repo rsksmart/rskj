@@ -506,7 +506,10 @@ public class TransactionExecutor {
             return;
         }
 
-        saveContractCode(code, storageCost);
+        // Save contract code
+        gasLeftover = GasCost.subtract(gasLeftover, storageCost);
+        program.spendGas(storageCost, "CONTRACT DATA COST");
+        cacheTrack.saveCode(tx.getContractAddress(), code);
     }
 
     private boolean hasInsufficientGasForStorage(long storageCost) {
@@ -542,12 +545,6 @@ public class TransactionExecutor {
             return true;
         }
         return false;
-    }
-
-    private void saveContractCode(byte[] code, long storageCost) {
-        gasLeftover = GasCost.subtract(gasLeftover, storageCost);
-        program.spendGas(storageCost, "CONTRACT DATA COST");
-        cacheTrack.saveCode(tx.getContractAddress(), code);
     }
 
     private void configureRuntimeExceptionOnProgram(RuntimeException e) {

@@ -42,7 +42,7 @@ class ContractCodePrefixDslTest {
             throws FileNotFoundException, DslProcessorException {
         TestSystemProperties properties = new TestSystemProperties(rawConfig ->
             rawConfig.withValue(
-                "blockchain.config.hardforkActivationHeights.vetiver900",
+                "blockchain.config.consensusRules.rskip544",
                 ConfigValueFactory.fromAnyRef(0)
             )
         );
@@ -89,7 +89,7 @@ class ContractCodePrefixDslTest {
             throws FileNotFoundException, DslProcessorException {
         TestSystemProperties properties = new TestSystemProperties(rawConfig ->
             rawConfig.withValue(
-                "blockchain.config.hardforkActivationHeights.vetiver900",
+                "blockchain.config.consensusRules.rskip544",
                 ConfigValueFactory.fromAnyRef(0)
             )
         );
@@ -112,7 +112,7 @@ class ContractCodePrefixDslTest {
             throws FileNotFoundException, DslProcessorException {
         TestSystemProperties properties = new TestSystemProperties(rawConfig ->
             rawConfig.withValue(
-                "blockchain.config.hardforkActivationHeights.vetiver900",
+                "blockchain.config.consensusRules.rskip544",
                 ConfigValueFactory.fromAnyRef(0)
             )
         );
@@ -136,7 +136,7 @@ class ContractCodePrefixDslTest {
             throws FileNotFoundException, DslProcessorException {
         TestSystemProperties properties = new TestSystemProperties(rawConfig ->
             rawConfig.withValue(
-                "blockchain.config.hardforkActivationHeights.vetiver900",
+                "blockchain.config.consensusRules.rskip544",
                 ConfigValueFactory.fromAnyRef(0)
             )
         );
@@ -156,8 +156,7 @@ class ContractCodePrefixDslTest {
         long gasUsedSuccess = ByteUtil.byteArrayToLong(receiptSuccess.getGasUsed());
         
         assertTrue(gasUsedFailed > 21000);
-        assertTrue(gasUsedSuccess > 21000);
-        assertTrue(gasUsedSuccess < 300000);
+        assertTrue(gasUsedSuccess > 21000 && gasUsedSuccess < 300000);
     }
 
     private World createWorldAndProcess(String resourcePath, TestSystemProperties properties) 

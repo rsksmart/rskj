@@ -715,9 +715,12 @@ public class Program {
                         contractAddress);
             }
             programResult.setException(ExceptionHelper.invalidCodePrefix(this));
-            track.rollback();
-            stackPushZero();
-            return true;
+
+            if (activations.isActive(ConsensusRule.RSKIP453)) {
+                track.rollback();
+                stackPushZero();
+                return true;
+            }
         }
         return false;
     }

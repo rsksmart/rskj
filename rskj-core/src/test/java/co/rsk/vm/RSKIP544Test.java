@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.stream.Stream;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP125;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP453;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP544;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -54,6 +55,11 @@ import static org.mockito.Mockito.when;
  * Tests for RSKIP544/EIP-3541: Reject new contract code starting with the 0xEF byte
  */
 class RSKIP544Test {
+
+    private static final String TEST_ADDRESS = "0x0000000000000000000000000000000000001000";
+    private static final int TEST_VALUE = 10;
+    private static final String ZERO_ADDRESS_RESULT = "0000000000000000000000000000000000000000000000000000000000000000";
+    private static final String DEFAULT_SALT = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
     private ActivationConfig.ForBlock activationConfig;
     private final ProgramInvokeMockImpl invoke = new ProgramInvokeMockImpl();
@@ -76,204 +82,132 @@ class RSKIP544Test {
     void setup() {
         activationConfig = mock(ActivationConfig.ForBlock.class);
         when(activationConfig.isActive(RSKIP125)).thenReturn(true);
+        when(activationConfig.isActive(RSKIP453)).thenReturn(true);
         when(activationConfig.isActive(RSKIP544)).thenReturn(true);
+    }
+
+    private void setupTestAccount() {
+        RskAddress testAddress = new RskAddress(TEST_ADDRESS);
+        invoke.setOwnerAddress(testAddress);
+        invoke.getRepository().addBalance(testAddress, Coin.valueOf(TEST_VALUE + 1000));
+    }
+
+    private String buildCreateCode(String initcodeHex, int initcodeSize) {
+        return "PUSH32 0x" + initcodeHex + " " +
+                "PUSH1 0x00 MSTORE " +
+                "PUSH1 0x" + String.format("%02x", initcodeSize) + " " +
+                "PUSH1 0x00 " +
+                "PUSH32 " + "0x" + DataWord.valueOf(TEST_VALUE) + " " +
+                "CREATE";
+    }
+
+    private String buildCreate2Code(String initcodeHex, int initcodeSize, String salt) {
+        return "PUSH32 0x" + initcodeHex + " " +
+                "PUSH1 0x00 MSTORE " +
+                "PUSH32 " + salt + " " +
+                "PUSH1 0x" + String.format("%02x", initcodeSize) + " " +
+                "PUSH1 0x00 " +
+                "PUSH32 " + "0x" + DataWord.valueOf(TEST_VALUE) + " " +
+                "CREATE2";
+    }
+
+    private void assertCreationFailed(Program program) {
+        Stack stack = program.getStack();
+        assertEquals(1, stack.size());
+        String result = ByteUtil.toHexString(stack.peek().getData());
+        assertEquals(ZERO_ADDRESS_RESULT, result);
+    }
+
+    private void assertCreationSucceeded(Program program) {
+        Stack stack = program.getStack();
+        assertEquals(1, stack.size());
+        String result = ByteUtil.toHexString(stack.peek().getData());
+        assertNotEquals(ZERO_ADDRESS_RESULT, result);
     }
 
     @Test
     void testCREATE_EmptyCodeStillAllowed() {
-        String address = "0x0000000000000000000000000000000000001000";
-        int value = 10;
-
-        RskAddress testAddress = new RskAddress(address);
-        invoke.setOwnerAddress(testAddress);
-        invoke.getRepository().addBalance(testAddress, Coin.valueOf(value + 1000));
+        setupTestAccount();
 
         String codeToExecute = 
                 "PUSH32 0x0000000000000000000000000000000000000000000000000000000000000000 " +
                 "PUSH1 0x00 MSTORE " +
                 "PUSH1 0x00 " +
                 "PUSH1 0x00 " +
-                "PUSH32 " + "0x" + DataWord.valueOf(value) + " " +
+                "PUSH32 " + "0x" + DataWord.valueOf(TEST_VALUE) + " " +
                 "CREATE";
 
         Program program = executeCode(codeToExecute);
-        Stack stack = program.getStack();
-
-        assertEquals(1, stack.size());
-        String result = ByteUtil.toHexString(stack.peek().getData());
-        assertNotEquals("0000000000000000000000000000000000000000000000000000000000000000", result);
+        assertCreationSucceeded(program);
     }
 
     @ParameterizedTest(name = "[{index}] {2}")
     @MethodSource("efPrefixPatternsForRejection")
-    void testCREATE_RejectsAllEFPrefixPatterns(String initcodeHex, int initcodeSize, String description) {
-        String address = "0x0000000000000000000000000000000000001000";
-        int value = 10;
+    void testCREATE_RejectsAllEFPrefixPatterns(String initcodeHex, int initcodeSize) {
+        setupTestAccount();
 
-        RskAddress testAddress = new RskAddress(address);
-        invoke.setOwnerAddress(testAddress);
-        invoke.getRepository().addBalance(testAddress, Coin.valueOf(value + 1000));
-
-        String codeToExecute = 
-                "PUSH32 0x" + initcodeHex + " " +
-                "PUSH1 0x00 MSTORE " +
-                "PUSH1 0x" + String.format("%02x", initcodeSize) + " " +
-                "PUSH1 0x00 " +
-                "PUSH32 " + "0x" + DataWord.valueOf(value) + " " +
-                "CREATE";
-
+        String codeToExecute = buildCreateCode(initcodeHex, initcodeSize);
         Program program = executeCode(codeToExecute);
-        Stack stack = program.getStack();
-
-        assertEquals(1, stack.size());
-        String result = ByteUtil.toHexString(stack.peek().getData());
-        assertEquals("0000000000000000000000000000000000000000000000000000000000000000", result);
+        assertCreationFailed(program);
     }
 
     @ParameterizedTest(name = "[{index}] {2}")
     @MethodSource("efPrefixPatternsForRejection")
-    void testCREATE2_RejectsAllEFPrefixPatterns(String initcodeHex, int initcodeSize, String description) {
-        String address = "0x0000000000000000000000000000000000001000";
-        String salt = "0x0000000000000000000000000000000000000000000000000000000000000000";
-        int value = 10;
+    void testCREATE2_RejectsAllEFPrefixPatterns(String initcodeHex, int initcodeSize) {
+        setupTestAccount();
 
-        RskAddress testAddress = new RskAddress(address);
-        invoke.setOwnerAddress(testAddress);
-        invoke.getRepository().addBalance(testAddress, Coin.valueOf(value + 1000));
-
-        String codeToExecute = 
-                "PUSH32 0x" + initcodeHex + " " +
-                "PUSH1 0x00 MSTORE " +
-                "PUSH32 " + salt + " " +
-                "PUSH1 0x" + String.format("%02x", initcodeSize) + " " +
-                "PUSH1 0x00 " +
-                "PUSH32 " + "0x" + DataWord.valueOf(value) + " " +
-                "CREATE2";
-
+        String codeToExecute = buildCreate2Code(initcodeHex, initcodeSize, DEFAULT_SALT);
         Program program = executeCode(codeToExecute);
-        Stack stack = program.getStack();
-
-        assertEquals(1, stack.size());
-        String result = ByteUtil.toHexString(stack.peek().getData());
-        assertEquals("0000000000000000000000000000000000000000000000000000000000000000", result);
+        assertCreationFailed(program);
     }
 
     @ParameterizedTest(name = "[{index}] {2}")
     @MethodSource("allowedCodePatterns")
-    void testCREATE_AllowsNonEFPatterns(String initcodeHex, int initcodeSize, String description) {
-        String address = "0x0000000000000000000000000000000000001000";
-        int value = 10;
+    void testCREATE_AllowsNonEFPatterns(String initcodeHex, int initcodeSize) {
+        setupTestAccount();
 
-        RskAddress testAddress = new RskAddress(address);
-        invoke.setOwnerAddress(testAddress);
-        invoke.getRepository().addBalance(testAddress, Coin.valueOf(value + 1000));
-
-        String codeToExecute = 
-                "PUSH32 0x" + initcodeHex + " " +
-                "PUSH1 0x00 MSTORE " +
-                "PUSH1 0x" + String.format("%02x", initcodeSize) + " " +
-                "PUSH1 0x00 " +
-                "PUSH32 " + "0x" + DataWord.valueOf(value) + " " +
-                "CREATE";
-
+        String codeToExecute = buildCreateCode(initcodeHex, initcodeSize);
         Program program = executeCode(codeToExecute);
-        Stack stack = program.getStack();
-
-        assertEquals(1, stack.size());
-        String result = ByteUtil.toHexString(stack.peek().getData());
-        assertNotEquals("0000000000000000000000000000000000000000000000000000000000000000", result);
+        assertCreationSucceeded(program);
     }
 
     @ParameterizedTest(name = "[{index}] {2}")
     @MethodSource("allowedCodePatterns")
-    void testCREATE2_AllowsNonEFPatterns(String initcodeHex, int initcodeSize, String description) {
-        String address = "0x0000000000000000000000000000000000001000";
-        String salt = "0x0000000000000000000000000000000000000000000000000000000000000000";
-        int value = 10;
+    void testCREATE2_AllowsNonEFPatterns(String initcodeHex, int initcodeSize) {
+        setupTestAccount();
 
-        RskAddress testAddress = new RskAddress(address);
-        invoke.setOwnerAddress(testAddress);
-        invoke.getRepository().addBalance(testAddress, Coin.valueOf(value + 1000));
-
-        String codeToExecute = 
-                "PUSH32 0x" + initcodeHex + " " +
-                "PUSH1 0x00 MSTORE " +
-                "PUSH32 " + salt + " " +
-                "PUSH1 0x" + String.format("%02x", initcodeSize) + " " +
-                "PUSH1 0x00 " +
-                "PUSH32 " + "0x" + DataWord.valueOf(value) + " " +
-                "CREATE2";
-
+        String codeToExecute = buildCreate2Code(initcodeHex, initcodeSize, DEFAULT_SALT);
         Program program = executeCode(codeToExecute);
-        Stack stack = program.getStack();
-
-        assertEquals(1, stack.size());
-        String result = ByteUtil.toHexString(stack.peek().getData());
-        assertNotEquals("0000000000000000000000000000000000000000000000000000000000000000", result);
+        assertCreationSucceeded(program);
     }
 
     @ParameterizedTest(name = "[{index}] {1}")
     @MethodSource("differentSaltValues")
-    void testCREATE2_DifferentSalts_AllRejectEF(String saltHex, String description) {
-        String address = "0x0000000000000000000000000000000000001000";
-        int value = 10;
-
-        RskAddress testAddress = new RskAddress(address);
-        invoke.setOwnerAddress(testAddress);
-        invoke.getRepository().addBalance(testAddress, Coin.valueOf(value + 1000));
+    void testCREATE2_DifferentSalts_AllRejectEF(String saltHex) {
+        setupTestAccount();
 
         String initcodeHex = "60ef60005360016000f300000000000000000000000000000000000000000000";
         int initcodeSize = 0x0a;
 
-        String codeToExecute = 
-                "PUSH32 0x" + initcodeHex + " " +
-                "PUSH1 0x00 MSTORE " +
-                "PUSH32 0x" + saltHex + " " +
-                "PUSH1 0x" + String.format("%02x", initcodeSize) + " " +
-                "PUSH1 0x00 " +
-                "PUSH32 " + "0x" + DataWord.valueOf(value) + " " +
-                "CREATE2";
-
+        String codeToExecute = buildCreate2Code(initcodeHex, initcodeSize, "0x" + saltHex);
         Program program = executeCode(codeToExecute);
-        Stack stack = program.getStack();
-
-        assertEquals(1, stack.size());
-        String result = ByteUtil.toHexString(stack.peek().getData());
-        assertEquals("0000000000000000000000000000000000000000000000000000000000000000", result);
+        assertCreationFailed(program);
     }
 
-    @ParameterizedTest(name = "[{index}] {2} - RSKIP544 {3}")
+    @ParameterizedTest(name = "[{index}] RSKIP544 active={2}, shouldSucceed={3}")
     @MethodSource("activationBoundaryScenarios")
-    void testActivationBoundary_Parameterized(String initcodeHex, int initcodeSize, 
-                                               String description, String activationState,
+    void testActivationBoundary_Parameterized(String initcodeHex, int initcodeSize,
                                                boolean rskip544Active, boolean shouldSucceed) {
         when(activationConfig.isActive(RSKIP544)).thenReturn(rskip544Active);
+        setupTestAccount();
 
-        String address = "0x0000000000000000000000000000000000001000";
-        int value = 10;
-
-        RskAddress testAddress = new RskAddress(address);
-        invoke.setOwnerAddress(testAddress);
-        invoke.getRepository().addBalance(testAddress, Coin.valueOf(value + 1000));
-
-        String codeToExecute = 
-                "PUSH32 0x" + initcodeHex + " " +
-                "PUSH1 0x00 MSTORE " +
-                "PUSH1 0x" + String.format("%02x", initcodeSize) + " " +
-                "PUSH1 0x00 " +
-                "PUSH32 " + "0x" + DataWord.valueOf(value) + " " +
-                "CREATE";
-
+        String codeToExecute = buildCreateCode(initcodeHex, initcodeSize);
         Program program = executeCode(codeToExecute);
-        Stack stack = program.getStack();
-
-        assertEquals(1, stack.size());
-        String result = ByteUtil.toHexString(stack.peek().getData());
         
         if (shouldSucceed) {
-            assertNotEquals("0000000000000000000000000000000000000000000000000000000000000000", result);
+            assertCreationSucceeded(program);
         } else {
-            assertEquals("0000000000000000000000000000000000000000000000000000000000000000", result);
+            assertCreationFailed(program);
         }
     }
 
@@ -282,38 +216,32 @@ class RSKIP544Test {
                 // Single EF byte
                 Arguments.of(
                         "60ef60005360016000f300000000000000000000000000000000000000000000",
-                        0x0a,
-                        "code starting with 0xEF (1 byte)"
+                        0x0a
                 ),
                 // EF00 (2 bytes)
                 Arguments.of(
                         "61ef006000526002601ef3000000000000000000000000000000000000000000",
-                        0x0b,
-                        "code starting with 0xEF00 (2 bytes)"
+                        0x0b
                 ),
                 // EF0000 (3 bytes)
                 Arguments.of(
                         "60ef60005360036000f300000000000000000000000000000000000000000000",
-                        0x0a,
-                        "code starting with 0xEF0000 (3 bytes)"
+                        0x0a
                 ),
-                // EF followed by 31 zeros (32 bytes total)
+                // EF followed by 31 zeros
                 Arguments.of(
                         "60ef60005360206000f300000000000000000000000000000000000000000000",
-                        0x0a,
-                        "code starting with 0xEF followed by 31 zeros (32 bytes)"
+                        0x0a
                 ),
-                // EFFF (to test different second byte)
+                // EFFF
                 Arguments.of(
                         "61efff6000526002601ef3000000000000000000000000000000000000000000",
-                        0x0b,
-                        "code starting with 0xEFFF"
+                        0x0b
                 ),
-                // EF01 (another variant)
+                // EF01
                 Arguments.of(
                         "61ef016000526002601ef3000000000000000000000000000000000000000000",
-                        0x0b,
-                        "code starting with 0xEF01"
+                        0x0b
                 )
         );
     }
@@ -323,38 +251,32 @@ class RSKIP544Test {
                 // 0xFE byte (INVALID opcode)
                 Arguments.of(
                         "60fe60005360016000f300000000000000000000000000000000000000000000",
-                        0x0a,
-                        "code starting with 0xFE"
+                        0x0a
                 ),
                 // 0x60 byte (PUSH1 opcode)
                 Arguments.of(
                         "606060005360016000f300000000000000000000000000000000000000000000",
-                        0x0a,
-                        "code starting with 0x60"
+                        0x0a
                 ),
                 // 0x00 byte (STOP opcode)
                 Arguments.of(
                         "600060005360016000f300000000000000000000000000000000000000000000",
-                        0x0a,
-                        "code starting with 0x00"
+                        0x0a
                 ),
                 // Code with EF in middle (0x60EF)
                 Arguments.of(
                         "606060005360ef60015360026000f3000000000000000000000000000000000000",
-                        0x0e,
-                        "code with 0xEF in middle (0x60EF)"
+                        0x0e
                 ),
                 // 0xEE byte (one before EF)
                 Arguments.of(
                         "60ee60005360016000f300000000000000000000000000000000000000000000",
-                        0x0a,
-                        "code starting with 0xEE"
+                        0x0a
                 ),
                 // 0xF0 byte (CREATE opcode)
                 Arguments.of(
                         "60f060005360016000f300000000000000000000000000000000000000000000",
-                        0x0a,
-                        "code starting with 0xF0"
+                        0x0a
                 )
         );
     }
@@ -390,8 +312,6 @@ class RSKIP544Test {
                 Arguments.of(
                         "60ef60005360016000f300000000000000000000000000000000000000000000",
                         0x0a,
-                        "EF byte deployment",
-                        "inactive",
                         false,
                         true
                 ),
@@ -399,8 +319,6 @@ class RSKIP544Test {
                 Arguments.of(
                         "60ef60005360016000f300000000000000000000000000000000000000000000",
                         0x0a,
-                        "EF byte deployment",
-                        "active",
                         true,
                         false
                 ),
@@ -408,8 +326,6 @@ class RSKIP544Test {
                 Arguments.of(
                         "61ef006000526002601ef3000000000000000000000000000000000000000000",
                         0x0b,
-                        "EF00 deployment",
-                        "inactive",
                         false,
                         true
                 ),
@@ -417,8 +333,6 @@ class RSKIP544Test {
                 Arguments.of(
                         "61ef006000526002601ef3000000000000000000000000000000000000000000",
                         0x0b,
-                        "EF00 deployment",
-                        "active",
                         true,
                         false
                 ),
@@ -426,8 +340,6 @@ class RSKIP544Test {
                 Arguments.of(
                         "60fe60005360016000f300000000000000000000000000000000000000000000",
                         0x0a,
-                        "FE byte deployment",
-                        "inactive",
                         false,
                         true
                 ),
@@ -435,8 +347,6 @@ class RSKIP544Test {
                 Arguments.of(
                         "60fe60005360016000f300000000000000000000000000000000000000000000",
                         0x0a,
-                        "FE byte deployment",
-                        "active",
                         true,
                         true
                 )
@@ -444,14 +354,13 @@ class RSKIP544Test {
     }
 
     private static Transaction createTransaction() {
-        int number = 0;
         AccountBuilder acbuilder = new AccountBuilder();
-        acbuilder.name("sender" + number);
+        acbuilder.name("sender");
         Account sender = acbuilder.build();
-        acbuilder.name("receiver" + number);
+        acbuilder.name("receiver");
         Account receiver = acbuilder.build();
         TransactionBuilder txbuilder = new TransactionBuilder();
-        return txbuilder.sender(sender).receiver(receiver).value(BigInteger.valueOf(number * 1000 + 1000)).build();
+        return txbuilder.sender(sender).receiver(receiver).value(BigInteger.valueOf(2000)).build();
     }
 
     private Program executeCode(String stringCode) {
