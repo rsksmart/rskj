@@ -69,8 +69,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
     private static final Coin DUSTY_AMOUNT_SEND_REQUESTED = BtcTransaction.MIN_NONDUST_OUTPUT.minus(
         Coin.SATOSHI);
 
-    private static final int SINGLE_UTXO = 1;
-
     private static final int OUTPUTS_COUNT_WITHOUT_CHANGE = 1;
     private static final int OUTPUTS_COUNT_WITH_CHANGE = 2;
 
@@ -122,7 +120,8 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         void buildMigrationTransaction_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
             // Arrange
             setUpActivationConfig(PAPYRUS_ACTIVATIONS);
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            int expectedNumberOfUTXOsToMigrate = 1;
+            federationUTXOs = createUTXOs(expectedNumberOfUTXOsToMigrate, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance();
 
@@ -133,7 +132,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_1, releaseTransaction.getVersion());
-            assertEquals(SINGLE_UTXO, releaseTransaction.getInputs().size());
+            assertEquals(expectedNumberOfUTXOsToMigrate, releaseTransaction.getInputs().size());
             assertEquals(OUTPUTS_COUNT_WITHOUT_CHANGE, releaseTransaction.getOutputs().size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
         }
@@ -141,7 +140,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenSingleUTXOToMigrate_shouldCreateMigrationTx() {
             // Arrange
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance();
 
@@ -152,7 +151,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-            assertEquals(SINGLE_UTXO, releaseTransaction.getInputs().size());
+            assertEquals(1, releaseTransaction.getInputs().size());
             assertEquals(OUTPUTS_COUNT_WITHOUT_CHANGE, releaseTransaction.getOutputs().size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
         }
@@ -179,7 +178,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenMigrationValueIsDifferentThanBalance_shouldCreateMigrationTx() {
             // Arrange
-            federationUTXOs = createUTXOs(SINGLE_UTXO, Coin.COIN, federationAddress);
+            federationUTXOs = createUTXOs(1, Coin.COIN, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = Coin.COIN.div(2);
 
@@ -196,7 +195,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenInsufficientFunds_shouldReturnInsufficientMoney() {
             // Arrange
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance().add(Coin.SATOSHI);
 
@@ -212,7 +211,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         void buildMigrationTransaction_whenResultChangeOutputWillBeDust_shouldCreateTxWithDustChangeOutput() {
             // Arrange
             Coin utxoAmount = MINIMUM_PEGIN_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
-            federationUTXOs = createUTXOs(SINGLE_UTXO, utxoAmount, federationAddress);
+            federationUTXOs = createUTXOs(1, utxoAmount, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             // Act
@@ -229,7 +228,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenMigrationValueIsTooSmall_shouldReturnDustySendRequested() {
             // Arrange
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             // Act
@@ -244,7 +243,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         void buildMigrationTransaction_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpTransactionFeePerKb(HIGH_FEE_PER_KB);
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance();
 
@@ -355,7 +354,8 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         void buildMigrationTransaction_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
             // Arrange
             setUpActivationConfig(PAPYRUS_ACTIVATIONS);
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            int expectedNumberOfUTXOsToMigrate = 1;
+            federationUTXOs = createUTXOs(expectedNumberOfUTXOsToMigrate, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance();
 
@@ -366,7 +366,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_1, releaseTransaction.getVersion());
-            assertEquals(SINGLE_UTXO, releaseTransaction.getInputs().size());
+            assertEquals(expectedNumberOfUTXOsToMigrate, releaseTransaction.getInputs().size());
             assertEquals(OUTPUTS_COUNT_WITHOUT_CHANGE, releaseTransaction.getOutputs().size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
         }
@@ -374,7 +374,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenSingleUTXOToMigrate_shouldCreateMigrationTx() {
             // Arrange
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance();
 
@@ -385,7 +385,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-            assertEquals(SINGLE_UTXO, releaseTransaction.getInputs().size());
+            assertEquals(1, releaseTransaction.getInputs().size());
             assertEquals(OUTPUTS_COUNT_WITHOUT_CHANGE, releaseTransaction.getOutputs().size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
         }
@@ -412,7 +412,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenMigrationValueIsDifferentThanBalance_shouldCreateMigrationTx() {
             // Arrange
-            federationUTXOs = createUTXOs(SINGLE_UTXO, Coin.COIN, federationAddress);
+            federationUTXOs = createUTXOs(1, Coin.COIN, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = Coin.COIN.div(2);
 
@@ -429,7 +429,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenInsufficientFunds_shouldReturnInsufficientMoney() {
             // Arrange
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance().add(Coin.SATOSHI);
 
@@ -445,7 +445,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         void buildMigrationTransaction_whenResultChangeOutputWillBeDust_shouldCreateTxWithDustChangeOutput() {
             // Arrange
             Coin utxoAmount = MINIMUM_PEGIN_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
-            federationUTXOs = createUTXOs(SINGLE_UTXO, utxoAmount, federationAddress);
+            federationUTXOs = createUTXOs(1, utxoAmount, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             // Act
@@ -462,7 +462,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenMigrationValueIsTooSmall_shouldReturnDustySendRequested() {
             // Arrange
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             // Act
@@ -477,7 +477,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         void buildMigrationTransaction_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpTransactionFeePerKb(HIGH_FEE_PER_KB);
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance();
 
@@ -588,7 +588,8 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         void buildMigrationTransaction_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
             // Arrange
             setUpActivationConfig(PAPYRUS_ACTIVATIONS);
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            int expectedNumberOfUTXOsToMigrate = 1;
+            federationUTXOs = createUTXOs(expectedNumberOfUTXOsToMigrate, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance();
 
@@ -599,7 +600,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_1, releaseTransaction.getVersion());
-            assertEquals(SINGLE_UTXO, releaseTransaction.getInputs().size());
+            assertEquals(expectedNumberOfUTXOsToMigrate, releaseTransaction.getInputs().size());
             assertEquals(OUTPUTS_COUNT_WITHOUT_CHANGE, releaseTransaction.getOutputs().size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
         }
@@ -607,7 +608,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenSingleUTXOToMigrate_shouldCreateMigrationTx() {
             // Arrange
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance();
 
@@ -618,7 +619,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-            assertEquals(SINGLE_UTXO, releaseTransaction.getInputs().size());
+            assertEquals(1, releaseTransaction.getInputs().size());
             assertEquals(OUTPUTS_COUNT_WITHOUT_CHANGE, releaseTransaction.getOutputs().size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
         }
@@ -645,7 +646,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenMigrationValueIsDifferentThanBalance_shouldCreateMigrationTx() {
             // Arrange
-            federationUTXOs = createUTXOs(SINGLE_UTXO, Coin.COIN, federationAddress);
+            federationUTXOs = createUTXOs(1, Coin.COIN, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = Coin.COIN.div(2);
 
@@ -662,7 +663,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenInsufficientFunds_shouldReturnInsufficientMoney() {
             // Arrange
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance().add(Coin.SATOSHI);
 
@@ -678,7 +679,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         void buildMigrationTransaction_whenResultChangeOutputWillBeDust_shouldCreateTxWithDustChangeOutput() {
             // Arrange
             Coin utxoAmount = MINIMUM_PEGIN_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
-            federationUTXOs = createUTXOs(SINGLE_UTXO, utxoAmount, federationAddress);
+            federationUTXOs = createUTXOs(1, utxoAmount, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             // Act
@@ -695,7 +696,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenMigrationValueIsTooSmall_shouldReturnDustySendRequested() {
             // Arrange
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             // Act
@@ -710,7 +711,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         void buildMigrationTransaction_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpTransactionFeePerKb(HIGH_FEE_PER_KB);
-            federationUTXOs = createUTXOs(SINGLE_UTXO, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance();
 
