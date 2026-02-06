@@ -1,9 +1,12 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_1;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
+import static co.rsk.peg.ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE;
+import static co.rsk.peg.ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.SUCCESS;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertP2shP2wshScriptWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
@@ -47,6 +50,8 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all()
         .forBlock(0);
+    private static final ActivationConfig.ForBlock PAPYRUS_ACTIVATIONS = ActivationConfigsForTest.papyrus200()
+        .forBlock(0);
 
     private static final BridgeConstants BRIDGE_MAINNET_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters BTC_MAINNET_PARAMS = BRIDGE_MAINNET_CONSTANTS.getBtcParams();
@@ -56,6 +61,10 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         ALL_ACTIVATIONS);
 
     private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
+    private static final int LARGE_NUMBER_OF_UTXOS = 100;
+
+    private static final Coin DUSTY_AMOUNT_SEND_REQUESTED = BtcTransaction.MIN_NONDUST_OUTPUT.minus(
+        Coin.SATOSHI);
 
     protected Federation federation;
     protected int federationFormatVersion;
@@ -66,12 +75,14 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
     private ActivationConfig.ForBlock activations;
     private Coin feePerKb;
     private Address destinationAddress;
+    private Coin dustAmount;
 
     @BeforeEach
     void setUp() {
         setUpActivations(ALL_ACTIVATIONS);
         setUpFeePerKb(BtcTransaction.DEFAULT_TX_FEE);
         destinationAddress = new BtcECKey().toAddress(BTC_MAINNET_PARAMS);
+        dustAmount = feePerKb.div(2);
     }
 
     @Nested
@@ -97,6 +108,26 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, result);
             assertNull(result.btcTx());
+        }
+
+        @Test
+        void buildMigrationTransaction_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
+            // Arrange
+            setUpActivations(PAPYRUS_ACTIVATIONS);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, result);
+            BtcTransaction tx = result.btcTx();
+            assertEquals(BTC_TX_VERSION_1, tx.getVersion());
+            assertEquals(1, tx.getInputs().size());
+            assertEquals(1, tx.getOutputs().size());
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(tx);
         }
 
         @Test
@@ -172,6 +203,53 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
+        void buildMigrationTransaction_whenInsufficientFunds_shouldReturnInsufficientMoney() {
+            // Arrange
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance().add(Coin.SATOSHI);
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(INSUFFICIENT_MONEY, result);
+            assertNull(result.btcTx());
+        }
+
+        @Test
+        void buildMigrationTransaction_whenResultChangeOutputWillBeDust_shouldCreateTxWithDustChangeOutput() {
+            // Arrange
+            Coin utxoAmount = MINIMUM_PEGIN_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
+            federationUTXOs = createUTXOs(1, utxoAmount, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(MINIMUM_PEGIN_TX_VALUE, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, result);
+            BtcTransaction tx = result.btcTx();
+            assertEquals(BTC_TX_VERSION_2, tx.getVersion());
+            assertEquals(2, tx.getOutputs().size());
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(tx);
+        }
+
+        @Test
+        void buildMigrationTransaction_whenMigrationValueIsTooSmall_shouldReturnDustySendRequested() {
+            // Arrange
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(DUSTY_AMOUNT_SEND_REQUESTED, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, result);
+            assertNull(result.btcTx());
+        }
+
+        @Test
         void buildMigrationTransaction_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
@@ -187,6 +265,56 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertNull(result.btcTx());
         }
 
+        @Test
+        void buildMigrationTransaction_whenUtxosAreDustButEnoughToPay_shouldReturnCouldNotAdjustDownwards() {
+            // Arrange
+            federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, result);
+            assertNull(result.btcTx());
+        }
+
+        @Test
+        void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize() {
+            // Arrange
+            int numberOfUtxos = 277;
+            federationUTXOs = createUTXOs(numberOfUtxos, Coin.COIN, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, result);
+            assertNull(result.btcTx());
+        }
+
+        @Test
+        void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_shouldCreateMigrationTx() {
+            // Arrange
+            int numberOfUtxos = 276;
+            federationUTXOs = createUTXOs(numberOfUtxos, Coin.COIN, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, result);
+            BtcTransaction tx = result.btcTx();
+            assertEquals(BTC_TX_VERSION_2, tx.getVersion());
+            assertEquals(numberOfUtxos, tx.getInputs().size());
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(tx);
+        }
+
         private void assertReleaseTxInputsHasProperFormatAndBelongsToFederation(BtcTransaction releaseTransaction) {
             for (TransactionInput releaseInput : releaseTransaction.getInputs()) {
                 Script inputScriptSig = releaseInput.getScriptSig();
@@ -195,15 +323,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
                 assertReleaseInputIsFromFederationUTXOsWallet(releaseInput);
             }
-        }
-
-        private void assertReleaseInputIsFromFederationUTXOsWallet(TransactionInput releaseInput) {
-            Predicate<UTXO> isUTXOAndReleaseInputFromTheSameOutpoint = utxo ->
-                utxo.getHash().equals(releaseInput.getOutpoint().getHash())
-                    && utxo.getIndex() == releaseInput.getOutpoint().getIndex();
-            Optional<UTXO> foundUtxo = federationUTXOs.stream()
-                .filter(isUTXOAndReleaseInputFromTheSameOutpoint).findFirst();
-            assertTrue(foundUtxo.isPresent());
         }
     }
 
@@ -233,6 +352,26 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
+        void buildMigrationTransaction_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
+            // Arrange
+            setUpActivations(PAPYRUS_ACTIVATIONS);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, result);
+            BtcTransaction tx = result.btcTx();
+            assertEquals(BTC_TX_VERSION_1, tx.getVersion());
+            assertEquals(1, tx.getInputs().size());
+            assertEquals(1, tx.getOutputs().size());
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(tx);
+        }
+
+        @Test
         void buildMigrationTransaction_whenSingleUTXOToMigrate_shouldCreateMigrationTx() {
             // Arrange
             federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
@@ -305,6 +444,53 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
+        void buildMigrationTransaction_whenInsufficientFunds_shouldReturnInsufficientMoney() {
+            // Arrange
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance().add(Coin.SATOSHI);
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(INSUFFICIENT_MONEY, result);
+            assertNull(result.btcTx());
+        }
+
+        @Test
+        void buildMigrationTransaction_whenResultChangeOutputWillBeDust_shouldCreateTxWithDustChangeOutput() {
+            // Arrange
+            Coin utxoAmount = MINIMUM_PEGIN_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
+            federationUTXOs = createUTXOs(1, utxoAmount, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(MINIMUM_PEGIN_TX_VALUE, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, result);
+            BtcTransaction tx = result.btcTx();
+            assertEquals(BTC_TX_VERSION_2, tx.getVersion());
+            assertEquals(2, tx.getOutputs().size());
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(tx);
+        }
+
+        @Test
+        void buildMigrationTransaction_whenMigrationValueIsTooSmall_shouldReturnDustySendRequested() {
+            // Arrange
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(DUSTY_AMOUNT_SEND_REQUESTED, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, result);
+            assertNull(result.btcTx());
+        }
+
+        @Test
         void buildMigrationTransaction_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
@@ -320,6 +506,56 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertNull(result.btcTx());
         }
 
+        @Test
+        void buildMigrationTransaction_whenUtxosAreDustButEnoughToPay_shouldReturnCouldNotAdjustDownwards() {
+            // Arrange
+            federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, result);
+            assertNull(result.btcTx());
+        }
+
+        @Test
+        void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize() {
+            // Arrange
+            int numberOfUtxos = 196;
+            federationUTXOs = createUTXOs(numberOfUtxos, Coin.COIN, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, result);
+            assertNull(result.btcTx());
+        }
+
+        @Test
+        void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_shouldCreateMigrationTx() {
+            // Arrange
+            int numberOfUtxos = 195;
+            federationUTXOs = createUTXOs(numberOfUtxos, Coin.COIN, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, result);
+            BtcTransaction tx = result.btcTx();
+            assertEquals(BTC_TX_VERSION_2, tx.getVersion());
+            assertEquals(numberOfUtxos, tx.getInputs().size());
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(tx);
+        }
+
         private void assertReleaseTxInputsHasProperFormatAndBelongsToFederation(BtcTransaction releaseTransaction) {
             for (TransactionInput releaseInput : releaseTransaction.getInputs()) {
                 Script inputScriptSig = releaseInput.getScriptSig();
@@ -328,15 +564,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
                 assertReleaseInputIsFromFederationUTXOsWallet(releaseInput);
             }
-        }
-
-        private void assertReleaseInputIsFromFederationUTXOsWallet(TransactionInput releaseInput) {
-            Predicate<UTXO> isUTXOAndReleaseInputFromTheSameOutpoint = utxo ->
-                utxo.getHash().equals(releaseInput.getOutpoint().getHash())
-                    && utxo.getIndex() == releaseInput.getOutpoint().getIndex();
-            Optional<UTXO> foundUtxo = federationUTXOs.stream()
-                .filter(isUTXOAndReleaseInputFromTheSameOutpoint).findFirst();
-            assertTrue(foundUtxo.isPresent());
         }
     }
 
@@ -366,6 +593,26 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
+        void buildMigrationTransaction_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
+            // Arrange
+            setUpActivations(PAPYRUS_ACTIVATIONS);
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, result);
+            BtcTransaction tx = result.btcTx();
+            assertEquals(BTC_TX_VERSION_1, tx.getVersion());
+            assertEquals(1, tx.getInputs().size());
+            assertEquals(1, tx.getOutputs().size());
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(tx);
+        }
+
+        @Test
         void buildMigrationTransaction_whenSingleUTXOToMigrate_shouldCreateMigrationTx() {
             // Arrange
             federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
@@ -438,6 +685,53 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
+        void buildMigrationTransaction_whenInsufficientFunds_shouldReturnInsufficientMoney() {
+            // Arrange
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance().add(Coin.SATOSHI);
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(INSUFFICIENT_MONEY, result);
+            assertNull(result.btcTx());
+        }
+
+        @Test
+        void buildMigrationTransaction_whenResultChangeOutputWillBeDust_shouldCreateTxWithDustChangeOutput() {
+            // Arrange
+            Coin utxoAmount = MINIMUM_PEGIN_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
+            federationUTXOs = createUTXOs(1, utxoAmount, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(MINIMUM_PEGIN_TX_VALUE, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, result);
+            BtcTransaction tx = result.btcTx();
+            assertEquals(BTC_TX_VERSION_2, tx.getVersion());
+            assertEquals(2, tx.getOutputs().size());
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(tx);
+        }
+
+        @Test
+        void buildMigrationTransaction_whenMigrationValueIsTooSmall_shouldReturnDustySendRequested() {
+            // Arrange
+            federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(DUSTY_AMOUNT_SEND_REQUESTED, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, result);
+            assertNull(result.btcTx());
+        }
+
+        @Test
         void buildMigrationTransaction_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
@@ -453,6 +747,58 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertNull(result.btcTx());
         }
 
+        @Test
+        void buildMigrationTransaction_whenUtxosAreDustButEnoughToPay_shouldCreateMigrationTx() {
+            // Arrange
+            federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, result);
+            BtcTransaction tx = result.btcTx();
+            assertEquals(BTC_TX_VERSION_2, tx.getVersion());
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(tx);
+        }
+
+        @Test
+        void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize() {
+            // Arrange
+            int numberOfUtxos = 2438;
+            federationUTXOs = createUTXOs(numberOfUtxos, Coin.COIN, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, result);
+            assertNull(result.btcTx());
+        }
+
+        @Test
+        void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_shouldCreateMigrationTx() {
+            // Arrange
+            int numberOfUtxos = 2437;
+            federationUTXOs = createUTXOs(numberOfUtxos, Coin.COIN, federationAddress);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult result = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, result);
+            BtcTransaction tx = result.btcTx();
+            assertEquals(BTC_TX_VERSION_2, tx.getVersion());
+            assertEquals(numberOfUtxos, tx.getInputs().size());
+            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(tx);
+        }
+
         private void assertReleaseTxInputsHasProperFormatAndBelongsToFederation(BtcTransaction releaseTransaction) {
             List<TransactionInput> releaseTransactionInputs = releaseTransaction.getInputs();
             for (TransactionInput releaseInput : releaseTransactionInputs) {
@@ -460,16 +806,9 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 TransactionWitness witness = releaseTransaction.getWitness(inputIndex);
                 assertP2shP2wshScriptWithoutSignaturesHasProperFormat(witness,
                     federation.getRedeemScript());
+                
+                assertReleaseInputIsFromFederationUTXOsWallet(releaseInput);
             }
-        }
-
-        private void assertReleaseInputIsFromFederationUTXOsWallet(TransactionInput releaseInput) {
-            Predicate<UTXO> isUTXOAndReleaseInputFromTheSameOutpoint = utxo ->
-                utxo.getHash().equals(releaseInput.getOutpoint().getHash())
-                    && utxo.getIndex() == releaseInput.getOutpoint().getIndex();
-            Optional<UTXO> foundUtxo = federationUTXOs.stream()
-                .filter(isUTXOAndReleaseInputFromTheSameOutpoint).findFirst();
-            assertTrue(foundUtxo.isPresent());
         }
     }
 
@@ -518,5 +857,14 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
     private void assertBuildResultResponseCode(ReleaseTransactionBuilder.Response expectedResponseCode, BuildResult batchedPegoutsResult) {
         Response actualResponseCode = batchedPegoutsResult.responseCode();
         assertEquals(expectedResponseCode, actualResponseCode);
+    }
+
+    private void assertReleaseInputIsFromFederationUTXOsWallet(TransactionInput releaseInput) {
+        Predicate<UTXO> isUTXOAndReleaseInputFromTheSameOutpoint = utxo ->
+            utxo.getHash().equals(releaseInput.getOutpoint().getHash())
+                && utxo.getIndex() == releaseInput.getOutpoint().getIndex();
+        Optional<UTXO> foundUtxo = federationUTXOs.stream()
+            .filter(isUTXOAndReleaseInputFromTheSameOutpoint).findFirst();
+        assertTrue(foundUtxo.isPresent());
     }
 }
