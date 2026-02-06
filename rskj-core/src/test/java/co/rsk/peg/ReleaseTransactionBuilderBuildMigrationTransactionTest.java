@@ -47,6 +47,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
@@ -69,8 +70,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         Coin.SATOSHI);
 
     private static final int SINGLE_UTXO = 1;
-    private static final int FIFTY_UTXOS = 50;
-    private static final int FIFTY_ONE_UTXOS = 51;
 
     private static final int OUTPUTS_COUNT_WITHOUT_CHANGE = 1;
     private static final int OUTPUTS_COUNT_WITH_CHANGE = 2;
@@ -158,10 +157,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
         }
 
-        @Test
-        void buildMigrationTransaction_when50UTXOsToMigrate_shouldCreateMigrationTx() {
+        @ParameterizedTest
+        @ValueSource(ints = {50, 51})
+        void buildMigrationTransaction_whenMultipleUTXOsToMigrate_shouldCreateMigrationTx(int numberOfUtxos) {
             // Arrange
-            federationUTXOs = createUTXOs(FIFTY_UTXOS, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(numberOfUtxos, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance();
 
@@ -172,25 +172,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-            assertEquals(FIFTY_UTXOS, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-        }
-
-        @Test
-        void buildMigrationTransaction_when51UTXOsToMigrate_shouldCreateMigrationTx() {
-            // Arrange
-            federationUTXOs = createUTXOs(FIFTY_ONE_UTXOS, MINIMUM_PEGIN_TX_VALUE, federationAddress);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Coin migrationValue = wallet.getBalance();
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
-            BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
-            assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-            assertEquals(FIFTY_ONE_UTXOS, releaseTransaction.getInputs().size());
+            assertEquals(numberOfUtxos, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
         }
 
@@ -408,10 +390,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
         }
 
-        @Test
-        void buildMigrationTransaction_when50UTXOsToMigrate_shouldCreateMigrationTx() {
+        @ParameterizedTest
+        @ValueSource(ints = {50, 51})
+        void buildMigrationTransaction_whenMultipleUTXOsToMigrate_shouldCreateMigrationTx(int numberOfUtxos) {
             // Arrange
-            federationUTXOs = createUTXOs(FIFTY_UTXOS, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(numberOfUtxos, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance();
 
@@ -422,25 +405,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-            assertEquals(FIFTY_UTXOS, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-        }
-
-        @Test
-        void buildMigrationTransaction_when51UTXOsToMigrate_shouldCreateMigrationTx() {
-            // Arrange
-            federationUTXOs = createUTXOs(FIFTY_ONE_UTXOS, MINIMUM_PEGIN_TX_VALUE, federationAddress);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Coin migrationValue = wallet.getBalance();
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
-            BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
-            assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-            assertEquals(FIFTY_ONE_UTXOS, releaseTransaction.getInputs().size());
+            assertEquals(numberOfUtxos, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
         }
 
@@ -658,10 +623,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
         }
 
-        @Test
-        void buildMigrationTransaction_when50UTXOsToMigrate_shouldCreateMigrationTx() {
+        @ParameterizedTest
+        @ValueSource(ints = {50, 51})
+        void buildMigrationTransaction_whenMultipleUTXOsToMigrate_shouldCreateMigrationTx(int numberOfUtxos) {
             // Arrange
-            federationUTXOs = createUTXOs(FIFTY_UTXOS, MINIMUM_PEGIN_TX_VALUE, federationAddress);
+            federationUTXOs = createUTXOs(numberOfUtxos, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Coin migrationValue = wallet.getBalance();
 
@@ -672,25 +638,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-            assertEquals(FIFTY_UTXOS, releaseTransaction.getInputs().size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-        }
-
-        @Test
-        void buildMigrationTransaction_when51UTXOsToMigrate_shouldCreateMigrationTx() {
-            // Arrange
-            federationUTXOs = createUTXOs(FIFTY_ONE_UTXOS, MINIMUM_PEGIN_TX_VALUE, federationAddress);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Coin migrationValue = wallet.getBalance();
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(migrationValue, destinationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
-            BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
-            assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-            assertEquals(FIFTY_ONE_UTXOS, releaseTransaction.getInputs().size());
+            assertEquals(numberOfUtxos, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
         }
 
