@@ -15,16 +15,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.core;
 
 import java.math.BigInteger;
 
 import java.util.Arrays;
 
-
 public class TransactionArguments {
 
+    private TransactionType type;
 	private String from;
 	private byte[] to;
 	private BigInteger gas;
@@ -107,6 +106,14 @@ public class TransactionArguments {
 		this.chainId = chainId;
 	}
 
+    public void setType(TransactionType type) {
+        this.type = type;
+    }
+
+    public TransactionType getType() {
+        return type;
+    }
+
 	@Override
 	public String toString() {
 		return "TransactionArguments{" +
@@ -118,6 +125,7 @@ public class TransactionArguments {
 			", data='" + data + '\'' +
 			", nonce='" + nonce + '\'' +
 			", chainId='" + chainId + '\'' +
+            ", type='" + type + '\'' +
 			"}";
     }
 }

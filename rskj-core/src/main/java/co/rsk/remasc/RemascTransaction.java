@@ -21,6 +21,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionType;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 
@@ -83,7 +84,8 @@ public class RemascTransaction extends Transaction {
                 PrecompiledContracts.REMASC_ADDR.getBytes(),
                 ZERO_BYTE_ARRAY,
                 null,
-                (byte) 0);
+                (byte) 0,
+                TransactionType.LEGACY);
     }
 
     @Override

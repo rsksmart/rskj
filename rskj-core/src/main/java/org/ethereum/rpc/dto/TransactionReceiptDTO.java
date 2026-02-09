@@ -31,8 +31,8 @@ import co.rsk.util.HexUtils;
  * Created by Ruben on 5/1/2016.
  */
 public class TransactionReceiptDTO {
-    private static final String TRANSACTION_TYPE = "0x0";
 
+    private String type;                 // is a positive unsigned 8-bit number that represents the type of the transaction.
     private String transactionHash;      // hash of the transaction.
     private String transactionIndex;     // integer of the transactions index position in the block.
     private String blockHash;            // hash of the block where this transaction was in.
@@ -45,9 +45,24 @@ public class TransactionReceiptDTO {
     private String to;                   // address of the receiver. null when it's a contract creation transaction.
     private String status;               // either 1 (success) or 0 (failure)
     private String logsBloom;            // Bloom filter for light clients to quickly retrieve related logs.
-    private String type = TRANSACTION_TYPE;     // is a positive unsigned 8-bit number that represents the type of the transaction.
-    private String effectiveGasPrice;   // The actual value per gas deducted on the transaction.
+    private String effectiveGasPrice;    // The actual value per gas deducted on the transaction.
 
+    /*
+
+        Validations:
+
+        LEGACY = 0x00 (first byte from 0xf8 to 0xff)
+        TYPE_1 = 0x01
+        ...
+        TYPE_4 = 0x04
+
+        0xf8a809840393870082a832943a15461d8ae0f0fb5fa2629e9da7d66a794a6e3780b8
+        44a9059cbb0000000000000000000000002eee847bf1b899ef47222f933eb98085d0a2
+        113b0000000000000000000000000000000000000000000000e5b8a7032e131100005f
+        a0e39df2a7a3ddc5098c6809b038c2f05bc9809fb71cd3364c52487c3e1d0c0b28a071
+        671984c82d34a7a6dc73bd166df08e12238d9f382fde5d584893807a3ff303
+
+     */
 
     public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache, int longIndexOffset) {
         TransactionReceipt receipt = txInfo.getReceipt();
@@ -76,6 +91,7 @@ public class TransactionReceiptDTO {
         transactionHash = receipt.getTransaction().getHash().toJsonString();
         transactionIndex = HexUtils.toQuantityJsonHex(txInfo.getIndex());
         logsBloom = HexUtils.toUnformattedJsonHex(txInfo.getReceipt().getBloomFilter().getData());
+        type = HexUtils.toQuantityJsonHex(txInfo.getReceipt().getTransaction().getType().getByteCode()); // TODO -> Check return type
         effectiveGasPrice = HexUtils.toQuantityJsonHex(txInfo.getReceipt().getTransaction().getGasPrice().getBytes());
     }
     public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache) {

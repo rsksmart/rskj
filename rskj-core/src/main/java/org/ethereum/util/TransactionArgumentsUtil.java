@@ -15,13 +15,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.util;
 
 import co.rsk.util.HexUtils;
 import org.ethereum.core.Account;
 import org.ethereum.core.TransactionArguments;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionType;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.GasCost;
@@ -34,19 +34,33 @@ public class TransactionArgumentsUtil {
 
 	private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
 
+    public static final String ERR_INVALID_TX_TYPE = "Invalid transaction type: ";
 	public static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
 	public static final String ERR_COULD_NOT_FIND_ACCOUNT = "Could not find account for address: ";
+
+    private TransactionArgumentsUtil() {}
 
 	public static TransactionArguments processArguments(CallArguments argsParam, byte defaultChainId) {
 		return processArguments(argsParam, null, null, defaultChainId);
 	}
-		/**
-         * transform the Web3.CallArguments in TransactionArguments that can be used in
-         * the TransactionBuilder
-         */
+
+    /**
+     * transform the Web3.CallArguments in TransactionArguments that can be used in
+     * the TransactionBuilder
+     */
 	public static TransactionArguments processArguments(CallArguments argsParam, TransactionPool transactionPool, Account senderAccount, byte defaultChainId) {
 
 		TransactionArguments argsRet = new TransactionArguments();
+
+        argsRet.setType(TransactionType.LEGACY);
+
+        if (argsParam.getType() != null) {
+            TransactionType type = TransactionType.getByByte(Byte.parseByte(argsParam.getType()));
+            if (type == null) {
+                throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + Byte.parseByte(argsParam.getType()));
+            }
+            argsRet.setType(type);
+        }
 
 		argsRet.setFrom(argsParam.getFrom());
 
