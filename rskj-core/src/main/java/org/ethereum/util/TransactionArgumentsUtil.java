@@ -52,15 +52,7 @@ public class TransactionArgumentsUtil {
 
 		TransactionArguments argsRet = new TransactionArguments();
 
-        argsRet.setType(TransactionType.LEGACY);
-
-        if (argsParam.getType() != null) {
-            TransactionType type = TransactionType.getByByte(Byte.parseByte(argsParam.getType()));
-            if (type == null) {
-                throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + Byte.parseByte(argsParam.getType()));
-            }
-            argsRet.setType(type);
-        }
+        argsRet.setType(hexToTransactionType(argsParam.getType()));
 
 		argsRet.setFrom(argsParam.getFrom());
 
@@ -120,5 +112,18 @@ public class TransactionArgumentsUtil {
 			throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex, e);
 		}
 	}
+
+    private static TransactionType hexToTransactionType(String hex) {
+        if (hex == null) {
+            return TransactionType.LEGACY;
+        }
+        TransactionType type;
+        try {
+            type = TransactionType.getByByte(Byte.parseByte(hex));
+        } catch (Exception ex) {
+            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex, ex);
+        }
+        return type;
+    }
 
 }
