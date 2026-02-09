@@ -107,20 +107,12 @@ public class Transaction {
 
     protected Transaction(byte[] rawData) {
         this(RLP.decodeList(rawData));
-        /*
-            TODO -> create something like the following
-            if (rawData[0] == 248) {
-                // this(RLP.decodeList(rawData));
-            } else {
-                // TODO -> Implement custom parsing for each type
-            }
-         */
     }
 
     protected Transaction(RLPList transaction) {
         this.type = TransactionType.LEGACY;
 
-        if (transaction.size() != 9) { // TODO -> this changes depending on the type
+        if (transaction.size() != 9) {
             throw new IllegalArgumentException("A transaction must have exactly 9 elements");
         }
         this.nonce = transaction.get(0).getRLPData();
@@ -253,7 +245,6 @@ public class Transaction {
     }
 
     private void validate(SignatureCache signatureCache) {
-        // TODO -> Add validation for each type
         if (getNonce().length > DATAWORD_LENGTH) {
             throw new RuntimeException("Nonce is not valid");
         }
@@ -470,7 +461,6 @@ public class Transaction {
 
     @Override
     public String toString() {
-        // TODO -> Add the new fields depending on type
         return "TransactionData [" + "hash=" + ByteUtil.toHexStringOrEmpty(getHash().getBytes()) +
                 "  nonce=" + ByteUtil.toHexStringOrEmpty(nonce) +
                 ", gasPrice=" + gasPrice +
@@ -490,7 +480,6 @@ public class Transaction {
      * RLP of the transaction without any signature data
      */
     public byte[] getEncodedRaw() {
-        // TODO -> Add the new fields depending on type
         if (this.rawRlpEncoding == null) {
             // Since EIP-155 use chainId for v
             if (chainId == 0) {
@@ -516,7 +505,6 @@ public class Transaction {
     }
 
     private byte[] encode(byte[] v, byte[] r, byte[] s) {
-        // TODO -> Include the new fields depending on type
         // parse null as 0 for nonce
         byte[] toEncodeNonce;
         if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
@@ -618,7 +606,6 @@ public class Transaction {
     // returning a mutable object from a private method is not that bad and is convenient this time
     @java.lang.SuppressWarnings("squid:S2384")
     private byte[] rlpEncode() {
-        // TODO -> Update this to take into account the transaction type
         if (this.rlpEncoding == null) {
             byte[] v;
             byte[] r;

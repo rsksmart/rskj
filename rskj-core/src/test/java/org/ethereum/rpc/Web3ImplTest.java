@@ -87,6 +87,7 @@ import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionPoolAddResult;
+import org.ethereum.core.TransactionType;
 import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -1257,6 +1258,7 @@ class Web3ImplTest {
         ECDSASignature mockSignature = new ECDSASignature(BigInteger.ONE, BigInteger.ONE);
         when(transaction.getSignature()).thenReturn(mockSignature);
         when(transaction.getEncodedV()).thenReturn((byte) 1);
+        when(transaction.getType()).thenReturn(TransactionType.LEGACY);
 
         return transaction;
     }

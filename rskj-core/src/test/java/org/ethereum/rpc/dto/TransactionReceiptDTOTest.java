@@ -50,6 +50,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
         when(transaction.getGasPrice()).thenReturn(gasPrice);
+        when(transaction.getType()).thenReturn(TransactionType.LEGACY);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
@@ -85,6 +86,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
         when(transaction.getGasPrice()).thenReturn(gasPrice);
+        when(transaction.getType()).thenReturn(TransactionType.LEGACY);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
@@ -120,6 +122,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
         when(transaction.getGasPrice()).thenReturn(gasPrice);
+        when(transaction.getType()).thenReturn(TransactionType.LEGACY);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
@@ -155,6 +158,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
         when(transaction.getGasPrice()).thenReturn(gasPrice);
+        when(transaction.getType()).thenReturn(TransactionType.LEGACY);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
@@ -191,6 +195,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
         when(transaction.getGasPrice()).thenReturn(gasPrice);
+        when(transaction.getType()).thenReturn(TransactionType.LEGACY);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
