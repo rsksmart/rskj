@@ -61,13 +61,14 @@ class ReleaseTransactionBuilderTest {
     private final Address changeAddress = BitcoinTestUtils.createP2PKHAddress(regtestParameters, "changeAddress");
     private final Coin feePerKb = Coin.MILLICOIN.multiply(2);
     private final Federation activeP2shErpFederation = P2shErpFederationBuilder.builder().build();
-    private final Script activeFederationP2SHScript = activeP2shErpFederation.getP2SHScript();
+    private final Address activeP2shErpFederationAddress = activeP2shErpFederation.getAddress();
     private final Federation p2shP2wshErpProposedFederation = P2shP2wshErpFederationBuilder.builder().build();
     private final UTXOBuilder utxoBuilder = UTXOBuilder.builder();
     private Wallet wallet;
     private ReleaseTransactionBuilder builder;
     private Federation federation;
     private BridgeStorageProvider bridgeStorageProviderMock;
+
 
     @BeforeEach
     void setup() {
@@ -91,8 +92,8 @@ class ReleaseTransactionBuilderTest {
         Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
             .build();
 
-        Script p2SHScript = activeFederation.getP2SHScript();
-        List<UTXO> utxos = getUtxos(p2SHScript);
+        Address activeFederationAddress = activeFederation.getAddress();
+        List<UTXO> utxos = createTwoUtxos(activeFederationAddress);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(btcMainNetParams),
@@ -106,7 +107,7 @@ class ReleaseTransactionBuilderTest {
             btcMainNetParams,
             thisWallet,
             federation.getFormatVersion(),
-            activeFederation.getAddress(),
+            activeFederationAddress,
             Coin.SATOSHI.multiply(1000),
             activations
         );
@@ -125,7 +126,7 @@ class ReleaseTransactionBuilderTest {
         TransactionOutput changeOutput = result.btcTx().getOutput(1);
 
         // Second output should be the change output to the Federation
-        assertEquals(activeFederation.getAddress(), changeOutput.getAddressFromP2SH(btcMainNetParams));
+        assertEquals(activeFederationAddress, changeOutput.getAddressFromP2SH(btcMainNetParams));
         // And if its value is the spent UTXOs summatory minus the requested pegout amount
         // we can ensure the Federation is not paying fees for pegouts
         assertEquals(inputsValue.minus(pegoutAmount), changeOutput.getValue());
@@ -134,7 +135,7 @@ class ReleaseTransactionBuilderTest {
     @Test
     void buildSvpFundTransaction_withAFederationWithEnoughUTXOsForTheSvpFundTransaction_shouldReturnACorrectSvpFundTx() {
         // Arrange
-        List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
+        List<UTXO> utxos = createTwoUtxos(activeP2shErpFederationAddress);
         ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(utxos);
         Keccak256 proposedFlyoverPrefix = bridgeMainNetConstants.getProposedFederationFlyoverPrefix();
 
@@ -170,6 +171,10 @@ class ReleaseTransactionBuilderTest {
         assertEquals(expectedSelectedUTXOs, selectedUTXOs);
     }
 
+    private static List<UTXO> createTwoUtxos(Address activeP2shErpFederationAddress) {
+        return createUTXOs(2, activeP2shErpFederationAddress);
+    }
+
     @Test
     void buildSvpFundTransaction_withAFederationWithoutUTXOs_shouldThrowInsufficientMoneyResponseCode() {
         // Arrange
@@ -200,7 +205,7 @@ class ReleaseTransactionBuilderTest {
     @Test
     void buildSvpFundTransaction_withDustValueAsSvpFundTxOutputsValue_shouldReturnDustySendRequestResponseCode() {
         // Arrange
-        List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
+        List<UTXO> utxos = createTwoUtxos(activeP2shErpFederationAddress);
         ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(utxos);
         Keccak256 proposedFlyoverPrefix = bridgeMainNetConstants.getProposedFederationFlyoverPrefix();
         Coin svpFundTxOutputsValue = Coin.SATOSHI;
@@ -227,7 +232,7 @@ class ReleaseTransactionBuilderTest {
     @Test
     void buildSvpFundTransaction_withNullProposedFlyoverPrefix_shouldThrowRedeemScriptCreationException() {
         // Arrange
-        List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
+        List<UTXO> utxos = createTwoUtxos(activeP2shErpFederationAddress);
         ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(utxos);
         Coin svpFundTxOutputsValue = Coin.SATOSHI;
 
@@ -252,7 +257,7 @@ class ReleaseTransactionBuilderTest {
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
-            activeP2shErpFederation.getAddress(),
+            activeP2shErpFederationAddress,
             feePerKb,
             activations
         );
@@ -261,7 +266,7 @@ class ReleaseTransactionBuilderTest {
     @Test
     void buildSvpFundTransaction_withInvalidProposedFlyoverPrefix_shouldThrowRedeemScriptCreationException() {
         // Arrange
-        List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
+        List<UTXO> utxos = createTwoUtxos(activeP2shErpFederationAddress);
         ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(utxos);
         Keccak256 proposedFlyoverPrefix = Keccak256.ZERO_HASH;
         Coin svpFundTxOutputsValue = Coin.SATOSHI;
@@ -277,7 +282,7 @@ class ReleaseTransactionBuilderTest {
     @Test
     void buildSvpFundTransaction_withNullProposedFederation_shouldThrowNullPointerException() {
         // Arrange
-        List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
+        List<UTXO> utxos = createTwoUtxos(activeP2shErpFederationAddress);
         ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(utxos);
         Keccak256 proposedFlyoverPrefix = bridgeMainNetConstants.getProposedFederationFlyoverPrefix();
         Coin svpFundTxOutputsValue = Coin.SATOSHI;
@@ -293,7 +298,7 @@ class ReleaseTransactionBuilderTest {
     @Test
     void buildSvpFundTransaction_withNullAsValueTransferred_shouldThrowNullPointerException() {
         // Arrange
-        List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
+        List<UTXO> utxos = createTwoUtxos(activeP2shErpFederationAddress);
         ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(utxos);
         Keccak256 proposedFlyoverPrefix = bridgeMainNetConstants.getProposedFederationFlyoverPrefix();
 
@@ -308,7 +313,7 @@ class ReleaseTransactionBuilderTest {
     @Test
     void buildMigrationTransaction_withAFederationWithEnoughUTXOs_beforeRSKIP376_shouldReturnACorrectMigrationTx_withVersion1() {
         // Arrange
-        List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
+        List<UTXO> utxos = createTwoUtxos(activeP2shErpFederationAddress);
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(btcMainNetParams),
             activeP2shErpFederation,
@@ -322,7 +327,7 @@ class ReleaseTransactionBuilderTest {
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
-            activeP2shErpFederation.getAddress(),
+            activeP2shErpFederationAddress,
             feePerKb,
             thisActivations
         );
@@ -360,7 +365,7 @@ class ReleaseTransactionBuilderTest {
     @Test
     void buildMigrationTransaction_withAFederationWithEnoughUTXOs_afterRSKIP376_shouldReturnACorrectMigrationTx_withVersion2() {
         // Arrange
-        List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
+        List<UTXO> utxos = createTwoUtxos(activeP2shErpFederationAddress);
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(btcMainNetParams),
             activeP2shErpFederation,
@@ -373,7 +378,7 @@ class ReleaseTransactionBuilderTest {
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
-            activeP2shErpFederation.getAddress(),
+            activeP2shErpFederationAddress,
             feePerKb,
             activations
         );
@@ -451,7 +456,7 @@ class ReleaseTransactionBuilderTest {
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
-            activeP2shErpFederation.getAddress(),
+            activeP2shErpFederationAddress,
             feePerKb,
             activations
         );
@@ -480,7 +485,7 @@ class ReleaseTransactionBuilderTest {
     @Test
     void buildMigrationTransaction_withNullMigrationValue_shouldThrowNullPointerException() {
         // Arrange
-        List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
+        List<UTXO> utxos = createTwoUtxos(activeP2shErpFederationAddress);
         ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(utxos);
         Address proposedFederationAddress = p2shP2wshErpProposedFederation.getAddress();
 
@@ -494,7 +499,7 @@ class ReleaseTransactionBuilderTest {
     @Test
     void buildMigrationTransaction_withNullDestinationAddress_shouldThrowNullPointerException() {
         // Arrange
-        List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
+        List<UTXO> utxos = createTwoUtxos(activeP2shErpFederationAddress);
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(btcMainNetParams),
             activeP2shErpFederation,
@@ -507,7 +512,7 @@ class ReleaseTransactionBuilderTest {
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
-            activeP2shErpFederation.getAddress(),
+            activeP2shErpFederationAddress,
             feePerKb,
             activations
         );
@@ -540,8 +545,8 @@ class ReleaseTransactionBuilderTest {
             activations
         );
 
-        Script p2SHScript = nonStandardErpFederation.getP2SHScript();
-        List<UTXO> utxos = getUtxos(p2SHScript);
+        Address nonStandardErpFederationAddress = nonStandardErpFederation.getAddress();
+        List<UTXO> utxos = createTwoUtxos(nonStandardErpFederationAddress);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(btcMainNetParams),
@@ -555,7 +560,7 @@ class ReleaseTransactionBuilderTest {
             btcMainNetParams,
             thisWallet,
             nonStandardErpFederation.getFormatVersion(),
-            nonStandardErpFederation.getAddress(),
+            nonStandardErpFederationAddress,
             Coin.SATOSHI.multiply(1000),
             activations
         );
@@ -568,11 +573,6 @@ class ReleaseTransactionBuilderTest {
             pegoutAmount
         );
         assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
-    }
-
-    private static List<UTXO> getUtxos(Script outputScript) {
-        int numberOfUtxos = 2;
-        return createUTXOs(numberOfUtxos, outputScript);
     }
 
     @Test
