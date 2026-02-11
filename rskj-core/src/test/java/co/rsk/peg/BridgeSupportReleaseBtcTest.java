@@ -1598,15 +1598,6 @@ class BridgeSupportReleaseBtcTest {
      *  -------     UTILS     ------- *
      *********************************/
 
-    private UTXO buildUTXO() {
-        return utxoBuilder
-            .withTransactionHash(createHash(11))
-            .withValue(Coin.COIN.multiply(2))
-            .withHeight(1)
-            .withOutputScript(activeFederation.getP2SHScript())
-            .build();
-    }
-
     private Transaction buildReleaseRskTx(co.rsk.core.Coin coin) {
         Transaction releaseTransaction = Transaction.builder()
             .nonce(NONCE)
@@ -1685,7 +1676,12 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private FederationStorageProvider initFederationStorageProvider() {
-        UTXO utxo = buildUTXO();
+        UTXO utxo = utxoBuilder
+            .withTransactionHash(createHash(11))
+            .withValue(Coin.COIN.multiply(2))
+            .withHeight(1)
+            .withOutputScript(activeFederation.getP2SHScript())
+            .build();
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         FederationStorageProvider storageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         storageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL).add(utxo);
