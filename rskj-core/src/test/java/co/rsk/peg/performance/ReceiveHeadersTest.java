@@ -28,7 +28,7 @@ import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
-import org.ethereum.vm.PrecompiledContracts;
+
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.Test;
@@ -137,7 +137,6 @@ class ReceiveHeadersTest extends BridgePerformanceTestCase {
                         btcRegtestParams,
                         (Repository) environment.getBenchmarkedRepository(),
                         new HashMap<>(),
-                        PrecompiledContracts.BRIDGE_ADDR,
                         bridgeConstants,
                         bridgeStorageProvider,
                         activationConfig.forBlock(0)

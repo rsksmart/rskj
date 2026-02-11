@@ -75,7 +75,6 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
             mainneNetworkParameters,
             repository,
             cacheBlocks,
-            BRIDGE_ADDR,
             bridgeMainnetConstants,
             bridgeStorageProvider,
             activations
