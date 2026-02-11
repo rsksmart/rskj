@@ -1390,13 +1390,16 @@ class ReleaseTransactionBuilderTest {
         return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
     }
 
+    /**
+     * Deprecated method. Use {@link UTXOBuilder} instead.
+     */
+    @Deprecated
     private UTXO mockUTXO(String generator, long index, Coin value) {
         return utxoBuilder
             .withTransactionHash(mockUTXOHash(generator))
             .withTransactionIndex(index)
             .withValue(value)
             .withHeight(10)
-            .withOutputScript(null)
             .build();
     }
 
