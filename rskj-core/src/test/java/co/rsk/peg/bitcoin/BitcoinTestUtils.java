@@ -93,6 +93,11 @@ public class BitcoinTestUtils {
             .collect(Collectors.toList());
     }
 
+
+    /**
+     * @deprecated method. Use {@link UTXOBuilder} instead.
+     */
+    @Deprecated
     public static List<UTXO> createUTXOs(int numberOfUtxos, Address address) {
         Script outputScript = ScriptBuilder.createOutputScript(address);
         return createUTXOs(numberOfUtxos, outputScript);
