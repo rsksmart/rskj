@@ -201,7 +201,10 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
             for (int i = 0; i < numUTXOs; i++) {
                 Sha256Hash hash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
                 Coin value = Coin.MILLICOIN.multiply(Helper.randomInRange(minMilliBtc, maxMilliBtc));
-                UTXO utxo = utxoBuilder.withTransactionHash(hash).withValue(value).build();
+                UTXO utxo = utxoBuilder
+                    .withTransactionHash(hash)
+                    .withValue(value)
+                    .build();
                 utxos.add(utxo);
             }
 
@@ -325,7 +328,10 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
             for (int i = 0; i < numUTXOs; i++) {
                 Sha256Hash hash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
                 Coin value = Coin.MILLICOIN.multiply(Helper.randomInRange(minMilliBtc, maxMilliBtc));
-                UTXO utxo = utxoBuilder.withTransactionHash(hash).withValue(value).build();
+                UTXO utxo = utxoBuilder
+                    .withTransactionHash(hash)
+                    .withValue(value)
+                    .build();
                 utxos.add(utxo);
             }
 

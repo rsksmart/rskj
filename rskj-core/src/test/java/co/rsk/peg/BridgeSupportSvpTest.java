@@ -139,7 +139,9 @@ class BridgeSupportSvpTest {
         federationStorageProvider.setNewFederation(activeFederation);
 
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-        UTXOBuilder builder = utxoBuilder.withOutputScript(outputScript).withHeight(10);
+        UTXOBuilder builder = utxoBuilder
+            .withOutputScript(outputScript)
+            .withHeight(10);
         List<UTXO> activeFederationUTXOs = Arrays.asList(
             builder.withTransactionHash(createHash(1)).withValue(svpFundTxOutpointsValues.get(0)).build(),
             builder.withTransactionHash(createHash(2)).withValue(svpFundTxOutpointsValues.get(1)).build(),
