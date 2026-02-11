@@ -8938,12 +8938,13 @@ class BridgeSupportTest {
         int blockHeight = 10;
 
         Coin utxoValue = Coin.valueOf(8, 0);
-        UTXO p2shFedUtxo1 = UTXOBuilder.builder()
+        UTXO p2shFedUtxo = UTXOBuilder.builder()
             .withOutputScript(p2shOutputScript)
             .withHeight(blockHeight)
             .withValue(utxoValue)
             .build();
-        UTXO p2shP2wshFedUtxo1 = UTXOBuilder.builder()
+
+        UTXO p2shP2wshFedUtxo = UTXOBuilder.builder()
             .withOutputScript(p2shP2wshOutputScript)
             .withHeight(blockHeight)
             .withValue(utxoValue)
@@ -8969,7 +8970,7 @@ class BridgeSupportTest {
                 p2shFed,
                 Coin.valueOf(9490L),
                 List.of(),
-                List.of(p2shFedUtxo1)
+                List.of(p2shFedUtxo)
             ),
             // active fed is p2sh and there are 1 pegout requests
             // when there are no utxos available, the old logic should be executed and return the expected fee
@@ -8987,7 +8988,7 @@ class BridgeSupportTest {
                 p2shFed,
                 Coin.valueOf(9830L),
                 List.of(pegoutRequest1),
-                List.of(p2shFedUtxo1)
+                List.of(p2shFedUtxo)
             ),
             // active fed is p2sh and there are 2 pegout requests
             Arguments.of(
@@ -8995,7 +8996,7 @@ class BridgeSupportTest {
                 p2shFed,
                 Coin.valueOf(10170L),
                 List.of(pegoutRequest1, pegoutRequest2),
-                List.of(p2shFedUtxo1)
+                List.of(p2shFedUtxo)
             ),
             // active fed is p2sh and there are 3 pegout requests
             Arguments.of(
@@ -9003,7 +9004,7 @@ class BridgeSupportTest {
                 p2shFed,
                 Coin.valueOf(10510L),
                 List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3),
-                List.of(p2shFedUtxo1)
+                List.of(p2shFedUtxo)
             ),
 
             // 2 inputs
@@ -9013,7 +9014,7 @@ class BridgeSupportTest {
                 p2shFed,
                 Coin.valueOf(18900L),
                 List.of(pegoutRequest1, bigPegoutRequest),
-                List.of(p2shFedUtxo1, p2shFedBigUtxoUtxo)
+                List.of(p2shFedUtxo, p2shFedBigUtxoUtxo)
             ),
             // active fed is p2sh and there are 2 pegout requests
             Arguments.of(
@@ -9021,7 +9022,7 @@ class BridgeSupportTest {
                 p2shFed,
                 Coin.valueOf(19240L),
                 List.of(pegoutRequest1, pegoutRequest2, bigPegoutRequest),
-                List.of(p2shFedUtxo1, p2shFedBigUtxoUtxo)
+                List.of(p2shFedUtxo, p2shFedBigUtxoUtxo)
             ),
             // active fed is p2sh and there are 3 pegout requests
             Arguments.of(
@@ -9029,7 +9030,7 @@ class BridgeSupportTest {
                 p2shFed,
                 Coin.valueOf(19580L),
                 List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3, bigPegoutRequest),
-                List.of(p2shFedUtxo1, p2shFedBigUtxoUtxo)
+                List.of(p2shFedUtxo, p2shFedBigUtxoUtxo)
             ),
             // active fed is p2sh p2wsh and there are 0 pegout requests
             Arguments.of(
@@ -9037,7 +9038,7 @@ class BridgeSupportTest {
                 p2shP2wshFed,
                 Coin.valueOf(5670L), // Savings: 59.75%
                 List.of(),
-                List.of(p2shP2wshFedUtxo1)
+                List.of(p2shP2wshFedUtxo)
             ),
             // active fed is p2sh p2wsh and there is 1 pegout requests
             // when there are no utxos available, it will call `calculatePegoutTxSize` and return the expected value for a segwit federation
@@ -9054,7 +9055,7 @@ class BridgeSupportTest {
                 p2shP2wshFed,
                 Coin.valueOf(6010L), // Savings: 61.12%
                 List.of(pegoutRequest1),
-                List.of(p2shP2wshFedUtxo1)
+                List.of(p2shP2wshFedUtxo)
             ),
             // active fed is p2sh p2wsh and there are 2 pegout requests
             Arguments.of(
@@ -9062,7 +9063,7 @@ class BridgeSupportTest {
                 p2shP2wshFed,
                 Coin.valueOf(6350L), // Savings: 62.42%
                 List.of(pegoutRequest1, pegoutRequest2),
-                List.of(p2shP2wshFedUtxo1)
+                List.of(p2shP2wshFedUtxo)
             ),
             // active fed is p2sh p2wsh and there are 3 pegout requests
             Arguments.of(
@@ -9070,7 +9071,7 @@ class BridgeSupportTest {
                 p2shP2wshFed,
                 Coin.valueOf(6690L), // Savings: 63.66%
                 List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3),
-                List.of(p2shP2wshFedUtxo1)
+                List.of(p2shP2wshFedUtxo)
             ),
 
             // 2 inputs
@@ -9080,7 +9081,7 @@ class BridgeSupportTest {
                 p2shP2wshFed,
                 Coin.valueOf(11260L), // Savings: 59.58%
                 List.of(pegoutRequest1, bigPegoutRequest),
-                List.of(p2shP2wshFedUtxo1, p2shP2wshFedBigUtxo)
+                List.of(p2shP2wshFedUtxo, p2shP2wshFedBigUtxo)
             ),
             // active fed is p2sh p2wsh and there are 2 pegout requests
             Arguments.of(
@@ -9088,7 +9089,7 @@ class BridgeSupportTest {
                 p2shP2wshFed,
                 Coin.valueOf(11600L), // Savings: 60.29%
                 List.of(pegoutRequest1, pegoutRequest2, bigPegoutRequest),
-                List.of(p2shP2wshFedUtxo1, p2shP2wshFedBigUtxo)
+                List.of(p2shP2wshFedUtxo, p2shP2wshFedBigUtxo)
             ),
             // active fed is p2sh p2wsh and there are 3 pegout requests
             Arguments.of(
@@ -9096,7 +9097,7 @@ class BridgeSupportTest {
                 p2shP2wshFed,
                 Coin.valueOf(11940L), // Savings: 60.97%
                 List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3, bigPegoutRequest),
-                List.of(p2shP2wshFedUtxo1, p2shP2wshFedBigUtxo)
+                List.of(p2shP2wshFedUtxo, p2shP2wshFedBigUtxo)
             )
         );
     }
