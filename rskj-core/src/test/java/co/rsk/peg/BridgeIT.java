@@ -226,7 +226,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder().setRequireUnclesValidation(false);
         World world = new World(blockChainBuilder);
@@ -277,7 +277,7 @@ class BridgeIT {
                 activationConfig,
                 signatureCache);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
 
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder().setRequireUnclesValidation(false);
@@ -339,7 +339,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, blocks.get(9), track, world.getBlockStore(), null, new LinkedList<>());
 
@@ -364,7 +364,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), track, null, null, null);
         try {
@@ -396,9 +396,9 @@ class BridgeIT {
 
         BridgeSupportFactory bridgeSupportFactory = mock(BridgeSupportFactory.class);
         BridgeSupport bridgeSupport = mock(BridgeSupport.class);
-        when(bridgeSupportFactory.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupport);
+        when(bridgeSupportFactory.newInstance(any(), any(), any())).thenReturn(bridgeSupport);
         when(bridgeSupport.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants()));
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -432,7 +432,7 @@ class BridgeIT {
                 new RepositoryBtcBlockStoreWithCache.Factory(regtestParameters),
                 bridgeRegTestConstants,
                 activationConfig, signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -463,7 +463,7 @@ class BridgeIT {
                 new RepositoryBtcBlockStoreWithCache.Factory(regtestParameters),
                 bridgeRegTestConstants,
                 activationConfig, signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         Transaction mockedTx = mock(Transaction.class);
         bridge.init(mockedTx, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -481,7 +481,6 @@ class BridgeIT {
                 signatureCache
         );
         Bridge bridge = new Bridge(
-            BRIDGE_ADDRESS,
                 constants,
                 activationConfig,
                 bridgeSupportFactory,
@@ -505,7 +504,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         Transaction mockedTx = mock(Transaction.class);
         bridge.init(mockedTx, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -521,7 +520,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         Transaction mockedTx = mock(Transaction.class);
 
@@ -553,7 +552,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         try {
@@ -586,7 +585,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -617,11 +616,11 @@ class BridgeIT {
         rskTx.sign(federatorECKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
-        Bridge bridge = spy(new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = spy(new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache));
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
 
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -686,9 +685,9 @@ class BridgeIT {
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
 
-        Bridge spiedBridge = spy(new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge spiedBridge = spy(new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache));
         spiedBridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -771,7 +770,7 @@ class BridgeIT {
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
                 activationConfig, signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -807,7 +806,7 @@ class BridgeIT {
                 new RepositoryBtcBlockStoreWithCache.Factory(regtestParameters),
                 bridgeRegTestConstants,
                 activationConfig, signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -866,7 +865,7 @@ class BridgeIT {
                 new RepositoryBtcBlockStoreWithCache.Factory(regtestParameters),
                 bridgeRegTestConstants,
                 activationConfig, signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -926,7 +925,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -962,7 +961,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -998,7 +997,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -1048,7 +1047,6 @@ class BridgeIT {
             signatureCache
         );
         Bridge bridge = new Bridge(
-            BRIDGE_ADDRESS,
             constants,
             activationConfig,
             bridgeSupportFactory,
@@ -1072,7 +1070,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         Transaction mockedTx = mock(Transaction.class);
         bridge.init(mockedTx, getGenesisBlock(), track, null, null, null);
@@ -1283,7 +1281,7 @@ class BridgeIT {
             signatureCache
         );
 
-        bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, bridgeSupportFactory, signatureCache);
+        bridge = new Bridge(constants, activationConfig, bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, block, track, null, null, null);
     }
 
@@ -1341,7 +1339,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -1375,7 +1373,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -1409,7 +1407,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, new BlockGenerator().getGenesisBlock(), track, null, null, null);
 
@@ -1443,7 +1441,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, new BlockGenerator().getGenesisBlock(), track, null, null, null);
 
@@ -1457,7 +1455,7 @@ class BridgeIT {
 
     @Test
     void exceptionInUpdateCollection() {
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, null, signatureCache);
 
         try {
             bridge.updateCollections(null);
@@ -1469,7 +1467,7 @@ class BridgeIT {
 
     @Test
     void exceptionInReleaseBtc() {
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, null, signatureCache);
 
         try {
             bridge.releaseBtc(null);
@@ -1481,7 +1479,7 @@ class BridgeIT {
 
     @Test
     void exceptionInGetStateForBtcReleaseClient() {
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, null, signatureCache);
 
         try {
             bridge.getStateForBtcReleaseClient(null);
@@ -1493,7 +1491,7 @@ class BridgeIT {
 
     @Test
     void exceptionInGetStateForSvpClient() {
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, null, signatureCache);
 
         try {
             bridge.getStateForSvpClient(null);
@@ -1505,7 +1503,7 @@ class BridgeIT {
 
     @Test
     void exceptionInGetStateForDebugging() {
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, null, signatureCache);
 
         try {
             bridge.getStateForDebugging(null);
@@ -1517,7 +1515,7 @@ class BridgeIT {
 
     @Test
     void exceptionInGetBtcBlockchainBestChainHeight() {
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, null, signatureCache);
 
         try {
             bridge.getBtcBlockchainBestChainHeight(null);
@@ -1529,7 +1527,7 @@ class BridgeIT {
 
     @Test
     void exceptionInGetBtcBlockchainBlockLocator() {
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, null, signatureCache);
 
         try {
             bridge.getBtcBlockchainBlockLocator(null);
@@ -1549,7 +1547,7 @@ class BridgeIT {
         Sha256Hash hash = Sha256Hash.wrap(hashedString);
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
-        Bridge bridge = spy(new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = spy(new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache));
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1557,7 +1555,7 @@ class BridgeIT {
             (InvocationOnMock invocation) -> Collections.singletonList(hash)
         );
 
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), track, null, null, null);
 
@@ -1580,7 +1578,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), track, null, null, null);
@@ -1602,7 +1600,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
@@ -1690,7 +1688,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1718,7 +1716,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1739,7 +1737,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1766,7 +1764,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1787,7 +1785,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1805,7 +1803,7 @@ class BridgeIT {
                 activationConfig,
                 signatureCache);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1817,7 +1815,7 @@ class BridgeIT {
 
     @Test
     void getFederationCreationBlockNumber() {
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, null, signatureCache);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getActiveFederationCreationBlockNumber()).thenReturn(42L);
@@ -1829,12 +1827,12 @@ class BridgeIT {
     void getFederatorPublicKey_beforeMultikey() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
 
         when(bridgeSupportMock.getActiveFederatorBtcPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
                 BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
@@ -1861,7 +1859,6 @@ class BridgeIT {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         Bridge bridge = new Bridge(
-            BRIDGE_ADDRESS,
             constants,
             activationConfig,
             bridgeSupportFactoryMock,
@@ -1880,7 +1877,7 @@ class BridgeIT {
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -1896,12 +1893,12 @@ class BridgeIT {
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
         when(bridgeSupportMock.getActiveFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class))).then((InvocationOnMock invocation) ->
                 BigInteger.valueOf(invocation.<Number>getArgument(0).longValue()).toString()
                         .concat((invocation.<FederationMember.KeyType>getArgument(1)).getValue()).getBytes()
@@ -1933,7 +1930,6 @@ class BridgeIT {
             signatureCache
         );
         Bridge bridge = new Bridge(
-            BRIDGE_ADDRESS,
             constants,
             activationConfig,
             bridgeSupportFactory,
@@ -1955,7 +1951,7 @@ class BridgeIT {
                 activationConfig,
                 signatureCache);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1967,7 +1963,7 @@ class BridgeIT {
 
     @Test
     void getRetiringFederationCreationBlockNumber() {
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, null, signatureCache);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         long retiringFederationCreationBlockNumber = 42L;
@@ -1979,7 +1975,6 @@ class BridgeIT {
     void getRetiringFederationAddress_withNoRetiringFederation_shouldReturnEmptyString() {
         // Arrange
         bridge = bridgeBuilder
-            .contractAddress(BRIDGE_ADDRESS)
             .constants(constants)
             .activationConfig(activationConfig)
             .signatureCache(signatureCache)
@@ -1995,7 +1990,6 @@ class BridgeIT {
     void getRetiringFederationAddress_withRetiringFederation_shouldReturnTheCorrectRetiringFederationAddress() {
         // Arrange
         bridge = bridgeBuilder
-            .contractAddress(BRIDGE_ADDRESS)
             .constants(constants)
             .activationConfig(activationConfig)
             .signatureCache(signatureCache)
@@ -2016,7 +2010,6 @@ class BridgeIT {
         bridge = bridgeBuilder
             .bridgeSupport(bridgeSupport)
             .activationConfig(activationConfig)
-            .contractAddress(BRIDGE_ADDRESS)
             .constants(constants)
             .signatureCache(signatureCache)
             .build();
@@ -2040,7 +2033,6 @@ class BridgeIT {
         bridge = bridgeBuilder
             .bridgeSupport(bridgeSupport)
             .activationConfig(activationConfig)
-            .contractAddress(BRIDGE_ADDRESS)
             .constants(constants)
             .signatureCache(signatureCache)
             .build();
@@ -2061,7 +2053,6 @@ class BridgeIT {
         bridge = bridgeBuilder
             .bridgeSupport(bridgeSupport)
             .activationConfig(activationConfig)
-            .contractAddress(BRIDGE_ADDRESS)
             .constants(constants)
             .signatureCache(signatureCache)
             .build();
@@ -2096,7 +2087,6 @@ class BridgeIT {
         bridge = bridgeBuilder
             .bridgeSupport(bridgeSupport)
             .activationConfig(activationConfig)
-            .contractAddress(BRIDGE_ADDRESS)
             .constants(constants)
             .signatureCache(signatureCache)
             .build();
@@ -2123,7 +2113,6 @@ class BridgeIT {
 
         bridge = bridgeBuilder
             .activationConfig(activationConfig)
-            .contractAddress(BRIDGE_ADDRESS)
             .constants(constants)
             .signatureCache(signatureCache)
             .bridgeSupport(bridgeSupport)
@@ -2162,7 +2151,6 @@ class BridgeIT {
 
         bridge = bridgeBuilder
             .activationConfig(activationConfig)
-            .contractAddress(BRIDGE_ADDRESS)
             .constants(constants)
             .signatureCache(signatureCache)
             .bridgeSupport(bridgeSupport)
@@ -2201,7 +2189,7 @@ class BridgeIT {
                 activationConfig,
                 signatureCache);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -2216,13 +2204,13 @@ class BridgeIT {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
         when(bridgeSupportMock.getPendingFederatorBtcPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
                 BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -2245,7 +2233,7 @@ class BridgeIT {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -2260,7 +2248,7 @@ class BridgeIT {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -2275,13 +2263,13 @@ class BridgeIT {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
         when(bridgeSupportMock.getPendingFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class))).then((InvocationOnMock invocation) ->
                 BigInteger.valueOf(invocation.<Number>getArgument(0).longValue()).toString()
                         .concat((invocation.<FederationMember.KeyType>getArgument(1)).getValue()).getBytes()
@@ -2313,7 +2301,7 @@ class BridgeIT {
                 activationConfig,
                 signatureCache);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -2331,13 +2319,13 @@ class BridgeIT {
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
         when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("add", new byte[][]{Hex.decode("aabbccdd")})))
                 .thenReturn(123);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
@@ -2356,7 +2344,7 @@ class BridgeIT {
         Transaction txMock = mock(Transaction.class);
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
 
@@ -2377,7 +2365,7 @@ class BridgeIT {
         Transaction txMock = mock(Transaction.class);
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
 
@@ -2401,13 +2389,13 @@ class BridgeIT {
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
         when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("add-multi", new byte[][]{
                 Hex.decode("aabb"), Hex.decode("ccdd"), Hex.decode("eeff")
         }))).thenReturn(123);
@@ -2430,7 +2418,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -2448,7 +2436,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -2467,7 +2455,7 @@ class BridgeIT {
                 activationConfig,
                 signatureCache);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -2484,7 +2472,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -2502,7 +2490,7 @@ class BridgeIT {
                 activationConfig,
                 signatureCache);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -2533,7 +2521,7 @@ class BridgeIT {
                 activationConfig,
                 signatureCache);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
@@ -2563,8 +2551,8 @@ class BridgeIT {
         mockedTransaction = mock(Transaction.class);
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
@@ -2605,7 +2593,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
@@ -2633,7 +2621,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
@@ -2662,7 +2650,7 @@ class BridgeIT {
                 activationConfig,
                 signatureCache);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
@@ -2687,7 +2675,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
@@ -2715,7 +2703,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
@@ -2740,7 +2728,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
@@ -2764,7 +2752,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(mockedTransaction, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -2776,7 +2764,7 @@ class BridgeIT {
 
     @Test
     void getFeePerKb() {
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, null, signatureCache);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getFeePerKb())
@@ -2794,7 +2782,7 @@ class BridgeIT {
                 activationConfig,
                 signatureCache);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -2813,7 +2801,7 @@ class BridgeIT {
                 activationConfig,
                 signatureCache);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -2862,7 +2850,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
 
         Genesis genesisBlock = new BlockGenerator().getGenesisBlock();
@@ -2881,13 +2869,13 @@ class BridgeIT {
         Transaction tx = mock(Transaction.class);
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Address address = new BtcECKey().toAddress(regtestParameters);
         when(bridgeSupportMock.getActiveFederationAddress()).thenReturn(address);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
 
         bridge.init(tx, getGenesisBlock(), null, null, null, null);
 
@@ -2905,14 +2893,14 @@ class BridgeIT {
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
         Address expectedResult = new BtcECKey().toAddress(regtestParameters);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getActiveFederationAddress()).thenReturn(expectedResult);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
 
         bridge.init(tx, getGenesisBlock(), null, null, null, null);
 
@@ -2936,9 +2924,9 @@ class BridgeIT {
             when(tx.isLocalCallTransaction()).thenReturn(false);
             BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-            Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+            Bridge bridge = new Bridge(constants, activationConfig,
                     bridgeSupportFactoryMock, signatureCache);
-            when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+            when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
             bridge.init(tx, getGenesisBlock(), null, null, null, null);
 
             byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(EMPTY_ARGS_FOR_BRIDGE_CALLS);
@@ -2967,7 +2955,7 @@ class BridgeIT {
         Transaction txMock = mock(Transaction.class);
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -2984,7 +2972,7 @@ class BridgeIT {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory = mock(BiFunction.class);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, merkleBranchFactory, signatureCache);
 
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -3047,7 +3035,7 @@ class BridgeIT {
                 signatureCache);
 
         BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory = mock(BiFunction.class);
-        Bridge bridge = spy(new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = spy(new Bridge(constants, activationConfig,
                 bridgeSupportFactory, merkleBranchFactory, signatureCache));
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -3116,7 +3104,7 @@ class BridgeIT {
                 signatureCache);
 
         BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory = mock(BiFunction.class);
-        Bridge bridge = spy(new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = spy(new Bridge(constants, activationConfig,
                 bridgeSupportFactory, merkleBranchFactory, signatureCache));
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -3170,7 +3158,7 @@ class BridgeIT {
                 activationConfig,
                 signatureCache);
 
-        Bridge bridge = spy(new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = spy(new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache));
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -3211,7 +3199,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -3309,7 +3297,7 @@ class BridgeIT {
 
     @Test
     void localCallOnlyMethodsDefinition() {
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, null, signatureCache);
 
         // To force initialization
         String foo = Bridge.UPDATE_COLLECTIONS.name;
@@ -3350,7 +3338,7 @@ class BridgeIT {
 
     @Test
     void mineableMethodsDefinition() {
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, null, signatureCache);
 
         // To force initialization
         String foo = Bridge.UPDATE_COLLECTIONS.name;
@@ -3404,7 +3392,7 @@ class BridgeIT {
 
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 mock(BridgeSupportFactory.class), signatureCache);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
@@ -3424,7 +3412,7 @@ class BridgeIT {
 
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 mock(BridgeSupportFactory.class), signatureCache);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
@@ -3457,10 +3445,10 @@ class BridgeIT {
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         byte[][] headers = new byte[][]{Hex.decode(
@@ -3494,10 +3482,10 @@ class BridgeIT {
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
 
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
@@ -3521,10 +3509,10 @@ class BridgeIT {
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
 
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
@@ -3542,11 +3530,11 @@ class BridgeIT {
     void bridgeSupportIsCreatedOnInit() {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
@@ -3567,12 +3555,12 @@ class BridgeIT {
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(bridgeSupportMock);
         when(bridgeSupportMock.voteFeePerKbChange(tx, Coin.CENT)).thenReturn(1);
 
         bridge.init(tx, getGenesisBlock(), null, null, null, null);
@@ -3590,7 +3578,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -3639,7 +3627,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         org.ethereum.core.Transaction rskTx;
         if (function == null) {
@@ -3700,7 +3688,7 @@ class BridgeIT {
                 bridgeRegTestConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
+        Bridge bridge = new Bridge(constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -3713,10 +3701,10 @@ class BridgeIT {
 
     private Bridge getBridgeInstance(ActivationConfig.ForBlock activations) {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(mock(BridgeSupport.class));
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any())).thenReturn(mock(BridgeSupport.class));
 
         when(activationConfig.forBlock(anyLong())).thenReturn(activations);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, bridgeSupportFactoryMock, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, bridgeSupportFactoryMock, signatureCache);
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
         return bridge;

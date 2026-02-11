@@ -20,7 +20,6 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.core.RskAddress;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
@@ -70,7 +69,6 @@ public class BridgeSupportFactory {
     public BridgeSupport newInstance(
         Repository repository,
         Block executionBlock,
-        RskAddress contractAddress,
         List<LogInfo> logs) {
 
         ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlock.getNumber());
