@@ -4,6 +4,7 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createUTXOs;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.*;
@@ -277,7 +278,8 @@ class FederationChangeIT {
         federationStorageProvider.setNewFederation(originalFederation);
 
         // Set new UTXOs
-        var originalUTXOs = createUTXOs(originalFederation.getAddress());
+        int numberOfUtxos = 50;
+        var originalUTXOs = createUTXOs(numberOfUtxos ,originalFederation.getAddress());
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), originalUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
         return originalFederation;
@@ -808,25 +810,6 @@ class FederationChangeIT {
 
         blockStore.put(storedBlock);
         blockStore.setChainHead(storedBlock);
-    }
-
-    private List<UTXO> createUTXOs(Address owner) {
-        var outputScript = ScriptBuilder.createOutputScript(owner);
-        List<UTXO> utxos = new ArrayList<>();
-
-        UTXOBuilder utxoBuilder = UTXOBuilder.builder()
-            .withOutputScript(outputScript)
-            .withValue(Coin.COIN);
-        var howMany = 50;
-        for (int i = 1; i < howMany; i++) {
-            Sha256Hash utxoHash = BitcoinTestUtils.createHash(i);
-            UTXO utxo = utxoBuilder
-                .withTransactionHash(utxoHash)
-                .build();
-            utxos.add(utxo);
-        }
-
-        return utxos;
     }
 
     private Script getFederationDefaultRedeemScript(Federation federation) {
