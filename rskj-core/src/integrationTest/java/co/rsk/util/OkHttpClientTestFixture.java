@@ -96,9 +96,17 @@ public class OkHttpClientTestFixture {
             }
             """;
 
+    public static final String ETH_GET_TRANSACTION_RECEIPT = """
+        {
+            "jsonrpc": "2.0",
+            "method": "eth_getTransactionReceipt",
+            "id": 1,
+            "params": ["<TX_HASH>"]
+        }
+        """;
+
     private OkHttpClientTestFixture() {
     }
-
 
     public static OkHttpClient getUnsafeOkHttpClient() {
         try {
@@ -158,6 +166,22 @@ public class OkHttpClientTestFixture {
     public static Response sendJsonRpcGetBlockMessage(int port, String blockNumOrTag) throws IOException {
         return sendJsonRpcMessage(GET_BLOCK_CONTENT.replace("<BLOCK_NUM_OR_TAG>", blockNumOrTag), port);
     }
+
+    public static Response sendJsonRpcGetTransactionReceiptMessage(int port, String txHash) throws IOException {
+        return sendJsonRpcMessage(ETH_GET_TRANSACTION_RECEIPT.replace("<TX_HASH>", txHash), port);
+    }
+
+    public static JsonNode getJsonResponseForGetTransactionReceipt(int port, String txHash) throws IOException {
+        Response response = sendJsonRpcGetTransactionReceiptMessage(port, txHash);
+        try {
+            return new ObjectMapper().readTree(response.body().string());
+        } finally {
+            if (response.body() != null) {
+                response.body().close();
+            }
+        }
+    }
+
 
     public static JsonNode getJsonResponseForGetBestBlockMessage(int port, String blockNumOrTag) throws IOException {
         Response response = sendJsonRpcGetBlockMessage(port, blockNumOrTag);
