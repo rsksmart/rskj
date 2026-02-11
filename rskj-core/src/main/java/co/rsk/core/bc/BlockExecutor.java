@@ -847,7 +847,7 @@ public class BlockExecutor {
         if (isRemascTransaction) {
             sublistGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, gasUsed);
         } else if (isSequentialSublistRequired) {
-            sublistGasAccumulated = parallelizeTransactionHandler.addTxToSequentialSublist(tx, gasUsed);
+            sublistGasAccumulated = parallelizeTransactionHandler.addTxToSequentialSublist(tx, gasUsed,  readWrittenKeysTracker.getThisThreadReadKeys(), readWrittenKeysTracker.getThisThreadWrittenKeys());
         } else {
             sublistGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getThisThreadReadKeys(), readWrittenKeysTracker.getThisThreadWrittenKeys(), gasUsed);
         }
