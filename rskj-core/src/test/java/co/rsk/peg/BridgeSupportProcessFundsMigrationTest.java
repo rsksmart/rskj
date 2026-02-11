@@ -182,8 +182,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
         Script outputScript = ScriptBuilder.createOutputScript(oldFederation.getAddress());
         UTXO utxo = UTXOBuilder.builder()
-            .withHeight(10)
-            .withOutputScript(outputScript)
+            .withScriptPubKey(outputScript)
             .build();
         sufficientUTXOsForMigration.add(
             utxo

@@ -3549,7 +3549,7 @@ class BridgeSupportFlyoverTest {
 
         UTXO utxo = UTXOBuilder.builder()
             .withTransactionHash(tx.getHash())
-            .withOutputScript(flyoverP2SH)
+            .withScriptPubKey(flyoverP2SH)
             .build();
         List<UTXO> utxoList = Collections.singletonList(utxo);
 
@@ -3629,7 +3629,7 @@ class BridgeSupportFlyoverTest {
         UTXO utxo = UTXOBuilder.builder()
             .withTransactionHash(transactionHash)
             .withValue(value)
-            .withOutputScript(outputScript)
+            .withScriptPubKey(outputScript)
             .build();
         utxos.add(utxo);
 

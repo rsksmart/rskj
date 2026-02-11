@@ -864,21 +864,21 @@ class ReleaseTransactionBuilderTest {
         Script outputScript = federation.getP2SHScript();
         List<UTXO> utxos = Arrays.asList(
             UTXOBuilder.builder()
-                .withOutputScript(outputScript)
+                .withScriptPubKey(outputScript)
                 .withTransactionHash(mockUTXOHash("1"))
-                .withTransactionIndex(0)
+                .withOutpointIndex(0)
                 .withValue(Coin.COIN)
                 .build(),
             UTXOBuilder.builder()
-                .withOutputScript(outputScript)
+                .withScriptPubKey(outputScript)
                 .withTransactionHash(mockUTXOHash("2"))
-                .withTransactionIndex(2)
+                .withOutpointIndex(2)
                 .withValue(Coin.FIFTY_COINS)
                 .build(),
             UTXOBuilder.builder()
-                .withOutputScript(outputScript)
+                .withScriptPubKey(outputScript)
                 .withTransactionHash(mockUTXOHash("3"))
-                .withTransactionIndex(0)
+                .withOutpointIndex(0)
                 .withValue(Coin.CENT.times(3))
                 .build()
         );
@@ -945,21 +945,21 @@ class ReleaseTransactionBuilderTest {
         Script outputScript = federation.getP2SHScript();
         List<UTXO> utxos = Arrays.asList(
             UTXOBuilder.builder()
-                .withOutputScript(outputScript)
+                .withScriptPubKey(outputScript)
                 .withTransactionHash(mockUTXOHash("1"))
-                .withTransactionIndex(0)
+                .withOutpointIndex(0)
                 .withValue(Coin.COIN)
                 .build(),
             UTXOBuilder.builder()
-                .withOutputScript(outputScript)
+                .withScriptPubKey(outputScript)
                 .withTransactionHash(mockUTXOHash("2"))
-                .withTransactionIndex(2)
+                .withOutpointIndex(2)
                 .withValue(Coin.FIFTY_COINS)
                 .build(),
             UTXOBuilder.builder()
-                .withOutputScript(outputScript)
+                .withScriptPubKey(outputScript)
                 .withTransactionHash(mockUTXOHash("3"))
-                .withTransactionIndex(0)
+                .withOutpointIndex(0)
                 .withValue(Coin.CENT.times(3))
                 .build()
         );
@@ -1023,7 +1023,7 @@ class ReleaseTransactionBuilderTest {
             String seed = String.valueOf(i + 1);
             Sha256Hash transactionHash = mockUTXOHash(seed);
             UTXO utxo = UTXOBuilder.builder()
-                .withOutputScript(scriptPubKey)
+                .withScriptPubKey(scriptPubKey)
                 .withValue(Coin.COIN)
                 .withTransactionHash(transactionHash)
                 .build();
@@ -1067,7 +1067,7 @@ class ReleaseTransactionBuilderTest {
             String seed = String.valueOf(i + 1);
             Sha256Hash transactionHash = mockUTXOHash(seed);
             UTXO utxo = UTXOBuilder.builder()
-                .withOutputScript(scriptPubKey)
+                .withScriptPubKey(scriptPubKey)
                 .withValue(Coin.MILLICOIN)
                 .withTransactionHash(transactionHash)
                 .build();
@@ -1101,7 +1101,7 @@ class ReleaseTransactionBuilderTest {
             String seed = String.valueOf(i + 1);
             Sha256Hash transactionHash = mockUTXOHash(seed);
             UTXO utxo = UTXOBuilder.builder()
-                .withOutputScript(scriptPubKey)
+                .withScriptPubKey(scriptPubKey)
                 .withValue(outputValues.get(i))
                 .withTransactionHash(transactionHash)
                 .build();
@@ -1205,7 +1205,7 @@ class ReleaseTransactionBuilderTest {
             String seed = String.valueOf(i + 1);
             Sha256Hash transactionHash = mockUTXOHash(seed);
             UTXO utxo = UTXOBuilder.builder()
-                .withOutputScript(outputScript)
+                .withScriptPubKey(outputScript)
                 .withTransactionHash(transactionHash)
                 .build();
             utxos.add(utxo);
@@ -1266,7 +1266,7 @@ class ReleaseTransactionBuilderTest {
             String seed = String.valueOf(i + 1);
             Sha256Hash transactionHash = mockUTXOHash(seed);
             UTXO utxo = UTXOBuilder.builder()
-                .withOutputScript(outputScript)
+                .withScriptPubKey(outputScript)
                 .withTransactionHash(transactionHash)
                 .build();
             utxos.add(utxo);
@@ -1453,9 +1453,8 @@ class ReleaseTransactionBuilderTest {
     private UTXO mockUTXO(String generator, long index, Coin value) {
         return UTXOBuilder.builder()
             .withTransactionHash(mockUTXOHash(generator))
-            .withTransactionIndex(index)
+            .withOutpointIndex(index)
             .withValue(value)
-            .withHeight(10)
             .build();
     }
 

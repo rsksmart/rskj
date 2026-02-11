@@ -195,8 +195,8 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
             Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
             Script federationP2SHScript = genesisFederation.getP2SHScript();
             UTXOBuilder utxoBuilder = UTXOBuilder.builder()
-                .withHeight(1)
-                .withOutputScript(federationP2SHScript);
+                .withBlockHeight(1)
+                .withScriptPubKey(federationP2SHScript);
 
             for (int i = 0; i < numUTXOs; i++) {
                 Sha256Hash hash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
@@ -322,8 +322,8 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
             Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
             Script federationP2SHScript =  genesisFederation.getP2SHScript();
             UTXOBuilder utxoBuilder = UTXOBuilder.builder()
-                .withHeight(1)
-                .withOutputScript(federationP2SHScript);
+                .withBlockHeight(1)
+                .withScriptPubKey(federationP2SHScript);
 
             for (int i = 0; i < numUTXOs; i++) {
                 Sha256Hash hash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));

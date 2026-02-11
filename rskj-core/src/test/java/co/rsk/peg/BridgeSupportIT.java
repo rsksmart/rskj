@@ -613,9 +613,9 @@ public class BridgeSupportIT {
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
         UTXO utxo = UTXOBuilder.builder()
             .withTransactionHash(transactionHash)
-            .withTransactionIndex(outpointIndex)
+            .withOutpointIndex(outpointIndex)
             .withValue(value)
-            .withOutputScript(outputScript)
+            .withScriptPubKey(outputScript)
             .build();
         federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(utxo);
 
@@ -700,9 +700,9 @@ public class BridgeSupportIT {
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
         UTXO utxo = UTXOBuilder.builder()
             .withTransactionHash(BitcoinTestUtils.createHash(1))
-            .withTransactionIndex(1)
+            .withOutpointIndex(1)
             .withValue(value)
-            .withOutputScript(outputScript)
+            .withScriptPubKey(outputScript)
             .build();
 
         federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(utxo);
@@ -791,9 +791,9 @@ public class BridgeSupportIT {
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
         UTXO utxo = UTXOBuilder.builder()
             .withTransactionHash(BitcoinTestUtils.createHash(1))
-            .withTransactionIndex(1)
+            .withOutpointIndex(1)
             .withValue(Coin.CENT)
-            .withOutputScript(outputScript)
+            .withScriptPubKey(outputScript)
             .build();
         for (int i = 0; i < 2000; i++) {
             federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(utxo);
@@ -931,8 +931,8 @@ public class BridgeSupportIT {
         // and so it won't be removed from the old federation UTXOs list for migration.
         List<UTXO> unsufficientUTXOsForMigration1 = new ArrayList<>();
         UTXO tinyUtxo = UTXOBuilder.builder()
-            .withTransactionIndex(1)
-            .withOutputScript(outputScript)
+            .withOutpointIndex(1)
+            .withScriptPubKey(outputScript)
             .withValue(Coin.MICROCOIN)
             .build();
         unsufficientUTXOsForMigration1.add(tinyUtxo);
@@ -944,8 +944,8 @@ public class BridgeSupportIT {
         // and it will be removed from the old federation UTXOs list for migration.
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
         UTXO millicoinUtxo = UTXOBuilder.builder()
-            .withTransactionIndex(1)
-            .withOutputScript(outputScript)
+            .withOutpointIndex(1)
+            .withScriptPubKey(outputScript)
             .withValue(Coin.MILLICOIN)
             .build();
         sufficientUTXOsForMigration1.add(millicoinUtxo);
@@ -958,8 +958,8 @@ public class BridgeSupportIT {
         List<UTXO> sufficientUTXOsForMigration2 = new ArrayList<>();
         Coin halfMillicoin = Coin.MILLICOIN.divide(2);
         UTXO halfOfAMillicoinUtxo = UTXOBuilder.builder()
-            .withTransactionIndex(1)
-            .withOutputScript(outputScript)
+            .withOutpointIndex(1)
+            .withScriptPubKey(outputScript)
             .withValue(halfMillicoin)
             .build();
         sufficientUTXOsForMigration2.add(halfOfAMillicoinUtxo);
@@ -1013,9 +1013,9 @@ public class BridgeSupportIT {
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
         UTXO utxo = UTXOBuilder.builder()
             .withTransactionHash(BitcoinTestUtils.createHash(1))
-            .withTransactionIndex(1)
+            .withOutpointIndex(1)
             .withValue(value)
-            .withOutputScript(outputScript)
+            .withScriptPubKey(outputScript)
             .build();
         federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(utxo);
 

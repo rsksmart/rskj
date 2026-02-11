@@ -102,7 +102,7 @@ public class BitcoinTestUtils {
         List<UTXO> utxos = new ArrayList<>();
         for (int i = 0; i < numberOfUtxos; i++) {
             UTXO utxo = UTXOBuilder.builder()
-                .withOutputScript(outputScript)
+                .withScriptPubKey(outputScript)
                 .withTransactionHash(createHash(i + 1))
                 .build();
             utxos.add(utxo);

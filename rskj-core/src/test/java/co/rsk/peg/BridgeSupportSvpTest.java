@@ -140,12 +140,10 @@ class BridgeSupportSvpTest {
         List<UTXO> activeFederationUTXOs = new ArrayList<>();
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
         int numberOfUtxos = 3;
-        int blockHeight = 10;
         for (int i = 0; i < numberOfUtxos; i++) {
             Sha256Hash transactionHash = createHash(i + 1);
             UTXO utxo = UTXOBuilder.builder()
-                .withOutputScript(outputScript)
-                .withHeight(blockHeight)
+                .withScriptPubKey(outputScript)
                 .withTransactionHash(transactionHash)
                 .withValue(svpFundTxOutpointsValues.get(i))
                 .build();
@@ -475,13 +473,11 @@ class BridgeSupportSvpTest {
 
             List<UTXO> activeFederationUTXOs = new ArrayList<>();
             Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-            int blockHeight = 10;
             int numberOfUtxos = 3;
             for (int i = 0; i < numberOfUtxos; i++) {
                 Sha256Hash transactionHash = createHash(i + 1);
                 UTXO utxo = UTXOBuilder.builder()
-                    .withOutputScript(outputScript)
-                    .withHeight(blockHeight)
+                    .withScriptPubKey(outputScript)
                     .withTransactionHash(transactionHash)
                     .withValue(svpFundTxOutpointsValues.get(i))
                     .build();
