@@ -40,18 +40,19 @@ Validate that **the current phase** meets its acceptance criteria.
 
 1. **Run Build** (command from PROJECT.md)
    ```bash
-   npm run build  # or equivalent
+   ./gradlew build -x test  # Compilation check
    ```
 
 2. **Run Lint** (command from PROJECT.md)
    ```bash
-   npm run lint  # or equivalent
+   ./gradlew checkstyleMain
+   ./gradlew spotlessJavaCheck
    ```
 
 3. **Run Tests** (command from PROJECT.md)
    ```bash
-   npm test
-   npm run test:coverage  # or equivalent
+   ./gradlew test                  # Full unit test suite
+   ./gradlew jacocoTestReport      # Generate coverage report
    ```
 
 4. **Validate Phase ACs**
@@ -148,10 +149,11 @@ Before approving next phase:
 **Verdict:** PASS / FAIL
 
 ### Validation Summary
-- Build: PASS/FAIL
-- Lint: PASS/FAIL
-- Tests: [X] passed
-- Coverage: [summary]
+- Compile (`./gradlew build -x test`): PASS/FAIL
+- Checkstyle: PASS/FAIL
+- Spotless: PASS/FAIL
+- Tests (`./gradlew test`): [X] passed
+- Coverage (`./gradlew jacocoTestReport`): [summary]
 
 ### Acceptance Criteria (This Phase)
 - [X/Y] criteria validated
@@ -179,10 +181,11 @@ Before handing off for merge:
 **Verdict:** PASS / FAIL
 
 ### Validation Summary
-- Build: PASS/FAIL
-- Lint: PASS/FAIL
-- Tests: [X] passed
-- Coverage: [summary]
+- Compile (`./gradlew build -x test`): PASS/FAIL
+- Checkstyle: PASS/FAIL
+- Spotless: PASS/FAIL
+- Tests (`./gradlew test`): [X] passed
+- Coverage (`./gradlew jacocoTestReport`): [summary]
 
 ### All Acceptance Criteria
 - [X/Y] total criteria validated across all phases
@@ -222,18 +225,27 @@ Before handing off for merge:
 
 ### Build
 ```
+./gradlew build -x test
 [Build output or status]
 ```
 
 ### Lint
 ```
-[Lint output - errors/warnings]
+./gradlew checkstyleMain
+./gradlew spotlessJavaCheck
+[Output - errors/warnings]
 ```
 
 ### Tests
 ```
-Test Suites: X passed, X total
-Tests:       X passed, X total
+./gradlew test
+Tests:  X passed, X failed, X total
+```
+
+### Coverage
+```
+./gradlew jacocoTestReport
+[Coverage report location: rskj-core/build/reports/jacoco/test/html/index.html]
 ```
 
 ---

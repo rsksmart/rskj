@@ -38,33 +38,46 @@ Review **ONE PHASE** of the implementation for quality, correctness, TDD complia
 
 ## Review Process
 
-1. **View Changes**
+1. **Run Lint and Tests (MANDATORY - do this FIRST)**
    ```bash
-   git diff main..HEAD  # or diff from previous phase
+   ./gradlew checkstyleMain       # MUST pass with 0 errors - reject the phase if checkstyle fails
+   ./gradlew spotlessJavaCheck    # MUST pass - reject if formatting is wrong
+   ./gradlew test                 # MUST pass - reject the phase if tests fail
+   ```
+   **If any command fails, STOP the review and report the failure as a Critical Issue. Do NOT approve code that fails validation.**
+
+2. **View Changes**
+   ```bash
+   git diff master..HEAD  # or diff from previous phase
    ```
 
-2. **Verify TDD Compliance**
+3. **Verify TDD Compliance**
    - Tests exist for this phase's functionality
    - Tests are meaningful (not just superficial)
    - Test coverage is appropriate for file types (see CONFIG.md)
    - Evidence that tests were written before implementation
 
-3. **Review Code Quality**
-   - Types properly defined (follow project's type system)
-   - Error handling appropriate
-   - Follows patterns from PROJECT.md
-   - No hardcoded values that should be config
+4. **Review Code Quality**
+   - Classes and interfaces properly defined
+   - Error handling appropriate (prefer `Optional<T>` over null)
+   - Follows patterns from PROJECT.md (constructor injection, `private final` fields)
+   - No hardcoded values that should be in `reference.conf`
+   - If consensus-critical: changes are gated behind `activations.isActive(ConsensusRule.RSKIPXXX)`
+   - If `reference.conf` changed: `expected.conf` is updated to match
 
-4. **Review Tests**
+5. **Review Tests**
    - Happy path covered
    - Error cases covered
    - Coverage meets targets (see CONFIG.md)
+   - Appropriate use of JUnit 5 + Mockito patterns
+   - Integration tests use `World`, `BlockGenerator`, or `RskTestContext` where appropriate
 
-5. **Review Security**
+6. **Review Security**
    - No secrets in code
    - Input validation where needed
+   - Bridge changes: verify peg-in/peg-out logic cannot be exploited
 
-6. **Save Review**
+7. **Save Review**
    Save to: .workflow/reviews/STORY-XXX-phase-N-review.md
 ```
 
@@ -135,6 +148,11 @@ Before handing off, ensure:
 ### Summary
 - [1-2 sentence summary]
 
+### Automated Checks
+- [ ] Checkstyle: PASS/FAIL (ran `./gradlew checkstyleMain`)
+- [ ] Spotless: PASS/FAIL (ran `./gradlew spotlessJavaCheck`)
+- [ ] Tests: PASS/FAIL (ran `./gradlew test`)
+
 ### TDD Compliance
 - [ ] Tests exist and are meaningful
 - [ ] Tests cover the acceptance criteria for this phase
@@ -198,11 +216,17 @@ Before handing off, ensure:
 
 ## Checklist Results
 
+### Automated Checks
+- [ ] `./gradlew checkstyleMain` passes with 0 errors
+- [ ] `./gradlew spotlessJavaCheck` passes
+- [ ] `./gradlew test` passes with all tests green
+
 ### Code Quality
-- [ ] Types properly defined
-- [ ] Error handling appropriate
+- [ ] Classes and interfaces properly defined
+- [ ] Error handling appropriate (`Optional<T>` over null)
 - [ ] Follows project patterns (PROJECT.md)
-- [ ] No hardcoded config values
+- [ ] No hardcoded config values (use `reference.conf`)
+- [ ] Consensus changes gated by RSKIP activation (if applicable)
 
 ### Patterns
 - [ ] Follows existing patterns

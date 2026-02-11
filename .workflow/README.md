@@ -110,9 +110,10 @@ The [Developer Agent](./agents/developer.md) uses **Test-Driven Development**:
 3. **REFACTOR:** Clean up while keeping tests green
 
 **Validation Gate:** See [CONFIG.md](./CONFIG.md#validation-gates)
-- `npm run build` must pass
-- `npm run lint` must pass with 0 errors
-- `npm test` must pass
+- `./gradlew build -x test` must pass (compilation)
+- `./gradlew checkstyleMain` must pass with 0 errors
+- `./gradlew spotlessJavaCheck` must pass
+- `./gradlew test` must pass
 
 #### Code Review Agent
 
@@ -217,6 +218,7 @@ Test coverage targets vary by file type:
 |-----------|--------|-----------|
 | Utilities | 90%+ | Yes |
 | Services | 80%+ | Yes |
+| Consensus-critical | 85%+ | Yes |
 | Entry Points | 60%+ | No |
 | Config | 70%+ | No |
 | Models | N/A | N/A |

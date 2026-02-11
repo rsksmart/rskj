@@ -132,12 +132,13 @@ validation_gates:
 
   before_code_review:
     required:
-      - "npm run build passes"
-      - "npm run lint passes with 0 errors"
-      - "npm test passes"
+      - "./gradlew build -x test passes (compilation)"
+      - "./gradlew checkstyleMain passes with 0 errors"
+      - "./gradlew spotlessJavaCheck passes"
+      - "./gradlew test --tests 'relevant.test.Class' passes (phase-specific tests)"
     recommended:
       - "No TODO comments in new code"
-      - "All new functions have JSDoc comments"
+      - "./gradlew test passes (full unit test suite)"
 
   before_qa:
     required:
@@ -150,9 +151,11 @@ validation_gates:
     required:
       - "QA report shows PASS"
       - "All acceptance criteria validated"
+      - "./gradlew build passes (full build with tests)"
       - "CI pipeline green"
     recommended:
       - "Documentation updated if needed"
+      - "./gradlew integrationTest passes"
 ```
 
 ---
@@ -166,37 +169,43 @@ coverage:
 
   # Shared utilities, pure functions
   utilities:
-    patterns: ["**/utils.ts", "**/cliUtils.ts", "**/*Helper.ts"]
+    patterns: ["**/util/**/*.java", "**/crypto/**/*.java", "**/*Helper.java", "**/*Utils.java"]
     target: 90
     rationale: "Pure functions should be fully testable"
 
-  # Data models and interfaces
+  # Data models and value objects
   models:
-    patterns: ["**/models/**/*.ts"]
+    patterns: ["**/core/Coin.java", "**/core/Block.java", "**/core/Transaction.java"]
     target: null
-    rationale: "Interfaces have no runtime code"
+    rationale: "Simple value objects with minimal logic"
 
-  # CLI entry points and main functions
+  # Entry points and main classes
   entry_points:
-    patterns: ["**/index.ts", "**/*Reports.ts", "**/report*.ts"]
+    patterns: ["**/Start.java", "**/NodeRunner.java", "**/cli/tools/**/*.java"]
     target: 60
     rationale: "Integration code is harder to test; focus on unit testing called functions"
 
-  # API and service classes
+  # Core business logic and services
   services:
-    patterns: ["**/api.ts", "**/slack.ts", "**/*Service.ts"]
+    patterns: ["**/peg/**/*.java", "**/rpc/modules/**/*.java", "**/mine/**/*.java", "**/validators/**/*.java"]
     target: 80
     rationale: "Core business logic should be well tested"
 
+  # Consensus-critical code (bridge, VM, validation)
+  consensus:
+    patterns: ["**/peg/Bridge*.java", "**/vm/VM.java", "**/vm/program/Program.java", "**/PrecompiledContracts.java"]
+    target: 85
+    rationale: "Consensus-critical code requires high coverage to prevent chain forks"
+
   # Configuration loaders
   config:
-    patterns: ["**/config.ts", "**/cliConfig.ts"]
+    patterns: ["**/config/**/*.java", "**/RskSystemProperties.java", "**/ConfigLoader.java"]
     target: 70
     rationale: "Config validation should be tested; env loading is integration"
 
   # Test files themselves
   tests:
-    patterns: ["**/tests/**/*.ts", "**/*.test.ts"]
+    patterns: ["**/test/**/*.java", "**/integrationTest/**/*.java"]
     target: null
     rationale: "Test files are not measured"
 ```

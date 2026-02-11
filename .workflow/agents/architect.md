@@ -46,16 +46,24 @@ Analyze this user story and create an implementation plan.
    - Minimize changes to existing code
    - **Divide work into logical phases** (each phase should be independently testable)
    - Map each acceptance criterion to a specific phase
-   - Plan for TDD (tests first in each phase)
+   - Plan for TDD where appropriate (tests first in each phase)
+   - For consensus-critical changes, plan both unit AND integration tests
 
-4. **Create the Phased Plan**
+4. **Consider rskj-Specific Concerns**
+   - **RSKIP Activation:** If the feature requires a new consensus rule, plan the ActivationConfig changes and guard all new behavior with `activations.isActive(ConsensusRule.RSKIPXXX)`
+   - **Bridge Changes:** Bridge modifications need special care — plan BridgeSupport, BridgeStorageProvider, and federation impact analysis
+   - **Configuration Sync:** Changes to `reference.conf` must have corresponding entries in `expected.conf`
+   - **Network Configs:** If behavior differs per network, plan changes to `main.conf`, `testnet.conf`, `regtest.conf`, `devnet.conf`
+   - **Precompiled Contracts:** New precompiled contracts need address registration in `PrecompiledContracts.java` and RSKIP gating
+
+5. **Create the Phased Plan**
    - List files to create/modify per phase
    - Provide step-by-step implementation guide for each phase
    - Define testing strategy (what tests to write FIRST)
    - Identify risks
    - Specify which ACs are covered by each phase
 
-5. **Save the Plan**
+6. **Save the Plan**
    Save to: .workflow/plans/STORY-XXX-plan.md
 
 ## Output Format
@@ -65,9 +73,10 @@ Use the plan template at the end of this document.
 
 - Each phase should deliver testable, working functionality
 - Phases should build on each other logically
-- Earlier phases should establish foundations (types, interfaces)
+- Earlier phases should establish foundations (classes, interfaces)
 - Later phases should add features on top
 - Each phase should cover specific acceptance criteria
+- Use `World`, `BlockGenerator`, and `RskTestContext` for integration-style tests where needed
 ```
 
 ---
