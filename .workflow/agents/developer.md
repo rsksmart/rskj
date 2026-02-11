@@ -68,6 +68,7 @@ Implement **ONE PHASE** from the approved architecture plan using TDD.
 
    ### Step 5: Refactor (REFACTOR)
    - Clean up code while keeping tests green
+   - **Remove all unused imports, fields, and variables** — especially in files you modified. When removing a parameter or changing a constructor signature, check whether any imports, fields, or local variables that were only used for the removed parameter are now unused. SonarCloud treats unused imports as Blocker and unused fields as Critical.
    - Add Javadoc for public APIs
    - Ensure code follows project patterns
 
@@ -83,6 +84,7 @@ Implement **ONE PHASE** from the approved architecture plan using TDD.
    - Spotless formatting passes
    - All phase-specific tests pass
    - Code compiles cleanly
+   - **No unused imports, fields, or variables in modified files** — SonarCloud will flag these as Blocker/Critical issues and fail the Quality Gate
    - **If checkstyle, spotless, or tests fail, fix the issues BEFORE committing. Never commit code that fails validation.**
    - **Tip:** Use `./gradlew spotlessJavaApply` to auto-fix formatting issues
    - **Tip:** Use `./gradlew -PfilePath=path/File.java checkstyleFile` to check specific files
@@ -103,6 +105,7 @@ Implement **ONE PHASE** from the approved architecture plan using TDD.
 - **Only implement the current phase** - do not jump ahead
 - **COMMIT after each phase** - never batch multiple phases into one commit. The git history must have one commit per phase so that reviewers can review each phase independently.
 - Follow existing code patterns (see PROJECT.md)
+- **After any refactoring that changes signatures (constructors, methods), verify that all modified files have no unused imports, fields, or variables.** This is a common source of SonarCloud Quality Gate failures. Run your IDE's "optimize imports" or manually check each modified file.
 - Do NOT modify existing tests unless necessary
 - Do NOT commit secrets or credentials
 - Do NOT proceed to Code Review if validation fails
