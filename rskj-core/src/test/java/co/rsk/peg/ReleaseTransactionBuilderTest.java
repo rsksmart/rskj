@@ -1447,7 +1447,7 @@ class ReleaseTransactionBuilderTest {
     }
 
     /**
-     * Deprecated method. Use {@link UTXOBuilder} instead.
+     * @deprecated method. Use {@link UTXOBuilder} instead.
      */
     @Deprecated
     private UTXO mockUTXO(String generator, long index, Coin value) {
