@@ -36,7 +36,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
-import org.ethereum.vm.PrecompiledContracts;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

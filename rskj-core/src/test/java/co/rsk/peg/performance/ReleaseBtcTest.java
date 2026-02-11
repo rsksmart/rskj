@@ -28,7 +28,7 @@ import co.rsk.peg.ReleaseRequestQueue;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.vm.PrecompiledContracts;
+
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;

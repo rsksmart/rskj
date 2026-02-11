@@ -27,14 +27,14 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.vm.PrecompiledContracts;
+
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class PegUtilsGetTransactionTypeTest {
-    private static final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
+
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final FederationConstants federationMainNetConstants = bridgeMainnetConstants.getFederationConstants();

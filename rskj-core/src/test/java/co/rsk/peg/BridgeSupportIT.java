@@ -108,7 +108,7 @@ import org.mockito.quality.Strictness;
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class BridgeSupportIT {
     private static final co.rsk.core.Coin LIMIT_MONETARY_BASE = new co.rsk.core.Coin(new BigInteger("21000000000000000000000000"));
-    private static final RskAddress BRIDGE_ADDRESS = PrecompiledContracts.BRIDGE_ADDR;
+
     private static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
 
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";

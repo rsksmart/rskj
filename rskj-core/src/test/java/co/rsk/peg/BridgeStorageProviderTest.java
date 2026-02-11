@@ -21,7 +21,7 @@ package co.rsk.peg;
 import static co.rsk.peg.BridgeSerializationUtils.deserializeOutpointsValues;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 import static org.ethereum.TestUtils.assertThrows;
-import static org.ethereum.TestUtils.mockAddress;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

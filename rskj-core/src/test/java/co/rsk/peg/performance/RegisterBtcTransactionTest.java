@@ -30,7 +30,7 @@ import co.rsk.peg.federation.FederationTestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.vm.PrecompiledContracts;
+
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
