@@ -3623,11 +3623,11 @@ class BridgeSupportFlyoverTest {
         );
 
         List<UTXO> utxos = new ArrayList<>();
-        Sha256Hash utxoHash = BitcoinTestUtils.createHash(1);
+        Sha256Hash transactionHash = BitcoinTestUtils.createHash(1);
         Coin value = Coin.COIN.multiply(2);
         Script outputScript = new Script(EMPTY_BYTE_ARRAY);
         UTXO utxo = UTXOBuilder.builder()
-            .withTransactionHash(utxoHash)
+            .withTransactionHash(transactionHash)
             .withValue(value)
             .withOutputScript(outputScript)
             .build();

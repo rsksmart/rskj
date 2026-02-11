@@ -73,8 +73,6 @@ class BridgeSupportReleaseBtcTest {
     private static final NetworkParameters NETWORK_PARAMETERS = BRIDGE_CONSTANTS.getBtcParams();
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
 
-    private final UTXOBuilder utxoBuilder = UTXOBuilder.builder();
-
     private Federation activeFederation;
     private Repository repository;
     private BridgeEventLogger eventLogger;
@@ -933,9 +931,18 @@ class BridgeSupportReleaseBtcTest {
 
         List<UTXO> utxos = new ArrayList<>();
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-        utxoBuilder.withOutputScript(outputScript).withHeight(10);
-        utxos.add(utxoBuilder.withTransactionHash(createHash(1)).withTransactionIndex(0).build());
-        utxos.add(utxoBuilder.withTransactionHash(createHash(2)).withTransactionIndex(1).build());
+        int blockHeight = 10;
+        int numberOfUtxos = 2;
+        for (int i = 0; i < numberOfUtxos; i++) {
+            Sha256Hash transactionHash = createHash(i + 1);
+            UTXO utxo = UTXOBuilder.builder()
+                .withOutputScript(outputScript)
+                .withHeight(blockHeight)
+                .withTransactionHash(transactionHash)
+                .withTransactionIndex(i)
+                .build();
+            utxos.add(utxo);
+        }
 
         List<ReleaseRequestQueue.Entry> entries = Arrays.asList(
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "one"), Coin.COIN.multiply(5)),
@@ -972,9 +979,18 @@ class BridgeSupportReleaseBtcTest {
 
         List<UTXO> utxos = new ArrayList<>();
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-        utxoBuilder.withOutputScript(outputScript).withHeight(10);
-        utxos.add(utxoBuilder.withTransactionHash(createHash(1)).withTransactionIndex(0).build());
-        utxos.add(utxoBuilder.withTransactionHash(createHash(2)).withTransactionIndex(1).build());
+        int numberOfUtxos = 2;
+        int blockHeight = 10;
+        for (int i = 0; i < numberOfUtxos; i++) {
+            Sha256Hash transactionHash = createHash(i + 1);
+            UTXO utxo = UTXOBuilder.builder()
+                .withOutputScript(outputScript)
+                .withHeight(blockHeight)
+                .withTransactionHash(transactionHash)
+                .withTransactionIndex(i)
+                .build();
+            utxos.add(utxo);
+        }
 
         List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
         int entriesSizeAboveMaxIterations = BridgeSupport.MAX_RELEASE_ITERATIONS + 10;
@@ -1023,7 +1039,7 @@ class BridgeSupportReleaseBtcTest {
         List<UTXO> utxos = new ArrayList<>();
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
         Coin value = Coin.COIN.multiply(2);
-        UTXO utxo = utxoBuilder
+        UTXO utxo = UTXOBuilder.builder()
             .withTransactionHash(createHash(1))
             .withValue(value)
             .withHeight(10)
@@ -1058,12 +1074,21 @@ class BridgeSupportReleaseBtcTest {
 
     @Test
     void check_wallet_balance_after_hop_process_no_requests() throws IOException {
+        List<Coin> utxoValues = Arrays.asList(Coin.COIN.multiply(4), Coin.COIN.multiply(4), Coin.COIN.multiply(3));
         List<UTXO> utxos = new ArrayList<>();
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-        utxoBuilder.withOutputScript(outputScript).withHeight(10);
-        utxos.add(utxoBuilder.withTransactionHash(createHash(1)).withTransactionIndex(0).withValue(Coin.COIN.multiply(4)).build());
-        utxos.add(utxoBuilder.withTransactionHash(createHash(2)).withTransactionIndex(1).withValue(Coin.COIN.multiply(4)).build());
-        utxos.add(utxoBuilder.withTransactionHash(createHash(3)).withTransactionIndex(2).withValue(Coin.COIN.multiply(3)).build());
+        int blockHeight = 10;
+        for (int i = 0; i < utxoValues.size(); i++) {
+                Sha256Hash transactionHash = createHash(i + 1);
+                UTXO utxo = UTXOBuilder.builder()
+                    .withOutputScript(outputScript)
+                    .withHeight(blockHeight)
+                    .withTransactionHash(transactionHash)
+                    .withTransactionIndex(i)
+                    .withValue(utxoValues.get(i))
+                    .build();
+                utxos.add(utxo);
+        }
 
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
@@ -1095,12 +1120,23 @@ class BridgeSupportReleaseBtcTest {
 
     @Test
     void check_wallet_balance_after_hop_process_all_requests_when_utxos_available() throws IOException {
+        List<Coin> utxoValues = Arrays.asList(Coin.COIN.multiply(4), Coin.COIN.multiply(4), Coin.COIN.multiply(3));
         List<UTXO> utxos = new ArrayList<>();
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-        utxoBuilder.withOutputScript(outputScript).withHeight(10);
-        utxos.add(utxoBuilder.withTransactionHash(createHash(1)).withTransactionIndex(0).withValue(Coin.COIN.multiply(4)).build());
-        utxos.add(utxoBuilder.withTransactionHash(createHash(2)).withTransactionIndex(1).withValue(Coin.COIN.multiply(4)).build());
-        utxos.add(utxoBuilder.withTransactionHash(createHash(3)).withTransactionIndex(2).withValue(Coin.COIN.multiply(3)).build());
+        int blockHeight = 10;
+        int i = 0;
+        while (i < utxoValues.size()) {
+            Sha256Hash transactionHash = createHash(i + 1);
+            UTXO utxo = UTXOBuilder.builder()
+                .withOutputScript(outputScript)
+                .withHeight(blockHeight)
+                .withTransactionHash(transactionHash)
+                .withTransactionIndex(i)
+                .withValue(utxoValues.get(i))
+                .build();
+            utxos.add(utxo);
+            i++;
+        }
 
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
@@ -1131,7 +1167,14 @@ class BridgeSupportReleaseBtcTest {
         verify(eventLogger, never()).logBatchPegoutCreated(any(), any());
         verify(provider, never()).setNextPegoutHeight(any(Long.class));
 
-        utxos.add(utxoBuilder.withTransactionHash(createHash(4)).withTransactionIndex(3).withValue(Coin.COIN.multiply(1)).build());
+        UTXO utxo = UTXOBuilder.builder()
+            .withOutputScript(outputScript)
+            .withHeight(blockHeight)
+            .withTransactionHash(createHash(4))
+            .withTransactionIndex(3)
+            .withValue(Coin.COIN.multiply(1)).build();
+
+        utxos.add(utxo);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
         FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(FEDERATION_CONSTANTS)
@@ -1676,7 +1719,7 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private FederationStorageProvider initFederationStorageProvider() {
-        UTXO utxo = utxoBuilder
+        UTXO utxo = UTXOBuilder.builder()
             .withTransactionHash(createHash(11))
             .withValue(Coin.COIN.multiply(2))
             .withHeight(1)
