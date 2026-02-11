@@ -30,8 +30,6 @@ class BridgeUtilsLegacyTest {
     private BridgeConstants bridgeConstantsRegtest;
     private BridgeConstants bridgeConstantsMainnet;
 
-    private final UTXOBuilder utxoBuilder = UTXOBuilder.builder();
-
     @BeforeEach
     void setup() {
         activations = mock(ActivationConfig.ForBlock.class);
@@ -408,13 +406,18 @@ class BridgeUtilsLegacyTest {
     @Test
     void getUTXOsSentToAddress_multiple_utxos_sent_to_given_address() {
         Function<BtcTransaction, List<UTXO>> expectedResult = btcTx -> {
-            utxoBuilder
-                .withHeight(10)
-                .withTransactionHash(btcTx.getHash());
             List<UTXO> expectedUTXOs = new ArrayList<>();
-            expectedUTXOs.add(utxoBuilder.withTransactionIndex(6).build());
-            expectedUTXOs.add(utxoBuilder.withTransactionIndex(7).build());
-            expectedUTXOs.add(utxoBuilder.withTransactionIndex(8).build());
+            int blockHeight = 10;
+            Sha256Hash transactionHash = btcTx.getHash();
+            for (int outpointIndex = 6; outpointIndex < 9; outpointIndex++) {
+                UTXO utxo = UTXOBuilder.builder()
+                    .withHeight(blockHeight)
+                    .withTransactionHash(transactionHash)
+                    .withTransactionIndex(outpointIndex)
+                    .build();
+                expectedUTXOs.add(utxo);
+            }
+
             return expectedUTXOs;
         };
 

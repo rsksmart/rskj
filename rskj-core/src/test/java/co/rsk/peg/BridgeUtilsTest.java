@@ -79,8 +79,6 @@ class BridgeUtilsTest {
     private static final String DATA = "80af2871";
     private static final byte[] MISSING_SIGNATURE = new byte[0];
 
-    private final UTXOBuilder utxoBuilder = UTXOBuilder.builder();
-
     private Constants constants;
     private ActivationConfig activationConfig;
     private ActivationConfig.ForBlock activations;
@@ -1975,9 +1973,18 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddress4);
 
         List<UTXO> expectedResult = new ArrayList<>();
-        utxoBuilder.withTransactionHash(btcTx.getHash()).withHeight(10);
-        expectedResult.add(utxoBuilder.withTransactionIndex(0).withValue(Coin.COIN).build());
-        expectedResult.add(utxoBuilder.withTransactionIndex(1).withValue(Coin.ZERO).build());
+        int blockHeight = 10;
+        Sha256Hash transactionHash = btcTx.getHash();
+        List<Coin> utxoValues = Arrays.asList(Coin.COIN, Coin.ZERO);
+        for (int i = 0; i < utxoValues.size(); i++) {
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(transactionHash)
+                .withHeight(blockHeight)
+                .withTransactionIndex(i)
+                .withValue(utxoValues.get(i))
+                .build();
+            expectedResult.add(utxo);
+        }
 
         List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,
@@ -2039,11 +2046,18 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
 
         List<UTXO> expectedResult = new ArrayList<>();
-        utxoBuilder
-            .withTransactionHash(btcTx.getHash())
-            .withHeight(10);
-        expectedResult.add(utxoBuilder.withTransactionIndex(1).withValue(Coin.COIN).build());
-        expectedResult.add(utxoBuilder.withTransactionIndex(2).withValue(Coin.ZERO).build());
+        Sha256Hash transactionHash = btcTx.getHash();
+        int blockHeight = 10;
+        List<Coin> utxoValues = Arrays.asList(Coin.COIN, Coin.ZERO);
+        for (int i = 0; i < utxoValues.size(); i++) {
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(transactionHash)
+                .withHeight(blockHeight)
+                .withTransactionIndex(i + 1)
+                .withValue(utxoValues.get(i))
+                .build();
+            expectedResult.add(utxo);
+        }
 
         List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,
@@ -2079,15 +2093,18 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddress4);
 
         List<UTXO> expectedResult = new ArrayList<>();
-
-        utxoBuilder
-            .withTransactionHash(btcTx.getHash())
-            .withHeight(10);
-        expectedResult.add(utxoBuilder.withTransactionIndex(0).withValue(Coin.COIN).build());
-        expectedResult.add(utxoBuilder.withTransactionIndex(1).withValue(Coin.ZERO).build());
-        expectedResult.add(utxoBuilder.withTransactionIndex(2).withValue(Coin.COIN).build());
-        expectedResult.add(utxoBuilder.withTransactionIndex(3).withValue(Coin.COIN).build());
-        expectedResult.add(utxoBuilder.withTransactionIndex(4).withValue(Coin.COIN).build());
+        Sha256Hash transactionHash = btcTx.getHash();
+        int blockHeight = 10;
+        List<Coin> utxoValues = Arrays.asList(Coin.COIN, Coin.ZERO, Coin.COIN, Coin.COIN, Coin.COIN);
+        for (int i = 0; i < utxoValues.size(); i++) {
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(transactionHash)
+                .withHeight(blockHeight)
+                .withTransactionIndex(i)
+                .withValue(utxoValues.get(i))
+                .build();
+            expectedResult.add(utxo);
+        }
 
         List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,
