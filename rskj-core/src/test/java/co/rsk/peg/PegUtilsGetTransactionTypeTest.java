@@ -2285,7 +2285,7 @@ class PegUtilsGetTransactionTypeTest {
 
         private void setUp(ActivationConfig.ForBlock activations, Federation retiringFed, Federation activeFed) {
             Repository repository = createRepository();
-            bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeContractAddress, btcMainnetParams, activations);
+            bridgeStorageProvider = new BridgeStorageProvider(repository, btcMainnetParams, activations);
 
             StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
             FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);

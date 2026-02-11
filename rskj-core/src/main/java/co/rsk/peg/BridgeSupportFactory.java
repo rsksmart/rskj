@@ -81,7 +81,6 @@ public class BridgeSupportFactory {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            contractAddress,
             networkParameters,
             activations
         );

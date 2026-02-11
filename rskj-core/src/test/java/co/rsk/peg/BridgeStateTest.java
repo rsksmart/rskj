@@ -58,7 +58,7 @@ class BridgeStateTest {
         NetworkParameters networkParameters = bridgeConstants.getBtcParams();
         ActivationConfig.ForBlock activations = config.getActivationConfig().forBlock(0L);
 
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, networkParameters, activations);
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(repository, networkParameters, activations);
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
 

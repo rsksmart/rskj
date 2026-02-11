@@ -4,7 +4,7 @@
 - [x] Draft
 - [x] Ready for Development
 - [x] In Architecture
-- [ ] In Development
+- [x] In Development
 - [ ] In Review
 - [ ] In QA
 - [ ] Done

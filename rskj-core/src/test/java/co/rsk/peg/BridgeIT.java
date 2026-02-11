@@ -200,7 +200,7 @@ class BridgeIT {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, BRIDGE_ADDRESS, regtestParameters, activationConfigAll);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, regtestParameters, activationConfigAll);
 
         provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L, PegTestUtils.createHash3(0));
         provider0.save();
@@ -248,7 +248,7 @@ class BridgeIT {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, BRIDGE_ADDRESS, regtestParameters, activationConfig.forBlock(0));
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, regtestParameters, activationConfig.forBlock(0));
 
         provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
         provider0.getPegoutsWaitingForConfirmations().add(tx2, 2L);
@@ -289,7 +289,7 @@ class BridgeIT {
         track.commit();
 
         //Reusing same storage configuration as the height doesn't affect storage configurations for releases.
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, BRIDGE_ADDRESS, regtestParameters, activationConfigAll);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, regtestParameters, activationConfigAll);
 
         assertEquals(3, provider.getPegoutsWaitingForConfirmations().getEntries().size());
         assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
@@ -304,7 +304,7 @@ class BridgeIT {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, BRIDGE_ADDRESS, regtestParameters, activationConfig.forBlock(0));
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, regtestParameters, activationConfig.forBlock(0));
 
         provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
         provider0.getPegoutsWaitingForConfirmations().add(tx2, 2L);
@@ -348,7 +348,7 @@ class BridgeIT {
         track.commit();
 
         // reusing same storage configuration as the height doesn't affect storage configurations for releases.
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, BRIDGE_ADDRESS, regtestParameters, activationConfigAll);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, regtestParameters, activationConfigAll);
 
         assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries().size());
         assertEquals(1, provider.getPegoutsWaitingForSignatures().size());
