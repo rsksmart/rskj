@@ -1,6 +1,6 @@
 something
-# Welcome to RskJ
-[![Build and Test](https://github.com/rsksmart/rskj/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/rsksmart/rskj/actions/workflows/build_and_test.yml)
+# Welcomee to RskJ
+[![Build ainnd Test](https://github.com/rsksmart/rskj/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/rsksmart/rskj/actions/workflows/build_and_test.yml)
 [![Rootstock Integration Tests](https://github.com/rsksmart/rskj/actions/workflows/rit.yml/badge.svg)](https://github.com/rsksmart/rskj/actions/workflows/rit.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=rskj&metric=alert_status)](https://sonarcloud.io/dashboard?id=rskj)
 [![CodeQL](https://github.com/rsksmart/rskj/workflows/CodeQL/badge.svg)](https://github.com/rsksmart/rskj/actions?query=workflow%3ACodeQL)
