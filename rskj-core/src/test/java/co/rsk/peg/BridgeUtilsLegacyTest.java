@@ -356,7 +356,6 @@ class BridgeUtilsLegacyTest {
             List<UTXO> expectedUTXOs = new ArrayList<>();
             UTXO utxo = UTXOBuilder.builder()
                 .withTransactionHash(btcTx.getHash())
-                .withHeight(10)
                 .build();
             expectedUTXOs.add(utxo);
             return expectedUTXOs;
@@ -407,13 +406,11 @@ class BridgeUtilsLegacyTest {
     void getUTXOsSentToAddress_multiple_utxos_sent_to_given_address() {
         Function<BtcTransaction, List<UTXO>> expectedResult = btcTx -> {
             List<UTXO> expectedUTXOs = new ArrayList<>();
-            int blockHeight = 10;
             Sha256Hash transactionHash = btcTx.getHash();
             for (int outpointIndex = 6; outpointIndex < 9; outpointIndex++) {
                 UTXO utxo = UTXOBuilder.builder()
-                    .withHeight(blockHeight)
                     .withTransactionHash(transactionHash)
-                    .withTransactionIndex(outpointIndex)
+                    .withOutpointIndex(outpointIndex)
                     .build();
                 expectedUTXOs.add(utxo);
             }

@@ -7,21 +7,25 @@ import co.rsk.peg.bitcoin.BitcoinTestUtils;
 
 public class UTXOBuilder {
     private Sha256Hash transactionHash;
-    private long transactionIndex;
+    private long outputIndex;
     private Coin value;
-    private int height;
+    private int blockHeight;
     private boolean isCoinbase;
-    private Script outputScript;
+    private Script scriptPubKey;
 
     private UTXOBuilder() {
         transactionHash = BitcoinTestUtils.createHash(0);
-        transactionIndex = 0;
+        outputIndex = 0;
         value = Coin.COIN;
-        height = 0;
+        blockHeight = 10;
         isCoinbase = false;
+        scriptPubKey = getDefaultOutputScript();
+    }
+
+    private Script getDefaultOutputScript() {
         NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
-        Address owner = BitcoinTestUtils.createP2PKHAddress(networkParameters, "seed");
-        outputScript = ScriptBuilder.createOutputScript(owner);
+        Address sender = BitcoinTestUtils.createP2PKHAddress(networkParameters, "seed");
+        return ScriptBuilder.createOutputScript(sender);
     }
 
     public static UTXOBuilder builder() {
@@ -33,8 +37,8 @@ public class UTXOBuilder {
         return this;
     }
 
-    public UTXOBuilder withTransactionIndex(long transactionIndex) {
-        this.transactionIndex = transactionIndex;
+    public UTXOBuilder withOutpointIndex(long outpointIndex) {
+        this.outputIndex = outpointIndex;
         return this;
     }
 
@@ -43,8 +47,8 @@ public class UTXOBuilder {
         return this;
     }
 
-    public UTXOBuilder withHeight(int height) {
-        this.height = height;
+    public UTXOBuilder withBlockHeight(int blockHeight) {
+        this.blockHeight = blockHeight;
         return this;
     }
 
@@ -53,19 +57,19 @@ public class UTXOBuilder {
         return this;
     }
 
-    public UTXOBuilder withOutputScript(Script outputScript) {
-        this.outputScript = outputScript;
+    public UTXOBuilder withScriptPubKey(Script scriptPubKey) {
+        this.scriptPubKey = scriptPubKey;
         return this;
     }
 
     public UTXO build() {
         return new UTXO(
             this.transactionHash,
-            this.transactionIndex,
+            this.outputIndex,
             this.value,
-            this.height,
+            this.blockHeight,
             this.isCoinbase,
-            this.outputScript
+            this.scriptPubKey
         );
     }
 }

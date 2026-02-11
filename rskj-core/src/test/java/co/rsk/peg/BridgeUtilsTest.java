@@ -1973,14 +1973,12 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddress4);
 
         List<UTXO> expectedResult = new ArrayList<>();
-        int blockHeight = 10;
         Sha256Hash transactionHash = btcTx.getHash();
         List<Coin> utxoValues = Arrays.asList(Coin.COIN, Coin.ZERO);
         for (int i = 0; i < utxoValues.size(); i++) {
             UTXO utxo = UTXOBuilder.builder()
                 .withTransactionHash(transactionHash)
-                .withHeight(blockHeight)
-                .withTransactionIndex(i)
+                .withOutpointIndex(i)
                 .withValue(utxoValues.get(i))
                 .build();
             expectedResult.add(utxo);
@@ -2047,13 +2045,11 @@ class BridgeUtilsTest {
 
         List<UTXO> expectedResult = new ArrayList<>();
         Sha256Hash transactionHash = btcTx.getHash();
-        int blockHeight = 10;
         List<Coin> utxoValues = Arrays.asList(Coin.COIN, Coin.ZERO);
         for (int i = 0; i < utxoValues.size(); i++) {
             UTXO utxo = UTXOBuilder.builder()
                 .withTransactionHash(transactionHash)
-                .withHeight(blockHeight)
-                .withTransactionIndex(i + 1)
+                .withOutpointIndex(i + 1)
                 .withValue(utxoValues.get(i))
                 .build();
             expectedResult.add(utxo);
@@ -2094,13 +2090,11 @@ class BridgeUtilsTest {
 
         List<UTXO> expectedResult = new ArrayList<>();
         Sha256Hash transactionHash = btcTx.getHash();
-        int blockHeight = 10;
         List<Coin> utxoValues = Arrays.asList(Coin.COIN, Coin.ZERO, Coin.COIN, Coin.COIN, Coin.COIN);
         for (int i = 0; i < utxoValues.size(); i++) {
             UTXO utxo = UTXOBuilder.builder()
                 .withTransactionHash(transactionHash)
-                .withHeight(blockHeight)
-                .withTransactionIndex(i)
+                .withOutpointIndex(i)
                 .withValue(utxoValues.get(i))
                 .build();
             expectedResult.add(utxo);
