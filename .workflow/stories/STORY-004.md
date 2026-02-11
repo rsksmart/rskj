@@ -3,7 +3,7 @@
 ## Status
 - [x] Draft
 - [x] Ready for Development
-- [ ] In Architecture
+- [x] In Architecture
 - [ ] In Development
 - [ ] In Review
 - [ ] In QA
@@ -63,7 +63,7 @@ This story removes `contractAddress` as a received parameter from all bridge-rel
 
 ### Architecture Plan
 - File: `../plans/STORY-004-plan.md`
-- Status: [ ] Pending | [ ] Approved | [ ] Rejected
+- Status: [ ] Pending | [x] Approved | [ ] Rejected
 
 ### Code Review
 - PR: #[number]
