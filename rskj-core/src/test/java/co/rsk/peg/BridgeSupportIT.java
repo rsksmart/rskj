@@ -607,13 +607,9 @@ public class BridgeSupportIT {
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(20, 0));
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(10, 0));
 
-        Sha256Hash transactionHash = BitcoinTestUtils.createHash(1);
-        int outpointIndex = 1;
         Coin value = Coin.valueOf(12, 0);
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
         UTXO utxo = UTXOBuilder.builder()
-            .withTransactionHash(transactionHash)
-            .withOutpointIndex(outpointIndex)
             .withValue(value)
             .withScriptPubKey(outputScript)
             .build();
