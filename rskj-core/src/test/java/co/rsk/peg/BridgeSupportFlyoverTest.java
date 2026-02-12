@@ -3623,14 +3623,7 @@ class BridgeSupportFlyoverTest {
         );
 
         List<UTXO> utxos = new ArrayList<>();
-        Sha256Hash transactionHash = BitcoinTestUtils.createHash(1);
-        Coin value = Coin.COIN.multiply(2);
-        Script outputScript = new Script(EMPTY_BYTE_ARRAY);
-        UTXO utxo = UTXOBuilder.builder()
-            .withTransactionHash(transactionHash)
-            .withValue(value)
-            .withScriptPubKey(outputScript)
-            .build();
+        UTXO utxo = UTXOBuilder.builder().build();
         utxos.add(utxo);
 
         Assertions.assertEquals(0, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
