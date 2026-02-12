@@ -595,12 +595,36 @@ class ReleaseTransactionBuilderTest {
         Coin amount = Coin.CENT.multiply(3);
 
         List<UTXO> availableUTXOs = Arrays.asList(
-            mockUTXO("one", 0, Coin.COIN),
-            mockUTXO("one", 1, Coin.COIN.multiply(2)),
-            mockUTXO("two", 1, Coin.COIN.divide(2)),
-            mockUTXO("two", 2, Coin.FIFTY_COINS),
-            mockUTXO("two", 0, Coin.MILLICOIN.times(7)),
-            mockUTXO("three", 0, Coin.CENT.times(3))
+            UTXOBuilder.builder()
+                .withTransactionHash(mockUTXOHash("one"))
+                .withOutpointIndex(0)
+                .withValue(Coin.COIN)
+                .build(),
+            UTXOBuilder.builder()
+                .withTransactionHash(mockUTXOHash("one"))
+                .withOutpointIndex(1)
+                .withValue(Coin.COIN.multiply(2))
+                .build(),
+            UTXOBuilder.builder()
+                .withTransactionHash(mockUTXOHash("two"))
+                .withOutpointIndex(1)
+                .withValue(Coin.COIN.divide(2))
+                .build(),
+            UTXOBuilder.builder()
+                .withTransactionHash(mockUTXOHash("two"))
+                .withOutpointIndex(2)
+                .withValue(Coin.FIFTY_COINS)
+                .build(),
+            UTXOBuilder.builder()
+                .withTransactionHash(mockUTXOHash("two"))
+                .withOutpointIndex(0)
+                .withValue(Coin.MILLICOIN.times(7))
+                .build(),
+            UTXOBuilder.builder()
+                .withTransactionHash(mockUTXOHash("three"))
+                .withOutpointIndex(0)
+                .withValue(Coin.CENT.times(3))
+                .build()
         );
 
         UTXOProvider utxoProvider = mock(UTXOProvider.class);
@@ -1166,8 +1190,17 @@ class ReleaseTransactionBuilderTest {
         ReleaseRequestQueue.Entry testEntry3 = createTestEntry(789, 5);
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
-        UTXO utxo2 = mockUTXO("two", 2, Coin.FIFTY_COINS);
-        UTXO utxo3 = mockUTXO("three", 0, Coin.CENT.times(3));
+        UTXO utxo2 = UTXOBuilder.builder()
+            .withTransactionHash(mockUTXOHash("two"))
+            .withOutpointIndex(2)
+            .withValue(Coin.FIFTY_COINS)
+            .build();
+
+        UTXO utxo3 = UTXOBuilder.builder()
+            .withTransactionHash(mockUTXOHash("three"))
+            .withOutpointIndex(0)
+            .withValue(Coin.CENT.times(3))
+            .build();
 
         UTXOProvider utxoProvider = mock(UTXOProvider.class);
         when(wallet.getUTXOProvider()).thenReturn(utxoProvider);
@@ -1327,10 +1360,26 @@ class ReleaseTransactionBuilderTest {
         Address to = mockAddress(123);
 
         List<UTXO> availableUTXOs = Arrays.asList(
-            mockUTXO("one", 0, Coin.COIN),
-            mockUTXO("two", 2, Coin.FIFTY_COINS),
-            mockUTXO("two", 0, Coin.COIN.times(7)),
-            mockUTXO("three", 0, Coin.CENT.times(3))
+            UTXOBuilder.builder()
+                .withTransactionHash(mockUTXOHash("one"))
+                .withOutpointIndex(0)
+                .withValue(Coin.COIN)
+                .build(),
+            UTXOBuilder.builder()
+                .withTransactionHash(mockUTXOHash("two"))
+                .withOutpointIndex(2)
+                .withValue(Coin.FIFTY_COINS)
+                .build(),
+            UTXOBuilder.builder()
+                .withTransactionHash(mockUTXOHash("two"))
+                .withOutpointIndex(0)
+                .withValue(Coin.COIN.times(7))
+                .build(),
+            UTXOBuilder.builder()
+                .withTransactionHash(mockUTXOHash("three"))
+                .withOutpointIndex(0)
+                .withValue(Coin.COIN.times(3))
+                .build()
         );
 
         UTXOProvider utxoProvider = mock(UTXOProvider.class);
@@ -1444,18 +1493,6 @@ class ReleaseTransactionBuilderTest {
 
     private Address mockAddress(int pk) {
         return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
-    }
-
-    /**
-     * @deprecated method. Use {@link UTXOBuilder} instead.
-     */
-    @Deprecated
-    private UTXO mockUTXO(String generator, long index, Coin value) {
-        return UTXOBuilder.builder()
-            .withTransactionHash(mockUTXOHash(generator))
-            .withOutpointIndex(index)
-            .withValue(value)
-            .build();
     }
 
     private Sha256Hash mockUTXOHash(String generator) {
