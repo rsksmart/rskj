@@ -934,7 +934,6 @@ class BridgeSupportReleaseBtcTest {
             UTXO utxo = UTXOBuilder.builder()
                 .withScriptPubKey(outputScript)
                 .withTransactionHash(transactionHash)
-                .withOutpointIndex(i)
                 .build();
             utxos.add(utxo);
         }
