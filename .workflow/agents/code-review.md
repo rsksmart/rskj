@@ -61,7 +61,9 @@ Review **ONE PHASE** of the implementation for quality, correctness, TDD complia
    - Classes and interfaces properly defined
    - Error handling appropriate (prefer `Optional<T>` over null)
    - Follows patterns from PROJECT.md (constructor injection, `private final` fields)
-   - **No unused imports, fields, or variables in any modified file** — SonarCloud treats unused imports as Blocker (java:S1128) and unused private fields as Critical (java:S1068). These WILL fail the Quality Gate. Check every modified file, especially after signature refactoring where imports/fields may become orphaned.
+   - **No unused imports, fields, or variables in any modified file** — SonarCloud treats unused imports as Blocker and unused private fields as Critical. These WILL fail the Quality Gate. Check every modified file, especially after signature refactoring where imports/fields may become orphaned.
+   - **No variable shadowing** — local variables must not have the same name as class/instance fields. SonarCloud flags this as a code smell that degrades the Maintainability Rating and can fail the Quality Gate.
+   - **File length within limits** — files over 1,000 non-comment lines are flagged by SonarCloud. If the PR adds significant lines to an already large file, flag it as a recommendation.
    - No hardcoded values that should be in `reference.conf`
    - If consensus-critical: changes are gated behind `activations.isActive(ConsensusRule.RSKIPXXX)`
    - If `reference.conf` changed: `expected.conf` is updated to match
@@ -228,6 +230,8 @@ Before handing off, ensure:
 - [ ] Follows project patterns (PROJECT.md)
 - [ ] No hardcoded config values (use `reference.conf`)
 - [ ] **No unused imports, fields, or variables** in modified files (SonarCloud Blocker/Critical)
+- [ ] **No variable shadowing** — local variables don't shadow class/instance fields (SonarCloud Maintainability)
+- [ ] **File length within limits** — modified files stay under 1,000 non-comment lines where possible
 - [ ] Consensus changes gated by RSKIP activation (if applicable)
 
 ### Patterns
