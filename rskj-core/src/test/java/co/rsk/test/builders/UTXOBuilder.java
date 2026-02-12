@@ -52,7 +52,7 @@ public class UTXOBuilder {
         return this;
     }
 
-    public UTXOBuilder withIsCoinbase(boolean isCoinbase) {
+    public UTXOBuilder isCoinbase(boolean isCoinbase) {
         this.isCoinbase = isCoinbase;
         return this;
     }
