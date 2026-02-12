@@ -1159,7 +1159,8 @@ class BridgeSupportReleaseBtcTest {
             .withScriptPubKey(outputScript)
             .withTransactionHash(createHash(4))
             .withOutpointIndex(3)
-            .withValue(Coin.COIN.multiply(1)).build();
+            .withValue(Coin.COIN.multiply(1))
+            .build();
 
         utxos.add(utxo);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
