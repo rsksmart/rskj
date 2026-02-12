@@ -8065,7 +8065,6 @@ class BridgeSupportTest {
         private void setUpReleaseRequests() {
             // save utxos in active federation wallet
             Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-            List<Coin> outpointValues = List.of(outpointValue1, outpointValue2, outpointValue3);
             int numberOfUtxos = 3;
             List<UTXO> activeFederationUTXOs = new ArrayList<>();
             for (int i = 0; i < numberOfUtxos; i++) {
