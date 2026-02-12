@@ -1113,8 +1113,8 @@ class BridgeSupportReleaseBtcTest {
         List<Coin> utxoValues = Arrays.asList(Coin.COIN.multiply(4), Coin.COIN.multiply(4), Coin.COIN.multiply(3));
         List<UTXO> utxos = new ArrayList<>();
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
-        int i = 0;
-        while (i < utxoValues.size()) {
+
+        for (int i = 0; i < utxoValues.size(); i++) {
             Sha256Hash transactionHash = createHash(i + 1);
             UTXO utxo = UTXOBuilder.builder()
                 .withScriptPubKey(outputScript)
@@ -1123,7 +1123,6 @@ class BridgeSupportReleaseBtcTest {
                 .withValue(utxoValues.get(i))
                 .build();
             utxos.add(utxo);
-            i++;
         }
 
         federationStorageProvider = mock(FederationStorageProvider.class);
