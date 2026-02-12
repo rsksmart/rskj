@@ -953,13 +953,13 @@ public class BridgeSupportIT {
         // 2 smaller coins should work exactly like 1 MILLICOIN
         List<UTXO> sufficientUTXOsForMigration2 = new ArrayList<>();
         Coin halfMillicoin = Coin.MILLICOIN.divide(2);
-        UTXO halfOfAMillicoinUtxo = UTXOBuilder.builder()
+        UTXO halfMillicoinUtxo = UTXOBuilder.builder()
             .withOutpointIndex(1)
             .withScriptPubKey(outputScript)
             .withValue(halfMillicoin)
             .build();
-        sufficientUTXOsForMigration2.add(halfOfAMillicoinUtxo);
-        sufficientUTXOsForMigration2.add(halfOfAMillicoinUtxo);
+        sufficientUTXOsForMigration2.add(halfMillicoinUtxo);
+        sufficientUTXOsForMigration2.add(halfMillicoinUtxo);
         when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration2);
 
         bridgeSupport.updateCollections(tx);
