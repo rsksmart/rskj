@@ -695,7 +695,6 @@ public class BridgeSupportIT {
         Coin value = Coin.valueOf(1000000);
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
         UTXO utxo = UTXOBuilder.builder()
-            .withTransactionHash(BitcoinTestUtils.createHash(1))
             .withOutpointIndex(1)
             .withValue(value)
             .withScriptPubKey(outputScript)
@@ -786,7 +785,6 @@ public class BridgeSupportIT {
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN.multiply(7));
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
         UTXO utxo = UTXOBuilder.builder()
-            .withTransactionHash(BitcoinTestUtils.createHash(1))
             .withOutpointIndex(1)
             .withValue(Coin.CENT)
             .withScriptPubKey(outputScript)
@@ -1008,7 +1006,6 @@ public class BridgeSupportIT {
         Coin value = Coin.COIN.add(Coin.valueOf(100));
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
         UTXO utxo = UTXOBuilder.builder()
-            .withTransactionHash(BitcoinTestUtils.createHash(1))
             .withOutpointIndex(1)
             .withValue(value)
             .withScriptPubKey(outputScript)
