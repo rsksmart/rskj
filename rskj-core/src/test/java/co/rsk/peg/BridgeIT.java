@@ -175,7 +175,6 @@ class BridgeIT {
     private ActivationConfig.ForBlock activationConfigAll;
     private BlockFactory blockFactory;
     private SignatureCache signatureCache;
-    private Bridge bridge;
     private Repository track;
     private BridgeSupport bridgeSupport;
 
@@ -1096,7 +1095,7 @@ class BridgeIT {
         long blockNumberForNewFedToBeActive = bridgeMainnetConstants.getFederationConstants().getFederationActivationAge(activationConfigAll)
             + ACTIVE_FEDERATION.getCreationBlockNumber();
         org.ethereum.core.Block rskExecutionBlock = RskTestUtils.createRskBlock(blockNumberForNewFedToBeActive);
-        initializeBridge(rskTx, rskExecutionBlock);
+        Bridge bridge = initializeBridge(rskTx, rskExecutionBlock);
 
         // get the data to call method
         byte[] data = getAddSignatureEncodedData(activeFederatorSignerKey);
@@ -1120,7 +1119,7 @@ class BridgeIT {
         long blockNumberForNewFedToBeActive = bridgeMainnetConstants.getFederationConstants().getFederationActivationAge(activationConfigAll)
             + ACTIVE_FEDERATION.getCreationBlockNumber();
         org.ethereum.core.Block rskExecutionBlock = RskTestUtils.createRskBlock(blockNumberForNewFedToBeActive);
-        initializeBridge(rskTx, rskExecutionBlock);
+        Bridge bridge = initializeBridge(rskTx, rskExecutionBlock);
 
         byte[] data = getAddSignatureEncodedData(RETIRING_FEDERATOR_SIGNER_KEY);
 
@@ -1144,7 +1143,7 @@ class BridgeIT {
             + ACTIVE_FEDERATION.getCreationBlockNumber()
             - 1;
         org.ethereum.core.Block rskExecutionBlock = RskTestUtils.createRskBlock(blockNumberForNewFedToBeInactive);
-        initializeBridge(rskTx, rskExecutionBlock);
+        Bridge bridge = initializeBridge(rskTx, rskExecutionBlock);
 
         byte[] data = getAddSignatureEncodedData(RETIRING_FEDERATOR_SIGNER_KEY);
 
@@ -1169,7 +1168,7 @@ class BridgeIT {
             + ACTIVE_FEDERATION.getCreationBlockNumber()
             - 1;
         org.ethereum.core.Block rskExecutionBlock = RskTestUtils.createRskBlock(blockNumberForNewFedToBeInactive);
-        initializeBridge(rskTx, rskExecutionBlock);
+        Bridge bridge = initializeBridge(rskTx, rskExecutionBlock);
 
         byte[] data = getAddSignatureEncodedData(activeFederatorSignerKey);
 
@@ -1189,7 +1188,7 @@ class BridgeIT {
         // sign rskTx with active federator, so he is the one calling the method
         rskTx.sign(ACTIVE_FEDERATOR_SIGNER_KEY.getPrivKeyBytes());
 
-        initializeBridge(rskTx, getGenesisBlock());
+        Bridge bridge = initializeBridge(rskTx, getGenesisBlock());
 
         byte[] data = getAddSignatureEncodedData(ACTIVE_FEDERATOR_SIGNER_KEY);
 
@@ -1220,7 +1219,7 @@ class BridgeIT {
         // sign rskTx with proposed federator, so he is the one calling the method
         rskTx.sign(PROPOSED_FEDERATOR_SIGNER_KEY.getPrivKeyBytes());
 
-        initializeBridge(rskTx, getGenesisBlock());
+        Bridge bridge = initializeBridge(rskTx, getGenesisBlock());
 
         byte[] data = getAddSignatureEncodedData(PROPOSED_FEDERATOR_SIGNER_KEY);
 
@@ -1243,7 +1242,7 @@ class BridgeIT {
         // sign rskTx with proposed federator, so he is the one calling the method
         rskTx.sign(PROPOSED_FEDERATOR_SIGNER_KEY.getPrivKeyBytes());
 
-        initializeBridge(rskTx, getGenesisBlock());
+        Bridge bridge = initializeBridge(rskTx, getGenesisBlock());
 
         byte[] data = getAddSignatureEncodedData(PROPOSED_FEDERATOR_SIGNER_KEY);
 
@@ -1273,7 +1272,7 @@ class BridgeIT {
             .build();
     }
 
-    private void initializeBridge(Transaction rskTx, Block block) {
+    private Bridge initializeBridge(Transaction rskTx, Block block) {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
             new RepositoryBtcBlockStoreWithCache.Factory(bridgeMainnetConstants.getBtcParams()),
             bridgeMainnetConstants,
@@ -1281,8 +1280,9 @@ class BridgeIT {
             signatureCache
         );
 
-        bridge = new Bridge(constants, activationConfig, bridgeSupportFactory, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, block, track, null, null, null);
+        return bridge;
     }
 
     private byte[] getAddSignatureEncodedData(BtcECKey signerKey) {
@@ -1308,7 +1308,7 @@ class BridgeIT {
         BtcECKey notFederatorSigner = BitcoinTestUtils.getBtcEcKeyFromSeed("notFederator");
         rskTx.sign(notFederatorSigner.getPrivKeyBytes());
 
-        initializeBridge(rskTx, getGenesisBlock());
+        Bridge bridge = initializeBridge(rskTx, getGenesisBlock());
 
         byte[] data = getAddSignatureEncodedData(notFederatorSigner);
 
@@ -1974,7 +1974,7 @@ class BridgeIT {
     @Test
     void getRetiringFederationAddress_withNoRetiringFederation_shouldReturnEmptyString() {
         // Arrange
-        bridge = bridgeBuilder
+        Bridge bridge = bridgeBuilder
             .constants(constants)
             .activationConfig(activationConfig)
             .signatureCache(signatureCache)
@@ -1989,7 +1989,7 @@ class BridgeIT {
     @Test
     void getRetiringFederationAddress_withRetiringFederation_shouldReturnTheCorrectRetiringFederationAddress() {
         // Arrange
-        bridge = bridgeBuilder
+        Bridge bridge = bridgeBuilder
             .constants(constants)
             .activationConfig(activationConfig)
             .signatureCache(signatureCache)
@@ -2007,7 +2007,7 @@ class BridgeIT {
         // Arrange
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
-        bridge = bridgeBuilder
+        Bridge bridge = bridgeBuilder
             .bridgeSupport(bridgeSupport)
             .activationConfig(activationConfig)
             .constants(constants)
@@ -2030,7 +2030,7 @@ class BridgeIT {
         // Arrange
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
-        bridge = bridgeBuilder
+        Bridge bridge = bridgeBuilder
             .bridgeSupport(bridgeSupport)
             .activationConfig(activationConfig)
             .constants(constants)
@@ -2050,7 +2050,7 @@ class BridgeIT {
         // Arrange
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
-        bridge = bridgeBuilder
+        Bridge bridge = bridgeBuilder
             .bridgeSupport(bridgeSupport)
             .activationConfig(activationConfig)
             .constants(constants)
@@ -2084,7 +2084,7 @@ class BridgeIT {
         // Arrange
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
-        bridge = bridgeBuilder
+        Bridge bridge = bridgeBuilder
             .bridgeSupport(bridgeSupport)
             .activationConfig(activationConfig)
             .constants(constants)
@@ -2111,7 +2111,7 @@ class BridgeIT {
         // Arrange
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
-        bridge = bridgeBuilder
+        Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
             .constants(constants)
             .signatureCache(signatureCache)
@@ -2149,7 +2149,7 @@ class BridgeIT {
         // Arrange
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
-        bridge = bridgeBuilder
+        Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
             .constants(constants)
             .signatureCache(signatureCache)
