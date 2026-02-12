@@ -64,6 +64,11 @@ Review **ONE PHASE** of the implementation for quality, correctness, TDD complia
    - **No unused imports, fields, or variables in any modified file** — SonarCloud treats unused imports as Blocker and unused private fields as Critical. These WILL fail the Quality Gate. Check every modified file, especially after signature refactoring where imports/fields may become orphaned.
    - **No variable shadowing** — local variables must not have the same name as class/instance fields. SonarCloud flags this as a code smell that degrades the Maintainability Rating and can fail the Quality Gate.
    - **File length within limits** — files over 1,000 non-comment lines are flagged by SonarCloud. If the PR adds significant lines to an already large file, flag it as a recommendation.
+   - **No dead code** — no unused parameters, private methods, dead stores (assigned-but-never-read variables), or commented-out code blocks in modified files.
+   - **Method complexity is reasonable** — methods should not have deeply nested control flow or excessive branching. Flag methods with high cognitive complexity for extraction into smaller helpers.
+   - **Parameter count is reasonable** — methods with more than 4-5 parameters should be flagged; consider grouping into an object.
+   - **No new deprecated API usage** — modified code should not introduce calls to deprecated methods/classes. Use modern replacements.
+   - **Mutable internal state is not exposed** — methods should return defensive copies of mutable fields (collections, arrays), not direct references.
    - No hardcoded values that should be in `reference.conf`
    - If consensus-critical: changes are gated behind `activations.isActive(ConsensusRule.RSKIPXXX)`
    - If `reference.conf` changed: `expected.conf` is updated to match
@@ -74,11 +79,17 @@ Review **ONE PHASE** of the implementation for quality, correctness, TDD complia
    - Coverage meets targets (see CONFIG.md)
    - Appropriate use of JUnit 5 + Mockito patterns
    - Integration tests use `World`, `BlockGenerator`, or `RskTestContext` where appropriate
+   - Tests contain meaningful assertions (no assertion-free tests)
+   - Each test method verifies a single behavior (not overloaded with dozens of assertions)
+   - Tests are independent — no reliance on execution order or shared mutable state between test methods
 
 6. **Review Security**
    - No secrets in code
    - Input validation where needed
    - Bridge changes: verify peg-in/peg-out logic cannot be exploited
+   - Resource cleanup: closeable resources are properly closed (try-with-resources or equivalent)
+   - Exception handling: catch/throw specific exceptions, not generic Exception/RuntimeException
+   - Consensus-critical code: no non-deterministic operations (random, wall-clock time, hash map iteration order)
 
 7. **Save Review**
    Save to: .workflow/reviews/STORY-XXX-phase-N-review.md
@@ -232,7 +243,15 @@ Before handing off, ensure:
 - [ ] **No unused imports, fields, or variables** in modified files (SonarCloud Blocker/Critical)
 - [ ] **No variable shadowing** — local variables don't shadow class/instance fields (SonarCloud Maintainability)
 - [ ] **File length within limits** — modified files stay under 1,000 non-comment lines where possible
+- [ ] **No dead code** — no unused params, methods, dead stores, or commented-out code
+- [ ] **Reasonable complexity** — no overly complex methods in modified files
+- [ ] **No new deprecated API usage**
+- [ ] **Mutable state not exposed** — defensive copies where appropriate
 - [ ] Consensus changes gated by RSKIP activation (if applicable)
+
+### Tests
+- [ ] Tests have meaningful assertions
+- [ ] Tests are independent (no shared mutable state)
 
 ### Patterns
 - [ ] Follows existing patterns
@@ -241,6 +260,9 @@ Before handing off, ensure:
 ### Security
 - [ ] No secrets in code
 - [ ] Input validation present
+- [ ] Resources properly closed
+- [ ] Specific exceptions used (not generic Exception)
+- [ ] Consensus code is deterministic
 
 ---
 

@@ -71,6 +71,10 @@ Implement **ONE PHASE** from the approved architecture plan using TDD.
    - **Remove all unused imports, fields, and variables** — especially in files you modified. When removing a parameter or changing a constructor signature, check whether any imports, fields, or local variables that were only used for the removed parameter are now unused. SonarCloud treats unused imports as Blocker and unused fields as Critical.
    - **No variable shadowing** — do not declare local variables that have the same name as class/instance fields. SonarCloud flags this as a code smell that impacts the Maintainability Rating.
    - **Watch file length** — files over 1,000 lines (non-comment/non-blank) are flagged by SonarCloud. If your changes add significant lines to an already large file, consider extracting logic to helper classes.
+   - **Remove dead code** — delete unused method parameters, private methods, and assignments to variables that are never read. Do not leave commented-out code blocks; use version control instead.
+   - **Keep methods/functions short and simple** — avoid high cognitive complexity (deeply nested control flow, many branches). Extract complex logic into well-named helper methods.
+   - **Limit parameter count** — methods with more than 4-5 parameters are a design smell. Consider grouping related parameters into an object.
+   - **Do not introduce deprecated API usage** — use modern replacements. If unsure, check the deprecation notice for the recommended alternative.
    - Add Javadoc for public APIs
    - Ensure code follows project patterns
 
@@ -89,6 +93,8 @@ Implement **ONE PHASE** from the approved architecture plan using TDD.
    - **No unused imports, fields, or variables in modified files** — SonarCloud will flag these as Blocker/Critical issues and fail the Quality Gate
    - **No variable shadowing in modified files** — local variables must not shadow class/instance fields
    - **File length within limits** — avoid pushing files beyond 1,000 non-comment lines
+   - **No dead code in modified files** — no unused parameters, private methods, or dead stores (assigned-but-never-read variables)
+   - **No commented-out code** — remove it; version control preserves history
    - **If checkstyle, spotless, or tests fail, fix the issues BEFORE committing. Never commit code that fails validation.**
    - **Tip:** Use `./gradlew spotlessJavaApply` to auto-fix formatting issues
    - **Tip:** Use `./gradlew -PfilePath=path/File.java checkstyleFile` to check specific files
@@ -111,6 +117,7 @@ Implement **ONE PHASE** from the approved architecture plan using TDD.
 - Follow existing code patterns (see PROJECT.md)
 - **After any refactoring that changes signatures (constructors, methods), verify that all modified files have no unused imports, fields, or variables.** This is a common source of SonarCloud Quality Gate failures. Run your IDE's "optimize imports" or manually check each modified file.
 - **Avoid variable shadowing** — when introducing or renaming local variables, ensure they don't share names with class/instance fields. This is another common source of SonarCloud Quality Gate failures (impacts Maintainability Rating).
+- **Remove all dead code after refactoring** — unused parameters, private methods, dead stores, and commented-out code are common sources of SonarCloud Quality Gate failures.
 - Do NOT modify existing tests unless necessary
 - Do NOT commit secrets or credentials
 - Do NOT proceed to Code Review if validation fails
