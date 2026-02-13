@@ -793,7 +793,6 @@ class BridgeSupportReleaseBtcTest {
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
         Coin value = Coin.COIN.multiply(4);
         UTXO utxo = UTXOBuilder.builder()
-            .withTransactionHash(createHash(2))
             .withValue(value)
             .withScriptPubKey(outputScript)
             .build();
@@ -977,7 +976,6 @@ class BridgeSupportReleaseBtcTest {
             UTXO utxo = UTXOBuilder.builder()
                 .withScriptPubKey(outputScript)
                 .withTransactionHash(transactionHash)
-                .withOutpointIndex(i)
                 .build();
             utxos.add(utxo);
         }
@@ -1070,7 +1068,6 @@ class BridgeSupportReleaseBtcTest {
                 UTXO utxo = UTXOBuilder.builder()
                     .withScriptPubKey(outputScript)
                     .withTransactionHash(transactionHash)
-                    .withOutpointIndex(i)
                     .withValue(utxoValues.get(i))
                     .build();
                 utxos.add(utxo);
@@ -1115,7 +1112,6 @@ class BridgeSupportReleaseBtcTest {
             UTXO utxo = UTXOBuilder.builder()
                 .withScriptPubKey(outputScript)
                 .withTransactionHash(transactionHash)
-                .withOutpointIndex(i)
                 .withValue(utxoValues.get(i))
                 .build();
             utxos.add(utxo);
@@ -1152,8 +1148,6 @@ class BridgeSupportReleaseBtcTest {
 
         UTXO utxo = UTXOBuilder.builder()
             .withScriptPubKey(outputScript)
-            .withTransactionHash(createHash(4))
-            .withOutpointIndex(3)
             .build();
 
         utxos.add(utxo);
@@ -1702,7 +1696,6 @@ class BridgeSupportReleaseBtcTest {
 
     private FederationStorageProvider initFederationStorageProvider() {
         UTXO utxo = UTXOBuilder.builder()
-            .withTransactionHash(createHash(11))
             .withValue(Coin.COIN.multiply(2))
             .withBlockHeight(1)
             .withScriptPubKey(activeFederation.getP2SHScript())

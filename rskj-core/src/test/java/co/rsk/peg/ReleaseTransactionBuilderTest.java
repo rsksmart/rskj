@@ -607,6 +607,11 @@ class ReleaseTransactionBuilderTest {
                 .build(),
             UTXOBuilder.builder()
                 .withTransactionHash(mockUTXOHash("two"))
+                .withOutpointIndex(0)
+                .withValue(Coin.MILLICOIN.times(7))
+                .build(),
+            UTXOBuilder.builder()
+                .withTransactionHash(mockUTXOHash("two"))
                 .withOutpointIndex(1)
                 .withValue(Coin.COIN.divide(2))
                 .build(),
@@ -614,11 +619,6 @@ class ReleaseTransactionBuilderTest {
                 .withTransactionHash(mockUTXOHash("two"))
                 .withOutpointIndex(2)
                 .withValue(Coin.FIFTY_COINS)
-                .build(),
-            UTXOBuilder.builder()
-                .withTransactionHash(mockUTXOHash("two"))
-                .withOutpointIndex(0)
-                .withValue(Coin.MILLICOIN.times(7))
                 .build(),
             UTXOBuilder.builder()
                 .withTransactionHash(mockUTXOHash("three"))
