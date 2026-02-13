@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 // TODO Try maybe some of the methods with org.openjdk.jmh.annotations.Measurement.batchSize, to test simultaneous calls
 
-// annotated fields at class, method or field level are providing default values that can be overriden via CLI or Runner parameters
+// annotated fields at class, method or field level are providing default values that can be overridden via CLI or Runner parameters
 @BenchmarkMode({Mode.SingleShotTime})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Warmup(iterations = 5)

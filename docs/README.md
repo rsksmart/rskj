@@ -1,6 +1,6 @@
 # DevPortal documentation automatic synchronization
 
-This document explain the pipeline and process that was confogured to set up 
+This document explain the pipeline and process that was configured to set up 
 the process to automatically update the Devportal documentation related with core team
 from the `docs` folder repository documentation. This allows Core team to have a single
 source of documentation, while maintaining an up to date version on the DevPortal.
