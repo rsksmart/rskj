@@ -695,7 +695,6 @@ public class BridgeSupportIT {
         Coin value = Coin.valueOf(1000000);
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
         UTXO utxo = UTXOBuilder.builder()
-            .withOutpointIndex(1)
             .withValue(value)
             .withScriptPubKey(outputScript)
             .build();
@@ -785,7 +784,6 @@ public class BridgeSupportIT {
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN.multiply(7));
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
         UTXO utxo = UTXOBuilder.builder()
-            .withOutpointIndex(1)
             .withValue(Coin.CENT)
             .withScriptPubKey(outputScript)
             .build();
@@ -925,7 +923,6 @@ public class BridgeSupportIT {
         // and so it won't be removed from the old federation UTXOs list for migration.
         List<UTXO> unsufficientUTXOsForMigration1 = new ArrayList<>();
         UTXO tinyUtxo = UTXOBuilder.builder()
-            .withOutpointIndex(1)
             .withScriptPubKey(outputScript)
             .withValue(Coin.MICROCOIN)
             .build();
@@ -938,7 +935,6 @@ public class BridgeSupportIT {
         // and it will be removed from the old federation UTXOs list for migration.
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
         UTXO millicoinUtxo = UTXOBuilder.builder()
-            .withOutpointIndex(1)
             .withScriptPubKey(outputScript)
             .withValue(Coin.MILLICOIN)
             .build();
@@ -952,7 +948,6 @@ public class BridgeSupportIT {
         List<UTXO> sufficientUTXOsForMigration2 = new ArrayList<>();
         Coin halfMillicoin = Coin.MILLICOIN.divide(2);
         UTXO halfMillicoinUtxo = UTXOBuilder.builder()
-            .withOutpointIndex(1)
             .withScriptPubKey(outputScript)
             .withValue(halfMillicoin)
             .build();
@@ -1006,7 +1001,6 @@ public class BridgeSupportIT {
         Coin value = Coin.COIN.add(Coin.valueOf(100));
         Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
         UTXO utxo = UTXOBuilder.builder()
-            .withOutpointIndex(1)
             .withValue(value)
             .withScriptPubKey(outputScript)
             .build();
