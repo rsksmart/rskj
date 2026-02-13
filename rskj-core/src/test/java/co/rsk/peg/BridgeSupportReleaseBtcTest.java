@@ -641,7 +641,6 @@ class BridgeSupportReleaseBtcTest {
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
         Coin value = Coin.COIN.multiply(3);
         UTXO utxo = UTXOBuilder.builder()
-            .withTransactionHash(createHash(1))
             .withValue(value)
             .withScriptPubKey(outputScript)
             .build();
@@ -680,7 +679,6 @@ class BridgeSupportReleaseBtcTest {
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
         Coin value = Coin.COIN.multiply(4);
         UTXO utxo = UTXOBuilder.builder()
-            .withTransactionHash(createHash(1))
             .withValue(value)
             .withScriptPubKey(outputScript)
             .build();
@@ -1032,7 +1030,6 @@ class BridgeSupportReleaseBtcTest {
         Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
         Coin value = Coin.COIN.multiply(2);
         UTXO utxo = UTXOBuilder.builder()
-            .withTransactionHash(createHash(1))
             .withValue(value)
             .withScriptPubKey(outputScript)
             .build();
