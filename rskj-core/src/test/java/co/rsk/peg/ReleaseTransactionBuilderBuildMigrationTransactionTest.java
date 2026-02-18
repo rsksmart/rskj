@@ -95,7 +95,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
     class StandardMultiSigFederationTests {
 
         @BeforeEach
-        void setup() {
+        void setUp() {
             federation = StandardMultiSigFederationBuilder.builder().build();
             federationFormatVersion = federation.getFormatVersion();
             federationAddress = federation.getAddress();
@@ -344,7 +344,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
     class P2shErpFederationTests {
 
         @BeforeEach
-        void setup() {
+        void setUp() {
             federation = P2shErpFederationBuilder.builder().build();
             federationFormatVersion = federation.getFormatVersion();
             federationAddress = federation.getAddress();
@@ -594,7 +594,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
     class P2wshErpFederationTests {
 
         @BeforeEach
-        void setup() {
+        void setUp() {
             federation = P2shP2wshErpFederationBuilder.builder().build();
             federationFormatVersion = federation.getFormatVersion();
             federationAddress = federation.getAddress();
