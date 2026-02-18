@@ -116,6 +116,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -217,6 +218,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -253,6 +255,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -271,6 +274,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -288,6 +292,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @ParameterizedTest
@@ -305,6 +310,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @ParameterizedTest
@@ -365,6 +371,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -466,6 +473,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -502,6 +510,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -520,6 +529,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -537,6 +547,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @ParameterizedTest
@@ -554,6 +565,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @ParameterizedTest
@@ -615,6 +627,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -717,6 +730,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -753,6 +767,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -771,6 +786,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -807,6 +823,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @ParameterizedTest
