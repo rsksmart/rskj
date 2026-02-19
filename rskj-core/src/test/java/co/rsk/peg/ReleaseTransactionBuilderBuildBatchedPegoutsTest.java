@@ -226,6 +226,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @Test
@@ -268,6 +269,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @Test
@@ -284,6 +286,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @Test
@@ -303,6 +306,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @ParameterizedTest
@@ -326,6 +330,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @ParameterizedTest
@@ -504,6 +509,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @Test
@@ -546,6 +552,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @Test
@@ -565,6 +572,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @Test
@@ -584,6 +592,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @ParameterizedTest
@@ -607,6 +616,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @ParameterizedTest
@@ -784,6 +794,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @Test
@@ -826,6 +837,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @Test
@@ -865,6 +877,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @ParameterizedTest
@@ -888,6 +901,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, batchedPegoutsResult);
             assertNull(batchedPegoutsResult.btcTx());
+            assertNull(batchedPegoutsResult.selectedUTXOs());
         }
 
         @ParameterizedTest
