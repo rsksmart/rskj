@@ -136,6 +136,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_1, releaseTransaction.getVersion());
             assertEquals(expectedNumberOfUTXOsToMigrate, releaseTransaction.getInputs().size());
@@ -157,6 +158,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(1, releaseTransaction.getInputs().size());
@@ -178,6 +180,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(numberOfUtxos, releaseTransaction.getInputs().size());
@@ -198,6 +201,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
@@ -235,6 +239,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(OUTPUTS_COUNT_WITH_CHANGE, releaseTransaction.getOutputs().size());
@@ -242,7 +247,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenMigrationValueIsTooSmall_shouldReturnDustySendRequested() {
+        void buildMigrationTransaction_whenMigrationValueIsDusty_shouldReturnDustySendRequested() {
             // Arrange
             federationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -327,6 +332,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(numberOfUtxos, releaseTransaction.getInputs().size());
@@ -391,6 +397,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_1, releaseTransaction.getVersion());
             assertEquals(expectedNumberOfUTXOsToMigrate, releaseTransaction.getInputs().size());
@@ -412,6 +419,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(1, releaseTransaction.getInputs().size());
@@ -433,6 +441,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(numberOfUtxos, releaseTransaction.getInputs().size());
@@ -453,6 +462,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
@@ -490,6 +500,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(OUTPUTS_COUNT_WITH_CHANGE, releaseTransaction.getOutputs().size());
@@ -583,6 +594,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(numberOfUtxos, releaseTransaction.getInputs().size());
@@ -647,6 +659,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_1, releaseTransaction.getVersion());
             assertEquals(expectedNumberOfUTXOsToMigrate, releaseTransaction.getInputs().size());
@@ -668,6 +681,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(1, releaseTransaction.getInputs().size());
@@ -690,6 +704,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(numberOfUtxos, releaseTransaction.getInputs().size());
@@ -710,6 +725,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
@@ -747,6 +763,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(OUTPUTS_COUNT_WITH_CHANGE, releaseTransaction.getOutputs().size());
@@ -803,6 +820,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
@@ -840,6 +858,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            assertEquals(federationUTXOs, migrationTransactionResult.selectedUTXOs());
             BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(numberOfUtxos, releaseTransaction.getInputs().size());
