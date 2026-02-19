@@ -119,7 +119,14 @@ public class TransactionArgumentsUtil {
         }
         TransactionType type;
         try {
-            type = TransactionType.getByByte(Byte.parseByte(hex));
+            byte[] bytes = HexUtils.strHexOrStrNumberToByteArray(hex);
+            if (bytes.length != 1) {
+                throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex);
+            }
+            type = TransactionType.getTransactionTypeByBytecode(bytes[0]);
+            if (type == null) {
+                throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex);
+            }
         } catch (Exception ex) {
             throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex, ex);
         }

@@ -25,8 +25,15 @@ public enum TransactionType {
         return this.byteCode;
     }
 
-    // Reverse Lookup
-    public static TransactionType getByByte(byte type) {
+    /**
+     * Reverse Lookup Function
+     * <p>
+     * Returns the TransactionType associated with the given byte
+     *
+     * @param type a byte value to be looked up for
+     * @return the TransactionType corresponding to the byte, or null if not found
+     */
+    public static TransactionType getTransactionTypeByBytecode(byte type) {
         return lookup.get(type);
     }
 

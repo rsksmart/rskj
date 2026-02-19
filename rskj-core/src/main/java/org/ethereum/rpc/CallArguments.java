@@ -35,7 +35,7 @@ public class CallArguments {
     private String data; // compiledCode
     private String nonce;
     private String chainId;
-    private String type; // This was ignored before (see https://github.com/rsksmart/rskj/pull/1601)
+    private String type;
 
     public String getFrom() {
         return from;

@@ -149,7 +149,6 @@ public final class TransactionBuilder {
         type(args.getType());
 
 		return this;
-
 	}
 
 }
