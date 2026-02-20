@@ -640,7 +640,7 @@ class ParallelizeTransactionHandlerTest {
     }
 
     @Test
-    void sameTxAddedTwice_shouldIncreaseSequentialGasAndPreserveOrder() {
+    void ifAllTheSublistsAreFullTheNewIndependentTxShouldNotBeIncluded() {
         short[] expectedTransactionEdgeList = new short[]{1,2};
         List<Transaction> expectedListOfTxs = Arrays.asList(bigTx, bigTx2, bigSequentialTx);
 
