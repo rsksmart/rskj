@@ -18,8 +18,12 @@
  */
 package co.rsk.pte;
 
-import co.rsk.util.*;
-
+import co.rsk.util.FilesHelper;
+import co.rsk.util.HexUtils;
+import co.rsk.util.IntegrationTestUtils;
+import co.rsk.util.OkHttpClientTestFixture;
+import co.rsk.util.RpcTransactionAssertions;
+import co.rsk.util.RskjConfigurationFileFixture;
 import co.rsk.util.cli.NodeIntegrationTestCommandLine;
 import co.rsk.util.rpc.ContractCaller;
 import co.rsk.util.rpc.ContractDeployer;
@@ -29,7 +33,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 
@@ -41,10 +48,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
-
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertTrue;
