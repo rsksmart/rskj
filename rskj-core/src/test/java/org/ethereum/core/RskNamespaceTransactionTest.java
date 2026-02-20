@@ -198,7 +198,6 @@ class RskNamespaceTransactionTest {
             null
         );
         assertEquals("0x01", type1Tx.getFullTypeString());
-
         Transaction legacyTx = new Transaction(
             TEST_NONCE,
             TEST_GAS_PRICE.getBytes(),
