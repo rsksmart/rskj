@@ -39,7 +39,7 @@ public final class SimpleAbi {
      *
      * @param functionSignature e.g. "acceptUnion(bytes32,uint256)"
      * @param args ABI arguments
-     * @return calldata hex string (0x...)
+     * @return calldata hex string (...) without 0x
      */
     public static String encode(String functionSignature, List<Object> args) {
         byte[] selector = selector(functionSignature);
