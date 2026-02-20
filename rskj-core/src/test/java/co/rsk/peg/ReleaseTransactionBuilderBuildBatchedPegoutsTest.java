@@ -257,6 +257,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTransactionChangeIsDust(releaseTransaction);
         }
 
         @Test
@@ -544,6 +545,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTransactionChangeIsDust(releaseTransaction);
         }
 
         @Test
@@ -831,6 +833,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTransactionChangeIsDust(releaseTransaction);
         }
 
         @Test
@@ -1035,13 +1038,25 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     private void assertFederationChangeOutputHasExpectedAmount(BtcTransaction releaseTransaction,
         Coin expectedChangeOutputAmount) {
-        List<TransactionOutput> outputsForFederation = releaseTransaction.getOutputs().stream()
-            .filter(this::isFederationOutput)
-            .toList();
+        List<TransactionOutput> outputsForFederation = getChangeOutputs(releaseTransaction);
         assertEquals(1, outputsForFederation.size());
 
         TransactionOutput federationChangeOutput = outputsForFederation.get(0);
         assertEquals(expectedChangeOutputAmount, federationChangeOutput.getValue());
+    }
+
+    private List<TransactionOutput> getChangeOutputs(BtcTransaction releaseTransaction) {
+        return releaseTransaction.getOutputs().stream()
+            .filter(this::isFederationOutput)
+            .toList();
+    }
+
+    private void assertReleaseTransactionChangeIsDust(BtcTransaction releaseTransaction) {
+        List<TransactionOutput> changeOutputs = getChangeOutputs(releaseTransaction);
+        for(TransactionOutput changeOutput : changeOutputs) {
+            boolean isDust = BtcTransaction.MIN_NONDUST_OUTPUT.compareTo(changeOutput.getValue()) > 0;
+            assertTrue(isDust);
+        }
     }
 
     private void assertPegoutRequestsAreIncludedInReleaseTx(BtcTransaction releaseTransaction,
