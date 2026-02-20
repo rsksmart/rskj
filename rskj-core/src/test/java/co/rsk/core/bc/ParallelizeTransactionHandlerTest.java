@@ -1018,7 +1018,7 @@ class ParallelizeTransactionHandlerTest {
         Transaction tx0BySender3 = new TransactionBuilder().sender(accountBuilder.name("sender3").build()).build();
         handler.addTransaction( tx0BySender3, new HashSet<>(), setWithX, 10000);
 
-        // tx0BySende4 Read X
+        // tx0BySender4 Read X
         Transaction tx0BySender4 = new TransactionBuilder().sender(accountBuilder.name("sender4").build()).build();
         handler.addTransaction( tx0BySender4, new HashSet<>(), setWithX, 10000);
 
