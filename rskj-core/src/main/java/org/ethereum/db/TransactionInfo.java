@@ -47,7 +47,8 @@ public class TransactionInfo {
     public TransactionInfo(byte[] rlp) {
         ArrayList<RLPElement> params = RLP.decode2(rlp);
         RLPList txInfo = (RLPList) params.get(0);
-        RLPList receiptRLP = (RLPList) txInfo.get(0);
+        
+        RLPElement receiptRLP = txInfo.get(0);
         RLPItem blockHashRLP  = (RLPItem) txInfo.get(1);
         RLPItem indexRLP = (RLPItem) txInfo.get(2);
 
@@ -67,7 +68,12 @@ public class TransactionInfo {
     /* [receipt, blockHash, index] */
     public byte[] getEncoded() {
 
-        byte[] receiptRLP = this.receipt.getEncoded();
+        // Wrap receipt bytes as an opaque RLP element.
+        // This is necessary because typed receipts (RSKIP543/EIP-2718) encode as
+        // type-prefix || RLP(...), which is NOT a single RLP element. Without wrapping,
+        // the type prefix byte(s) would be treated as separate elements in the outer list,
+        // corrupting the TransactionInfo structure on decode.
+        byte[] receiptRLP = RLP.encodeElement(this.receipt.getEncoded());
         byte[] blockHashRLP = RLP.encodeElement(blockHash);
         byte[] indexRLP = RLP.encodeInt(index);
 

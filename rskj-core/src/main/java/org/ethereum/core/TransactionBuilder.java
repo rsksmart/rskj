@@ -30,6 +30,7 @@ import java.math.BigInteger;
 public final class TransactionBuilder {
 
     private TransactionType type = TransactionType.LEGACY;
+	private Byte rskSubtype = null;
 	private boolean isLocalCall = false;
 	private byte[] nonce = ByteUtil.cloneBytes(null);
 	private Coin value = Coin.ZERO;
@@ -117,6 +118,11 @@ public final class TransactionBuilder {
         return this;
     }
 
+    public TransactionBuilder rskSubtype(Byte rskSubtype) {
+        this.rskSubtype = rskSubtype;
+        return this;
+    }
+
 	public TransactionBuilder destination(String to) {
 		return this.destination(to == null ? null : Hex.decode(to));
 	}
@@ -130,7 +136,8 @@ public final class TransactionBuilder {
 	}
 
 	public Transaction build() {
-		return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall, this.type);
+		TransactionTypePrefix prefix = TransactionTypePrefix.of(this.type, this.rskSubtype);
+		return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall, prefix);
 	}
 
 	public TransactionBuilder data(String data) {

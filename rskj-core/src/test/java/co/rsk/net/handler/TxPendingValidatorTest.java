@@ -56,6 +56,7 @@ class TxPendingValidatorTest {
         when(tx.getNonce()).thenReturn(BigInteger.valueOf(1L).toByteArray());
         when(tx.getNonceAsInteger()).thenReturn(BigInteger.valueOf(1L));
         when(tx.getGasPrice()).thenReturn(Coin.valueOf(1L));
+        when(tx.getTypePrefix()).thenReturn(TransactionTypePrefix.legacy());
 
         AccountState state = mock(AccountState.class);
         when(state.getNonce()).thenReturn(BigInteger.valueOf(1L));
@@ -89,6 +90,7 @@ class TxPendingValidatorTest {
         when(tx.getNonce()).thenReturn(BigInteger.valueOf(1L).toByteArray());
         when(tx.getNonceAsInteger()).thenReturn(BigInteger.valueOf(1L));
         when(tx.getGasPrice()).thenReturn(Coin.valueOf(1L));
+        when(tx.getTypePrefix()).thenReturn(TransactionTypePrefix.legacy());
 
         AccountState state = mock(AccountState.class);
         when(state.getNonce()).thenReturn(BigInteger.valueOf(1L));
@@ -124,6 +126,7 @@ class TxPendingValidatorTest {
         when(tx.getNonce()).thenReturn(BigInteger.valueOf(1L).toByteArray());
         when(tx.getNonceAsInteger()).thenReturn(BigInteger.valueOf(1L));
         when(tx.getGasPrice()).thenReturn(Coin.valueOf(1L));
+        when(tx.getTypePrefix()).thenReturn(TransactionTypePrefix.legacy());
 
         AccountState state = mock(AccountState.class);
         when(state.getNonce()).thenReturn(BigInteger.valueOf(1L));
@@ -159,6 +162,7 @@ class TxPendingValidatorTest {
         when(tx.getNonce()).thenReturn(BigInteger.valueOf(1L).toByteArray());
         when(tx.getNonceAsInteger()).thenReturn(BigInteger.valueOf(1L));
         when(tx.getGasPrice()).thenReturn(Coin.valueOf(1L));
+        when(tx.getTypePrefix()).thenReturn(TransactionTypePrefix.legacy());
 
         AccountState state = mock(AccountState.class);
         when(state.getNonce()).thenReturn(BigInteger.valueOf(1L));
@@ -177,5 +181,33 @@ class TxPendingValidatorTest {
         TransactionValidationResult result = validator.isValid(tx, executionBlock, state);
 
         assertFalse(result.transactionIsValid());
+    }
+
+    @Test
+    void isValid_ShouldBeInvalid_WhenTypedTransactionAndRSKIP543IsNotActivated() {
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(10L);
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(10L).toByteArray());
+        when(executionBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
+
+        Transaction tx = mock(Transaction.class);
+        when(tx.getTypePrefix()).thenReturn(TransactionTypePrefix.typed(TransactionType.TYPE_1));
+
+        TestSystemProperties config = new TestSystemProperties();
+        ActivationConfig.ForBlock forBlock = mock(ActivationConfig.ForBlock.class);
+        when(forBlock.isActive(ConsensusRule.RSKIP144)).thenReturn(false);
+        when(forBlock.isActive(ConsensusRule.RSKIP543)).thenReturn(false);
+
+        ActivationConfig activationConfig = spy(config.getActivationConfig());
+        when(activationConfig.forBlock(anyLong())).thenReturn(forBlock);
+
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        TxPendingValidator validator = new TxPendingValidator(
+                config.getNetworkConstants(), activationConfig, config.getNumOfAccountSlots(), signatureCache);
+
+        TransactionValidationResult result = validator.isValid(tx, executionBlock, null);
+
+        assertFalse(result.transactionIsValid());
+        assertEquals("typed transactions are not supported before RSKIP543 activation", result.getErrorMessage());
     }
 }

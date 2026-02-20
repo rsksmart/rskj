@@ -18,10 +18,10 @@
 
 package co.rsk.net.messages;
 
+import org.ethereum.core.BlockTxCodec;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -45,15 +45,13 @@ public class TransactionsMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-        List<byte[]> encodedElements = new ArrayList<>();
+        byte[][] encodedElements = new byte[transactions.size()][];
 
-        for (Transaction tx : transactions) {
-            encodedElements.add(tx.getEncoded());
+        for (int i = 0; i < transactions.size(); i++) {
+            encodedElements[i] = BlockTxCodec.encodeTransaction(transactions.get(i));
         }
 
-        byte[][] encodedElementArray = encodedElements.toArray(new byte[encodedElements.size()][]);
-
-        return RLP.encodeList(encodedElementArray);
+        return RLP.encodeList(encodedElements);
     }
 
     public String getMessageContentInfo() {

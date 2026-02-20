@@ -22,7 +22,6 @@ import co.rsk.config.RskMiningConstants;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BtcHeaderSizeRule;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -34,7 +33,6 @@ import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.ethereum.core.BlockHeaderIndex.COINBASE;
@@ -73,20 +71,7 @@ public final class BlockFactory implements BtcHeaderSizeRule {
     }
 
     private static List<Transaction> parseTxs(RLPList transactionList) {
-        List<Transaction> parsedTxs = new ArrayList<>();
-
-        for (int i = 0; i < transactionList.size(); i++) {
-            RLPElement transactionRaw = transactionList.get(i);
-            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
-
-            if (tx.isRemascTransaction(i, transactionList.size())) {
-                // It is the remasc transaction
-                tx = new RemascTransaction(transactionRaw.getRLPData());
-            }
-            parsedTxs.add(tx);
-        }
-
-        return Collections.unmodifiableList(parsedTxs);
+        return BlockTxCodec.decodeTransactions(transactionList);
     }
 
     public BlockHeaderBuilder getBlockHeaderBuilder() {

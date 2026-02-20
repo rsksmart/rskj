@@ -27,6 +27,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -87,11 +88,12 @@ class TransactionExecutorTest {
 
     @Test
     void testInitHandlesFreeTransactionsOK() {
-        BlockTxSignatureCache blockTxSignatureCache = mock(BlockTxSignatureCache.class);
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         Transaction transaction = mock(Transaction.class);
         // paperwork: transaction has high gas limit, execution block has normal gas limit
         // and the nonces are okey
         when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(4000000).toByteArray());
+        when(transaction.getTypePrefix()).thenReturn(TransactionTypePrefix.legacy());
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(config, blockStore, receiptStore, blockFactory, programInvokeFactory, precompiledContracts, blockTxSignatureCache);
@@ -356,6 +358,31 @@ class TransactionExecutorTest {
         assertNull(argsCaptor.getValue().getProgramInvoke());
     }
 
+    @Test
+    void typedTransactionIsRejectedBeforeRSKIP543Activation() {
+        activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP543);
+        when(config.getActivationConfig()).thenReturn(activationConfig);
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6_800_000).toByteArray());
+
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        Transaction transaction = getTransaction(
+                sender,
+                receiver,
+                BigInteger.valueOf(4_000_000).toByteArray(),
+                BigInteger.ONE.toByteArray(),
+                Coin.valueOf(1),
+                Coin.ZERO
+        );
+        when(transaction.getTypePrefix()).thenReturn(TransactionTypePrefix.typed(TransactionType.TYPE_1));
+
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                config, blockStore, receiptStore, blockFactory, programInvokeFactory, precompiledContracts, blockTxSignatureCache);
+        TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
+                transaction, txIndex, executionBlock.getCoinbase(), repository, executionBlock, 0L);
+
+        assertFalse(txExecutor.executeTransaction());
+    }
+
     private void mockRepositoryForAnAccountWithBalance(RskAddress sender, long val) {
         when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
         when(repository.getBalance(sender)).thenReturn(new Coin(BigInteger.valueOf(val)));
@@ -371,6 +398,7 @@ class TransactionExecutorTest {
         when(transaction.getReceiveAddress()).thenReturn(receiver);
         when(transaction.acceptTransactionSignature(constants.getChainId())).thenReturn(true);
         when(transaction.getValue()).thenReturn(value);
+        when(transaction.getTypePrefix()).thenReturn(TransactionTypePrefix.legacy());
         return transaction;
     }
 
