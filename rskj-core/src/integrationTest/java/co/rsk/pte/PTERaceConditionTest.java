@@ -53,6 +53,23 @@ import java.util.Optional;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Test-specific on-chain configuration used to reproduce and validate
+ * race-condition scenarios under PTE (Parallel Transaction Execution).
+ *
+ * <p><b>RACE_POC_BYTECODE</b><br>
+ * Compiled bytecode of a Proof-of-Concept smart contract deployed during test setup.
+ * The smart contract can be found in this directory and is named RacePoc.sol.
+ *
+ * <p><b>BRIDGE_ADDRESS</b><br>
+ * Address of the Bridge contract.
+ *
+ * <p><b>RACE_ID</b><br>
+ * Deterministic {@code bytes32} identifier used as the shared key for all
+ * contract interactions. By forcing all transactions to operate on the same
+ * race identifier.
+ *
+ */
 class PTERaceConditionTest {
 
     //node
@@ -74,6 +91,18 @@ class PTERaceConditionTest {
     private static List<String> senders;
 
 
+    /**
+     * Bootstraps a dedicated regtest node and prepares all on-chain prerequisites for the race tests.
+     *
+     * <p><b>Steps performed:</b><br>
+     * <p>Starts a rskj node using a temporary database directory and a generated RPC port.<br>
+     * <p>Captures {@link #initialBlock} to ensure test transactions are mined after startup.<br>
+     * <p>Deploys the PoC contract ({@link #RACE_POC_BYTECODE}) and creates callers for it and the Bridge.<br>
+     * <p>Reset the PoC state by calling {@code reset(bytes32)} and {@code register(bytes32)} with {@link #RACE_ID}.<br>
+     * <p>Authorizes the deployed PoC contract in the Bridge contract so union-related calls are allowed in regtest.<br>
+     *
+     * <p>This setup makes the tests deterministic: all senders contend on the same {@link #RACE_ID}<br>
+     */
     @BeforeAll
     static void setup() throws Exception {
         //node
@@ -107,7 +136,6 @@ class PTERaceConditionTest {
         Optional<String> registerTx = racePOCContractCaller.call(coordinatorAccount, registerData);
         String registerTxHash = registerTx.orElseThrow(() -> new AssertionError("register tx was not sent"));
         RpcTransactionAssertions.assertMinedSuccess(rpcPort, 50, 2000, registerTxHash);
-
 
         // allow bridge to be called by this.racePOCContractCaller contract
         String setBridgeData = SimpleAbi.encode("setUnionBridgeContractAddressForTestnet(address)", List.of(HexUtils.stringHexToByteArray(racePOCContractAddress)));
