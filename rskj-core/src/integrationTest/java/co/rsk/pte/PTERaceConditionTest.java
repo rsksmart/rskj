@@ -111,7 +111,7 @@ class PTERaceConditionTest {
         String rskConfFileChangedServer = configureServerWithGeneratedInformation(serverDbDir);
         serverNode = new NodeIntegrationTestCommandLine(rskConfFileChangedServer, "--regtest");
         serverNode.startNode();
-        IntegrationTestUtils.waitFor(20, SECONDS);
+        IntegrationTestUtils.waitFor(8, SECONDS);
 
         initialBlock = RPCBlockRequests.getLatestBlockNumber(rpcPort);
         assertTrue(initialBlock > 0);
@@ -138,7 +138,7 @@ class PTERaceConditionTest {
         RpcTransactionAssertions.assertMinedSuccess(rpcPort, 50, 2000, registerTxHash);
 
         // allow bridge to be called by this.racePOCContractCaller contract
-        String setBridgeData = SimpleAbi.encode("setUnionBridgeContractAddressForTestnet(address)", List.of(HexUtils.stringHexToByteArray(racePOCContractAddress)));
+        String setBridgeData = SimpleAbi.encode("setUnionBridgeContractAddressForTestnet(address)", List.of(racePOCContractAddress));
         String setBridgeTx = bridgeContractCaller.call(authorizedBridgeAccount, setBridgeData).orElseThrow(() -> new AssertionError("setBridge tx not sent"));
         RpcTransactionAssertions.assertMinedSuccess(rpcPort, 50, 2000, setBridgeTx);
 
