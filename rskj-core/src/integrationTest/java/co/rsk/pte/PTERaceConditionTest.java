@@ -95,7 +95,7 @@ class PTERaceConditionTest {
 
         //call reset method
         String resetData = SimpleAbi.encode("reset(bytes32)", List.of(RACE_ID));
-        Optional<String> resetTx =  this.racePOCContractCaller.callIgnoreFailure(coordinatorAccount, resetData);
+        Optional<String> resetTx = this.racePOCContractCaller.callIgnoreFailure(coordinatorAccount, resetData);
         resetTx.ifPresent(txHash -> RpcTransactionAssertions.assertMinedSuccess(rpcPort, 50, 2000, txHash));
 
         //call register method
@@ -119,7 +119,7 @@ class PTERaceConditionTest {
 
         String acceptSimpleData = SimpleAbi.encode("acceptSimple(bytes32)", List.of((RACE_ID)));
         for (String from : senders) {
-            String txHash =  this.racePOCContractCaller.call(from, acceptSimpleData)
+            String txHash = this.racePOCContractCaller.call(from, acceptSimpleData)
                     .orElseThrow(() -> new AssertionError("acceptSimple tx not sent for " + from));
             sameBlockTransactions.add(txHash);
         }
@@ -166,36 +166,37 @@ class PTERaceConditionTest {
         Assertions.assertNotNull(block);
         Assertions.assertTrue(block.get(0).get("result").get("rskPteEdges").isEmpty());
     }
-@Test
-public void whenMultipleSendersCallAcceptUnionPrecheckAllMustBeSequential_noPteEdges() throws Exception {
-    BigInteger amountWei = BigInteger.valueOf(123);
-    List<String> sameBlockTransactions = new ArrayList<>();
 
-    String acceptUnionData = SimpleAbi.encode("acceptUnionPrecheck(bytes32,uint256)", List.of(RACE_ID, amountWei));
+    @Test
+    public void whenMultipleSendersCallAcceptUnionPrecheckAllMustBeSequential_noPteEdges() throws Exception {
+        BigInteger amountWei = BigInteger.valueOf(123);
+        List<String> sameBlockTransactions = new ArrayList<>();
 
-    for (String from : senders) {
-        String txHash = this.racePOCContractCaller.call(from, acceptUnionData)
-                .orElseThrow(() -> new AssertionError("acceptUnion tx not sent for " + from));
-        sameBlockTransactions.add(txHash);
+        String acceptUnionData = SimpleAbi.encode("acceptUnionPrecheck(bytes32,uint256)", List.of(RACE_ID, amountWei));
+
+        for (String from : senders) {
+            String txHash = this.racePOCContractCaller.call(from, acceptUnionData)
+                    .orElseThrow(() -> new AssertionError("acceptUnionPrecheck tx not sent for " + from));
+            sameBlockTransactions.add(txHash);
+        }
+
+        IntegrationTestUtils.waitFor(10, SECONDS);
+
+        long minedBlock = RpcTransactionAssertions.assertAllMinedInSameBlock(rpcPort, sameBlockTransactions);
+
+        Assertions.assertTrue(
+                minedBlock > this.initialBlock,
+                "Expected mined block > initial block. initial=" + this.initialBlock + " mined=" + minedBlock
+        );
+
+        JsonNode block = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(
+                rpcPort,
+                HexUtils.toQuantityJsonHex(minedBlock)
+        );
+        Assertions.assertNotNull(block);
+        Assertions.assertTrue(block.get(0).get("result").get("rskPteEdges").isEmpty());
+
     }
-
-    IntegrationTestUtils.waitFor(10, SECONDS);
-
-    long minedBlock = RpcTransactionAssertions.assertAllMinedInSameBlock(rpcPort, sameBlockTransactions);
-
-    Assertions.assertTrue(
-            minedBlock > this.initialBlock,
-            "Expected mined block > initial block. initial=" + this.initialBlock + " mined=" + minedBlock
-    );
-
-    JsonNode block = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(
-            rpcPort,
-            HexUtils.toQuantityJsonHex(minedBlock)
-    );
-    Assertions.assertNotNull(block);
-    Assertions.assertTrue(block.get(0).get("result").get("rskPteEdges").isEmpty());
-
-}
 
     private static List<String> buildSenderList() {
         return List.of(
