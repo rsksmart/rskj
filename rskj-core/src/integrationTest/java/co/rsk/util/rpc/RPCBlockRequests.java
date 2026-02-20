@@ -25,8 +25,6 @@ import java.io.IOException;
 
 public final class RPCBlockRequests {
 
-
-
     public static long getLatestBlockNumber(int rpcPort) throws IOException {
         JsonNode response = OkHttpClientTestFixture
                 .getJsonResponseForGetBestBlockMessage(rpcPort, "latest");
