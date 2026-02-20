@@ -50,7 +50,7 @@ public class TransactionResultDTO {
     private String s;
 
     public TransactionResultDTO(Block b, Integer index, Transaction tx, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
-        type = HexUtils.toQuantityJsonHex(tx.getType().getByteCode());
+        type = tx.getTypeForRpc();
 
         hash = tx.getHash().toJsonString();
 

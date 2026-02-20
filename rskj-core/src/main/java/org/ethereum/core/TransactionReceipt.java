@@ -59,9 +59,15 @@ public class TransactionReceipt {
     public TransactionReceipt() {
     }
 
+    /** Decodes legacy and typed receipts from encoded bytes. */
     public TransactionReceipt(byte[] rlp) {
+        if (rlp == null || rlp.length == 0) {
+            throw new IllegalArgumentException("Receipt RLP data cannot be null or empty");
+        }
 
-        ArrayList<RLPElement> params = RLP.decode2(rlp);
+        byte[] receiptData = TransactionTypePrefix.stripPrefix(rlp);
+
+        ArrayList<RLPElement> params = RLP.decode2(receiptData);
         RLPList receipt = (RLPList) params.get(0);
 
         RLPItem postTxStateRLP = (RLPItem) receipt.get(0);
@@ -155,9 +161,21 @@ public class TransactionReceipt {
             logInfoListRLP = RLP.encodeList();
         }
 
-        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, statusRLP);
+        byte[] receiptData = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP,
+                logInfoListRLP, gasUsedRLP, statusRLP);
+
+        byte[] prefix = getReceiptTypePrefix();
+        rlpEncoded = prefix.length == 0 ? receiptData : ByteUtil.merge(prefix, receiptData);
 
         return rlpEncoded;
+    }
+
+    private byte[] getReceiptTypePrefix() {
+        if (transaction == null) {
+            return new byte[0];
+        }
+        TransactionTypePrefix prefix = transaction.getTypePrefix();
+        return prefix != null ? prefix.toBytes() : new byte[0];
     }
 
     public void setStatus(byte[] status) {
