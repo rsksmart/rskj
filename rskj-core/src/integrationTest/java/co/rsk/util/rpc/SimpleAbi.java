@@ -60,31 +60,51 @@ public final class SimpleAbi {
     private static byte[] encodeArgs(List<Object> args) {
         byte[] out = new byte[32 * args.size()];
         for (int i = 0; i < args.size(); i++) {
-            byte[] enc = encodeOne(args.get(i));
+            byte[] enc = encodeStaticWord(args.get(i));
             System.arraycopy(enc, 0, out, i * 32, 32);
         }
         return out;
     }
 
-    private static byte[] encodeOne(Object arg) {
-        if (arg instanceof byte[] b) {
-            return pad32(b);
-        }
+    /**
+     * Encodes a supported static Solidity ABI value into a 32-byte word.
+     * Supported types:
+     * - BigInteger → uint256 (non-negative)
+     * - String (hex) → address (20 bytes)
+     * - byte[] → bytes32 (exactly 32 bytes)
+     * This method DOES NOT support:
+     * - int256 (signed integers)
+     * - bytesN where N &lt; 32
+     * - >dynamic types (bytes, string)
+     * @throws IllegalArgumentException if the value is invalid or unsupported
+     */
+    private static byte[] encodeStaticWord(Object arg) {
+
         if (arg instanceof BigInteger bi) {
-            return pad32(unsignedBigInt(bi));
+            if (bi.signum() < 0) {
+                throw new IllegalArgumentException("uint256 cannot be negative");
+            }
+            return leftPad32(unsignedBigInt(bi));
         }
+
         if (arg instanceof String hex) {
-            // address
-            return pad32(HexUtils.stringToByteArray(hex));
+            byte[] address = HexUtils.stringHexToByteArray(hex);
+            if (address.length != 20) throw new IllegalArgumentException("Address must be 20 bytes");
+            return leftPad32(address);
         }
-        throw new IllegalArgumentException("Unsupported ABI arg type: " + arg.getClass());
+
+        if (arg instanceof byte[] b) {
+            if (b.length != 32)  throw new IllegalArgumentException("byte[] must be exactly 32 bytes (bytes32 supported only)");
+            return b;
+        }
+        throw new IllegalArgumentException("Unsupported ABI static type: " + arg.getClass().getName());
     }
 
-    private static byte[] pad32(byte[] raw) {
-        if (raw.length == 32) return raw;
+    private static byte[] leftPad32(byte[] raw) {
+        if (raw.length > 32)  throw new IllegalArgumentException("Value exceeds 32 bytes");
+        if (raw.length == 32)  return raw;
         byte[] out = new byte[32];
-        int copy = Math.min(raw.length, 32);
-        System.arraycopy(raw, raw.length - copy, out, 32 - copy, copy);
+        System.arraycopy(raw, 0, out, 32 - raw.length, raw.length);
         return out;
     }
 
