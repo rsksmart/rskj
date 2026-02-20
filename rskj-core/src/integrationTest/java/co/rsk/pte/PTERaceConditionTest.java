@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,7 +44,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -111,6 +114,13 @@ class PTERaceConditionTest {
         RpcTransactionAssertions.assertMinedSuccess(rpcPort, 50, 2000, setBridgeTx);
 
         IntegrationTestUtils.waitFor(10, SECONDS);
+    }
+
+    @AfterEach
+    void tearDown() throws InterruptedException {
+        if (serverNode != null) {
+            serverNode.killNode();
+        }
     }
 
     @Test
