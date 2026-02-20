@@ -94,25 +94,40 @@ public final class ContractDeployer {
                 .replace("<DATA>", bytecode);
 
         String txHash;
+        Response eth_sendTransactionResponse = null;
 
-        Response eth_sendTransactionResponse = OkHttpClientTestFixture.sendJsonRpcMessage(payload, rpcPort);
-        assertHttpOk(eth_sendTransactionResponse, "eth_sendTransaction (deploy)");
-        JsonNode eth_sendTransactionJSONResponse = parseJson(eth_sendTransactionResponse);
-        txHash = extractResult(eth_sendTransactionJSONResponse, "deploy tx hash");
+        try {
+            eth_sendTransactionResponse = OkHttpClientTestFixture.sendJsonRpcMessage(payload, rpcPort);
+            assertHttpOk(eth_sendTransactionResponse, "eth_sendTransaction (deploy)");
+            JsonNode eth_sendTransactionJSONResponse = parseJson(eth_sendTransactionResponse);
+            txHash = extractResult(eth_sendTransactionJSONResponse, "deploy tx hash");
+        } finally {
+            if (eth_sendTransactionResponse != null && eth_sendTransactionResponse.body() != null) {
+                eth_sendTransactionResponse.body().close();
+            }
+        }
 
         // 2) poll for receipt
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (System.currentTimeMillis() < deadline) {
             String receiptPayload = ETH_GET_RECEIPT.replace("<TX_HASH>", txHash);
+            Response eth_getTransactionReceiptResponse = null;
+            try {
+                eth_getTransactionReceiptResponse = OkHttpClientTestFixture.sendJsonRpcMessage(receiptPayload, rpcPort);
+                assertHttpOk(eth_getTransactionReceiptResponse, "eth_getTransactionReceipt");
 
-            Response eth_getTransactionReceiptResponse = OkHttpClientTestFixture.sendJsonRpcMessage(receiptPayload, rpcPort);
-            assertHttpOk(eth_getTransactionReceiptResponse, "eth_getTransactionReceipt");
-            JsonNode eth_getTransactionReceiptJSONResponse = parseJson(eth_getTransactionReceiptResponse);
-            JsonNode result = eth_getTransactionReceiptJSONResponse.get("result");
-            if (result != null && !result.isNull()) {
-                JsonNode addr = result.get("contractAddress");
-                if (addr != null && !addr.isNull() && !addr.asText().isBlank()) {
-                    return addr.asText();
+                JsonNode eth_getTransactionReceiptJSONResponse = parseJson(eth_getTransactionReceiptResponse);
+                JsonNode result = eth_getTransactionReceiptJSONResponse.get("result");
+
+                if (result != null && !result.isNull()) {
+                    JsonNode addr = result.get("contractAddress");
+                    if (addr != null && !addr.isNull() && !addr.asText().isBlank()) {
+                        return addr.asText();
+                    }
+                }
+            } finally {
+                if (eth_getTransactionReceiptResponse != null && eth_getTransactionReceiptResponse.body() != null) {
+                    eth_getTransactionReceiptResponse.body().close();
                 }
             }
             Thread.sleep(250);

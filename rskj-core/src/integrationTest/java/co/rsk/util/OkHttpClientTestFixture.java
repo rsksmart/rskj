@@ -149,6 +149,15 @@ public class OkHttpClientTestFixture {
         }
     }
 
+    /**
+     * Sends a JSON-RPC POST request to the local node.
+     *
+     * <p><b>IMPORTANT:</b> The caller MUST close the returned {@link Response}
+     * (specifically {@code response.body().close()}) to avoid leaking the
+     * underlying HTTP connection.
+     *
+     * @throws IOException if the request fails at the transport level
+     */
     public static Response sendJsonRpcMessage(String content, int port) throws IOException {
         RequestBody requestBody = RequestBody.create(MediaType.parse("application/json-rpc"), content);
         URL url = new URL("http", "localhost", port, "/");
