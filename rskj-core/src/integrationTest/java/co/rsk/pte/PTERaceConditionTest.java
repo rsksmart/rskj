@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2024 RSK Labs Ltd.
+ * Copyright (C) 2026 RSK Labs Ltd.
  * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
