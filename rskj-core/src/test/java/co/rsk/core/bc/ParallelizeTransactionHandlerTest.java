@@ -1002,7 +1002,7 @@ class ParallelizeTransactionHandlerTest {
     }
 
     @Test
-    void whenSequentialWriteOrReadAKeyOtherTXWritesOReadSameKeyShouldBeSequential() {
+    void whenSequentialWriteOrReadAKeyOtherTXWritesOrReadSameKeyShouldBeSequential() {
         HashSet<ByteArrayWrapper> setWithX = createASetAndAddKeys(aWrappedKey);
         AccountBuilder accountBuilder = new AccountBuilder();
 
