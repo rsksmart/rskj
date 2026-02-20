@@ -1,6 +1,7 @@
 package co.rsk.test.builders;
 
 import static co.rsk.peg.federation.FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
@@ -53,7 +54,7 @@ public class PegoutTransactionBuilder {
         TransactionInput input = new TransactionInput(
             networkParameters,
             null,
-            new byte[]{},
+            EMPTY_BYTE_ARRAY,
             new TransactionOutPoint(networkParameters, outputIndex, spendTxHash),
             value
         );

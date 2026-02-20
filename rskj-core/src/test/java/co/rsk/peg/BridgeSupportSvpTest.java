@@ -58,6 +58,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.*;
 
 class BridgeSupportSvpTest {
+    private static final byte[] EMPTY_SCRIPT_SIG = new byte[]{};
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
     private static final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
     private static final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
@@ -1021,7 +1022,6 @@ class BridgeSupportSvpTest {
             // arrange
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
-
             BtcTransaction pegout = PegoutTransactionBuilder.builder()
                 .withActiveFederation(activeFederation)
                 .withInput(BitcoinTestUtils.createHash(2), 0, Coin.COIN)
