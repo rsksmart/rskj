@@ -210,4 +210,94 @@ class TxPendingValidatorTest {
         assertFalse(result.transactionIsValid());
         assertEquals("typed transactions are not supported before RSKIP543 activation", result.getErrorMessage());
     }
+
+    @Test
+    void isValid_ShouldBeInvalid_WhenStateIsNullAndBasicTxCostIsNotZero() {
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(10L);
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(10L).toByteArray());
+        when(executionBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
+
+        Transaction tx = mock(Transaction.class);
+        when(tx.getTypePrefix()).thenReturn(TransactionTypePrefix.legacy());
+        when(tx.transactionCost(any(), any(), any())).thenReturn(100L);
+
+        TestSystemProperties config = new TestSystemProperties();
+        ActivationConfig.ForBlock forBlock = mock(ActivationConfig.ForBlock.class);
+        when(forBlock.isActive(ConsensusRule.RSKIP144)).thenReturn(false);
+        when(forBlock.isActive(ConsensusRule.RSKIP543)).thenReturn(false);
+
+        ActivationConfig activationConfig = spy(config.getActivationConfig());
+        when(activationConfig.forBlock(anyLong())).thenReturn(forBlock);
+
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        TxPendingValidator validator = new TxPendingValidator(
+                config.getNetworkConstants(), activationConfig, config.getNumOfAccountSlots(), signatureCache);
+
+        TransactionValidationResult result = validator.isValid(tx, executionBlock, null);
+
+        assertFalse(result.transactionIsValid());
+        assertEquals("the sender account doesn't exist", result.getErrorMessage());
+    }
+
+    @Test
+    void isValid_ShouldBeInvalid_WhenInitCodeSizeIsInvalid() {
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(10L);
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(10L).toByteArray());
+        when(executionBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
+
+        Transaction tx = mock(Transaction.class);
+        when(tx.getTypePrefix()).thenReturn(TransactionTypePrefix.legacy());
+        when(tx.transactionCost(any(), any(), any())).thenReturn(0L);
+        when(tx.isInitCodeSizeInvalidForTx(any())).thenReturn(true);
+
+        TestSystemProperties config = new TestSystemProperties();
+        ActivationConfig.ForBlock forBlock = mock(ActivationConfig.ForBlock.class);
+        when(forBlock.isActive(ConsensusRule.RSKIP144)).thenReturn(false);
+        when(forBlock.isActive(ConsensusRule.RSKIP543)).thenReturn(false);
+
+        ActivationConfig activationConfig = spy(config.getActivationConfig());
+        when(activationConfig.forBlock(anyLong())).thenReturn(forBlock);
+
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        TxPendingValidator validator = new TxPendingValidator(
+                config.getNetworkConstants(), activationConfig, config.getNumOfAccountSlots(), signatureCache);
+
+        TransactionValidationResult result = validator.isValid(tx, executionBlock, null);
+
+        assertFalse(result.transactionIsValid());
+        assertEquals("transaction's init code size is invalid", result.getErrorMessage());
+    }
+
+    @Test
+    void isValid_ShouldBeInvalid_WhenTransactionSizeExceedsMax() {
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(10L);
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(10L).toByteArray());
+        when(executionBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
+
+        Transaction tx = mock(Transaction.class);
+        when(tx.getTypePrefix()).thenReturn(TransactionTypePrefix.legacy());
+        when(tx.transactionCost(any(), any(), any())).thenReturn(0L);
+        when(tx.isInitCodeSizeInvalidForTx(any())).thenReturn(false);
+        when(tx.getSize()).thenReturn(TxPendingValidator.TX_MAX_SIZE + 1);
+
+        TestSystemProperties config = new TestSystemProperties();
+        ActivationConfig.ForBlock forBlock = mock(ActivationConfig.ForBlock.class);
+        when(forBlock.isActive(ConsensusRule.RSKIP144)).thenReturn(false);
+        when(forBlock.isActive(ConsensusRule.RSKIP543)).thenReturn(false);
+
+        ActivationConfig activationConfig = spy(config.getActivationConfig());
+        when(activationConfig.forBlock(anyLong())).thenReturn(forBlock);
+
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        TxPendingValidator validator = new TxPendingValidator(
+                config.getNetworkConstants(), activationConfig, config.getNumOfAccountSlots(), signatureCache);
+
+        TransactionValidationResult result = validator.isValid(tx, executionBlock, null);
+
+        assertFalse(result.transactionIsValid());
+        assertTrue(result.getErrorMessage().contains("transaction's size is higher than defined maximum"));
+    }
 }

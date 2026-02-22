@@ -299,8 +299,6 @@ public class TransactionExecutor {
 
             track.increaseNonce(tx.getSender(signatureCache));
 
-            // There must be an executor for each type of transaction
-
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
             track.addBalance(tx.getSender(signatureCache), txGasCost.negate());
