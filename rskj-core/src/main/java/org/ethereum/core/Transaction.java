@@ -216,19 +216,11 @@ public class Transaction {
         return new ImmutableTransaction(this.getEncoded());
     }
 
-    private byte extractChainIdFromV(byte v) {
-        return extractChainIdFromVStatic(v);
-    }
-
     private static byte extractChainIdFromVStatic(byte v) {
         if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1)) {
             return 0;
         }
         return (byte) (((0x00FF & v) - CHAIN_ID_INC) / 2);
-    }
-
-    private byte getRealV(byte v) {
-        return getRealVStatic(v);
     }
 
     private static byte getRealVStatic(byte v) {
@@ -727,14 +719,14 @@ public class Transaction {
     }
 
     private static final class ParsedFields {
-        final byte[] nonce;
-        final Coin gasPrice;
-        final byte[] gasLimit;
-        final RskAddress receiveAddress;
-        final Coin value;
-        final byte[] data;
-        final byte chainId;
-        final ECDSASignature signature;
+        private final byte[] nonce;
+        private final Coin gasPrice;
+        private final byte[] gasLimit;
+        private final RskAddress receiveAddress;
+        private final Coin value;
+        private final byte[] data;
+        private final byte chainId;
+        private final ECDSASignature signature;
 
         ParsedFields(byte[] nonce, Coin gasPrice, byte[] gasLimit, RskAddress receiveAddress,
                      Coin value, byte[] data, byte chainId, ECDSASignature signature) {

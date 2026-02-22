@@ -20,8 +20,6 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLP;
 import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.Test;
 
