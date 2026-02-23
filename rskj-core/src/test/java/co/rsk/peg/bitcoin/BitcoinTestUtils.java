@@ -359,7 +359,7 @@ public class BitcoinTestUtils {
         int startIndex = 1; // First push is OP_0, next come the signatures
 
         // An empty chunk for each signature required to spend
-        for (int i = startIndex; i < numberOfSignaturesRequiredToSpend; i++) {
+        for (int i = startIndex; i <= numberOfSignaturesRequiredToSpend; i++) {
             ScriptChunk signatureChunk = scriptSigChunks.get(i);
             assertEquals(OP_0, signatureChunk.opcode);
         }
