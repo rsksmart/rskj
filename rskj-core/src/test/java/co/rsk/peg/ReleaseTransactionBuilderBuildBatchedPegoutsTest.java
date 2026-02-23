@@ -692,7 +692,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     }
 
     @Nested
-    class P2wshErpFederationTests {
+    class P2shP2wshErpFederationTests {
 
         @BeforeEach
         void setup() {
