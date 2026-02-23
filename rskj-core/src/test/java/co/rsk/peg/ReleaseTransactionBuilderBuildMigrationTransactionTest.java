@@ -17,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
@@ -65,8 +64,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
     private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
     private static final int LARGE_NUMBER_OF_UTXOS = 100;
 
-    private static final Coin DUSTY_AMOUNT_SEND_REQUESTED = BtcTransaction.MIN_NONDUST_OUTPUT.minus(
-        Coin.SATOSHI);
+    private static final Coin DUSTY_AMOUNT_SEND_REQUESTED =  Coin.valueOf(2699);
 
     private static final int OUTPUTS_COUNT_WITHOUT_CHANGE = 1;
     private static final int OUTPUTS_COUNT_WITH_CHANGE = 2;
@@ -80,14 +78,13 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
     private ActivationConfig.ForBlock activationConfig;
     private Coin transactionFeePerKb;
-    private Address destinationAddress;
+    private Address newFederationAddress;
     private Coin dustAmount;
 
     @BeforeEach
     void setUp() {
         setUpActivationConfig(ALL_ACTIVATIONS);
         setUpTransactionFeePerKb(BtcTransaction.DEFAULT_TX_FEE);
-        destinationAddress = new BtcECKey().toAddress(BTC_MAINNET_PARAMS);
         dustAmount = transactionFeePerKb.div(2);
     }
 
@@ -99,6 +96,8 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             retiringFederation = StandardMultiSigFederationBuilder.builder().build();
             retiringFederationFormatVersion = retiringFederation.getFormatVersion();
             retiringFederationAddress = retiringFederation.getAddress();
+            Federation newFederation = P2shErpFederationBuilder.builder().build();
+            newFederationAddress = newFederation.getAddress();
         }
 
         @Test
@@ -111,7 +110,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -132,7 +131,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -154,7 +153,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -176,7 +175,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -197,7 +196,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -217,7 +216,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, migrationTransactionResult);
@@ -235,7 +234,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                MINIMUM_PEGIN_TX_VALUE, destinationAddress);
+                MINIMUM_PEGIN_TX_VALUE, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -255,7 +254,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                DUSTY_AMOUNT_SEND_REQUESTED, destinationAddress);
+                DUSTY_AMOUNT_SEND_REQUESTED, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -274,7 +273,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -292,7 +291,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -310,7 +309,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
@@ -328,7 +327,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -360,6 +359,8 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             retiringFederation = P2shErpFederationBuilder.builder().build();
             retiringFederationFormatVersion = retiringFederation.getFormatVersion();
             retiringFederationAddress = retiringFederation.getAddress();
+            Federation newFederation = P2shP2wshErpFederationBuilder.builder().build();
+            newFederationAddress = newFederation.getAddress();
         }
 
         @Test
@@ -372,7 +373,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -393,7 +394,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -415,7 +416,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -437,7 +438,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -458,7 +459,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -478,7 +479,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, migrationTransactionResult);
@@ -496,7 +497,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                MINIMUM_PEGIN_TX_VALUE, destinationAddress);
+                MINIMUM_PEGIN_TX_VALUE, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -516,7 +517,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                DUSTY_AMOUNT_SEND_REQUESTED, destinationAddress);
+                DUSTY_AMOUNT_SEND_REQUESTED, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -535,7 +536,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -553,7 +554,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -571,7 +572,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
@@ -590,7 +591,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -622,6 +623,8 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             retiringFederation = P2shP2wshErpFederationBuilder.builder().build();
             retiringFederationFormatVersion = retiringFederation.getFormatVersion();
             retiringFederationAddress = retiringFederation.getAddress();
+            Federation newFederation = P2shP2wshErpFederationBuilder.builder().build();
+            newFederationAddress =  newFederation.getAddress();
         }
 
         @Test
@@ -634,7 +637,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -655,7 +658,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -677,7 +680,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -700,7 +703,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -721,7 +724,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -741,7 +744,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, migrationTransactionResult);
@@ -759,7 +762,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                MINIMUM_PEGIN_TX_VALUE, destinationAddress);
+                MINIMUM_PEGIN_TX_VALUE, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -779,7 +782,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                DUSTY_AMOUNT_SEND_REQUESTED, destinationAddress);
+                DUSTY_AMOUNT_SEND_REQUESTED, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -798,7 +801,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -816,7 +819,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
@@ -836,7 +839,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
@@ -854,7 +857,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, destinationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
