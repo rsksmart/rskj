@@ -281,7 +281,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenUtxosAreDustButEnoughToPay_shouldReturnCouldNotAdjustDownwards() {
+        void buildBatchedPegouts_whenFedHasManySmallUtxosEqualRequestAmount_returnsCouldNotAdjustDownwards() {
             // Arrange
             federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -569,7 +569,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenUtxosAreDustButEnoughToPay_shouldReturnCouldNotAdjustDownwards() {
+        void buildBatchedPegouts_whenFedHasManySmallUtxosEqualRequestAmount_returnsCouldNotAdjustDownwards() {
             // Arrange
             federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount,
                 federationAddress);
@@ -857,7 +857,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenUtxosAreDustButEnoughToPay_shouldCreateReleaseTx() {
+        void buildBatchedPegouts_whenFedHasManySmallUtxosEqualRequestAmount_shouldCreateReleaseTx() {
             // Arrange
             federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -868,6 +868,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
+            // Unlike P2SH and Standard Multisig, the fees are way lower,
+            // so the builder is able to pay for the fees even with dust UTXOs and
+            // create the transaction instead of returning COULD_NOT_ADJUST_DOWNWARDS
             assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
 
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
