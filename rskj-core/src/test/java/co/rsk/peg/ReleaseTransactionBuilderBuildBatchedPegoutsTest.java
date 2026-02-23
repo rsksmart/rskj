@@ -290,7 +290,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenFedHasManySmallUtxosEqualRequestAmount_returnsCouldNotAdjustDownwards() {
+        void buildBatchedPegouts_whenFedDustUtxosSumEqualsRequestAmount_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -588,7 +588,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenFedHasManySmallUtxosEqualRequestAmount_returnsCouldNotAdjustDownwards() {
+        void buildBatchedPegouts_whenFedDustUtxosSumEqualsRequestAmount_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -891,7 +891,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenFedHasManySmallUtxosEqualRequestAmount_shouldCreateReleaseTx() {
+        void buildBatchedPegouts_whenFedDustUtxosSumEqualsRequestAmount_shouldCreateReleaseTx() {
             // Arrange
             federationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, federationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
