@@ -42,6 +42,9 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.function.Predicate;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -1031,9 +1034,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         Predicate<UTXO> isUTXOAndReleaseInputFromTheSameOutpoint = utxo ->
             utxo.getHash().equals(releaseInput.getOutpoint().getHash())
                 && utxo.getIndex() == releaseInput.getOutpoint().getIndex();
-        Optional<UTXO> foundUtxo = federationUTXOs.stream()
-            .filter(isUTXOAndReleaseInputFromTheSameOutpoint).findFirst();
-        assertTrue(foundUtxo.isPresent());
+        List<UTXO> foundUtxo = federationUTXOs.stream()
+            .filter(isUTXOAndReleaseInputFromTheSameOutpoint).toList();
+        assertEquals(1, foundUtxo.size());
     }
 
     private void assertFederationChangeOutputHasExpectedAmount(BtcTransaction releaseTransaction,
@@ -1061,14 +1064,18 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     private void assertPegoutRequestsAreIncludedInReleaseTx(BtcTransaction releaseTransaction,
         List<Entry> pegoutRequests) {
-        List<TransactionOutput> onlyUserOutputs = releaseTransaction.getOutputs().stream().filter(
-            this::isUserOutput
-        ).toList();
+        List<TransactionOutput> userOutputs = releaseTransaction.getOutputs().stream()
+            .filter(this::isUserOutput)
+            .toList();
 
-        assertEquals(pegoutRequests.size(), onlyUserOutputs.size());
-        for (Entry pegoutRequest : pegoutRequests) {
-            assertPegoutRequestIsIncludedInUserOutputs(pegoutRequest, onlyUserOutputs);
-        }
+        assertEquals(pegoutRequests.size(), userOutputs.size());
+        assertPegoutRequestsAreIncludedAsOutputs(pegoutRequests, userOutputs);
+
+        Optional<Coin> changeOutputs = getChangeOutputs(releaseTransaction).stream().map(TransactionOutput::getValue).reduce(Coin::add);
+        Coin userOutputsSum = releaseTransaction.getOutputSum().subtract(changeOutputs.orElse(Coin.ZERO));
+        Coin releaseTransactionFees = releaseTransaction.getFee();
+        Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
+        assertEquals(totalPegoutRequestsAmount, releaseTransactionFees.add(userOutputsSum));
     }
 
     private boolean isUserOutput(TransactionOutput userOutput) {
@@ -1084,52 +1091,63 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         return transactionOutput.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
     }
 
-    private void assertPegoutRequestIsIncludedInUserOutputs(Entry pegoutRequest,
-        List<TransactionOutput> userOutputs) {
-        Optional<TransactionOutput> userOutput = userOutputs.stream().filter(
-            output -> getDestinationAddress(output).equals(pegoutRequest.getDestination())
-        ).findFirst();
-        assertTrue(userOutput.isPresent(),
-            String.format("No matching output found for pegout request to address %s",
-                pegoutRequest.getDestination().toString()
-            )
-        );
-        Coin pegoutRequestAmount = pegoutRequest.getAmount();
-        Coin userOutputAmount = userOutput.get().getValue();
-        assertUserOutputAmountAfterFeesSubtractedIsBelowPegoutRequestAmount(pegoutRequestAmount, userOutputAmount);
-    }
+    private void assertPegoutRequestsAreIncludedAsOutputs(List<Entry> pegoutRequests,
+                                                          List<TransactionOutput> outputs) {
+        Map<Address, ArrayDeque<Entry>> byDestination = new HashMap<>();
+        for (Entry request : pegoutRequests) {
+            byDestination
+                .computeIfAbsent(request.getDestination(), k -> new ArrayDeque<>())
+                .addLast(request);
+        }
 
-    private static void assertUserOutputAmountAfterFeesSubtractedIsBelowPegoutRequestAmount(Coin pegoutRequestAmount, Coin userOutputAmount) {
-        boolean validUserOutputAmount = pegoutRequestAmount.compareTo(userOutputAmount) > 0;
-        assertTrue(validUserOutputAmount);
+        for (TransactionOutput output : outputs) {
+            Address outputDestination = getDestinationAddress(output);
+            Coin outputAmount = output.getValue();
+
+            ArrayDeque<Entry> queue = byDestination.get(outputDestination);
+            Entry pegoutRequest = queue.removeFirst();
+            // pegoutRequest == outputAmount + fees
+            boolean outputIsBelowPegoutRequest = pegoutRequest.getAmount().compareTo(outputAmount) >= 0;
+            assertTrue(outputIsBelowPegoutRequest);
+        }
+
+        for (ArrayDeque<Entry> remaining : byDestination.values()) {
+            assertTrue(remaining.isEmpty());
+        }
     }
 
     private void assertReleaseTxHasChangeAndUserOutputs(BtcTransaction releaseTransaction,
         List<Entry> pegoutRequests) {
         int expectedNumberOfChangeOutputs = 1;
         int expectedNumberOfOutputs = pegoutRequests.size() + expectedNumberOfChangeOutputs;
-        assertReleaseTransactionNumberOfOutputs(releaseTransaction, expectedNumberOfOutputs);
+        List<TransactionOutput> releaseTransactionOutputs = releaseTransaction.getOutputs();
+        assertReleaseTransactionNumberOfOutputs(expectedNumberOfOutputs, releaseTransactionOutputs);
         assertPegoutRequestsAreIncludedInReleaseTx(releaseTransaction, pegoutRequests);
 
-        Coin totalPegoutRequestsAmount = pegoutRequests.stream().map(Entry::getAmount)
-            .reduce(Coin.ZERO, Coin::add);
         Coin inputTotalAmount = releaseTransaction.getInputSum();
-
+        Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
         Coin expectedChangeOutputAmount = inputTotalAmount.subtract(totalPegoutRequestsAmount);
         assertFederationChangeOutputHasExpectedAmount(releaseTransaction,
             expectedChangeOutputAmount);
+
+
+    }
+
+    private static Coin getTotalPegoutRequestsAmount(List<Entry> pegoutRequests) {
+        return pegoutRequests.stream().map(Entry::getAmount)
+            .reduce(Coin.ZERO, Coin::add);
     }
 
     private void assertReleaseTxHasOnlyUserOutputs(BtcTransaction releaseTransaction,
         List<Entry> pegoutRequests) {
         int expectedNumberOfOutputs = pegoutRequests.size();
-        assertReleaseTransactionNumberOfOutputs(releaseTransaction, expectedNumberOfOutputs);
+        List<TransactionOutput> releaseTransactionOutputs = releaseTransaction.getOutputs();
+        assertReleaseTransactionNumberOfOutputs(expectedNumberOfOutputs, releaseTransactionOutputs);
         assertPegoutRequestsAreIncludedInReleaseTx(releaseTransaction, pegoutRequests);
     }
 
-    private void assertReleaseTransactionNumberOfOutputs(BtcTransaction releaseTransaction,
-        int expectedNumberOfOutputs) {
-        int actualNumberOfOutputs = releaseTransaction.getOutputs().size();
+    private void assertReleaseTransactionNumberOfOutputs(int expectedNumberOfOutputs, List<TransactionOutput> releaseTransactionOutputs) {
+        int actualNumberOfOutputs = releaseTransactionOutputs.size();
         assertEquals(expectedNumberOfOutputs, actualNumberOfOutputs);
     }
 }
