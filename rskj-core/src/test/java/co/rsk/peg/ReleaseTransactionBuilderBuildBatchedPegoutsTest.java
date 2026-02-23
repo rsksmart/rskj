@@ -1129,8 +1129,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         Coin expectedChangeOutputAmount = inputTotalAmount.subtract(totalPegoutRequestsAmount);
         assertFederationChangeOutputHasExpectedAmount(releaseTransaction,
             expectedChangeOutputAmount);
-
-
     }
 
     private static Coin getTotalPegoutRequestsAmount(List<Entry> pegoutRequests) {
