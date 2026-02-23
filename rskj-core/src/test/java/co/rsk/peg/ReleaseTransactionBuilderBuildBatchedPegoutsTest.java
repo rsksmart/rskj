@@ -143,7 +143,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -168,7 +168,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -188,7 +188,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -213,7 +213,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -259,7 +259,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
             assertReleaseTransactionChangeIsDust(releaseTransaction);
         }
 
@@ -369,7 +369,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(expectedNumberOfUtxos, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         private void assertReleaseTxInputsHasProperFormatAndBelongsToFederation(BtcTransaction releaseTransaction) {
@@ -429,7 +429,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -454,7 +454,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -475,7 +475,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -501,7 +501,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -547,7 +547,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
             assertReleaseTransactionChangeIsDust(releaseTransaction);
         }
 
@@ -660,7 +660,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(expectedNumberOfUtxos, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         private void assertReleaseTxInputsHasProperFormatAndBelongsToFederation(BtcTransaction releaseTransaction) {
@@ -726,7 +726,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -746,7 +746,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -767,7 +767,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -788,7 +788,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -835,7 +835,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasChangeAndUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
             assertReleaseTransactionChangeIsDust(releaseTransaction);
         }
 
@@ -873,7 +873,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction releaseTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         @Test
@@ -947,7 +947,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
             assertEquals(expectedNumberOfUtxos, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-            assertReleaseTxHasOnlyUserOutputs(releaseTransaction, pegoutRequests);
+            assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
         }
 
         private void assertReleaseTxInputsHasProperFormatAndBelongsToFederation(BtcTransaction releaseTransaction) {
@@ -1064,22 +1064,22 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     private void assertPegoutRequestsAreIncludedInReleaseTx(BtcTransaction releaseTransaction,
         List<Entry> pegoutRequests) {
-        List<TransactionOutput> userOutputs = releaseTransaction.getOutputs().stream()
-            .filter(this::isUserOutput)
+        List<TransactionOutput> pegoutOutputs = releaseTransaction.getOutputs().stream()
+            .filter(this::isPegoutOutput)
             .toList();
 
-        assertEquals(pegoutRequests.size(), userOutputs.size());
-        assertPegoutRequestsAreIncludedAsOutputs(pegoutRequests, userOutputs);
+        assertEquals(pegoutRequests.size(), pegoutOutputs.size());
+        assertPegoutRequestsAreIncludedAsOutputs(pegoutRequests, pegoutOutputs);
 
         Optional<Coin> changeOutputs = getChangeOutputs(releaseTransaction).stream().map(TransactionOutput::getValue).reduce(Coin::add);
-        Coin userOutputsSum = releaseTransaction.getOutputSum().subtract(changeOutputs.orElse(Coin.ZERO));
+        Coin pegoutOutputsSum = releaseTransaction.getOutputSum().subtract(changeOutputs.orElse(Coin.ZERO));
         Coin releaseTransactionFees = releaseTransaction.getFee();
         Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
-        assertEquals(totalPegoutRequestsAmount, releaseTransactionFees.add(userOutputsSum));
+        assertEquals(totalPegoutRequestsAmount, releaseTransactionFees.add(pegoutOutputsSum));
     }
 
-    private boolean isUserOutput(TransactionOutput userOutput) {
-        return !isFederationOutput(userOutput);
+    private boolean isPegoutOutput(TransactionOutput pegoutOutput) {
+        return !isFederationOutput(pegoutOutput);
     }
 
     private boolean isFederationOutput(TransactionOutput output) {
@@ -1116,8 +1116,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
     }
 
-    private void assertReleaseTxHasChangeAndUserOutputs(BtcTransaction releaseTransaction,
-        List<Entry> pegoutRequests) {
+    private void assertReleaseTxHasChangeAndPegoutOutputs(BtcTransaction releaseTransaction,
+                                                          List<Entry> pegoutRequests) {
         int expectedNumberOfChangeOutputs = 1;
         int expectedNumberOfOutputs = pegoutRequests.size() + expectedNumberOfChangeOutputs;
         List<TransactionOutput> releaseTransactionOutputs = releaseTransaction.getOutputs();
@@ -1136,8 +1136,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             .reduce(Coin.ZERO, Coin::add);
     }
 
-    private void assertReleaseTxHasOnlyUserOutputs(BtcTransaction releaseTransaction,
-        List<Entry> pegoutRequests) {
+    private void assertReleaseTxHasOnlyPegoutOutputs(BtcTransaction releaseTransaction,
+                                                     List<Entry> pegoutRequests) {
         int expectedNumberOfOutputs = pegoutRequests.size();
         List<TransactionOutput> releaseTransactionOutputs = releaseTransaction.getOutputs();
         assertReleaseTransactionNumberOfOutputs(expectedNumberOfOutputs, releaseTransactionOutputs);
