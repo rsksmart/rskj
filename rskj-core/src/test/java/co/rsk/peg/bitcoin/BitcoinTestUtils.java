@@ -336,6 +336,10 @@ public class BitcoinTestUtils {
 
     public static void assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat(Script scriptSig, Script redeemScript) {
         List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
+        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        int expectedChunkCount = numberOfSignaturesRequiredToSpend + 2; // OP_0 + redeem script
+        assertEquals(expectedChunkCount, scriptSigChunks.size());
+
         int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
 
         assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
