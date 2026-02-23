@@ -6,7 +6,6 @@ import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE;
-import static co.rsk.peg.ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.SUCCESS;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertP2shP2wshScriptWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
@@ -184,44 +183,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(numberOfUtxos, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-        }
-
-        @Test
-        void buildMigrationTransaction_whenMigrationValueIsDifferentThanBalance_shouldCreateMigrationTx() {
-            // Arrange
-            retiringFederationUTXOs = createUTXOs(1, Coin.COIN, retiringFederationAddress);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
-                retiringFederationUTXOs);
-            Coin migrationValue = Coin.COIN.div(2);
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, newFederationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
-            assertEquals(retiringFederationUTXOs, migrationTransactionResult.selectedUTXOs());
-            BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
-            assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-        }
-
-        @Test
-        void buildMigrationTransaction_whenInsufficientFunds_shouldReturnInsufficientMoney() {
-            // Arrange
-            retiringFederationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, retiringFederationAddress);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
-                retiringFederationUTXOs);
-            Coin migrationValue = wallet.getBalance().add(Coin.SATOSHI);
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, newFederationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(INSUFFICIENT_MONEY, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -450,44 +411,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenMigrationValueIsDifferentThanBalance_shouldCreateMigrationTx() {
-            // Arrange
-            retiringFederationUTXOs = createUTXOs(1, Coin.COIN, retiringFederationAddress);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
-                retiringFederationUTXOs);
-            Coin migrationValue = Coin.COIN.div(2);
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, newFederationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
-            assertEquals(retiringFederationUTXOs, migrationTransactionResult.selectedUTXOs());
-            BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
-            assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-        }
-
-        @Test
-        void buildMigrationTransaction_whenInsufficientFunds_shouldReturnInsufficientMoney() {
-            // Arrange
-            retiringFederationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, retiringFederationAddress);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
-                retiringFederationUTXOs);
-            Coin migrationValue = wallet.getBalance().add(Coin.SATOSHI);
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, newFederationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(INSUFFICIENT_MONEY, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
-        }
-
-        @Test
         void buildMigrationTransaction_whenResultChangeOutputWillBeDust_shouldCreateTxWithDustChangeOutput() {
             // Arrange
             Coin utxoAmount = MINIMUM_PEGIN_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
@@ -712,44 +635,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
             assertEquals(numberOfUtxos, releaseTransaction.getInputs().size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-        }
-
-        @Test
-        void buildMigrationTransaction_whenMigrationValueIsDifferentThanBalance_shouldCreateMigrationTx() {
-            // Arrange
-            retiringFederationUTXOs = createUTXOs(1, Coin.COIN, retiringFederationAddress);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
-                retiringFederationUTXOs);
-            Coin migrationValue = Coin.COIN.div(2);
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, newFederationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
-            assertEquals(retiringFederationUTXOs, migrationTransactionResult.selectedUTXOs());
-            BtcTransaction releaseTransaction = migrationTransactionResult.btcTx();
-            assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-            assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
-        }
-
-        @Test
-        void buildMigrationTransaction_whenInsufficientFunds_shouldReturnInsufficientMoney() {
-            // Arrange
-            retiringFederationUTXOs = createUTXOs(1, MINIMUM_PEGIN_TX_VALUE, retiringFederationAddress);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
-                retiringFederationUTXOs);
-            Coin migrationValue = wallet.getBalance().add(Coin.SATOSHI);
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, newFederationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(INSUFFICIENT_MONEY, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
