@@ -243,7 +243,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenUtxosAreDustButEnoughToPay_shouldReturnCouldNotAdjustDownwards() {
+        void buildMigrationTransaction_whenFedDustUtxosSumEqualsRequestAmount_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             retiringFederationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, retiringFederationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -468,7 +468,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenUtxosAreDustButEnoughToPay_shouldReturnCouldNotAdjustDownwards() {
+        void buildMigrationTransaction_whenFedDustUtxosSumEqualsRequestAmount_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             retiringFederationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, retiringFederationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -695,7 +695,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenUtxosAreDustButEnoughToPay_shouldCreateMigrationTx() {
+        void buildMigrationTransaction_whenFedDustUtxosSumEqualsRequestAmount_shouldCreateMigrationTx() {
             // Arrange
             retiringFederationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, retiringFederationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
