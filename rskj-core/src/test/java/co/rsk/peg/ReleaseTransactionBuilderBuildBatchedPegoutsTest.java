@@ -143,6 +143,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -166,6 +168,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -186,6 +190,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -212,6 +219,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -259,6 +268,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
             assertReleaseTransactionChangeIsDust(releaseTransaction);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -368,6 +379,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUtxos, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         private void assertReleaseTxInputsHasProperFormatAndBelongsToFederation(BtcTransaction releaseTransaction) {
@@ -428,6 +441,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -451,6 +466,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -471,6 +488,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -497,6 +517,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -544,6 +566,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
             assertReleaseTransactionChangeIsDust(releaseTransaction);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -654,6 +678,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUtxos, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         private void assertReleaseTxInputsHasProperFormatAndBelongsToFederation(BtcTransaction releaseTransaction) {
@@ -717,6 +743,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -740,6 +768,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -761,6 +791,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -786,6 +819,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUTXOs, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -834,6 +869,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasChangeAndPegoutOutputs(releaseTransaction, pegoutRequests);
             assertReleaseTransactionChangeIsDust(releaseTransaction);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -874,6 +911,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertBtcTxVersionIs2(releaseTransaction);
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            List<TransactionInput> releaseInputs = releaseTransaction.getInputs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         @Test
@@ -948,6 +988,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertEquals(expectedNumberOfUtxos, releaseInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToFederation(releaseTransaction);
             assertReleaseTxHasOnlyPegoutOutputs(releaseTransaction, pegoutRequests);
+            List<UTXO> releaseTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
+            assertSelectedUtxosBelongToTheInputs(releaseTransactionUTXOs, releaseInputs);
         }
 
         private void assertReleaseTxInputsHasProperFormatAndBelongsToFederation(BtcTransaction releaseTransaction) {
@@ -958,6 +1000,15 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 assertP2shP2wshScriptWithoutSignaturesHasProperFormat(witness,
                     federation.getRedeemScript());
             }
+        }
+    }
+
+    private static void assertSelectedUtxosBelongToTheInputs(List<UTXO> releaseTransactionUTXOs, List<TransactionInput> releaseTransactionInputs) {
+        for (UTXO utxo : releaseTransactionUTXOs) {
+            List<TransactionInput> matchingInputs = releaseTransactionInputs.stream().
+                filter(input -> input.getOutpoint().getHash().equals(utxo.getHash())
+                    && input.getOutpoint().getIndex() == utxo.getIndex()).toList();
+            assertEquals(1, matchingInputs.size());
         }
     }
 
