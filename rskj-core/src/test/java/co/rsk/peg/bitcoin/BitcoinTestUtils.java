@@ -393,7 +393,7 @@ public class BitcoinTestUtils {
         int startIndex = 1; // First push is OP_0, next come the signatures
 
         // An empty push for each signature required to spend
-        for (int i = startIndex; i < numberOfSignaturesRequiredToSpend; i++) {
+        for (int i = startIndex; i <= numberOfSignaturesRequiredToSpend; i++) {
             byte[] signaturePush = witness.getPush(i);
             assertArrayEquals(EMPTY_BYTE_ARRAY, signaturePush);
         }
