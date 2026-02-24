@@ -11,6 +11,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import co.rsk.test.builders.UTXOBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
@@ -91,20 +93,24 @@ public class BitcoinTestUtils {
             .collect(Collectors.toList());
     }
 
-    public static UTXO createUTXO(int nHash, long index, Coin value, Address address) {
-        return new UTXO(
-            createHash(nHash),
-            index,
-            value,
-            10,
-            false,
-            ScriptBuilder.createOutputScript(address));
+
+    /**
+     * @deprecated method. Use {@link UTXOBuilder} instead.
+     */
+    @Deprecated
+    public static List<UTXO> createUTXOs(int numberOfUtxos, Address address) {
+        Script outputScript = ScriptBuilder.createOutputScript(address);
+        return createUTXOs(numberOfUtxos, outputScript);
     }
 
-    public static List<UTXO> createUTXOs(int amount, Address address) {
+    private static List<UTXO> createUTXOs(int numberOfUtxos, Script outputScript) {
         List<UTXO> utxos = new ArrayList<>();
-        for (int i = 0; i < amount; i++) {
-            utxos.add(createUTXO(i + 1, 0, Coin.COIN, address));
+        for (int i = 0; i < numberOfUtxos; i++) {
+            UTXO utxo = UTXOBuilder.builder()
+                .withScriptPubKey(outputScript)
+                .withTransactionHash(createHash(i + 1))
+                .build();
+            utxos.add(utxo);
         }
 
         return utxos;

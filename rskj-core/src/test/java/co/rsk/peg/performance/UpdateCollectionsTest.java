@@ -23,17 +23,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.ReleaseRequestQueue;
 import co.rsk.peg.PegoutsWaitingForConfirmations;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationTestUtils;
 import java.util.Collections;
+
+import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
@@ -192,11 +194,18 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
             int numUTXOs = Helper.randomInRange(minUTXOs, maxUTXOs);
             Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
             Script federationP2SHScript = genesisFederation.getP2SHScript();
+            UTXOBuilder utxoBuilder = UTXOBuilder.builder()
+                .withBlockHeight(1)
+                .withScriptPubKey(federationP2SHScript);
 
             for (int i = 0; i < numUTXOs; i++) {
                 Sha256Hash hash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
                 Coin value = Coin.MILLICOIN.multiply(Helper.randomInRange(minMilliBtc, maxMilliBtc));
-                utxos.add(new UTXO(hash, 0, value, 1, false, federationP2SHScript));
+                UTXO utxo = utxoBuilder
+                    .withTransactionHash(hash)
+                    .withValue(value)
+                    .build();
+                utxos.add(utxo);
             }
 
             // Generate some release requests to process
@@ -312,11 +321,18 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
             int numUTXOs = Helper.randomInRange(minUTXOs, maxUTXOs);
             Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
             Script federationP2SHScript =  genesisFederation.getP2SHScript();
+            UTXOBuilder utxoBuilder = UTXOBuilder.builder()
+                .withBlockHeight(1)
+                .withScriptPubKey(federationP2SHScript);
 
             for (int i = 0; i < numUTXOs; i++) {
                 Sha256Hash hash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
                 Coin value = Coin.MILLICOIN.multiply(Helper.randomInRange(minMilliBtc, maxMilliBtc));
-                utxos.add(new UTXO(hash, 0, value, 1, false, federationP2SHScript));
+                UTXO utxo = utxoBuilder
+                    .withTransactionHash(hash)
+                    .withValue(value)
+                    .build();
+                utxos.add(utxo);
             }
 
             // Generate some release requests to process

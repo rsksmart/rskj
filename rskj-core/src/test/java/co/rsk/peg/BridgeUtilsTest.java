@@ -37,6 +37,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.test.builders.UTXOBuilder;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
@@ -1972,8 +1973,16 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddress4);
 
         List<UTXO> expectedResult = new ArrayList<>();
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 0, Coin.COIN));
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 1, Coin.ZERO));
+        Sha256Hash transactionHash = btcTx.getHash();
+        List<Coin> utxoValues = Arrays.asList(Coin.COIN, Coin.ZERO);
+        for (int i = 0; i < utxoValues.size(); i++) {
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(transactionHash)
+                .withOutpointIndex(i)
+                .withValue(utxoValues.get(i))
+                .build();
+            expectedResult.add(utxo);
+        }
 
         List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,
@@ -2035,8 +2044,16 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
 
         List<UTXO> expectedResult = new ArrayList<>();
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 1, Coin.COIN));
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 2, Coin.ZERO));
+        Sha256Hash transactionHash = btcTx.getHash();
+        List<Coin> utxoValues = Arrays.asList(Coin.COIN, Coin.ZERO);
+        for (int i = 0; i < utxoValues.size(); i++) {
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(transactionHash)
+                .withOutpointIndex(i + 1)
+                .withValue(utxoValues.get(i))
+                .build();
+            expectedResult.add(utxo);
+        }
 
         List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,
@@ -2072,11 +2089,16 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddress4);
 
         List<UTXO> expectedResult = new ArrayList<>();
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 0, Coin.COIN));
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 1, Coin.ZERO));
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 2, Coin.COIN));
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 3, Coin.COIN));
-        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 4, Coin.COIN));
+        Sha256Hash transactionHash = btcTx.getHash();
+        List<Coin> utxoValues = Arrays.asList(Coin.COIN, Coin.ZERO, Coin.COIN, Coin.COIN, Coin.COIN);
+        for (int i = 0; i < utxoValues.size(); i++) {
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(transactionHash)
+                .withOutpointIndex(i)
+                .withValue(utxoValues.get(i))
+                .build();
+            expectedResult.add(utxo);
+        }
 
         List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,

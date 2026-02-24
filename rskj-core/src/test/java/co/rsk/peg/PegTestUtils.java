@@ -28,6 +28,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.simples.SimpleRskTransaction;
+import co.rsk.test.builders.UTXOBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -234,67 +235,23 @@ public final class PegTestUtils {
 
     /**
      *
-     * @deprecated Use {@link co.rsk.peg.bitcoin.BitcoinTestUtils#createUTXO(int, long, Coin, Address)} instead.
-     * @param nHash
-     * @param index
-     * @param value
-     * @return
-     */
-    public static UTXO createUTXO(int nHash, long index, Coin value) {
-        return createUTXO(nHash, index, value, createRandomP2PKHBtcAddress(RegTestParams.get()));
-    }
-
-    /**
-     * @deprecated Use {@link co.rsk.peg.bitcoin.BitcoinTestUtils#createUTXO(int, long, Coin, Address)} instead.
-     * @param nHash
-     * @param index
-     * @param value
-     * @param address
-     * @return
-     */
-    public static UTXO createUTXO(int nHash, long index, Coin value, Address address) {
-        return new UTXO(
-            createHash(nHash),
-            index,
-            value,
-            10,
-            false,
-            ScriptBuilder.createOutputScript(address));
-    }
-
-    /**
-     *
      * @deprecated Use {@link co.rsk.peg.bitcoin.BitcoinTestUtils#createUTXOs(int, Address)} instead.
      * @param amount
      * @param address
      * @return
      */
     public static List<UTXO> createUTXOs(int amount, Address address) {
+        Script outputScript = ScriptBuilder.createOutputScript(address);
         List<UTXO> utxos = new ArrayList<>();
         for (int i = 0; i < amount; i++) {
-            utxos.add(createUTXO(i + 1, 0, Coin.COIN, address));
+            UTXO utxo = UTXOBuilder.builder()
+                    .withTransactionHash(createHash(i + 1))
+                    .withScriptPubKey(outputScript)
+                    .build();
+            utxos.add(utxo);
         }
 
         return utxos;
-    }
-
-    /**
-     *
-     * @deprecated Use {@link co.rsk.peg.bitcoin.BitcoinTestUtils#createUTXO(int, long, Coin, Address)} instead.
-     * @param btcHash
-     * @param index
-     * @param value
-     * @return
-     */
-    public static UTXO createUTXO(Sha256Hash btcHash, long index, Coin value) {
-        return new UTXO(
-            btcHash,
-            index,
-            value,
-            10,
-            false,
-            ScriptBuilder.createOutputScript(new BtcECKey())
-        );
     }
 
     public static List<ReleaseRequestQueue.Entry> createReleaseRequestQueueEntries(int amount) {
@@ -375,15 +332,5 @@ public final class PegTestUtils {
             valuesToSend,
             address
         );
-    }
-
-    public static UTXO createUTXO(Coin value, Address address) {
-        return new UTXO(
-            PegTestUtils.createHash(),
-            1,
-            value,
-            0,
-            false,
-            ScriptBuilder.createOutputScript(address));
     }
 }

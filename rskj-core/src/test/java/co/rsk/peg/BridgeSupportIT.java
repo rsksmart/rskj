@@ -607,14 +607,13 @@ public class BridgeSupportIT {
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(20, 0));
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(10, 0));
 
-        federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(new UTXO(
-            BitcoinTestUtils.createHash(1),
-            1,
-            Coin.valueOf(12, 0),
-            0,
-            false,
-            ScriptBuilder.createOutputScript(genesisFederation.getAddress())
-        ));
+        Coin value = Coin.valueOf(12, 0);
+        Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
+        UTXO utxo = UTXOBuilder.builder()
+            .withValue(value)
+            .withScriptPubKey(outputScript)
+            .build();
+        federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(utxo);
 
         provider0.save();
         federationStorageProvider.save(btcParams, activationsBeforeForks);
@@ -693,14 +692,14 @@ public class BridgeSupportIT {
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(37500));
 
-        federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(new UTXO(
-            BitcoinTestUtils.createHash(1),
-            1,
-            Coin.valueOf(1000000),
-            0,
-            false,
-            ScriptBuilder.createOutputScript(genesisFederation.getAddress())
-        ));
+        Coin value = Coin.valueOf(1000000);
+        Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
+        UTXO utxo = UTXOBuilder.builder()
+            .withValue(value)
+            .withScriptPubKey(outputScript)
+            .build();
+
+        federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(utxo);
 
         provider0.save();
         federationStorageProvider.save(btcParams, activationsBeforeForks);
@@ -783,15 +782,13 @@ public class BridgeSupportIT {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, bridgeRegTestConstants.getBtcParams(), activationsBeforeForks);
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN.multiply(7));
+        Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
+        UTXO utxo = UTXOBuilder.builder()
+            .withValue(Coin.CENT)
+            .withScriptPubKey(outputScript)
+            .build();
         for (int i = 0; i < 2000; i++) {
-            federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(new UTXO(
-                BitcoinTestUtils.createHash(1),
-                1,
-                Coin.CENT,
-                0,
-                false,
-                ScriptBuilder.createOutputScript(genesisFederation.getAddress())
-            ));
+            federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(utxo);
         }
 
         provider0.save();
@@ -921,10 +918,15 @@ public class BridgeSupportIT {
             .withFeePerKbSupport(feePerKbSupport)
             .build();
 
+        Script outputScript = ScriptBuilder.createOutputScript(oldFederation.getAddress());
         // One MICROCOIN is less than half the fee per kb, which is the minimum funds to migrate,
         // and so it won't be removed from the old federation UTXOs list for migration.
         List<UTXO> unsufficientUTXOsForMigration1 = new ArrayList<>();
-        unsufficientUTXOsForMigration1.add(createUTXO(Coin.MICROCOIN, oldFederation.getAddress()));
+        UTXO tinyUtxo = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .withValue(Coin.MICROCOIN)
+            .build();
+        unsufficientUTXOsForMigration1.add(tinyUtxo);
         when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(unsufficientUTXOsForMigration1);
         bridgeSupport.updateCollections(tx);
         assertThat(unsufficientUTXOsForMigration1.size(), is(1));
@@ -932,7 +934,11 @@ public class BridgeSupportIT {
         // MILLICOIN is greater than half the fee per kb,
         // and it will be removed from the old federation UTXOs list for migration.
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
-        sufficientUTXOsForMigration1.add(createUTXO(Coin.MILLICOIN, oldFederation.getAddress()));
+        UTXO millicoinUtxo = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .withValue(Coin.MILLICOIN)
+            .build();
+        sufficientUTXOsForMigration1.add(millicoinUtxo);
         when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration1);
 
         bridgeSupport.updateCollections(tx);
@@ -940,8 +946,13 @@ public class BridgeSupportIT {
 
         // 2 smaller coins should work exactly like 1 MILLICOIN
         List<UTXO> sufficientUTXOsForMigration2 = new ArrayList<>();
-        sufficientUTXOsForMigration2.add(createUTXO(Coin.MILLICOIN.divide(2), oldFederation.getAddress()));
-        sufficientUTXOsForMigration2.add(createUTXO(Coin.MILLICOIN.divide(2), oldFederation.getAddress()));
+        Coin halfMillicoin = Coin.MILLICOIN.divide(2);
+        UTXO halfMillicoinUtxo = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .withValue(halfMillicoin)
+            .build();
+        sufficientUTXOsForMigration2.add(halfMillicoinUtxo);
+        sufficientUTXOsForMigration2.add(halfMillicoinUtxo);
         when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration2);
 
         bridgeSupport.updateCollections(tx);
@@ -949,7 +960,7 @@ public class BridgeSupportIT {
 
         // higher fee per kb prevents funds migration
         List<UTXO> unsufficientUTXOsForMigration2 = new ArrayList<>();
-        unsufficientUTXOsForMigration2.add(createUTXO(Coin.MILLICOIN, oldFederation.getAddress()));
+        unsufficientUTXOsForMigration2.add(millicoinUtxo);
         when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(unsufficientUTXOsForMigration2);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.COIN);
 
@@ -987,14 +998,12 @@ public class BridgeSupportIT {
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN);
 
-        UTXO utxo = new UTXO(
-            BitcoinTestUtils.createHash(1),
-            1,
-            Coin.COIN.add(Coin.valueOf(100)),
-            0,
-            false,
-            ScriptBuilder.createOutputScript(genesisFederation.getAddress())
-        );
+        Coin value = Coin.COIN.add(Coin.valueOf(100));
+        Script outputScript = ScriptBuilder.createOutputScript(genesisFederation.getAddress());
+        UTXO utxo = UTXOBuilder.builder()
+            .withValue(value)
+            .withScriptPubKey(outputScript)
+            .build();
         federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(utxo);
 
         provider0.save();
@@ -4340,17 +4349,6 @@ public class BridgeSupportIT {
         btcTx.addInput(new TransactionInput(btcParams, btcTx, new byte[0]));
         btcTx.addOutput(new TransactionOutput(btcParams, btcTx, Coin.COIN, new BtcECKey().toAddress(btcParams)));
         return btcTx;
-    }
-
-    private UTXO createUTXO(Coin value, Address address) {
-        return new UTXO(
-            BitcoinTestUtils.createHash(1),
-            1,
-            value,
-            0,
-            false,
-            ScriptBuilder.createOutputScript(address)
-        );
     }
 
     private void mockChainOfStoredBlocks(BtcBlockStoreWithCache btcBlockStore, BtcBlock targetHeader, int headHeight, int targetHeight) throws BlockStoreException {
