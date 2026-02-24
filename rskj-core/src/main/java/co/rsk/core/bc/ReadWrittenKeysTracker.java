@@ -138,11 +138,18 @@ public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
     }
 
     @Override
-    public Map<Long, Set<ByteArrayWrapper>> getReadKeysByThread() { return new HashMap<>(readKeysByThread);}
+    public Map<Long, Set<ByteArrayWrapper>> getReadKeysByThread() {
+        Map<Long, Set<ByteArrayWrapper>> copy = new HashMap<>();
+        readKeysByThread.forEach((k, v) -> copy.put(k, new HashSet<>(v)));
+        return copy;
+    }
+
 
     @Override
     public Map<Long, Set<ByteArrayWrapper>> getWrittenKeysByThread() {
-        return new HashMap<>(writtenKeysByThread);
+        Map<Long, Set<ByteArrayWrapper>> copy = new HashMap<>();
+        writtenKeysByThread.forEach((k, v) -> copy.put(k, new HashSet<>(v)));
+        return copy;
     }
 
     @VisibleForTesting
