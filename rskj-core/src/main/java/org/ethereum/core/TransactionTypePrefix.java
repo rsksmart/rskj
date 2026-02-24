@@ -79,15 +79,26 @@ public sealed interface TransactionTypePrefix
             throw new IllegalArgumentException("rawData must not be empty");
         }
 
-        if (!TransactionType.isTypedTransactionByte(rawData[0])) {
+        byte firstByte = rawData[0];
+
+        if (TransactionType.isLegacyTransaction(firstByte)) {
             return LEGACY_INSTANCE;
         }
 
-        byte typeByte = rawData[0];
-        TransactionType detectedType = TransactionType.getByByte(typeByte);
+        if (!TransactionType.isTypedTransactionByte(firstByte)) {
+            throw new IllegalArgumentException(
+                    String.format("Invalid first byte 0x%02x: not a typed transaction byte "
+                            + "([0x00, 0x7f]) and not a legacy RLP list (>= 0xc0)",
+                            firstByte & 0xFF));
+        }
+
+        TransactionType detectedType = TransactionType.getByByte(firstByte);
         if (detectedType == null) {
             throw new IllegalArgumentException(
-                    "Unknown transaction type: 0x" + String.format("%02x", typeByte));
+                    "Unknown transaction type: 0x" + String.format("%02x", firstByte));
+        }
+        if (detectedType == TransactionType.LEGACY) {
+            return LEGACY_INSTANCE;
         }
 
         if (TransactionType.hasRskNamespacePrefix(rawData)) {
