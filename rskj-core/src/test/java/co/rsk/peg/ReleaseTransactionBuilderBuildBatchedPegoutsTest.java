@@ -1,13 +1,15 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_1;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.SUCCESS;
+import static co.rsk.peg.ReleaseTransactionBuilderTestUtils.assertBtcTxVersionIs1;
+import static co.rsk.peg.ReleaseTransactionBuilderTestUtils.assertBtcTxVersionIs2;
+import static co.rsk.peg.ReleaseTransactionBuilderTestUtils.assertBuildResultResponseCode;
+import static co.rsk.peg.ReleaseTransactionBuilderTestUtils.assertSelectedUtxosBelongToTheInputs;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.assertP2shP2wshScriptWithoutSignaturesHasProperFormat;
@@ -31,7 +33,6 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.ReleaseRequestQueue.Entry;
 import co.rsk.peg.ReleaseTransactionBuilder.BuildResult;
-import co.rsk.peg.ReleaseTransactionBuilder.Response;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.Federation;
@@ -1003,15 +1004,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
     }
 
-    private static void assertSelectedUtxosBelongToTheInputs(List<UTXO> releaseTransactionUTXOs, List<TransactionInput> releaseTransactionInputs) {
-        for (UTXO utxo : releaseTransactionUTXOs) {
-            List<TransactionInput> matchingInputs = releaseTransactionInputs.stream().
-                filter(input -> input.getOutpoint().getHash().equals(utxo.getHash())
-                    && input.getOutpoint().getIndex() == utxo.getIndex()).toList();
-            assertEquals(1, matchingInputs.size());
-        }
-    }
-
     private void setUpActivations(ActivationConfig.ForBlock activations) {
         this.activations = activations;
     }
@@ -1066,19 +1058,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             pegoutRequests.add(pegoutEntry);
         }
         return pegoutRequests;
-    }
-
-    private void assertBuildResultResponseCode(ReleaseTransactionBuilder.Response expectedResponseCode, BuildResult batchedPegoutsResult) {
-        Response actualResponseCode = batchedPegoutsResult.responseCode();
-        assertEquals(expectedResponseCode, actualResponseCode);
-    }
-
-    private void assertBtcTxVersionIs1(BtcTransaction releaseTransaction) {
-        assertEquals(BTC_TX_VERSION_1, releaseTransaction.getVersion());
-    }
-
-    private void assertBtcTxVersionIs2(BtcTransaction releaseTransaction) {
-        assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
     }
 
     private void assertReleaseInputIsFromFederationUTXOsWallet(TransactionInput releaseInput) {
