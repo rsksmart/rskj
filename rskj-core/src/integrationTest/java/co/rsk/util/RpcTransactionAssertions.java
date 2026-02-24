@@ -28,7 +28,7 @@ public final class RpcTransactionAssertions {
     private RpcTransactionAssertions() {}
 
 
-    public static long assertMinedSuccess(int rpcPort, final int maxAttempts,  final long sleepMills, String txHash) {
+    public static long assertMined(int rpcPort, final int maxAttempts, final long sleepMills, String txHash) {
         try {
             JsonNode receipt = null;
             for (int attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -57,7 +57,7 @@ public final class RpcTransactionAssertions {
         Long expectedBlock = null;
 
         for (String txHash : txHashes) {
-            long block = RpcTransactionAssertions.assertMinedSuccess(rpcPort, 50, 200, txHash);
+            long block = RpcTransactionAssertions.assertMined(rpcPort, 50, 200, txHash);
 
             if (expectedBlock == null) {
                 expectedBlock = block;

@@ -129,18 +129,18 @@ class PTERaceConditionTest {
         //call reset method
         String resetData = SimpleAbi.encode("reset(bytes32)", List.of(RACE_ID));
         Optional<String> resetTx = racePOCContractCaller.callIgnoreFailure(coordinatorAccount, resetData);
-        resetTx.ifPresent(txHash -> RpcTransactionAssertions.assertMinedSuccess(rpcPort, 50, 2000, txHash));
+        resetTx.ifPresent(txHash -> RpcTransactionAssertions.assertMined(rpcPort, 50, 2000, txHash));
 
         //call register method
         String registerData = SimpleAbi.encode("register(bytes32)", List.of(RACE_ID));
         Optional<String> registerTx = racePOCContractCaller.call(coordinatorAccount, registerData);
         String registerTxHash = registerTx.orElseThrow(() -> new AssertionError("register tx was not sent"));
-        RpcTransactionAssertions.assertMinedSuccess(rpcPort, 50, 2000, registerTxHash);
+        RpcTransactionAssertions.assertMined(rpcPort, 50, 2000, registerTxHash);
 
         // allow bridge to be called by this.racePOCContractCaller contract
         String setBridgeData = SimpleAbi.encode("setUnionBridgeContractAddressForTestnet(address)", List.of(racePOCContractAddress));
         String setBridgeTx = bridgeContractCaller.call(authorizedBridgeAccount, setBridgeData).orElseThrow(() -> new AssertionError("setBridge tx not sent"));
-        RpcTransactionAssertions.assertMinedSuccess(rpcPort, 50, 2000, setBridgeTx);
+        RpcTransactionAssertions.assertMined(rpcPort, 50, 2000, setBridgeTx);
 
         IntegrationTestUtils.waitFor(10, SECONDS);
     }
