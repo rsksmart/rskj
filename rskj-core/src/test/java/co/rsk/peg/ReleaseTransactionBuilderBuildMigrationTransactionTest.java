@@ -21,6 +21,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.core.TransactionWitness;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
@@ -63,6 +64,9 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
     private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
     private static final int LARGE_NUMBER_OF_UTXOS = 100;
 
+    /**
+     * Derived from {@link TransactionOutput#getMinNonDustValue} minus 1 satoshi.
+     */
     private static final Coin DUSTY_AMOUNT_SEND_REQUESTED =  Coin.valueOf(2699);
 
     private static final int OUTPUTS_COUNT_WITHOUT_CHANGE = 1;
