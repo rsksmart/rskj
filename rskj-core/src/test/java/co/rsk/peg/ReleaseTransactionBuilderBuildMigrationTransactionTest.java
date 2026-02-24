@@ -83,13 +83,13 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
     private ActivationConfig.ForBlock activationConfig;
     private Coin transactionFeePerKb;
     private Address newFederationAddress;
-    private Coin dustAmount;
+    private Coin smallAmount;
 
     @BeforeEach
     void setUp() {
         setUpActivationConfig(ALL_ACTIVATIONS);
         setUpTransactionFeePerKb(BtcTransaction.DEFAULT_TX_FEE);
-        dustAmount = transactionFeePerKb.div(2);
+        smallAmount = transactionFeePerKb.div(2);
     }
 
     @Nested
@@ -260,9 +260,9 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenFedDustUtxosSumEqualsRequestAmount_shouldReturnCouldNotAdjustDownwards() {
+        void buildMigrationTransaction_whenFedSmallUtxosSumEqualsRequestAmount_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
-            retiringFederationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, retiringFederationAddress);
+            retiringFederationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, smallAmount, retiringFederationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -500,9 +500,9 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenFedDustUtxosSumEqualsRequestAmount_shouldReturnCouldNotAdjustDownwards() {
+        void buildMigrationTransaction_whenFedSmallUtxosSumEqualsRequestAmount_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
-            retiringFederationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, retiringFederationAddress);
+            retiringFederationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, smallAmount, retiringFederationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -742,9 +742,9 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenFedDustUtxosSumEqualsRequestAmount_shouldCreateMigrationTx() {
+        void buildMigrationTransaction_whenFedSmallUtxosSumEqualsRequestAmount_shouldCreateMigrationTx() {
             // Arrange
-            retiringFederationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, dustAmount, retiringFederationAddress);
+            retiringFederationUTXOs = createUTXOs(LARGE_NUMBER_OF_UTXOS, smallAmount, retiringFederationAddress);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
