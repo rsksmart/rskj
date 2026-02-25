@@ -31,8 +31,8 @@ import co.rsk.util.HexUtils;
  * Created by Ruben on 5/1/2016.
  */
 public class TransactionReceiptDTO {
-    private static final String TRANSACTION_TYPE = "0x0";
 
+    private String type;                 // is a positive unsigned 8-bit number that represents the type of the transaction.
     private String transactionHash;      // hash of the transaction.
     private String transactionIndex;     // integer of the transactions index position in the block.
     private String blockHash;            // hash of the block where this transaction was in.
@@ -45,9 +45,7 @@ public class TransactionReceiptDTO {
     private String to;                   // address of the receiver. null when it's a contract creation transaction.
     private String status;               // either 1 (success) or 0 (failure)
     private String logsBloom;            // Bloom filter for light clients to quickly retrieve related logs.
-    private String type = TRANSACTION_TYPE;     // is a positive unsigned 8-bit number that represents the type of the transaction.
-    private String effectiveGasPrice;   // The actual value per gas deducted on the transaction.
-
+    private String effectiveGasPrice;    // The actual value per gas deducted on the transaction.
 
     public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache, int longIndexOffset) {
         TransactionReceipt receipt = txInfo.getReceipt();
@@ -76,6 +74,7 @@ public class TransactionReceiptDTO {
         transactionHash = receipt.getTransaction().getHash().toJsonString();
         transactionIndex = HexUtils.toQuantityJsonHex(txInfo.getIndex());
         logsBloom = HexUtils.toUnformattedJsonHex(txInfo.getReceipt().getBloomFilter().getData());
+        type = HexUtils.toQuantityJsonHex(txInfo.getReceipt().getTransaction().getType().getByteCode());
         effectiveGasPrice = HexUtils.toQuantityJsonHex(txInfo.getReceipt().getTransaction().getGasPrice().getBytes());
     }
     public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache) {

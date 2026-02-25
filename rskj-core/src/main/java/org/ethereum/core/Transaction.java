@@ -75,6 +75,8 @@ public class Transaction {
     public static final byte CHAIN_ID_INC = 35;
     public static final byte LOWER_REAL_V = 27;
 
+    private final TransactionType type;
+
     protected RskAddress sender;
     /* whether this is a local call transaction */
     private boolean isLocalCall;
@@ -108,6 +110,8 @@ public class Transaction {
     }
 
     protected Transaction(RLPList transaction) {
+        this.type = TransactionType.LEGACY;
+
         if (transaction.size() != 9) {
             throw new IllegalArgumentException("A transaction must have exactly 9 elements");
         }
@@ -140,11 +144,15 @@ public class Transaction {
      * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
      */
     protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, TransactionType.LEGACY);
+    }
+
+    protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, TransactionType type) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, type);
     }
 
     protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
-                          byte chainId) {
+                          byte chainId, TransactionType type) {
         this(
                 nonce,
                 RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw)),
@@ -153,12 +161,13 @@ public class Transaction {
                 RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw)),
                 data,
                 chainId,
-                false
+                false,
+                type
         );
     }
 
     protected Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
-                          byte chainId, final boolean localCall) {
+                          byte chainId, final boolean localCall, TransactionType type) {
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = gasPriceRaw;
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
@@ -167,6 +176,7 @@ public class Transaction {
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = localCall;
+        this.type = type;
     }
 
     public static TransactionBuilder builder() {
@@ -437,6 +447,10 @@ public class Transaction {
 
     public byte getChainId() {
         return chainId;
+    }
+
+    public TransactionType getType() {
+        return type;
     }
 
     public byte getEncodedV() {
