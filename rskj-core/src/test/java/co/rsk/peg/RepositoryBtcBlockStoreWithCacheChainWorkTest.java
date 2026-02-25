@@ -69,13 +69,12 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     void arrange(ActivationConfig.ForBlock activations) {
         Map<Sha256Hash, StoredBlock> cacheBlocks = new HashMap<>();
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(repository,
-            BRIDGE_ADDR, mainneNetworkParameters, activations);
+            mainneNetworkParameters, activations);
 
         repositoryBtcBlockStoreWithCache = new RepositoryBtcBlockStoreWithCache(
             mainneNetworkParameters,
             repository,
             cacheBlocks,
-            BRIDGE_ADDR,
             bridgeMainnetConstants,
             bridgeStorageProvider,
             activations

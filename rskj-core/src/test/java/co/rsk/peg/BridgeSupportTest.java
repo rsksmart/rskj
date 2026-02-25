@@ -176,7 +176,7 @@ class BridgeSupportTest {
         );
 
         repository = createRepository();
-        bridgeStorageProvider = new BridgeStorageProvider(repository, contractAddress, btcMainnetParams, allActivations);
+        bridgeStorageProvider = new BridgeStorageProvider(repository, btcMainnetParams, allActivations);
     }
 
     @Test
@@ -2065,7 +2065,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
 
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(newFederation);
@@ -2253,7 +2253,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
         federationStorageProvider.setOldFederation(federation2);
@@ -3515,7 +3515,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -3610,7 +3610,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -3708,7 +3708,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -3806,7 +3806,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -3915,7 +3915,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -4011,7 +4011,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -4099,7 +4099,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -4201,7 +4201,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -4315,7 +4315,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -4402,7 +4402,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -4507,7 +4507,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -4593,7 +4593,7 @@ class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -4823,7 +4823,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            contractAddress,
             bridgeConstantsRegtest.getBtcParams(),
             activations
         );
@@ -4938,7 +4937,7 @@ class BridgeSupportTest {
 
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations));
 
         bridgeSupport = getBridgeSupport(
             bridgeConstantsRegtest,
@@ -5028,7 +5027,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
             repository,
-            contractAddress,
             bridgeConstantsRegtest.getBtcParams(),
             activations)
         );
@@ -5117,7 +5115,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
             repository,
-            contractAddress,
             bridgeConstantsRegtest.getBtcParams(),
             activations)
         );
@@ -5207,7 +5204,7 @@ class BridgeSupportTest {
 
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -5313,7 +5310,7 @@ class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
         federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -5428,7 +5425,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            contractAddress,
             bridgeConstantsRegtest.getBtcParams(),
             activations
         );
@@ -5552,7 +5548,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            contractAddress,
             bridgeConstantsRegtest.getBtcParams(),
             activations
         );
@@ -5874,7 +5869,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
             repository,
-            BRIDGE_ADDR,
             bridgeConstantsRegtest.getBtcParams(),
             activations
         ));
@@ -5953,7 +5947,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
             repository,
-            BRIDGE_ADDR,
             bridgeConstantsRegtest.getBtcParams(),
             activations)
         );
@@ -6033,7 +6026,7 @@ class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(),
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(),
             activations));
 
         bridgeSupport = getBridgeSupport(
@@ -6093,7 +6086,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
             repository,
-            BRIDGE_ADDR,
             bridgeConstantsRegtest.getBtcParams(),
             activations)
         );
@@ -6164,7 +6156,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
             repository,
-            BRIDGE_ADDR,
             bridgeConstantsRegtest.getBtcParams(),
             activations)
         );
@@ -6665,7 +6656,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
         repository = createRepository();
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
 
         bridgeSupport = getBridgeSupport(
             bridgeConstantsRegtest,
@@ -6690,7 +6681,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
         repository = createRepository();
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), activations);
 
         bridgeSupport = getBridgeSupport(
             bridgeConstantsRegtest,
@@ -6736,7 +6727,7 @@ class BridgeSupportTest {
     void isAlreadyBtcTxHashProcessedHeight_true() throws IOException {
         repository = createRepository();
         BtcTransaction btcTransaction = new BtcTransaction(btcRegTestParams);
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(), genesisActivations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), genesisActivations);
 
         provider.setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(), 1L);
         bridgeSupport = bridgeSupportBuilder
@@ -6759,7 +6750,7 @@ class BridgeSupportTest {
     void validationsForRegisterBtcTransaction_negative_height() throws BlockStoreException, BridgeIllegalArgumentException {
         BtcTransaction peginTx = new BtcTransaction(btcRegTestParams);
         repository = createRepository();
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(), genesisActivations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeConstantsRegtest.getBtcParams(), genesisActivations);
         bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstantsRegtest)
             .withProvider(provider)
@@ -6777,7 +6768,6 @@ class BridgeSupportTest {
         repository = createRepository();
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            BRIDGE_ADDR,
             bridgeConstantsRegtest.getBtcParams(),
             genesisActivations
         );
@@ -7326,7 +7316,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
                 repository,
-                contractAddress,
                 bridgeConstantsRegtest.getBtcParams(),
                 allActivations
             )
@@ -7364,7 +7353,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
                 repository,
-                contractAddress,
                 bridgeConstantsRegtest.getBtcParams(),
                 allActivations
             )
@@ -7405,7 +7393,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
                 repository,
-                contractAddress,
                 bridgeConstantsRegtest.getBtcParams(),
                 allActivations
             )
@@ -7443,7 +7430,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
                 repository,
-                contractAddress,
                 bridgeConstantsRegtest.getBtcParams(),
                 allActivations
             )
@@ -7477,7 +7463,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
                 repository,
-                contractAddress,
                 bridgeConstantsRegtest.getBtcParams(),
                 allActivations
             )
@@ -7514,7 +7499,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
                 repository,
-                contractAddress,
                 bridgeConstantsRegtest.getBtcParams(),
                 allActivations
             )
@@ -7552,7 +7536,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
                 repository,
-                contractAddress,
                 bridgeConstantsRegtest.getBtcParams(),
                 allActivations
             )
@@ -7595,7 +7578,6 @@ class BridgeSupportTest {
             repository = createRepository();
             bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
-                BRIDGE_ADDR,
                 bridgeTestnetConstants.getBtcParams(),
                 allActivations
             );
@@ -7695,7 +7677,6 @@ class BridgeSupportTest {
             // recreate context pre rskip 434 for mainnet
             BridgeStorageProvider bridgeStorageProviderPreRSKIP434 = new BridgeStorageProvider(
                 repository,
-                BRIDGE_ADDR,
                 bridgeMainnetConstants.getBtcParams(),
                 activationsPreRSKIP434
             );
@@ -7712,7 +7693,6 @@ class BridgeSupportTest {
             // recreate context post rskip 434 for mainnet
             BridgeStorageProvider bridgeStorageProviderPostRSKIP434 = new BridgeStorageProvider(
                 repository,
-                BRIDGE_ADDR,
                 bridgeMainnetConstants.getBtcParams(),
                 activationsPostRSKIP434
             );
@@ -7835,7 +7815,6 @@ class BridgeSupportTest {
         void receiveHeader_networkNotMainnet_returnsSuccessfulAndSavesTheBlock(ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) throws BlockStoreException, IOException {
             bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
-                BRIDGE_ADDR,
                 bridgeConstants.getBtcParams(),
                 activations
             );
@@ -7870,7 +7849,6 @@ class BridgeSupportTest {
         void receiveHeaders_networkNotMainnet_savesAllBlocks(ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) throws BlockStoreException, IOException {
             bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
-                BRIDGE_ADDR,
                 bridgeConstants.getBtcParams(),
                 activations
             );
@@ -8032,7 +8010,7 @@ class BridgeSupportTest {
         }
 
         private void setUpWithActivations(ActivationConfig.ForBlock activations) {
-            bridgeStorageProvider = new BridgeStorageProvider(repository, contractAddress, btcMainnetParams, activations);
+            bridgeStorageProvider = new BridgeStorageProvider(repository, btcMainnetParams, activations);
             btcBlockStoreFactory =
                 new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
 
@@ -9277,7 +9255,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            BRIDGE_ADDR,
             bridgeConstants.getBtcParams(),
             activations
         );

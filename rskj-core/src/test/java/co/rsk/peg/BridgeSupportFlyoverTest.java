@@ -869,7 +869,7 @@ class BridgeSupportFlyoverTest {
             federationStorageProvider.setNewFederation(activeFederation);
 
             repository = createRepository();
-            bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeContractAddress, btcMainnetParams, activations);
+            bridgeStorageProvider = new BridgeStorageProvider(repository, btcMainnetParams, activations);
 
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
             btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeConstantsMainnet, bridgeStorageProvider, activations);
@@ -1881,7 +1881,7 @@ class BridgeSupportFlyoverTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeConstants.getBtcParams(), activations));
         when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -2061,7 +2061,7 @@ class BridgeSupportFlyoverTest {
 
         federationStorageProvider.setNewFederation(activeFederation);
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeConstants.getBtcParams(), activations));
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
@@ -2248,7 +2248,7 @@ class BridgeSupportFlyoverTest {
 
         federationStorageProvider.setNewFederation(activeFederation);
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeConstants.getBtcParams(), activations));
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
@@ -2440,7 +2440,7 @@ class BridgeSupportFlyoverTest {
         federationStorageProvider.setNewFederation(activeFederation);
 
         Coin lockingCapValue = Coin.COIN;
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeConstants.getBtcParams(), activations));
 
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
 
@@ -2605,7 +2605,7 @@ class BridgeSupportFlyoverTest {
         federationStorageProvider.setNewFederation(activeFederation);
 
         Coin lockingCapValue = Coin.COIN;
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeConstants.getBtcParams(), activations));
 
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
 
@@ -2778,7 +2778,7 @@ class BridgeSupportFlyoverTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeConstants.getBtcParams(), activations));
         when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -3233,7 +3233,6 @@ class BridgeSupportFlyoverTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeContractAddress,
             btcRegTestParams,
             activations
         );
@@ -3338,7 +3337,6 @@ class BridgeSupportFlyoverTest {
         Repository repository = spy(createRepository());
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeContractAddress,
             btcRegTestParams,
             activations
         );
@@ -3591,7 +3589,6 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeContractAddress,
             btcRegTestParams,
             activations
         );

@@ -225,7 +225,6 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 Repository repository = benchmarkerTrack.startTracking();
                 storageProvider = new BridgeStorageProvider(
                         repository,
-                        PrecompiledContracts.BRIDGE_ADDR,
                         bridgeConstants.getBtcParams(),
                         activationConfig.forBlock((long) executionIndex)
                 );
@@ -261,7 +260,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                         btcBlockStoreFactory, constants.getBridgeConstants(), activationConfig, signatureCache);
 
-                bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridge = new Bridge(constants, activationConfig,
                         bridgeSupportFactory, signatureCache);
                 BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
                 Blockchain blockchain = blockChainBuilder.ofSize(height);

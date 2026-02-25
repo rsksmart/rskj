@@ -3,7 +3,6 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.core.RskAddress;
 import co.rsk.peg.*;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import org.ethereum.TestUtils;
@@ -12,7 +11,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.solidity.SolidityType;
-import org.ethereum.vm.PrecompiledContracts;
+
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.Test;
@@ -42,12 +41,11 @@ class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCase {
 
 
     private class DiskAccessRepositoryBlockStore extends RepositoryBtcBlockStoreWithCache {
-        public DiskAccessRepositoryBlockStore(Repository repository, RskAddress contractAddress) {
+        public DiskAccessRepositoryBlockStore(Repository repository) {
             super(
                 bridgeConstants.getBtcParams(),
                 repository,
                 null,
-                contractAddress,
                 null,
                 null,
                 null
@@ -199,7 +197,7 @@ class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCase {
                         Bridge bridge = (Bridge) environment.getContract();
                         BridgeSupport bridgeSupport = TestUtils.getInternalState(bridge, "bridgeSupport");
                         Repository repository = TestUtils.getInternalState(bridgeSupport, "rskRepository");
-                        BtcBlockStore diskAccessRepositoryBlockStore = new DiskAccessRepositoryBlockStore(repository, PrecompiledContracts.BRIDGE_ADDR);
+                        BtcBlockStore diskAccessRepositoryBlockStore = new DiskAccessRepositoryBlockStore(repository);
                         TestUtils.setInternalState(bridgeSupport, "btcBlockStore", diskAccessRepositoryBlockStore);
                     }
                 }

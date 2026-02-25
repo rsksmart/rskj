@@ -206,7 +206,6 @@ public class PrecompiledContracts {
         }
         if (address.equals(BRIDGE_ADDR_DW)) {
             return new Bridge(
-                    BRIDGE_ADDR,
                     config.getNetworkConstants(),
                     config.getActivationConfig(),
                     bridgeSupportFactory, signatureCache);

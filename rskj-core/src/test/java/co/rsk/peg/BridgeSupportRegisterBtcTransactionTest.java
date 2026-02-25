@@ -1738,7 +1738,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         networkParameters = bridgeConstants.getBtcParams();
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
 
-        bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeContractAddress, networkParameters, activations);
+        bridgeStorageProvider = new BridgeStorageProvider(repository, networkParameters, activations);
         logs = new ArrayList<>();
         bridgeEventLogger = new BridgeEventLoggerImpl(
             bridgeConstants,
