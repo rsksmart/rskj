@@ -272,8 +272,8 @@ class BlockHeaderBuilderTest {
                     : new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP535));
         else
             builderForTest = new BlockHeaderBuilder(
-                    useRSKIP535 ? ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351)
-                            : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351, ConsensusRule.RSKIP535));
+                    useRSKIP535 ? ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351,  ConsensusRule.RSKIP144)
+                            : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351, ConsensusRule.RSKIP535, ConsensusRule.RSKIP144));
 
         byte[] btcCoinbase = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcCoinbase", 128);
         byte[] btcHeader = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcHeader", 80);
@@ -514,8 +514,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithVersion0WithNoRskip351() {
-        // RSKIP351 = -1
-        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351)).build();
+        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351, ConsensusRule.RSKIP144)).build();
         assertEquals((byte) 0x0, header.getVersion());
     }
 
@@ -542,22 +541,100 @@ class BlockHeaderBuilderTest {
         assertEquals((byte) 0x2, header.getVersion());
     }
 
+    /**
+     * Provides combinations of feature flags to validate the expected number of
+     * attributes present in a {@link BlockHeader} under different consensus rules.
+     *
+     * <h2>Attribute count calculation rules</h2>
+     *
+     * <h3>1. Base attributes</h3>
+     * By default, a block header contains:
+     * <ul>
+     *     <li>16 base attributes</li>
+     *     <li>+1 attribute introduced by RSKIP-UUM</li>
+     * </ul>
+     *
+     * This results in:
+     * <pre>
+     * 16 + 1 = 17 attributes
+     * </pre>
+     *
+     * <h3>2. Merge mining fields</h3>
+     * Three additional merge-mining-related fields are included when building
+     * the header:
+     * <ul>
+     *     <li>bitcoinMergeMiningHeader</li>
+     *     <li>bitcoinMergeMiningMerkleProof</li>
+     *     <li>bitcoinMergeMiningCoinbaseTransaction</li>
+     * </ul>
+     *
+     * That leads to:
+     * <pre>
+     * 17 + 3 = 20 attributes (default scenario)
+     * </pre>
+     *
+     * These three fields can be reduced to a single encoded field when calling
+     * {@code BlockHeader#getEncoded()}, but only if consensus-compliant encoding
+     * is used. This reduction does <b>not</b> happen during header construction,
+     * only during encoding.
+     *
+     * If {@code createConsensusCompliantHeader} is {@code true} in
+     * {@link BlockHeaderBuilder}, the builder enforces consensus-compliant
+     * encoding and overrides {@code useRskip92Encoding}. Therefore, in this test
+     * scenario, {@code useRskip92Encoding} becomes irrelevant whenever
+     * {@code createConsensusCompliantHeader} is {@code true}.
+     *
+     * <h3>3. RSKIP-351 effects</h3>
+     *
+     * Enabling RSKIP-351 changes the header structure:
+     *
+     * <ul>
+     *     <li>The {@code BlockHeaderBuilder#build()} method selects between
+     *     {@code BlockHeaderV1} and {@code BlockHeaderV2}.</li>
+     *     <li>The version is determined by {@code getHeaderVersion(long blockNumber)}.</li>
+     *     <li>RSKIP-535 determines whether {@code baseEvent} is included and
+     *     whether V1 or V2 is returned.</li>
+     * </ul>
+     *
+     * <h4>Version differences</h4>
+     *
+     * <ul>
+     *     <li><b>V1</b>: adds 2 attributes → {@code version} + {@code edges}</li>
+     *     <li><b>V2</b>: adds 3 attributes → {@code version} + {@code edges} + {@code baseEvent}</li>
+     * </ul>
+     *
+     * <h3>Important notes for this test</h3>
+     * <ul>
+     *     <li>RSKIP-141 is always disabled in this test.</li>
+     *     <li>When {@code createConsensusCompliantHeader} is {@code true},
+     *     {@code useRskip92Encoding} has no effect because it is overwritten
+     *     during header building.</li>
+     *     <li>RSKIP-351 determines whether additional structural fields are added.</li>
+     *     <li>RSKIP-535 determines whether {@code baseEvent} is included and whether
+     *     V1 or V2 is used.</li>
+     * </ul>
+     *
+     * The {@code expectedSize} parameter in each {@link Arguments} entry reflects
+     * the total number of attributes resulting from the combination of these rules.
+     */
+
     private static class CreateHeaderArgumentsProvider implements ArgumentsProvider {
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
             return Stream.of(
-                    Arguments.of(false, false, false, false, 21),
-                    Arguments.of(false, false, false, true, 21),
-                    Arguments.of(false, true, false, false, 19),
-                    Arguments.of(false, true, false, true, 19),
-                    Arguments.of(true, false, false, false, 19),
-                    Arguments.of(true, false, false, true, 19),
+                    Arguments.of(false, false, false, false, 20),
+                    Arguments.of(false, false, false, true, 20),
                     Arguments.of(false, false, true, false, 22),
                     Arguments.of(false, false, true, true, 23),
+                    Arguments.of(false, true, false, false, 18),
+                    Arguments.of(false, true, false, true, 18),
                     Arguments.of(false, true, true, false, 20),
                     Arguments.of(false, true, true, true, 21),
+                    Arguments.of(true, false, false, false, 18),
+                    Arguments.of(true, false, false, true, 18),
                     Arguments.of(true, false, true, false, 20),
-                    Arguments.of(true, false, true, true, 21));
+                    Arguments.of(true, false, true, true, 21)
+            );
         }
     }
 }
