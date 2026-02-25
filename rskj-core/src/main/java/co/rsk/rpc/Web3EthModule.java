@@ -20,6 +20,7 @@ package co.rsk.rpc;
 import co.rsk.rpc.modules.eth.EthModule;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
+import org.ethereum.rpc.dto.ProofResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.parameters.AccountOverrideParam;
@@ -29,6 +30,7 @@ import org.ethereum.rpc.parameters.BlockRefParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.FilterRequestParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataArrayParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.rpc.parameters.HexIndexParam;
 import org.ethereum.rpc.parameters.HexNumberParam;
@@ -84,6 +86,8 @@ public interface Web3EthModule {
     String eth_getBalance(HexAddressParam address) throws Exception;
 
     String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, BlockRefParam blockRefParam) throws Exception;
+
+    ProofResultDTO eth_getProof(HexAddressParam address, HexDataArrayParam storageKeys, BlockRefParam blockRefParam) throws Exception;
 
     String eth_getTransactionCount(HexAddressParam address, BlockRefParam blockRefParam) throws Exception;
 

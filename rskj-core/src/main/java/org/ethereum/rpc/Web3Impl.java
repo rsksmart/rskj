@@ -59,6 +59,7 @@ import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
+import org.ethereum.rpc.dto.ProofResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -537,6 +538,88 @@ public class Web3Impl implements Web3 {
 
     private String rsk_getStorageBytesAt(HexAddressParam address, HexNumberParam storageIdx, Map<String, String> blockRef) {
         return invokeByBlockRef(blockRef, blockNumber -> this.rsk_getStorageBytesAt(address, storageIdx, blockNumber));
+    }
+
+    @Override
+    public ProofResultDTO eth_getProof(HexAddressParam address, HexDataArrayParam storageKeys, BlockRefParam blockRefParam) throws Exception {
+        String blockId = blockRefParam.getIdentifier();
+        if (blockId != null) {
+            return eth_getProof(address, storageKeys, blockId);
+        }
+        // Handle block hash reference
+        Map<String, String> inputs = blockRefParam.getInputs();
+        String blockHash = inputs.get("blockHash");
+        if (blockHash != null) {
+            boolean requireCanonical = Boolean.parseBoolean(inputs.get("requireCanonical"));
+            Block block = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(blockHash)))
+                    .orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", blockHash)));
+            if (requireCanonical && !isInMainChain(block)) {
+                throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", blockHash));
+            }
+            return eth_getProof(address, storageKeys, toQuantityJsonHex(block.getNumber()));
+        }
+        String blockNumber = inputs.get("blockNumber");
+        if (blockNumber != null) {
+            return eth_getProof(address, storageKeys, blockNumber);
+        }
+        throw invalidParamError("Invalid block reference");
+    }
+
+    private ProofResultDTO eth_getProof(HexAddressParam address, HexDataArrayParam storageKeys, String blockId) {
+        try {
+            // eth_getProof uses RLP encoding for Ethereum compatibility
+            return getEthModule().getProof(
+                    address.getAddress(),
+                    storageKeys.getAsDataWords(),
+                    blockId,
+                    true  // Use RLP encoding for Ethereum compatibility
+            );
+        } finally {
+            if (logger.isDebugEnabled()) {
+                logger.debug("eth_getProof({}, {}, {})", address, storageKeys.size(), blockId);
+            }
+        }
+    }
+
+    @Override
+    public ProofResultDTO rsk_getProof(HexAddressParam address, HexDataArrayParam storageKeys, BlockRefParam blockRefParam) throws Exception {
+        String blockId = blockRefParam.getIdentifier();
+        if (blockId != null) {
+            return rsk_getProof(address, storageKeys, blockId);
+        }
+        // Handle block hash reference
+        Map<String, String> inputs = blockRefParam.getInputs();
+        String blockHash = inputs.get("blockHash");
+        if (blockHash != null) {
+            boolean requireCanonical = Boolean.parseBoolean(inputs.get("requireCanonical"));
+            Block block = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(blockHash)))
+                    .orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", blockHash)));
+            if (requireCanonical && !isInMainChain(block)) {
+                throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", blockHash));
+            }
+            return rsk_getProof(address, storageKeys, toQuantityJsonHex(block.getNumber()));
+        }
+        String blockNumber = inputs.get("blockNumber");
+        if (blockNumber != null) {
+            return rsk_getProof(address, storageKeys, blockNumber);
+        }
+        throw invalidParamError("Invalid block reference");
+    }
+
+    private ProofResultDTO rsk_getProof(HexAddressParam address, HexDataArrayParam storageKeys, String blockId) {
+        try {
+            // rsk_getProof uses RSKj's native format (no RLP wrapping)
+            return getEthModule().getProof(
+                    address.getAddress(),
+                    storageKeys.getAsDataWords(),
+                    blockId,
+                    false  // Use native RSKj format
+            );
+        } finally {
+            if (logger.isDebugEnabled()) {
+                logger.debug("rsk_getProof({}, {}, {})", address, storageKeys.size(), blockId);
+            }
+        }
     }
 
     @Override
