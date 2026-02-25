@@ -93,29 +93,6 @@ public class BitcoinTestUtils {
             .collect(Collectors.toList());
     }
 
-
-    /**
-     * @deprecated method. Use {@link UTXOBuilder} instead.
-     */
-    @Deprecated
-    public static List<UTXO> createUTXOs(int numberOfUtxos, Address address) {
-        Script outputScript = ScriptBuilder.createOutputScript(address);
-        return createUTXOs(numberOfUtxos, outputScript);
-    }
-
-    private static List<UTXO> createUTXOs(int numberOfUtxos, Script outputScript) {
-        List<UTXO> utxos = new ArrayList<>();
-        for (int i = 0; i < numberOfUtxos; i++) {
-            UTXO utxo = UTXOBuilder.builder()
-                .withScriptPubKey(outputScript)
-                .withTransactionHash(createHash(i + 1))
-                .build();
-            utxos.add(utxo);
-        }
-
-        return utxos;
-    }
-
     public static BtcTransaction createBtcTransactionWithOutputToAddress(
         NetworkParameters networkParameters,
         Coin amount,
