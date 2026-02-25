@@ -3,6 +3,7 @@ package co.rsk.peg.federation;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_TESTNET;
 import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.federation.FederationStorageIndexKey.*;
 import static java.util.Objects.isNull;
@@ -14,6 +15,7 @@ import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.PegTestUtils;
@@ -32,6 +34,8 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
+
+import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -433,7 +437,11 @@ class FederationStorageProviderImplTests {
         Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");
 
         // Save utxos directly in storage
-        List<UTXO> expectedUtxos = BitcoinTestUtils.createUTXOs(2, btcAddress);
+        Script outputScript = ScriptBuilder.createOutputScript(btcAddress);
+        int numberOfUtxos = 2;
+        List<UTXO> expectedUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
         storageAccessor.saveToRepository(federationStorageIndexKey.getKey(), BridgeSerializationUtils.serializeUTXOList(expectedUtxos));
 
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
@@ -455,7 +463,11 @@ class FederationStorageProviderImplTests {
         DataWord newFederationBtcUtxosKey = NEW_FEDERATION_BTC_UTXOS_KEY.getKey();
 
         // Save utxos directly in storage.
-        List<UTXO> expectedUtxos = BitcoinTestUtils.createUTXOs(1, btcAddress);
+        Script outputScript = ScriptBuilder.createOutputScript(btcAddress);
+        int numberOfUtxos = 1;
+        List<UTXO> expectedUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
         storageAccessor.saveToRepository(newFederationBtcUtxosKey, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
 
         // Get utxos from method and check they are as expected
@@ -464,7 +476,10 @@ class FederationStorageProviderImplTests {
         assertEquals(expectedUtxos, actualUtxos);
 
         // Save new utxos directly in storage
-        List<UTXO> extraUtxos = new ArrayList<>(BitcoinTestUtils.createUTXOs(2, btcAddress));
+        int numberOfExtraUtxos = 2;
+        List<UTXO> extraUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .buildMany(numberOfExtraUtxos, i -> createHash(i + 1));
         storageAccessor.saveToRepository(newFederationBtcUtxosKey, extraUtxos, BridgeSerializationUtils::serializeUTXOList);
 
         // Get utxos from method and check they are still the same as the original expected utxos since it is returning the cached utxos
@@ -488,7 +503,11 @@ class FederationStorageProviderImplTests {
         DataWord oldFederationBtcUtxosKey = OLD_FEDERATION_BTC_UTXOS_KEY.getKey();
 
         // Save utxos directly in storage.
-        List<UTXO> expectedUtxos = BitcoinTestUtils.createUTXOs(1, btcAddress);
+        Script outputScript = ScriptBuilder.createOutputScript(btcAddress);
+        int numberOfUtxos = 1;
+        List<UTXO> expectedUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
         storageAccessor.saveToRepository(oldFederationBtcUtxosKey, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
 
         // Get utxos from method and check they are as expected
@@ -507,7 +526,11 @@ class FederationStorageProviderImplTests {
         DataWord oldFederationBtcUtxosKey = OLD_FEDERATION_BTC_UTXOS_KEY.getKey();
 
         // Save utxos directly in storage.
-        List<UTXO> expectedUtxos = BitcoinTestUtils.createUTXOs(1, btcAddress);
+        Script outputScript = ScriptBuilder.createOutputScript(btcAddress);
+        int numberOfUtxos = 1;
+        List<UTXO> expectedUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
         storageAccessor.saveToRepository(oldFederationBtcUtxosKey, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
 
         // Get utxos from method and check they are as expected
@@ -516,7 +539,10 @@ class FederationStorageProviderImplTests {
         assertEquals(expectedUtxos, actualUtxos);
 
         // Save new utxos directly in storage
-        List<UTXO> extraUtxos = new ArrayList<>(BitcoinTestUtils.createUTXOs(2, btcAddress));
+        int numberOfExtraUtxos = 2;
+        List<UTXO> extraUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .buildMany(numberOfExtraUtxos, i -> createHash(i + 1));
         storageAccessor.saveToRepository(
             oldFederationBtcUtxosKey,
             extraUtxos,
@@ -682,7 +708,10 @@ class FederationStorageProviderImplTests {
         List<UTXO> utxos = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations);
         Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");
         int expectedCountOfUtxos = 3;
-        List<UTXO> extraUtxos = BitcoinTestUtils.createUTXOs(expectedCountOfUtxos, btcAddress);
+        Script outputScript = ScriptBuilder.createOutputScript(btcAddress);
+        List<UTXO> extraUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .buildMany(expectedCountOfUtxos, i -> createHash(i + 1));
         utxos.addAll(extraUtxos);
 
         // Act
@@ -711,7 +740,11 @@ class FederationStorageProviderImplTests {
 
         Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");
         List<UTXO> utxos = federationStorageProvider.getOldFederationBtcUTXOs();
-        List<UTXO> extraUtxos = BitcoinTestUtils.createUTXOs(1, btcAddress);
+        Script outputScript = ScriptBuilder.createOutputScript(btcAddress);
+        int numberOfUtxos = 1;
+        List<UTXO> extraUtxos = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
         utxos.addAll(extraUtxos);
 
         // Act

@@ -3251,11 +3251,16 @@ class BridgeSupportTest {
             .thenReturn(newFederation);
 
         // Utxos to migrate
-        List<UTXO> utxos = BitcoinTestUtils.createUTXOs(10, oldFederation.getAddress());
+        int numberOfUtxos = 10;
+        List<UTXO> utxos = UTXOBuilder.builder()
+            .withScriptPubKey(oldFederation.getP2SHScript())
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
         when(federationStorageProviderMock.getOldFederationBtcUTXOs())
             .thenReturn(utxos);
 
-        List<UTXO> utxosNew = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+        List<UTXO> utxosNew = UTXOBuilder.builder()
+            .withScriptPubKey(newFederation.getP2SHScript())
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
         when(federationStorageProviderMock.getNewFederationBtcUTXOs(any(), any()))
             .thenReturn(utxosNew);
 
