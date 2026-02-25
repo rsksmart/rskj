@@ -17,6 +17,7 @@
  */
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
 import static org.hamcrest.CoreMatchers.is;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.*;
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -40,6 +42,7 @@ import java.util.*;
 import java.util.stream.Stream;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.FederationSupportBuilder;
+import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -211,7 +214,11 @@ class FederationSupportImplTest {
         @Test
         @Tag("getActiveFederationBtcUTXOs")
         void getActiveFederationUTXOs_returnsGenesisFederationUTXOs() {
-            List<UTXO> genesisFederationUTXOs = BitcoinTestUtils.createUTXOs(10, genesisFederation.getAddress());
+            int numberOfUtxos = 10;
+            List<UTXO> genesisFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(genesisFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
             storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), genesisFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
             List<UTXO> activeFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
@@ -431,7 +438,10 @@ class FederationSupportImplTest {
         @Test
         @Tag("getActiveFederationBtcUTXOs")
         void getActiveFederationUTXOs_returnsNewFederationUTXOs() {
-            List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+            int numberOfUtxos = 10;
+            List<UTXO> newFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(newFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
             List<UTXO> activeFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
@@ -965,9 +975,16 @@ class FederationSupportImplTest {
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
-            List<UTXO> oldFederationUTXOs = BitcoinTestUtils.createUTXOs(5, oldFederation.getAddress());
+            int oldFederationNumberOfUtxos = 5;
+            List<UTXO> oldFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(oldFederation.getP2SHScript())
+                .buildMany(oldFederationNumberOfUtxos, i -> createHash(i + 1));
             storageAccessor.saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), oldFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
-            List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+
+            int newFederationNumberOfUtxos = 10;
+            List<UTXO> newFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(newFederation.getP2SHScript())
+                .buildMany(newFederationNumberOfUtxos, i -> createHash(i + 1));
             storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
             federationSupport = federationSupportBuilder
@@ -982,8 +999,15 @@ class FederationSupportImplTest {
         }
 
         private Stream<Arguments> expectedUTXOsArgs() {
-            List<UTXO> oldFederationUTXOs = BitcoinTestUtils.createUTXOs(5, oldFederation.getAddress());
-            List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+            int oldFederationNumberOfUtxos = 5;
+            List<UTXO> oldFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(oldFederation.getP2SHScript())
+                .buildMany(oldFederationNumberOfUtxos, i -> createHash(i + 1));
+
+            int newFederationNumberOfUtxos = 10;
+            List<UTXO> newFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(newFederation.getP2SHScript())
+                .buildMany(newFederationNumberOfUtxos, i -> createHash(i + 1));
 
             return Stream.of(
                 Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederationUTXOs),
@@ -1423,7 +1447,10 @@ class FederationSupportImplTest {
         @Tag("getRetiringFederationBtcUTXOs")
         void getRetiringFederationUTXOs_returnsEmptyList() {
             // set UTXOs for new federation since there is no retiring federation
-            List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+            int newFederationNumberOfUtxos = 10;
+            List<UTXO> newFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(newFederation.getP2SHScript())
+                .buildMany(newFederationNumberOfUtxos, i -> createHash(i + 1));
             storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
             List<UTXO> retiringFederationUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
@@ -1992,9 +2019,16 @@ class FederationSupportImplTest {
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
             // set UTXOs for both feds
-            List<UTXO> oldFederationUTXOs = BitcoinTestUtils.createUTXOs(5, oldFederation.getAddress());
+            int oldFederationNumberOfUtxos = 5;
+            List<UTXO> oldFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(oldFederation.getP2SHScript())
+                .buildMany(oldFederationNumberOfUtxos, i -> createHash(i + 1));
             storageAccessor.saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), oldFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
-            List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+
+            int newFederationNumberOfUtxos = 10;
+            List<UTXO> newFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(newFederation.getP2SHScript())
+                .buildMany(newFederationNumberOfUtxos, i -> createHash(i + 1));
             storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
             federationSupport = federationSupportBuilder
@@ -2019,9 +2053,16 @@ class FederationSupportImplTest {
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
             // set UTXOs for both feds
-            List<UTXO> oldFederationUTXOs = BitcoinTestUtils.createUTXOs(5, oldFederation.getAddress());
+            int oldFederationNumberOfUtxos = 5;
+            List<UTXO> oldFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(oldFederation.getP2SHScript())
+                .buildMany(oldFederationNumberOfUtxos, i -> createHash(i + 1));
             storageAccessor.saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), oldFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
-            List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+
+            int newFederationNumberOfUtxos = 10;
+            List<UTXO> newFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(newFederation.getP2SHScript())
+                .buildMany(newFederationNumberOfUtxos, i -> createHash(i + 1));
             storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
             federationSupport = federationSupportBuilder
@@ -2257,7 +2298,11 @@ class FederationSupportImplTest {
     @Tag("new federation btc utxos")
     void getNewFederationBtcUTXOs_whenSavingUTXOs_returnsNewFederationUTXOs() {
         Address btcAddress = BitcoinTestUtils.createP2PKHAddress(federationMainnetConstants.getBtcParams(), "address");
-        List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, btcAddress);
+        Script outputScript = ScriptBuilder.createOutputScript(btcAddress);
+        int numberOfUtxos = 10;
+        List<UTXO> newFederationUTXOs = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
         storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 

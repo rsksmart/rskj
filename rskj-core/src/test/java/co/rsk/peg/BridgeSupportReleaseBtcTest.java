@@ -829,7 +829,10 @@ class BridgeSupportReleaseBtcTest {
 
     @Test
     void processPegoutsInBatch_after_hop_divide_transaction_when_max_size_exceeded() throws IOException {
-        List<UTXO> utxos = PegTestUtils.createUTXOs(310, activeFederation.getAddress());
+        int numberOfUtxos = 310;
+        List<UTXO> utxos = UTXOBuilder.builder()
+            .withScriptPubKey(activeFederation.getP2SHScript())
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
@@ -868,7 +871,10 @@ class BridgeSupportReleaseBtcTest {
 
     @Test
     void processPegoutsInBatch_after_hop_when_max_size_exceeded_for_one_pegout() throws IOException {
-        List<UTXO> utxos = PegTestUtils.createUTXOs(700, activeFederation.getAddress());
+        int numberOfUtxos = 700;
+        List<UTXO> utxos = UTXOBuilder.builder()
+            .withScriptPubKey(activeFederation.getP2SHScript())
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
@@ -894,7 +900,10 @@ class BridgeSupportReleaseBtcTest {
 
     @Test
     void processPegoutsInBatch_after_hop_when_max_size_exceeded_for_two_pegout() throws IOException {
-        List<UTXO> utxos = PegTestUtils.createUTXOs(1400, activeFederation.getAddress());
+        int numberOfUtxos = 1400;
+        List<UTXO> utxos = UTXOBuilder.builder()
+            .withScriptPubKey(activeFederation.getP2SHScript())
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);

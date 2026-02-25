@@ -5,6 +5,11 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.IntFunction;
+import java.util.stream.IntStream;
+
 public class UTXOBuilder {
     private Sha256Hash transactionHash;
     private long outputIndex;
@@ -60,6 +65,27 @@ public class UTXOBuilder {
     public UTXOBuilder withScriptPubKey(Script scriptPubKey) {
         this.scriptPubKey = scriptPubKey;
         return this;
+    }
+
+    private UTXOBuilder copy() {
+        Script scriptPubKeyCopy = new Script(this.scriptPubKey.getProgram());
+        return UTXOBuilder.builder()
+            .withTransactionHash(this.transactionHash)
+            .withOutpointIndex(this.outputIndex)
+            .withValue(this.value)
+            .withBlockHeight(this.blockHeight)
+            .isCoinbase(this.isCoinbase)
+            .withScriptPubKey(scriptPubKeyCopy);
+    }
+
+    public List<UTXO> buildMany(int numberOfUtxos, IntFunction<Sha256Hash> transactionHashGenerator) {
+        List<UTXO> utxos = IntStream.range(0, numberOfUtxos)
+            .mapToObj(i -> this.copy()
+                .withTransactionHash(transactionHashGenerator.apply(i))
+                .build()
+            )
+            .toList();
+        return new ArrayList<>(utxos);
     }
 
     public UTXO build() {

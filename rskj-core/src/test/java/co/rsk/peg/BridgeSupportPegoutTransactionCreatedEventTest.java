@@ -1,6 +1,6 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.createUTXOs;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,6 +24,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -36,6 +38,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class BridgeSupportPegoutTransactionCreatedEventTest {
 
+    private static final int NUMBER_OF_UTXOS = 10;
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final FederationConstants federationMainNetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
@@ -51,10 +54,9 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
     @BeforeEach
     void init() throws IOException {
-        List<UTXO> fedUTXOs = createUTXOs(
-            10,
-            ERP_FEDERATION.getAddress()
-        );
+        List<UTXO> fedUTXOs = UTXOBuilder.builder()
+            .withScriptPubKey(ERP_FEDERATION.getP2SHScript())
+            .buildMany(NUMBER_OF_UTXOS, i -> createHash(i + 1));
 
         BlockGenerator blockGenerator = new BlockGenerator();
         rskCurrentBlock = blockGenerator.createBlock(ERP_FEDERATION.getCreationBlockNumber(), 1);
@@ -161,7 +163,9 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         when(federationStorageProvider.getNewFederation(federationMainNetConstants, activations)).thenReturn(newFederation);
 
         // Utxos to migrate
-        List<UTXO> utxosToMigrate = createUTXOs(10, oldFederation.getAddress());
+        List<UTXO> utxosToMigrate = UTXOBuilder.builder()
+            .withScriptPubKey(oldFederation.getP2SHScript())
+            .buildMany(NUMBER_OF_UTXOS, i -> createHash(i + 1));
         Coin totalTransactionInputAmount = utxosToMigrate.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
         when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(utxosToMigrate);
 
@@ -242,11 +246,15 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         when(federationStorageProvider.getNewFederation(federationMainNetConstants, activations)).thenReturn(newFederation);
 
         // Utxos to migrate
-        List<UTXO> utxosToMigrate = createUTXOs(10, oldFederation.getAddress());
+        List<UTXO> utxosToMigrate = UTXOBuilder.builder()
+            .withScriptPubKey(oldFederation.getP2SHScript())
+            .buildMany(NUMBER_OF_UTXOS, i -> createHash(i + 1));
         when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(utxosToMigrate);
         Coin migrationTotalAmount = utxosToMigrate.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
 
-        List<UTXO> utxosNewFederation = createUTXOs(10, newFederation.getAddress());
+        List<UTXO> utxosNewFederation = UTXOBuilder.builder()
+            .withScriptPubKey(newFederation.getP2SHScript())
+            .buildMany(NUMBER_OF_UTXOS, i -> createHash(i + 1));
         when(federationStorageProvider.getNewFederationBtcUTXOs(btcMainnetParams, activations)).thenReturn(utxosNewFederation);
 
         // Advance blockchain to migration phase. Migration phase starts 1 block after migration age is reached.
