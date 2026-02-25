@@ -1,0 +1,39 @@
+comment
+
+// RSKIP544/EIP-3541: Reject new contract code starting with 0xEF byte
+// This test uses a create transaction (receiverAddress 00) where the
+// initcode returns 0xEF as the deployed contract bytecode.
+//
+// Initcode: 60ef60005360016000f3 (10 bytes)
+//   60ef    PUSH1 0xef
+//   6000    PUSH1 0x00
+//   53      MSTORE8 (store 0xef at memory[0])
+//   6001    PUSH1 0x01 (size = 1 byte)
+//   6000    PUSH1 0x00 (offset = 0)
+//   f3      RETURN (return memory[0:1] = 0xef)
+//
+// Expected: Transaction fails after RSKIP544 activation
+
+end
+
+account_new acc1 10000000000
+
+# Create transaction with initcode that returns 0xEF
+transaction_build txCreateWithEF
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 60ef60005360016000f3
+    gas 300000
+    build
+
+block_build b01
+    parent g00
+    gasLimit 6800000
+    transactions txCreateWithEF
+    build
+
+block_connect b01
+
+# Assert best block
+assert_best b01

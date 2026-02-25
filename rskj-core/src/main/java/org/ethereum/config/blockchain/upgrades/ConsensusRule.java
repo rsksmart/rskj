@@ -112,6 +112,7 @@ public enum ConsensusRule {
     RSKIP529("rskip529"), // New storage cells in Bridge native contract for base and super events info
     RSKIP535("rskip535"), // BaseEvent for the union bridge
     RSKIP536("rskip536"), // Additional methods for BlockHeader precompiled contract
+    RSKIP544("rskip544"), // From EIP-3541 Reject new contract code starting with the 0xEF byte
     ;
 
     private final String configKey;
