@@ -184,7 +184,7 @@ public class BlockGenerator {
                 .setEmptyMergedMiningForkDetectionData()
                 .setUncleCount(uncles.size())
                 .setUmmRoot(ummRoot)
-                .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
+                .setCreateParallelCompliantHeader(activationConfig.isActive(blockNumber, ConsensusRule.RSKIP351, ConsensusRule.RSKIP144))
                 .build();
 
         return blockFactory.newBlock(
@@ -219,7 +219,7 @@ public class BlockGenerator {
                 .setTimestamp(parent.getTimestamp() + ++count)
                 .setEmptyMergedMiningForkDetectionData()
                 .setUmmRoot(ummRoot)
-                .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
+                .setCreateParallelCompliantHeader(activationConfig.isActive(blockNumber, ConsensusRule.RSKIP351, ConsensusRule.RSKIP144))
                 .build();
 
         return blockFactory.newBlock(
@@ -275,7 +275,7 @@ public class BlockGenerator {
         byte[] gasLimit,
         RskAddress coinbase
     ) {
-        short[] edges = activationConfig.isActive(ConsensusRule.RSKIP144, parent.getNumber() + 1) ? new short[0] : null;
+        short[] edges = activationConfig.isActive(parent.getNumber() + 1, ConsensusRule.RSKIP351, ConsensusRule.RSKIP144)  ? new short[0] : null;
         return createChildBlockUsingCoinbase(parent, txs, uncles, difficulty, minGasPrice, gasLimit, coinbase, edges);
     }
 
@@ -325,7 +325,7 @@ public class BlockGenerator {
                 .setUmmRoot(ummRoot)
                 .setBaseEvent(baseEvent)
                 .setTxExecutionSublistsEdges(edges)
-                .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
+                .setCreateParallelCompliantHeader(activationConfig.isActive(blockNumber, ConsensusRule.RSKIP351, ConsensusRule.RSKIP144))
                 .build();
 
         if (difficulty == 0) {
@@ -378,7 +378,7 @@ public class BlockGenerator {
                 .setEmptyMergedMiningForkDetectionData()
                 .setMinimumGasPrice(minimumGasPrice)
                 .setUmmRoot(ummRoot)
-                .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, number))
+                .setCreateParallelCompliantHeader(activationConfig.isActive(number, ConsensusRule.RSKIP351, ConsensusRule.RSKIP144))
                 .build();
 
         return blockFactory.newBlock(
@@ -416,7 +416,7 @@ public class BlockGenerator {
                 .setEmptyMergedMiningForkDetectionData()
                 .setMinimumGasPrice(Coin.valueOf(10))
                 .setUmmRoot(ummRoot)
-                .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
+                .setCreateParallelCompliantHeader(activationConfig.isActive(blockNumber, ConsensusRule.RSKIP351, ConsensusRule.RSKIP144))
                 .build();
 
         return blockFactory.newBlock(

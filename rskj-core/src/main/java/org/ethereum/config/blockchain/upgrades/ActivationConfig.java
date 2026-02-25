@@ -107,6 +107,22 @@ public class ActivationConfig {
         return 0 <= activationHeight && activationHeight <= blockNumber;
     }
 
+    /**
+     * Returns {@code true} if all given {@link ConsensusRule} instances
+     * are active at the specified block number.
+     * <p>If no rules are provided, this method returns {@code false}.
+     *
+     * @param number the block number to evaluate
+     * @param consensusRules the rules to check, in evaluation order
+     * @return {@code true} if all rules are active and at least one rule
+     *         is provided; {@code false} otherwise
+     */
+    public boolean isActive(long number, ConsensusRule... consensusRules) {
+        return consensusRules.length > 0 &&
+                Arrays.stream(consensusRules)
+                        .allMatch(rule -> isActive(rule, number));
+    }
+
     public boolean containsNetworkUpgrade(NetworkUpgrade networkUpgrade) {
         return networkUpgrades.containsKey(networkUpgrade);
     }
@@ -115,6 +131,7 @@ public class ActivationConfig {
         long activationHeight = networkUpgrades.get(networkUpgrade);
         return 0 <= activationHeight && activationHeight <= blockNumber;
     }
+
 
     private boolean isActivating(ConsensusRule consensusRule, long blockNumber) {
         long activationHeight = activationHeights.get(consensusRule);
