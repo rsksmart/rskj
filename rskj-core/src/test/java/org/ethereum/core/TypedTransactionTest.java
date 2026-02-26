@@ -22,316 +22,284 @@ import co.rsk.core.RskAddress;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for RSKIP543 Typed Transaction encoding and decoding
+ * Tests for RSKIP543 Typed Transaction encoding and decoding.
  */
-public class TypedTransactionTest {
+class TypedTransactionTest {
 
     private static final byte[] EMPTY_DATA = new byte[0];
     private static final ECKey TEST_KEY = new ECKey();
     private static final RskAddress TEST_ADDRESS = new RskAddress("0x1234567890123456789012345678901234567890");
 
-    /**
-     * Test that legacy transactions (Type 0) do NOT have a type prefix
-     */
+    // ========================================================================
+    // Encoding prefix
+    // ========================================================================
+
     @Test
-    public void testLegacyTransactionEncodingNoPrefix() {
-        Transaction tx = createTransaction(TransactionType.LEGACY);
+    void legacyTransactionEncoding_startsWithRlpListMarker() {
+        Transaction tx = createTransaction(TransactionType.LEGACY, EMPTY_DATA);
         byte[] encoded = tx.getEncoded();
-        
-        // Legacy transactions should start with RLP list marker (0xc0-0xff)
-        assertTrue(encoded[0] >= (byte) 0xc0, 
-            "Legacy transaction should start with RLP list marker, got: 0x" + 
+
+        assertTrue((encoded[0] & 0xFF) >= 0xc0,
+            "Legacy transaction should start with RLP list marker, got: 0x" +
             String.format("%02x", encoded[0]));
     }
 
-    /**
-     * Test that Type 1 transactions have the 0x01 prefix
-     */
-    @Test
-    public void testType1TransactionEncodingWithPrefix() {
-        Transaction tx = createTransaction(TransactionType.TYPE_1);
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = "LEGACY", mode = EnumSource.Mode.EXCLUDE)
+    void typedTransactionEncoding_startsWithCorrectTypePrefix(TransactionType type) {
+        Transaction tx = createTransaction(type, EMPTY_DATA);
         byte[] encoded = tx.getEncoded();
-        
-        // Type 1 transactions should start with 0x01
-        assertEquals((byte) 0x01, encoded[0], 
-            "Type 1 transaction should start with 0x01");
-        
-        // The rest should be RLP encoded
-        assertTrue(encoded[1] >= (byte) 0xc0,
+
+        assertEquals(type.getByteCode(), encoded[0],
+            "Typed transaction should start with type byte 0x" +
+            String.format("%02x", type.getByteCode()));
+        assertTrue((encoded[1] & 0xFF) >= 0xc0,
             "After type prefix, should be RLP list marker");
     }
 
-    /**
-     * Test that Type 2 transactions have the 0x02 prefix
-     */
-    @Test
-    public void testType2TransactionEncodingWithPrefix() {
-        Transaction tx = createTransaction(TransactionType.TYPE_2);
-        byte[] encoded = tx.getEncoded();
-        
-        // Type 2 transactions should start with 0x02
-        assertEquals((byte) 0x02, encoded[0], 
-            "Type 2 transaction should start with 0x02");
-        
-        // The rest should be RLP encoded
-        assertTrue(encoded[1] >= (byte) 0xc0,
-            "After type prefix, should be RLP list marker");
-    }
+    // ========================================================================
+    // Round-trip (encode -> decode) for all types
+    // ========================================================================
 
-    /**
-     * Test that Type 3 transactions have the 0x03 prefix
-     */
-    @Test
-    public void testType3TransactionEncodingWithPrefix() {
-        Transaction tx = createTransaction(TransactionType.TYPE_3);
-        byte[] encoded = tx.getEncoded();
-        
-        // Type 3 transactions should start with 0x03
-        assertEquals((byte) 0x03, encoded[0], 
-            "Type 3 transaction should start with 0x03");
-        
-        // The rest should be RLP encoded
-        assertTrue(encoded[1] >= (byte) 0xc0,
-            "After type prefix, should be RLP list marker");
-    }
+    @ParameterizedTest
+    @EnumSource(TransactionType.class)
+    void signedTransactionRoundTrip_preservesCoreFields(TransactionType type) {
+        Transaction original = createSignedTransaction(type, EMPTY_DATA);
+        byte[] encoded = original.getEncoded();
 
-    /**
-     * Test that Type 4 transactions have the 0x04 prefix
-     */
-    @Test
-    public void testType4TransactionEncodingWithPrefix() {
-        Transaction tx = createTransaction(TransactionType.TYPE_4);
-        byte[] encoded = tx.getEncoded();
-        
-        // Type 4 transactions should start with 0x04
-        assertEquals((byte) 0x04, encoded[0], 
-            "Type 4 transaction should start with 0x04");
-        
-        // The rest should be RLP encoded
-        assertTrue(encoded[1] >= (byte) 0xc0,
-            "After type prefix, should be RLP list marker");
-    }
-
-    /**
-     * Test encoding and decoding round-trip for Legacy transaction
-     */
-    @Test
-    public void testLegacyTransactionRoundTrip() {
-        Transaction originalTx = createSignedTransaction(TransactionType.LEGACY);
-        byte[] encoded = originalTx.getEncoded();
-        
-        Transaction decodedTx = new Transaction(encoded);
-        
-        assertEquals(TransactionType.LEGACY, decodedTx.getType());
-        assertArrayEquals(originalTx.getNonce(), decodedTx.getNonce());
-        assertEquals(originalTx.getValue(), decodedTx.getValue());
-        assertEquals(originalTx.getReceiveAddress(), decodedTx.getReceiveAddress());
-        // Note: Empty data arrays may become null after RLP encoding/decoding
-        byte[] originalData = originalTx.getData();
-        byte[] decodedData = decodedTx.getData();
-        if (originalData == null || originalData.length == 0) {
-            assertTrue(decodedData == null || decodedData.length == 0,
-                "Empty data should remain empty or null");
-        } else {
-            assertArrayEquals(originalData, decodedData);
+        if (type.isTyped()) {
+            assertEquals(type.getByteCode(), encoded[0]);
         }
+
+        Transaction decoded = new Transaction(encoded);
+
+        assertEquals(type, decoded.getType());
+        assertArrayEquals(original.getNonce(), decoded.getNonce());
+        assertEquals(original.getValue(), decoded.getValue());
+        assertEquals(original.getReceiveAddress(), decoded.getReceiveAddress());
+        assertDataEquals(original.getData(), decoded.getData());
     }
 
-    /**
-     * Test encoding and decoding round-trip for Type 1 transaction
-     */
-    @Test
-    public void testType1TransactionRoundTrip() {
-        Transaction originalTx = createSignedTransaction(TransactionType.TYPE_1);
-        byte[] encoded = originalTx.getEncoded();
-        
-        // Verify type prefix is present
-        assertEquals((byte) 0x01, encoded[0]);
-        
-        Transaction decodedTx = new Transaction(encoded);
-        
-        assertEquals(TransactionType.TYPE_1, decodedTx.getType());
-        assertArrayEquals(originalTx.getNonce(), decodedTx.getNonce());
-        assertEquals(originalTx.getValue(), decodedTx.getValue());
-        assertEquals(originalTx.getReceiveAddress(), decodedTx.getReceiveAddress());
-        // Note: Empty data arrays may become null after RLP encoding/decoding
-        byte[] originalData = originalTx.getData();
-        byte[] decodedData = decodedTx.getData();
-        if (originalData == null || originalData.length == 0) {
-            assertTrue(decodedData == null || decodedData.length == 0,
-                "Empty data should remain empty or null");
-        } else {
-            assertArrayEquals(originalData, decodedData);
+    @ParameterizedTest
+    @EnumSource(TransactionType.class)
+    void signedTransactionRoundTrip_preservesGasFields(TransactionType type) {
+        Transaction original = createSignedTransaction(type, EMPTY_DATA);
+        Transaction decoded = new Transaction(original.getEncoded());
+
+        assertEquals(original.getGasPrice(), decoded.getGasPrice());
+        assertArrayEquals(original.getGasLimit(), decoded.getGasLimit());
+    }
+
+    @ParameterizedTest
+    @EnumSource(TransactionType.class)
+    void signedTransactionRoundTrip_withNonEmptyData(TransactionType type) {
+        byte[] data = {0x01, 0x02, 0x03, 0x04, 0x05};
+        Transaction original = createSignedTransaction(type, data);
+
+        Transaction decoded = new Transaction(original.getEncoded());
+
+        assertEquals(type, decoded.getType());
+        assertArrayEquals(data, decoded.getData());
+    }
+
+    @ParameterizedTest
+    @EnumSource(TransactionType.class)
+    void signedTransactionRoundTrip_withLargeData(TransactionType type) {
+        byte[] largeData = new byte[1024];
+        for (int i = 0; i < largeData.length; i++) {
+            largeData[i] = (byte) (i & 0xff);
         }
+        Transaction original = createSignedTransaction(type, largeData);
+
+        Transaction decoded = new Transaction(original.getEncoded());
+
+        assertEquals(type, decoded.getType());
+        assertArrayEquals(largeData, decoded.getData());
     }
 
-    /**
-     * Test encoding and decoding round-trip for Type 2 transaction
-     */
-    @Test
-    public void testType2TransactionRoundTrip() {
-        Transaction originalTx = createSignedTransaction(TransactionType.TYPE_2);
-        byte[] encoded = originalTx.getEncoded();
-        
-        // Verify type prefix is present
-        assertEquals((byte) 0x02, encoded[0]);
-        
-        Transaction decodedTx = new Transaction(encoded);
-        
-        assertEquals(TransactionType.TYPE_2, decodedTx.getType());
-        assertArrayEquals(originalTx.getNonce(), decodedTx.getNonce());
-        assertEquals(originalTx.getValue(), decodedTx.getValue());
-        assertEquals(originalTx.getReceiveAddress(), decodedTx.getReceiveAddress());
-        // Note: Empty data arrays may become null after RLP encoding/decoding
-        byte[] originalData = originalTx.getData();
-        byte[] decodedData = decodedTx.getData();
-        if (originalData == null || originalData.length == 0) {
-            assertTrue(decodedData == null || decodedData.length == 0,
-                "Empty data should remain empty or null");
-        } else {
-            assertArrayEquals(originalData, decodedData);
-        }
+    @ParameterizedTest
+    @EnumSource(TransactionType.class)
+    void signedTransactionRoundTrip_withZeroNonce(TransactionType type) {
+        Transaction original = createSignedTransactionWith(type, BigInteger.ZERO,
+            Coin.valueOf(1_000_000_000_000_000_000L), EMPTY_DATA);
+
+        Transaction decoded = new Transaction(original.getEncoded());
+
+        assertEquals(type, decoded.getType());
+        assertArrayEquals(original.getNonce(), decoded.getNonce());
     }
 
-    /**
-     * Test encoding and decoding round-trip for Type 3 transaction
-     */
-    @Test
-    public void testType3TransactionRoundTrip() {
-        Transaction originalTx = createSignedTransaction(TransactionType.TYPE_3);
-        byte[] encoded = originalTx.getEncoded();
-        
-        // Verify type prefix is present
-        assertEquals((byte) 0x03, encoded[0]);
-        
-        Transaction decodedTx = new Transaction(encoded);
-        
-        assertEquals(TransactionType.TYPE_3, decodedTx.getType());
-        assertArrayEquals(originalTx.getNonce(), decodedTx.getNonce());
-        assertEquals(originalTx.getValue(), decodedTx.getValue());
-        assertEquals(originalTx.getReceiveAddress(), decodedTx.getReceiveAddress());
-        // Note: Empty data arrays may become null after RLP encoding/decoding
-        byte[] originalData = originalTx.getData();
-        byte[] decodedData = decodedTx.getData();
-        if (originalData == null || originalData.length == 0) {
-            assertTrue(decodedData == null || decodedData.length == 0,
-                "Empty data should remain empty or null");
-        } else {
-            assertArrayEquals(originalData, decodedData);
-        }
+    @ParameterizedTest
+    @EnumSource(TransactionType.class)
+    void signedTransactionRoundTrip_withHighNonce(TransactionType type) {
+        BigInteger highNonce = BigInteger.valueOf(Integer.MAX_VALUE).add(BigInteger.ONE);
+        Transaction original = createSignedTransactionWith(type, highNonce,
+            Coin.valueOf(1_000_000_000_000_000_000L), EMPTY_DATA);
+
+        Transaction decoded = new Transaction(original.getEncoded());
+
+        assertEquals(type, decoded.getType());
+        assertArrayEquals(original.getNonce(), decoded.getNonce());
     }
 
-    /**
-     * Test encoding and decoding round-trip for Type 4 transaction
-     */
-    @Test
-    public void testType4TransactionRoundTrip() {
-        Transaction originalTx = createSignedTransaction(TransactionType.TYPE_4);
-        byte[] encoded = originalTx.getEncoded();
-        
-        // Verify type prefix is present
-        assertEquals((byte) 0x04, encoded[0]);
-        
-        Transaction decodedTx = new Transaction(encoded);
-        
-        assertEquals(TransactionType.TYPE_4, decodedTx.getType());
-        assertArrayEquals(originalTx.getNonce(), decodedTx.getNonce());
-        assertEquals(originalTx.getValue(), decodedTx.getValue());
-        assertEquals(originalTx.getReceiveAddress(), decodedTx.getReceiveAddress());
-        // Note: Empty data arrays may become null after RLP encoding/decoding
-        byte[] originalData = originalTx.getData();
-        byte[] decodedData = decodedTx.getData();
-        if (originalData == null || originalData.length == 0) {
-            assertTrue(decodedData == null || decodedData.length == 0,
-                "Empty data should remain empty or null");
-        } else {
-            assertArrayEquals(originalData, decodedData);
-        }
+    @ParameterizedTest
+    @EnumSource(TransactionType.class)
+    void signedTransactionRoundTrip_withZeroValue(TransactionType type) {
+        Transaction original = createSignedTransactionWith(type, BigInteger.ONE,
+            Coin.ZERO, EMPTY_DATA);
+
+        Transaction decoded = new Transaction(original.getEncoded());
+
+        assertEquals(type, decoded.getType());
     }
 
-    /**
-     * Test that getEncodedRaw includes type prefix for typed transactions
-     * This is important for signing - the signature must cover the type
-     */
-    @Test
-    public void testTypedTransactionRawEncodingIncludesTypePrefix() {
-        Transaction tx = createTransaction(TransactionType.TYPE_1);
+    // ========================================================================
+    // Double-encode stability
+    // ========================================================================
+
+    @ParameterizedTest
+    @EnumSource(TransactionType.class)
+    void doubleEncode_producesIdenticalBytes(TransactionType type) {
+        Transaction original = createSignedTransaction(type, EMPTY_DATA);
+        byte[] firstEncode = original.getEncoded();
+
+        Transaction decoded = new Transaction(firstEncode);
+        byte[] secondEncode = decoded.getEncoded();
+
+        assertArrayEquals(firstEncode, secondEncode,
+            "Re-encoding a decoded transaction should produce identical bytes");
+    }
+
+    // ========================================================================
+    // Raw encoding (used for signing digest)
+    // ========================================================================
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = "LEGACY", mode = EnumSource.Mode.EXCLUDE)
+    void typedTransactionRawEncoding_startsWithTypePrefix(TransactionType type) {
+        Transaction tx = createTransaction(type, EMPTY_DATA);
         byte[] rawEncoded = tx.getEncodedRaw();
-        
-        // Raw encoding for typed transactions should also include type prefix
-        assertEquals((byte) 0x01, rawEncoded[0],
-            "Raw encoding for Type 1 transaction should start with 0x01");
+
+        assertEquals(type.getByteCode(), rawEncoded[0],
+            "Raw encoding should start with type byte 0x" +
+            String.format("%02x", type.getByteCode()));
     }
 
-    /**
-     * Test that legacy transaction raw encoding does NOT include type prefix
-     */
     @Test
-    public void testLegacyTransactionRawEncodingNoTypePrefix() {
-        Transaction tx = createTransaction(TransactionType.LEGACY);
+    void legacyTransactionRawEncoding_startsWithRlpListMarker() {
+        Transaction tx = createTransaction(TransactionType.LEGACY, EMPTY_DATA);
         byte[] rawEncoded = tx.getEncodedRaw();
-        
-        // Legacy raw encoding should start with RLP list marker
-        assertTrue(rawEncoded[0] >= (byte) 0xc0,
+
+        assertTrue((rawEncoded[0] & 0xFF) >= 0xc0,
             "Legacy raw encoding should start with RLP list marker");
     }
 
-    /**
-     * Test that attempting to parse an unknown transaction type throws an exception
-     */
-    @Test
-    public void testUnknownTransactionTypeThrowsException() {
-        // Create a fake transaction with an unsupported type in the valid typed range
-        // Use 0x7f (127) which is in the typed transaction range [0x00, 0x7f] but not supported
+    // ========================================================================
+    // Type identification
+    // ========================================================================
+
+    @ParameterizedTest
+    @EnumSource(TransactionType.class)
+    void transactionType_isCorrectlyIdentified(TransactionType type) {
+        Transaction tx = createTransaction(type, EMPTY_DATA);
+
+        assertEquals(type, tx.getType());
+        assertEquals(type == TransactionType.LEGACY, tx.getType().isLegacy());
+        assertEquals(type != TransactionType.LEGACY, tx.getType().isTyped());
+    }
+
+    // ========================================================================
+    // Encoding length: typed txs are 1 byte longer than the same legacy tx
+    // ========================================================================
+
+    @ParameterizedTest
+    @EnumSource(value = TransactionType.class, names = "LEGACY", mode = EnumSource.Mode.EXCLUDE)
+    void typedTransactionEncoding_isOneByteLongerThanLegacy(TransactionType type) {
+        Transaction legacyTx = createSignedTransaction(TransactionType.LEGACY, EMPTY_DATA);
+        Transaction typedTx = createSignedTransaction(type, EMPTY_DATA);
+
+        int legacyLen = legacyTx.getEncoded().length;
+        int typedLen = typedTx.getEncoded().length;
+
+        assertEquals(legacyLen + 1, typedLen,
+            type + " encoded length should be legacy length + 1 (for type prefix)");
+    }
+
+    // ========================================================================
+    // Invalid / unknown raw data
+    // ========================================================================
+
+    @ParameterizedTest
+    @ValueSource(bytes = {0x05, 0x06, 0x10, 0x50, 0x7f})
+    void unknownTypeByte_throwsException(byte unknownType) {
         byte[] fakeTypedTx = new byte[50];
-        fakeTypedTx[0] = (byte) 0x7f; // Unsupported but valid typed transaction type
-        // Fill rest with dummy RLP data
-        fakeTypedTx[1] = (byte) 0xc0; // Empty RLP list
-        
-        assertThrows(IllegalArgumentException.class, () -> {
-            new Transaction(fakeTypedTx);
-        }, "Should throw exception for unknown transaction type");
+        fakeTypedTx[0] = unknownType;
+        fakeTypedTx[1] = (byte) 0xc0;
+
+        assertThrows(IllegalArgumentException.class,
+            () -> new Transaction(fakeTypedTx));
     }
 
-    /**
-     * Test that all transaction types are correctly identified
-     */
     @Test
-    public void testTransactionTypeIdentification() {
-        Transaction legacyTx = createTransaction(TransactionType.LEGACY);
-        assertTrue(legacyTx.getType().isLegacy());
-        assertFalse(legacyTx.getType().isTyped());
-        
-        Transaction type1Tx = createTransaction(TransactionType.TYPE_1);
-        assertFalse(type1Tx.getType().isLegacy());
-        assertTrue(type1Tx.getType().isTyped());
-        
-        Transaction type2Tx = createTransaction(TransactionType.TYPE_2);
-        assertFalse(type2Tx.getType().isLegacy());
-        assertTrue(type2Tx.getType().isTyped());
+    void nullRawData_throwsException() {
+        assertThrows(IllegalArgumentException.class,
+            () -> new Transaction((byte[]) null));
     }
 
-    // Helper methods
+    @Test
+    void emptyRawData_throwsException() {
+        assertThrows(IllegalArgumentException.class,
+            () -> new Transaction(new byte[0]));
+    }
 
-    private Transaction createTransaction(TransactionType type) {
+    // ========================================================================
+    // Helpers
+    // ========================================================================
+
+    private static void assertDataEquals(byte[] expected, byte[] actual) {
+        if (expected == null || expected.length == 0) {
+            assertTrue(actual == null || actual.length == 0,
+                "Empty data should remain empty or null");
+        } else {
+            assertArrayEquals(expected, actual);
+        }
+    }
+
+    private Transaction createTransaction(TransactionType type, byte[] data) {
         byte[] nonce = ByteUtil.bigIntegerToBytes(BigInteger.ONE);
-        byte[] gasPrice = Coin.valueOf(1000000000).getBytes(); // 1 Gwei
-        byte[] gasLimit = ByteUtil.bigIntegerToBytes(BigInteger.valueOf(21000));
+        byte[] gasPrice = Coin.valueOf(1_000_000_000).getBytes();
+        byte[] gasLimit = ByteUtil.bigIntegerToBytes(BigInteger.valueOf(21_000));
         byte[] receiveAddress = TEST_ADDRESS.getBytes();
-        byte[] value = Coin.valueOf(1000000000000000000L).getBytes(); // 1 RSK
-        byte[] data = EMPTY_DATA;
-        
+        byte[] value = Coin.valueOf(1_000_000_000_000_000_000L).getBytes();
+
         return new Transaction(nonce, gasPrice, gasLimit, receiveAddress, value, data, type);
     }
 
-    private Transaction createSignedTransaction(TransactionType type) {
-        Transaction tx = createTransaction(type);
+    private Transaction createSignedTransaction(TransactionType type, byte[] data) {
+        Transaction tx = createTransaction(type, data);
+        tx.sign(TEST_KEY.getPrivKeyBytes());
+        return tx;
+    }
+
+    private Transaction createSignedTransactionWith(TransactionType type, BigInteger nonce,
+                                                    Coin value, byte[] data) {
+        byte[] nonceBytes = ByteUtil.bigIntegerToBytes(nonce);
+        byte[] gasPrice = Coin.valueOf(1_000_000_000).getBytes();
+        byte[] gasLimit = ByteUtil.bigIntegerToBytes(BigInteger.valueOf(21_000));
+        byte[] receiveAddress = TEST_ADDRESS.getBytes();
+        byte[] valueBytes = value.getBytes();
+
+        Transaction tx = new Transaction(nonceBytes, gasPrice, gasLimit, receiveAddress,
+            valueBytes, data, type);
         tx.sign(TEST_KEY.getPrivKeyBytes());
         return tx;
     }
