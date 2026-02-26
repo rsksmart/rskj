@@ -2,7 +2,10 @@ package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
 import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHP2WSHOutputScript;
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
@@ -11,8 +14,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import co.rsk.test.builders.UTXOBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
@@ -302,4 +303,101 @@ public class BitcoinTestUtils {
     public static byte[] getOutputScriptPubKeyHash(TransactionOutput output) {
         return output.getScriptPubKey().getPubKeyHash();
     }
+
+    public static void assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat(Script scriptSig, Script redeemScript) {
+        List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
+        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        int expectedChunkCount = numberOfSignaturesRequiredToSpend + 2; // OP_0 + redeem script
+        assertEquals(expectedChunkCount, scriptSigChunks.size());
+
+        int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
+
+        assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
+
+        for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
+            assertEquals(ScriptOpCodes.OP_0, chunk.opcode);
+        }
+    }
+
+    public static void assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat(Script scriptSig, Script redeemScript) {
+        assertP2shErpScriptSigStructure(scriptSig, redeemScript);
+
+        List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
+        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        int startIndex = 1; // First push is OP_0, next come the signatures
+
+        // An empty chunk for each signature required to spend
+        for (int i = startIndex; i <= numberOfSignaturesRequiredToSpend; i++) {
+            ScriptChunk signatureChunk = scriptSigChunks.get(i);
+            assertEquals(OP_0, signatureChunk.opcode);
+        }
+    }
+
+    public static void assertP2shErpScriptSigStructure(Script scriptSig, Script redeemScript) {
+        List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
+
+        // Check size first
+        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        int expectedChunksCount = numberOfSignaturesRequiredToSpend + 3; // OP_0, OP_NOTIF param, redeem script
+        assertEquals(expectedChunksCount, scriptSigChunks.size());
+
+        // Check each chunk
+        int chunkIndex = 0;
+
+        // first chunk should be OP_0
+        ScriptChunk firstChunk = scriptSigChunks.get(chunkIndex);
+        assertEquals(OP_0, firstChunk.opcode);
+
+        // Skip checking the signatures, other methods will handle that depending on whether signatures are expected or not
+        chunkIndex += numberOfSignaturesRequiredToSpend;
+
+        // An empty chunk for the OP_NOTIF param
+        ScriptChunk flowChunk = scriptSigChunks.get(++chunkIndex);
+        assertEquals(OP_0, flowChunk.opcode);
+
+        // Finally, the redeem script program
+        ScriptChunk redeemScriptChunk = scriptSigChunks.get(++chunkIndex);
+        assertArrayEquals(redeemScript.getProgram(), redeemScriptChunk.data);
+    }
+
+    public static void assertP2shP2wshScriptWithoutSignaturesHasProperFormat(TransactionWitness witness, Script redeemScript) {
+        assertP2shP2wshScriptSigStructure(witness, redeemScript);
+
+        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        int startIndex = 1; // First push is OP_0, next come the signatures
+
+        // An empty push for each signature required to spend
+        for (int i = startIndex; i <= numberOfSignaturesRequiredToSpend; i++) {
+            byte[] signaturePush = witness.getPush(i);
+            assertArrayEquals(EMPTY_BYTE_ARRAY, signaturePush);
+        }
+    }
+
+    public static void assertP2shP2wshScriptSigStructure(TransactionWitness witness, Script redeemScript) {
+        assertNotNull(witness);
+
+        // Check size first
+        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        int expectedPushCount = numberOfSignaturesRequiredToSpend + 3; // OP_0, OP_NOTIF param, redeem script
+        assertEquals(expectedPushCount, witness.getPushCount());
+
+        // Check each push element
+        int pushIndex = 0;
+
+        // first push should be OP_0 (empty byte)
+        byte[] firstPush = witness.getPush(pushIndex);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, firstPush);
+
+        // Skip checking the signatures, other methods will handle that depending on whether signatures are expected or not
+        pushIndex += numberOfSignaturesRequiredToSpend;
+
+        // An empty push for the OP_NOTIF param
+        byte[] flowPush = witness.getPush(++pushIndex);
+        assertArrayEquals(EMPTY_BYTE_ARRAY, flowPush);
+
+        // Finally, the redeem script program
+        byte[] lastPush = witness.getPush(++pushIndex);
+        assertArrayEquals(redeemScript.getProgram(), lastPush);
+    }
+
 }
