@@ -311,22 +311,22 @@ public class WorldDslProcessor {
                 name = difficultyTokenizer.nextToken();
                 difficulty = difficultyTokenizer.hasMoreTokens()?parseDifficulty(difficultyTokenizer.nextToken(),k):k;
             }
-            Block block = blockBuilder.difficulty(difficulty).parent(parent).build();
+            Block block = blockBuilder.difficulty(difficulty).parent(parent).build(world.getConfig());
             final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-            final TestSystemProperties config = new TestSystemProperties();
-            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
+
+            StateRootHandler stateRootHandler = new StateRootHandler(world.getConfig().getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
             BlockExecutor executor = new BlockExecutor(
                     new RepositoryLocator(world.getTrieStore(), stateRootHandler),
                     new TransactionExecutorFactory(
-                            config,
+                            world.getConfig(),
                             world.getBlockStore(),
                             null,
-                            new BlockFactory(config.getActivationConfig()),
+                            new BlockFactory(world.getConfig().getActivationConfig()),
                             programInvokeFactory,
                             null,
                             world.getBlockTxSignatureCache()
                     ),
-                    config);
+                    world.getConfig());
             executor.executeAndFill(block, parent.getHeader());
             world.saveBlock(name, block);
             parent = block;
