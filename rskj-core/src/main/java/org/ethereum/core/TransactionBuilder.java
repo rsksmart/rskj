@@ -154,6 +154,7 @@ public final class TransactionBuilder {
 		chainId(args.getChainId());
 		value(BigIntegers.asUnsignedByteArray(args.getValue()));
         type(args.getType());
+        rskSubtype(args.getRskSubtype());
 
 		return this;
 

@@ -24,6 +24,7 @@ import java.util.Arrays;
 public class TransactionArguments {
 
     private TransactionType type;
+    private Byte rskSubtype;
 	private String from;
 	private byte[] to;
 	private BigInteger gas;
@@ -114,6 +115,14 @@ public class TransactionArguments {
         return type;
     }
 
+    public void setRskSubtype(Byte rskSubtype) {
+        this.rskSubtype = rskSubtype;
+    }
+
+    public Byte getRskSubtype() {
+        return rskSubtype;
+    }
+
 	@Override
 	public String toString() {
 		return "TransactionArguments{" +
@@ -126,6 +135,7 @@ public class TransactionArguments {
 			", nonce='" + nonce + '\'' +
 			", chainId='" + chainId + '\'' +
             ", type='" + type + '\'' +
+            ", rskSubtype='" + rskSubtype + '\'' +
 			"}";
     }
 }

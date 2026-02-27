@@ -175,6 +175,8 @@ public class CallArgumentsParamTest {
                 new HexNumberParam(CHAIN_ID),
                 new HexNumberParam(VALUE),
                 new HexDataParam(DATA),
+                null,
+                null,
                 null
         );
 
@@ -203,7 +205,9 @@ public class CallArgumentsParamTest {
                 new HexNumberParam(CHAIN_ID),
                 new HexNumberParam(VALUE),
                 null,
-                new HexDataParam(DATA)
+                new HexDataParam(DATA),
+                null,
+                null
         );
 
         CallArguments callArguments = callArgumentsParam.toCallArguments();
@@ -229,7 +233,9 @@ public class CallArgumentsParamTest {
                 "            \"value\": " + NULL + ", " +
                 "            \"data\": " + NULL + ", " +
                 "            \"nonce\": " + NULL + ", " +
-                "            \"chainId\": " + NULL + "}";
+                "            \"chainId\": " + NULL + ", " +
+                "            \"type\": " + NULL + ", " +
+                "            \"rskSubtype\": " + NULL + "}";
 
         JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
         CallArgumentsParam callArgumentsParam = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
@@ -244,6 +250,8 @@ public class CallArgumentsParamTest {
         assertNull(callArgumentsParam.getData());
         assertNull(callArgumentsParam.getNonce());
         assertNull(callArgumentsParam.getChainId());
+        assertNull(callArgumentsParam.getType());
+        assertNull(callArgumentsParam.getRskSubtype());
     }
 
     @Test
@@ -263,6 +271,8 @@ public class CallArgumentsParamTest {
         assertNull(callArgumentsParam.getData());
         assertNull(callArgumentsParam.getNonce());
         assertNull(callArgumentsParam.getChainId());
+        assertNull(callArgumentsParam.getType());
+        assertNull(callArgumentsParam.getRskSubtype());
     }
 
     @Test
@@ -274,7 +284,7 @@ public class CallArgumentsParamTest {
 
         String result = callArgumentsParam.toString();
 
-        String expected = "CallArguments{from='null', to='null', gas='null', gasLimit='null', gasPrice='null', value='null', data='null', nonce='null', chainId='null'}";
+        String expected = "CallArguments{from='null', to='null', gas='null', gasLimit='null', gasPrice='null', value='null', data='null', nonce='null', chainId='null', type='null', rskSubtype='null'}";
         assertEquals(expected, result);
     }
 
@@ -293,7 +303,74 @@ public class CallArgumentsParamTest {
 
         String result = callArgumentsParam.toString();
 
-        String expected = "CallArguments{from='7986b3df570230288501eea3d890bd66948c9b79', to='e7b8e91401bf4d1669f54dc5f98109d7efbc4eea', gas='0x76c0', gasLimit='null', gasPrice='0x9184e72a000', value='null', data='null', nonce='0x1', chainId='0x539'}";
+        String expected = "CallArguments{from='7986b3df570230288501eea3d890bd66948c9b79', to='e7b8e91401bf4d1669f54dc5f98109d7efbc4eea', gas='0x76c0', gasLimit='null', gasPrice='0x9184e72a000', value='null', data='null', nonce='0x1', chainId='0x539', type='null', rskSubtype='null'}";
         assertEquals(expected, result);
+    }
+
+    @Test
+    public void testTypeIsDeserialized() throws JsonProcessingException {
+        String callArgumentsInput = "{\n" +
+                "            \"from\": \"" + FROM + "\"," +
+                "            \"to\" : \"" + TO + "\"," +
+                "            \"type\": \"0x1\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+        CallArgumentsParam callArgumentsParam = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
+
+        assertNotNull(callArgumentsParam.getType());
+        assertEquals("0x1", callArgumentsParam.getType().getHexNumber());
+
+        CallArguments callArguments = callArgumentsParam.toCallArguments();
+        assertEquals("0x1", callArguments.getType());
+    }
+
+    @Test
+    public void testRskSubtypeIsDeserialized() throws JsonProcessingException {
+        String callArgumentsInput = "{\n" +
+                "            \"from\": \"" + FROM + "\"," +
+                "            \"to\" : \"" + TO + "\"," +
+                "            \"type\": \"0x2\"," +
+                "            \"rskSubtype\": \"0x3\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+        CallArgumentsParam callArgumentsParam = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
+
+        assertNotNull(callArgumentsParam.getType());
+        assertEquals("0x2", callArgumentsParam.getType().getHexNumber());
+        assertNotNull(callArgumentsParam.getRskSubtype());
+        assertEquals("0x3", callArgumentsParam.getRskSubtype().getHexNumber());
+
+        CallArguments callArguments = callArgumentsParam.toCallArguments();
+        assertEquals("0x2", callArguments.getType());
+        assertEquals("0x3", callArguments.getRskSubtype());
+    }
+
+    @Test
+    public void testTypeAndRskSubtypeAreNullWhenOmitted() throws JsonProcessingException {
+        String callArgumentsInput = "{\n" +
+                "            \"from\": \"" + FROM + "\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+        CallArgumentsParam callArgumentsParam = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
+
+        assertNull(callArgumentsParam.getType());
+        assertNull(callArgumentsParam.getRskSubtype());
+
+        CallArguments callArguments = callArgumentsParam.toCallArguments();
+        assertNull(callArguments.getType());
+        assertNull(callArguments.getRskSubtype());
+    }
+
+    @Test
+    public void testNullTypeAndRskSubtypeAreHandled() throws JsonProcessingException {
+        String callArgumentsInput = "{\n" +
+                "            \"type\": " + NULL + "," +
+                "            \"rskSubtype\": " + NULL + "}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+        CallArgumentsParam callArgumentsParam = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
+
+        assertNull(callArgumentsParam.getType());
+        assertNull(callArgumentsParam.getRskSubtype());
     }
 }

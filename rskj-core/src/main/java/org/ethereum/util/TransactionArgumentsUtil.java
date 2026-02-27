@@ -35,6 +35,7 @@ public class TransactionArgumentsUtil {
 	private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
 
     public static final String ERR_INVALID_TX_TYPE = "Invalid transaction type: ";
+    public static final String ERR_INVALID_RSK_SUBTYPE = "Invalid RSK subtype: ";
 	public static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
 	public static final String ERR_COULD_NOT_FIND_ACCOUNT = "Could not find account for address: ";
 
@@ -53,6 +54,7 @@ public class TransactionArgumentsUtil {
 		TransactionArguments argsRet = new TransactionArguments();
 
         argsRet.setType(hexToTransactionType(argsParam.getType()));
+        argsRet.setRskSubtype(hexToRskSubtype(argsParam.getRskSubtype()));
 
 		argsRet.setFrom(argsParam.getFrom());
 
@@ -117,12 +119,19 @@ public class TransactionArgumentsUtil {
         if (hex == null) {
             return TransactionType.LEGACY;
         }
-        TransactionType type;
+        byte typeByte;
         try {
-            type = TransactionType.getByByte(Byte.parseByte(hex));
+            BigInteger value = HexUtils.strHexOrStrNumberToBigInteger(hex);
+            if (value.signum() < 0 || value.compareTo(BigInteger.valueOf(TransactionType.MAX_TYPE_VALUE)) > 0) {
+                throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex);
+            }
+            typeByte = value.byteValue();
+        } catch (RskJsonRpcRequestException e) {
+            throw e;
         } catch (Exception ex) {
             throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex, ex);
         }
+        TransactionType type = TransactionType.getByByte(typeByte);
         if (type == null) {
             throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex);
         }
@@ -132,6 +141,23 @@ public class TransactionArgumentsUtil {
                             + "; explicit type 0x00 is not allowed, omit the type field for legacy transactions");
         }
         return type;
+    }
+
+    static Byte hexToRskSubtype(String hex) {
+        if (hex == null) {
+            return null;
+        }
+        try {
+            BigInteger value = HexUtils.strHexOrStrNumberToBigInteger(hex);
+            if (value.signum() < 0 || value.compareTo(BigInteger.valueOf(TransactionType.MAX_TYPE_VALUE)) > 0) {
+                throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_RSK_SUBTYPE + hex);
+            }
+            return value.byteValue();
+        } catch (RskJsonRpcRequestException e) {
+            throw e;
+        } catch (Exception ex) {
+            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_RSK_SUBTYPE + hex, ex);
+        }
     }
 
 }
