@@ -331,7 +331,7 @@ public class BlockHeaderBuilder {
             }
         }
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP144, number) && createParallelCompliantHeader && txExecutionSublistsEdges == null) {
+        if (activationConfig.isActive(number, ConsensusRule.RSKIP351, ConsensusRule.RSKIP144) && createParallelCompliantHeader && txExecutionSublistsEdges == null) {
             txExecutionSublistsEdges = new short[0];
         }
 

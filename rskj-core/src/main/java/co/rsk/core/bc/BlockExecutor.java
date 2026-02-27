@@ -334,7 +334,7 @@ public class BlockExecutor {
     }
 
     public BlockResult executeForMining(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute, boolean saveState) {
-        if (activationConfig.isActive(ConsensusRule.RSKIP144, block.getHeader().getNumber())) {
+        if (activationConfig.isActive(block.getHeader().getNumber(), ConsensusRule.RSKIP351, ConsensusRule.RSKIP144)) {
             return executeForMiningAfterRSKIP144(block, parent, discardInvalidTxs, ignoreReadyToExecute, saveState);
         } else {
             return executeInternal(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute, saveState);
@@ -361,7 +361,7 @@ public class BlockExecutor {
                                boolean discardInvalidTxs,
                                boolean acceptInvalidTransactions,
                                boolean saveState) {
-        if (activationConfig.isActive(ConsensusRule.RSKIP144, block.getHeader().getNumber())) {
+        if (activationConfig.isActive(block.getHeader().getNumber(), ConsensusRule.RSKIP351, ConsensusRule.RSKIP144)) {
             return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
         } else {
             return executeInternal(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
