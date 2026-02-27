@@ -445,7 +445,7 @@ class Web3ImplUnitTest {
         HexAddressParam from = new HexAddressParam("0x0011223344556677880011223344556677889900");
         HexAddressParam to = new HexAddressParam("0x0011223344556677880011223344556677889900");
         HexDataParam data = new HexDataParam("0x010203");
-        return new CallArgumentsParam(from, to, null, null, null, null, null, null, data, null);
+        return new CallArgumentsParam(from, to, null, null, null, null, null, null, data, null, null, null);
     }
 
 }

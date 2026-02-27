@@ -76,7 +76,7 @@ class TransactionArgumentsUtilTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {"1", "2", "3", "4"})
+	@ValueSource(strings = {"1", "2", "3", "4", "0x1", "0x2", "0x3", "0x4", "0x01", "0x02", "0x03", "0x04"})
 	void hexToTransactionType_validTypes_areAccepted(String hex) {
 		TransactionType type = TransactionArgumentsUtil.hexToTransactionType(hex);
 
@@ -85,15 +85,25 @@ class TransactionArgumentsUtilTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {"5", "6", "10", "127"})
+	@ValueSource(strings = {"5", "6", "10", "127", "0x5", "0x0a", "0x7f"})
 	void hexToTransactionType_unknownTypes_areRejected(String hex) {
 		assertThrows(RskJsonRpcRequestException.class,
 				() -> TransactionArgumentsUtil.hexToTransactionType(hex));
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {"0x0", "0x1", "abc", "0xff", ""})
-	void hexToTransactionType_unparseableStrings_areRejected(String hex) {
+	@ValueSource(strings = {"0x0", "0x00", "0"})
+	void hexToTransactionType_explicitZeroHex_isRejected(String hex) {
+		RskJsonRpcRequestException ex = assertThrows(
+				RskJsonRpcRequestException.class,
+				() -> TransactionArgumentsUtil.hexToTransactionType(hex));
+		assertTrue(ex.getMessage().contains("explicit type 0x00 is not allowed"),
+				"Error should mention explicit 0x00 is not allowed, got: " + ex.getMessage());
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"abc", "0xff", "", "0x80", "-1"})
+	void hexToTransactionType_invalidStrings_areRejected(String hex) {
 		assertThrows(RskJsonRpcRequestException.class,
 				() -> TransactionArgumentsUtil.hexToTransactionType(hex));
 	}
@@ -110,6 +120,56 @@ class TransactionArgumentsUtilTest {
 
 		assertThrows(RskJsonRpcRequestException.class,
 				() -> TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId()));
+	}
+
+	@Test
+	void processArguments_withHexType_isAccepted() {
+		CallArguments args = new CallArguments();
+		args.setFrom("0x0000000000000000000000000000000000000001");
+		args.setTo("0x0000000000000000000000000000000000000002");
+		args.setGas("0x5208");
+		args.setGasPrice("0x1");
+		args.setValue("0x0");
+		args.setType("0x1");
+
+		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId());
+		assertEquals(TransactionType.TYPE_1, txArgs.getType());
+		assertNull(txArgs.getRskSubtype());
+	}
+
+	@Test
+	void hexToRskSubtype_nullReturnsNull() {
+		assertNull(TransactionArgumentsUtil.hexToRskSubtype(null));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"0", "1", "127", "0x0", "0x1", "0x7f", "0x00", "0x01"})
+	void hexToRskSubtype_validValues_areAccepted(String hex) {
+		Byte result = TransactionArgumentsUtil.hexToRskSubtype(hex);
+		assertNotNull(result);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"128", "0x80", "0xff", "-1", "abc", ""})
+	void hexToRskSubtype_invalidValues_areRejected(String hex) {
+		assertThrows(RskJsonRpcRequestException.class,
+				() -> TransactionArgumentsUtil.hexToRskSubtype(hex));
+	}
+
+	@Test
+	void processArguments_withRskSubtype_isThreaded() {
+		CallArguments args = new CallArguments();
+		args.setFrom("0x0000000000000000000000000000000000000001");
+		args.setTo("0x0000000000000000000000000000000000000002");
+		args.setGas("0x5208");
+		args.setGasPrice("0x1");
+		args.setValue("0x0");
+		args.setType("0x2");
+		args.setRskSubtype("0x3");
+
+		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId());
+		assertEquals(TransactionType.TYPE_2, txArgs.getType());
+		assertEquals((byte) 0x03, txArgs.getRskSubtype());
 	}
 
 }
