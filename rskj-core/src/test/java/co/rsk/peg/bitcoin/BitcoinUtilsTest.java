@@ -2072,7 +2072,7 @@ class BitcoinUtilsTest {
     }
 
     private void assertWitnessScriptWithSignaturesHasProperFormat(TransactionWitness witness, Script redeemScript) {
-        assertP2shP2wshScriptSigStructure(witness, redeemScript);
+        assertP2shP2wshWitnessHasExpectedStructure(witness, redeemScript);
 
         int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
         int startIndex = 1; // First push is OP_0, next come the signatures
