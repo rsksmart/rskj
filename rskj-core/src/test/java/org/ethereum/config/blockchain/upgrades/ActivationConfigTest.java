@@ -32,7 +32,9 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP98;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.values;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ActivationConfigTest {
     private static final Config BASE_CONFIG = ConfigFactory.parseString(String.join("\n",
@@ -234,4 +236,17 @@ class ActivationConfigTest {
         ActivationConfig config = ActivationConfigsForTest.all();
         assertEquals((byte) 0x2, config.getHeaderVersion(10));
     }
+
+    @Test
+    void isActive_allRulesActive_returnsTrue() {
+        ActivationConfig config = ActivationConfig.read(BASE_CONFIG);
+        assertTrue(config.isActive(42L, RSKIP85, RSKIP98, RSKIP103));
+    }
+
+    @Test
+    void isActive_oneRuleInactive_returnsFalse() {
+        ActivationConfig config = ActivationConfigsForTest.allBut(RSKIP351);
+        assertFalse(config.isActive(10L, RSKIP85, RSKIP351));
+    }
+
 }

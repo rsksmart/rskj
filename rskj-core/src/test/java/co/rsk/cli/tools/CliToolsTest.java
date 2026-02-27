@@ -362,8 +362,10 @@ class CliToolsTest {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.consensusRules.rskip351", ConfigValueFactory.fromAnyRef(-1))
+                          .withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(-1))
         );
         Assertions.assertFalse(config.getActivationConfig().isActive(ConsensusRule.RSKIP351, 3));
+        Assertions.assertFalse(config.getActivationConfig().isActive(ConsensusRule.RSKIP144, 3));
         World world = new World(receiptStore, config);
         testImportBlocks(world);
     }
@@ -373,9 +375,13 @@ class CliToolsTest {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.consensusRules.rskip351", ConfigValueFactory.fromAnyRef(2))
+                 .withValue( "blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(2))
         );
         Assertions.assertFalse(config.getActivationConfig().isActive(ConsensusRule.RSKIP351, 1));
+        Assertions.assertFalse(config.getActivationConfig().isActive(ConsensusRule.RSKIP144, 1));
         Assertions.assertTrue(config.getActivationConfig().isActive(ConsensusRule.RSKIP351, 2));
+        Assertions.assertTrue(config.getActivationConfig().isActive(ConsensusRule.RSKIP144, 2));
+
         World world = new World(receiptStore, config);
         testImportBlocks(world);
     }
