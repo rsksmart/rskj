@@ -19,6 +19,8 @@ package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.test.World;
+import co.rsk.test.builders.AccountBuilder;
+import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
@@ -892,5 +894,66 @@ class Rskip543DslTest {
         assertEquals("0x1", type1DTO.getType(), "Type 1 tx in mixed block should have type 0x1");
         assertEquals("0x0211", rskDTO.getType(),
                 "RSK namespace tx (subtype 0x11) in mixed block should have type 0x0211");
+    }
+
+    @Test
+    void explicitType0x00_shouldBeRejectedByTransactionBuilder() {
+        Account acc = new AccountBuilder().name("type0test").build();
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                new TransactionBuilder()
+                        .sender(acc)
+                        .receiver(acc)
+                        .value(java.math.BigInteger.valueOf(1000))
+                        .gasLimit(java.math.BigInteger.valueOf(21000))
+                        .transactionType((byte) 0x00)
+                        .build());
+
+        assertTrue(ex.getMessage().contains("Explicit type 0x00 is not allowed"),
+                "Error should indicate 0x00 rejection, got: " + ex.getMessage());
+    }
+
+    @Test
+    void explicitType0x00_shouldBeRejectedByDslProcessor() {
+        TestSystemProperties config = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.consensusRules.rskip543",
+                        ConfigValueFactory.fromAnyRef(0))
+        );
+
+        String dsl = "account_new acc1 100000000000000000\n"
+                + "transaction_build txType0\n"
+                + "    sender acc1\n"
+                + "    receiver acc1\n"
+                + "    value 1000\n"
+                + "    gas 21000\n"
+                + "    transactionType 00\n"
+                + "    build\n";
+
+        World testWorld = new World(config);
+        WorldDslProcessor processor = new WorldDslProcessor(testWorld);
+        DslParser parser = new DslParser(dsl);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> processor.processCommands(parser),
+                "DSL should reject transaction_build with explicit transactionType 00");
+        assertTrue(ex.getMessage().contains("Explicit type 0x00 is not allowed"),
+                "Error should mention 0x00 is not allowed, got: " + ex.getMessage());
+    }
+
+    @Test
+    void unknownTypeGreaterThan0x04_shouldBeRejectedByTransactionBuilder() {
+        Account acc = new AccountBuilder().name("type5test").build();
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                new TransactionBuilder()
+                        .sender(acc)
+                        .receiver(acc)
+                        .value(java.math.BigInteger.valueOf(1000))
+                        .gasLimit(java.math.BigInteger.valueOf(21000))
+                        .transactionType((byte) 0x05)
+                        .build());
+
+        assertTrue(ex.getMessage().contains("Unknown transaction type"),
+                "Error should indicate unknown type, got: " + ex.getMessage());
     }
 }

@@ -22,9 +22,13 @@ import java.math.BigInteger;
 
 import org.ethereum.config.Constants;
 import org.ethereum.core.TransactionArguments;
+import org.ethereum.core.TransactionType;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
@@ -54,6 +58,58 @@ class TransactionArgumentsUtilTest {
 		assertNull(txArgs.getData());
 		assertArrayEquals(txArgs.getTo(), receiver.getBytes());
 
+	}
+
+	@Test
+	void hexToTransactionType_nullReturnsLegacy() {
+		assertEquals(TransactionType.LEGACY,
+				TransactionArgumentsUtil.hexToTransactionType(null));
+	}
+
+	@Test
+	void hexToTransactionType_explicitZero_isRejected() {
+		RskJsonRpcRequestException ex = assertThrows(
+				RskJsonRpcRequestException.class,
+				() -> TransactionArgumentsUtil.hexToTransactionType("0"));
+		assertTrue(ex.getMessage().contains("explicit type 0x00 is not allowed"),
+				"Error should mention explicit 0x00 is not allowed, got: " + ex.getMessage());
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"1", "2", "3", "4"})
+	void hexToTransactionType_validTypes_areAccepted(String hex) {
+		TransactionType type = TransactionArgumentsUtil.hexToTransactionType(hex);
+
+		assertNotNull(type);
+		assertNotEquals(TransactionType.LEGACY, type);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"5", "6", "10", "127"})
+	void hexToTransactionType_unknownTypes_areRejected(String hex) {
+		assertThrows(RskJsonRpcRequestException.class,
+				() -> TransactionArgumentsUtil.hexToTransactionType(hex));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"0x0", "0x1", "abc", "0xff", ""})
+	void hexToTransactionType_unparseableStrings_areRejected(String hex) {
+		assertThrows(RskJsonRpcRequestException.class,
+				() -> TransactionArgumentsUtil.hexToTransactionType(hex));
+	}
+
+	@Test
+	void processArguments_withExplicitType0x00_isRejected() {
+		CallArguments args = new CallArguments();
+		args.setFrom("0x0000000000000000000000000000000000000001");
+		args.setTo("0x0000000000000000000000000000000000000002");
+		args.setGas("0x5208");
+		args.setGasPrice("0x1");
+		args.setValue("0x0");
+		args.setType("0");
+
+		assertThrows(RskJsonRpcRequestException.class,
+				() -> TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId()));
 	}
 
 }

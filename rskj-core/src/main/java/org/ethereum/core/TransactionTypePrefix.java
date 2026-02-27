@@ -98,7 +98,9 @@ public sealed interface TransactionTypePrefix
                     "Unknown transaction type: 0x" + String.format("%02x", firstByte));
         }
         if (detectedType == TransactionType.LEGACY) {
-            return LEGACY_INSTANCE;
+            throw new IllegalArgumentException(
+                    "Explicit type 0x00 prefix is not allowed; "
+                            + "legacy transactions must use RLP list encoding (first byte >= 0xc0)");
         }
 
         if (TransactionType.hasRskNamespacePrefix(rawData)) {

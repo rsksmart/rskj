@@ -139,12 +139,19 @@ public class TransactionBuilder {
                 .data(data)
                 .value(value);
         
-        // Add transaction type
         if (this.transactionType != null) {
-            txBuilder.type(org.ethereum.core.TransactionType.getByByte(this.transactionType));
+            org.ethereum.core.TransactionType txType = org.ethereum.core.TransactionType.getByByte(this.transactionType);
+            if (txType == null) {
+                throw new IllegalArgumentException(
+                        "Unknown transaction type: 0x" + String.format("%02x", this.transactionType & 0xFF));
+            }
+            if (txType == org.ethereum.core.TransactionType.LEGACY) {
+                throw new IllegalArgumentException(
+                        "Explicit type 0x00 is not allowed; omit transactionType for legacy transactions");
+            }
+            txBuilder.type(txType);
         }
         
-        // Add RSK subtype
         if (this.rskSubtype != null) {
             txBuilder.rskSubtype(this.rskSubtype);
         }

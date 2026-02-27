@@ -113,7 +113,7 @@ public class TransactionArgumentsUtil {
 		}
 	}
 
-    private static TransactionType hexToTransactionType(String hex) {
+    static TransactionType hexToTransactionType(String hex) {
         if (hex == null) {
             return TransactionType.LEGACY;
         }
@@ -122,6 +122,14 @@ public class TransactionArgumentsUtil {
             type = TransactionType.getByByte(Byte.parseByte(hex));
         } catch (Exception ex) {
             throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex, ex);
+        }
+        if (type == null) {
+            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex);
+        }
+        if (type == TransactionType.LEGACY) {
+            throw RskJsonRpcRequestException.invalidParamError(
+                    ERR_INVALID_TX_TYPE + hex
+                            + "; explicit type 0x00 is not allowed, omit the type field for legacy transactions");
         }
         return type;
     }
