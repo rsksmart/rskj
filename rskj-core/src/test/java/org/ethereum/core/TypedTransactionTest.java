@@ -238,6 +238,18 @@ class TypedTransactionTest {
     // Invalid / unknown raw data
     // ========================================================================
 
+    @Test
+    void explicitType0x00Prefix_throwsException() {
+        byte[] fakeTypedTx = new byte[50];
+        fakeTypedTx[0] = 0x00;
+        fakeTypedTx[1] = (byte) 0xc0;
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> new Transaction(fakeTypedTx));
+        assertTrue(ex.getMessage().contains("Explicit type 0x00 prefix is not allowed"),
+            "Error message should indicate 0x00 prefix rejection, got: " + ex.getMessage());
+    }
+
     @ParameterizedTest
     @ValueSource(bytes = {0x05, 0x06, 0x10, 0x50, 0x7f})
     void unknownTypeByte_throwsException(byte unknownType) {
@@ -247,6 +259,16 @@ class TypedTransactionTest {
 
         assertThrows(IllegalArgumentException.class,
             () -> new Transaction(fakeTypedTx));
+    }
+
+    @ParameterizedTest
+    @ValueSource(bytes = {(byte) 0x80, (byte) 0x90, (byte) 0xbf})
+    void invalidFirstByte_notTypedAndNotLegacy_throwsException(byte invalidByte) {
+        byte[] fakeData = new byte[50];
+        fakeData[0] = invalidByte;
+
+        assertThrows(IllegalArgumentException.class,
+            () -> new Transaction(fakeData));
     }
 
     @Test
