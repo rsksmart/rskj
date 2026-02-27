@@ -314,7 +314,8 @@ public class BitcoinTestUtils {
 
         assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
 
-        for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
+        List<ScriptChunk> scriptChunks = scriptSigChunks.subList(0, redeemScriptChunkIndex);
+        for (ScriptChunk chunk : scriptChunks) { // all the other chunks should be zero
             assertEquals(ScriptOpCodes.OP_0, chunk.opcode);
         }
     }
