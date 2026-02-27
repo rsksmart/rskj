@@ -289,6 +289,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
         }
 
+        /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; real pegouts must be at least
+         * {@link BridgeConstants#getMinimumPegoutTxValue()}, but we use it to exercise the
+         * DUSTY_SEND_REQUESTED path.
+         */
         @Test
         void buildBatchedPegouts_whenPegoutRequestAmountIsTooSmall_shouldReturnDustySendRequested() {
             // Arrange
@@ -614,6 +618,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
         }
 
+        /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; real pegouts must be at least
+         * {@link BridgeConstants#getMinimumPegoutTxValue()}, but we use it to exercise the
+         * DUSTY_SEND_REQUESTED path.
+         */
         @Test
         void buildBatchedPegouts_whenPegoutRequestAmountIsTooSmall_shouldReturnDustySendRequested() {
             // Arrange
@@ -944,6 +952,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
         }
 
+        /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; real pegouts must be at least
+         * {@link BridgeConstants#getMinimumPegoutTxValue()}, but we use it to exercise the
+         * DUSTY_SEND_REQUESTED path.
+         */
         @Test
         void buildBatchedPegouts_whenPegoutRequestAmountIsTooSmall_shouldReturnDustySendRequested() {
             // Arrange
