@@ -101,7 +101,7 @@ class Web3RskImplTest {
         callArguments.setChainId("0x00");
         callArguments.setType("0x00");
 
-        assertEquals("CallArguments{from='0x1', to='0x2', gas='21000', gasLimit='21000', gasPrice='100', value='1', data='data', nonce='0', chainId='0x00', type='0x00'}", callArguments.toString());
+        assertEquals("CallArguments{from='0x1', to='0x2', gas='21000', gasLimit='21000', gasPrice='100', value='1', data='data', nonce='0', chainId='0x00', type='0x00', rskSubtype='null'}", callArguments.toString());
     }
 
     @Test

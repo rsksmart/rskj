@@ -81,32 +81,38 @@ public sealed interface TransactionTypePrefix
 
         byte firstByte = rawData[0];
 
-        if (TransactionType.isLegacyTransaction(firstByte)) {
+        if ((firstByte & 0xFF) > TransactionType.MAX_TYPE_VALUE) {
+            if (TransactionType.isReservedByte(firstByte)) {
+                throw new IllegalArgumentException(
+                        "Transaction type 0xff is reserved per EIP-2718 and cannot be used");
+            }
             return LEGACY_INSTANCE;
         }
 
-        if (!TransactionType.isTypedTransactionByte(firstByte)) {
-            throw new IllegalArgumentException(
-                    String.format("Invalid first byte 0x%02x: not a typed transaction byte "
-                            + "([0x00, 0x7f]) and not a legacy RLP list (>= 0xc0)",
-                            firstByte & 0xFF));
-        }
+        return decodeTypedPrefix(rawData, firstByte);
+    }
 
-        TransactionType detectedType = TransactionType.getByByte(firstByte);
-        if (detectedType == null) {
-            throw new IllegalArgumentException(
-                    "Unknown transaction type: 0x" + String.format("%02x", firstByte));
+    /**
+     * Decodes a typed transaction prefix by looking up the enum and dispatching.
+     * Type 0x00 (LEGACY) and unknown bytes are rejected as unsupported.
+     */
+    private static TransactionTypePrefix decodeTypedPrefix(byte[] rawData, byte typeByte) {
+        TransactionType type = TransactionType.getByByte(typeByte);
+        if (type == null || type == TransactionType.LEGACY) {
+            throw new IllegalArgumentException(String.format(
+                    "transaction type not supported: 0x%02x", typeByte & 0xFF));
         }
-        if (detectedType == TransactionType.LEGACY) {
-            throw new IllegalArgumentException(
-                    "Explicit type 0x00 prefix is not allowed; "
-                            + "legacy transactions must use RLP list encoding (first byte >= 0xc0)");
-        }
-
-        if (TransactionType.hasRskNamespacePrefix(rawData)) {
-            return new RskNamespace(rawData[1]);
-        }
-        return new StandardTyped(detectedType);
+        return switch (type) {
+            case TYPE_1, TYPE_3, TYPE_4 -> new StandardTyped(type);
+            case TYPE_2 -> {
+                if (TransactionType.hasRskNamespacePrefix(rawData)) {
+                    yield new RskNamespace(rawData[1]);
+                }
+                yield new StandardTyped(type);
+            }
+            default -> throw new IllegalArgumentException(String.format(
+                    "transaction type not supported: 0x%02x", typeByte & 0xFF));
+        };
     }
 
     /** Returns only the RLP payload after removing the detected prefix. */

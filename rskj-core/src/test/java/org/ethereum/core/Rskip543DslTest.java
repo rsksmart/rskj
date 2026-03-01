@@ -909,8 +909,8 @@ class Rskip543DslTest {
                         .transactionType((byte) 0x00)
                         .build());
 
-        assertTrue(ex.getMessage().contains("Explicit type 0x00 is not allowed"),
-                "Error should indicate 0x00 rejection, got: " + ex.getMessage());
+        assertTrue(ex.getMessage().contains("transaction type not supported"),
+                "Error should indicate type not supported, got: " + ex.getMessage());
     }
 
     @Test
@@ -920,14 +920,16 @@ class Rskip543DslTest {
                         ConfigValueFactory.fromAnyRef(0))
         );
 
-        String dsl = "account_new acc1 100000000000000000\n"
-                + "transaction_build txType0\n"
-                + "    sender acc1\n"
-                + "    receiver acc1\n"
-                + "    value 1000\n"
-                + "    gas 21000\n"
-                + "    transactionType 00\n"
-                + "    build\n";
+        String dsl = """
+                account_new acc1 100000000000000000
+                transaction_build txType0
+                    sender acc1
+                    receiver acc1
+                    value 1000
+                    gas 21000
+                    transactionType 00
+                    build
+                """;
 
         World testWorld = new World(config);
         WorldDslProcessor processor = new WorldDslProcessor(testWorld);
@@ -936,8 +938,8 @@ class Rskip543DslTest {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> processor.processCommands(parser),
                 "DSL should reject transaction_build with explicit transactionType 00");
-        assertTrue(ex.getMessage().contains("Explicit type 0x00 is not allowed"),
-                "Error should mention 0x00 is not allowed, got: " + ex.getMessage());
+        assertTrue(ex.getMessage().contains("transaction type not supported"),
+                "Error should mention type not supported, got: " + ex.getMessage());
     }
 
     @Test
@@ -953,7 +955,7 @@ class Rskip543DslTest {
                         .transactionType((byte) 0x05)
                         .build());
 
-        assertTrue(ex.getMessage().contains("Unknown transaction type"),
-                "Error should indicate unknown type, got: " + ex.getMessage());
+        assertTrue(ex.getMessage().contains("transaction type not supported"),
+                "Error should indicate type not supported, got: " + ex.getMessage());
     }
 }

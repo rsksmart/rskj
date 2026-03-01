@@ -32,6 +32,8 @@ public enum TransactionType {
 
     public static final byte RSK_NAMESPACE_PREFIX = 0x02;
     public static final byte MAX_TYPE_VALUE = 0x7f;
+    /** Reserved per EIP-2718 as an extension sentinel value. */
+    public static final byte RESERVED_BYTE = (byte) 0xff;
     private static final int RLP_LIST_START = 0xc0;
 
     private static final Map<Byte, TransactionType> lookup = new HashMap<>();
@@ -70,15 +72,13 @@ public enum TransactionType {
         return lookup.get(type);
     }
 
-    /**
-     * Returns {@code true} if the byte can be a typed-transaction marker.
-     */
-    public static boolean isTypedTransactionByte(byte b) {
-        return (b & 0xFF) <= MAX_TYPE_VALUE;
+    public static boolean isLegacyTransaction(byte firstByte) {
+        int unsigned = firstByte & 0xFF;
+        return unsigned >= RLP_LIST_START && unsigned != (RESERVED_BYTE & 0xFF);
     }
 
-    public static boolean isLegacyTransaction(byte firstByte) {
-        return (firstByte & 0xFF) >= RLP_LIST_START;
+    public static boolean isReservedByte(byte firstByte) {
+        return firstByte == RESERVED_BYTE;
     }
 
     public static boolean isValidType(byte type) {
@@ -96,18 +96,6 @@ public enum TransactionType {
         return rawData.length > 1
                 && rawData[0] == RSK_NAMESPACE_PREFIX
                 && (rawData[1] & 0xFF) <= MAX_TYPE_VALUE;
-    }
-
-    public static int typePrefixLength(byte[] rawData) {
-        return TransactionTypePrefix.fromRawData(rawData).length();
-    }
-
-    public static byte[] stripTypePrefix(byte[] rawData) {
-        return TransactionTypePrefix.stripPrefix(rawData);
-    }
-
-    public static byte[] buildTypePrefix(TransactionType type, Byte rskSubtype) {
-        return TransactionTypePrefix.of(type, rskSubtype).toBytes();
     }
 
     /**

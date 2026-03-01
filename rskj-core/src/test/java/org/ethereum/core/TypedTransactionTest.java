@@ -238,37 +238,38 @@ class TypedTransactionTest {
     // Invalid / unknown raw data
     // ========================================================================
 
-    @Test
-    void explicitType0x00Prefix_throwsException() {
+    @ParameterizedTest
+    @ValueSource(bytes = {0x00, 0x05, 0x06, 0x10, 0x50, 0x7f})
+    void unsupportedTypeByte_throwsException(byte unsupportedType) {
         byte[] fakeTypedTx = new byte[50];
-        fakeTypedTx[0] = 0x00;
+        fakeTypedTx[0] = unsupportedType;
         fakeTypedTx[1] = (byte) 0xc0;
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
             () -> new Transaction(fakeTypedTx));
-        assertTrue(ex.getMessage().contains("Explicit type 0x00 prefix is not allowed"),
-            "Error message should indicate 0x00 prefix rejection, got: " + ex.getMessage());
-    }
-
-    @ParameterizedTest
-    @ValueSource(bytes = {0x05, 0x06, 0x10, 0x50, 0x7f})
-    void unknownTypeByte_throwsException(byte unknownType) {
-        byte[] fakeTypedTx = new byte[50];
-        fakeTypedTx[0] = unknownType;
-        fakeTypedTx[1] = (byte) 0xc0;
-
-        assertThrows(IllegalArgumentException.class,
-            () -> new Transaction(fakeTypedTx));
+        assertTrue(ex.getMessage().contains("transaction type not supported"),
+            "Error should mention type not supported, got: " + ex.getMessage());
     }
 
     @ParameterizedTest
     @ValueSource(bytes = {(byte) 0x80, (byte) 0x90, (byte) 0xbf})
-    void invalidFirstByte_notTypedAndNotLegacy_throwsException(byte invalidByte) {
+    void bytesAbove0x7f_areTreatedAsLegacy(byte legacyByte) {
         byte[] fakeData = new byte[50];
-        fakeData[0] = invalidByte;
+        fakeData[0] = legacyByte;
 
-        assertThrows(IllegalArgumentException.class,
+        // Bytes > 0x7f go to the legacy path (RLP decoder will reject invalid RLP)
+        assertThrows(Exception.class, () -> new Transaction(fakeData));
+    }
+
+    @Test
+    void reservedByte0xff_throwsException() {
+        byte[] fakeData = new byte[50];
+        fakeData[0] = (byte) 0xff;
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
             () -> new Transaction(fakeData));
+        assertTrue(ex.getMessage().contains("0xff is reserved"),
+            "Error should mention 0xff is reserved per EIP-2718, got: " + ex.getMessage());
     }
 
     @Test

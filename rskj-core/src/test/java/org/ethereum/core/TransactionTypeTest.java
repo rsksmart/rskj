@@ -115,35 +115,30 @@ class TransactionTypeTest {
     }
 
     // ========================================================================
-    // Static: isTypedTransactionByte(byte)
-    // ========================================================================
-
-    @ParameterizedTest
-    @ValueSource(bytes = {0x00, 0x01, 0x02, 0x03, 0x04, 0x40, 0x7f})
-    void isTypedTransactionByte_trueForValidRange(byte b) {
-        assertTrue(TransactionType.isTypedTransactionByte(b));
-    }
-
-    @ParameterizedTest
-    @ValueSource(bytes = {(byte) 0x80, (byte) 0xbf, (byte) 0xc0, (byte) 0xff})
-    void isTypedTransactionByte_falseAboveMaxType(byte b) {
-        assertFalse(TransactionType.isTypedTransactionByte(b));
-    }
-
-    // ========================================================================
     // Static: isLegacyTransaction(byte)
     // ========================================================================
 
     @ParameterizedTest
-    @ValueSource(bytes = {(byte) 0xc0, (byte) 0xc1, (byte) 0xf8, (byte) 0xf9, (byte) 0xfe, (byte) 0xff})
+    @ValueSource(bytes = {(byte) 0xc0, (byte) 0xc1, (byte) 0xf8, (byte) 0xf9, (byte) 0xfe})
     void isLegacyTransaction_trueForRlpListRange(byte b) {
         assertTrue(TransactionType.isLegacyTransaction(b));
     }
 
     @ParameterizedTest
-    @ValueSource(bytes = {0x00, 0x01, 0x7f, (byte) 0x80, (byte) 0xbf})
+    @ValueSource(bytes = {0x00, 0x01, 0x7f, (byte) 0x80, (byte) 0xbf, (byte) 0xff})
     void isLegacyTransaction_falseOutsideRlpListRange(byte b) {
         assertFalse(TransactionType.isLegacyTransaction(b));
+    }
+
+    @Test
+    void isReservedByte_trueFor0xff() {
+        assertTrue(TransactionType.isReservedByte((byte) 0xff));
+    }
+
+    @ParameterizedTest
+    @ValueSource(bytes = {0x00, 0x01, 0x7f, (byte) 0xc0, (byte) 0xfe})
+    void isReservedByte_falseForNon0xff(byte b) {
+        assertFalse(TransactionType.isReservedByte(b));
     }
 
     // ========================================================================

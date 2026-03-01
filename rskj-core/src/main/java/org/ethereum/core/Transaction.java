@@ -125,7 +125,8 @@ public class Transaction {
 
         this.typePrefix = TransactionTypePrefix.fromRawData(rawData);
 
-        byte[] payload = TransactionTypePrefix.stripPrefix(rawData);
+        int prefixLen = this.typePrefix.length();
+        byte[] payload = prefixLen == 0 ? rawData : java.util.Arrays.copyOfRange(rawData, prefixLen, rawData.length);
         RLPList txFields = RLP.decodeList(payload);
         ParsedFields parsed = parseFields(txFields);
 
@@ -479,7 +480,7 @@ public class Transaction {
     }
 
     public TransactionTypePrefix getTypePrefix() {
-        return typePrefix != null ? typePrefix : TransactionTypePrefix.LEGACY_INSTANCE;
+        return typePrefix;
     }
 
     public TransactionType getType() {
