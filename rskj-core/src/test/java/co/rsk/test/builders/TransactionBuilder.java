@@ -141,13 +141,10 @@ public class TransactionBuilder {
         
         if (this.transactionType != null) {
             org.ethereum.core.TransactionType txType = org.ethereum.core.TransactionType.getByByte(this.transactionType);
-            if (txType == null) {
-                throw new IllegalArgumentException(
-                        "Unknown transaction type: 0x" + String.format("%02x", this.transactionType & 0xFF));
-            }
-            if (txType == org.ethereum.core.TransactionType.LEGACY) {
-                throw new IllegalArgumentException(
-                        "Explicit type 0x00 is not allowed; omit transactionType for legacy transactions");
+            if (txType == null || txType.isLegacy()) {
+                throw new IllegalArgumentException(String.format(
+                        "transaction type not supported: 0x%02x",
+                        this.transactionType & 0xFF));
             }
             txBuilder.type(txType);
         }

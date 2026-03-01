@@ -174,8 +174,7 @@ public class TransactionReceipt {
         if (transaction == null) {
             return new byte[0];
         }
-        TransactionTypePrefix prefix = transaction.getTypePrefix();
-        return prefix != null ? prefix.toBytes() : new byte[0];
+        return transaction.getTypePrefix().toBytes();
     }
 
     public void setStatus(byte[] status) {

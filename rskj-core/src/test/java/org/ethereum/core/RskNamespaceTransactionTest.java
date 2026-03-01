@@ -28,20 +28,25 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test suite for RSKIP543 RSK Namespace Transactions (0x02 || rsk-tx-type || payload)
  */
-public class RskNamespaceTransactionTest {
-    
-    // Test data
+class RskNamespaceTransactionTest {
+
     private static final byte[] TEST_NONCE = BigInteger.ONE.toByteArray();
     private static final byte[] TEST_GAS_LIMIT = BigInteger.valueOf(21000).toByteArray();
     private static final byte[] TEST_DATA = new byte[]{0x01, 0x02, 0x03};
     private static final RskAddress TEST_ADDRESS = new RskAddress("0x0000000000000000000000000000000001000006");
     private static final Coin TEST_GAS_PRICE = Coin.valueOf(1000);
     private static final Coin TEST_VALUE = Coin.ZERO;
-    private static final byte TEST_CHAIN_ID = 33; // RSK Mainnet
-    
-    /**
-     * Helper method to create an RSK namespace transaction
-     */
+    private static final byte TEST_CHAIN_ID = 33;
+    private static final byte[] TEST_PRIVATE_KEY = buildTestPrivateKey();
+
+    private static byte[] buildTestPrivateKey() {
+        byte[] key = new byte[32];
+        for (int i = 0; i < 32; i++) {
+            key[i] = (byte) (i + 1);
+        }
+        return key;
+    }
+
     private Transaction createRskTransaction(byte rskSubtype) {
         return new Transaction(
             TEST_NONCE,
@@ -56,73 +61,56 @@ public class RskNamespaceTransactionTest {
             rskSubtype
         );
     }
-    
+
+    private Transaction createSignedRskTransaction(byte rskSubtype) {
+        Transaction tx = createRskTransaction(rskSubtype);
+        tx.sign(TEST_PRIVATE_KEY);
+        return tx;
+    }
+
     @Test
-    public void testRskNamespaceTransactionCreation() {
+    void rskNamespaceTransactionCreation() {
         byte rskSubtype = 0x03;
         Transaction tx = createRskTransaction(rskSubtype);
-        
+
         assertEquals(TransactionType.TYPE_2, tx.getType());
         assertTrue(tx.isRskNamespaceTransaction());
         assertEquals(rskSubtype, tx.getRskSubtype());
     }
-    
+
     @Test
-    public void testRskNamespaceEncoding() {
+    void rskNamespaceEncoding() {
         byte rskSubtype = 0x03;
-        Transaction tx = createRskTransaction(rskSubtype);
-        
-        // Sign the transaction first
-        byte[] privateKey = new byte[32];
-        for (int i = 0; i < 32; i++) {
-            privateKey[i] = (byte) (i + 1);
-        }
-        tx.sign(privateKey);
-        
+        Transaction tx = createSignedRskTransaction(rskSubtype);
         byte[] encoded = tx.getEncoded();
-        
+
         assertNotNull(encoded);
         assertTrue(encoded.length > 2);
-        assertEquals(0x02, encoded[0]); // First byte is 0x02 (namespace)
-        assertEquals(rskSubtype, encoded[1]); // Second byte is RSK subtype
+        assertEquals(0x02, encoded[0]);
+        assertEquals(rskSubtype, encoded[1]);
     }
-    
+
     @Test
-    public void testRskNamespaceDecoding() {
+    void rskNamespaceDecoding() {
         byte rskSubtype = 0x05;
-        Transaction original = createRskTransaction(rskSubtype);
-        
-        // Sign the transaction
-        byte[] privateKey = new byte[32];
-        for (int i = 0; i < 32; i++) {
-            privateKey[i] = (byte) (i + 1);
-        }
-        original.sign(privateKey);
-        
-        // Encode and decode
+        Transaction original = createSignedRskTransaction(rskSubtype);
+
         byte[] encoded = original.getEncoded();
         Transaction decoded = new Transaction(encoded);
-        
+
         assertEquals(TransactionType.TYPE_2, decoded.getType());
         assertTrue(decoded.isRskNamespaceTransaction());
         assertEquals(rskSubtype, decoded.getRskSubtype());
     }
-    
+
     @Test
-    public void testRskNamespaceRoundTrip() {
+    void rskNamespaceRoundTrip() {
         byte rskSubtype = 0x07;
-        Transaction original = createRskTransaction(rskSubtype);
-        
-        // Sign the transaction
-        byte[] privateKey = new byte[32];
-        for (int i = 0; i < 32; i++) {
-            privateKey[i] = (byte) (i + 1);
-        }
-        original.sign(privateKey);
-        
+        Transaction original = createSignedRskTransaction(rskSubtype);
+
         byte[] encoded = original.getEncoded();
         Transaction decoded = new Transaction(encoded);
-        
+
         assertEquals(original.getType(), decoded.getType());
         assertTrue(decoded.isRskNamespaceTransaction());
         assertEquals(original.getRskSubtype(), decoded.getRskSubtype());
@@ -130,92 +118,73 @@ public class RskNamespaceTransactionTest {
         assertEquals(original.getGasPrice(), decoded.getGasPrice());
         assertArrayEquals(original.getGasLimit(), decoded.getGasLimit());
     }
-    
+
     @Test
-    public void testAllRskSubtypes() {
-        // Test all valid RSK subtypes [0x00, 0x7f]
+    void allRskSubtypes() {
         for (int i = 0x00; i <= 0x7f; i++) {
             byte subtype = (byte) i;
             Transaction tx = createRskTransaction(subtype);
-            
+
             assertTrue(tx.isRskNamespaceTransaction());
             assertEquals(TransactionType.TYPE_2, tx.getType());
             assertEquals(subtype, tx.getRskSubtype());
         }
     }
-    
+
     @Test
-    public void testRskVsEip1559Detection() {
-        // Create RSK namespace transaction: 0x02 || 0x03 || payload
-        Transaction rskTx = createRskTransaction((byte) 0x03);
-        
-        // Sign the transaction
-        byte[] privateKey = new byte[32];
-        for (int i = 0; i < 32; i++) {
-            privateKey[i] = (byte) (i + 1);
-        }
-        rskTx.sign(privateKey);
-        
-        // Encode and decode
+    void rskVsEip1559Detection() {
+        Transaction rskTx = createSignedRskTransaction((byte) 0x03);
+
         byte[] encoded = rskTx.getEncoded();
         Transaction decoded = new Transaction(encoded);
-        
+
         assertTrue(decoded.isRskNamespaceTransaction());
         assertEquals((byte) 0x03, decoded.getRskSubtype());
     }
-    
+
     @Test
-    public void testRskSubtypeValidation() {
-        // Valid subtype within range
+    void rskSubtypeValidation() {
         assertDoesNotThrow(() -> createRskTransaction((byte) 0x00));
         assertDoesNotThrow(() -> createRskTransaction((byte) 0x7f));
-        
-        // Invalid subtype (> 0x7f)
-        assertThrows(IllegalArgumentException.class, () -> {
-            new Transaction(
-                TEST_NONCE,
-                TEST_GAS_PRICE,
-                TEST_GAS_LIMIT,
-                TEST_ADDRESS,
-                TEST_VALUE,
-                TEST_DATA,
-                TEST_CHAIN_ID,
-                false,
-                TransactionType.TYPE_2,
-                (byte) 0x80 // Invalid: > 0x7f
-            );
-        });
+
+        assertThrows(IllegalArgumentException.class, () -> new Transaction(
+            TEST_NONCE,
+            TEST_GAS_PRICE,
+            TEST_GAS_LIMIT,
+            TEST_ADDRESS,
+            TEST_VALUE,
+            TEST_DATA,
+            TEST_CHAIN_ID,
+            false,
+            TransactionType.TYPE_2,
+            (byte) 0x80
+        ));
     }
-    
+
     @Test
-    public void testRskSubtypeOnlyWithType2() {
-        // RSK subtype should only work with TYPE_2
-        assertThrows(IllegalArgumentException.class, () -> {
-            new Transaction(
-                TEST_NONCE,
-                TEST_GAS_PRICE,
-                TEST_GAS_LIMIT,
-                TEST_ADDRESS,
-                TEST_VALUE,
-                TEST_DATA,
-                TEST_CHAIN_ID,
-                false,
-                TransactionType.TYPE_1, // Wrong type
-                (byte) 0x03
-            );
-        });
+    void rskSubtypeOnlyWithType2() {
+        assertThrows(IllegalArgumentException.class, () -> new Transaction(
+            TEST_NONCE,
+            TEST_GAS_PRICE,
+            TEST_GAS_LIMIT,
+            TEST_ADDRESS,
+            TEST_VALUE,
+            TEST_DATA,
+            TEST_CHAIN_ID,
+            false,
+            TransactionType.TYPE_1,
+            (byte) 0x03
+        ));
     }
-    
+
     @Test
-    public void testGetFullTypeString() {
-        // RSK namespace transaction
+    void getFullTypeString() {
         Transaction rskTx = createRskTransaction((byte) 0x03);
         assertEquals("0x0203", rskTx.getFullTypeString());
-        
+
         rskTx = createRskTransaction((byte) 0x0a);
         assertEquals("0x020a", rskTx.getFullTypeString());
-        
-        // Standard typed transaction (TYPE_1)
+
         Transaction type1Tx = new Transaction(
             TEST_NONCE,
             TEST_GAS_PRICE,
@@ -229,8 +198,7 @@ public class RskNamespaceTransactionTest {
             null
         );
         assertEquals("0x01", type1Tx.getFullTypeString());
-        
-        // Legacy transaction
+
         Transaction legacyTx = new Transaction(
             TEST_NONCE,
             TEST_GAS_PRICE.getBytes(),
@@ -241,10 +209,9 @@ public class RskNamespaceTransactionTest {
         );
         assertEquals("0x00", legacyTx.getFullTypeString());
     }
-    
+
     @Test
-    public void testGetRskSubtypeThrowsForNonRskTransaction() {
-        // Legacy transaction
+    void getRskSubtypeThrowsForNonRskTransaction() {
         Transaction legacyTx = new Transaction(
             TEST_NONCE,
             TEST_GAS_PRICE.getBytes(),
@@ -253,11 +220,10 @@ public class RskNamespaceTransactionTest {
             TEST_VALUE.getBytes(),
             TEST_DATA
         );
-        
+
         assertFalse(legacyTx.isRskNamespaceTransaction());
         assertThrows(IllegalStateException.class, legacyTx::getRskSubtype);
-        
-        // Standard TYPE_1 transaction
+
         Transaction type1Tx = new Transaction(
             TEST_NONCE,
             TEST_GAS_PRICE,
@@ -270,102 +236,68 @@ public class RskNamespaceTransactionTest {
             TransactionType.TYPE_1,
             null
         );
-        
+
         assertFalse(type1Tx.isRskNamespaceTransaction());
         assertThrows(IllegalStateException.class, type1Tx::getRskSubtype);
     }
-    
+
     @Test
-    public void testRskNamespaceReceiptEncoding() {
+    void rskNamespaceReceiptEncoding() {
         byte rskSubtype = 0x03;
-        Transaction tx = createRskTransaction(rskSubtype);
-        
-        // Sign the transaction
-        byte[] privateKey = new byte[32];
-        for (int i = 0; i < 32; i++) {
-            privateKey[i] = (byte) (i + 1);
-        }
-        tx.sign(privateKey);
-        
-        // Create a receipt
+        Transaction tx = createSignedRskTransaction(rskSubtype);
+
         TransactionReceipt receipt = new TransactionReceipt();
         receipt.setTransaction(tx);
-        
+
         byte[] encoded = receipt.getEncoded();
-        
+
         assertNotNull(encoded);
         assertTrue(encoded.length > 2);
-        assertEquals(0x02, encoded[0]); // First byte is 0x02 (namespace)
-        assertEquals(rskSubtype, encoded[1]); // Second byte is RSK subtype
+        assertEquals(0x02, encoded[0]);
+        assertEquals(rskSubtype, encoded[1]);
     }
-    
+
     @Test
-    public void testRskNamespaceReceiptDecoding() {
+    void rskNamespaceReceiptDecoding() {
         byte rskSubtype = 0x05;
-        Transaction tx = createRskTransaction(rskSubtype);
-        
-        // Sign the transaction
-        byte[] privateKey = new byte[32];
-        for (int i = 0; i < 32; i++) {
-            privateKey[i] = (byte) (i + 1);
-        }
-        tx.sign(privateKey);
-        
-        // Create and encode receipt
+        Transaction tx = createSignedRskTransaction(rskSubtype);
+
         TransactionReceipt originalReceipt = new TransactionReceipt();
         originalReceipt.setTransaction(tx);
         originalReceipt.setCumulativeGas(21000);
         originalReceipt.setGasUsed(21000);
         originalReceipt.setTxStatus(true);
-        
+
         byte[] encoded = originalReceipt.getEncoded();
-        
-        // Decode receipt
         TransactionReceipt decodedReceipt = new TransactionReceipt(encoded);
-        
-        // The decoded receipt won't have transaction reference until it's set
-        // But the encoding should have preserved the type bytes
+
         assertArrayEquals(encoded, decodedReceipt.getEncoded());
     }
-    
+
     @Test
-    public void testRskNamespaceReceiptRoundTrip() {
-        // Test a few RSK subtypes
+    void rskNamespaceReceiptRoundTrip() {
         byte[] subtypes = {0x00, 0x03, 0x0f};
-        
+
         for (byte subtype : subtypes) {
-            Transaction tx = createRskTransaction(subtype);
-            
-            // Sign the transaction
-            byte[] privateKey = new byte[32];
-            for (int j = 0; j < 32; j++) {
-                privateKey[j] = (byte) (j + 1);
-            }
-            tx.sign(privateKey);
-            
-            // Create receipt with transaction
+            Transaction tx = createSignedRskTransaction(subtype);
+
             TransactionReceipt original = new TransactionReceipt();
             original.setTransaction(tx);
             original.setCumulativeGas(21000);
             original.setGasUsed(21000);
             original.setTxStatus(true);
-            
+
             byte[] encoded = original.getEncoded();
-            
-            // Verify encoding has correct prefix
+
             assertEquals(0x02, encoded[0]);
             assertEquals(subtype, encoded[1]);
-            
-            // For now, just verify the encoding - full round trip requires
-            // more context (block, transaction info) which is tested elsewhere
             assertNotNull(encoded);
             assertTrue(encoded.length > 2);
         }
     }
-    
+
     @Test
-    public void testBackwardCompatibilityLegacy() {
-        // Legacy transaction should still work
+    void backwardCompatibilityLegacy() {
         Transaction legacy = new Transaction(
             TEST_NONCE,
             TEST_GAS_PRICE.getBytes(),
@@ -374,24 +306,18 @@ public class RskNamespaceTransactionTest {
             TEST_VALUE.getBytes(),
             TEST_DATA
         );
-        
+
         assertFalse(legacy.isRskNamespaceTransaction());
         assertEquals(TransactionType.LEGACY, legacy.getType());
-        
-        // Legacy transaction encoding should not have type prefix
-        byte[] privateKey = new byte[32];
-        for (int i = 0; i < 32; i++) {
-            privateKey[i] = (byte) (i + 1);
-        }
-        legacy.sign(privateKey);
-        
+
+        legacy.sign(TEST_PRIVATE_KEY);
+
         byte[] encoded = legacy.getEncoded();
-        assertTrue((encoded[0] & 0xFF) >= 0xc0); // Should start with RLP list marker
+        assertTrue((encoded[0] & 0xFF) >= 0xc0);
     }
-    
+
     @Test
-    public void testBackwardCompatibilityStandardTyped() {
-        // Standard TYPE_1 transaction should still work
+    void backwardCompatibilityStandardTyped() {
         Transaction type1 = new Transaction(
             TEST_NONCE,
             TEST_GAS_PRICE,
@@ -404,18 +330,13 @@ public class RskNamespaceTransactionTest {
             TransactionType.TYPE_1,
             null
         );
-        
+
         assertFalse(type1.isRskNamespaceTransaction());
         assertEquals(TransactionType.TYPE_1, type1.getType());
-        
-        // Sign and encode
-        byte[] privateKey = new byte[32];
-        for (int i = 0; i < 32; i++) {
-            privateKey[i] = (byte) (i + 1);
-        }
-        type1.sign(privateKey);
-        
+
+        type1.sign(TEST_PRIVATE_KEY);
+
         byte[] encoded = type1.getEncoded();
-        assertEquals(0x01, encoded[0]); // Should start with 0x01
+        assertEquals(0x01, encoded[0]);
     }
 }
