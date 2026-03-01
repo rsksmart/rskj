@@ -35,7 +35,8 @@ public class CallArguments {
     private String data; // compiledCode
     private String nonce;
     private String chainId;
-    private String type; // ignore, see https://github.com/rsksmart/rskj/pull/1601
+    private String type; // This was ignored before (see https://github.com/rsksmart/rskj/pull/1601)
+    private String rskSubtype;
 
     public String getFrom() {
         return from;
@@ -117,6 +118,14 @@ public class CallArguments {
         this.type = type;
     }
 
+    public String getRskSubtype() {
+        return rskSubtype;
+    }
+
+    public void setRskSubtype(String rskSubtype) {
+        this.rskSubtype = rskSubtype;
+    }
+
     public String getInput() {
         return this.data;
     }
@@ -138,6 +147,7 @@ public class CallArguments {
                 ", nonce='" + nonce + '\'' +
                 ", chainId='" + chainId + '\'' +
                 ", type='" + type + '\'' +
+                ", rskSubtype='" + rskSubtype + '\'' +
                 '}';
     }
 }

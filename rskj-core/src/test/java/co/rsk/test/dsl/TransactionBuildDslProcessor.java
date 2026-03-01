@@ -68,10 +68,13 @@ public class TransactionBuildDslProcessor {
             this.builder.gasPrice(new BigInteger(cmd.getArgument(0)));
         else if (cmd.isCommand("data"))
             this.builder.data(cmd.getArgument(0));
+        else if (cmd.isCommand("transactionType"))
+            this.builder.transactionType(Byte.parseByte(cmd.getArgument(0), 16));
+        else if (cmd.isCommand("rskSubtype"))
+            this.builder.rskSubtype(Byte.parseByte(cmd.getArgument(0), 16));
         else if (cmd.isCommand("build"))
             this.world.saveTransaction(this.name, this.builder.build());
         else
             throw new DslProcessorException(String.format("Unknown command '%s'", cmd.getVerb()));
     }
 }
-

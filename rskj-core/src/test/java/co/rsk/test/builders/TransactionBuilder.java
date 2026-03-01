@@ -44,6 +44,8 @@ public class TransactionBuilder {
     private BigInteger nonce = BigInteger.ZERO;
     private Byte chainId = null;
     private boolean immutable;
+    private Byte transactionType = null;
+    private Byte rskSubtype = null;
 
     public TransactionBuilder sender(Account sender) {
         this.sender = sender;
@@ -100,6 +102,16 @@ public class TransactionBuilder {
         return this;
     }
 
+    public TransactionBuilder transactionType(byte transactionType) {
+        this.transactionType = transactionType;
+        return this;
+    }
+
+    public TransactionBuilder rskSubtype(byte rskSubtype) {
+        this.rskSubtype = rskSubtype;
+        return this;
+    }
+
     public Transaction build() {
         byte chainId = Optional.ofNullable(this.chainId).orElse(Constants.REGTEST_CHAIN_ID);
 
@@ -118,15 +130,30 @@ public class TransactionBuilder {
     }
 
     private Transaction build(String to, BigInteger nonce, BigInteger gasLimit, BigInteger gasPrice, byte chainId, byte[] data, BigInteger value, byte[] privKeyBytes, boolean immutable) {
-        Transaction tx = Transaction.builder()
+        org.ethereum.core.TransactionBuilder txBuilder = org.ethereum.core.Transaction.builder()
                 .destination(to)
                 .nonce(nonce)
                 .gasLimit(gasLimit)
                 .gasPrice(gasPrice)
                 .chainId(chainId)
                 .data(data)
-                .value(value)
-                .build();
+                .value(value);
+        
+        if (this.transactionType != null) {
+            org.ethereum.core.TransactionType txType = org.ethereum.core.TransactionType.getByByte(this.transactionType);
+            if (txType == null || txType.isLegacy()) {
+                throw new IllegalArgumentException(String.format(
+                        "transaction type not supported: 0x%02x",
+                        this.transactionType & 0xFF));
+            }
+            txBuilder.type(txType);
+        }
+        
+        if (this.rskSubtype != null) {
+            txBuilder.rskSubtype(this.rskSubtype);
+        }
+        
+        Transaction tx = txBuilder.build();
         tx.sign(privKeyBytes);
 
         if (immutable) {

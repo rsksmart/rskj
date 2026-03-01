@@ -87,6 +87,10 @@ public class TxPendingValidator {
             return TransactionValidationResult.withError("the sender account doesn't exist");
         }
 
+        if (tx.getTypePrefix().isTyped() && !activations.isActive(ConsensusRule.RSKIP543)) {
+            return TransactionValidationResult.withError("typed transactions are not supported before RSKIP543 activation");
+        }
+
         if (tx.isInitCodeSizeInvalidForTx(activationConfig.forBlock(bestBlockNumber))) {
             return TransactionValidationResult.withError("transaction's init code size is invalid");
         }

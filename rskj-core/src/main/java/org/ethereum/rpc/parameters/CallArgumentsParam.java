@@ -41,10 +41,13 @@ public class CallArgumentsParam {
     private final HexNumberParam value;
     private final HexDataParam data;
     private final HexDataParam input;
+    private final HexNumberParam type;
+    private final HexNumberParam rskSubtype;
 
     public CallArgumentsParam(HexAddressParam from, HexAddressParam to, HexNumberParam gas,
                               HexNumberParam gasPrice, HexNumberParam gasLimit, HexNumberParam nonce,
-                              HexNumberParam chainId, HexNumberParam value, HexDataParam data, HexDataParam input) {
+                              HexNumberParam chainId, HexNumberParam value, HexDataParam data, HexDataParam input,
+                              HexNumberParam type, HexNumberParam rskSubtype) {
         this.from = from;
         this.to = to;
         this.gas = gas;
@@ -55,6 +58,8 @@ public class CallArgumentsParam {
         this.value = value;
         this.data = data;
         this.input = input;
+        this.type = type;
+        this.rskSubtype = rskSubtype;
     }
 
     public HexAddressParam getFrom() {
@@ -97,6 +102,14 @@ public class CallArgumentsParam {
         return input;
     }
 
+    public HexNumberParam getType() {
+        return type;
+    }
+
+    public HexNumberParam getRskSubtype() {
+        return rskSubtype;
+    }
+
     public CallArguments toCallArguments() {
         String caFrom = this.from == null ? null : this.from.getAddress().toJsonString();
         String caTo = this.to == null ? null : this.to.getAddress().toJsonString();
@@ -108,6 +121,8 @@ public class CallArgumentsParam {
         String caValue = this.value == null ? null : this.value.getHexNumber();
         String caData = this.data == null ? null : this.data.getAsHexString();
         String caInput = this.input == null ? null : this.input.getAsHexString();
+        String caType = this.type == null ? null : this.type.getHexNumber();
+        String caRskSubtype = this.rskSubtype == null ? null : this.rskSubtype.getHexNumber();
 
         CallArguments callArguments = new CallArguments();
         callArguments.setFrom(caFrom);
@@ -124,6 +139,8 @@ public class CallArgumentsParam {
         if (caInput != null) {
             callArguments.setInput(caInput);
         }
+        callArguments.setType(caType);
+        callArguments.setRskSubtype(caRskSubtype);
 
         return callArguments;
     }
@@ -140,6 +157,8 @@ public class CallArgumentsParam {
                 ", data='" + (data != null ? data.getAsHexString() : null) + '\'' +
                 ", nonce='" + nonce + '\'' +
                 ", chainId='" + chainId + '\'' +
+                ", type='" + type + '\'' +
+                ", rskSubtype='" + rskSubtype + '\'' +
                 '}';
     }
 
@@ -164,8 +183,10 @@ public class CallArgumentsParam {
             HexNumberParam value = paramOrNull(node, "value", HexNumberParam::new);
             HexDataParam data = paramOrNull(node, "data", HexDataParam::new);
             HexDataParam input = paramOrNull(node, "input", HexDataParam::new);
+            HexNumberParam type = paramOrNull(node, "type", HexNumberParam::new);
+            HexNumberParam rskSubtype = paramOrNull(node, "rskSubtype", HexNumberParam::new);
 
-            return new CallArgumentsParam(from, to, gas, gasPrice, gasLimit, nonce, chainId, value, data, input);
+            return new CallArgumentsParam(from, to, gas, gasPrice, gasLimit, nonce, chainId, value, data, input, type, rskSubtype);
         }
 
         @Nullable

@@ -75,6 +75,11 @@ public class Transaction {
     public static final byte CHAIN_ID_INC = 35;
     public static final byte LOWER_REAL_V = 27;
 
+    /** Number of required fields in a transaction RLP list. */
+    private static final int TX_FIELD_COUNT = 9;
+
+    private final TransactionTypePrefix typePrefix;
+
     protected RskAddress sender;
     /* whether this is a local call transaction */
     private boolean isLocalCall;
@@ -103,35 +108,50 @@ public class Transaction {
     private Keccak256 hash;
     private Keccak256 rawHash;
 
+    /**
+     * Constructor for parsing raw transaction data.
+     * Supports legacy and typed transactions.
+     *
+     * <ul>
+     *   <li>Legacy: RLP([nonce, gasPrice, gasLimit, to, value, data, v, r, s])</li>
+     *   <li>Typed:  TransactionType || RLP([nonce, gasPrice, gasLimit, to, value, data, v, r, s])</li>
+     *   <li>RSK Namespace (RSKIP543): 0x02 || rsk-tx-type || RLP([...])</li>
+     * </ul>
+     */
     protected Transaction(byte[] rawData) {
-        this(RLP.decodeList(rawData));
+        if (rawData == null || rawData.length == 0) {
+            throw new IllegalArgumentException("Transaction raw data cannot be null or empty");
+        }
+
+        this.typePrefix = TransactionTypePrefix.fromRawData(rawData);
+
+        int prefixLen = this.typePrefix.length();
+        byte[] payload = prefixLen == 0 ? rawData : java.util.Arrays.copyOfRange(rawData, prefixLen, rawData.length);
+        RLPList txFields = RLP.decodeList(payload);
+        ParsedFields parsed = parseFields(txFields);
+
+        this.nonce = parsed.nonce;
+        this.gasPrice = parsed.gasPrice;
+        this.gasLimit = parsed.gasLimit;
+        this.receiveAddress = parsed.receiveAddress;
+        this.value = parsed.value;
+        this.data = parsed.data;
+        this.chainId = parsed.chainId;
+        this.signature = parsed.signature;
     }
 
-    protected Transaction(RLPList transaction) {
-        if (transaction.size() != 9) {
-            throw new IllegalArgumentException("A transaction must have exactly 9 elements");
-        }
-        this.nonce = transaction.get(0).getRLPData();
-        this.gasPrice = RLP.parseCoinNonNullZero(transaction.get(1).getRLPData());
-        this.gasLimit = transaction.get(2).getRLPData();
-        this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
-        this.value = RLP.parseCoinNullZero(transaction.get(4).getRLPData());
-        this.data = transaction.get(5).getRLPData();
-        // only parse signature in case tx is signed
-        byte[] vData = transaction.get(6).getRLPData();
-        if (vData != null) {
-            if (vData.length != 1) {
-                throw new TransactionException("Signature V is invalid");
-            }
-            byte v = vData[0];
-            this.chainId = extractChainIdFromV(v);
-            byte[] r = transaction.get(7).getRLPData();
-            byte[] s = transaction.get(8).getRLPData();
-            this.signature = ECDSASignature.fromComponents(r, s, getRealV(v));
-        } else {
-            this.chainId = 0;
-            logger.trace("RLP encoded tx is not signed!");
-        }
+    protected Transaction(RLPList txFields) {
+        this.typePrefix = TransactionTypePrefix.legacy();
+
+        ParsedFields parsed = parseFields(txFields);
+        this.nonce = parsed.nonce;
+        this.gasPrice = parsed.gasPrice;
+        this.gasLimit = parsed.gasLimit;
+        this.receiveAddress = parsed.receiveAddress;
+        this.value = parsed.value;
+        this.data = parsed.data;
+        this.chainId = parsed.chainId;
+        this.signature = parsed.signature;
     }
 
     /* creation contract tx
@@ -140,11 +160,15 @@ public class Transaction {
      * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
      */
     protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, TransactionType.LEGACY);
+    }
+
+    protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, TransactionType type) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, type);
     }
 
     protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
-                          byte chainId) {
+                          byte chainId, TransactionType type) {
         this(
                 nonce,
                 RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw)),
@@ -153,12 +177,27 @@ public class Transaction {
                 RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw)),
                 data,
                 chainId,
-                false
+                false,
+                type
         );
     }
 
     protected Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
-                          byte chainId, final boolean localCall) {
+                          byte chainId, final boolean localCall, TransactionType type) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId, localCall,
+                TransactionTypePrefix.typed(type));
+    }
+    
+    /** Constructor with optional RSK namespace subtype. */
+    protected Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
+                          byte chainId, final boolean localCall, TransactionType type, Byte rskSubtype) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId, localCall,
+                TransactionTypePrefix.of(type, rskSubtype));
+    }
+
+    /** Canonical constructor used by all overloads. */
+    protected Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
+                          byte chainId, final boolean localCall, TransactionTypePrefix typePrefix) {
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = gasPriceRaw;
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
@@ -167,6 +206,7 @@ public class Transaction {
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = localCall;
+        this.typePrefix = Objects.requireNonNull(typePrefix, "typePrefix must not be null");
     }
 
     public static TransactionBuilder builder() {
@@ -177,14 +217,14 @@ public class Transaction {
         return new ImmutableTransaction(this.getEncoded());
     }
 
-    private byte extractChainIdFromV(byte v) {
+    private static byte extractChainIdFromVStatic(byte v) {
         if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1)) {
             return 0;
         }
         return (byte) (((0x00FF & v) - CHAIN_ID_INC) / 2);
     }
 
-    private byte getRealV(byte v) {
+    private static byte getRealVStatic(byte v) {
         if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1)) {
             return v;
         }
@@ -439,6 +479,33 @@ public class Transaction {
         return chainId;
     }
 
+    public TransactionTypePrefix getTypePrefix() {
+        return typePrefix;
+    }
+
+    public TransactionType getType() {
+        return typePrefix.type();
+    }
+    
+    public boolean isRskNamespaceTransaction() {
+        return typePrefix.isRskNamespace();
+    }
+
+    public byte getRskSubtype() {
+        if (typePrefix instanceof TransactionTypePrefix.RskNamespace rsk) {
+            return rsk.subtype();
+        }
+        throw new IllegalStateException("Not an RSK namespace transaction");
+    }
+
+    public String getFullTypeString() {
+        return typePrefix.toFullString();
+    }
+
+    public String getTypeForRpc() {
+        return typePrefix.toRpcString();
+    }
+
     public byte getEncodedV() {
         return this.chainId == 0
                 ? this.signature.getV()
@@ -461,22 +528,21 @@ public class Transaction {
 
     }
 
-    /**
-     * For signatures you have to keep also
-     * RLP of the transaction without any signature data
-     */
     public byte[] getEncodedRaw() {
         if (this.rawRlpEncoding == null) {
+            byte[] txData;
+
             // Since EIP-155 use chainId for v
             if (chainId == 0) {
-                this.rawRlpEncoding = encode(null, null, null);
+                txData = encode(null, null, null);
             } else {
                 byte[] v = RLP.encodeByte(chainId);
                 byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
                 byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-
-                this.rawRlpEncoding = encode(v, r, s);
+                txData = encode(v, r, s);
             }
+
+            this.rawRlpEncoding = prependTypePrefix(txData);
         }
 
         return ByteUtil.cloneBytes(this.rawRlpEncoding);
@@ -607,9 +673,72 @@ public class Transaction {
                 s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
             }
 
-            this.rlpEncoding = encode(v, r, s);
+            byte[] txData = encode(v, r, s);
+            this.rlpEncoding = prependTypePrefix(txData);
         }
 
         return this.rlpEncoding;
+    }
+
+    /** Parses the 9 standard transaction fields and optional signature values. */
+    private static ParsedFields parseFields(RLPList txFields) {
+        if (txFields.size() != TX_FIELD_COUNT) {
+            throw new IllegalArgumentException(
+                    "A transaction must have exactly " + TX_FIELD_COUNT + " elements");
+        }
+
+        byte[] nonce = txFields.get(0).getRLPData();
+        Coin gasPrice = RLP.parseCoinNonNullZero(txFields.get(1).getRLPData());
+        byte[] gasLimit = txFields.get(2).getRLPData();
+        RskAddress receiveAddress = RLP.parseRskAddress(txFields.get(3).getRLPData());
+        Coin value = RLP.parseCoinNullZero(txFields.get(4).getRLPData());
+        byte[] data = txFields.get(5).getRLPData();
+
+        byte chainId = 0;
+        ECDSASignature signature = null;
+        byte[] vData = txFields.get(6).getRLPData();
+        if (vData != null) {
+            if (vData.length != 1) {
+                throw new TransactionException("Signature V is invalid");
+            }
+            byte v = vData[0];
+            chainId = extractChainIdFromVStatic(v);
+            byte[] r = txFields.get(7).getRLPData();
+            byte[] s = txFields.get(8).getRLPData();
+            signature = ECDSASignature.fromComponents(r, s, getRealVStatic(v));
+        } else {
+            logger.trace("RLP encoded tx is not signed!");
+        }
+
+        return new ParsedFields(nonce, gasPrice, gasLimit, receiveAddress, value, data, chainId, signature);
+    }
+
+    /** Prepends the RSKIP543 type prefix when present. */
+    private byte[] prependTypePrefix(byte[] txData) {
+        byte[] prefix = typePrefix.toBytes();
+        return prefix.length == 0 ? txData : ByteUtil.merge(prefix, txData);
+    }
+
+    private static final class ParsedFields {
+        private final byte[] nonce;
+        private final Coin gasPrice;
+        private final byte[] gasLimit;
+        private final RskAddress receiveAddress;
+        private final Coin value;
+        private final byte[] data;
+        private final byte chainId;
+        private final ECDSASignature signature;
+
+        ParsedFields(byte[] nonce, Coin gasPrice, byte[] gasLimit, RskAddress receiveAddress,
+                     Coin value, byte[] data, byte chainId, ECDSASignature signature) {
+            this.nonce = nonce;
+            this.gasPrice = gasPrice;
+            this.gasLimit = gasLimit;
+            this.receiveAddress = receiveAddress;
+            this.value = value;
+            this.data = data;
+            this.chainId = chainId;
+            this.signature = signature;
+        }
     }
 }

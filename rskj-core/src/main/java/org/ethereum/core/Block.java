@@ -262,23 +262,11 @@ public class Block {
     }
 
     private byte[] getTransactionsEncoded() {
-        byte[][] transactionsEncoded = new byte[transactionsList.size()][];
-        int i = 0;
-        for (Transaction tx : transactionsList) {
-            transactionsEncoded[i] = tx.getEncoded();
-            ++i;
-        }
-        return RLP.encodeList(transactionsEncoded);
+        return BlockTxCodec.encodeTransactions(transactionsList);
     }
 
     private byte[] getUnclesEncoded() {
-        byte[][] unclesEncoded = new byte[uncleList.size()][];
-        int i = 0;
-        for (BlockHeader uncle : uncleList) {
-            unclesEncoded[i] = uncle.getFullEncoded();
-            ++i;
-        }
-        return RLP.encodeList(unclesEncoded);
+        return BlockTxCodec.encodeUncles(uncleList);
     }
 
     public byte[] getEncoded() {
