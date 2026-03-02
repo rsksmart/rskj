@@ -108,7 +108,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             federationOutputScript = federation.getP2SHScript();
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             setUpWallet(federationUTXOs);
@@ -204,7 +204,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             int expectedNumberOfUTXOs = 1;
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(MINIMUM_PEGOUT_TX_VALUE)
                 .buildMany(expectedNumberOfUTXOs, i -> createHash(i + 1));
 
@@ -235,7 +235,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             int numberOfUtxos = 1;
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(MINIMUM_PEGOUT_TX_VALUE)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -259,7 +259,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             int expectedNumberOfUTXOs = 1;
             Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(utxoAmount)
                 .buildMany(expectedNumberOfUTXOs, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -289,7 +289,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             int numberOfUtxos = 1;
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(MINIMUM_PEGOUT_TX_VALUE.add(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT))
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -319,7 +319,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             int numberOfUtxos = 1;
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(MINIMUM_PEGOUT_TX_VALUE.add(Coin.SATOSHI))
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -352,7 +352,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -396,7 +396,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 3;
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -422,7 +422,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         void buildBatchedPegouts_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
             // Arrange
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(Coin.COIN)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -451,7 +451,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             int expectedNumberOfUtxos, int numberOfPegoutRequests) {
             // Arrange
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(Coin.COIN)
                 .buildMany(expectedNumberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -682,7 +682,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             int numberOfUtxos = 1;
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(MINIMUM_PEGOUT_TX_VALUE.add(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT))
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -712,7 +712,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             int numberOfUtxos = 1;
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(MINIMUM_PEGOUT_TX_VALUE.add(Coin.SATOSHI))
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -745,7 +745,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -1079,7 +1079,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             int numberOfUtxos = 1;
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(MINIMUM_PEGOUT_TX_VALUE.add(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT))
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -1109,7 +1109,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             int numberOfUtxos = 1;
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(MINIMUM_PEGOUT_TX_VALUE.add(Coin.SATOSHI))
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -1142,7 +1142,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federation.getP2SHScript())
+                .withScriptPubKey(federationOutputScript)
                 .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
