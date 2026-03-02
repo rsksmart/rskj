@@ -671,6 +671,33 @@ public final class BridgeUtils {
         return baseSize + signingSize;
     }
 
+    public static int calculateBtcTxVirtualSize(BtcTransaction btcTx) {
+        int baseSize = 0;
+        List<TransactionInput> inputs = btcTx.getInputs();
+        baseSize += 1; // input count
+        for (TransactionInput input : inputs) {
+            baseSize += input.bitcoinSerialize().length;
+        }
+
+        List<TransactionOutput> outputs = btcTx.getOutputs();
+        baseSize += 1; // output count
+        for (TransactionOutput output : outputs) {
+            baseSize += output.bitcoinSerialize().length;
+        }
+
+        baseSize += 4; // version
+        baseSize += 4; // locktime
+
+        int totalSize = btcTx.bitcoinSerialize().length;
+        return calculateVirtualBytes(totalSize, baseSize);
+    }
+
+    // As described in BIP141
+    private static int calculateVirtualBytes(int totalSize, int baseSize) {
+        int txWeight = totalSize + (baseSize * 3);
+        return txWeight / 4;
+    }
+
     private static int calculateSegwitTxSize(Federation federation, int inputsCount, int outputsCount) {
         BtcTransaction tx = new BtcTransaction(federation.getBtcParams());
 
@@ -681,9 +708,8 @@ public final class BridgeUtils {
         int baseSize = calculateTxBaseSize(tx, inputsCount, true);
         int signingSize = getSigningSize(federation.getNumberOfSignaturesRequired(), inputsCount);
         int totalSize = baseSize + signingSize + (inputsCount * federation.getRedeemScript().getProgram().length);
-        // As described in BIP141
-        int txWeight = totalSize + (3 * baseSize);
-        return txWeight / 4;
+
+        return calculateVirtualBytes(totalSize, baseSize);
     }
 
     private static int getSigningSize(int numberOfSignaturesRequired, int inputsCount) {
