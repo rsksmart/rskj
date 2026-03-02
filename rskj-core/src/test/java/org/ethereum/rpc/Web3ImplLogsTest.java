@@ -17,8 +17,10 @@
  */
 package org.ethereum.rpc;
 
+import com.typesafe.config.ConfigValueFactory;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.jsonrpc.JsonRpcError;
 import co.rsk.core.Coin;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
@@ -136,6 +138,10 @@ class Web3ImplLogsTest {
     }
 
     private void setUpBlockChainForTest(RskTestFactory rskTestFactory) {
+        setUpBlockChainForTest(rskTestFactory, null);
+    }
+
+    private void setUpBlockChainForTest(RskTestFactory rskTestFactory, TestSystemProperties web3Config) {
         blockChain = rskTestFactory.getBlockchain();
         blockStore = rskTestFactory.getBlockStore();
         trieStore = rskTestFactory.getTrieStore();
@@ -143,7 +149,7 @@ class Web3ImplLogsTest {
         transactionPool = rskTestFactory.getTransactionPool();
         eth = rskTestFactory.getRsk();
         receiptStore = rskTestFactory.getReceiptStore();
-        web3 = createWeb3();
+        web3 = createWeb3(web3Config);
         signatureCache = new ReceivedTxSignatureCache();
     }
 
@@ -888,6 +894,45 @@ class Web3ImplLogsTest {
     }
 
     @Test
+    void getLogsCheckMaxBlockToQueryLimit() throws Exception {
+	// Given
+        TestSystemProperties configMax2 = new TestSystemProperties(
+                cfg -> cfg.withValue("rpc.logs.maxBlocksToQuery", ConfigValueFactory.fromAnyRef(2L)));
+        setUpBlockChainForTest(new RskTestFactory(tempDir, configMax2), configMax2);
+        generateBlocksWithLogs();
+
+	// When
+        // Query first 2 blocks
+        FilterRequestParam frFirstTwo = new FilterRequestParam(
+                new BlockIdentifierParam("0x1"), new BlockIdentifierParam("0x2"), null, null, null);
+        Object[] logsFirstTwo = web3.eth_getLogs(frFirstTwo);
+
+	// Then
+        assertNotNull(logsFirstTwo);
+        assertEquals(logsFirstTwo.length,  2, "First two blocks should have at least one log");
+
+	// When
+        // Query next 2 blocks
+        FilterRequestParam frLastTwo = new FilterRequestParam(
+                new BlockIdentifierParam("0x3"), new BlockIdentifierParam("0x4"), null, null, null);
+        Object[] logsLastTwo = web3.eth_getLogs(frLastTwo);
+
+	// Then
+        assertNotNull(logsLastTwo);
+        assertEquals(logsLastTwo.length,2, "Last two blocks should have at least one log");
+
+	// When
+        // Query range greater than 2 blocks
+        FilterRequestParam frThreeBlocks = new FilterRequestParam(
+                new BlockIdentifierParam("0x1"), new BlockIdentifierParam("0x4"), null, null, null);
+        RskJsonRpcRequestException ex = Assertions.assertThrows(RskJsonRpcRequestException.class,
+                () -> web3.eth_getLogs(frThreeBlocks));
+
+	// Then
+        assertEquals(JsonRpcError.MAX_ETH_GET_LOGS_LIMIT, ex.getCode());
+    }
+
+    @Test
     void createMainContractWithoutEvents() throws Exception {
         Account acc1 = new AccountBuilder(blockChain,
                 blockStore,
@@ -1065,20 +1110,25 @@ class Web3ImplLogsTest {
     }
 
     private Web3Impl createWeb3() {
+        return createWeb3(null);
+    }
+
+    private Web3Impl createWeb3(TestSystemProperties configOverride) {
+        TestSystemProperties scopedConfig = configOverride != null ? configOverride : config;
         Wallet wallet = WalletFactory.createWallet();
-        PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
+        PersonalModule personalModule = new PersonalModuleWalletEnabled(scopedConfig, eth, wallet, transactionPool);
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null,
-                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(),
+                scopedConfig.getNetworkConstants().getBridgeConstants(), scopedConfig.getActivationConfig(),
                 new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockChain, transactionPool,
+                scopedConfig.getNetworkConstants().getBridgeConstants(), scopedConfig.getNetworkConstants().getChainId(), blockChain, transactionPool,
                 null, new ExecutionBlockRetriever(blockChain, null, null),
                 null, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache), null,
                 bridgeSupportFactory,
-                config.getGasEstimationCap(),
-                config.getCallGasCap(),
-                config.getActivationConfig(),
-                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
+                scopedConfig.getGasEstimationCap(),
+                scopedConfig.getCallGasCap(),
+                scopedConfig.getActivationConfig(),
+                new PrecompiledContracts(scopedConfig, bridgeSupportFactory, signatureCache),
                 false,
                 null
         );
@@ -1090,7 +1140,7 @@ class Web3ImplLogsTest {
         return new Web3RskImpl(
                 eth,
                 blockChain,
-                config,
+                scopedConfig,
                 Web3Mocks.getMockMinerClient(),
                 Web3Mocks.getMockMinerServer(),
                 personalModule,
@@ -1300,6 +1350,25 @@ class Web3ImplLogsTest {
         web3.personal_newAccountWithSeed("notDefault");
     }
 
+    /**
+     * Generates sequence of 4+ blocks with at least one log.
+     */
+    private void generateBlocksWithLogs() {
+        Account acc1 = new AccountBuilder(blockChain, blockStore, repositoryLocator)
+                .name("notDefault").balance(Coin.valueOf(10000000)).build();
+        web3.personal_newAccountWithSeed("notDefault");
+
+        Block genesis = blockChain.getBlockByNumber(0);
+        Transaction tx = getContractTransaction(acc1);
+        Block block1 = buildAndConnectBlock(genesis, List.of(tx));
+        byte[] contractAddress = tx.getContractAddress().getBytes();
+
+        Block block2 = buildAndConnectBlock(block1, List.of(getContractTransactionWithInvoke(acc1, contractAddress, 1)));
+        Block block3 = buildAndConnectBlock(block2, List.of(getContractTransactionWithInvoke(acc1, contractAddress, 2)));
+        Block block4 = buildAndConnectBlock(block3, List.of(getContractTransactionWithInvoke(acc1, contractAddress, 3)));
+        buildAndConnectBlock(block4, List.of(getContractTransactionWithInvoke(acc1, contractAddress, 4)));
+    }
+
     //0.4.11+commit.68ef5810.Emscripten.clang WITH optimizations
     static final String COMPILED_0_4_11 = "6060604052341561000c57fe5b5b60466000819055507f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad16000546040518082815260200191505060405180910390a15b5b61014e8061005f6000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632096525514610046578063371303c01461006c575bfe5b341561004e57fe5b61005661007e565b6040518082815260200191505060405180910390f35b341561007457fe5b61007c6100c2565b005b60007f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b6000546040518082815260200191505060405180910390a160005490505b90565b60006000815460010191905081905550600160026000548115156100e257fe5b061415157f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad6000546040518082815260200191505060405180910390a25b5600a165627a7a7230582092c7b2c0483b85227396e18149993b33243059af0f3bd0364f1dc36b8bbbcdae0029";
     static final String COMPILED_UNKNOWN = "60606040526046600081905560609081527f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad190602090a160aa8060426000396000f3606060405260e060020a60003504632096525581146024578063371303c0146060575b005b60a36000805460609081527f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b90602090a1600060005054905090565b6022600080546001908101918290556060828152600290920614907f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad90602090a2565b5060206060f3";
@@ -1337,13 +1406,17 @@ class Web3ImplLogsTest {
     }
 
     private static Transaction getContractTransactionWithInvoke(Account acc1, byte[] receiverAddress) {
+        return getContractTransactionWithInvoke(acc1, receiverAddress, 1);
+    }
+
+    private static Transaction getContractTransactionWithInvoke(Account acc1, byte[] receiverAddress, long nonce) {
         return new TransactionBuilder()
                 .sender(acc1)
                 .receiverAddress(receiverAddress)
                 .gasLimit(BigInteger.valueOf(100000))
                 .gasPrice(BigInteger.ONE)
                 .data(INCREMENT_METHOD_SIGNATURE)   // invoke incr()
-                .nonce(1)
+                .nonce(nonce)
                 .build();
     }
 
