@@ -1,5 +1,7 @@
 # local credentials
 credentials.properties
+# local settings etc
+.local
 
 # Vim
 *.sw[op]
