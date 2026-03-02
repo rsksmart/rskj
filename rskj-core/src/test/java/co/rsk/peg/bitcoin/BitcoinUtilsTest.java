@@ -1,6 +1,10 @@
 package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.*;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshScriptWithoutSignaturesHasProperFormat;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessHasExpectedStructure;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shErpScriptSigStructure;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static com.google.common.base.Preconditions.checkNotNull;
