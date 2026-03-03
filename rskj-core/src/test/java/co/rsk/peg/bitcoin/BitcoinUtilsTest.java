@@ -3,8 +3,9 @@ package co.rsk.peg.bitcoin;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.*;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshScriptWithoutSignaturesHasProperFormat;
-import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessHasExpectedStructure;
-import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shErpScriptSigStructure;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshScriptWithSignaturesHasProperFormat;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigWithSignaturesHasProperFormat;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertSegwitScriptSigContainsHashedRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -42,8 +43,6 @@ class BitcoinUtilsTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
 
     private static final int FIRST_INPUT_INDEX = 0;
-    private static final int MIN_SIGNATURE_LENGTH = 71;
-    private static final int MAX_SIGNATURE_LENGTH = 73;
 
     private static final ActivationConfig.ForBlock arrowHeadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
@@ -1241,7 +1240,7 @@ class BitcoinUtilsTest {
         List<TransactionInput> transactionInputs = transaction.getInputs();
         for (TransactionInput input : transactionInputs) {
             int inputIndex = transactionInputs.indexOf(input);
-            assertWitnessScriptWithSignaturesHasProperFormat(
+            assertP2shP2wshScriptWithSignaturesHasProperFormat(
                 transaction.getWitness(inputIndex),
                 federationRedeemScript
             );
@@ -1349,7 +1348,7 @@ class BitcoinUtilsTest {
             transaction.getInput(legacyInputIndex).getScriptSig(),
             p2shFederation.getRedeemScript()
         );
-        assertWitnessScriptWithSignaturesHasProperFormat(
+        assertP2shP2wshScriptWithSignaturesHasProperFormat(
             transaction.getWitness(segwitInputIndex),
             p2wshFederation.getRedeemScript()
         );
@@ -2031,61 +2030,6 @@ class BitcoinUtilsTest {
                     "5e4aae37309d88e9f49d3a4c6fb424e491cbdbac754b8ef06bb90d2a149bd969")),
                 Arguments.of(coinbaseTxWithWitnessCommitmentOutputInNonStandardFormat, Sha256Hash.wrap(
                     "4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b"))
-            );
-        }
-    }
-
-    private void assertSegwitScriptSigContainsHashedRedeemScript(Script segwitScriptSig, Script redeemScript) {
-        List<ScriptChunk> chunks = segwitScriptSig.getChunks();
-        assertEquals(1, chunks.size());
-
-        ScriptChunk chunk = chunks.get(0);
-        assertEquals(34, chunk.opcode); // OP_PUSHBYTES_34, 32 bytes from the redeem script hash + 2 for OP_0 and OP_PUSHBYTES_32
-
-        byte[] segwitScriptSigProgram = segwitScriptSig.getProgram();
-        assertEquals(35, segwitScriptSigProgram.length); // OP_PUSHBYTES_34 + the 34 bytes
-
-        // Check the first byte is OP_PUSHBYTES_34
-        assertEquals(34, segwitScriptSigProgram[0]);
-
-        // Check the second byte is OP_0
-        assertEquals(0, segwitScriptSigProgram[1]);
-
-        // Check the hashed redeem script
-        byte[] hashedRedeemScript = extractHashedRedeemScriptProgramFromSegwitScriptSig(segwitScriptSig);
-        byte[] expectedHashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
-        assertArrayEquals(expectedHashedRedeemScript, hashedRedeemScript);
-    }
-
-    private void assertScriptSigWithSignaturesHasProperFormat(Script scriptSig, Script redeemScript) {
-        assertP2shErpScriptSigStructure(scriptSig, redeemScript);
-
-        List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
-        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
-        int startIndex = 1; // First push is OP_0, next come the signatures
-
-        // A non-empty chunk for each signature required to spend
-        for (int i = startIndex; i < numberOfSignaturesRequiredToSpend; i++) {
-            ScriptChunk signatureChunk = scriptSigChunks.get(i);
-            int signatureLength = signatureChunk.data.length;
-            assertAll(
-                () -> assertTrue(signatureLength >= MIN_SIGNATURE_LENGTH, "Signature should be at least " + MIN_SIGNATURE_LENGTH + " bytes long"),
-                () -> assertTrue(signatureLength <= MAX_SIGNATURE_LENGTH, "Signature should be at most " + MAX_SIGNATURE_LENGTH + " bytes long")
-            );
-        }
-    }
-
-    private void assertWitnessScriptWithSignaturesHasProperFormat(TransactionWitness witness, Script redeemScript) {
-        assertP2shP2wshWitnessHasExpectedStructure(witness, redeemScript);
-
-        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
-        int startIndex = 1; // First push is OP_0, next come the signatures
-
-        for (int i = startIndex; i < numberOfSignaturesRequiredToSpend; i++) {
-            byte[] signaturePush = witness.getPush(i);
-            assertAll(
-                () -> assertTrue(signaturePush.length >= MIN_SIGNATURE_LENGTH, "Signature should be at least " + MIN_SIGNATURE_LENGTH + " bytes long"),
-                () -> assertTrue(signaturePush.length <= MAX_SIGNATURE_LENGTH, "Signature should be at most " + MAX_SIGNATURE_LENGTH + " bytes long")
             );
         }
     }
