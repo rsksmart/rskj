@@ -1279,8 +1279,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
         private void assertBatchedPegoutsTxInputsHasProperFormatAndBelongsToFederation(BtcTransaction batchedPegoutsTransaction) {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
-            for (TransactionInput input : batchedPegoutsTransactionInputs) {
-                int inputIndex = batchedPegoutsTransactionInputs.indexOf(input);
+            for (int inputIndex = 0; inputIndex < batchedPegoutsTransactionInputs.size(); inputIndex++) {
                 TransactionWitness witness = batchedPegoutsTransaction.getWitness(inputIndex);
                 assertP2shP2wshScriptWithoutSignaturesHasProperFormat(witness, federation.getRedeemScript());
             }
