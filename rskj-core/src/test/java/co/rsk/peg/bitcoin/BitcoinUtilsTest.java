@@ -2,8 +2,8 @@ package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.*;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
-import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshScriptWithoutSignaturesHasProperFormat;
-import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshScriptWithSignaturesHasProperFormat;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithoutSignaturesHasProperFormat;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigWithSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertSegwitScriptSigContainsHashedRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
@@ -1199,7 +1199,7 @@ class BitcoinUtilsTest {
                 transaction.getInput(inputIndex).getScriptSig(),
                 redeemScript
             );
-            assertP2shP2wshScriptWithoutSignaturesHasProperFormat(
+            assertP2shP2wshWitnessWithoutSignaturesHasProperFormat(
                 transaction.getWitness(inputIndex),
                 redeemScript
             );
@@ -1240,7 +1240,7 @@ class BitcoinUtilsTest {
         List<TransactionInput> transactionInputs = transaction.getInputs();
         for (TransactionInput input : transactionInputs) {
             int inputIndex = transactionInputs.indexOf(input);
-            assertP2shP2wshScriptWithSignaturesHasProperFormat(
+            assertP2shP2wshWitnessWithSignaturesHasProperFormat(
                 transaction.getWitness(inputIndex),
                 federationRedeemScript
             );
@@ -1263,7 +1263,7 @@ class BitcoinUtilsTest {
             int inputIndex = transactionInputs.indexOf(input);
             TransactionWitness witness = transaction.getWitness(inputIndex);
 
-            assertP2shP2wshScriptWithoutSignaturesHasProperFormat(witness, federationRedeemScript);
+            assertP2shP2wshWitnessWithoutSignaturesHasProperFormat(witness, federationRedeemScript);
             assertSegwitScriptSigContainsHashedRedeemScript(input.getScriptSig(), federationRedeemScript);
         }
     }
@@ -1348,7 +1348,7 @@ class BitcoinUtilsTest {
             transaction.getInput(legacyInputIndex).getScriptSig(),
             p2shFederation.getRedeemScript()
         );
-        assertP2shP2wshScriptWithSignaturesHasProperFormat(
+        assertP2shP2wshWitnessWithSignaturesHasProperFormat(
             transaction.getWitness(segwitInputIndex),
             p2wshFederation.getRedeemScript()
         );
@@ -1371,7 +1371,7 @@ class BitcoinUtilsTest {
 
         // Check second input (segwit), does not have signatures
         TransactionWitness witness = transaction.getWitness(segwitInputIndex);
-        assertP2shP2wshScriptWithoutSignaturesHasProperFormat(witness, p2wshFederation.getRedeemScript());
+        assertP2shP2wshWitnessWithoutSignaturesHasProperFormat(witness, p2wshFederation.getRedeemScript());
         assertSegwitScriptSigContainsHashedRedeemScript(
             transaction.getInput(segwitInputIndex).getScriptSig(),
             p2wshFederation.getRedeemScript()

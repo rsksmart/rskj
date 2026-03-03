@@ -94,7 +94,7 @@ public class BitcoinTestAssertions {
         }
     }
 
-    public static void assertP2shP2wshScriptWithoutSignaturesHasProperFormat(TransactionWitness witness, Script redeemScript) {
+    public static void assertP2shP2wshWitnessWithoutSignaturesHasProperFormat(TransactionWitness witness, Script redeemScript) {
         assertP2shP2wshWitnessHasExpectedStructure(witness, redeemScript);
 
         int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
@@ -107,7 +107,7 @@ public class BitcoinTestAssertions {
         }
     }
 
-    public static void assertP2shP2wshScriptWithSignaturesHasProperFormat(TransactionWitness witness, Script redeemScript) {
+    public static void assertP2shP2wshWitnessWithSignaturesHasProperFormat(TransactionWitness witness, Script redeemScript) {
         assertP2shP2wshWitnessHasExpectedStructure(witness, redeemScript);
 
         int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
