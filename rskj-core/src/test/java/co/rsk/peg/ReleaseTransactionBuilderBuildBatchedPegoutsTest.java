@@ -11,7 +11,7 @@ import static co.rsk.peg.ReleaseTransactionBuilder.Response.SUCCESS;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat;
-import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshScriptWithoutSignaturesHasProperFormat;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -1281,7 +1281,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             for (int inputIndex = 0; inputIndex < batchedPegoutsTransactionInputs.size(); inputIndex++) {
                 TransactionWitness witness = batchedPegoutsTransaction.getWitness(inputIndex);
-                assertP2shP2wshScriptWithoutSignaturesHasProperFormat(witness, federation.getRedeemScript());
+                assertP2shP2wshWitnessWithoutSignaturesHasProperFormat(witness, federation.getRedeemScript());
             }
         }
     }
