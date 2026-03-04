@@ -56,10 +56,11 @@ public final class BlockTxCodec {
 
         for (int i = 0; i < transactionList.size(); i++) {
             RLPElement transactionRaw = transactionList.get(i);
-            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
+            byte[] rawData = transactionRaw.getRLPData();
+            Transaction tx = new ImmutableTransaction(rawData);
 
             if (tx.isRemascTransaction(i, transactionList.size())) {
-                tx = new RemascTransaction(transactionRaw.getRLPData());
+                tx = new RemascTransaction(rawData);
             }
             parsedTxs.add(tx);
         }
