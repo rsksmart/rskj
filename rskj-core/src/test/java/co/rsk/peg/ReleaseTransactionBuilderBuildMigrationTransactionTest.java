@@ -50,7 +50,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all()
         .forBlock(0);
-    private static final ActivationConfig.ForBlock PAPYRUS_ACTIVATIONS = ActivationConfigsForTest.papyrus200()
+    private static final ActivationConfig.ForBlock FINGERROOT_ACTIVATIONS = ActivationConfigsForTest.fingerroot500()
         .forBlock(0);
 
     private static final BridgeConstants BRIDGE_MAINNET_CONSTANTS = BridgeMainNetConstants.getInstance();
@@ -124,9 +124,9 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenRSKIP201IsNotActive_shouldCreateMigrationTxWithBtcVersion1() {
+        void buildMigrationTransaction_whenRSKIP376IsNotActive_shouldCreateMigrationTxWithBtcVersion1() {
             // Arrange
-            setUpActivationConfig(PAPYRUS_ACTIVATIONS);
+            setUpActivationConfig(FINGERROOT_ACTIVATIONS);
             int expectedNumberOfUTXOsToMigrate = 1;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
@@ -396,9 +396,9 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenRSKIP201IsNotActive_shouldCreateMigrationTxWithBtcVersion1() {
+        void buildMigrationTransaction_whenRSKIP376IsNotActive_shouldCreateMigrationTxWithBtcVersion1() {
             // Arrange
-            setUpActivationConfig(PAPYRUS_ACTIVATIONS);
+            setUpActivationConfig(FINGERROOT_ACTIVATIONS);
             int expectedNumberOfUTXOsToMigrate = 1;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
@@ -668,9 +668,9 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenRSKIP201IsNotActive_shouldCreateMigrationTxWithBtcVersion1() {
+        void buildMigrationTransaction_whenRSKIP376IsNotActive_shouldCreateMigrationTxWithBtcVersion1() {
             // Arrange
-            setUpActivationConfig(PAPYRUS_ACTIVATIONS);
+            setUpActivationConfig(FINGERROOT_ACTIVATIONS);
             int expectedNumberOfUTXOsToMigrate = 1;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
