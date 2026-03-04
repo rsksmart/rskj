@@ -96,6 +96,15 @@ public class OkHttpClientTestFixture {
             }
             """;
 
+    public static final String ETH_GET_TRANSACTION_RECEIPT = """
+            {
+                "jsonrpc": "2.0",
+                "method": "eth_getTransactionReceipt",
+                "id": 1,
+                "params": ["<TX_HASH>"]
+            }
+            """;
+
     private OkHttpClientTestFixture() {
     }
 
@@ -195,6 +204,18 @@ public class OkHttpClientTestFixture {
         String content = getEnvelopedMethodCalls(methodCalls);
 
         return OkHttpClientTestFixture.sendJsonRpcMessage(content, rpcPort);
+    }
+
+    public static JsonNode getJsonResponseForGetTransactionReceipt(int port, String txHash) throws IOException {
+        String content = ETH_GET_TRANSACTION_RECEIPT.replace("<TX_HASH>", txHash);
+        Response response = sendJsonRpcMessage(content, port);
+        try {
+            return new ObjectMapper().readTree(response.body().string());
+        } finally {
+            if (response.body() != null) {
+                response.body().close();
+            }
+        }
     }
 
     public static class FromToAddressPair {
