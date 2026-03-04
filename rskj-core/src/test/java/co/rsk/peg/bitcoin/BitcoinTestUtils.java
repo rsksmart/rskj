@@ -12,13 +12,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import co.rsk.test.builders.UTXOBuilder;
+import co.rsk.peg.constants.BridgeConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 
 public class BitcoinTestUtils {
     public static final Sha256Hash WITNESS_RESERVED_VALUE = Sha256Hash.ZERO_HASH;
+
+    /**
+     * The constant {@link BtcTransaction#MIN_NONDUST_OUTPUT} is defined as the minimum non-dust value
+     * for a P2PKH. The possible outputs from the Federation are either a peg-out whose minimum value defined
+     * in {@link BridgeConstants#getMinimumPegoutTxValue()}, which is way above MIN_NONDUST_OUTPUT, or a change
+     * output. All change outputs from a Federation transaction are sent to a P2SH address. The dust threshold for P2SH
+     * is computed by {@link TransactionOutput#getMinNonDustValue(Coin)} and depends on the fee rate. The precomputed
+     * fee rate is 15,000 sat/KB. Output script size for a P2SH address is 32B. (32B + 148B) * 15,000 sat/KB = 2700 sat.
+     */
+    public static final Coin MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT = Coin.valueOf(2700);
 
     public static BtcECKey getBtcEcKeyFromSeed(String seed) {
         byte[] serializedSeed = HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8));
@@ -302,4 +312,5 @@ public class BitcoinTestUtils {
     public static byte[] getOutputScriptPubKeyHash(TransactionOutput output) {
         return output.getScriptPubKey().getPubKeyHash();
     }
+
 }
