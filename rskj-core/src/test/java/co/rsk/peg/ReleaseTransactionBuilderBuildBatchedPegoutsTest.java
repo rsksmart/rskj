@@ -419,13 +419,14 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         @ParameterizedTest
         @CsvSource({
             "277, 1",
-            "276, 11",
+            "276, 10",
         })
-        void buildBatchedPegouts_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
+        void buildBatchedPegouts_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
             // Arrange
+            Coin utxoValueToGuaranteeChangeOutput = Coin.COIN.add(Coin.SATOSHI);
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
-                .withValue(Coin.COIN)
+                .withValue(utxoValueToGuaranteeChangeOutput)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
@@ -446,15 +447,16 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         @ParameterizedTest
         @CsvSource({
             "276, 1",
-            "276, 2",
-            "276, 10",
+            "276, 9",
+            "275, 10",
         })
-        void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSize_shouldCreateBatchedPegoutsTxWithNoChangeOutput(
+        void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSize_shouldCreateBatchedPegoutsTx(
             int expectedNumberOfUtxos, int numberOfPegoutRequests) {
             // Arrange
+            Coin utxoValueToGuaranteeChangeOutput = Coin.COIN.add(Coin.SATOSHI);
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
-                .withValue(Coin.COIN)
+                .withValue(utxoValueToGuaranteeChangeOutput)
                 .buildMany(expectedNumberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
@@ -475,7 +477,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
             assertEquals(expectedNumberOfUtxos, batchedPegoutsInputs.size());
             assertBatchedPegoutsTxInputsHasProperFormatAndBelongsToFederation(batchedPegoutsTransaction);
-            assertBatchedPegoutsTxHasOnlyPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
         }
@@ -815,13 +817,14 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         @ParameterizedTest
         @CsvSource({
             "196, 1",
-            "195, 16",
+            "195, 15",
         })
-        void buildBatchedPegouts_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
+        void buildBatchedPegouts_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
             // Arrange
+            Coin utxoValueToGuaranteeChangeOutput = Coin.COIN.add(Coin.SATOSHI);
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
-                .withValue(Coin.COIN)
+                .withValue(utxoValueToGuaranteeChangeOutput)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
@@ -842,14 +845,15 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         @ParameterizedTest
         @CsvSource({
             "195, 1",
-            "195, 2",
-            "195, 15",
+            "195, 14",
+            "194, 15",
         })
-        void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSize_shouldCreateBatchedPegoutsTxWithNoChangeOutput(int expectedNumberOfUtxos, int numberOfPegoutRequests) {
+        void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSize_shouldCreateBatchedPegoutsTx(int expectedNumberOfUtxos, int numberOfPegoutRequests) {
             // Arrange
+            Coin utxoValueToGuaranteeChangeOutput = Coin.COIN.add(Coin.SATOSHI);
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
-                .withValue(Coin.COIN)
+                .withValue(utxoValueToGuaranteeChangeOutput)
                 .buildMany(expectedNumberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
@@ -870,7 +874,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
             assertEquals(expectedNumberOfUtxos, batchedPegoutsInputs.size());
             assertBatchedPegoutsTxInputsHasProperFormatAndBelongsToFederation(batchedPegoutsTransaction);
-            assertBatchedPegoutsTxHasOnlyPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
         }
@@ -1217,13 +1221,15 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         @ParameterizedTest
         @CsvSource({
             "2438, 1",
-            "2437, 3",
+            "2437, 2",
+            "2436, 3"
         })
-        void buildBatchedPegouts_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
+        void buildBatchedPegouts_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
             // Arrange
+            Coin utxoValueToGuaranteeChangeOutput = Coin.COIN.add(Coin.SATOSHI);
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
-                .withValue(Coin.COIN)
+                .withValue(utxoValueToGuaranteeChangeOutput)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
@@ -1244,14 +1250,16 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         @ParameterizedTest
         @CsvSource({
             "2437, 1",
-            "2437, 2",
+            "2436, 2",
+            "2435, 3",
         })
-        void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSize_shouldCreateBatchedPegoutsTxWithNoChangeOutput(
+        void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSize_shouldCreateBatchedPegoutsTx(
             int expectedNumberOfUtxos, int numberOfPegoutRequests) {
             // Arrange
+            Coin utxoValueToGuaranteeChangeOutput = Coin.COIN.add(Coin.SATOSHI);
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
-                .withValue(Coin.COIN)
+                .withValue(utxoValueToGuaranteeChangeOutput)
                 .buildMany(expectedNumberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
@@ -1272,7 +1280,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
             assertEquals(expectedNumberOfUtxos, batchedPegoutsInputs.size());
             assertBatchedPegoutsTxInputsHasProperFormatAndBelongsToFederation(batchedPegoutsTransaction);
-            assertBatchedPegoutsTxHasOnlyPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
         }
