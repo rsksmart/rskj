@@ -1467,6 +1467,18 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         assertEquals(inputTotalAmount, pegoutsAndFeesAmount.add(changeOutputsAmount));
     }
 
+    private void assertBatchedPegoutsTxHasPegoutsAmountWithFeesProperly(BtcTransaction batchedPegoutsTransaction,
+                                                                                 List<Entry> pegoutRequests) {
+        Coin inputTotalAmount = batchedPegoutsTransaction.getInputSum();
+        Coin expectedSentPegoutAmount = getTotalPegoutRequestsAmount(pegoutRequests);
+
+        Coin pegoutOutputsAmount = batchedPegoutsTransaction.getOutputSum();
+        Coin batchedPegoutsTransactionFees = batchedPegoutsTransaction.getFee();
+        Coin pegoutsAndFeesAmount = batchedPegoutsTransactionFees.add(pegoutOutputsAmount);
+        assertEquals(expectedSentPegoutAmount, pegoutsAndFeesAmount);
+        assertEquals(inputTotalAmount, pegoutsAndFeesAmount);
+    }
+
     private static boolean isDust(Coin expectedChange) {
         return expectedChange.compareTo(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT) < 0;
     }
@@ -1482,6 +1494,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         List<TransactionOutput> batchedPegoutsTransactionOutputs = batchedPegoutsTransaction.getOutputs();
         assertBatchedPegoutsTransactionNumberOfOutputs(expectedNumberOfOutputs, batchedPegoutsTransactionOutputs);
         assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
+        assertBatchedPegoutsTxHasPegoutsAmountWithFeesProperly(batchedPegoutsTransaction, pegoutRequests);
     }
 
     private void assertBatchedPegoutsTransactionNumberOfOutputs(int expectedNumberOfOutputs,
