@@ -244,13 +244,13 @@ class ActivationConfigTest {
     @Test
     void isActive_allRulesActive_returnsTrue() {
         ActivationConfig config = ActivationConfig.read(BASE_CONFIG);
-        assertTrue(config.isActive(42L, RSKIP85, RSKIP98, RSKIP103));
+        assertTrue(config.areActive(42L, RSKIP85, RSKIP98, RSKIP103));
     }
 
     @Test
     void isActive_oneRuleInactive_returnsFalse() {
         ActivationConfig config = ActivationConfigsForTest.allBut(RSKIP351);
-        assertFalse(config.isActive(10L, RSKIP85, RSKIP351));
+        assertFalse(config.areActive(10L, RSKIP85, RSKIP351));
     }
 
 }

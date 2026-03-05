@@ -117,7 +117,7 @@ public class ActivationConfig {
      * @return {@code true} if all rules are active and at least one rule
      *         is provided; {@code false} otherwise
      */
-    public boolean isActive(long number, ConsensusRule... consensusRules) {
+    public boolean areActive(long number, ConsensusRule... consensusRules) {
         return consensusRules.length > 0 &&
                 Arrays.stream(consensusRules)
                         .allMatch(rule -> isActive(rule, number));
