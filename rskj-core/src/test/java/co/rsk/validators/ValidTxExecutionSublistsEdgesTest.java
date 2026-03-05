@@ -35,38 +35,43 @@ class ValidTxExecutionSublistsEdgesTest {
         rule = new ValidTxExecutionSublistsEdgesRule(activationConfig);
     }
 
-    private void mockGetTxExecutionListsEdges (short[] edges, boolean rskip144Activated) {
+    private void mockActivationOfRSKIPP351_RSKIP144(boolean rskip351andRskip144Activated) {
+        Mockito.when(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)).thenReturn(rskip351andRskip144Activated);
+        Mockito.when(activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)).thenReturn(rskip351andRskip144Activated);
+    }
+
+    private void mockGetTxExecutionListsEdges (short[] edges) {
         Mockito.when(blockHeader.getTxExecutionSublistsEdges()).thenReturn(edges);
-        Mockito.when(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)).thenReturn(rskip144Activated);
     }
 
     // valid cases
     @Test
     void blockWithRSKIP144Deactivated() {
-        mockGetTxExecutionListsEdges(null, false);
-
+        mockGetTxExecutionListsEdges(null);
+        mockActivationOfRSKIPP351_RSKIP144(false);
         Assertions.assertTrue(rule.isValid(block));
     }
 
     @Test
     void blockWithValidEdges() {
-        mockGetTxExecutionListsEdges(new short[]{2, 5}, true);
+        mockGetTxExecutionListsEdges(new short[]{2, 5});
+        mockActivationOfRSKIPP351_RSKIP144(true);
 
         Assertions.assertTrue(rule.isValid(block));
     }
 
     @Test
     void blockWithEmptyEdges() {
-        mockGetTxExecutionListsEdges(new short[0], true);
-
+        mockGetTxExecutionListsEdges(new short[0]);
+        mockActivationOfRSKIPP351_RSKIP144(true);
         Assertions.assertTrue(rule.isValid(block));
     }
 
     // invalid cases
     @Test
     void blockWithTooManyEdges() {
-        mockGetTxExecutionListsEdges(new short[]{1, 2, 3, 4, 5}, true);
-
+        mockGetTxExecutionListsEdges(new short[]{1, 2, 3, 4, 5});
+        mockActivationOfRSKIPP351_RSKIP144(true);
         Assertions.assertFalse(rule.isValid(block));
     }
 
@@ -75,43 +80,43 @@ class ValidTxExecutionSublistsEdgesTest {
         // include the last tx in a parallelized thread
         // shouldn't be valid because the last transaction
         // is the remasc transaction and cannot be parallelized
-        mockGetTxExecutionListsEdges(new short[]{10}, true);
-
+        mockGetTxExecutionListsEdges(new short[]{10});
+        mockActivationOfRSKIPP351_RSKIP144(true);
         Assertions.assertFalse(rule.isValid(block));
     }
 
     @Test
     void blockWithOutOfBoundsEdges() {
-        mockGetTxExecutionListsEdges(new short[]{12}, true);
-
+        mockGetTxExecutionListsEdges(new short[]{12});
+        mockActivationOfRSKIPP351_RSKIP144(true);
         Assertions.assertFalse(rule.isValid(block));
     }
 
     @Test
     void blockWithNegativeEdge() {
-        mockGetTxExecutionListsEdges(new short[]{-2}, true);
-
+        mockGetTxExecutionListsEdges(new short[]{-2});
+        mockActivationOfRSKIPP351_RSKIP144(true);
         Assertions.assertFalse(rule.isValid(block));
     }
 
     @Test
     void blockWithEdgeZero() {
-        mockGetTxExecutionListsEdges(new short[]{0, 2}, true);
-
+        mockGetTxExecutionListsEdges(new short[]{0, 2});
+        mockActivationOfRSKIPP351_RSKIP144(true);
         Assertions.assertFalse(rule.isValid(block));
     }
 
     @Test
     void blockWithRepeatedEdge() {
-        mockGetTxExecutionListsEdges(new short[]{2, 2}, true);
-
+        mockGetTxExecutionListsEdges(new short[]{2, 2});
+        mockActivationOfRSKIPP351_RSKIP144(true);
         Assertions.assertFalse(rule.isValid(block));
     }
 
     @Test
     void blockWithEdgesNotInOrder() {
-        mockGetTxExecutionListsEdges(new short[]{2, 4, 3}, true);
-
+        mockGetTxExecutionListsEdges(new short[]{2, 4, 3});
+        mockActivationOfRSKIPP351_RSKIP144(true);
         Assertions.assertFalse(rule.isValid(block));
     }
 }
