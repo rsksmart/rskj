@@ -97,8 +97,7 @@ class TransactionsMessageTest {
 
         Transaction decodedRsk = decoded.getTransactions().get(2);
         Assertions.assertTrue(decodedRsk.getTypePrefix().isRskNamespace());
-        Assertions.assertInstanceOf(TransactionTypePrefix.RskNamespace.class, decodedRsk.getTypePrefix());
-        Assertions.assertEquals((byte) 3, ((TransactionTypePrefix.RskNamespace) decodedRsk.getTypePrefix()).subtype());
+        Assertions.assertEquals((byte) 3, decodedRsk.getTypePrefix().subtype());
         Assertions.assertArrayEquals(txs.get(2).getHash().getBytes(), decodedRsk.getHash().getBytes());
     }
 
