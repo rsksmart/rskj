@@ -241,55 +241,8 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
-
-        @ParameterizedTest
-        @ValueSource(ints = {1, 10})
-        void buildMigrationTransaction_whenUtxosAreMinimumNonDustValue_shouldReturnCouldNotAdjustDownwards(int numberOfUtxos) {
-            // Arrange
-            retiringFederationUTXOs = UTXOBuilder.builder()
-                    .withScriptPubKey(retiringFederationOutputScript)
-                    .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
-                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
-                retiringFederationUTXOs);
-            Coin migrationValue = wallet.getBalance();
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, newFederationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
-        }
-
         @Test
-        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereIsNoEnoughUtxosToPay_shouldReturnCouldNotAdjustDownwards() {
-            // Arrange
-            setUpFeePerKb(HIGH_FEE_PER_KB);
-            retiringFederationUTXOs = List.of(
-                UTXOBuilder.builder()
-                .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(MINIMUM_PEGIN_TX_VALUE)
-                .build()
-            );
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
-                retiringFederationUTXOs);
-            Coin migrationValue = wallet.getBalance();
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, newFederationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
-        }
-
-        @Test
-        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereIsEnoughUtxosToPay_shouldCreateMigrationTx() {
+        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereAreEnoughUtxosToPay_shouldCreateMigrationTx() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 10;
@@ -324,6 +277,52 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
+        }
+
+        @Test
+        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereAreNotEnoughUtxosToPay_shouldReturnCouldNotAdjustDownwards() {
+            // Arrange
+            setUpFeePerKb(HIGH_FEE_PER_KB);
+            retiringFederationUTXOs = List.of(
+                UTXOBuilder.builder()
+                    .withScriptPubKey(retiringFederationOutputScript)
+                    .withValue(MINIMUM_PEGIN_TX_VALUE)
+                    .build()
+            );
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
+                retiringFederationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
+                migrationValue, newFederationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
+            assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = {1, 10})
+        void buildMigrationTransaction_whenUtxosAreMinimumNonDustValue_shouldReturnCouldNotAdjustDownwards(int numberOfUtxos) {
+            // Arrange
+            retiringFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(retiringFederationOutputScript)
+                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
+                retiringFederationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
+                migrationValue, newFederationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
+            assertNull(migrationTransactionResult.btcTx());
+            assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
         @Test
@@ -557,30 +556,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
-            // Arrange
-            setUpFeePerKb(HIGH_FEE_PER_KB);
-            int numberOfUtxos = 10;
-            retiringFederationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(MINIMUM_PEGIN_TX_VALUE)
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
-                retiringFederationUTXOs);
-            Coin migrationValue = wallet.getBalance();
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                migrationValue, newFederationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
-        }
-
-        @Test
-        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereIsEnoughUtxosToPay_shouldCreateMigrationTx() {
+        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereAreEnoughUtxosToPay_shouldCreateMigrationTx() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 10;
@@ -617,14 +593,16 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
-        @ParameterizedTest
-        @ValueSource(ints = {1, 10})
-        void buildMigrationTransaction_whenUtxosAreMinimumNonDustValue_shouldReturnCouldNotAdjustDownwards(int numberOfUtxos) {
+        @Test
+        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereAreNotEnoughUtxosToPay_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
-            retiringFederationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            setUpFeePerKb(HIGH_FEE_PER_KB);
+            retiringFederationUTXOs = List.of(
+                UTXOBuilder.builder()
+                    .withScriptPubKey(retiringFederationOutputScript)
+                    .withValue(MINIMUM_PEGIN_TX_VALUE)
+                    .build()
+            );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -639,16 +617,14 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
-        @Test
-        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereIsNoEnoughUtxosToPay_shouldReturnCouldNotAdjustDownwards() {
+        @ParameterizedTest
+        @ValueSource(ints = {1, 10})
+        void buildMigrationTransaction_whenUtxosAreMinimumNonDustValue_shouldReturnCouldNotAdjustDownwards(int numberOfUtxos) {
             // Arrange
-            setUpFeePerKb(HIGH_FEE_PER_KB);
-            retiringFederationUTXOs = List.of(
-                UTXOBuilder.builder()
-                    .withScriptPubKey(retiringFederationOutputScript)
-                    .withValue(MINIMUM_PEGIN_TX_VALUE)
-                    .build()
-            );
+            retiringFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(retiringFederationOutputScript)
+                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -895,7 +871,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
 
         @Test
-        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereIsEnoughUtxosToPay_shouldCreateMigrationTx() {
+        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereAreEnoughUtxosToPay_shouldCreateMigrationTx() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 10;
@@ -932,14 +908,16 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
-        @ParameterizedTest
-        @ValueSource(ints = {1, 10})
-        void buildMigrationTransaction_whenUtxosAreMinimumNonDustValue_shouldReturnCouldNotAdjustDownwards(int numberOfUtxos) {
+        @Test
+        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereAreNotEnoughUtxosToPay_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
-            retiringFederationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            setUpFeePerKb(HIGH_FEE_PER_KB);
+            retiringFederationUTXOs = List.of(
+                UTXOBuilder.builder()
+                    .withScriptPubKey(retiringFederationOutputScript)
+                    .withValue(MINIMUM_PEGIN_TX_VALUE)
+                    .build()
+            );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -954,16 +932,14 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
-        @Test
-        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereIsNoEnoughUtxosToPay_shouldReturnCouldNotAdjustDownwards() {
+        @ParameterizedTest
+        @ValueSource(ints = {1, 10})
+        void buildMigrationTransaction_whenUtxosAreMinimumNonDustValue_shouldReturnCouldNotAdjustDownwards(int numberOfUtxos) {
             // Arrange
-            setUpFeePerKb(HIGH_FEE_PER_KB);
-            retiringFederationUTXOs = List.of(
-                UTXOBuilder.builder()
-                    .withScriptPubKey(retiringFederationOutputScript)
-                    .withValue(MINIMUM_PEGIN_TX_VALUE)
-                    .build()
-            );
+            retiringFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(retiringFederationOutputScript)
+                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
