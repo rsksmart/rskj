@@ -492,10 +492,7 @@ public class Transaction {
     }
 
     public byte getRskSubtype() {
-        if (typePrefix instanceof TransactionTypePrefix.RskNamespace rsk) {
-            return rsk.subtype();
-        }
-        throw new IllegalStateException("Not an RSK namespace transaction");
+        return typePrefix.subtype();
     }
 
     public String getFullTypeString() {

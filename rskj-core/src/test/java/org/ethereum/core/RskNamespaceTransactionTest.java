@@ -222,7 +222,7 @@ class RskNamespaceTransactionTest {
         );
 
         assertFalse(legacyTx.isRskNamespaceTransaction());
-        assertThrows(IllegalStateException.class, legacyTx::getRskSubtype);
+        assertThrows(UnsupportedOperationException.class, legacyTx::getRskSubtype);
 
         Transaction type1Tx = new Transaction(
             TEST_NONCE,
@@ -238,7 +238,7 @@ class RskNamespaceTransactionTest {
         );
 
         assertFalse(type1Tx.isRskNamespaceTransaction());
-        assertThrows(IllegalStateException.class, type1Tx::getRskSubtype);
+        assertThrows(UnsupportedOperationException.class, type1Tx::getRskSubtype);
     }
 
     @Test
