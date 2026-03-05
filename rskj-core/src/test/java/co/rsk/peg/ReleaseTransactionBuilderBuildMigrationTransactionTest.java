@@ -10,13 +10,7 @@ import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.ReleaseTransactionBuilder.BuildResult;
@@ -140,6 +134,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -178,6 +173,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -213,6 +209,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -251,6 +248,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 2;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(utxoAmount, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -373,6 +371,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -446,6 +445,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -484,6 +484,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -519,6 +520,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -556,6 +558,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 2;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(utxoAmount, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -678,6 +681,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -748,6 +752,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -786,6 +791,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -821,6 +827,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -859,6 +866,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 2;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(utxoAmount, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -939,6 +947,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -995,6 +1004,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -1008,6 +1018,12 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
     private void setUpFeePerKb(Coin transactionFeePerKb) {
         this.transactionFeePerKb = transactionFeePerKb;
+    }
+
+    private static void assertMigrationTransactionIsMigratingExpectedValue(Coin expectedValue, BtcTransaction migrationTransaction) {
+        Coin migratedValue = migrationTransaction.getOutputs().stream().map(TransactionOutput::getValue).reduce(Coin.ZERO, Coin::add);
+        Coin fee = migrationTransaction.getFee();
+        assertEquals(expectedValue, migratedValue.add(fee));
     }
 
     private void setUpWallet(List<UTXO> utxos) {
