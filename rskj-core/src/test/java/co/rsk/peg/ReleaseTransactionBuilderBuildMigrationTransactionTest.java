@@ -107,8 +107,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Arrange
             setUpActivationConfig(FINGERROOT_ACTIVATIONS);
             int numberOfUtxos = 10;
-            retiringFederationUTXOs =
-                UTXOBuilder.builder()
+            retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
@@ -296,9 +295,9 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 10;
             retiringFederationUTXOs = UTXOBuilder.builder()
-                    .withScriptPubKey(retiringFederationOutputScript)
-                    .withValue(Coin.COIN)
-                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                .withScriptPubKey(retiringFederationOutputScript)
+                .withValue(Coin.COIN)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -423,11 +422,10 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             // Arrange
             setUpActivationConfig(FINGERROOT_ACTIVATIONS);
             int numberOfUtxos = 10;
-            retiringFederationUTXOs =
-                UTXOBuilder.builder()
-                    .withScriptPubKey(retiringFederationOutputScript)
-                    .withValue(MINIMUM_PEGIN_TX_VALUE)
-                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            retiringFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(retiringFederationOutputScript)
+                .withValue(MINIMUM_PEGIN_TX_VALUE)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
