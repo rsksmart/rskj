@@ -19,7 +19,6 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.core.TransactionWitness;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
@@ -43,8 +42,6 @@ import org.ethereum.core.Repository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
@@ -79,7 +76,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
     @BeforeEach
     void setUp() {
         setUpActivationConfig(ALL_ACTIVATIONS);
-        setUpTransactionFeePerKb(BtcTransaction.DEFAULT_TX_FEE);
+        setUpFeePerKb(BtcTransaction.DEFAULT_TX_FEE);
         smallAmount = transactionFeePerKb.div(2);
     }
 
@@ -119,12 +116,12 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         void buildMigrationTransaction_whenRSKIP376IsNotActive_shouldCreateMigrationTxWithBtcVersion1() {
             // Arrange
             setUpActivationConfig(FINGERROOT_ACTIVATIONS);
-            retiringFederationUTXOs = List.of(
+            int numberOfUtxos = 10;
+            retiringFederationUTXOs =
                 UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
-                .build()
-            );
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -137,11 +134,13 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs1(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
-            int expectedNumberOfUTXOsToMigrate = 1;
-            assertEquals(expectedNumberOfUTXOsToMigrate, migrationTransactionInputs.size());
-            assertEquals(1, migrationTransaction.getOutputs().size());
+            assertEquals(numberOfUtxos, migrationTransactionInputs.size());
             assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
@@ -168,20 +167,23 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs2(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             int expectedNumberOfUTXOsToMigrate = 1;
             assertEquals(expectedNumberOfUTXOsToMigrate, migrationTransactionInputs.size());
-            assertEquals(1, migrationTransaction.getOutputs().size());
             assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
-        @ParameterizedTest
-        @ValueSource(ints = {50, 51})
-        void buildMigrationTransaction_whenMultipleUTXOsToMigrate_shouldCreateMigrationTx(int numberOfUtxos) {
+        @Test
+        void buildMigrationTransaction_whenMultipleUTXOsToMigrate_shouldCreateMigrationTx() {
             // Arrange
+            int numberOfUtxos = 10;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
@@ -197,9 +199,13 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs2(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
             assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
@@ -226,9 +232,14 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs2(migrationTransaction);
-            assertEquals(2, migrationTransaction.getOutputs().size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
+            int expectedNumberOfUtxos = 1;
+            assertEquals(expectedNumberOfUtxos, migrationTransactionInputs.size());
+            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 2;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
@@ -259,13 +270,12 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
-            setUpTransactionFeePerKb(HIGH_FEE_PER_KB);
-            retiringFederationUTXOs = List.of(
-                UTXOBuilder.builder()
+            setUpFeePerKb(HIGH_FEE_PER_KB);
+            int numberOfUtxos = 10;
+            retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
-                .build()
-            );
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -301,10 +311,10 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
-        @ParameterizedTest
-        @ValueSource(ints = {277, 278})
-        void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize(int numberOfUtxos) {
+        @Test
+        void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize() {
             // Arrange
+            int numberOfUtxos = 277;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(Coin.COIN)
@@ -322,10 +332,10 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
-        @ParameterizedTest
-        @ValueSource(ints = {275, 276})
-        void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_shouldCreateMigrationTx(int numberOfUtxos) {
+        @Test
+        void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_shouldCreateMigrationTx() {
             // Arrange
+            int numberOfUtxos = 276;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(Coin.COIN)
@@ -341,10 +351,13 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs2(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertEquals(1, migrationTransaction.getOutputs().size());
             assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
@@ -397,12 +410,12 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         void buildMigrationTransaction_whenRSKIP376IsNotActive_shouldCreateMigrationTxWithBtcVersion1() {
             // Arrange
             setUpActivationConfig(FINGERROOT_ACTIVATIONS);
-            retiringFederationUTXOs = List.of(
+            int numberOfUtxos = 10;
+            retiringFederationUTXOs =
                 UTXOBuilder.builder()
-                .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(MINIMUM_PEGIN_TX_VALUE)
-                .build()
-            );
+                    .withScriptPubKey(retiringFederationOutputScript)
+                    .withValue(MINIMUM_PEGIN_TX_VALUE)
+                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -415,11 +428,13 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs1(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
-            int expectedNumberOfUTXOsToMigrate = 1;
-            assertEquals(expectedNumberOfUTXOsToMigrate, migrationTransactionInputs.size());
-            assertEquals(1, migrationTransaction.getOutputs().size());
+            assertEquals(numberOfUtxos, migrationTransactionInputs.size());
             assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
@@ -446,20 +461,23 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs2(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             int expectedNumberOfUTXOsToMigrate = 1;
             assertEquals(expectedNumberOfUTXOsToMigrate, migrationTransactionInputs.size());
-            assertEquals(1, migrationTransaction.getOutputs().size());
             assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
-        @ParameterizedTest
-        @ValueSource(ints = {50, 51})
-        void buildMigrationTransaction_whenMultipleUTXOsToMigrate_shouldCreateMigrationTx(int numberOfUtxos) {
+        @Test
+        void buildMigrationTransaction_whenMultipleUTXOsToMigrate_shouldCreateMigrationTx() {
             // Arrange
+            int numberOfUtxos = 10;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
@@ -475,9 +493,13 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs2(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
             assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
@@ -504,9 +526,13 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs2(migrationTransaction);
-            assertEquals(2, migrationTransaction.getOutputs().size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
+            int expectedNumberOfUtxosToMigrate = 1;
+            assertEquals(expectedNumberOfUtxosToMigrate, migrationTransactionInputs.size());
+            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 2;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
@@ -537,13 +563,12 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
-            setUpTransactionFeePerKb(HIGH_FEE_PER_KB);
-            retiringFederationUTXOs = List.of(
-                UTXOBuilder.builder()
+            setUpFeePerKb(HIGH_FEE_PER_KB);
+            int numberOfUtxos = 10;
+            retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
-                .build()
-            );
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -579,10 +604,10 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
-        @ParameterizedTest
-        @ValueSource(ints = {196, 197})
-        void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize(int numberOfUtxos) {
+        @Test
+        void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize() {
             // Arrange
+            int numberOfUtxos = 196;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(Coin.COIN)
@@ -600,11 +625,10 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
-        @ParameterizedTest
-        @ValueSource(ints = {194, 195})
-        void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_shouldCreateMigrationTx(
-            int numberOfUtxos) {
+        @Test
+        void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_shouldCreateMigrationTx() {
             // Arrange
+            int numberOfUtxos = 195;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(Coin.COIN)
@@ -620,10 +644,13 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs2(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertEquals(1, migrationTransaction.getOutputs().size());
             assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
@@ -631,18 +658,18 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
         private void assertMigrationTxInputsHasProperFormatAndBelongsToFederation(
             BtcTransaction migrationTransaction) {
-            for (TransactionInput releaseInput : migrationTransaction.getInputs()) {
-                Script inputScriptSig = releaseInput.getScriptSig();
+            for (TransactionInput input : migrationTransaction.getInputs()) {
+                Script inputScriptSig = input.getScriptSig();
                 assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat(inputScriptSig,
                     retiringFederation.getRedeemScript());
 
-                assertInputIsFromFederationUTXOsWallet(releaseInput);
+                assertInputIsFromFederationUTXOsWallet(input);
             }
         }
     }
 
     @Nested
-    class P2wshErpFederationTests {
+    class P2shP2wshErpFederationTests {
 
         @BeforeEach
         void setUp() {
@@ -676,12 +703,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         void buildMigrationTransaction_whenRSKIP376IsNotActive_shouldCreateMigrationTxWithBtcVersion1() {
             // Arrange
             setUpActivationConfig(FINGERROOT_ACTIVATIONS);
-            retiringFederationUTXOs = List.of(
-                UTXOBuilder.builder()
+            int numberOfUtxos = 10;
+            retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
-                .build()
-            );
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -694,11 +720,13 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs1(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
-            int expectedNumberOfUTXOsToMigrate = 1;
-            assertEquals(expectedNumberOfUTXOsToMigrate, migrationTransactionInputs.size());
-            assertEquals(1, migrationTransaction.getOutputs().size());
             assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertEquals(numberOfUtxos, migrationTransactionInputs.size());
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
@@ -725,21 +753,23 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs2(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             int expectedNumberOfUTXOsToMigrate = 1;
             assertEquals(expectedNumberOfUTXOsToMigrate, migrationTransactionInputs.size());
-            assertEquals(1, migrationTransaction.getOutputs().size());
             assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
-        @ParameterizedTest
-        @ValueSource(ints = {50, 51})
-        void buildMigrationTransaction_whenMultipleUTXOsToMigrate_shouldCreateMigrationTx(
-            int numberOfUtxos) {
+        @Test
+        void buildMigrationTransaction_whenMultipleUTXOsToMigrate_shouldCreateMigrationTx() {
             // Arrange
+            int numberOfUtxos = 10;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
@@ -755,9 +785,13 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs2(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
             assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
@@ -784,9 +818,14 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs2(migrationTransaction);
-            assertEquals(2, migrationTransaction.getOutputs().size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
+            int expectedNumberOfUtxos = 1;
+            assertEquals(expectedNumberOfUtxos, migrationTransactionInputs.size());
+            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 2;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
@@ -817,13 +856,12 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         @Test
         void buildMigrationTransaction_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
-            setUpTransactionFeePerKb(HIGH_FEE_PER_KB);
-            retiringFederationUTXOs = List.of(
-                UTXOBuilder.builder()
+            setUpFeePerKb(HIGH_FEE_PER_KB);
+            int numberOfUtxos = 3;
+            retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
-                .build()
-            );
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -857,17 +895,22 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs2(migrationTransaction);
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
+            assertEquals(LARGE_NUMBER_OF_UTXOS, migrationTransactionInputs.size());
+            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
-        @ParameterizedTest
-        @ValueSource(ints = {2438, 2439})
-        void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize(int numberOfUtxos) {
+        @Test
+        void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize() {
             // Arrange
+            int numberOfUtxos = 2438;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(Coin.COIN)
@@ -885,10 +928,10 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
-        @ParameterizedTest
-        @ValueSource(ints = {2436, 2437})
-        void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_shouldCreateMigrationTx(int numberOfUtxos) {
+        @Test
+        void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_shouldCreateMigrationTx() {
             // Arrange
+            int numberOfUtxos = 2437;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(Coin.COIN)
@@ -904,10 +947,13 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
             BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
             assertBtcTxVersionIs2(migrationTransaction);
+
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertEquals(1, migrationTransaction.getOutputs().size());
             assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
@@ -954,7 +1000,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         this.activationConfig = activationConfig;
     }
 
-    private void setUpTransactionFeePerKb(Coin transactionFeePerKb) {
+    private void setUpFeePerKb(Coin transactionFeePerKb) {
         this.transactionFeePerKb = transactionFeePerKb;
     }
 
