@@ -255,21 +255,26 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
+        /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; the minimum UTXO the Federation
+         * may hold is {@link co.rsk.peg.bitcoin.BitcoinTestUtils#MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT}
+         * but we use it to exercise the DUSTY_SEND_REQUESTED path.
+         */
         @Test
-        void buildMigrationTransaction_whenMigrationValueIsDusty_shouldReturnDustySendRequested() {
+        void buildMigrationTransaction_whenMigrationValueIsTooSmall_shouldReturnDustySendRequested() {
             // Arrange
             retiringFederationUTXOs = List.of(
                 UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(MINIMUM_PEGIN_TX_VALUE)
+                .withValue(DUSTY_AMOUNT_SEND_REQUESTED)
                 .build()
             );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
+            Coin migrationValue = wallet.getBalance();
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                DUSTY_AMOUNT_SEND_REQUESTED, newFederationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -565,21 +570,26 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
+        /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; the minimum UTXO the Federation
+         * may hold is {@link co.rsk.peg.bitcoin.BitcoinTestUtils#MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT}
+         * but we use it to exercise the DUSTY_SEND_REQUESTED path.
+         */
         @Test
         void buildMigrationTransaction_whenMigrationValueIsTooSmall_shouldReturnDustySendRequested() {
             // Arrange
             retiringFederationUTXOs = List.of(
                 UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(MINIMUM_PEGIN_TX_VALUE)
+                .withValue(DUSTY_AMOUNT_SEND_REQUESTED)
                 .build()
             );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
+            Coin migrationValue = wallet.getBalance();
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                DUSTY_AMOUNT_SEND_REQUESTED, newFederationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -873,21 +883,26 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
+        /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; the minimum UTXO the Federation
+         * may hold is {@link co.rsk.peg.bitcoin.BitcoinTestUtils#MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT}
+         * but we use it to exercise the DUSTY_SEND_REQUESTED path.
+         */
         @Test
         void buildMigrationTransaction_whenMigrationValueIsTooSmall_shouldReturnDustySendRequested() {
             // Arrange
             retiringFederationUTXOs = List.of(
                 UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(MINIMUM_PEGIN_TX_VALUE)
+                .withValue(DUSTY_AMOUNT_SEND_REQUESTED)
                 .build()
             );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
+            Coin migrationValue = wallet.getBalance();
 
             // Act
             BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                DUSTY_AMOUNT_SEND_REQUESTED, newFederationAddress);
+                migrationValue, newFederationAddress);
 
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
