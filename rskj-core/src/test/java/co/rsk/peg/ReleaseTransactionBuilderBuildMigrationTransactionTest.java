@@ -30,6 +30,8 @@ import org.ethereum.core.Repository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
@@ -280,15 +282,15 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
-        @Test
-        void buildMigrationTransaction_whenMigrationValueIsTheMinimumNonDustValue_shouldReturnCouldNotAdjustDownwards() {
+
+        @ParameterizedTest
+        @ValueSource(ints = {1, 10})
+        void buildMigrationTransaction_whenUtxosAreMinimumNonDustValue_shouldReturnCouldNotAdjustDownwards(int numberOfUtxos) {
             // Arrange
-            retiringFederationUTXOs = List.of(
-                UTXOBuilder.builder()
+            retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
                     .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
-                    .build()
-            );
+                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -695,15 +697,14 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
-        @Test
-        void buildMigrationTransaction_whenMigrationValueIsTheMinimumNonDustValue_shouldReturnCouldNotAdjustDownwards() {
+        @ParameterizedTest
+        @ValueSource(ints = {1, 10})
+        void buildMigrationTransaction_whenUtxosAreMinimumNonDustValue_shouldReturnCouldNotAdjustDownwards(int numberOfUtxos) {
             // Arrange
-            retiringFederationUTXOs = List.of(
-                UTXOBuilder.builder()
-                    .withScriptPubKey(retiringFederationOutputScript)
-                    .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
-                    .build()
-            );
+            retiringFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(retiringFederationOutputScript)
+                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -1050,15 +1051,14 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
-        @Test
-        void buildMigrationTransaction_whenMigrationValueIsTheMinimumNonDustValue_shouldReturnCouldNotAdjustDownwards() {
+        @ParameterizedTest
+        @ValueSource(ints = {1, 10})
+        void buildMigrationTransaction_whenUtxosAreMinimumNonDustValue_shouldReturnCouldNotAdjustDownwards(int numberOfUtxos) {
             // Arrange
-            retiringFederationUTXOs = List.of(
-                UTXOBuilder.builder()
-                    .withScriptPubKey(retiringFederationOutputScript)
-                    .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
-                    .build()
-            );
+            retiringFederationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(retiringFederationOutputScript)
+                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
