@@ -283,14 +283,15 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
+        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereIsNoEnoughUtxosToPay_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
-            int numberOfUtxos = 10;
-            retiringFederationUTXOs = UTXOBuilder.builder()
+            retiringFederationUTXOs = List.of(
+                UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                .build()
+            );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -303,6 +304,44 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
             assertNull(migrationTransactionResult.btcTx());
             assertNull(migrationTransactionResult.selectedUTXOs());
+        }
+
+        @Test
+        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereIsEnoughUtxosToPay_shouldCreateMigrationTx() {
+            // Arrange
+            setUpFeePerKb(HIGH_FEE_PER_KB);
+            int numberOfUtxos = 10;
+            retiringFederationUTXOs = UTXOBuilder.builder()
+                    .withScriptPubKey(retiringFederationOutputScript)
+                    .withValue(Coin.COIN)
+                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
+                retiringFederationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
+                migrationValue, newFederationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
+            assertBtcTxVersionIs2(migrationTransaction);
+
+            List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
+            assertEquals(numberOfUtxos, migrationTransactionInputs.size());
+            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
+
+            List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
+            assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
+            assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
         @Test
@@ -382,8 +421,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
-
-
     }
 
     @Nested
@@ -621,12 +658,53 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         }
 
         @Test
-        void buildMigrationTransaction_whenFedSmallUtxosSumEqualsRequestAmount_shouldReturnCouldNotAdjustDownwards() {
+        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereIsEnoughUtxosToPay_shouldCreateMigrationTx() {
             // Arrange
+            setUpFeePerKb(HIGH_FEE_PER_KB);
+            int numberOfUtxos = 10;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(smallAmount)
-                .buildMany(LARGE_NUMBER_OF_UTXOS, i -> createHash(i + 1));
+                .withValue(Coin.COIN)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
+                retiringFederationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
+                migrationValue, newFederationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
+            assertBtcTxVersionIs2(migrationTransaction);
+
+            List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
+            assertEquals(numberOfUtxos, migrationTransactionInputs.size());
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2SHFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
+
+            List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
+            assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
+            assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
+        }
+
+        @Test
+        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereIsNoEnoughUtxosToPay_shouldReturnCouldNotAdjustDownwards() {
+            // Arrange
+            setUpFeePerKb(HIGH_FEE_PER_KB);
+            retiringFederationUTXOs = List.of(
+                UTXOBuilder.builder()
+                    .withScriptPubKey(retiringFederationOutputScript)
+                    .withValue(MINIMUM_PEGIN_TX_VALUE)
+                    .build()
+            );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
@@ -910,15 +988,55 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertNull(migrationTransactionResult.selectedUTXOs());
         }
 
+
         @Test
-        void buildMigrationTransaction_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
+        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereIsEnoughUtxosToPay_shouldCreateMigrationTx() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
-            int numberOfUtxos = 3;
+            int numberOfUtxos = 10;
             retiringFederationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(MINIMUM_PEGIN_TX_VALUE)
+                .withValue(Coin.COIN)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
+                retiringFederationUTXOs);
+            Coin migrationValue = wallet.getBalance();
+
+            // Act
+            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
+                migrationValue, newFederationAddress);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+            BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
+            assertBtcTxVersionIs2(migrationTransaction);
+
+            List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
+            assertEquals(numberOfUtxos, migrationTransactionInputs.size());
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
+            int expectedNumberOfOutputs = 1;
+            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
+            assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
+
+            List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
+            assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
+            assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
+        }
+
+        @Test
+        void buildMigrationTransaction_whenEstimatedFeeIsTooHighAndThereIsNoEnoughUtxosToPay_shouldReturnCouldNotAdjustDownwards() {
+            // Arrange
+            setUpFeePerKb(HIGH_FEE_PER_KB);
+            retiringFederationUTXOs = List.of(
+                UTXOBuilder.builder()
+                    .withScriptPubKey(retiringFederationOutputScript)
+                    .withValue(MINIMUM_PEGIN_TX_VALUE)
+                    .build()
+            );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                 retiringFederationUTXOs);
             Coin migrationValue = wallet.getBalance();
