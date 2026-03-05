@@ -418,15 +418,12 @@ public abstract class BlockHeader {
         return RLP.encodeBlockDifficulty(difficulty);
     }
 
-    // Warning: This method does not use the object's attributes
+    /**
+     * @deprecated Use {@link BlockTxCodec#encodeUncles(List)} instead.
+     */
+    @Deprecated
     public static byte[] getUnclesEncodedEx(List<BlockHeader> uncleList) {
-        byte[][] unclesEncoded = new byte[uncleList.size()][];
-        int i = 0;
-        for (BlockHeader uncle : uncleList) {
-            unclesEncoded[i] = uncle.getFullEncoded();
-            ++i;
-        }
-        return RLP.encodeList(unclesEncoded);
+        return BlockTxCodec.encodeUncles(uncleList);
     }
 
     public boolean hasMiningFields() {
@@ -445,14 +442,12 @@ public abstract class BlockHeader {
         return false;
     }
 
+    /**
+     * @deprecated Use {@link BlockTxCodec#encodeUncles(List)} instead.
+     */
+    @Deprecated
     public static byte[] getUnclesEncoded(List<BlockHeader> uncleList) {
-        byte[][] unclesEncoded = new byte[uncleList.size()][];
-        int i = 0;
-        for (BlockHeader uncle : uncleList) {
-            unclesEncoded[i] = uncle.getFullEncoded();
-            ++i;
-        }
-        return RLP.encodeList(unclesEncoded);
+        return BlockTxCodec.encodeUncles(uncleList);
     }
 
     public String toString() {

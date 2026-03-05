@@ -24,6 +24,7 @@ import co.rsk.crypto.Keccak256;
 import org.ethereum.TestUtils;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionTypePrefix;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -84,6 +85,7 @@ public class Tx {
         }
         Mockito.when(transaction.getData()).thenReturn(b);
         Mockito.when(transaction.transactionCost(any(), any(), any())).thenReturn(amount);
+        Mockito.when(transaction.getTypePrefix()).thenReturn(TransactionTypePrefix.legacy());
 
         return transaction;
     }

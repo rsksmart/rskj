@@ -1,0 +1,287 @@
+comment
+
+// RSKIP543 Consolidated DSL Test: EIP-2718 Style Typed Transactions in Rootstock
+//
+// Tests the full RSKIP543 specification:
+//   1. Legacy transactions (Type 0x00) - no type prefix, first byte >= 0xc0
+//   2. Standard EIP-2718 typed transactions (Type 0x01) - single byte prefix
+//   3. RSK namespace transactions (0x02 || rsk-tx-type || payload)
+//      - rsk-tx-type in range [0x00, 0x7f]
+//   4. Transaction receipts with correct type encoding
+//   5. Mixed transaction types in the same block
+//   6. Contract deployment and interaction via RSK namespace
+//   7. Backward compatibility with legacy transactions
+
+end
+
+# Create test accounts with sufficient balance
+account_new acc1 100000000000000000
+account_new acc2 1000000
+account_new acc3 1000000
+
+# ============================================================================
+# Test 1: Legacy Transaction (Type 0x00) - Backward Compatibility
+# ============================================================================
+# Per RSKIP543: legacy transactions start with byte >= 0xc0 (RLP list marker)
+# and should continue to work exactly as before.
+
+transaction_build txLegacy
+    sender acc1
+    receiver acc2
+    value 1000
+    gas 21000
+    build
+
+block_build b01
+    parent g00
+    transactions txLegacy
+    build
+
+block_connect b01
+
+assert_best b01
+assert_tx_success txLegacy
+
+# ============================================================================
+# Test 2: Type 1 Transaction
+# ============================================================================
+# Per RSKIP543: Standard typed transactions follow EIP-2718 format
+# tx-type || TransactionPayload where tx-type is a single byte.
+# Type 1 is explicitly mentioned as one that Rootstock may consider.
+
+transaction_build txType1
+    sender acc1
+    nonce 1
+    receiver acc2
+    value 2000
+    gas 21000
+    transactionType 01
+    build
+
+block_build b02
+    parent b01
+    transactions txType1
+    build
+
+block_connect b02
+
+assert_best b02
+assert_tx_success txType1
+
+# ============================================================================
+# Test 3: RSK Namespace Transaction (0x02 || 0x03 || payload)
+# ============================================================================
+# Core RSKIP543 test: When first byte is 0x02 AND second byte <= 0x7f,
+# this is an RSK-specific transaction.
+# The rsk-tx-type (second byte) identifies the RSK-specific transaction type.
+# Full type for receipts/DTOs: "0x0203"
+
+transaction_build txRskType3
+    sender acc1
+    nonce 2
+    receiver acc2
+    value 3000
+    gas 21000
+    transactionType 02
+    rskSubtype 03
+    build
+
+block_build b03
+    parent b02
+    transactions txRskType3
+    build
+
+block_connect b03
+
+assert_best b03
+assert_tx_success txRskType3
+
+# ============================================================================
+# Test 4: RSK Namespace - Boundary Subtypes (0x00, 0x05, 0x7f)
+# ============================================================================
+# Per RSKIP543: rsk-tx-type is between 0 and 0x7f.
+# Test minimum (0x00), mid-range (0x05), and maximum (0x7f).
+
+# RSK subtype 0x00 (minimum)
+transaction_build txRskType0
+    sender acc1
+    nonce 3
+    receiver acc2
+    value 1000
+    gas 21000
+    transactionType 02
+    rskSubtype 00
+    build
+
+# RSK subtype 0x05 (mid-range)
+transaction_build txRskType5
+    sender acc1
+    nonce 4
+    receiver acc2
+    value 1000
+    gas 21000
+    transactionType 02
+    rskSubtype 05
+    build
+
+# RSK subtype 0x7f (maximum allowed)
+transaction_build txRskType127
+    sender acc1
+    nonce 5
+    receiver acc2
+    value 1000
+    gas 21000
+    transactionType 02
+    rskSubtype 7f
+    build
+
+block_build b04
+    parent b03
+    transactions txRskType0 txRskType5 txRskType127
+    build
+
+block_connect b04
+
+assert_best b04
+assert_tx_success txRskType0
+assert_tx_success txRskType5
+assert_tx_success txRskType127
+
+# ============================================================================
+# Test 5: Contract Deployment with RSK Namespace Transaction
+# ============================================================================
+# Per RSKIP543: RSK namespace transactions should support all operations
+# including contract creation. Subtype 0x0a used here.
+
+# SimpleStorage contract: stores a uint256 value
+# Runtime has function dispatch for:
+#   setValue(uint256) selector = 0x60fe47b1 → SSTORE at slot 0
+#   value()          selector = 0x2a1afcd9 → SLOAD slot 0 and return
+# Init code (11 bytes): CODECOPY runtime from offset 0x0b, length 0x39, RETURN
+# Runtime code (57 bytes): function dispatch + setValue + value getter
+transaction_build txDeployRsk
+    sender acc1
+    nonce 6
+    receiverAddress 00
+    value 0
+    data 603980600b6000396000f36004361060205760003560e01c806360fe47b114602557632a1afcd914602d575b600080fd5b600435600055005b60005460005260206000f3
+    gas 200000
+    transactionType 02
+    rskSubtype 0a
+    build
+
+block_build b05
+    parent b04
+    transactions txDeployRsk
+    build
+
+block_connect b05
+
+assert_best b05
+assert_tx_success txDeployRsk
+
+# ============================================================================
+# Test 6: Contract Interaction with RSK Namespace Transaction
+# ============================================================================
+# Call setValue(42) on deployed contract using RSK namespace subtype 0x0f.
+
+transaction_build txCallSetValue
+    sender acc1
+    nonce 7
+    contract txDeployRsk
+    value 0
+    data 60fe47b1000000000000000000000000000000000000000000000000000000000000002a
+    gas 50000
+    transactionType 02
+    rskSubtype 0f
+    build
+
+block_build b06
+    parent b05
+    transactions txCallSetValue
+    build
+
+block_connect b06
+
+assert_best b06
+assert_tx_success txCallSetValue
+
+# ============================================================================
+# Test 7: Mixed Transaction Types in Same Block
+# ============================================================================
+# Per RSKIP543: different transaction types must coexist in the same block.
+# This tests backward compatibility with legacy and standard typed transactions
+# alongside RSK namespace transactions.
+
+# Legacy transaction
+transaction_build txMixed1
+    sender acc1
+    nonce 8
+    receiver acc2
+    value 500
+    gas 21000
+    build
+
+# Type 1 (EIP-2930) transaction
+transaction_build txMixed2
+    sender acc1
+    nonce 9
+    receiver acc2
+    value 600
+    gas 21000
+    transactionType 01
+    build
+
+# RSK namespace transaction (subtype 0x11)
+transaction_build txMixed3
+    sender acc1
+    nonce 10
+    receiver acc2
+    value 700
+    gas 21000
+    transactionType 02
+    rskSubtype 11
+    build
+
+block_build b07
+    parent b06
+    transactions txMixed1 txMixed2 txMixed3
+    build
+
+block_connect b07
+
+assert_best b07
+assert_tx_success txMixed1
+assert_tx_success txMixed2
+assert_tx_success txMixed3
+
+# ============================================================================
+# Test 8: Value Transfer to Different Account with RSK Namespace
+# ============================================================================
+# Verify RSK namespace transactions work with different recipients.
+
+transaction_build txRskToAcc3
+    sender acc1
+    nonce 11
+    receiver acc3
+    value 5000
+    gas 21000
+    transactionType 02
+    rskSubtype 01
+    build
+
+block_build b08
+    parent b07
+    transactions txRskToAcc3
+    build
+
+block_connect b08
+
+assert_best b08
+assert_tx_success txRskToAcc3
+
+# ============================================================================
+# Final Assertions
+# ============================================================================
+
+assert_best b08

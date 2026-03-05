@@ -80,6 +80,10 @@ public class TxPendingValidator {
         long bestBlockNumber = executionBlock.getNumber();
         long basicTxCost = tx.transactionCost(constants, activations, signatureCache);
 
+        if (tx.getTypePrefix().isTyped() && !activations.isActive(ConsensusRule.RSKIP543)) {
+            return TransactionValidationResult.withError("typed transactions are not supported before RSKIP543 activation");
+        }
+
         if (state == null && basicTxCost != 0) {
             if (logger.isTraceEnabled()) {
                 logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender(signatureCache));
