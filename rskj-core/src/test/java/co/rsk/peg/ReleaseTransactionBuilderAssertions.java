@@ -27,7 +27,7 @@ public class ReleaseTransactionBuilderAssertions {
         }
     }
 
-    public static void assertReleaseTxInputsHasProperFormatAndBelongsToP2SHFederation(
+    public static void assertReleaseTxInputsHasProperFormatAndBelongsToP2shFederation(
         BtcTransaction releaseTransaction,
         Script federationRedeemScript,
         List<UTXO> federationUTXOs) {
