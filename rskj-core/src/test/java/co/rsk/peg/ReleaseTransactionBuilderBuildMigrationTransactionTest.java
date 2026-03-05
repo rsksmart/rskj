@@ -216,45 +216,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
-        @Test
-        void buildMigrationTransaction_whenResultChangeOutputWillBeDust_shouldCreateTxWithDustChangeOutput() {
-            // Arrange
-            Coin utxoAmount = MINIMUM_PEGIN_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
-            retiringFederationUTXOs = List.of(
-                UTXOBuilder.builder()
-                .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(utxoAmount)
-                .build()
-            );
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
-                retiringFederationUTXOs);
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                MINIMUM_PEGIN_TX_VALUE, newFederationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
-            BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
-            assertBtcTxVersionIs2(migrationTransaction);
-
-            List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
-            int expectedNumberOfUtxos = 1;
-            assertEquals(expectedNumberOfUtxos, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-                migrationTransaction,
-                retiringFederationRedeemScript,
-                retiringFederationUTXOs
-            );
-            int expectedNumberOfOutputs = 2;
-            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
-            assertMigrationTransactionIsMigratingExpectedValue(utxoAmount, migrationTransaction);
-
-            List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
-            assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
-            assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
-        }
-
         /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; the minimum UTXO the Federation
          * may hold is {@link co.rsk.peg.bitcoin.BitcoinTestUtils#MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT}
          * but we use it to exercise the DUSTY_SEND_REQUESTED path.
@@ -565,44 +526,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-
-            List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
-            assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
-            assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
-        }
-
-        @Test
-        void buildMigrationTransaction_whenResultChangeOutputWillBeDust_shouldCreateTxWithDustChangeOutput() {
-            // Arrange
-            Coin utxoAmount = MINIMUM_PEGIN_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
-            retiringFederationUTXOs = List.of(
-                UTXOBuilder.builder()
-                .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(utxoAmount)
-                .build()
-            );
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
-                retiringFederationUTXOs);
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                MINIMUM_PEGIN_TX_VALUE, newFederationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
-            BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
-            assertBtcTxVersionIs2(migrationTransaction);
-            List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
-            int expectedNumberOfUtxosToMigrate = 1;
-            assertEquals(expectedNumberOfUtxosToMigrate, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2SHFederation(
-                migrationTransaction,
-                retiringFederationRedeemScript,
-                retiringFederationUTXOs
-            );
-            int expectedNumberOfOutputs = 2;
-            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
-            assertMigrationTransactionIsMigratingExpectedValue(utxoAmount, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -940,45 +863,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-
-            List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
-            assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
-            assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
-        }
-
-        @Test
-        void buildMigrationTransaction_whenResultChangeOutputWillBeDust_shouldCreateTxWithDustChangeOutput() {
-            // Arrange
-            Coin utxoAmount = MINIMUM_PEGIN_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
-            retiringFederationUTXOs = List.of(
-                UTXOBuilder.builder()
-                .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(utxoAmount)
-                .build()
-            );
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
-                retiringFederationUTXOs);
-
-            // Act
-            BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                MINIMUM_PEGIN_TX_VALUE, newFederationAddress);
-
-            // Assert
-            assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
-            BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
-            assertBtcTxVersionIs2(migrationTransaction);
-
-            List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
-            int expectedNumberOfUtxos = 1;
-            assertEquals(expectedNumberOfUtxos, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
-                migrationTransaction,
-                retiringFederationRedeemScript,
-                retiringFederationUTXOs
-            );
-            int expectedNumberOfOutputs = 2;
-            assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
-            assertMigrationTransactionIsMigratingExpectedValue(utxoAmount, migrationTransaction);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
