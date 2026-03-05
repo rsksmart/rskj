@@ -48,7 +48,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         ALL_ACTIVATIONS);
 
     private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
-    private static final int LARGE_NUMBER_OF_UTXOS = 100;
     private static final Coin DUSTY_AMOUNT_SEND_REQUESTED = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
 
     protected Federation retiringFederation;
