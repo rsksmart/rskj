@@ -1,17 +1,14 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_1;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.SUCCESS;
-import static co.rsk.peg.bitcoin.BitcoinTestAssertions.*;
+import static co.rsk.peg.ReleaseTransactionBuilderAssertions.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
@@ -19,7 +16,6 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.core.TransactionWitness;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.Wallet;
@@ -32,8 +28,6 @@ import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
 import co.rsk.peg.federation.StandardMultiSigFederationBuilder;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
 
 import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -66,6 +60,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
     protected Address retiringFederationAddress;
     protected List<UTXO> retiringFederationUTXOs;
     protected Script retiringFederationOutputScript;
+    private Script retiringFederationRedeemScript;
     protected Wallet wallet;
 
     private ActivationConfig.ForBlock activationConfig;
@@ -89,6 +84,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             retiringFederationFormatVersion = retiringFederation.getFormatVersion();
             retiringFederationAddress = retiringFederation.getAddress();
             retiringFederationOutputScript = retiringFederation.getP2SHScript();
+            retiringFederationRedeemScript = retiringFederation.getRedeemScript();
 
             Federation newFederation = P2shErpFederationBuilder.builder().build();
             newFederationAddress = newFederation.getAddress();
@@ -137,7 +133,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -171,7 +171,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             int expectedNumberOfUTXOsToMigrate = 1;
             assertEquals(expectedNumberOfUTXOsToMigrate, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -202,7 +206,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -236,7 +244,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             int expectedNumberOfUtxos = 1;
             assertEquals(expectedNumberOfUtxos, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 2;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -354,7 +366,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -363,16 +379,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
 
-        private void assertMigrationTxInputsHasProperFormatAndBelongsToFederation(
-            BtcTransaction migrationTransaction) {
-            for (TransactionInput input : migrationTransaction.getInputs()) {
-                Script inputScriptSig = input.getScriptSig();
-                assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat(inputScriptSig,
-                    retiringFederation.getRedeemScript());
 
-                assertInputIsFromFederationUTXOsWallet(input);
-            }
-        }
     }
 
     @Nested
@@ -384,6 +391,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             retiringFederationFormatVersion = retiringFederation.getFormatVersion();
             retiringFederationAddress = retiringFederation.getAddress();
             retiringFederationOutputScript = retiringFederation.getP2SHScript();
+            retiringFederationRedeemScript = retiringFederation.getRedeemScript();
             Federation newFederation = P2shP2wshErpFederationBuilder.builder().build();
             newFederationAddress = newFederation.getAddress();
         }
@@ -431,7 +439,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2SHFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -465,7 +477,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             int expectedNumberOfUTXOsToMigrate = 1;
             assertEquals(expectedNumberOfUTXOsToMigrate, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2SHFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -496,7 +512,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2SHFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -529,7 +549,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             int expectedNumberOfUtxosToMigrate = 1;
             assertEquals(expectedNumberOfUtxosToMigrate, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2SHFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 2;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -647,24 +671,17 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2SHFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
-        }
-
-        private void assertMigrationTxInputsHasProperFormatAndBelongsToFederation(
-            BtcTransaction migrationTransaction) {
-            for (TransactionInput input : migrationTransaction.getInputs()) {
-                Script inputScriptSig = input.getScriptSig();
-                assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat(inputScriptSig,
-                    retiringFederation.getRedeemScript());
-
-                assertInputIsFromFederationUTXOsWallet(input);
-            }
         }
     }
 
@@ -677,6 +694,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             retiringFederationFormatVersion = retiringFederation.getFormatVersion();
             retiringFederationAddress = retiringFederation.getAddress();
             retiringFederationOutputScript = retiringFederation.getP2SHScript();
+            retiringFederationRedeemScript = retiringFederation.getRedeemScript();
             Federation newFederation = P2shP2wshErpFederationBuilder.builder().build();
             newFederationAddress =  newFederation.getAddress();
         }
@@ -722,7 +740,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBtcTxVersionIs1(migrationTransaction);
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
@@ -757,7 +779,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             int expectedNumberOfUTXOsToMigrate = 1;
             assertEquals(expectedNumberOfUTXOsToMigrate, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -788,7 +814,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -822,7 +852,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             int expectedNumberOfUtxos = 1;
             assertEquals(expectedNumberOfUtxos, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 2;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -898,7 +932,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(LARGE_NUMBER_OF_UTXOS, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -950,7 +988,11 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertMigrationTxInputsHasProperFormatAndBelongsToFederation(migrationTransaction);
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+                migrationTransaction,
+                retiringFederationRedeemScript,
+                retiringFederationUTXOs
+            );
             int expectedNumberOfOutputs = 1;
             assertEquals(expectedNumberOfOutputs, migrationTransaction.getOutputs().size());
 
@@ -958,42 +1000,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
             assertSelectedUtxosBelongToTheInputs(selectedUTXOsForMigration, migrationTransactionInputs);
         }
-
-        private void assertMigrationTxInputsHasProperFormatAndBelongsToFederation(
-            BtcTransaction migrationTransaction) {
-            List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
-            for (TransactionInput input : migrationTransactionInputs) {
-                int inputIndex = migrationTransactionInputs.indexOf(input);
-                TransactionWitness witness = migrationTransaction.getWitness(inputIndex);
-                assertP2shP2wshWitnessWithoutSignaturesHasProperFormat(witness,
-                    retiringFederation.getRedeemScript());
-
-                assertInputIsFromFederationUTXOsWallet(input);
-            }
-        }
-    }
-
-    private static void assertSelectedUtxosBelongToTheInputs(List<UTXO> batchedPegoutsTransactionUTXOs,
-                                                             List<TransactionInput> batchedPegoutsTransactionInputs) {
-        for (UTXO utxo : batchedPegoutsTransactionUTXOs) {
-            List<TransactionInput> matchingInputs = batchedPegoutsTransactionInputs.stream().
-                filter(input -> input.getOutpoint().getHash().equals(utxo.getHash())
-                    && input.getOutpoint().getIndex() == utxo.getIndex()).toList();
-            assertEquals(1, matchingInputs.size());
-        }
-    }
-
-    private void assertBuildResultResponseCode(ReleaseTransactionBuilder.Response expectedResponseCode, BuildResult batchedPegoutsResult) {
-        ReleaseTransactionBuilder.Response actualResponseCode = batchedPegoutsResult.responseCode();
-        assertEquals(expectedResponseCode, actualResponseCode);
-    }
-
-    private void assertBtcTxVersionIs1(BtcTransaction batchedPegoutsTransaction) {
-        assertEquals(BTC_TX_VERSION_1, batchedPegoutsTransaction.getVersion());
-    }
-
-    private void assertBtcTxVersionIs2(BtcTransaction batchedPegoutsTransaction) {
-        assertEquals(BTC_TX_VERSION_2, batchedPegoutsTransaction.getVersion());
     }
 
     private void setUpActivationConfig(ActivationConfig.ForBlock activationConfig) {
@@ -1036,14 +1042,5 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             transactionFeePerKb,
             activationConfig
         );
-    }
-
-    private void assertInputIsFromFederationUTXOsWallet(TransactionInput releaseInput) {
-        Predicate<UTXO> isUTXOAndReleaseInputFromTheSameOutpoint = utxo ->
-            utxo.getHash().equals(releaseInput.getOutpoint().getHash())
-                && utxo.getIndex() == releaseInput.getOutpoint().getIndex();
-        Optional<UTXO> foundUtxo = retiringFederationUTXOs.stream()
-            .filter(isUTXOAndReleaseInputFromTheSameOutpoint).findFirst();
-        assertTrue(foundUtxo.isPresent());
     }
 }
