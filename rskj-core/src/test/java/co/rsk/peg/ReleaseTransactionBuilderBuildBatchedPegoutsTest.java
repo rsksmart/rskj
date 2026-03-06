@@ -1116,7 +1116,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         @Test
         void buildBatchedPegouts_whenChangeIsDust_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
             // Arrange
-
             Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
@@ -1477,50 +1476,13 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         List<TransactionOutput> batchedPegoutsTransactionOutputs = batchedPegoutsTransaction.getOutputs();
         assertBatchedPegoutsTransactionNumberOfOutputs(expectedNumberOfOutputs, batchedPegoutsTransactionOutputs);
         assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
-        assertBatchedPegoutsTxHasChangeAndPegoutsAmountWithFeesProperly(batchedPegoutsTransaction, pegoutRequests);
-    }
+        Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
 
-    private void assertBatchedPegoutsTxHasChangeAndPegoutsAmountWithFeesProperly(BtcTransaction batchedPegoutsTransaction,
-                                                                                 List<Entry> pegoutRequests) {
-        Coin inputTotalAmount = batchedPegoutsTransaction.getInputSum();
-        Coin expectedSentPegoutAmount = getTotalPegoutRequestsAmount(pegoutRequests);
-        Coin expectedChangeAmount = inputTotalAmount.subtract(expectedSentPegoutAmount);
-
-        if (isDust(expectedChangeAmount)) {
-            Coin amountToGetNonDustValue = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(expectedChangeAmount);
-            expectedSentPegoutAmount = expectedSentPegoutAmount.subtract(amountToGetNonDustValue);
-            expectedChangeAmount = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
-        }
-
-        List<TransactionOutput> changeOutputs = getChangeOutputs(batchedPegoutsTransaction);
-        assertEquals(EXPECTED_NUMBER_OF_CHANGE_OUTPUTS, changeOutputs.size());
-        Coin changeOutputsAmount = changeOutputs.stream()
-            .map(TransactionOutput::getValue)
-            .reduce(Coin::add)
-            .orElse(Coin.ZERO);
-        assertEquals(expectedChangeAmount, changeOutputsAmount);
-
-        Coin pegoutOutputsAmount = batchedPegoutsTransaction.getOutputSum().subtract(changeOutputsAmount);
-        Coin batchedPegoutsTransactionFees = batchedPegoutsTransaction.getFee();
-        Coin pegoutsAndFeesAmount = batchedPegoutsTransactionFees.add(pegoutOutputsAmount);
-        assertEquals(expectedSentPegoutAmount, pegoutsAndFeesAmount);
-        assertEquals(inputTotalAmount, pegoutsAndFeesAmount.add(changeOutputsAmount));
-    }
-
-    private void assertBatchedPegoutsTxHasPegoutsAmountWithFeesProperly(BtcTransaction batchedPegoutsTransaction,
-                                                                                 List<Entry> pegoutRequests) {
-        Coin inputTotalAmount = batchedPegoutsTransaction.getInputSum();
-        Coin expectedSentPegoutAmount = getTotalPegoutRequestsAmount(pegoutRequests);
-
-        Coin pegoutOutputsAmount = batchedPegoutsTransaction.getOutputSum();
-        Coin batchedPegoutsTransactionFees = batchedPegoutsTransaction.getFee();
-        Coin pegoutsAndFeesAmount = batchedPegoutsTransactionFees.add(pegoutOutputsAmount);
-        assertEquals(expectedSentPegoutAmount, pegoutsAndFeesAmount);
-        assertEquals(inputTotalAmount, pegoutsAndFeesAmount);
-    }
-
-    private static boolean isDust(Coin expectedChange) {
-        return expectedChange.compareTo(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT) < 0;
+        List<TransactionOutput> batchedPegoutsTransactionChangeOutputs = getChangeOutputs(batchedPegoutsTransaction);
+        assertReleaseTxHasChangeAndPegoutsAmountWithFeesProperly(batchedPegoutsTransaction,
+            batchedPegoutsTransactionChangeOutputs, totalPegoutRequestsAmount
+        );
+        assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress);
     }
 
     private static Coin getTotalPegoutRequestsAmount(List<Entry> pegoutRequests) {
@@ -1534,7 +1496,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         List<TransactionOutput> batchedPegoutsTransactionOutputs = batchedPegoutsTransaction.getOutputs();
         assertBatchedPegoutsTransactionNumberOfOutputs(expectedNumberOfOutputs, batchedPegoutsTransactionOutputs);
         assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
-        assertBatchedPegoutsTxHasPegoutsAmountWithFeesProperly(batchedPegoutsTransaction, pegoutRequests);
+        Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
+        assertReleaseTxWithNoChangeHasPegoutsAmountWithFeesProperly(batchedPegoutsTransaction, totalPegoutRequestsAmount);
     }
 
     private void assertBatchedPegoutsTransactionNumberOfOutputs(int expectedNumberOfOutputs,
