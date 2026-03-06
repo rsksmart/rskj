@@ -94,12 +94,15 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
+            // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             Address recipientAddress = createRecipientAddress();
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs1(pegoutTransaction);
@@ -118,11 +121,14 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreateReleaseTx() {
+            // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             Address recipientAddress = createRecipientAddress();
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs2(pegoutTransaction);
@@ -141,6 +147,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenMultipleUtxosCanCoverAmount_shouldCreateReleaseTx() {
+            // Arrange
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -151,8 +158,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             int numberOfUtxosToCoverAmountRequested = 2;
             Coin amountToSend = MINIMUM_PEGOUT_TX_VALUE.add(THOUSAND_SATOSHIS);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs2(pegoutTransaction);
@@ -170,6 +179,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenWalletHasExactFunds_shouldCreateReleaseTxWithNoChangeOutput() {
+            // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -179,8 +189,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Address recipientAddress = createRecipientAddress();
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs2(pegoutTransaction);
@@ -199,6 +211,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenInsufficientFunds_shouldReturnInsufficientMoney() {
+            // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -209,8 +222,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             Address recipientAddress = createRecipientAddress();
             Coin amountExceedingFederationBalance = MINIMUM_PEGOUT_TX_VALUE.add(Coin.SATOSHI);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountExceedingFederationBalance);
 
+            // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
@@ -222,11 +237,14 @@ class ReleaseTransactionBuilderBuildAmountToTest {
          */
         @Test
         void buildAmountTo_whenAmountIsTooSmall_shouldReturnDustySendRequested() {
+            // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             Address recipientAddress = createRecipientAddress();
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, DUSTY_AMOUNT_SEND_REQUESTED);
 
+            // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
@@ -237,6 +255,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             // Spending an input with a p2sh script costs more than MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.
             // Therefore, if the federation has only UTXOs with that minimum non-dust value,
             // it won't be possible to adjust downwards the pegout amount to avoid creating a dust output.
+            // Arrange
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -246,8 +265,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             Address recipientAddress = createRecipientAddress();
             Coin amountToSend = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.multiply(numberOfUtxos);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
 
+            // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
@@ -255,6 +276,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
+            // Arrange
             int numberOfUtxos = 277;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -264,8 +286,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             Address recipientAddress = createRecipientAddress();
             Coin amountToSend = wallet.getBalance().subtract(THOUSAND_SATOSHIS);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
 
+            // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
@@ -273,6 +297,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenTxIsAlmostExceedingMaxTxSize_shouldCreateReleaseTx() {
+            // Arrange
             int numberOfUtxos = 276;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -282,8 +307,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             Address recipientAddress = createRecipientAddress();
             Coin amountToSend = wallet.getBalance().subtract(THOUSAND_SATOSHIS);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs2(pegoutTransaction);
@@ -320,12 +347,15 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
+            // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Address recipientAddress = createRecipientAddress();
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs1(pegoutTransaction);
@@ -344,11 +374,14 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreateReleaseTx() {
+            // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             Address recipientAddress = createRecipientAddress();
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs2(pegoutTransaction);
@@ -368,6 +401,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenMultipleUtxosCanCoverAmount_shouldCreateReleaseTx() {
+            // Arrange
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -378,8 +412,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             int numberOfUtxosToCoverAmountRequested = 2;
             Coin amountToSend = MINIMUM_PEGOUT_TX_VALUE.add(THOUSAND_SATOSHIS);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs2(pegoutTransaction);
@@ -397,6 +433,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenWalletHasExactFunds_shouldCreateReleaseTxWithNoChangeOutput() {
+            // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -406,8 +443,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Address recipientAddress = createRecipientAddress();
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs2(pegoutTransaction);
@@ -426,6 +465,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenInsufficientFunds_shouldReturnInsufficientMoney() {
+            // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -436,8 +476,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             Address recipientAddress = createRecipientAddress();
             Coin amountExceedingFederationBalance = MINIMUM_PEGOUT_TX_VALUE.add(Coin.SATOSHI);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountExceedingFederationBalance);
 
+            // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
@@ -449,11 +491,14 @@ class ReleaseTransactionBuilderBuildAmountToTest {
          */
         @Test
         void buildAmountTo_whenAmountIsTooSmall_shouldReturnDustySendRequested() {
+            // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             Address recipientAddress = createRecipientAddress();
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, DUSTY_AMOUNT_SEND_REQUESTED);
 
+            // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
@@ -464,6 +509,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             // Spending an input with a p2sh script costs more than MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.
             // Therefore, if the federation has only UTXOs with that minimum non-dust value,
             // it won't be possible to adjust downwards the pegout amount to avoid creating a dust output.
+            // Arrange
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -473,8 +519,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             Address recipientAddress = createRecipientAddress();
             Coin amountToSend = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.multiply(numberOfUtxos);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
 
+            // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
@@ -482,6 +530,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
+            // Arrange
             int numberOfUtxos = 196;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -491,8 +540,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             Address recipientAddress = createRecipientAddress();
             Coin amountToSend = wallet.getBalance().subtract(THOUSAND_SATOSHIS);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
 
+            // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
@@ -500,6 +551,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenTxIsAlmostExceedingMaxTxSize_shouldCreateReleaseTx() {
+            // Arrange
             int numberOfUtxos = 195;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -509,8 +561,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             Address recipientAddress = createRecipientAddress();
             Coin amountToSend = wallet.getBalance().subtract(THOUSAND_SATOSHIS);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs2(pegoutTransaction);
@@ -547,12 +601,15 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
+            // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Address recipientAddress = createRecipientAddress();
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs1(pegoutTransaction);
@@ -570,11 +627,14 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreateReleaseTx() {
+            // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             Address recipientAddress = createRecipientAddress();
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs2(pegoutTransaction);
@@ -593,6 +653,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenMultipleUtxosCanCoverAmount_shouldCreateReleaseTx() {
+            // Arrange
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -603,8 +664,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             int numberOfUtxosToCoverAmountRequested = 2;
             Coin amountToSend = MINIMUM_PEGOUT_TX_VALUE.add(THOUSAND_SATOSHIS);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs2(pegoutTransaction);
@@ -622,6 +685,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenWalletHasExactFunds_shouldCreateReleaseTxWithNoChangeOutput() {
+            // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -631,8 +695,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             Address recipientAddress = createRecipientAddress();
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs2(pegoutTransaction);
@@ -651,6 +717,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenInsufficientFunds_shouldReturnInsufficientMoney() {
+            // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -661,8 +728,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             Address recipientAddress = createRecipientAddress();
             Coin amountExceedingFederationBalance = MINIMUM_PEGOUT_TX_VALUE.add(Coin.SATOSHI);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountExceedingFederationBalance);
 
+            // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
@@ -674,11 +743,14 @@ class ReleaseTransactionBuilderBuildAmountToTest {
          */
         @Test
         void buildAmountTo_whenAmountIsTooSmall_shouldReturnDustySendRequested() {
+            // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             Address recipientAddress = createRecipientAddress();
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, DUSTY_AMOUNT_SEND_REQUESTED);
 
+            // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
@@ -689,6 +761,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             // Spending an input with a p2sh-p2wsh script costs more than MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.
             // Therefore, if the federation has only UTXOs with that minimum non-dust value,
             // it won't be possible to adjust downwards the pegout amount to avoid creating a dust output.
+            // Arrange
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -698,8 +771,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             Address recipientAddress = createRecipientAddress();
             Coin amountToSend = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.multiply(numberOfUtxos);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
 
+            // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
@@ -707,6 +782,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
+            // Arrange
             int numberOfUtxos = 2438;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -716,8 +792,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             Address recipientAddress = createRecipientAddress();
             Coin amountToSend = wallet.getBalance().subtract(THOUSAND_SATOSHIS);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
 
+            // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
@@ -725,6 +803,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
         @Test
         void buildAmountTo_whenTxIsAlmostExceedingMaxTxSize_shouldCreateReleaseTx() {
+            // Arrange
             int numberOfUtxos = 2437;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -734,8 +813,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             Address recipientAddress = createRecipientAddress();
             Coin amountToSend = wallet.getBalance().subtract(THOUSAND_SATOSHIS);
 
+            // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
 
+            // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
             BtcTransaction pegoutTransaction = amountToResult.btcTx();
             assertBtcTxVersionIs2(pegoutTransaction);
