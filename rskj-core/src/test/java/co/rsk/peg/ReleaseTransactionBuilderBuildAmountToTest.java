@@ -32,6 +32,7 @@ import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
 import co.rsk.peg.federation.StandardMultiSigFederationBuilder;
 import co.rsk.test.builders.UTXOBuilder;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -91,6 +92,21 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             setUpWallet(federationUTXOs);
+        }
+
+        @Test
+        void buildAmountTo_whenFedHasNoUTXOs_shouldReturnInsufficientMoney() {
+            // Arrange
+            federationUTXOs = new ArrayList<>();
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+            // Act
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
+
+            // Assert
+            assertBuildResultResponseCode(INSUFFICIENT_MONEY, amountToResult);
+            assertNull(amountToResult.btcTx());
+            assertNull(amountToResult.selectedUTXOs());
         }
 
         @Test
@@ -338,6 +354,21 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
+        void buildAmountTo_whenFedHasNoUTXOs_shouldReturnInsufficientMoney() {
+            // Arrange
+            federationUTXOs = new ArrayList<>();
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+            // Act
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
+
+            // Assert
+            assertBuildResultResponseCode(INSUFFICIENT_MONEY, amountToResult);
+            assertNull(amountToResult.btcTx());
+            assertNull(amountToResult.selectedUTXOs());
+        }
+
+        @Test
         void buildAmountTo_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
@@ -580,6 +611,21 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             setUpWallet(federationUTXOs);
+        }
+
+        @Test
+        void buildAmountTo_whenFedHasNoUTXOs_shouldReturnInsufficientMoney() {
+            // Arrange
+            federationUTXOs = new ArrayList<>();
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+            // Act
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
+
+            // Assert
+            assertBuildResultResponseCode(INSUFFICIENT_MONEY, amountToResult);
+            assertNull(amountToResult.btcTx());
+            assertNull(amountToResult.selectedUTXOs());
         }
 
         @Test
