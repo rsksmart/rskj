@@ -114,7 +114,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         void buildAmountTo_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
-            ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
