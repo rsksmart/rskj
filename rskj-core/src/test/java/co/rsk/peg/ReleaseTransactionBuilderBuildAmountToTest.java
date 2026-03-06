@@ -56,6 +56,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
     private static final Coin DUSTY_AMOUNT_SEND_REQUESTED = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
     private static final Coin THOUSAND_SATOSHIS = Coin.valueOf(1000);
     private static final int RECIPIENT_ADDRESS_KEY_OFFSET = 2100;
+    private static final Address RECIPIENT_ADDRESS = createRecipientAddress();
 
     protected Federation federation;
     protected int federationFormatVersion;
@@ -97,10 +98,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-            Address recipientAddress = createRecipientAddress();
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -123,10 +123,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreateReleaseTx() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-            Address recipientAddress = createRecipientAddress();
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -154,12 +153,11 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(MINIMUM_PEGOUT_TX_VALUE)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             int numberOfUtxosToCoverAmountRequested = 2;
             Coin amountToSend = MINIMUM_PEGOUT_TX_VALUE.add(THOUSAND_SATOSHIS);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -187,10 +185,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                     .build()
             );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -219,11 +216,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                     .build()
             );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             Coin amountExceedingFederationBalance = MINIMUM_PEGOUT_TX_VALUE.add(Coin.SATOSHI);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountExceedingFederationBalance);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountExceedingFederationBalance);
 
             // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, amountToResult);
@@ -239,10 +235,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         void buildAmountTo_whenAmountIsTooSmall_shouldReturnDustySendRequested() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-            Address recipientAddress = createRecipientAddress();
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, DUSTY_AMOUNT_SEND_REQUESTED);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, DUSTY_AMOUNT_SEND_REQUESTED);
 
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, amountToResult);
@@ -262,11 +257,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             Coin amountToSend = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.multiply(numberOfUtxos);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, amountToResult);
@@ -283,11 +277,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(Coin.COIN)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             Coin amountToSend = wallet.getBalance().subtract(THOUSAND_SATOSHIS);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
             // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, amountToResult);
@@ -304,11 +297,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(Coin.COIN)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             Coin amountToSend = wallet.getBalance().subtract(THOUSAND_SATOSHIS);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -350,10 +342,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -376,10 +367,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreateReleaseTx() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-            Address recipientAddress = createRecipientAddress();
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -408,12 +398,11 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(MINIMUM_PEGOUT_TX_VALUE)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             int numberOfUtxosToCoverAmountRequested = 2;
             Coin amountToSend = MINIMUM_PEGOUT_TX_VALUE.add(THOUSAND_SATOSHIS);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -441,10 +430,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                     .build()
             );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -473,11 +461,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                     .build()
             );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             Coin amountExceedingFederationBalance = MINIMUM_PEGOUT_TX_VALUE.add(Coin.SATOSHI);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountExceedingFederationBalance);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountExceedingFederationBalance);
 
             // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, amountToResult);
@@ -493,10 +480,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         void buildAmountTo_whenAmountIsTooSmall_shouldReturnDustySendRequested() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-            Address recipientAddress = createRecipientAddress();
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, DUSTY_AMOUNT_SEND_REQUESTED);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, DUSTY_AMOUNT_SEND_REQUESTED);
 
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, amountToResult);
@@ -516,11 +502,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             Coin amountToSend = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.multiply(numberOfUtxos);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, amountToResult);
@@ -537,11 +522,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(Coin.COIN)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             Coin amountToSend = wallet.getBalance().subtract(THOUSAND_SATOSHIS);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
             // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, amountToResult);
@@ -558,11 +542,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(Coin.COIN)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             Coin amountToSend = wallet.getBalance().subtract(THOUSAND_SATOSHIS);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -604,10 +587,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -629,10 +611,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreateReleaseTx() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-            Address recipientAddress = createRecipientAddress();
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -660,12 +641,11 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(MINIMUM_PEGOUT_TX_VALUE)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             int numberOfUtxosToCoverAmountRequested = 2;
             Coin amountToSend = MINIMUM_PEGOUT_TX_VALUE.add(THOUSAND_SATOSHIS);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -693,10 +673,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                     .build()
             );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, MINIMUM_PEGOUT_TX_VALUE);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -725,11 +704,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                     .build()
             );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             Coin amountExceedingFederationBalance = MINIMUM_PEGOUT_TX_VALUE.add(Coin.SATOSHI);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountExceedingFederationBalance);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountExceedingFederationBalance);
 
             // Assert
             assertBuildResultResponseCode(INSUFFICIENT_MONEY, amountToResult);
@@ -745,10 +723,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         void buildAmountTo_whenAmountIsTooSmall_shouldReturnDustySendRequested() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-            Address recipientAddress = createRecipientAddress();
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, DUSTY_AMOUNT_SEND_REQUESTED);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, DUSTY_AMOUNT_SEND_REQUESTED);
 
             // Assert
             assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, amountToResult);
@@ -768,11 +745,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             Coin amountToSend = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.multiply(numberOfUtxos);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
             // Assert
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, amountToResult);
@@ -789,11 +765,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(Coin.COIN)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             Coin amountToSend = wallet.getBalance().subtract(THOUSAND_SATOSHIS);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
             // Assert
             assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, amountToResult);
@@ -810,11 +785,10 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 .withValue(Coin.COIN)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            Address recipientAddress = createRecipientAddress();
             Coin amountToSend = wallet.getBalance().subtract(THOUSAND_SATOSHIS);
 
             // Act
-            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(recipientAddress, amountToSend);
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
             // Assert
             assertBuildResultResponseCode(SUCCESS, amountToResult);
@@ -841,7 +815,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         this.feePerKb = feePerKb;
     }
 
-    private Address createRecipientAddress() {
+    private static Address createRecipientAddress() {
         BigInteger seed = BigInteger.valueOf(RECIPIENT_ADDRESS_KEY_OFFSET);
         return BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
     }
