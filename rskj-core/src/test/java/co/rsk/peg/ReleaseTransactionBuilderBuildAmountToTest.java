@@ -192,7 +192,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenWalletHasExactFunds_shouldCreateReleaseTxWithNoChangeOutput() {
+        void buildAmountTo_whenWalletHasExactFundsForPegoutRequest_shouldCreatePegoutTxWithNoChangeOutput() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
@@ -223,7 +223,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenInsufficientFunds_shouldReturnInsufficientMoney() {
+        void buildAmountTo_whenInsufficientFundsForPegoutRequest_shouldReturnInsufficientMoney() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
@@ -452,7 +452,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenWalletHasExactFunds_shouldCreateReleaseTxWithNoChangeOutput() {
+        void buildAmountTo_whenWalletHasExactFundsForPegoutRequest_shouldCreatePegoutTxWithNoChangeOutput() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
@@ -483,7 +483,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenInsufficientFunds_shouldReturnInsufficientMoney() {
+        void buildAmountTo_whenInsufficientFundsForPegoutRequest_shouldReturnInsufficientMoney() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
@@ -710,7 +710,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenWalletHasExactFunds_shouldCreateReleaseTxWithNoChangeOutput() {
+        void buildAmountTo_whenWalletHasExactFundsForPegoutRequest_shouldCreatePegoutTxWithNoChangeOutput() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
@@ -741,7 +741,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenInsufficientFunds_shouldReturnInsufficientMoney() {
+        void buildAmountTo_whenInsufficientFundsForPegoutRequest_shouldReturnInsufficientMoney() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
