@@ -236,6 +236,7 @@ public class TransactionReceipt {
     }
 
     public void setTransaction(Transaction transaction) {
+        this.rlpEncoded = null;
         this.transaction = transaction;
     }
 

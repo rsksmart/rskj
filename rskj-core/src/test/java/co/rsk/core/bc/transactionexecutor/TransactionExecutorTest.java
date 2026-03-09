@@ -374,6 +374,7 @@ class TransactionExecutorTest {
                 Coin.ZERO
         );
         when(transaction.getTypePrefix()).thenReturn(TransactionTypePrefix.typed(TransactionType.TYPE_1));
+        when(transaction.isTypedTransactionNotAllowed(any())).thenReturn(true);
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config, blockStore, receiptStore, blockFactory, programInvokeFactory, precompiledContracts, blockTxSignatureCache);

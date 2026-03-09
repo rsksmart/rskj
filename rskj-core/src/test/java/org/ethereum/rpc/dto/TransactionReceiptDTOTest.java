@@ -51,7 +51,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
         when(transaction.getGasPrice()).thenReturn(gasPrice);
         when(transaction.getType()).thenReturn(TransactionType.LEGACY);
-        when(transaction.getTypeForRpc()).thenReturn("0x0");
+        when(transaction.getTypeAsHex()).thenReturn("0x0");
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
@@ -88,7 +88,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
         when(transaction.getGasPrice()).thenReturn(gasPrice);
         when(transaction.getType()).thenReturn(TransactionType.LEGACY);
-        when(transaction.getTypeForRpc()).thenReturn("0x0");
+        when(transaction.getTypeAsHex()).thenReturn("0x0");
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
@@ -125,7 +125,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
         when(transaction.getGasPrice()).thenReturn(gasPrice);
         when(transaction.getType()).thenReturn(TransactionType.LEGACY);
-        when(transaction.getTypeForRpc()).thenReturn("0x0");
+        when(transaction.getTypeAsHex()).thenReturn("0x0");
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
@@ -162,7 +162,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
         when(transaction.getGasPrice()).thenReturn(gasPrice);
         when(transaction.getType()).thenReturn(TransactionType.LEGACY);
-        when(transaction.getTypeForRpc()).thenReturn("0x0");
+        when(transaction.getTypeAsHex()).thenReturn("0x0");
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
@@ -200,7 +200,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
         when(transaction.getGasPrice()).thenReturn(gasPrice);
         when(transaction.getType()).thenReturn(TransactionType.LEGACY);
-        when(transaction.getTypeForRpc()).thenReturn("0x0");
+        when(transaction.getTypeAsHex()).thenReturn("0x0");
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);

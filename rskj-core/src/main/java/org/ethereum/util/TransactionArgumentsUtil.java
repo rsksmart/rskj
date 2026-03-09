@@ -53,8 +53,16 @@ public class TransactionArgumentsUtil {
 
 		TransactionArguments argsRet = new TransactionArguments();
 
-        argsRet.setType(hexToTransactionType(argsParam.getType()));
-        argsRet.setRskSubtype(hexToRskSubtype(argsParam.getRskSubtype()));
+        TransactionType type = hexToTransactionType(argsParam.getType());
+        Byte rskSubtype = hexToRskSubtype(argsParam.getRskSubtype());
+        if (rskSubtype != null && type != TransactionType.TYPE_2) {
+            throw RskJsonRpcRequestException.invalidParamError(
+                    "rskSubtype can only be used with type 0x02 (RSK namespace), got type: "
+                            + (argsParam.getType() == null ? "legacy (omitted)" : argsParam.getType()));
+        }
+
+        argsRet.setType(type);
+        argsRet.setRskSubtype(rskSubtype);
 
 		argsRet.setFrom(argsParam.getFrom());
 
@@ -131,7 +139,7 @@ public class TransactionArgumentsUtil {
         } catch (Exception ex) {
             throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex, ex);
         }
-        TransactionType type = TransactionType.getByByte(typeByte);
+        TransactionType type = TransactionType.fromByte(typeByte);
         if (type == null) {
             throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex);
         }

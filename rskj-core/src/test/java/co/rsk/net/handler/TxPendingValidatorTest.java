@@ -192,6 +192,7 @@ class TxPendingValidatorTest {
 
         Transaction tx = mock(Transaction.class);
         when(tx.getTypePrefix()).thenReturn(TransactionTypePrefix.typed(TransactionType.TYPE_1));
+        when(tx.isTypedTransactionNotAllowed(any())).thenReturn(true);
 
         TestSystemProperties config = new TestSystemProperties();
         ActivationConfig.ForBlock forBlock = mock(ActivationConfig.ForBlock.class);

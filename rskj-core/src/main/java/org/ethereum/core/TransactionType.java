@@ -68,7 +68,7 @@ public enum TransactionType {
         return typeName;
     }
 
-    public static TransactionType getByByte(byte type) {
+    public static TransactionType fromByte(byte type) {
         return lookup.get(type);
     }
 
