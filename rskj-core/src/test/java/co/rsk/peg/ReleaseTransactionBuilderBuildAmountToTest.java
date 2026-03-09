@@ -111,7 +111,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
+        void buildAmountTo_whenRSKIP201IsNotActive_shouldCreatePegoutTxWithBtcVersion1() {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -137,7 +137,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreateReleaseTx() {
+        void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreatePegoutTx() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
 
@@ -162,7 +162,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenMultipleUtxosCanCoverAmount_shouldCreateReleaseTx() {
+        void buildAmountTo_whenMultipleUtxosCanCoverAmount_shouldCreatePegoutTx() {
             // Arrange
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
@@ -403,7 +403,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenEstimatedFeeIsHighAndUtxosAreEnough_shouldCreateReleaseTx() {
+        void buildAmountTo_whenEstimatedFeeIsHighAndUtxosAreEnough_shouldCreatePegoutTx() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 10;
@@ -454,7 +454,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenTxIsAlmostExceedingMaxTxSize_shouldCreateReleaseTx() {
+        void buildAmountTo_whenTxIsAlmostExceedingMaxTxSize_shouldCreatePegoutTx() {
             // Arrange
             int numberOfUtxos = 276;
             federationUTXOs = UTXOBuilder.builder()
@@ -518,7 +518,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
+        void buildAmountTo_whenRSKIP201IsNotActive_shouldCreatePegoutTxWithBtcVersion1() {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -544,7 +544,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreateReleaseTx() {
+        void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreatePegoutTx() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
 
@@ -570,7 +570,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenMultipleUtxosCanCoverAmount_shouldCreateReleaseTx() {
+        void buildAmountTo_whenMultipleUtxosCanCoverAmount_shouldCreatePegoutTx() {
             // Arrange
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
@@ -811,7 +811,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenEstimatedFeeIsHighAndUtxosAreEnough_shouldCreateReleaseTx() {
+        void buildAmountTo_whenEstimatedFeeIsHighAndUtxosAreEnough_shouldCreatePegoutTx() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 10;
@@ -863,7 +863,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenTxIsAlmostExceedingMaxTxSize_shouldCreateReleaseTx() {
+        void buildAmountTo_whenTxIsAlmostExceedingMaxTxSize_shouldCreatePegoutTx() {
             // Arrange
             int numberOfUtxos = 195;
             federationUTXOs = UTXOBuilder.builder()
@@ -927,7 +927,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenRSKIP201IsNotActive_shouldCreateReleaseTxWithBtcVersion1() {
+        void buildAmountTo_whenRSKIP201IsNotActive_shouldCreatePegoutTxWithBtcVersion1() {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -952,7 +952,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreateReleaseTx() {
+        void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreatePegoutTx() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
 
@@ -977,7 +977,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenMultipleUtxosCanCoverAmount_shouldCreateReleaseTx() {
+        void buildAmountTo_whenMultipleUtxosCanCoverAmount_shouldCreatePegoutTx() {
             // Arrange
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
@@ -1238,7 +1238,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenEstimatedFeeIsHighAndUtxosAreEnough_shouldCreateReleaseTx() {
+        void buildAmountTo_whenEstimatedFeeIsHighAndUtxosAreEnough_shouldCreatePegoutTx() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 10;
@@ -1269,7 +1269,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenTxIsAlmostExceedingMaxTxSize_shouldCreateReleaseTx() {
+        void buildAmountTo_whenTxIsAlmostExceedingMaxTxSize_shouldCreatePegoutTx() {
             // Arrange
             int numberOfUtxos = 2437;
             federationUTXOs = UTXOBuilder.builder()
