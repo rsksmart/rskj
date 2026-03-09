@@ -219,7 +219,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertPegoutToTxHasOnlyPegoutOutput(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
+            assertPegoutTxHasOnlyPegoutOutput(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
             assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
         }
 
@@ -596,7 +596,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertPegoutToTxHasOnlyPegoutOutput(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
+            assertPegoutTxHasOnlyPegoutOutput(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
             assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
         }
 
@@ -971,7 +971,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertPegoutToTxHasOnlyPegoutOutput(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
+            assertPegoutTxHasOnlyPegoutOutput(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
             assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
         }
 
@@ -1266,7 +1266,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         assertDestinationAddress(pegoutTransactionChangeOutputs, federationAddress);
     }
 
-    private void assertPegoutToTxHasOnlyPegoutOutput(
+    private void assertPegoutTxHasOnlyPegoutOutput(
         BtcTransaction pegoutTransaction,
         Coin requestedAmount
     ) {
