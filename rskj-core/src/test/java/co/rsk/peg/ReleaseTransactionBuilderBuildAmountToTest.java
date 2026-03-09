@@ -403,6 +403,37 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
+        void buildAmountTo_whenEstimatedFeeIsHighAndUtxosAreEnough_shouldCreateReleaseTx() {
+            // Arrange
+            setUpFeePerKb(HIGH_FEE_PER_KB);
+            int numberOfUtxos = 10;
+            federationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(federationOutputScript)
+                .withValue(Coin.COIN)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
+                federationUTXOs);
+            Coin requestedAmount = Coin.COIN.subtract(THOUSAND_SATOSHIS);
+
+            // Act
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, requestedAmount);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, amountToResult);
+            BtcTransaction pegoutTransaction = amountToResult.btcTx();
+            assertBtcTxVersionIs2(pegoutTransaction);
+
+            List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
+            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+                pegoutTransaction,
+                federationRedeemScript,
+                federationUTXOs
+            );
+            assertPegoutTxHasPegoutAndChangeOutputs(pegoutTransaction, requestedAmount);
+            assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
+        }
+
+        @Test
         void buildAmountTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
             // Arrange
             int numberOfUtxos = 277;
@@ -777,6 +808,38 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
+        }
+
+        @Test
+        void buildAmountTo_whenEstimatedFeeIsHighAndUtxosAreEnough_shouldCreateReleaseTx() {
+            // Arrange
+            setUpFeePerKb(HIGH_FEE_PER_KB);
+            int numberOfUtxos = 10;
+            federationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(federationOutputScript)
+                .withValue(Coin.COIN)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
+                federationUTXOs);
+            Coin requestedAmount = Coin.COIN.subtract(THOUSAND_SATOSHIS);
+
+            // Act
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS,
+                requestedAmount);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, amountToResult);
+            BtcTransaction pegoutTransaction = amountToResult.btcTx();
+            assertBtcTxVersionIs2(pegoutTransaction);
+
+            List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shFederation(
+                pegoutTransaction,
+                federationRedeemScript,
+                federationUTXOs
+            );
+            assertPegoutTxHasPegoutAndChangeOutputs(pegoutTransaction, requestedAmount);
+            assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
         }
 
         @Test
@@ -1172,6 +1235,37 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, amountToResult);
             assertNull(amountToResult.btcTx());
             assertNull(amountToResult.selectedUTXOs());
+        }
+
+        @Test
+        void buildAmountTo_whenEstimatedFeeIsHighAndUtxosAreEnough_shouldCreateReleaseTx() {
+            // Arrange
+            setUpFeePerKb(HIGH_FEE_PER_KB);
+            int numberOfUtxos = 10;
+            federationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(federationOutputScript)
+                .withValue(Coin.COIN)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
+                federationUTXOs);
+            Coin requestedAmount = Coin.COIN.subtract(THOUSAND_SATOSHIS);
+
+            // Act
+            BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, requestedAmount);
+
+            // Assert
+            assertBuildResultResponseCode(SUCCESS, amountToResult);
+            BtcTransaction pegoutTransaction = amountToResult.btcTx();
+            assertBtcTxVersionIs2(pegoutTransaction);
+
+            List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+                pegoutTransaction,
+                federationRedeemScript,
+                federationUTXOs
+            );
+            assertPegoutTxHasPegoutAndChangeOutputs(pegoutTransaction, requestedAmount);
+            assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
         }
 
         @Test
