@@ -49,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SignatureException;
+import java.util.Arrays;
 import java.util.Objects;
 
 import static co.rsk.util.ListArrayUtil.getLength;
@@ -696,5 +697,42 @@ public class Transaction {
 
     private record ParsedFields(byte[] nonce, Coin gasPrice, byte[] gasLimit,
                                     RskAddress receiveAddress, Coin value, byte[] data,
-                                    byte chainId, ECDSASignature signature) {}
+                                    byte chainId, ECDSASignature signature) {
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof ParsedFields that)) return false;
+            return chainId == that.chainId
+                    && Arrays.equals(nonce, that.nonce)
+                    && Objects.equals(gasPrice, that.gasPrice)
+                    && Arrays.equals(gasLimit, that.gasLimit)
+                    && Objects.equals(receiveAddress, that.receiveAddress)
+                    && Objects.equals(value, that.value)
+                    && Arrays.equals(data, that.data)
+                    && Objects.equals(signature, that.signature);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(gasPrice, receiveAddress, value, chainId, signature);
+            result = 31 * result + Arrays.hashCode(nonce);
+            result = 31 * result + Arrays.hashCode(gasLimit);
+            result = 31 * result + Arrays.hashCode(data);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "ParsedFields[" +
+                    "nonce=" + Arrays.toString(nonce) +
+                    ", gasPrice=" + gasPrice +
+                    ", gasLimit=" + Arrays.toString(gasLimit) +
+                    ", receiveAddress=" + receiveAddress +
+                    ", value=" + value +
+                    ", data=" + Arrays.toString(data) +
+                    ", chainId=" + chainId +
+                    ", signature=" + signature +
+                    ']';
+        }
+    }
 }
