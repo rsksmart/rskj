@@ -74,7 +74,7 @@ public class TransactionReceiptDTO {
         transactionHash = receipt.getTransaction().getHash().toJsonString();
         transactionIndex = HexUtils.toQuantityJsonHex(txInfo.getIndex());
         logsBloom = HexUtils.toUnformattedJsonHex(txInfo.getReceipt().getBloomFilter().getData());
-        type = receipt.getTransaction().getTypeForRpc();
+        type = receipt.getTransaction().getTypeAsHex();
         effectiveGasPrice = HexUtils.toQuantityJsonHex(txInfo.getReceipt().getTransaction().getGasPrice().getBytes());
     }
     public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache) {

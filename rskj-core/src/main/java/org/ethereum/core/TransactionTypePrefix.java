@@ -25,11 +25,10 @@ import java.util.Objects;
  * legacy (no prefix), standard typed (1 byte), and RSK namespace (2 bytes).
  */
 public sealed interface TransactionTypePrefix
-        permits TransactionTypePrefix.Legacy,
-                TransactionTypePrefix.StandardTyped,
-                TransactionTypePrefix.RskNamespace {
+        permits LegacyPrefix, StandardTypedPrefix, RskNamespacePrefix {
 
-    TransactionTypePrefix LEGACY_INSTANCE = new Legacy();
+    TransactionTypePrefix LEGACY_INSTANCE = new LegacyPrefix();
+
     TransactionType type();
     boolean isLegacy();
     boolean isTyped();
@@ -43,6 +42,7 @@ public sealed interface TransactionTypePrefix
     int length();
     String toFullString();
     String toRpcString();
+
     static TransactionTypePrefix legacy() {
         return LEGACY_INSTANCE;
     }
@@ -55,11 +55,11 @@ public sealed interface TransactionTypePrefix
         if (type == null || type == TransactionType.LEGACY) {
             return LEGACY_INSTANCE;
         }
-        return new StandardTyped(type);
+        return new StandardTypedPrefix(type);
     }
 
     static TransactionTypePrefix rskNamespace(byte subtype) {
-        return new RskNamespace(subtype);
+        return new RskNamespacePrefix(subtype);
     }
 
     /**
@@ -102,18 +102,18 @@ public sealed interface TransactionTypePrefix
      * Type 0x00 (LEGACY) and unknown bytes are rejected as unsupported.
      */
     private static TransactionTypePrefix decodeTypedPrefix(byte[] rawData, byte typeByte) {
-        TransactionType type = TransactionType.getByByte(typeByte);
+        TransactionType type = TransactionType.fromByte(typeByte);
         if (type == null || type == TransactionType.LEGACY) {
             throw new IllegalArgumentException(String.format(
                     "transaction type not supported: 0x%02x", typeByte & 0xFF));
         }
         return switch (type) {
-            case TYPE_1, TYPE_3, TYPE_4 -> new StandardTyped(type);
+            case TYPE_1, TYPE_3, TYPE_4 -> new StandardTypedPrefix(type);
             case TYPE_2 -> {
                 if (TransactionType.hasRskNamespacePrefix(rawData)) {
-                    yield new RskNamespace(rawData[1]);
+                    yield new RskNamespacePrefix(rawData[1]);
                 }
-                yield new StandardTyped(type);
+                yield new StandardTypedPrefix(type);
             }
             default -> throw new IllegalArgumentException(String.format(
                     "transaction type not supported: 0x%02x", typeByte & 0xFF));
@@ -127,91 +127,5 @@ public sealed interface TransactionTypePrefix
             return rawData;
         }
         return Arrays.copyOfRange(rawData, prefix.length(), rawData.length);
-    }
-
-    /** Legacy transaction: no prefix bytes. */
-    record Legacy() implements TransactionTypePrefix {
-        @Override public TransactionType type()     { return TransactionType.LEGACY; }
-        @Override public boolean isLegacy()         { return true;  }
-        @Override public boolean isTyped()          { return false; }
-        @Override public boolean isRskNamespace()   { return false; }
-        @Override public byte[] toBytes()           { return new byte[0]; }
-        @Override public int length()               { return 0; }
-        @Override public String toFullString()      { return "0x00"; }
-        @Override public String toRpcString()       { return "0x0"; }
-
-        @Override public String toString() {
-            return "Legacy";
-        }
-    }
-
-    /** Standard typed transaction: {@code type || rlpPayload}. */
-    record StandardTyped(TransactionType type) implements TransactionTypePrefix {
-        public StandardTyped {
-            Objects.requireNonNull(type, "type must not be null");
-            if (type == TransactionType.LEGACY) {
-                throw new IllegalArgumentException(
-                        "Use TransactionTypePrefix.legacy() for legacy transactions");
-            }
-        }
-
-        @Override public boolean isLegacy()       { return false; }
-        @Override public boolean isTyped()        { return true;  }
-        @Override public boolean isRskNamespace() { return false; }
-        @Override public byte[] toBytes()         { return new byte[]{ type.getByteCode() }; }
-        @Override public int length()             { return 1; }
-
-        @Override
-        public String toFullString() {
-            return String.format("0x%02x", type.getByteCode());
-        }
-
-        @Override
-        public String toRpcString() {
-            return "0x" + Long.toHexString(type.getByteCode() & 0xFF);
-        }
-
-        @Override
-        public String toString() {
-            return "StandardTyped[" + type.getTypeName() + "]";
-        }
-    }
-
-    /** RSK namespace transaction: {@code 0x02 || subtype || rlpPayload}. */
-    record RskNamespace(byte subtype) implements TransactionTypePrefix {
-        public RskNamespace {
-            if ((subtype & 0xFF) > TransactionType.MAX_TYPE_VALUE) {
-                throw new IllegalArgumentException(
-                        "RSK subtype must be in [0x00, 0x7f], got: 0x"
-                                + String.format("%02x", subtype & 0xFF));
-            }
-        }
-
-        @Override public TransactionType type()   { return TransactionType.TYPE_2; }
-        @Override public boolean isLegacy()       { return false; }
-        @Override public boolean isTyped()        { return true;  }
-        @Override public boolean isRskNamespace() { return true;  }
-
-        @Override
-        public byte[] toBytes() {
-            return new byte[]{ TransactionType.RSK_NAMESPACE_PREFIX, subtype };
-        }
-
-        @Override public int length() { return 2; }
-
-        @Override
-        public String toFullString() {
-            return String.format("0x%02x%02x", TransactionType.RSK_NAMESPACE_PREFIX, subtype);
-        }
-
-        @Override
-        public String toRpcString() {
-            return toFullString();
-        }
-
-        @Override
-        public String toString() {
-            return String.format("RskNamespace[subtype=0x%02x]", subtype);
-        }
     }
 }

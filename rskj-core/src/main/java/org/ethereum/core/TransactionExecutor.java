@@ -53,7 +53,6 @@ import static co.rsk.util.ListArrayUtil.getLength;
 import static co.rsk.util.ListArrayUtil.isEmpty;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP174;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP543;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -166,7 +165,7 @@ public class TransactionExecutor {
             return true;
         }
 
-        if (tx.getTypePrefix().isTyped() && !activations.isActive(RSKIP543)) {
+        if (tx.isTypedTransactionNotAllowed(activations)) {
             logger.warn("Typed transactions are not supported before RSKIP543 activation, tx {}", tx.getHash());
             execError("typed transactions are not supported before RSKIP543 activation");
             return false;

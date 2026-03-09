@@ -60,19 +60,19 @@ class TransactionTypeTest {
     }
 
     // ========================================================================
-    // Reverse lookup: getByByte
+    // Reverse lookup: fromByte
     // ========================================================================
 
     @ParameterizedTest
     @EnumSource(TransactionType.class)
-    void getByByte_roundTripsForAllEnumValues(TransactionType type) {
-        assertEquals(type, TransactionType.getByByte(type.getByteCode()));
+    void fromByte_roundTripsForAllEnumValues(TransactionType type) {
+        assertEquals(type, TransactionType.fromByte(type.getByteCode()));
     }
 
     @ParameterizedTest
     @ValueSource(bytes = {0x05, 0x06, 0x10, 0x50, 0x7e, 0x7f})
-    void getByByte_returnsNullForUnknownTypes(byte unknownByte) {
-        assertNull(TransactionType.getByByte(unknownByte));
+    void fromByte_returnsNullForUnknownTypes(byte unknownByte) {
+        assertNull(TransactionType.fromByte(unknownByte));
     }
 
     // ========================================================================

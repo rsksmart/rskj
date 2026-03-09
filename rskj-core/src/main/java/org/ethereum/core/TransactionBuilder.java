@@ -29,7 +29,7 @@ import java.math.BigInteger;
 
 public final class TransactionBuilder {
 
-    private TransactionType type = TransactionType.LEGACY;
+    private TransactionType type;
 	private Byte rskSubtype = null;
 	private boolean isLocalCall = false;
 	private byte[] nonce = ByteUtil.cloneBytes(null);
@@ -136,7 +136,8 @@ public final class TransactionBuilder {
 	}
 
 	public Transaction build() {
-		TransactionTypePrefix prefix = TransactionTypePrefix.of(this.type, this.rskSubtype);
+		TransactionType effectiveType = this.type != null ? this.type : TransactionType.LEGACY;
+		TransactionTypePrefix prefix = TransactionTypePrefix.of(effectiveType, this.rskSubtype);
 		return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall, prefix);
 	}
 

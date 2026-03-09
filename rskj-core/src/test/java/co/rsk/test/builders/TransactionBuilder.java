@@ -140,7 +140,7 @@ public class TransactionBuilder {
                 .value(value);
         
         if (this.transactionType != null) {
-            org.ethereum.core.TransactionType txType = org.ethereum.core.TransactionType.getByByte(this.transactionType);
+            org.ethereum.core.TransactionType txType = org.ethereum.core.TransactionType.fromByte(this.transactionType);
             if (txType == null || txType.isLegacy()) {
                 throw new IllegalArgumentException(String.format(
                         "transaction type not supported: 0x%02x",
