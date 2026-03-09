@@ -44,6 +44,7 @@ public sealed interface TransactionTypePrefix
     int length();
     String toFullString();
     String toRpcString();
+
     static TransactionTypePrefix legacy() {
         return LEGACY_INSTANCE;
     }
