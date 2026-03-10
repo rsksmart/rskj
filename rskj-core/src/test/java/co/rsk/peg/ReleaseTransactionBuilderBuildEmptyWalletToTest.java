@@ -95,6 +95,26 @@ class ReleaseTransactionBuilderBuildEmptyWalletToTest {
             setUpWallet(federationUTXOs);
         }
 
+        /**
+         * This is an unrealistic scenario. The federation wallet is built from the peg-in UTXOs, so it cannot
+         * be empty. If that were the case, the peg-in transaction would fail at the validation point
+         * in {@link BridgeSupport#registerBtcTransaction(org.ethereum.core.Transaction, byte[], int, byte[])}.
+         */
+        @Test
+        void buildEmptyWalletTo_whenFedHasNoUTXOs_shouldReturnCouldNotAdjustDownwards() {
+            // Arrange
+            federationUTXOs = List.of();
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+            // Act
+            BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
+
+            // Assert
+            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, emptyWalletResult);
+            assertNull(emptyWalletResult.btcTx());
+            assertNull(emptyWalletResult.selectedUTXOs());
+        }
+
         @Test
         void buildEmptyWalletTo_whenRSKIP201IsNotActive_shouldCreateRefundTxWithBtcVersion1() {
             // Arrange
@@ -262,6 +282,26 @@ class ReleaseTransactionBuilderBuildEmptyWalletToTest {
             setUpWallet(federationUTXOs);
         }
 
+        /**
+         * This is an unrealistic scenario. The federation wallet is built from the peg-in UTXOs, so it cannot
+         * be empty. If that were the case, the peg-in transaction would fail at the validation point
+         * in {@link BridgeSupport#registerBtcTransaction(org.ethereum.core.Transaction, byte[], int, byte[])}.
+         */
+        @Test
+        void buildEmptyWalletTo_whenFedHasNoUTXOs_shouldReturnCouldNotAdjustDownwards() {
+            // Arrange
+            federationUTXOs = List.of();
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+            // Act
+            BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
+
+            // Assert
+            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, emptyWalletResult);
+            assertNull(emptyWalletResult.btcTx());
+            assertNull(emptyWalletResult.selectedUTXOs());
+        }
+
         @Test
         void buildEmptyWalletTo_whenRSKIP201IsNotActive_shouldCreateRefundTxWithBtcVersion1() {
             // Arrange
@@ -427,6 +467,26 @@ class ReleaseTransactionBuilderBuildEmptyWalletToTest {
                 .withValue(MINIMUM_PEGIN_TX_VALUE)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             setUpWallet(federationUTXOs);
+        }
+
+        /**
+         * This is an unrealistic scenario. The federation wallet is built from the peg-in UTXOs, so it cannot
+         * be empty. If that were the case, the peg-in transaction would fail at the validation point
+         * in {@link BridgeSupport#registerBtcTransaction(org.ethereum.core.Transaction, byte[], int, byte[])}.
+         */
+        @Test
+        void buildEmptyWalletTo_whenFedHasNoUTXOs_shouldReturnCouldNotAdjustDownwards() {
+            // Arrange
+            federationUTXOs = List.of();
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+            // Act
+            BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
+
+            // Assert
+            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, emptyWalletResult);
+            assertNull(emptyWalletResult.btcTx());
+            assertNull(emptyWalletResult.selectedUTXOs());
         }
 
         @Test
