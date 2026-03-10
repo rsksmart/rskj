@@ -63,6 +63,7 @@ public class ReleaseTransactionBuilderAssertions {
 
     public static void assertSelectedUtxosBelongToTheInputs(List<UTXO> selectedUtxos,
                                                              List<TransactionInput> releaseTransactionInputs) {
+        assertEquals(releaseTransactionInputs.size(), selectedUtxos.size());
         for (UTXO utxo : selectedUtxos) {
             List<TransactionInput> matchingInputs = releaseTransactionInputs.stream().
                 filter(input -> input.getOutpoint().getHash().equals(utxo.getHash())
