@@ -19,7 +19,6 @@
 package co.rsk.test.dsl;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
