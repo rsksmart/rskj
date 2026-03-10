@@ -89,7 +89,7 @@ class BodyResponseMessageTest {
     }
 
     @Test
-    void typedTransactionRoundTrip() {
+    void typedTransactionEncodeDecode() {
         List<Transaction> transactions = new ArrayList<>();
 
         AccountBuilder acbuilder = new AccountBuilder();

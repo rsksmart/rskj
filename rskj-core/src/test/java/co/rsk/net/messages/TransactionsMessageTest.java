@@ -51,7 +51,7 @@ class TransactionsMessageTest {
     }
 
     @Test
-    void typedTransactionRoundTrip() {
+    void typedTransactionEncodeDecode() {
         List<Transaction> txs = new ArrayList<>();
 
         Account sender1 = new AccountBuilder().name("sender1").build();

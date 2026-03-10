@@ -134,7 +134,7 @@ class TypedTransactionReceiptTest {
     }
 
     @Test
-    void receiptRoundTrip() {
+    void receiptEncodeDecode() {
         for (TransactionType type : TransactionType.values()) {
             Transaction tx = createTransaction(type);
             TransactionReceipt originalReceipt = createReceipt(tx);

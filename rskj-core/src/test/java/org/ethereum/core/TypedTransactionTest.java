@@ -72,7 +72,7 @@ class TypedTransactionTest {
 
     @ParameterizedTest
     @EnumSource(TransactionType.class)
-    void signedTransactionRoundTrip_preservesCoreFields(TransactionType type) {
+    void signedTransactionEncodeDecode_preservesCoreFields(TransactionType type) {
         Transaction original = createSignedTransaction(type, EMPTY_DATA);
         byte[] encoded = original.getEncoded();
 
@@ -91,7 +91,7 @@ class TypedTransactionTest {
 
     @ParameterizedTest
     @EnumSource(TransactionType.class)
-    void signedTransactionRoundTrip_preservesGasFields(TransactionType type) {
+    void signedTransactionEncodeDecode_preservesGasFields(TransactionType type) {
         Transaction original = createSignedTransaction(type, EMPTY_DATA);
         Transaction decoded = new Transaction(original.getEncoded());
 
@@ -101,7 +101,7 @@ class TypedTransactionTest {
 
     @ParameterizedTest
     @EnumSource(TransactionType.class)
-    void signedTransactionRoundTrip_withNonEmptyData(TransactionType type) {
+    void signedTransactionEncodeDecode_withNonEmptyData(TransactionType type) {
         byte[] data = {0x01, 0x02, 0x03, 0x04, 0x05};
         Transaction original = createSignedTransaction(type, data);
 
@@ -113,7 +113,7 @@ class TypedTransactionTest {
 
     @ParameterizedTest
     @EnumSource(TransactionType.class)
-    void signedTransactionRoundTrip_withLargeData(TransactionType type) {
+    void signedTransactionEncodeDecode_withLargeData(TransactionType type) {
         byte[] largeData = new byte[1024];
         for (int i = 0; i < largeData.length; i++) {
             largeData[i] = (byte) (i & 0xff);
@@ -128,7 +128,7 @@ class TypedTransactionTest {
 
     @ParameterizedTest
     @EnumSource(TransactionType.class)
-    void signedTransactionRoundTrip_withZeroNonce(TransactionType type) {
+    void signedTransactionEncodeDecode_withZeroNonce(TransactionType type) {
         Transaction original = createSignedTransactionWith(type, BigInteger.ZERO,
             Coin.valueOf(1_000_000_000_000_000_000L), EMPTY_DATA);
 
@@ -140,7 +140,7 @@ class TypedTransactionTest {
 
     @ParameterizedTest
     @EnumSource(TransactionType.class)
-    void signedTransactionRoundTrip_withHighNonce(TransactionType type) {
+    void signedTransactionEncodeDecode_withHighNonce(TransactionType type) {
         BigInteger highNonce = BigInteger.valueOf(Integer.MAX_VALUE).add(BigInteger.ONE);
         Transaction original = createSignedTransactionWith(type, highNonce,
             Coin.valueOf(1_000_000_000_000_000_000L), EMPTY_DATA);
@@ -153,7 +153,7 @@ class TypedTransactionTest {
 
     @ParameterizedTest
     @EnumSource(TransactionType.class)
-    void signedTransactionRoundTrip_withZeroValue(TransactionType type) {
+    void signedTransactionEncodeDecode_withZeroValue(TransactionType type) {
         Transaction original = createSignedTransactionWith(type, BigInteger.ONE,
             Coin.ZERO, EMPTY_DATA);
 

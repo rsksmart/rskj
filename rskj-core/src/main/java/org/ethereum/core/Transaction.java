@@ -181,7 +181,7 @@ public class Transaction {
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = localCall;
-        this.typePrefix = Objects.requireNonNull(typePrefix, "typePrefix must not be null");
+        this.typePrefix = typePrefix;
     }
 
     public static TransactionBuilder builder() {
@@ -731,7 +731,7 @@ public class Transaction {
                     ", value=" + value +
                     ", data=" + Arrays.toString(data) +
                     ", chainId=" + chainId +
-                    ", signature=" + signature +
+                    ", signature=" + (signature != null ? "present" : "null") +
                     ']';
         }
     }

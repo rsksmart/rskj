@@ -61,7 +61,7 @@ class TransactionBuilderTest {
     @Test
     void buildValidRandomTransactions() {
         List<String> randomTxsHashes = IntStream.range(0, 100)
-                .mapToObj(i -> new TransactionBuilder().buildRandomTransaction(i).getHash().toJsonString())
+                .mapToObj(i -> new TransactionBuilder().createRandomTransaction(i).getHash().toJsonString())
                 .collect(Collectors.toList());
 
         Set<String> hashesWithoutDuplicates = randomTxsHashes.stream().collect(Collectors.toSet());

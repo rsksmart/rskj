@@ -39,6 +39,7 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockTxCodec;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.GenesisHeader;
@@ -163,7 +164,7 @@ public class BlockGenerator {
     }
 
     public Block createChildBlock(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty) {
-        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
+        byte[] unclesListHash = HashUtil.keccak256(BlockTxCodec.encodeUncles(uncles));
 
         long blockNumber = parent.getNumber() + 1;
 
@@ -297,7 +298,7 @@ public class BlockGenerator {
             uncles = new ArrayList<>();
         }
 
-        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
+        byte[] unclesListHash = HashUtil.keccak256(BlockTxCodec.encodeUncles(uncles));
 
         byte[] miningForkDetectionData = parent.getNumber() + 1 > MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION ?
                 new byte[12] :
