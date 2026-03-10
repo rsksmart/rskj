@@ -685,52 +685,97 @@ public class Program {
                 returnDataBuffer = result.getHReturn();
             }
         } else {
-            // CREATE THE CONTRACT OUT OF RETURN
             byte[] code = programResult.getHReturn();
             int codeLength = getLength(code);
-
             long storageCost = GasCost.multiply(GasCost.CREATE_DATA, codeLength);
-            long afterSpend = programInvoke.getGas() - storageCost - programResult.getGasUsed();
 
-            if (afterSpend < 0) {
-                programResult.setException(
-                        ExceptionHelper.notEnoughSpendingGas(
-                                this,
-                                "No gas to return just created contract",
-                                storageCost));
-
-                if (activations.isActive(ConsensusRule.RSKIP453)) {
-                    track.rollback();
-                    stackPushZero();
-                    return null;
-                }
-            } else if (codeLength > Constants.getMaxContractSize()) {
-                programResult.setException(
-                        ExceptionHelper.tooLargeContractSize(
-                                this,
-                                Constants.getMaxContractSize(),
-                                codeLength));
-
-                if (activations.isActive(ConsensusRule.RSKIP453)) {
-                    track.rollback();
-                    stackPushZero();
-                    return null;
-                }
-            } else {
-                programResult.spendGas(storageCost);
-                track.saveCode(contractAddress, code);
+            if (hasInvalidCodePrefix(code, codeLength, contractAddress, programResult, track)) {
+                return null;
             }
 
-            track.commit();
+            if (hasInsufficientGasForStorage(programInvoke, storageCost, programResult, track)) {
+                return null;
+            }
 
-            getResult().addDeleteAccounts(programResult.getDeleteAccounts());
-            getResult().addLogInfos(programResult.getLogInfoList());
+            if (exceedsMaxContractSize(codeLength, programResult, track)) {
+                return null;
+            }
 
-            // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
-            stackPush(DataWord.valueOf(contractAddress.getBytes()));
+            finalizeContractCreation(code, storageCost, contractAddress, programResult, track);
         }
 
         return programResult;
+    }
+
+    private boolean hasInvalidCodePrefix(byte[] code, int codeLength, RskAddress contractAddress,
+                                         ProgramResult programResult, Repository track) {
+        if (activations.isActive(ConsensusRule.RSKIP544) && codeLength > 0 && code[0] == (byte) 0xEF) {
+            if (isLogEnabled) {
+                logger.info("contract creation rejected: code starts with 0xEF (RSKIP544), contract: [{}]",
+                        contractAddress);
+            }
+            programResult.setException(ExceptionHelper.invalidCodePrefix(this));
+
+            if (activations.isActive(ConsensusRule.RSKIP453)) {
+                track.rollback();
+                stackPushZero();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasInsufficientGasForStorage(ProgramInvoke programInvoke, long storageCost,
+                                                  ProgramResult programResult, Repository track) {
+        long afterSpend = programInvoke.getGas() - storageCost - programResult.getGasUsed();
+        if (afterSpend < 0) {
+            programResult.setException(
+                    ExceptionHelper.notEnoughSpendingGas(
+                            this,
+                            "No gas to return just created contract",
+                            storageCost));
+
+            if (activations.isActive(ConsensusRule.RSKIP453)) {
+                track.rollback();
+                stackPushZero();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean exceedsMaxContractSize(int codeLength,
+                                           ProgramResult programResult, Repository track) {
+        if (codeLength > Constants.getMaxContractSize()) {
+            programResult.setException(
+                    ExceptionHelper.tooLargeContractSize(
+                            this,
+                            Constants.getMaxContractSize(),
+                            codeLength));
+
+            if (activations.isActive(ConsensusRule.RSKIP453)) {
+                track.rollback();
+                stackPushZero();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void finalizeContractCreation(byte[] code, long storageCost,
+                                          RskAddress contractAddress, ProgramResult programResult,
+                                          Repository track) {
+        if (programResult.getException() == null) {
+            programResult.spendGas(storageCost);
+            track.saveCode(contractAddress, code);
+        }
+
+        track.commit();
+
+        getResult().addDeleteAccounts(programResult.getDeleteAccounts());
+        getResult().addLogInfos(programResult.getLogInfoList());
+
+        stackPush(DataWord.valueOf(contractAddress.getBytes()));
     }
 
     public static long limitToMaxLong(DataWord gas) {
@@ -1744,6 +1789,11 @@ public class Program {
         public static RuntimeException tooLargeInitCodeSize(@Nonnull Program program, long maxSize, long actualSize) {
             return new RuntimeException(format("Maximum initcode size allowed %d but actual was %d, tx: %s", maxSize,
                     actualSize, extractTxHash(program)));
+        }
+
+        public static RuntimeException invalidCodePrefix(@Nonnull Program program) {
+            return new RuntimeException(format("Contract code cannot start with 0xEF byte (RSKIP544/EIP-3541), tx: %s",
+                    extractTxHash(program)));
         }
 
         public static AddressCollisionException addressCollisionException(@Nonnull Program program,
