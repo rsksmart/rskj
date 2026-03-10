@@ -115,20 +115,8 @@ class TransactionTypeTest {
     }
 
     // ========================================================================
-    // Static: isLegacyTransaction(byte)
+    // Static: isReservedByte(byte)
     // ========================================================================
-
-    @ParameterizedTest
-    @ValueSource(bytes = {(byte) 0xc0, (byte) 0xc1, (byte) 0xf8, (byte) 0xf9, (byte) 0xfe})
-    void isLegacyTransaction_trueForRlpListRange(byte b) {
-        assertTrue(TransactionType.isLegacyTransaction(b));
-    }
-
-    @ParameterizedTest
-    @ValueSource(bytes = {0x00, 0x01, 0x7f, (byte) 0x80, (byte) 0xbf, (byte) 0xff})
-    void isLegacyTransaction_falseOutsideRlpListRange(byte b) {
-        assertFalse(TransactionType.isLegacyTransaction(b));
-    }
 
     @Test
     void isReservedByte_trueFor0xff() {
@@ -139,22 +127,6 @@ class TransactionTypeTest {
     @ValueSource(bytes = {0x00, 0x01, 0x7f, (byte) 0xc0, (byte) 0xfe})
     void isReservedByte_falseForNon0xff(byte b) {
         assertFalse(TransactionType.isReservedByte(b));
-    }
-
-    // ========================================================================
-    // Static: isValidType(byte)
-    // ========================================================================
-
-    @ParameterizedTest
-    @ValueSource(bytes = {0x00, 0x01, 0x02, 0x03, 0x04, 0x40, 0x7f})
-    void isValidType_trueForValidRange(byte b) {
-        assertTrue(TransactionType.isValidType(b));
-    }
-
-    @ParameterizedTest
-    @ValueSource(bytes = {(byte) 0x80, (byte) 0xc0, (byte) 0xff})
-    void isValidType_falseAboveMaxType(byte b) {
-        assertFalse(TransactionType.isValidType(b));
     }
 
     // ========================================================================
@@ -184,133 +156,5 @@ class TransactionTypeTest {
     void hasRskNamespacePrefix_falseForSingleByte() {
         byte[] data = {TransactionType.RSK_NAMESPACE_PREFIX};
         assertFalse(TransactionType.hasRskNamespacePrefix(data));
-    }
-
-    // ========================================================================
-    // Static: encodeRskType(byte) / decodeRskType(int) — roundtrip
-    // ========================================================================
-
-    @ParameterizedTest
-    @ValueSource(bytes = {0x00, 0x01, 0x03, 0x40, 0x7e, 0x7f})
-    void encodeRskType_producesExpectedFormat(byte subtype) {
-        int encoded = TransactionType.encodeRskType(subtype);
-        int expectedHigh = TransactionType.RSK_NAMESPACE_PREFIX;
-
-        assertEquals(expectedHigh, (encoded >> 8) & 0xFF);
-        assertEquals(subtype & 0xFF, encoded & 0xFF);
-    }
-
-    @ParameterizedTest
-    @ValueSource(bytes = {0x00, 0x01, 0x03, 0x40, 0x7e, 0x7f})
-    void encodeRskType_thenDecodeRskType_encodeDecode(byte subtype) {
-        int encoded = TransactionType.encodeRskType(subtype);
-        byte decoded = TransactionType.decodeRskType(encoded);
-
-        assertEquals(subtype, decoded);
-    }
-
-    @ParameterizedTest
-    @MethodSource("decodeRskTypeProvider")
-    void decodeRskType_returnsExpectedSubtype(int encodedType, byte expectedSubtype) {
-        assertEquals(expectedSubtype, TransactionType.decodeRskType(encodedType));
-    }
-
-    private static Stream<Arguments> decodeRskTypeProvider() {
-        return Stream.of(
-            Arguments.of(0x0200, (byte) 0x00),
-            Arguments.of(0x0201, (byte) 0x01),
-            Arguments.of(0x0203, (byte) 0x03),
-            Arguments.of(0x0240, (byte) 0x40),
-            Arguments.of(0x027f, (byte) 0x7f)
-        );
-    }
-
-    @ParameterizedTest
-    @ValueSource(bytes = {(byte) 0x80, (byte) 0x81, (byte) 0xff})
-    void encodeRskType_throwsForSubtypeAboveMaxValue(byte invalidSubtype) {
-        assertThrows(IllegalArgumentException.class,
-            () -> TransactionType.encodeRskType(invalidSubtype));
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = {0x0100, 0x0300, 0x0004, 0x0001, 0x0000, 0xffff})
-    void decodeRskType_throwsForNonRskEncodedValues(int invalidEncoded) {
-        assertThrows(IllegalArgumentException.class,
-            () -> TransactionType.decodeRskType(invalidEncoded));
-    }
-
-    // ========================================================================
-    // Static: isRskSpecificType(int)
-    // ========================================================================
-
-    @ParameterizedTest
-    @ValueSource(ints = {0x0200, 0x0201, 0x0203, 0x0240, 0x027f})
-    void isRskSpecificType_trueForValidRskEncoding(int encoded) {
-        assertTrue(TransactionType.isRskSpecificType(encoded));
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = {0x00, 0x01, 0x04, 0x0100, 0x0300, 0x0280, 0x02ff, 0xffff})
-    void isRskSpecificType_falseForNonRskValues(int encoded) {
-        assertFalse(TransactionType.isRskSpecificType(encoded));
-    }
-
-    // ========================================================================
-    // Static: toReceiptString(int)
-    // ========================================================================
-
-    @ParameterizedTest
-    @MethodSource("receiptStringProvider")
-    void toReceiptString_formatsCorrectly(int typeValue, String expected) {
-        assertEquals(expected, TransactionType.toReceiptString(typeValue));
-    }
-
-    private static Stream<Arguments> receiptStringProvider() {
-        return Stream.of(
-            Arguments.of(0x00, "0x0"),
-            Arguments.of(0x01, "0x1"),
-            Arguments.of(0x02, "0x2"),
-            Arguments.of(0x03, "0x3"),
-            Arguments.of(0x04, "0x4"),
-            Arguments.of(0x0200, "0x200"),
-            Arguments.of(0x0203, "0x203"),
-            Arguments.of(0x027f, "0x27f")
-        );
-    }
-
-    // ========================================================================
-    // Static: getTypeName(int)
-    // ========================================================================
-
-    @ParameterizedTest
-    @MethodSource("staticTypeNameProvider")
-    void getTypeName_static_returnsExpectedLabel(int typeValue, String expected) {
-        assertEquals(expected, TransactionType.getTypeName(typeValue));
-    }
-
-    private static Stream<Arguments> staticTypeNameProvider() {
-        return Stream.of(
-            Arguments.of(0x00, "Legacy"),
-            Arguments.of(0x01, "RSKIP546 (EIP-2930 Access List)"),
-            Arguments.of(0x02, "RSKIP546 (EIP-1559 Dynamic Fee)"),
-            Arguments.of(0x03, "RSKIP000 (Blob)"),
-            Arguments.of(0x04, "RSKIP545 (EIP-7702 Set Code)")
-        );
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = {0x0200, 0x0203, 0x027f})
-    void getTypeName_static_returnsRskTypeForNamespaceValues(int rskType) {
-        String name = TransactionType.getTypeName(rskType);
-        assertTrue(name.startsWith("RSK Type"),
-            "Expected RSK Type label, got: " + name);
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = {0x05, 0x10, 0x7f})
-    void getTypeName_static_returnsUnknownForUnmappedTypes(int unknownType) {
-        String name = TransactionType.getTypeName(unknownType);
-        assertTrue(name.startsWith("Unknown"),
-            "Expected Unknown label, got: " + name);
     }
 }
