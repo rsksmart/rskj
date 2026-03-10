@@ -418,14 +418,6 @@ public abstract class BlockHeader {
         return RLP.encodeBlockDifficulty(difficulty);
     }
 
-    /**
-     * @deprecated Use {@link BlockTxCodec#encodeUncles(List)} instead.
-     */
-    @Deprecated
-    public static byte[] getUnclesEncodedEx(List<BlockHeader> uncleList) {
-        return BlockTxCodec.encodeUncles(uncleList);
-    }
-
     public boolean hasMiningFields() {
         if (this.bitcoinMergedMiningCoinbaseTransaction != null && this.bitcoinMergedMiningCoinbaseTransaction.length > 0) {
             return true;
@@ -440,14 +432,6 @@ public abstract class BlockHeader {
         }
 
         return false;
-    }
-
-    /**
-     * @deprecated Use {@link BlockTxCodec#encodeUncles(List)} instead.
-     */
-    @Deprecated
-    public static byte[] getUnclesEncoded(List<BlockHeader> uncleList) {
-        return BlockTxCodec.encodeUncles(uncleList);
     }
 
     public String toString() {

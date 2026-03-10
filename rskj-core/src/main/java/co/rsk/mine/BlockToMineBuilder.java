@@ -210,7 +210,7 @@ public class BlockToMineBuilder {
             List<Transaction> txs,
             Coin minimumGasPrice,
             byte[] extraData) {
-        final byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
+        final byte[] unclesListHash = HashUtil.keccak256(BlockTxCodec.encodeUncles(uncles));
 
         BlockHeader newBlockParentHeader = mainchainHeaders.get(0);
         final long timestampSeconds = clock.calculateTimestampForChild(newBlockParentHeader);

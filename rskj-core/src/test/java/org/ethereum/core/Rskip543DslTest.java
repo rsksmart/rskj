@@ -320,7 +320,7 @@ class Rskip543DslTest {
     }
 
     @Test
-    void rskNamespaceTransactionShouldSurviveRoundTrip() {
+    void rskNamespaceTransactionShouldSurviveEncodeDecode() {
         Transaction original = world.getTransactionByName("txRskType3");
         byte[] encoded = original.getEncoded();
 
@@ -335,7 +335,7 @@ class Rskip543DslTest {
     }
 
     @Test
-    void legacyTransactionShouldSurviveRoundTrip() {
+    void legacyTransactionShouldSurviveEncodeDecode() {
         Transaction original = world.getTransactionByName("txLegacy");
         byte[] encoded = original.getEncoded();
 
@@ -347,7 +347,7 @@ class Rskip543DslTest {
     }
 
     @Test
-    void type1TransactionShouldSurviveRoundTrip() {
+    void type1TransactionShouldSurviveEncodeDecode() {
         Transaction original = world.getTransactionByName("txType1");
         byte[] encoded = original.getEncoded();
 
@@ -638,7 +638,7 @@ class Rskip543DslTest {
     }
 
     @Test
-    void legacyReceiptShouldSurviveRoundTrip() {
+    void legacyReceiptShouldSurviveEncodeDecode() {
         TransactionReceipt original = world.getTransactionReceiptByName("txLegacy");
         byte[] encoded = original.getEncoded();
 
@@ -650,7 +650,7 @@ class Rskip543DslTest {
     }
 
     @Test
-    void type1ReceiptShouldSurviveRoundTrip() {
+    void type1ReceiptShouldSurviveEncodeDecode() {
         TransactionReceipt original = world.getTransactionReceiptByName("txType1");
         byte[] encoded = original.getEncoded();
 
@@ -662,7 +662,7 @@ class Rskip543DslTest {
     }
 
     @Test
-    void rskNamespaceReceiptShouldSurviveRoundTrip() {
+    void rskNamespaceReceiptShouldSurviveEncodeDecode() {
         TransactionReceipt original = world.getTransactionReceiptByName("txRskType3");
         byte[] encoded = original.getEncoded();
 
@@ -674,7 +674,7 @@ class Rskip543DslTest {
     }
 
     @Test
-    void rskNamespaceBoundarySubtypeReceiptsShouldSurviveRoundTrip() {
+    void rskNamespaceBoundarySubtypeReceiptsShouldSurviveEncodeDecode() {
         // Subtype 0x00
         TransactionReceipt r0 = world.getTransactionReceiptByName("txRskType0");
         TransactionReceipt d0 = new TransactionReceipt(r0.getEncoded());

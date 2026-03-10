@@ -104,7 +104,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void rskNamespaceRoundTrip() {
+    void rskNamespaceEncodeDecode() {
         byte rskSubtype = 0x07;
         Transaction original = createSignedRskTransaction(rskSubtype);
 
@@ -275,7 +275,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void rskNamespaceReceiptRoundTrip() {
+    void rskNamespaceReceiptEncodeDecode() {
         byte[] subtypes = {0x00, 0x03, 0x0f};
 
         for (byte subtype : subtypes) {

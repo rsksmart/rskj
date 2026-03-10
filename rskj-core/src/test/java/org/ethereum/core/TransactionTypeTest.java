@@ -65,7 +65,7 @@ class TransactionTypeTest {
 
     @ParameterizedTest
     @EnumSource(TransactionType.class)
-    void fromByte_roundTripsForAllEnumValues(TransactionType type) {
+    void fromByte_encodeDecodeForAllEnumValues(TransactionType type) {
         assertEquals(type, TransactionType.fromByte(type.getByteCode()));
     }
 
@@ -202,7 +202,7 @@ class TransactionTypeTest {
 
     @ParameterizedTest
     @ValueSource(bytes = {0x00, 0x01, 0x03, 0x40, 0x7e, 0x7f})
-    void encodeRskType_thenDecodeRskType_roundTrips(byte subtype) {
+    void encodeRskType_thenDecodeRskType_encodeDecode(byte subtype) {
         int encoded = TransactionType.encodeRskType(subtype);
         byte decoded = TransactionType.decodeRskType(encoded);
 

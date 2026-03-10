@@ -17,7 +17,6 @@
  */
 package co.rsk.mine;
 
-import co.rsk.TestHelpers.Tx;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.ConfigUtils;
@@ -137,7 +136,7 @@ public abstract class MinerServerTest {
 
     @Test
     void buildBlockToMineCheckThatLastTransactionIsForREMASC() {
-        Transaction tx1 = Tx.create(config, 0, 21000, 100, 0, 0, 0);
+        Transaction tx1 = TransactionBuilder.createMockTransaction(config, 0, 21000, 100, 0, 0, 0);
         byte[] s1 = new byte[32];
         s1[0] = 0;
         when(tx1.getHash()).thenReturn(new Keccak256(s1));
