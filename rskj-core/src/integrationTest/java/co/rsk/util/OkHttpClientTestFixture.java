@@ -96,9 +96,17 @@ public class OkHttpClientTestFixture {
             }
             """;
 
+    public static final String ETH_GET_TRANSACTION_RECEIPT = """
+        {
+            "jsonrpc": "2.0",
+            "method": "eth_getTransactionReceipt",
+            "id": 1,
+            "params": ["<TX_HASH>"]
+        }
+        """;
+
     private OkHttpClientTestFixture() {
     }
-
 
     public static OkHttpClient getUnsafeOkHttpClient() {
         try {
@@ -141,6 +149,15 @@ public class OkHttpClientTestFixture {
         }
     }
 
+    /**
+     * Sends a JSON-RPC POST request to the local node.
+     *
+     * <p><b>IMPORTANT:</b> The caller MUST close the returned {@link Response}
+     * (specifically {@code response.body().close()}) to avoid leaking the
+     * underlying HTTP connection.
+     *
+     * @throws IOException if the request fails at the transport level
+     */
     public static Response sendJsonRpcMessage(String content, int port) throws IOException {
         RequestBody requestBody = RequestBody.create(MediaType.parse("application/json-rpc"), content);
         URL url = new URL("http", "localhost", port, "/");
@@ -158,6 +175,22 @@ public class OkHttpClientTestFixture {
     public static Response sendJsonRpcGetBlockMessage(int port, String blockNumOrTag) throws IOException {
         return sendJsonRpcMessage(GET_BLOCK_CONTENT.replace("<BLOCK_NUM_OR_TAG>", blockNumOrTag), port);
     }
+
+    public static Response sendJsonRpcGetTransactionReceiptMessage(int port, String txHash) throws IOException {
+        return sendJsonRpcMessage(ETH_GET_TRANSACTION_RECEIPT.replace("<TX_HASH>", txHash), port);
+    }
+
+    public static JsonNode getJsonResponseForGetTransactionReceipt(int port, String txHash) throws IOException {
+        Response response = sendJsonRpcGetTransactionReceiptMessage(port, txHash);
+        try {
+            return new ObjectMapper().readTree(response.body().string());
+        } finally {
+            if (response.body() != null) {
+                response.body().close();
+            }
+        }
+    }
+
 
     public static JsonNode getJsonResponseForGetBestBlockMessage(int port, String blockNumOrTag) throws IOException {
         Response response = sendJsonRpcGetBlockMessage(port, blockNumOrTag);
