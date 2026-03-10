@@ -23,7 +23,6 @@ import static java.util.Objects.isNull;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
@@ -32,6 +31,7 @@ import java.util.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -49,7 +49,6 @@ public class BridgeStorageProvider {
     private static final byte TRUE_VALUE = (byte) 1;
 
     private final Repository repository;
-    private final RskAddress contractAddress;
     private final NetworkParameters networkParameters;
     private final ActivationConfig.ForBlock activations;
 
@@ -92,11 +91,9 @@ public class BridgeStorageProvider {
 
     public BridgeStorageProvider(
         Repository repository,
-        RskAddress contractAddress,
         NetworkParameters networkParameters,
         ActivationConfig.ForBlock activations) {
         this.repository = repository;
-        this.contractAddress = contractAddress;
         this.networkParameters = networkParameters;
         this.activations = activations;
     }
@@ -251,7 +248,7 @@ public class BridgeStorageProvider {
             .map(cachedValues -> cachedValues.get(releaseTxHash))
             // search in storage
             .or(() -> Optional.ofNullable(
-                repository.getStorageBytes(contractAddress, getStorageKeyForReleaseOutpointsValues(releaseTxHash)))
+                repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, getStorageKeyForReleaseOutpointsValues(releaseTxHash)))
                 .map(BridgeSerializationUtils::deserializeOutpointsValues)
             );
     }
@@ -279,7 +276,7 @@ public class BridgeStorageProvider {
 
     private boolean releaseTxHashStorageKeyAlreadyExists(Sha256Hash releaseTxHash) {
         byte[] data = repository.getStorageBytes(
-            contractAddress,
+            PrecompiledContracts.BRIDGE_ADDR,
             getStorageKeyForReleaseOutpointsValues(releaseTxHash)
         );
 
@@ -409,7 +406,7 @@ public class BridgeStorageProvider {
         }
 
         byte[] data = repository.getStorageBytes(
-            contractAddress,
+            PrecompiledContracts.BRIDGE_ADDR,
             getStorageKeyForFlyoverHash(btcTxHash, flyoverDerivationHash)
         );
 
@@ -431,7 +428,7 @@ public class BridgeStorageProvider {
         }
 
         repository.addStorageBytes(
-            contractAddress,
+            PrecompiledContracts.BRIDGE_ADDR,
             getStorageKeyForFlyoverHash(
                 flyoverBtcTxHash,
                 flyoverDerivationHash
@@ -557,7 +554,7 @@ public class BridgeStorageProvider {
         }
 
         byte[] data = repository.getStorageBytes(
-            contractAddress,
+            PrecompiledContracts.BRIDGE_ADDR,
             getStorageKeyForPegoutTxSigHash(sigHash)
         );
 
@@ -588,7 +585,7 @@ public class BridgeStorageProvider {
         }
 
         pegoutTxSigHashes.forEach(pegoutTxSigHash -> repository.addStorageBytes(
-            contractAddress,
+            PrecompiledContracts.BRIDGE_ADDR,
             getStorageKeyForPegoutTxSigHash(
                 pegoutTxSigHash
             ),
@@ -853,7 +850,7 @@ public class BridgeStorageProvider {
     }
 
     private <T> T getFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
-        byte[] data = repository.getStorageBytes(contractAddress, keyAddress);
+        byte[] data = repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, keyAddress);
         return deserializer.deserialize(data);
     }
 
@@ -873,7 +870,7 @@ public class BridgeStorageProvider {
         if (object != null) {
             data = serializer.serialize(object);
         }
-        repository.addStorageBytes(contractAddress, addressKey, data);
+        repository.addStorageBytes(PrecompiledContracts.BRIDGE_ADDR, addressKey, data);
     }
 
     private interface RepositoryDeserializer<T> {

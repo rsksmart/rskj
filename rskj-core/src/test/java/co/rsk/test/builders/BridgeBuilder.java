@@ -5,7 +5,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
@@ -20,10 +19,8 @@ import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContractArgsBuilder;
-import org.ethereum.vm.PrecompiledContracts;
 
 public class BridgeBuilder {
-    private RskAddress contractAddress;
     private Constants constants;
     private ActivationConfig activationConfig;
     private BridgeSupport bridgeSupport;
@@ -35,7 +32,6 @@ public class BridgeBuilder {
     private MessageCall.MsgType msgType;
 
     public BridgeBuilder() {
-        contractAddress = PrecompiledContracts.BRIDGE_ADDR;
         constants = Constants.mainnet();
         bridgeSupport = BridgeSupportBuilder.builder().build();
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
@@ -43,11 +39,6 @@ public class BridgeBuilder {
         transaction = mock(Transaction.class);
         executionBlock = new BlockGenerator().getGenesisBlock();
         msgType = MsgType.CALL;
-    }
-
-    public BridgeBuilder contractAddress(RskAddress contractAddress) {
-        this.contractAddress = contractAddress;
-        return this;
     }
 
     public BridgeBuilder constants(Constants constants) {
@@ -87,10 +78,9 @@ public class BridgeBuilder {
 
     public Bridge build() {
         BridgeSupportFactory bridgeSupportFactory = mock(BridgeSupportFactory.class);
-        when(bridgeSupportFactory.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupport);
+        when(bridgeSupportFactory.newInstance(any(), any(), any())).thenReturn(bridgeSupport);
 
         Bridge bridge = new Bridge(
-            contractAddress,
             constants,
             activationConfig,
             bridgeSupportFactory,

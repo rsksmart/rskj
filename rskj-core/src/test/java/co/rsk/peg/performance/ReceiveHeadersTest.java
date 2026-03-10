@@ -21,14 +21,14 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.peg.constants.BridgeRegTestConstants;
+
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
-import org.ethereum.vm.PrecompiledContracts;
+
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.Test;
@@ -128,7 +128,6 @@ class ReceiveHeadersTest extends BridgePerformanceTestCase {
                     NetworkParameters btcParams = constants.getBridgeConstants().getBtcParams();
                     BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                             (Repository) environment.getBenchmarkedRepository(),
-                            PrecompiledContracts.BRIDGE_ADDR,
                             btcParams,
                             activationConfig.forBlock(0)
                     );
@@ -138,7 +137,6 @@ class ReceiveHeadersTest extends BridgePerformanceTestCase {
                         btcRegtestParams,
                         (Repository) environment.getBenchmarkedRepository(),
                         new HashMap<>(),
-                        PrecompiledContracts.BRIDGE_ADDR,
                         bridgeConstants,
                         bridgeStorageProvider,
                         activationConfig.forBlock(0)

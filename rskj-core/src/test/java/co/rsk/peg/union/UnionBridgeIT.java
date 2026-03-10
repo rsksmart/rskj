@@ -126,7 +126,6 @@ class UnionBridgeIT {
 
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
             repository,
-            BRIDGE_ADDR,
             bridgeMainNetConstants.getBtcParams(),
             lovellActivationsForBlock
         );
@@ -153,7 +152,6 @@ class UnionBridgeIT {
         ForBlock allActivationsForBlock = allActivations.forBlock(0);
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
             repository,
-            BRIDGE_ADDR,
             bridgeMainNetConstants.getBtcParams(),
             allActivationsForBlock
         );

@@ -38,7 +38,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
-import org.ethereum.vm.PrecompiledContracts;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -92,7 +92,6 @@ class RepositoryBtcBlockStoreWithCacheTest {
             networkParameters,
             repository.startTracking(),
             null,
-            PrecompiledContracts.BRIDGE_ADDR,
             bridgeConstants,
             mock(BridgeStorageProvider.class),
             mock(ActivationConfig.ForBlock.class)

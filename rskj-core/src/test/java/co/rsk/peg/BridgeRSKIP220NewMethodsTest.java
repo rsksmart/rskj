@@ -42,13 +42,12 @@ class BridgeRSKIP220NewMethodsTest {
         when(config.getActivationConfig()).thenReturn(activationConfig);
         bridgeSupport = mock(BridgeSupport.class);
         bridgeSupportFactory = mock(BridgeSupportFactory.class);
-        when(bridgeSupportFactory.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupport);
+        when(bridgeSupportFactory.newInstance(any(), any(), any())).thenReturn(bridgeSupport);
         rskExecutionBlock = mock(Block.class);
         when(rskExecutionBlock.getNumber()).thenReturn(42L);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
         bridge = new Bridge(
-                null,
                 constants,
                 activationConfig,
                 bridgeSupportFactory,

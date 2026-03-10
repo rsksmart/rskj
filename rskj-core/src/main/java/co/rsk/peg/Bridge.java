@@ -258,14 +258,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private MsgType msgType;
 
     public Bridge(
-        RskAddress contractAddress,
         Constants constants,
         ActivationConfig activationConfig,
         BridgeSupportFactory bridgeSupportFactory,
         SignatureCache signatureCache) {
 
         this(
-            contractAddress,
             constants,
             activationConfig,
             bridgeSupportFactory,
@@ -276,7 +274,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     @VisibleForTesting
     Bridge(
-        RskAddress contractAddress,
         Constants constants,
         ActivationConfig activationConfig,
         BridgeSupportFactory bridgeSupportFactory,
@@ -284,7 +281,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         SignatureCache signatureCache) {
 
         this.bridgeSupportFactory = bridgeSupportFactory;
-        this.contractAddress = contractAddress;
+        this.contractAddress = PrecompiledContracts.BRIDGE_ADDR;
         this.constants = constants;
         this.bridgeConstants = constants.getBridgeConstants();
         this.activationConfig = activationConfig;
@@ -372,7 +369,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.bridgeSupport = bridgeSupportFactory.newInstance(
             args.getRepository(),
             rskExecutionBlock,
-            contractAddress,
             args.getLogs()
         );
     }

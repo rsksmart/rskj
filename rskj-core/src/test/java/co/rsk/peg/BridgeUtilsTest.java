@@ -1576,7 +1576,7 @@ class BridgeUtilsTest {
             activationConfig,
                 signatureCache);
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, bridgeSupportFactory, signatureCache);
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
             0,
             1,

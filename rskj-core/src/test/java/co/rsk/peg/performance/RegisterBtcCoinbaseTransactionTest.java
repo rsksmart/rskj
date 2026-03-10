@@ -28,7 +28,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
-import org.ethereum.vm.PrecompiledContracts;
+
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -74,7 +74,7 @@ class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCase {
                 Helper.getRandomHeightProvider(10),
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
-                    BridgeStorageProvider bsp = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants().getBtcParams(), activationConfig.forBlock(0));
+                    BridgeStorageProvider bsp = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), constants.getBridgeConstants().getBtcParams(), activationConfig.forBlock(0));
                     Assertions.assertEquals(witnessRoot, bsp.getCoinbaseInformation(registerHeader.getHash()).getWitnessMerkleRoot());
                 });
     }

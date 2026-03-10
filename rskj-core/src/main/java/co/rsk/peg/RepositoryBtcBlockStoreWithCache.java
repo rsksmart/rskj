@@ -27,7 +27,6 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.core.RskAddress;
 import co.rsk.util.MaxSizeHashMap;
 import java.util.Optional;
 import com.google.common.annotations.VisibleForTesting;
@@ -57,7 +56,6 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     private static final int DEFAULT_MAX_SIZE_BLOCK_CACHE = 10_000;
 
     private final Repository repository;
-    private final RskAddress contractAddress;
     private final NetworkParameters btcNetworkParams;
     private final BridgeConstants bridgeConstants;
     private final BridgeStorageProvider bridgeStorageProvider;
@@ -69,7 +67,6 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         NetworkParameters btcNetworkParams,
         Repository repository,
         Map<Sha256Hash, StoredBlock> cacheBlocks,
-        RskAddress contractAddress,
         BridgeConstants bridgeConstants,
         BridgeStorageProvider bridgeStorageProvider,
         ForBlock activations) {
@@ -78,7 +75,6 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             btcNetworkParams,
             repository,
             cacheBlocks,
-            contractAddress,
             bridgeConstants,
             bridgeStorageProvider,
             activations,
@@ -90,7 +86,6 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         NetworkParameters btcNetworkParams,
         Repository repository,
         Map<Sha256Hash, StoredBlock> cacheBlocks,
-        RskAddress contractAddress,
         BridgeConstants bridgeConstants,
         BridgeStorageProvider bridgeStorageProvider,
         ForBlock activations,
@@ -98,7 +93,6 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
         this.cacheBlocks = cacheBlocks;
         this.repository = repository;
-        this.contractAddress = contractAddress;
         this.btcNetworkParams = btcNetworkParams;
         this.bridgeConstants = bridgeConstants;
         this.bridgeStorageProvider = bridgeStorageProvider;
@@ -112,7 +106,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     public synchronized void put(StoredBlock storedBlock) {
         Sha256Hash hash = storedBlock.getHeader().getHash();
         byte[] ba = storedBlockToByteArray(storedBlock);
-        repository.addStorageBytes(contractAddress, DataWord.valueFromHex(hash.toString()), ba);
+        repository.addStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.valueFromHex(hash.toString()), ba);
         if (cacheBlocks != null) {
             StoredBlock chainHead = getChainHead();
             if (chainHead == null || chainHead.getHeight() - storedBlock.getHeight() < this.maxDepthBlockCache) {
@@ -124,7 +118,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     @Override
     public synchronized StoredBlock get(Sha256Hash hash) {
         logger.trace("[get] Looking in storage for block with hash {}", hash);
-        byte[] ba = repository.getStorageBytes(contractAddress, DataWord.valueFromHex(hash.toString()));
+        byte[] ba = repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.valueFromHex(hash.toString()));
         if (ba == null) {
             logger.trace("[get] Block with hash {} not found in storage", hash);
             return null;
@@ -134,7 +128,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
     @Override
     public synchronized StoredBlock getChainHead() {
-        byte[] ba = repository.getStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY));
+        byte[] ba = repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY));
         if (ba == null) {
             return null;
         }
@@ -145,7 +139,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     public synchronized void setChainHead(StoredBlock newChainHead) {
         logger.trace("Set new chain head with height: {}.", newChainHead.getHeight());
         byte[] ba = storedBlockToByteArray(newChainHead);
-        repository.addStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY), ba);
+        repository.addStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY), ba);
         if (cacheBlocks != null) {
             populateCache(newChainHead);
         }
@@ -356,7 +350,6 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         private final int maxSizeBlockCache;
         //This is ok as we don't have parallel execution, in the feature we should move to a concurrentHashMap
         private final Map<Sha256Hash, StoredBlock> cacheBlocks;
-        private final RskAddress contractAddress;
         private final NetworkParameters btcNetworkParams;
         private final int maxDepthBlockCache;
 
@@ -366,7 +359,6 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         }
 
         public Factory(NetworkParameters btcNetworkParams, int maxDepthBlockCache, int maxSizeBlockCache) {
-            this.contractAddress = PrecompiledContracts.BRIDGE_ADDR;
             this.btcNetworkParams = btcNetworkParams;
             this.maxDepthBlockCache = maxDepthBlockCache;
             this.maxSizeBlockCache = maxSizeBlockCache;
@@ -392,7 +384,6 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
                 btcNetworkParams,
                 track,
                 cacheBlocks,
-                contractAddress,
                 bridgeConstants,
                 bridgeStorageProvider,
                 activations,

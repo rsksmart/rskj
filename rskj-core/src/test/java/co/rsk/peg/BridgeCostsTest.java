@@ -62,7 +62,7 @@ class BridgeCostsTest {
 
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, bridgeSupportFactory, signatureCache);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
@@ -81,7 +81,7 @@ class BridgeCostsTest {
 
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, bridgeSupportFactory, signatureCache);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         final long BASE_COST = 66_000L;
@@ -106,7 +106,7 @@ class BridgeCostsTest {
 
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, bridgeSupportFactory, signatureCache);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         final long BASE_COST = 25_000L;
@@ -133,7 +133,7 @@ class BridgeCostsTest {
                 bridgeConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, bridgeSupportFactory, signatureCache);
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
                 0,
@@ -221,7 +221,7 @@ class BridgeCostsTest {
                 bridgeConstants,
                 activationConfig,
                 signatureCache);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, signatureCache);
+        Bridge bridge = new Bridge(constants, activationConfig, bridgeSupportFactory, signatureCache);
         org.ethereum.core.Transaction rskTx;
         if (function==null) {
             rskTx = CallTransaction.createRawTransaction(
