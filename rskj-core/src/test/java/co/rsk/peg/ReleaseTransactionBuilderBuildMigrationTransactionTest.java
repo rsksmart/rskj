@@ -1191,6 +1191,12 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         assertEquals(expectedValue, migratedValue.add(fee));
     }
 
+
+    /**
+     * Used only in unrealistic scenarios where the requested migration value differs from the total value
+     * available in the retiring federation UTXOs. In that case, the change is also sent to the
+     * migration destination address implying that the total value sent is greater than the requested migration value.
+     */
     private static void assertMigrationTransactionIsMigratingMoreThanRequestedValue(Coin migrationValueRequested, BtcTransaction migrationTransaction) {
         Coin migratedValue = getMigrationTransactionValueSent(migrationTransaction);
         Coin fee = migrationTransaction.getFee();
