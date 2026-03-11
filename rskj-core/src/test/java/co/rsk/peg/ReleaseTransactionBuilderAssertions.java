@@ -29,7 +29,7 @@ public final class ReleaseTransactionBuilderAssertions {
         }
     }
 
-    public static void assertReleaseTxInputsHasProperFormatAndBelongsToP2shFederation(
+    public static void assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
         BtcTransaction releaseTransaction,
         Script federationRedeemScript,
         List<UTXO> federationUTXOs) {
@@ -40,7 +40,7 @@ public final class ReleaseTransactionBuilderAssertions {
         }
     }
 
-    public static void assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+    public static void assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
         BtcTransaction releaseTransaction,
         Script federationRedeemScript,
         List<UTXO> federationUTXOs) {
