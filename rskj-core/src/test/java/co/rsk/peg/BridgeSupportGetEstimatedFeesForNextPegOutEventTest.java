@@ -523,6 +523,28 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         }
 
         @Test
+        void getEstimatedFeesForNextPegOutEvent_withP2shErpFederationWithNoUtxos_withNoPegoutRequests_shouldFallBackToLegacyFeesCalculation() throws IOException {
+            // Arrange
+            List<Entry> pegoutRequests = List.of();
+            when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(pegoutRequests));
+            when(provider.getReleaseRequestQueueSize()).thenReturn(0);
+            when(federationSupport.getActiveFederation()).thenReturn(p2shErpFederation);
+            when(federationSupport.getActiveFederationBtcUTXOs()).thenReturn(List.of());
+            BridgeSupport bridgeSupport = buildBridgeSupport(
+                POST_RSKIP305_ACTIVATIONS,
+                provider,
+                federationSupport,
+                feePerKbSupport
+            );
+
+            // Act
+            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
+
+            // Assert
+            assertEquals(Coin.valueOf(179_400L), estimatedFeesForNextPegout);
+        }
+
+        @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shErpFederationWithNoUtxos_withOnePegoutRequest_shouldFallBackToLegacyFeesCalculation() throws IOException {
             // Arrange
             List<Entry> pegoutRequests = List.of(MIN_PEGOUT_VALUE_REQUEST);
@@ -689,6 +711,28 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
 
             // Assert
             assertEquals(Coin.valueOf(56_700L), estimatedFeesForNextPegout);
+        }
+
+        @Test
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithNoUtxos_withNoPegoutRequests_shouldFallBackToLegacyFeesCalculation() throws IOException {
+            // Arrange
+            List<Entry> pegoutRequests = List.of();
+            when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(pegoutRequests));
+            when(provider.getReleaseRequestQueueSize()).thenReturn(0);
+            when(federationSupport.getActiveFederation()).thenReturn(p2shP2wshErpFederation);
+            when(federationSupport.getActiveFederationBtcUTXOs()).thenReturn(List.of());
+            BridgeSupport bridgeSupport = buildBridgeSupport(
+                POST_RSKIP305_ACTIVATIONS,
+                provider,
+                federationSupport,
+                feePerKbSupport
+            );
+
+            // Act
+            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
+
+            // Assert
+            assertEquals(Coin.valueOf(95_800L), estimatedFeesForNextPegout);
         }
 
         @Test
