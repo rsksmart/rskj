@@ -230,18 +230,6 @@ public class OkHttpClientTestFixture {
         return OkHttpClientTestFixture.sendJsonRpcMessage(content, rpcPort);
     }
 
-    public static JsonNode getJsonResponseForGetTransactionReceipt(int port, String txHash) throws IOException {
-        String content = ETH_GET_TRANSACTION_RECEIPT.replace("<TX_HASH>", txHash);
-        Response response = sendJsonRpcMessage(content, port);
-        try {
-            return new ObjectMapper().readTree(response.body().string());
-        } finally {
-            if (response.body() != null) {
-                response.body().close();
-            }
-        }
-    }
-
     public static class FromToAddressPair {
         private final String from;
         private final String to;
