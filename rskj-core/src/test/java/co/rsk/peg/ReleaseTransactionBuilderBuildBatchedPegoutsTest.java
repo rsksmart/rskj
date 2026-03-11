@@ -1461,8 +1461,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             ArrayDeque<Entry> queue = byDestination.get(outputDestination);
             Entry pegoutRequest = queue.removeFirst();
-            // pegoutRequest <= outputAmount + fees
-            boolean outputIsBelowPegoutRequest = pegoutRequest.getAmount().compareTo(outputAmount) >= 0;
+            // ensure the transaction output does not exceed the original pegout request amount
+            // (outputAmount <= pegoutRequestAmount). The output is below/equal because fees are
+            // discounted from the pegout request amount when building the transaction.
+            boolean outputIsBelowPegoutRequest = outputAmount.compareTo(pegoutRequest.getAmount()) <= 0;
             assertTrue(outputIsBelowPegoutRequest);
         }
 
