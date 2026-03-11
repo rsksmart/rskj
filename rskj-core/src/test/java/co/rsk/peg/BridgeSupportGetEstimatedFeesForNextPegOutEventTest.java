@@ -158,7 +158,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             when(provider.getReleaseRequestQueueSize()).thenReturn(0);
             when(federationSupport.getActiveFederation()).thenReturn(p2shErpFederation);
-            when(federationSupport.getActiveFederationBtcUTXOs()).thenReturn(STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS);
+            when(federationSupport.getActiveFederationBtcUTXOs()).thenReturn(P2SH_SINGLE_INPUT_UTXOS);
             BridgeSupport bridgeSupport = buildBridgeSupport(
                 BEFORE_RSKIP271_ACTIVATIONS,
                 provider,
@@ -178,7 +178,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             when(provider.getReleaseRequestQueueSize()).thenReturn(1);
             when(federationSupport.getActiveFederation()).thenReturn(p2shErpFederation);
-            when(federationSupport.getActiveFederationBtcUTXOs()).thenReturn(STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS);
+            when(federationSupport.getActiveFederationBtcUTXOs()).thenReturn(P2SH_SINGLE_INPUT_UTXOS);
             BridgeSupport bridgeSupport = buildBridgeSupport(
                 BEFORE_RSKIP271_ACTIVATIONS,
                 provider,
@@ -198,7 +198,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             when(provider.getReleaseRequestQueueSize()).thenReturn(150);
             when(federationSupport.getActiveFederation()).thenReturn(p2shErpFederation);
-            when(federationSupport.getActiveFederationBtcUTXOs()).thenReturn(STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS);
+            when(federationSupport.getActiveFederationBtcUTXOs()).thenReturn(P2SH_SINGLE_INPUT_UTXOS);
             BridgeSupport bridgeSupport = buildBridgeSupport(
                 BEFORE_RSKIP271_ACTIVATIONS,
                 provider,
