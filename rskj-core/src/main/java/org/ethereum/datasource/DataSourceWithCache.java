@@ -36,7 +36,7 @@ import java.util.stream.Stream;
 public class DataSourceWithCache implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("datasourcewithcache");
-
+    private final DataSourceWithCacheMetrics metrics;
     private final int cacheSize;
     private final KeyValueDataSource base;
     private final Map<ByteArrayWrapper, byte[]> uncommittedCache;
@@ -51,21 +51,31 @@ public class DataSourceWithCache implements KeyValueDataSource {
     @Nullable
     private final CacheSnapshotHandler cacheSnapshotHandler;
 
-    public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize) {
-        this(base, cacheSize, null);
+    public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize, String owner) {
+        this(base, cacheSize, null, owner);
     }
 
     public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize,
-                               @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
+                               @Nullable CacheSnapshotHandler cacheSnapshotHandler, String owner) {
         this.cacheSize = cacheSize;
         this.base = Objects.requireNonNull(base);
+        String instanceId = Integer.toHexString(System.identityHashCode(this));
         this.uncommittedCache = new LinkedHashMap<>(cacheSize / 8, (float) 0.75, false);
         this.committedCache = Collections.synchronizedMap(makeCommittedCache(cacheSize, cacheSnapshotHandler));
         this.cacheSnapshotHandler = cacheSnapshotHandler;
+        this.metrics = new DataSourceWithCacheMetrics(
+                logger,
+                getName() + "#" + instanceId,
+                owner,
+                () -> committedCache.size(),
+                () -> uncommittedCache.size(),
+                10_000 // emit every 10k ops
+        );
     }
 
     @Override
     public byte[] get(byte[] key) {
+        metrics.onUserReadGet();
         Objects.requireNonNull(key);
 
         boolean traceEnabled = logger.isTraceEnabled();
@@ -75,22 +85,33 @@ public class DataSourceWithCache implements KeyValueDataSource {
         this.lock.readLock().lock();
 
         try {
+            metrics.onCacheCommittedReadContains();
             if (committedCache.containsKey(wrappedKey)) {
-                return committedCache.get(wrappedKey);
+                metrics.onCacheCommittedReadGet();
+                byte[] result = committedCache.get(wrappedKey);
+                metrics.onUserReadGetFromCommittedCache(result == null);
+                return result;
             }
-
+            metrics.onCacheUncommittedReadContains();
             if (uncommittedCache.containsKey(wrappedKey)) {
-                return uncommittedCache.get(wrappedKey);
+                metrics.onCacheUncommittedReadGet();
+                byte[] result = uncommittedCache.get(wrappedKey);
+                metrics.onUserReadGetFromUncommittedCache(result == null);
+                return result;
             }
 
+            long start = System.nanoTime();
             value = base.get(key);
-
+            long nanos = System.nanoTime() - start;
+            metrics.onUserReadGetFromStore(nanos, value==null);
             if (traceEnabled) {
                 numOfGetsFromStore.incrementAndGet();
             }
 
             //null value, as expected, is allowed here to be stored in committedCache
+            metrics.onCacheCommittedWritePut();
             committedCache.put(wrappedKey, value);
+            metrics.onReadThroughFillCommittedFromStore(value == null);
         } finally {
             if (traceEnabled) {
                 numOfGets.incrementAndGet();
@@ -105,23 +126,23 @@ public class DataSourceWithCache implements KeyValueDataSource {
     @Override
     public byte[] put(byte[] key, byte[] value) {
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
-
         return put(wrappedKey, value);
     }
 
     private byte[] put(ByteArrayWrapper wrappedKey, byte[] value) {
         Objects.requireNonNull(value);
+        metrics.onUserWritePut();
 
         this.lock.writeLock().lock();
 
         try {
             // here I could check for equal data or just move to the uncommittedCache.
+            metrics.onCacheCommittedReadGet();
             byte[] priorValue = committedCache.get(wrappedKey);
-
             if (priorValue != null && Arrays.equals(priorValue, value)) {
                 return value;
             }
-
+            metrics.onCacheCommittedWriteRemove();
             committedCache.remove(wrappedKey);
             this.putKeyValue(wrappedKey, value);
         } finally {
@@ -137,9 +158,13 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     private void putKeyValue(ByteArrayWrapper key, byte[] value) {
         uncommittedCache.put(key, value);
+        metrics.onCacheUncommittedWritePut();
 
         if (uncommittedCache.size() > cacheSize) {
-            this.flush();
+            long start = System.nanoTime();
+            flushNotManual();
+            long nanos = System.nanoTime() - start;
+            metrics.onUserWriteFlush(DataSourceWithCacheMetrics.FlushReason.SIZE, nanos);
         }
     }
 
@@ -150,20 +175,24 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     private void delete(ByteArrayWrapper wrappedKey) {
         this.lock.writeLock().lock();
+        metrics.onUserWriteDelete();
 
         try {
             // always mark for deletion if we don't know the state in the underlying store
+            metrics.onCacheCommittedReadContains();
             if (!committedCache.containsKey(wrappedKey)) {
                 this.putKeyValue(wrappedKey, null);
                 return;
             }
-
+            metrics.onCacheCommittedReadGet();
             byte[] valueToRemove = committedCache.get(wrappedKey);
 
             // a null value means we know for a fact that the key doesn't exist in the underlying store, so this is a noop
             if (valueToRemove != null) {
                 this.putKeyValue(wrappedKey, null);
+                metrics.onCacheCommittedWriteRemove();
                 committedCache.remove(wrappedKey);
+
             }
         } finally {
             this.lock.writeLock().unlock();
@@ -217,7 +246,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
         // remove overlapping entries
         rows.keySet().removeAll(keysToRemove);
-
+        long start = System.nanoTime();
         this.lock.writeLock().lock();
 
         try {
@@ -225,11 +254,14 @@ public class DataSourceWithCache implements KeyValueDataSource {
             keysToRemove.forEach(this::delete);
         } finally {
             this.lock.writeLock().unlock();
+            long nanos = System.nanoTime() - start;
+            metrics.onUserWriteBatch(nanos);
         }
     }
 
     @Override
     public void flush() {
+        long start = System.nanoTime();
         Map<ByteArrayWrapper, byte[]> uncommittedBatch = new LinkedHashMap<>();
 
         this.lock.writeLock().lock();
@@ -245,6 +277,40 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
             Set<ByteArrayWrapper> uncommittedKeysToRemove = uncommittedCache.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey).collect(Collectors.toSet());
             base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
+            metrics.onCacheCommittedWritePutAll();
+            committedCache.putAll(uncommittedCache);
+            uncommittedCache.clear();
+
+            long totalTime = System.nanoTime() - saveTime;
+
+            if (logger.isTraceEnabled()) {
+                logger.trace("datasource flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+            }
+            base.flush();
+        } finally {
+            long nanos = System.nanoTime() - start;
+           metrics.onUserWriteFlush(DataSourceWithCacheMetrics.FlushReason.MANUAL, nanos);
+            this.lock.writeLock().unlock();
+        }
+    }
+
+    public void flushNotManual() {
+        Map<ByteArrayWrapper, byte[]> uncommittedBatch = new LinkedHashMap<>();
+
+        this.lock.writeLock().lock();
+
+        try {
+            long saveTime = System.nanoTime();
+
+            this.uncommittedCache.forEach((key, value) -> {
+                if (value != null) {
+                    uncommittedBatch.put(key, value);
+                }
+            });
+
+            Set<ByteArrayWrapper> uncommittedKeysToRemove = uncommittedCache.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey).collect(Collectors.toSet());
+            base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
+            metrics.onCacheCommittedWritePutAll();
             committedCache.putAll(uncommittedCache);
             uncommittedCache.clear();
 
@@ -258,6 +324,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
             this.lock.writeLock().unlock();
         }
     }
+
 
     public String getName() {
         return base.getName() + "-with-uncommittedCache";
@@ -275,12 +342,16 @@ public class DataSourceWithCache implements KeyValueDataSource {
         this.lock.writeLock().lock();
 
         try {
-            flush();
+            long start = System.nanoTime();
+            flushNotManual();
+            long nanos = System.nanoTime() - start;
+            metrics.onUserWriteFlush(DataSourceWithCacheMetrics.FlushReason.CLOSE, nanos);
             base.close();
             if (cacheSnapshotHandler != null) {
                 cacheSnapshotHandler.save(committedCache);
             }
             uncommittedCache.clear();
+
             committedCache.clear();
         } finally {
             this.lock.writeLock().unlock();

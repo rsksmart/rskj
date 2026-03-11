@@ -33,7 +33,7 @@ class DataSourceWithCacheTest {
     @BeforeEach
     void setupDataSources() {
         this.baseDataSource = spy(new HashMapDB());
-        this.dataSourceWithCache = new DataSourceWithCache(baseDataSource, CACHE_SIZE);
+        this.dataSourceWithCache = new DataSourceWithCache(baseDataSource, CACHE_SIZE, "Testing");
     }
 
     /**
@@ -334,7 +334,7 @@ class DataSourceWithCacheTest {
     @Test
     void checkCacheSnapshotLoadTriggered() {
         CacheSnapshotHandler cacheSnapshotHandler = mock(CacheSnapshotHandler.class);
-        new DataSourceWithCache(baseDataSource, CACHE_SIZE, cacheSnapshotHandler);
+        new DataSourceWithCache(baseDataSource, CACHE_SIZE, cacheSnapshotHandler, "Testing");
 
         verify(cacheSnapshotHandler, atLeastOnce()).load(anyMap());
     }
@@ -342,7 +342,7 @@ class DataSourceWithCacheTest {
     @Test
     void checkCacheSnapshotSaveTriggered() {
         CacheSnapshotHandler cacheSnapshotHandler = mock(CacheSnapshotHandler.class);
-        DataSourceWithCache dataSourceWithCache = new DataSourceWithCache(baseDataSource, CACHE_SIZE, cacheSnapshotHandler);
+        DataSourceWithCache dataSourceWithCache = new DataSourceWithCache(baseDataSource, CACHE_SIZE, cacheSnapshotHandler, "Testing");
 
         dataSourceWithCache.close();
 

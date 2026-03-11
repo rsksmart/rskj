@@ -312,13 +312,13 @@ class KeyValueDataSourceTest {
         }
 
         private static DataSourceWithCache initDatasourceWithCache(Path tmpDir) throws IOException {
-            DataSourceWithCache dataSourceWithCache = new DataSourceWithCache(initRocksDBDatasource(tmpDir), CACHE_SIZE);
+            DataSourceWithCache dataSourceWithCache = new DataSourceWithCache(initRocksDBDatasource(tmpDir), CACHE_SIZE, "Testing");
             dataSourceWithCache.init();
             return dataSourceWithCache;
         }
 
         private static DataSourceWithCache initHashmapDBWithCache() {
-            DataSourceWithCache dataSourceWithCache = new DataSourceWithCache(initHashmapDB(), CACHE_SIZE);
+            DataSourceWithCache dataSourceWithCache = new DataSourceWithCache(initHashmapDB(), CACHE_SIZE, "Testing");
             dataSourceWithCache.init();
             return dataSourceWithCache;
         }
