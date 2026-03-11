@@ -495,7 +495,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shFederation(
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -536,7 +536,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             int expectedNumberOfUTXOsToMigrate = 1;
             assertEquals(expectedNumberOfUTXOsToMigrate, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shFederation(
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -574,7 +574,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shFederation(
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -641,7 +641,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shFederation(
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -710,7 +710,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shFederation(
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -791,7 +791,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shFederation(
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -863,7 +863,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             assertBtcTxVersionIs1(migrationTransaction);
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -905,7 +905,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             int expectedNumberOfUTXOsToMigrate = 1;
             assertEquals(expectedNumberOfUTXOsToMigrate, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -943,7 +943,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -1010,7 +1010,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -1079,7 +1079,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -1160,7 +1160,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(numberOfUtxos, migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshFederation(
+            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
