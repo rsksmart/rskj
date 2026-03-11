@@ -231,11 +231,11 @@ public class TransactionBuilder {
         long amount = 21000;
         if (data != 0) {
             data /= 2;
-            for (int i = 0; i < data / 4; i++) {
+            for (long i = 0; i < data / 4; i++) {
                 bytes.add((byte) 0);
                 amount += 4;
             }
-            for (int i = 0; i < data / 68; i++) {
+            for (long i = 0; i < data / 68; i++) {
                 bytes.add((byte) 1);
                 amount += 68;
             }
