@@ -94,7 +94,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withZeroPegoutRequests_shouldReturnZeroFees() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withNoPegoutRequests_shouldReturnZeroFees() throws IOException {
             // Arrange
             when(provider.getReleaseRequestQueueSize()).thenReturn(0);
             when(federationSupport.getActiveFederation()).thenReturn(standardMultisigFederation);
@@ -154,7 +154,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withZeroPegoutRequests_shouldReturnZeroFees() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withNoPegoutRequests_shouldReturnZeroFees() throws IOException {
             // Arrange
             when(provider.getReleaseRequestQueueSize()).thenReturn(0);
             when(federationSupport.getActiveFederation()).thenReturn(p2shErpFederation);
@@ -230,7 +230,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withZeroPegoutRequests_shouldEstimateZeroFees() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withNoPegoutRequests_shouldEstimateZeroFees() throws IOException {
             // Arrange
             when(provider.getReleaseRequestQueueSize()).thenReturn(0);
             when(federationSupport.getActiveFederation()).thenReturn(standardMultisigFederation);
@@ -290,7 +290,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withZeroPegoutRequests_shouldEstimateZeroFees() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withNoPegoutRequests_shouldEstimateZeroFees() throws IOException {
             // Arrange
             when(provider.getReleaseRequestQueueSize()).thenReturn(0);
             when(federationSupport.getActiveFederation()).thenReturn(p2shErpFederation);
@@ -366,7 +366,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withZeroPegoutRequests_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withNoPegoutRequests_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
             // Arrange
             when(provider.getReleaseRequestQueueSize()).thenReturn(0);
             when(federationSupport.getActiveFederation()).thenReturn(standardMultisigFederation);
@@ -426,7 +426,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withZeroPegoutRequests_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withNoPegoutRequests_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
             // Arrange
             when(provider.getReleaseRequestQueueSize()).thenReturn(0);
             when(federationSupport.getActiveFederation()).thenReturn(p2shErpFederation);
