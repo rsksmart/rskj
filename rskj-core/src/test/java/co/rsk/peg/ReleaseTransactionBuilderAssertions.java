@@ -11,10 +11,12 @@ import java.util.function.Predicate;
 
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_1;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
-import static co.rsk.peg.bitcoin.BitcoinTestAssertions.*;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithoutSignaturesHasProperFormat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ReleaseTransactionBuilderAssertions {
+public final class ReleaseTransactionBuilderAssertions {
 
     public static void assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
         BtcTransaction releaseTransaction,
