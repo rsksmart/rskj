@@ -2,8 +2,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -17,8 +15,6 @@ import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWit
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public final class ReleaseTransactionBuilderAssertions {
-
-    private static final BridgeConstants BRIDGE_MAINNET_CONSTANTS = BridgeMainNetConstants.getInstance();
 
     public static void assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
         BtcTransaction releaseTransaction,
