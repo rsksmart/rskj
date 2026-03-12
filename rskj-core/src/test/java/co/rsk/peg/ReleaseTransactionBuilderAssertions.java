@@ -13,6 +13,7 @@ import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromStanda
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithoutSignaturesHasProperFormat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public final class ReleaseTransactionBuilderAssertions {
 
@@ -95,31 +96,48 @@ public final class ReleaseTransactionBuilderAssertions {
         }
     }
 
-    public static void assertReleaseTxValueInPegoutsAndChangeOutputsAreCorrect(BtcTransaction releaseTransaction,
+    public static void assertPegoutsAndChangeValuesWhenOriginalChangeIsDust(BtcTransaction releaseTransaction,
+                                                                            List<TransactionOutput> releaseTransactionChangeOutputs,
+                                                                            Coin expectedSentPegoutAmount) {
+        Coin inputTotalAmount = releaseTransaction.getInputSum();
+        Coin expectedChangeAmount = inputTotalAmount.subtract(expectedSentPegoutAmount);
+        assertTrue(isDust(expectedChangeAmount));
+
+        Coin amountToGetNonDustValue = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(expectedChangeAmount);
+        expectedSentPegoutAmount = expectedSentPegoutAmount.subtract(amountToGetNonDustValue);
+        expectedChangeAmount = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
+
+        assertPegoutsAndChangeValues(releaseTransaction, releaseTransactionChangeOutputs, expectedSentPegoutAmount, expectedChangeAmount);
+    }
+
+    public static void assertPegoutsAndChangeValuesWhenOriginalChangeIsNonDust(BtcTransaction releaseTransaction,
                                                                                List<TransactionOutput> releaseTransactionChangeOutputs,
                                                                                Coin expectedSentPegoutAmount) {
         Coin inputTotalAmount = releaseTransaction.getInputSum();
         Coin expectedChangeAmount = inputTotalAmount.subtract(expectedSentPegoutAmount);
+        assertPegoutsAndChangeValues(releaseTransaction, releaseTransactionChangeOutputs, expectedSentPegoutAmount, expectedChangeAmount);
+    }
 
-        if (isDust(expectedChangeAmount)) {
-            Coin amountToGetNonDustValue = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(expectedChangeAmount);
-            expectedSentPegoutAmount = expectedSentPegoutAmount.subtract(amountToGetNonDustValue);
-            expectedChangeAmount = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
-        }
-
-        int expectedNumberOfOutputs = 1;
-        assertEquals(expectedNumberOfOutputs, releaseTransactionChangeOutputs.size());
-        Coin changeOutputsAmount = releaseTransactionChangeOutputs.stream()
-            .map(TransactionOutput::getValue)
-            .reduce(Coin::add)
-            .orElse(Coin.ZERO);
+    private static void assertPegoutsAndChangeValues(BtcTransaction releaseTransaction,
+                                                     List<TransactionOutput> releaseTransactionChangeOutputs,
+                                                     Coin expectedSentPegoutAmount,
+                                                     Coin expectedChangeAmount) {
+        Coin changeOutputsAmount = getChangeOutputsAmount(releaseTransactionChangeOutputs);
         assertEquals(expectedChangeAmount, changeOutputsAmount);
 
         Coin pegoutOutputsAmount = releaseTransaction.getOutputSum().subtract(changeOutputsAmount);
         Coin releaseTransactionFees = releaseTransaction.getFee();
         Coin pegoutsAndFeesAmount = releaseTransactionFees.add(pegoutOutputsAmount);
         assertEquals(expectedSentPegoutAmount, pegoutsAndFeesAmount);
+        Coin inputTotalAmount = releaseTransaction.getInputSum();
         assertEquals(inputTotalAmount, pegoutsAndFeesAmount.add(changeOutputsAmount));
+    }
+
+    private static Coin getChangeOutputsAmount(List<TransactionOutput> outputs) {
+        return outputs.stream()
+            .map(TransactionOutput::getValue)
+            .reduce(Coin::add)
+            .orElse(Coin.ZERO);
     }
 
     private static boolean isDust(Coin expectedChangeAmount) {
