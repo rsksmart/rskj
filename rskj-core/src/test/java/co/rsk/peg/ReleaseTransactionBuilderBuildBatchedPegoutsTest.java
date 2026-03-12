@@ -542,36 +542,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenRSKIP201IsNotActive_shouldCreateBatchedPegoutsTxWithBtcVersion1() {
-            // Arrange
-            setUpActivations(PAPYRUS_ACTIVATIONS);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                MINIMUM_PEGOUT_TX_VALUE);
-
-            // Act
-            BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
-                pegoutRequests);
-
-            // Assert
-            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
-
-            BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
-            assertBtcTxVersionIs1(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
-                batchedPegoutsTransaction,
-                federationRedeemScript,
-                federationUTXOs
-            );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
-            List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
-        }
-
-        @Test
         void buildBatchedPegouts_whenSinglePegoutRequest_shouldCreateBatchedPegoutsTx() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
@@ -964,36 +934,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction batchedPegoutsTx = batchedPegoutsResult.btcTx();
             assertTrue(batchedPegoutsTx.getOutputs().isEmpty());
             assertTrue(batchedPegoutsTx.getInputs().isEmpty());
-        }
-
-        @Test
-        void buildBatchedPegouts_whenRSKIP201IsNotActive_shouldCreateBatchedPegoutsTxWithBtcVersion1() {
-            // Arrange
-            setUpActivations(PAPYRUS_ACTIVATIONS);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                MINIMUM_PEGOUT_TX_VALUE);
-
-            // Act
-            BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
-                pegoutRequests);
-
-            // Assert
-            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
-
-            BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
-            assertBtcTxVersionIs1(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
-                batchedPegoutsTransaction,
-                federationRedeemScript,
-                federationUTXOs
-            );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
-            List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
         }
 
         @Test
