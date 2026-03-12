@@ -201,7 +201,6 @@ class Rskip543ReceiptIntegrationTest {
     }
 
     private void waitForBlock(long blockNumber) {
-        String hexBlock = "0x" + Long.toHexString(blockNumber);
         await().atMost(Duration.ofSeconds(60))
                 .pollInterval(Duration.ofMillis(500))
                 .ignoreExceptions()
