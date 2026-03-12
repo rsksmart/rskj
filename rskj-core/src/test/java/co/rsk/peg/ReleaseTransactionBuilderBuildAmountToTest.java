@@ -85,12 +85,6 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             federationAddress = federation.getAddress();
             federationOutputScript = federation.getP2SHScript();
             federationRedeemScript = federation.getRedeemScript();
-            int numberOfUtxos = 10;
-            federationUTXOs = UTXOBuilder.builder()
-                .withScriptPubKey(federationOutputScript)
-                .withValue(MINIMUM_PEGIN_TX_VALUE)
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
-            setUpWallet(federationUTXOs);
         }
 
         @Test
@@ -112,6 +106,12 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         void buildAmountTo_whenRSKIP201IsNotActive_shouldCreatePegoutTxWithBtcVersion1() {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
+            int numberOfUtxos = 10;
+            federationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(federationOutputScript)
+                .withValue(MINIMUM_PEGIN_TX_VALUE)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            setUpWallet(federationUTXOs);
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             // Act
@@ -137,7 +137,13 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         @Test
         void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreatePegoutTx() {
             // Arrange
-            ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
+            int numberOfUtxos = 10;
+            federationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(federationOutputScript)
+                .withValue(MINIMUM_PEGIN_TX_VALUE)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            setUpWallet(federationUTXOs);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
@@ -367,7 +373,13 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         @Test
         void buildAmountTo_whenAmountIsTooSmall_shouldReturnDustySendRequested() {
             // Arrange
-            ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
+            int numberOfUtxos = 10;
+            federationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(federationOutputScript)
+                .withValue(MINIMUM_PEGIN_TX_VALUE)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            setUpWallet(federationUTXOs);
+            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             // Act
             BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, DUSTY_AMOUNT_SEND_REQUESTED);
