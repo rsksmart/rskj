@@ -420,7 +420,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
+        void buildBatchedPegouts_whenEstimatedFeeIsTooHighAndUtxosAreNotEnough_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 3;
@@ -812,7 +812,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
+        void buildBatchedPegouts_whenEstimatedFeeIsTooHighAndUtxosAreNotEnough_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 3;
@@ -1207,7 +1207,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
+        void buildBatchedPegouts_whenEstimatedFeeIsTooHighAndUtxosAreNotEnough_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 3;
