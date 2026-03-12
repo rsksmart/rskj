@@ -546,7 +546,8 @@ class ReleaseTransactionBuilderBuildAmountToTest {
     ) {
         int expectedNumberOfPegoutOutputs = 1;
         int expectedNumberOfOutputs = expectedNumberOfPegoutOutputs + EXPECTED_NUMBER_OF_CHANGE_OUTPUTS;
-        assertEquals(expectedNumberOfOutputs, pegoutTransaction.getOutputs().size());
+        assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, pegoutTransaction.getOutputs());
+
         List<TransactionOutput> pegoutTransactionChangeOutputs = getChangeOutputs(pegoutTransaction);
         assertEquals(EXPECTED_NUMBER_OF_CHANGE_OUTPUTS, pegoutTransactionChangeOutputs.size());
         assertReleaseTxValueInPegoutsAndChangeOutputsAreCorrect(pegoutTransaction,
@@ -560,7 +561,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         Coin requestedAmount
     ) {
         int expectedNumberOfPegoutOutputs = 1;
-        assertEquals(expectedNumberOfPegoutOutputs, pegoutTransaction.getOutputs().size());
+        assertReleaseTxNumberOfOutputs(expectedNumberOfPegoutOutputs, pegoutTransaction.getOutputs());
         List<TransactionOutput> changeOutputs = getChangeOutputs(pegoutTransaction);
         int expectedNumberOfChangeOutputs = 0;
         assertEquals(expectedNumberOfChangeOutputs, changeOutputs.size());
