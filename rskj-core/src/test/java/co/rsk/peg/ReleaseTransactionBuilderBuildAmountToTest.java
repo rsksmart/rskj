@@ -391,7 +391,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         }
 
         @Test
-        void buildAmountTo_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
+        void buildAmountTo_whenEstimatedFeeIsTooHighAndUtxosAreNotEnough_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 3;
