@@ -133,7 +133,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -174,7 +174,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -212,7 +212,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -279,7 +279,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -348,7 +348,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 2;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingMoreThanRequestedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -429,7 +429,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -502,7 +502,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -543,7 +543,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -581,7 +581,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -648,7 +648,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -717,7 +717,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 2;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingMoreThanRequestedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -798,7 +798,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -872,7 +872,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -910,7 +910,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -977,7 +977,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -1046,7 +1046,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 2;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingMoreThanRequestedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
@@ -1127,7 +1127,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             );
             int expectedNumberOfOutputs = 1;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 

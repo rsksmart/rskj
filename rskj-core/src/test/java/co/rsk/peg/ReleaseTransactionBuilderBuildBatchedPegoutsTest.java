@@ -1416,7 +1416,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                                                                  List<Entry> pegoutRequests) {
         int expectedNumberOfOutputs = pegoutRequests.size() + EXPECTED_NUMBER_OF_CHANGE_OUTPUTS;
         List<TransactionOutput> batchedPegoutsTransactionOutputs = batchedPegoutsTransaction.getOutputs();
-        assertBatchedPegoutsTransactionNumberOfOutputs(expectedNumberOfOutputs, batchedPegoutsTransactionOutputs);
+        assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, batchedPegoutsTransactionOutputs);
         assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
         Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
 
@@ -1436,15 +1436,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                                                             List<Entry> pegoutRequests) {
         int expectedNumberOfOutputs = pegoutRequests.size();
         List<TransactionOutput> batchedPegoutsTransactionOutputs = batchedPegoutsTransaction.getOutputs();
-        assertBatchedPegoutsTransactionNumberOfOutputs(expectedNumberOfOutputs, batchedPegoutsTransactionOutputs);
+        assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, batchedPegoutsTransactionOutputs);
         assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
         Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
         assertReleaseTxWithNoChangeHasPegoutsAmountWithFeesProperly(batchedPegoutsTransaction, totalPegoutRequestsAmount);
-    }
-
-    private void assertBatchedPegoutsTransactionNumberOfOutputs(int expectedNumberOfOutputs,
-                                                                List<TransactionOutput> batchedPegoutsTransactionOutputs) {
-        int actualNumberOfOutputs = batchedPegoutsTransactionOutputs.size();
-        assertEquals(expectedNumberOfOutputs, actualNumberOfOutputs);
     }
 }
