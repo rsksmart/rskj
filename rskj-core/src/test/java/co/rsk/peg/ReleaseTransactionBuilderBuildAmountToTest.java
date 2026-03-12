@@ -1357,7 +1357,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         assertReleaseTxHasChangeAndPegoutsAmountWithFeesProperly(pegoutTransaction,
             pegoutTransactionChangeOutputs, requestedAmount
         );
-        assertDestinationAddress(pegoutTransactionChangeOutputs, federationAddress);
+        assertDestinationAddress(pegoutTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
     }
 
     private void assertPegoutTxHasOnlyPegoutOutput(
