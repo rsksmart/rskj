@@ -1484,7 +1484,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         assertReleaseTxHasChangeAndPegoutsAmountWithFeesProperly(batchedPegoutsTransaction,
             batchedPegoutsTransactionChangeOutputs, totalPegoutRequestsAmount
         );
-        assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress);
+        assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
     }
 
     private static Coin getTotalPegoutRequestsAmount(List<Entry> pegoutRequests) {

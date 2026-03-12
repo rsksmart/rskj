@@ -135,7 +135,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -176,7 +176,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -214,7 +214,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -281,7 +281,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -350,7 +350,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingMoreThanRequestedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -431,7 +431,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -504,7 +504,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -545,7 +545,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -583,7 +583,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -650,7 +650,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -719,7 +719,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingMoreThanRequestedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -800,7 +800,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -873,7 +873,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -914,7 +914,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -952,7 +952,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -1019,7 +1019,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -1088,7 +1088,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingMoreThanRequestedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -1169,7 +1169,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
             assertMigrationTransactionIsMigratingExpectedValue(migrationValue, migrationTransaction);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<UTXO> selectedUTXOsForMigration = migrationTransactionResult.selectedUTXOs();
             assertEquals(retiringFederationUTXOs, selectedUTXOsForMigration);
@@ -1206,13 +1206,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
     private static Coin getMigrationTransactionValueSent(BtcTransaction migrationTransaction) {
         return migrationTransaction.getOutputs().stream().map(TransactionOutput::getValue).reduce(Coin.ZERO, Coin::add);
-    }
-
-    private void assertDestinationAddress(List<TransactionOutput> migrationTransactionOutputs, Address expectedDestinationAddress) {
-        for (TransactionOutput output : migrationTransactionOutputs) {
-            Address destinationAddress = output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
-            assertEquals(expectedDestinationAddress, destinationAddress);
-        }
     }
 
     private void setUpWallet(List<UTXO> utxos) {

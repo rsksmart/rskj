@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public final class ReleaseTransactionBuilderAssertions {
 
     private static final BridgeConstants BRIDGE_MAINNET_CONSTANTS = BridgeMainNetConstants.getInstance();
-    private static final NetworkParameters BTC_MAINNET_PARAMS = BRIDGE_MAINNET_CONSTANTS.getBtcParams();
 
     public static void assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
         BtcTransaction releaseTransaction,
@@ -92,9 +91,10 @@ public final class ReleaseTransactionBuilderAssertions {
     }
 
     public static void assertDestinationAddress(List<TransactionOutput> releaseTransactionOutputs,
-                                                Address expectedDestinationAddress) {
+                                                Address expectedDestinationAddress,
+                                                NetworkParameters networkParameters) {
         for (TransactionOutput output : releaseTransactionOutputs) {
-            Address destinationAddress = output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
+            Address destinationAddress = output.getScriptPubKey().getToAddress(networkParameters);
             assertEquals(expectedDestinationAddress, destinationAddress);
         }
     }
