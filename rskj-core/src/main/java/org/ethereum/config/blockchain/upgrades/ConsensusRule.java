@@ -113,6 +113,7 @@ public enum ConsensusRule {
     RSKIP535("rskip535"), // BaseEvent for the union bridge
     RSKIP536("rskip536"), // Additional methods for BlockHeader precompiled contract
     RSKIP544("rskip544"), // From EIP-3541 Reject new contract code starting with the 0xEF byte
+    RSKIP551("rskip551"), // Disable RSKIP459
     RSKIP552("rskip552"), // Blake2F null data protection (placeholder)
     ;
 
