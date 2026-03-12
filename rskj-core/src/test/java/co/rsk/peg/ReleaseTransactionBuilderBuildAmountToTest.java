@@ -1354,7 +1354,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         assertEquals(expectedNumberOfOutputs, pegoutTransaction.getOutputs().size());
         List<TransactionOutput> pegoutTransactionChangeOutputs = getChangeOutputs(pegoutTransaction);
         assertEquals(EXPECTED_NUMBER_OF_CHANGE_OUTPUTS, pegoutTransactionChangeOutputs.size());
-        assertReleaseTxHasChangeAndPegoutsAmountWithFeesProperly(pegoutTransaction,
+        assertReleaseTxValueInPegoutsAndChangeOutputsAreCorrect(pegoutTransaction,
             pegoutTransactionChangeOutputs, requestedAmount
         );
         assertDestinationAddress(pegoutTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
