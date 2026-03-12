@@ -99,9 +99,9 @@ public final class ReleaseTransactionBuilderAssertions {
         }
     }
 
-    public static void assertReleaseTxHasChangeAndPegoutsAmountWithFeesProperly(BtcTransaction releaseTransaction,
-                                                                                List<TransactionOutput> releaseTransactionChangeOutputs,
-                                                                                Coin expectedSentPegoutAmount) {
+    public static void assertReleaseTxValueInPegoutsAndChangeOutputsAreCorrect(BtcTransaction releaseTransaction,
+                                                                               List<TransactionOutput> releaseTransactionChangeOutputs,
+                                                                               Coin expectedSentPegoutAmount) {
         Coin inputTotalAmount = releaseTransaction.getInputSum();
         Coin expectedChangeAmount = inputTotalAmount.subtract(expectedSentPegoutAmount);
 

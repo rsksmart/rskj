@@ -1481,7 +1481,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
 
         List<TransactionOutput> batchedPegoutsTransactionChangeOutputs = getChangeOutputs(batchedPegoutsTransaction);
-        assertReleaseTxHasChangeAndPegoutsAmountWithFeesProperly(batchedPegoutsTransaction,
+        assertReleaseTxValueInPegoutsAndChangeOutputsAreCorrect(batchedPegoutsTransaction,
             batchedPegoutsTransactionChangeOutputs, totalPegoutRequestsAmount
         );
         assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
