@@ -155,7 +155,6 @@ public final class ReleaseTransactionBuilderAssertions {
         assertEquals(inputTotalAmount, outputTotalAmount);
     }
 
-
     public static void assertReleaseTxNumberOfOutputs(int expectedNumberOfOutputs,
                                                       List<TransactionOutput> releaseTransactionOutputs) {
         int actualNumberOfOutputs = releaseTransactionOutputs.size();

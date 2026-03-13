@@ -95,7 +95,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     class StandardMultiSigFederationTests {
 
         @BeforeEach
-        void setup() {
+        void setUp() {
             federation = StandardMultiSigFederationBuilder.builder().build();
             federationFormatVersion = federation.getFormatVersion();
             federationAddress = federation.getAddress();
