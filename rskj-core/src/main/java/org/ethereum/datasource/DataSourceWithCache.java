@@ -277,7 +277,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
             Set<ByteArrayWrapper> uncommittedKeysToRemove = uncommittedCache.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey).collect(Collectors.toSet());
             base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
-            metrics.onCacheCommittedWritePutAll();
+            metrics.onCacheCommittedWritePutAll(uncommittedCache.size());
             committedCache.putAll(uncommittedCache);
             uncommittedCache.clear();
 
@@ -310,7 +310,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
             Set<ByteArrayWrapper> uncommittedKeysToRemove = uncommittedCache.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey).collect(Collectors.toSet());
             base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
-            metrics.onCacheCommittedWritePutAll();
+            metrics.onCacheCommittedWritePutAll(uncommittedCache.size());
             committedCache.putAll(uncommittedCache);
             uncommittedCache.clear();
 

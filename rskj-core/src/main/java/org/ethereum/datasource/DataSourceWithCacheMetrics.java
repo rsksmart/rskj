@@ -152,7 +152,10 @@ public final class DataSourceWithCacheMetrics {
     // committedCache WRITE
     public void onCacheCommittedWritePut() { cache_committed_put.increment();}
     public void onCacheCommittedWriteRemove() { cache_committed_remove.increment();}
-    public void onCacheCommittedWritePutAll() { cache_committed_putAll.increment();}
+    public void onCacheCommittedWritePutAll(int entries) {
+        cache_committed_putAll.increment();
+        cache_committed_put.add(entries);
+    }
     // committedCache READ
     public void onCacheUncommittedReadContains() { cache_uncommitted_contains.increment(); }
     public void onCacheUncommittedReadGet() { cache_uncommitted_get.increment(); }
