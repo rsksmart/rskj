@@ -96,11 +96,11 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         // Arrange
         setUpActivations(PAPYRUS_ACTIVATIONS);
         int numberOfUtxos = 10;
+        Coin minimumPeginTxValue = BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(PAPYRUS_ACTIVATIONS);
         federationUTXOs = UTXOBuilder.builder()
             .withScriptPubKey(federationOutputScript)
-            .withValue(MINIMUM_PEGIN_TX_VALUE)
+            .withValue(minimumPeginTxValue)
             .buildMany(numberOfUtxos, i -> createHash(i + 1));
-        setUpWallet(federationUTXOs);
         ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
         // Act
