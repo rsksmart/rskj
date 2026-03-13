@@ -105,9 +105,8 @@ public final class ReleaseTransactionBuilderAssertions {
 
         Coin amountToGetNonDustValue = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(expectedChangeAmount);
         expectedSentPegoutAmount = expectedSentPegoutAmount.subtract(amountToGetNonDustValue);
-        expectedChangeAmount = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 
-        assertPegoutsAndChangeValues(releaseTransaction, releaseTransactionChangeOutputs, expectedSentPegoutAmount, expectedChangeAmount);
+        assertPegoutsAndChangeValues(releaseTransaction, releaseTransactionChangeOutputs, expectedSentPegoutAmount, MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
     }
 
     public static void assertPegoutsAndChangeValuesWhenOriginalChangeIsNonDust(BtcTransaction releaseTransaction,
