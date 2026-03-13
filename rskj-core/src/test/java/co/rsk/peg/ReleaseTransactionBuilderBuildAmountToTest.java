@@ -547,15 +547,8 @@ class ReleaseTransactionBuilderBuildAmountToTest {
     private void assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(BtcTransaction pegoutTransaction,
                                                                                    Coin requestedAmount
     ) {
-        int expectedNumberOfUserOutputs = 1;
-        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfUserOutputs, EXPECTED_NUMBER_OF_CHANGE_OUTPUTS);
-
-        List<TransactionOutput> userOutputs = getUserOutputs(pegoutTransaction);
-        assertDestinationAddress(userOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
-
+        assertNumberOfOutputs(pegoutTransaction);
         List<TransactionOutput> changeOutputs = getChangeOutputs(pegoutTransaction);
-        assertDestinationAddress(changeOutputs, federationAddress, BTC_MAINNET_PARAMS);
-
         assertUserAndChangeOutputsValuesWhenOriginalChangeIsNonDust(
             pegoutTransaction,
             changeOutputs,
@@ -567,20 +560,24 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         BtcTransaction pegoutTransaction,
         Coin requestedAmount
     ) {
-        int expectedNumberOfUserOutputs = 1;
-        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfUserOutputs, EXPECTED_NUMBER_OF_CHANGE_OUTPUTS);
-
+        assertNumberOfOutputs(pegoutTransaction);
         List<TransactionOutput> changeOutputs = getChangeOutputs(pegoutTransaction);
-        assertDestinationAddress(changeOutputs, federationAddress, BTC_MAINNET_PARAMS);
-
-        List<TransactionOutput> userOutputs = getUserOutputs(pegoutTransaction);
-        assertDestinationAddress(userOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
-
         assertUserAndChangeOutputsValuesWhenOriginalChangeIsDust(
             pegoutTransaction,
             changeOutputs,
             requestedAmount
         );
+    }
+
+    private void assertNumberOfOutputs(BtcTransaction pegoutTransaction) {
+        int expectedNumberOfUserOutputs = 1;
+        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfUserOutputs, EXPECTED_NUMBER_OF_CHANGE_OUTPUTS);
+
+        List<TransactionOutput> userOutputs = getUserOutputs(pegoutTransaction);
+        assertDestinationAddress(userOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
+
+        List<TransactionOutput> changeOutputs = getChangeOutputs(pegoutTransaction);
+        assertDestinationAddress(changeOutputs, federationAddress, BTC_MAINNET_PARAMS);
     }
 
     private void assertPegoutTxWithOnlyUserOutputs(
