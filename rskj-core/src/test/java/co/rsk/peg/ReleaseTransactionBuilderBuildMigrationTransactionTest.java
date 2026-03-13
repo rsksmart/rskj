@@ -48,7 +48,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
         ALL_ACTIVATIONS);
 
     private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
-    private static final Coin DUSTY_AMOUNT_SEND_REQUESTED = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
+    private static final Coin DUST_VALUE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
 
     protected Federation retiringFederation;
     protected int retiringFederationFormatVersion;
@@ -208,7 +208,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             retiringFederationUTXOs = List.of(
                 UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(DUSTY_AMOUNT_SEND_REQUESTED)
+                .withValue(DUST_VALUE)
                 .build()
             );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -534,7 +534,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             retiringFederationUTXOs = List.of(
                 UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(DUSTY_AMOUNT_SEND_REQUESTED)
+                .withValue(DUST_VALUE)
                 .build()
             );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -828,7 +828,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             retiringFederationUTXOs = List.of(
                 UTXOBuilder.builder()
                 .withScriptPubKey(retiringFederationOutputScript)
-                .withValue(DUSTY_AMOUNT_SEND_REQUESTED)
+                .withValue(DUST_VALUE)
                 .build()
             );
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(

@@ -68,7 +68,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     private static final List<ReleaseRequestQueue.Entry> NO_PEGOUT_REQUESTS = Collections.emptyList();
 
-    private static final Coin DUSTY_AMOUNT_SEND_REQUESTED = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
+    private static final Coin DUST_VALUE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
     private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
     public static final Coin THOUSAND_SATOSHIS = Coin.valueOf(1000);
 
@@ -277,7 +277,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         @Test
         void buildBatchedPegouts_whenOriginalChangeIsMaxDustValue_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
             // Arrange
-            Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
+            Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUST_VALUE);
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -418,7 +418,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                DUSTY_AMOUNT_SEND_REQUESTED);
+                DUST_VALUE);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
@@ -673,7 +673,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         @Test
         void buildBatchedPegouts_whenOriginalChangeIsMaxDustValue_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
             // Arrange
-            Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
+            Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUST_VALUE);
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -815,7 +815,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                DUSTY_AMOUNT_SEND_REQUESTED);
+                DUST_VALUE);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
@@ -1076,7 +1076,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         @Test
         void buildBatchedPegouts_whenOriginalChangeIsMaxDust_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
             // Arrange
-            Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
+            Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUST_VALUE);
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -1214,7 +1214,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                DUSTY_AMOUNT_SEND_REQUESTED);
+                DUST_VALUE);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
