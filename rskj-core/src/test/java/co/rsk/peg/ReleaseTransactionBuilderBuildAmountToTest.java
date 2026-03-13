@@ -270,7 +270,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
     }
 
     @Test
-    void buildAmountTo_whenChangeIsNonDustForOneSatoshi_shouldCreatePegoutTxWithNoModificationInTheValues() {
+    void buildAmountTo_whenChangeIsMinNonDustValue_shouldCreatePegoutTxWithNoModificationInTheValues() {
         // Arrange
         federationUTXOs = List.of(
             UTXOBuilder.builder()
