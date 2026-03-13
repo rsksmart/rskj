@@ -51,7 +51,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
     private static final Coin MINIMUM_PEGIN_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(IRIS_ACTIVATIONS);
 
     private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
-    private static final Coin DUSTY_AMOUNT_SEND_REQUESTED = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
+    private static final Coin DUST_VALUE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
     private static final Address RECIPIENT_ADDRESS = createRecipientAddress();
 
     protected Federation federation;
@@ -239,7 +239,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
     @Test
     void buildAmountTo_whenOriginalChangeIsMaxDustValue_shouldCreatePegoutTxDecrementingFirstOutputAndSettingNonDustChange() {
         // Arrange
-        Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
+        Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUST_VALUE);
         federationUTXOs = List.of(
             UTXOBuilder.builder()
             .withScriptPubKey(federationOutputScript)
@@ -354,7 +354,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         assertNull(amountToResult.selectedUTXOs());
     }
 
-    /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; real pegouts must be at least
+    /** DUST_VALUE is unrealistic; real pegouts must be at least
      * {@link BridgeConstants#getMinimumPegoutTxValue()}, but we use it to exercise the
      * DUSTY_SEND_REQUESTED path.
      */
@@ -369,7 +369,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
         // Act
-        BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, DUSTY_AMOUNT_SEND_REQUESTED);
+        BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, DUST_VALUE);
 
         // Assert
         assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, amountToResult);
