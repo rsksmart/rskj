@@ -313,7 +313,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenChangeIsNonDustForOneSatoshi_shouldCreateBatchedPegoutsTxWithNoModificationInTheValues() {
+        void buildBatchedPegouts_whenChangeIsMinNonDustValue_shouldCreateBatchedPegoutsTxWithNoModificationInTheValues() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
@@ -710,7 +710,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenChangeIsNonDustForOneSatoshi_shouldCreateBatchedPegoutsTxWithNoModificationInTheValues() {
+        void buildBatchedPegouts_whenChangeIsMinNonDustValue_shouldCreateBatchedPegoutsTxWithNoModificationInTheValues() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
@@ -1111,7 +1111,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenChangeIsNonDustForOneSatoshi_shouldCreateBatchedPegoutsTxWithNoModificationInTheValues() {
+        void buildBatchedPegouts_whenChangeIsMinNonDustValue_shouldCreateBatchedPegoutsTxWithNoModificationInTheValues() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
