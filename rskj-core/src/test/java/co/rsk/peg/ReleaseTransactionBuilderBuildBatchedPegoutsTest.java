@@ -1509,6 +1509,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
         assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
         Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
-        assertReleaseTxWithNoChangeHasUserOutputsAmountWithFeesProperly(batchedPegoutsTransaction, totalPegoutRequestsAmount);
+        assertReleaseTxWithOnlyUserOutputsAmounts(batchedPegoutsTransaction, totalPegoutRequestsAmount);
     }
 }
