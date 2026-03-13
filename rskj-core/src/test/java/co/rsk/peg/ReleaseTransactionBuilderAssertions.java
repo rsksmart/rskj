@@ -143,8 +143,8 @@ public final class ReleaseTransactionBuilderAssertions {
         return expectedChangeAmount.compareTo(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT) < 0;
     }
 
-    public static void assertReleaseTxWithNoChangeHasUserOutputsAmountWithFeesProperly(BtcTransaction releaseTransaction,
-                                                                                       Coin expectedSentAmount) {
+    public static void assertReleaseTxWithOnlyUserOutputsAmounts(BtcTransaction releaseTransaction,
+                                                                 Coin expectedSentAmount) {
         Coin outputsAmount = releaseTransaction.getOutputSum();
         Coin fees = releaseTransaction.getFee();
         Coin totalAmountSent = fees.add(outputsAmount);
