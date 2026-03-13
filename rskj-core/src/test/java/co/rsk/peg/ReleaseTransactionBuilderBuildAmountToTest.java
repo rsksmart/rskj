@@ -124,7 +124,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
     }
 
     @Test
-    void buildAmountTo_whenSingleUtxoCanCoverAmount_shouldCreatePegoutTx() {
+    void buildAmountTo_whenSingleUtxoCoversRequestedAmount_shouldCreatePegoutTx() {
         // Arrange
         int numberOfUtxos = 10;
         federationUTXOs = UTXOBuilder.builder()
@@ -154,7 +154,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
     }
 
     @Test
-    void buildAmountTo_whenMultipleUtxosCanCoverAmount_shouldCreatePegoutTx() {
+    void buildAmountTo_whenMultipleUtxosCoverRequestedAmount_shouldCreatePegoutTx() {
         // Arrange
         int numberOfUtxos = 10;
         federationUTXOs = UTXOBuilder.builder()
