@@ -1048,7 +1048,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
         List<TransactionOutput> migrationTransactionChangeOutputs = getChangeOutputs(migrationTransaction);
         assertEquals(expectedNumberOfChangeOutputs, migrationTransactionChangeOutputs.size());
-        assertReleaseTxWithNoChangeHasPegoutsAmountWithFeesProperly(migrationTransaction, migratedAmount);
+        assertReleaseTxWithNoChangeHasUserOutputsAmountWithFeesProperly(migrationTransaction, migratedAmount);
     }
 
     private List<TransactionOutput> getChangeOutputs(BtcTransaction migrationTransaction) {
