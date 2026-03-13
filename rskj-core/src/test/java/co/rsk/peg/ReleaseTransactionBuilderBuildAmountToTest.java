@@ -599,12 +599,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
     private List<TransactionOutput> getUserOutputs(BtcTransaction pegoutTransaction) {
         return pegoutTransaction.getOutputs().stream()
-            .filter(this::isUserOutput)
+            .filter(output ->
+                output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS).equals(RECIPIENT_ADDRESS))
             .toList();
-    }
-
-    private boolean isUserOutput(TransactionOutput output) {
-        return !isFederationOutput(output);
     }
 
     private List<TransactionOutput> getChangeOutputs(BtcTransaction pegoutTransaction) {
