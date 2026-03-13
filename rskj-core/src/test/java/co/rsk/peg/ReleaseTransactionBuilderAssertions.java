@@ -98,28 +98,28 @@ public final class ReleaseTransactionBuilderAssertions {
 
     public static void assertUserAndChangeOutputsValuesWhenOriginalChangeIsDust(BtcTransaction releaseTransaction,
                                                                                 List<TransactionOutput> releaseTransactionChangeOutputs,
-                                                                                Coin expectedAmountSentToUser) {
+                                                                                Coin requestedAmount) {
         Coin inputTotalAmount = releaseTransaction.getInputSum();
-        Coin expectedChangeAmount = inputTotalAmount.subtract(expectedAmountSentToUser);
-        assertTrue(isDust(expectedChangeAmount));
+        Coin originalChangeAmount = inputTotalAmount.subtract(requestedAmount);
+        assertTrue(isDust(originalChangeAmount));
 
-        Coin amountToGetNonDustValue = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(expectedChangeAmount);
-        expectedAmountSentToUser = expectedAmountSentToUser.subtract(amountToGetNonDustValue);
+        Coin amountToGetNonDustValue = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(originalChangeAmount);
+        requestedAmount = requestedAmount.subtract(amountToGetNonDustValue);
 
-        assertUserAndChangeOutputsValues(releaseTransaction, releaseTransactionChangeOutputs, expectedAmountSentToUser, MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
+        assertUserAndChangeOutputsValues(releaseTransaction, releaseTransactionChangeOutputs, requestedAmount, MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
     }
 
     public static void assertUserAndChangeOutputsValuesWhenOriginalChangeIsNonDust(BtcTransaction releaseTransaction,
                                                                                    List<TransactionOutput> releaseTransactionChangeOutputs,
-                                                                                   Coin expectedAmountSentToUser) {
+                                                                                   Coin requestedAmount) {
         Coin inputTotalAmount = releaseTransaction.getInputSum();
-        Coin expectedChangeAmount = inputTotalAmount.subtract(expectedAmountSentToUser);
-        assertUserAndChangeOutputsValues(releaseTransaction, releaseTransactionChangeOutputs, expectedAmountSentToUser, expectedChangeAmount);
+        Coin expectedChangeAmount = inputTotalAmount.subtract(requestedAmount);
+        assertUserAndChangeOutputsValues(releaseTransaction, releaseTransactionChangeOutputs, requestedAmount, expectedChangeAmount);
     }
 
     private static void assertUserAndChangeOutputsValues(BtcTransaction releaseTransaction,
                                                          List<TransactionOutput> releaseTransactionChangeOutputs,
-                                                         Coin expectedAmountSentToUser,
+                                                         Coin requestedAmount,
                                                          Coin expectedChangeAmount) {
         Coin changeOutputsAmount = getChangeOutputsAmount(releaseTransactionChangeOutputs);
         assertEquals(expectedChangeAmount, changeOutputsAmount);
@@ -127,7 +127,7 @@ public final class ReleaseTransactionBuilderAssertions {
         Coin userOutputsAmount = releaseTransaction.getOutputSum().subtract(changeOutputsAmount);
         Coin releaseTransactionFees = releaseTransaction.getFee();
         Coin userOutputsAndFeesAmount = releaseTransactionFees.add(userOutputsAmount);
-        assertEquals(expectedAmountSentToUser, userOutputsAndFeesAmount);
+        assertEquals(requestedAmount, userOutputsAndFeesAmount);
         Coin inputTotalAmount = releaseTransaction.getInputSum();
         assertEquals(inputTotalAmount, userOutputsAndFeesAmount.add(changeOutputsAmount));
     }
