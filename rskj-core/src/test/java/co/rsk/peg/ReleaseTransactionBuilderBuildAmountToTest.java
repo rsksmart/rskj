@@ -594,7 +594,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         List<TransactionOutput> pegoutTransactionOutputs = pegoutTransaction.getOutputs();
         assertDestinationAddress(pegoutTransactionOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
 
-        assertReleaseTxWithNoChangeHasUserOutputsAmountWithFeesProperly(pegoutTransaction, requestedAmount);
+        assertReleaseTxWithOnlyUserOutputsAmounts(pegoutTransaction, requestedAmount);
     }
 
     private List<TransactionOutput> getUserOutputs(BtcTransaction pegoutTransaction) {
