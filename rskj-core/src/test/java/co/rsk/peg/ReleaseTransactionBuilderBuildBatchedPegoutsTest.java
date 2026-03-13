@@ -1385,18 +1385,18 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     private void assertPegoutRequestsAreIncludedInBatchedPegoutsTx(BtcTransaction batchedPegoutsTransaction,
                                                                    List<Entry> pegoutRequests) {
-        List<TransactionOutput> pegoutOutputs = getPegoutOutputs(batchedPegoutsTransaction);
-        assertPegoutRequestsAreIncludedAsOutputs(pegoutRequests, pegoutOutputs);
+        List<TransactionOutput> userOutputs = getUserOutputs(batchedPegoutsTransaction);
+        assertPegoutRequestsAreIncludedAsUserOutputs(pegoutRequests, userOutputs);
     }
 
-    private List<TransactionOutput> getPegoutOutputs(BtcTransaction batchedPegoutsTransaction) {
+    private List<TransactionOutput> getUserOutputs(BtcTransaction batchedPegoutsTransaction) {
         return batchedPegoutsTransaction.getOutputs().stream()
-            .filter(this::isPegoutOutput)
+            .filter(this::isUserOutput)
             .toList();
     }
 
-    private boolean isPegoutOutput(TransactionOutput pegoutOutput) {
-        return !isFederationOutput(pegoutOutput);
+    private boolean isUserOutput(TransactionOutput output) {
+        return !isFederationOutput(output);
     }
 
     private boolean isFederationOutput(TransactionOutput output) {
@@ -1404,12 +1404,12 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         return recipientAddress.equals(federationAddress);
     }
 
-    private Address getDestinationAddress(TransactionOutput transactionOutput) {
-        return transactionOutput.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
+    private Address getDestinationAddress(TransactionOutput output) {
+        return output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
     }
 
-    private void assertPegoutRequestsAreIncludedAsOutputs(List<Entry> pegoutRequests,
-                                                          List<TransactionOutput> outputs) {
+    private void assertPegoutRequestsAreIncludedAsUserOutputs(List<Entry> pegoutRequests,
+                                                              List<TransactionOutput> outputs) {
         Map<Address, ArrayDeque<Entry>> byDestination = new HashMap<>();
         for (Entry request : pegoutRequests) {
             byDestination
@@ -1436,24 +1436,24 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     }
 
     private void assertBatchedPegoutsTxOutputAndChangeOutputsNumbers(BtcTransaction pegoutTransaction,
-                                                                     int expectedNumberOfPegoutOutputs,
+                                                                     int expectedNumberOfUserOutputs,
                                                                      int expectedNumberOfChangeOutputs) {
-        List<TransactionOutput> pegoutOutputs = getPegoutOutputs(pegoutTransaction);
-        assertReleaseTxNumberOfOutputs(expectedNumberOfPegoutOutputs, pegoutOutputs);
+        List<TransactionOutput> userOutputs = getUserOutputs(pegoutTransaction);
+        assertReleaseTxNumberOfOutputs(expectedNumberOfUserOutputs, userOutputs);
 
         List<TransactionOutput> pegoutTransactionChangeOutputs = getChangeOutputs(pegoutTransaction);
         assertReleaseTxNumberOfOutputs(expectedNumberOfChangeOutputs, pegoutTransactionChangeOutputs);
 
-        int expectedNumberOfOutputs = expectedNumberOfPegoutOutputs + expectedNumberOfChangeOutputs;
+        int expectedNumberOfOutputs = expectedNumberOfUserOutputs + expectedNumberOfChangeOutputs;
         assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, pegoutTransaction.getOutputs());
     }
 
     private void assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(BtcTransaction batchedPegoutsTransaction,
                                                                                             List<Entry> pegoutRequests) {
-        int expectedNumberOfBatchedPegoutsOutputs = pegoutRequests.size();
+        int pegoutRequestsNumber = pegoutRequests.size();
         assertBatchedPegoutsTxOutputAndChangeOutputsNumbers(
             batchedPegoutsTransaction,
-            expectedNumberOfBatchedPegoutsOutputs,
+            pegoutRequestsNumber,
             EXPECTED_NUMBER_OF_CHANGE_OUTPUTS
         );
 
@@ -1463,7 +1463,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
 
         Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
-        assertPegoutsAndChangeValuesWhenOriginalChangeIsNonDust(
+        assertUserAndChangeOutputsValuesWhenOriginalChangeIsNonDust(
             batchedPegoutsTransaction,
             batchedPegoutsTransactionChangeOutputs,
             totalPegoutRequestsAmount
@@ -1472,10 +1472,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     private void assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsDust(BtcTransaction batchedPegoutsTransaction,
                                                                                          List<Entry> pegoutRequests) {
-        int expectedNumberOfBatchedPegoutsOutputs = pegoutRequests.size();
+        int pegoutRequestsNumber = pegoutRequests.size();
         assertBatchedPegoutsTxOutputAndChangeOutputsNumbers(
             batchedPegoutsTransaction,
-            expectedNumberOfBatchedPegoutsOutputs,
+            pegoutRequestsNumber,
             EXPECTED_NUMBER_OF_CHANGE_OUTPUTS
         );
 
@@ -1485,7 +1485,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
 
         Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
-        assertPegoutsAndChangeValuesWhenOriginalChangeIsDust(
+        assertUserAndChangeOutputsValuesWhenOriginalChangeIsDust(
             batchedPegoutsTransaction,
             batchedPegoutsTransactionChangeOutputs,
             totalPegoutRequestsAmount
@@ -1509,6 +1509,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
         assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
         Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
-        assertReleaseTxWithNoChangeHasPegoutsAmountWithFeesProperly(batchedPegoutsTransaction, totalPegoutRequestsAmount);
+        assertReleaseTxWithNoChangeHasUserOutputsAmountWithFeesProperly(batchedPegoutsTransaction, totalPegoutRequestsAmount);
     }
 }

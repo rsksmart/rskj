@@ -96,40 +96,40 @@ public final class ReleaseTransactionBuilderAssertions {
         }
     }
 
-    public static void assertPegoutsAndChangeValuesWhenOriginalChangeIsDust(BtcTransaction releaseTransaction,
-                                                                            List<TransactionOutput> releaseTransactionChangeOutputs,
-                                                                            Coin expectedSentPegoutAmount) {
+    public static void assertUserAndChangeOutputsValuesWhenOriginalChangeIsDust(BtcTransaction releaseTransaction,
+                                                                                List<TransactionOutput> releaseTransactionChangeOutputs,
+                                                                                Coin expectedAmountSentToUser) {
         Coin inputTotalAmount = releaseTransaction.getInputSum();
-        Coin expectedChangeAmount = inputTotalAmount.subtract(expectedSentPegoutAmount);
+        Coin expectedChangeAmount = inputTotalAmount.subtract(expectedAmountSentToUser);
         assertTrue(isDust(expectedChangeAmount));
 
         Coin amountToGetNonDustValue = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(expectedChangeAmount);
-        expectedSentPegoutAmount = expectedSentPegoutAmount.subtract(amountToGetNonDustValue);
+        expectedAmountSentToUser = expectedAmountSentToUser.subtract(amountToGetNonDustValue);
 
-        assertPegoutsAndChangeValues(releaseTransaction, releaseTransactionChangeOutputs, expectedSentPegoutAmount, MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
+        assertUserAndChangeOutputsValues(releaseTransaction, releaseTransactionChangeOutputs, expectedAmountSentToUser, MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
     }
 
-    public static void assertPegoutsAndChangeValuesWhenOriginalChangeIsNonDust(BtcTransaction releaseTransaction,
-                                                                               List<TransactionOutput> releaseTransactionChangeOutputs,
-                                                                               Coin expectedSentPegoutAmount) {
+    public static void assertUserAndChangeOutputsValuesWhenOriginalChangeIsNonDust(BtcTransaction releaseTransaction,
+                                                                                   List<TransactionOutput> releaseTransactionChangeOutputs,
+                                                                                   Coin expectedAmountSentToUser) {
         Coin inputTotalAmount = releaseTransaction.getInputSum();
-        Coin expectedChangeAmount = inputTotalAmount.subtract(expectedSentPegoutAmount);
-        assertPegoutsAndChangeValues(releaseTransaction, releaseTransactionChangeOutputs, expectedSentPegoutAmount, expectedChangeAmount);
+        Coin expectedChangeAmount = inputTotalAmount.subtract(expectedAmountSentToUser);
+        assertUserAndChangeOutputsValues(releaseTransaction, releaseTransactionChangeOutputs, expectedAmountSentToUser, expectedChangeAmount);
     }
 
-    private static void assertPegoutsAndChangeValues(BtcTransaction releaseTransaction,
-                                                     List<TransactionOutput> releaseTransactionChangeOutputs,
-                                                     Coin expectedSentPegoutAmount,
-                                                     Coin expectedChangeAmount) {
+    private static void assertUserAndChangeOutputsValues(BtcTransaction releaseTransaction,
+                                                         List<TransactionOutput> releaseTransactionChangeOutputs,
+                                                         Coin expectedAmountSentToUser,
+                                                         Coin expectedChangeAmount) {
         Coin changeOutputsAmount = getChangeOutputsAmount(releaseTransactionChangeOutputs);
         assertEquals(expectedChangeAmount, changeOutputsAmount);
 
-        Coin pegoutOutputsAmount = releaseTransaction.getOutputSum().subtract(changeOutputsAmount);
+        Coin userOutputsAmount = releaseTransaction.getOutputSum().subtract(changeOutputsAmount);
         Coin releaseTransactionFees = releaseTransaction.getFee();
-        Coin pegoutsAndFeesAmount = releaseTransactionFees.add(pegoutOutputsAmount);
-        assertEquals(expectedSentPegoutAmount, pegoutsAndFeesAmount);
+        Coin userOutputsAndFeesAmount = releaseTransactionFees.add(userOutputsAmount);
+        assertEquals(expectedAmountSentToUser, userOutputsAndFeesAmount);
         Coin inputTotalAmount = releaseTransaction.getInputSum();
-        assertEquals(inputTotalAmount, pegoutsAndFeesAmount.add(changeOutputsAmount));
+        assertEquals(inputTotalAmount, userOutputsAndFeesAmount.add(changeOutputsAmount));
     }
 
     private static Coin getChangeOutputsAmount(List<TransactionOutput> outputs) {
@@ -143,15 +143,15 @@ public final class ReleaseTransactionBuilderAssertions {
         return expectedChangeAmount.compareTo(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT) < 0;
     }
 
-    public static void assertReleaseTxWithNoChangeHasPegoutsAmountWithFeesProperly(BtcTransaction releaseTransaction,
-                                                                                   Coin expectedSentAmount) {
-        Coin pegoutOutputsAmount = releaseTransaction.getOutputSum();
-        Coin releaseTransactionFees = releaseTransaction.getFee();
-        Coin outputTotalAmount = releaseTransactionFees.add(pegoutOutputsAmount);
-        assertEquals(expectedSentAmount, outputTotalAmount);
+    public static void assertReleaseTxWithNoChangeHasUserOutputsAmountWithFeesProperly(BtcTransaction releaseTransaction,
+                                                                                       Coin expectedSentAmount) {
+        Coin outputsAmount = releaseTransaction.getOutputSum();
+        Coin fees = releaseTransaction.getFee();
+        Coin totalAmountSent = fees.add(outputsAmount);
+        assertEquals(expectedSentAmount, totalAmountSent);
 
         Coin inputTotalAmount = releaseTransaction.getInputSum();
-        assertEquals(inputTotalAmount, outputTotalAmount);
+        assertEquals(inputTotalAmount, totalAmountSent);
     }
 
     public static void assertReleaseTxNumberOfOutputs(int expectedNumberOfOutputs,
