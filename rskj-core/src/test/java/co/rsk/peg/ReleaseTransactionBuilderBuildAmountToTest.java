@@ -131,7 +131,6 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             .withScriptPubKey(federationOutputScript)
             .withValue(MINIMUM_PEGIN_TX_VALUE)
             .buildMany(numberOfUtxos, i -> createHash(i + 1));
-        setUpWallet(federationUTXOs);
         ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
         // Act
@@ -367,7 +366,6 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             .withScriptPubKey(federationOutputScript)
             .withValue(MINIMUM_PEGIN_TX_VALUE)
             .buildMany(numberOfUtxos, i -> createHash(i + 1));
-        setUpWallet(federationUTXOs);
         ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
         // Act
