@@ -119,7 +119,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             federationRedeemScript,
             federationUTXOs
         );
-        assertPegoutTxWithPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
+        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
         assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
@@ -149,7 +149,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             federationRedeemScript,
             federationUTXOs
         );
-        assertPegoutTxWithPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
+        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
         assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
@@ -180,7 +180,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             federationRedeemScript,
             federationUTXOs
         );
-        assertPegoutTxWithPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, amountToSend);
+        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, amountToSend);
         assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
@@ -211,7 +211,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             federationRedeemScript,
             federationUTXOs
         );
-        assertPegoutTxWithOnlyPegoutOutputs(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
+        assertPegoutTxWithOnlyUserOutputs(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
         assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
@@ -265,7 +265,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             federationRedeemScript,
             federationUTXOs
         );
-        assertPegoutTxWithPegoutAndChangeOutputsWhenOriginalChangeIsDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
+        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
         assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
@@ -296,7 +296,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             federationRedeemScript,
             federationUTXOs
         );
-        assertPegoutTxWithPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
+        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
         assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
@@ -327,7 +327,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             federationRedeemScript,
             federationUTXOs
         );
-        assertPegoutTxWithPegoutAndChangeOutputsWhenOriginalChangeIsDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
+        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
         assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
@@ -428,7 +428,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             federationRedeemScript,
             federationUTXOs
         );
-        assertPegoutTxWithPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, requestedAmount);
+        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, requestedAmount);
         assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
@@ -479,7 +479,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             federationRedeemScript,
             federationUTXOs
         );
-        assertPegoutTxWithPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, requestedAmount);
+        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, requestedAmount);
         assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
@@ -532,79 +532,79 @@ class ReleaseTransactionBuilderBuildAmountToTest {
     }
 
     private void assertPegoutTxOutputAndChangeOutputsNumbers(BtcTransaction pegoutTransaction,
-                                                             int expectedNumberOfPegoutOutputs,
+                                                             int expectedNumberOfUserOutputs,
                                                              int expectedNumberOfChangeOutputs) {
-        List<TransactionOutput> pegoutOutputs = getPegoutOutputs(pegoutTransaction);
-        assertReleaseTxNumberOfOutputs(expectedNumberOfPegoutOutputs, pegoutOutputs);
+        List<TransactionOutput> userOutputs = getUserOutputs(pegoutTransaction);
+        assertReleaseTxNumberOfOutputs(expectedNumberOfUserOutputs, userOutputs);
 
         List<TransactionOutput> pegoutTransactionChangeOutputs = getChangeOutputs(pegoutTransaction);
         assertReleaseTxNumberOfOutputs(expectedNumberOfChangeOutputs, pegoutTransactionChangeOutputs);
 
-        int expectedNumberOfOutputs = expectedNumberOfPegoutOutputs + expectedNumberOfChangeOutputs;
+        int expectedNumberOfOutputs = expectedNumberOfUserOutputs + expectedNumberOfChangeOutputs;
         assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, pegoutTransaction.getOutputs());
     }
 
-    private void assertPegoutTxWithPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(BtcTransaction pegoutTransaction,
-                                                                                     Coin requestedAmount
+    private void assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(BtcTransaction pegoutTransaction,
+                                                                                   Coin requestedAmount
     ) {
-        int expectedNumberOfPegoutOutputs = 1;
-        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfPegoutOutputs, EXPECTED_NUMBER_OF_CHANGE_OUTPUTS);
+        int expectedNumberOfUserOutputs = 1;
+        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfUserOutputs, EXPECTED_NUMBER_OF_CHANGE_OUTPUTS);
 
-        List<TransactionOutput> pegoutOutputs = getPegoutOutputs(pegoutTransaction);
-        assertDestinationAddress(pegoutOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
+        List<TransactionOutput> userOutputs = getUserOutputs(pegoutTransaction);
+        assertDestinationAddress(userOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
 
-        List<TransactionOutput> pegoutTransactionChangeOutputs = getChangeOutputs(pegoutTransaction);
-        assertDestinationAddress(pegoutTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
+        List<TransactionOutput> changeOutputs = getChangeOutputs(pegoutTransaction);
+        assertDestinationAddress(changeOutputs, federationAddress, BTC_MAINNET_PARAMS);
 
-        assertPegoutsAndChangeValuesWhenOriginalChangeIsNonDust(
+        assertUserAndChangeOutputsValuesWhenOriginalChangeIsNonDust(
             pegoutTransaction,
-            pegoutTransactionChangeOutputs,
+            changeOutputs,
             requestedAmount
         );
     }
 
-    private void assertPegoutTxWithPegoutAndChangeOutputsWhenOriginalChangeIsDust(
+    private void assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsDust(
         BtcTransaction pegoutTransaction,
         Coin requestedAmount
     ) {
-        int expectedNumberOfPegoutOutputs = 1;
-        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfPegoutOutputs, EXPECTED_NUMBER_OF_CHANGE_OUTPUTS);
+        int expectedNumberOfUserOutputs = 1;
+        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfUserOutputs, EXPECTED_NUMBER_OF_CHANGE_OUTPUTS);
 
-        List<TransactionOutput> pegoutTransactionChangeOutputs = getChangeOutputs(pegoutTransaction);
-        assertDestinationAddress(pegoutTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
+        List<TransactionOutput> changeOutputs = getChangeOutputs(pegoutTransaction);
+        assertDestinationAddress(changeOutputs, federationAddress, BTC_MAINNET_PARAMS);
 
-        List<TransactionOutput> pegoutOutputs = getPegoutOutputs(pegoutTransaction);
-        assertDestinationAddress(pegoutOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
+        List<TransactionOutput> userOutputs = getUserOutputs(pegoutTransaction);
+        assertDestinationAddress(userOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
 
-        assertPegoutsAndChangeValuesWhenOriginalChangeIsDust(
+        assertUserAndChangeOutputsValuesWhenOriginalChangeIsDust(
             pegoutTransaction,
-            pegoutTransactionChangeOutputs,
+            changeOutputs,
             requestedAmount
         );
     }
 
-    private void assertPegoutTxWithOnlyPegoutOutputs(
+    private void assertPegoutTxWithOnlyUserOutputs(
         BtcTransaction pegoutTransaction,
         Coin requestedAmount
     ) {
-        int expectedNumberOfPegoutOutputs = 1;
+        int expectedNumberOfUserOutputs = 1;
         int expectedNumberOfChangeOutputs = 0;
-        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfPegoutOutputs, expectedNumberOfChangeOutputs);
+        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfUserOutputs, expectedNumberOfChangeOutputs);
 
         List<TransactionOutput> pegoutTransactionOutputs = pegoutTransaction.getOutputs();
         assertDestinationAddress(pegoutTransactionOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
 
-        assertReleaseTxWithNoChangeHasPegoutsAmountWithFeesProperly(pegoutTransaction, requestedAmount);
+        assertReleaseTxWithNoChangeHasUserOutputsAmountWithFeesProperly(pegoutTransaction, requestedAmount);
     }
 
-    private List<TransactionOutput> getPegoutOutputs(BtcTransaction pegoutTransaction) {
+    private List<TransactionOutput> getUserOutputs(BtcTransaction pegoutTransaction) {
         return pegoutTransaction.getOutputs().stream()
-            .filter(this::isPegoutOutput)
+            .filter(this::isUserOutput)
             .toList();
     }
 
-    private boolean isPegoutOutput(TransactionOutput pegoutOutput) {
-        return !isFederationOutput(pegoutOutput);
+    private boolean isUserOutput(TransactionOutput output) {
+        return !isFederationOutput(output);
     }
 
     private List<TransactionOutput> getChangeOutputs(BtcTransaction pegoutTransaction) {
