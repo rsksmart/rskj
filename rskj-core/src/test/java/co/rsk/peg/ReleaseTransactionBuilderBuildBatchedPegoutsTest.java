@@ -61,7 +61,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     private static final BridgeConstants BRIDGE_MAINNET_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters BTC_MAINNET_PARAMS = BRIDGE_MAINNET_CONSTANTS.getBtcParams();
-    private static final Context BTC_CONTEXT = new Context(BTC_MAINNET_PARAMS);
 
     private static final Coin MINIMUM_PEGOUT_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPegoutTxValue();
     private static final Coin MINIMUM_PEGIN_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(
@@ -71,7 +70,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     private static final Coin DUSTY_AMOUNT_SEND_REQUESTED = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
     private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
-    private static final int RECIPIENT_ADDRESS_KEY_OFFSET = 1100;
     public static final Coin THOUSAND_SATOSHIS = Coin.valueOf(1000);
 
     protected Federation federation;
@@ -1316,8 +1314,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             activations
         );
 
+        Context btcContext = new Context(BTC_MAINNET_PARAMS);
         wallet = BridgeUtils.getFederationSpendWallet(
-            BTC_CONTEXT,
+            btcContext,
             federation,
             utxos,
             true,
@@ -1345,7 +1344,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     private List<Entry> createPegoutRequests(int count, Coin amount) {
         List<ReleaseRequestQueue.Entry> pegoutRequests = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            BigInteger seed = BigInteger.valueOf(i + RECIPIENT_ADDRESS_KEY_OFFSET);
+            BigInteger seed = BigInteger.valueOf(i + 1100);
             Address recipientAddress = BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
             Entry pegoutEntry = new Entry(
                 recipientAddress,

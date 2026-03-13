@@ -43,7 +43,6 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
     private static final BridgeConstants BRIDGE_MAINNET_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters BTC_MAINNET_PARAMS = BRIDGE_MAINNET_CONSTANTS.getBtcParams();
-    private static final Context BTC_CONTEXT = new Context(BTC_MAINNET_PARAMS);
 
     private static final Coin MINIMUM_PEGIN_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(
         ALL_ACTIVATIONS);
@@ -1093,8 +1092,9 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
             activationConfig
         );
 
+        Context btcContext = new Context(BTC_MAINNET_PARAMS);
         wallet = BridgeUtils.getFederationSpendWallet(
-            BTC_CONTEXT,
+            btcContext,
             retiringFederation,
             utxos,
             true,
