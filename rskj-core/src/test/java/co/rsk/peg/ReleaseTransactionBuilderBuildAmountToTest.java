@@ -112,8 +112,8 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         assertBtcTxVersionIs1(pegoutTransaction);
 
         List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int numberOfUtxosExpected = 1;
-        assertEquals(numberOfUtxosExpected, pegoutInputs.size());
+        int expectedNumberOfInputs = 1;
+        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
         assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
             pegoutTransaction,
             federationRedeemScript,
@@ -142,8 +142,8 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         assertBtcTxVersionIs2(pegoutTransaction);
 
         List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int numberOfUtxosExpected = 1;
-        assertEquals(numberOfUtxosExpected, pegoutInputs.size());
+        int expectedNumberOfInputs = 1;
+        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
         assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
             pegoutTransaction,
             federationRedeemScript,
@@ -162,7 +162,6 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             .withValue(MINIMUM_PEGOUT_TX_VALUE)
             .buildMany(numberOfUtxos, i -> createHash(i + 1));
         ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-        int numberOfUtxosToCoverAmountRequested = 2;
         Coin amountToSend = MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(1000));
 
         // Act
@@ -174,7 +173,8 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         assertBtcTxVersionIs2(pegoutTransaction);
 
         List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        assertEquals(numberOfUtxosToCoverAmountRequested, pegoutInputs.size());
+        int expectedNumberOfInputs = 2;
+        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
         assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
             pegoutTransaction,
             federationRedeemScript,
@@ -204,8 +204,8 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         assertBtcTxVersionIs2(pegoutTransaction);
 
         List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int numberOfUtxosExpected = 1;
-        assertEquals(numberOfUtxosExpected, pegoutInputs.size());
+        int expectedNumberOfInputs = federationUTXOs.size();
+        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
         assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
             pegoutTransaction,
             federationRedeemScript,
@@ -258,8 +258,8 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         assertBtcTxVersionIs2(pegoutTransaction);
 
         List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int numberOfUtxos = 1;
-        assertEquals(numberOfUtxos, pegoutInputs.size());
+        int expectedNumberOfInputs = 1;
+        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
         assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
             pegoutTransaction,
             federationRedeemScript,
@@ -289,8 +289,8 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         assertBtcTxVersionIs2(pegoutTransaction);
 
         List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int numberOfUtxos = 1;
-        assertEquals(numberOfUtxos, pegoutInputs.size());
+        int expectedNumberOfInputs = 1;
+        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
         assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
             pegoutTransaction,
             federationRedeemScript,
@@ -320,8 +320,8 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         assertBtcTxVersionIs2(pegoutTransaction);
 
         List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int numberOfUtxos = 1;
-        assertEquals(numberOfUtxos, pegoutInputs.size());
+        int expectedNumberOfInputs = 1;
+        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
         assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
             pegoutTransaction,
             federationRedeemScript,
@@ -421,6 +421,8 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         assertBtcTxVersionIs2(pegoutTransaction);
 
         List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
+        int expectedNumberOfInputs = 1;
+        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
         assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
             pegoutTransaction,
             federationRedeemScript,
@@ -470,7 +472,8 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         assertBtcTxVersionIs2(pegoutTransaction);
 
         List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        assertEquals(numberOfUtxos, pegoutInputs.size());
+        int expectedNumberOfInputs = federationUTXOs.size();
+        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
         assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
             pegoutTransaction,
             federationRedeemScript,
