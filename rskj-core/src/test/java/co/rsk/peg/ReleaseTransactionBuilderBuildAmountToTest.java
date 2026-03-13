@@ -46,15 +46,12 @@ class ReleaseTransactionBuilderBuildAmountToTest {
 
     private static final BridgeConstants BRIDGE_MAINNET_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters BTC_MAINNET_PARAMS = BRIDGE_MAINNET_CONSTANTS.getBtcParams();
-    private static final Context BTC_CONTEXT = new Context(BTC_MAINNET_PARAMS);
 
     private static final Coin MINIMUM_PEGOUT_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPegoutTxValue();
     private static final Coin MINIMUM_PEGIN_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(IRIS_ACTIVATIONS);
 
     private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
     private static final Coin DUSTY_AMOUNT_SEND_REQUESTED = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
-    private static final Coin THOUSAND_SATOSHIS = Coin.valueOf(1000);
-    private static final int RECIPIENT_ADDRESS_KEY_OFFSET = 2100;
     private static final Address RECIPIENT_ADDRESS = createRecipientAddress();
 
     protected Federation federation;
@@ -167,7 +164,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             .buildMany(numberOfUtxos, i -> createHash(i + 1));
         ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
         int numberOfUtxosToCoverAmountRequested = 2;
-        Coin amountToSend = MINIMUM_PEGOUT_TX_VALUE.add(THOUSAND_SATOSHIS);
+        Coin amountToSend = MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(1000));
 
         // Act
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
@@ -494,7 +491,8 @@ class ReleaseTransactionBuilderBuildAmountToTest {
     }
 
     private static Address createRecipientAddress() {
-        BigInteger seed = BigInteger.valueOf(RECIPIENT_ADDRESS_KEY_OFFSET);
+        int keyOffset = 2100;
+        BigInteger seed = BigInteger.valueOf(keyOffset);
         return BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
     }
 
@@ -506,8 +504,9 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             activations
         );
 
+        Context btcContext = new Context(BTC_MAINNET_PARAMS);
         wallet = BridgeUtils.getFederationSpendWallet(
-            BTC_CONTEXT,
+            btcContext,
             federation,
             utxos,
             true,
