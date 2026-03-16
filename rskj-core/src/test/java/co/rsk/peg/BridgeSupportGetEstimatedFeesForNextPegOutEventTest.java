@@ -71,17 +71,18 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         createUTXO(Coin.valueOf(13, 0), p2shP2wshErpFederation.getAddress())
     );
 
+    private BridgeStorageProvider bridgeStorageProvider;
+    private FederationSupport federationSupport;
+    private FeePerKbSupport feePerKbSupport;
+
     @Nested
     class PreHop400Activation {
-        private final StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
-        private final Repository repository = createRepository();
-
-        private BridgeStorageProvider bridgeStorageProvider;
-        private FederationSupport federationSupport;
-        private FeePerKbSupport feePerKbSupport;
 
         @BeforeEach
-        void setUp() throws IOException {
+        void setUp() {
+            Repository repository = createRepository();
+            StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+
             bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, BRIDGE_CONSTANTS.getBtcParams(), BEFORE_HOP400_ACTIVATION);
             FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
             federationStorageProvider.setNewFederation(standardMultisigFederation);
@@ -91,8 +92,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 .withActivations(BEFORE_HOP400_ACTIVATION)
                 .withFederationStorageProvider(federationStorageProvider)
                 .build();
-            feePerKbSupport = mock(FeePerKbSupport.class);
-            when(feePerKbSupport.getFeePerKb()).thenReturn(FEE_PER_KB);
+            setUpFeePerKb();
         }
 
         @Test
@@ -164,10 +164,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         private final StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
         private final Repository repository = createRepository();
 
-        private BridgeStorageProvider bridgeStorageProvider;
         private FederationStorageProvider federationStorageProvider;
-        private FederationSupport federationSupport;
-        private FeePerKbSupport feePerKbSupport;
 
         @BeforeEach
         void setUp() throws IOException {
@@ -178,8 +175,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 .withActivations(POST_HOP400_PRE_FINGERROOT_ACTIVATIONS)
                 .withFederationStorageProvider(federationStorageProvider)
                 .build();
-            feePerKbSupport = mock(FeePerKbSupport.class);
-            when(feePerKbSupport.getFeePerKb()).thenReturn(FEE_PER_KB);
+            setUpFeePerKb();
         }
 
         @Test
@@ -332,10 +328,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         private final StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
         private final Repository repository = createRepository();
 
-        private BridgeStorageProvider bridgeStorageProvider;
         private FederationStorageProvider federationStorageProvider;
-        private FederationSupport federationSupport;
-        private FeePerKbSupport feePerKbSupport;
 
         @BeforeEach
         void setUp() throws IOException {
@@ -346,8 +339,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 .withActivations(BEFORE_HOP400_ACTIVATION)
                 .withFederationStorageProvider(federationStorageProvider)
                 .build();
-            feePerKbSupport = mock(FeePerKbSupport.class);
-            when(feePerKbSupport.getFeePerKb()).thenReturn(FEE_PER_KB);
+            setUpFeePerKb();
         }
 
         @Test
@@ -502,14 +494,11 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
     @Nested
     class PostReedActivation {
         private final StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
-        private final Repository repository = createRepository();
-
-        private BridgeStorageProvider bridgeStorageProvider;
-        private FederationSupport federationSupport;
-        private FeePerKbSupport feePerKbSupport;
 
         @BeforeEach
         void setUp() throws IOException {
+            Repository repository = createRepository();
+
             bridgeStorageProvider =  new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, BRIDGE_CONSTANTS.getBtcParams(), POST_REED_ACTIVATION);
             FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
             federationStorageProvider.setNewFederation(p2shP2wshErpFederation);
@@ -518,8 +507,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 .withActivations(POST_REED_ACTIVATION)
                 .withFederationStorageProvider(federationStorageProvider)
                 .build();
-            feePerKbSupport = mock(FeePerKbSupport.class);
-            when(feePerKbSupport.getFeePerKb()).thenReturn(FEE_PER_KB);
+            setUpFeePerKb();
         }
 
         @Test
@@ -727,6 +715,11 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Assert
             assertEquals(Coin.valueOf(119_400L), estimatedFeesForNextPegout);
         }
+    }
+
+    private void setUpFeePerKb() {
+        feePerKbSupport = mock(FeePerKbSupport.class);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(FEE_PER_KB);
     }
 
 }
