@@ -128,7 +128,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         private FederationStorageProvider federationStorageProvider;
 
         @BeforeEach
-        void setUp() throws IOException {
+        void setUp() {
             setUpFeePerKb();
             bridgeStorageAccessor = new InMemoryStorage();
             bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, NETWORK_PARAMETERS, POST_HOP400_PRE_FINGERROOT_ACTIVATIONS);
@@ -237,7 +237,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         private FederationStorageProvider federationStorageProvider;
 
         @BeforeEach
-        void setUp() throws IOException {
+        void setUp() {
             setUpFeePerKb();
             bridgeStorageAccessor = new InMemoryStorage();
             bridgeStorageProvider =  new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, NETWORK_PARAMETERS, POST_FINGERROOT_PRE_REED_ACTIVATIONS);
@@ -343,7 +343,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
     class PostReedActivation {
 
         @BeforeEach
-        void setUp() throws IOException {
+        void setUp() {
             Repository repository = createRepository();
             setUpFeePerKb();
             bridgeStorageAccessor = new InMemoryStorage();
