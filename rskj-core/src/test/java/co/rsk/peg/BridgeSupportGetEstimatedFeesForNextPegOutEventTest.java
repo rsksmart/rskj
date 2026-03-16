@@ -85,7 +85,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             Repository repository = createRepository();
             setUpFeePerKb();
             bridgeStorageAccessor = new InMemoryStorage();
-            bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, BRIDGE_CONSTANTS.getBtcParams(), BEFORE_HOP400_ACTIVATION);
+            bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, NETWORK_PARAMETERS, BEFORE_HOP400_ACTIVATION);
             FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
             federationStorageProvider.setNewFederation(standardMultisigFederation);
             addUtxosToActiveFederation(STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS);
@@ -153,7 +153,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         void setUp() throws IOException {
             setUpFeePerKb();
             bridgeStorageAccessor = new InMemoryStorage();
-            bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, BRIDGE_CONSTANTS.getBtcParams(), POST_HOP400_PRE_FINGERROOT_ACTIVATIONS);
+            bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, NETWORK_PARAMETERS, POST_HOP400_PRE_FINGERROOT_ACTIVATIONS);
             federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
             federationSupport = FederationSupportBuilder.builder()
                 .withFederationConstants(FEDERATION_CONSTANTS)
@@ -276,7 +276,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         void setUp() throws IOException {
             setUpFeePerKb();
             bridgeStorageAccessor = new InMemoryStorage();
-            bridgeStorageProvider =  new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, BRIDGE_CONSTANTS.getBtcParams(), POST_FINGERROOT_PRE_REED_ACTIVATIONS);
+            bridgeStorageProvider =  new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, NETWORK_PARAMETERS, POST_FINGERROOT_PRE_REED_ACTIVATIONS);
             federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
             federationSupport = FederationSupportBuilder.builder()
                 .withFederationConstants(FEDERATION_CONSTANTS)
@@ -397,7 +397,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             Repository repository = createRepository();
             setUpFeePerKb();
             bridgeStorageAccessor = new InMemoryStorage();
-            bridgeStorageProvider =  new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, BRIDGE_CONSTANTS.getBtcParams(), POST_REED_ACTIVATION);
+            bridgeStorageProvider =  new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, NETWORK_PARAMETERS, POST_REED_ACTIVATION);
             FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
             federationStorageProvider.setNewFederation(p2shP2wshErpFederation);
             federationSupport = FederationSupportBuilder.builder()
