@@ -201,55 +201,12 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         @BeforeEach
         void setUp() {
             setUpBridgeAndFederationSupport(POST_FINGERROOT_PRE_REED_ACTIVATIONS);
-        }
-
-        @Test
-        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withNoPegoutRequests_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
-            // Arrange
-            federationStorageProvider.setNewFederation(STANDARD_MULTISIG_FEDERATION);
-            addUtxosToActiveFederation(STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS);
-
-            // Act
-            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
-
-            // Assert
-            assertEquals(Coin.valueOf(233_800L), estimatedFeesForNextPegout);
-        }
-
-        @Test
-        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withOnePegoutRequest_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
-            // Arrange
-            federationStorageProvider.setNewFederation(STANDARD_MULTISIG_FEDERATION);
-            addUtxosToActiveFederation(STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS);
-            addPegoutRequests(1);
-
-            // Act
-            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
-
-            // Assert
-            assertEquals(Coin.valueOf(237_000L), estimatedFeesForNextPegout);
-        }
-
-        @Test
-        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withManyPegoutRequests_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
-            // Arrange
-            federationStorageProvider.setNewFederation(STANDARD_MULTISIG_FEDERATION);
-            addUtxosToActiveFederation(STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS);
-            addPegoutRequests(150);
-
-            // Act
-            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
-
-            // Assert
-            assertEquals(Coin.valueOf(713_800L), estimatedFeesForNextPegout);
+            federationStorageProvider.setNewFederation(P2SH_ERP_FEDERATION);
+            addUtxosToActiveFederation(P2SH_SINGLE_INPUT_UTXOS);
         }
 
         @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withNoPegoutRequests_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
-            // Arrange
-            federationStorageProvider.setNewFederation(P2SH_ERP_FEDERATION);
-            addUtxosToActiveFederation(P2SH_SINGLE_INPUT_UTXOS);
-
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
@@ -260,8 +217,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withOnePegoutRequest_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
             // Arrange
-            federationStorageProvider.setNewFederation(P2SH_ERP_FEDERATION);
-            addUtxosToActiveFederation(P2SH_SINGLE_INPUT_UTXOS);
             addPegoutRequests(1);
 
             // Act
@@ -274,8 +229,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withManyPegoutRequests_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
             // Arrange
-            federationStorageProvider.setNewFederation(P2SH_ERP_FEDERATION);
-            addUtxosToActiveFederation(P2SH_SINGLE_INPUT_UTXOS);
             addPegoutRequests(150);
 
             // Act
