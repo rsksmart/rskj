@@ -116,8 +116,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         @Test
         void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withOnePegoutRequest_shouldReturnZeroFees() throws IOException {
             // Arrange
-            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            releaseRequestQueue.add(RECEIVER_1, Coin.COIN);
+            addPegoutRequests(1);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -129,11 +128,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         @Test
         void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withManyPegoutRequests_shouldReturnZeroFees() throws IOException {
             // Arrange
-            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            for (int i = 0; i < 150; i++) {
-                Address receiver = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "receiver" + i);
-                releaseRequestQueue.add(receiver, Coin.COIN);
-            }
+            addPegoutRequests(150);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -187,9 +182,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             federationStorageProvider.setNewFederation(standardMultisigFederation);
             addUtxosToActiveFederation(STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS);
-
-            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            releaseRequestQueue.add(RECEIVER_1, Coin.COIN);
+            addPegoutRequests(1);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -203,12 +196,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             federationStorageProvider.setNewFederation(standardMultisigFederation);
             addUtxosToActiveFederation(STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS);
-
-            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            for (int i = 0; i < 150; i++) {
-                Address receiver = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "receiver" + i);
-                releaseRequestQueue.add(receiver, Coin.COIN);
-            }
+            addPegoutRequests(150);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -235,9 +223,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             federationStorageProvider.setNewFederation(p2shErpFederation);
             addUtxosToActiveFederation(P2SH_SINGLE_INPUT_UTXOS);
-
-            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            releaseRequestQueue.add(RECEIVER_1, Coin.COIN);
+            addPegoutRequests(1);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -251,12 +237,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             federationStorageProvider.setNewFederation(p2shErpFederation);
             addUtxosToActiveFederation(P2SH_SINGLE_INPUT_UTXOS);
-
-            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            for (int i = 0; i < 150; i++) {
-                Address receiver = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "receiver" + i);
-                releaseRequestQueue.add(receiver, Coin.COIN);
-            }
+            addPegoutRequests(150);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -310,9 +291,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             federationStorageProvider.setNewFederation(standardMultisigFederation);
             addUtxosToActiveFederation(STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS);
-
-            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            releaseRequestQueue.add(RECEIVER_1, Coin.COIN);
+            addPegoutRequests(1);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -326,12 +305,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             federationStorageProvider.setNewFederation(standardMultisigFederation);
             addUtxosToActiveFederation(STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS);
-
-            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            for (int i = 0; i < 150; i++) {
-                Address receiver = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "receiver" + i);
-                releaseRequestQueue.add(receiver, Coin.COIN);
-            }
+            addPegoutRequests(150);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -358,9 +332,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             federationStorageProvider.setNewFederation(p2shErpFederation);
             addUtxosToActiveFederation(P2SH_SINGLE_INPUT_UTXOS);
-
-            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            releaseRequestQueue.add(RECEIVER_1, Coin.COIN);
+            addPegoutRequests(1);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -374,12 +346,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             federationStorageProvider.setNewFederation(p2shErpFederation);
             addUtxosToActiveFederation(P2SH_SINGLE_INPUT_UTXOS);
-
-            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            for (int i = 0; i < 150; i++) {
-                Address receiver = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "receiver" + i);
-                releaseRequestQueue.add(receiver, Coin.COIN);
-            }
+            addPegoutRequests(150);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -506,7 +473,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             releaseRequestQueue.add(RECEIVER_1, BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
             releaseRequestQueue.add(RECEIVER_2, BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.valueOf(1_000L)));
 
-
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
@@ -590,6 +556,14 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
     private void setUpFeePerKb() {
         feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(FEE_PER_KB);
+    }
+
+    private void addPegoutRequests(int pegOutRequestCount) throws IOException {
+        ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
+        for (int i = 0; i < pegOutRequestCount; i++) {
+            Address receiver = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "receiver" + i);
+            releaseRequestQueue.add(receiver, Coin.COIN);
+        }
     }
 
 }
