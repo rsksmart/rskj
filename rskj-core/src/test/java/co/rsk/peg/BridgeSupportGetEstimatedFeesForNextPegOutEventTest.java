@@ -74,6 +74,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
     private BridgeStorageProvider bridgeStorageProvider;
     private FederationSupport federationSupport;
     private FeePerKbSupport feePerKbSupport;
+    private BridgeSupport bridgeSupport;
 
     @Nested
     class PreHop400Activation {
@@ -82,7 +83,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         void setUp() {
             Repository repository = createRepository();
             StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
-
+            setUpFeePerKb();
             bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, BRIDGE_CONSTANTS.getBtcParams(), BEFORE_HOP400_ACTIVATION);
             FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
             federationStorageProvider.setNewFederation(standardMultisigFederation);
@@ -92,13 +93,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 .withActivations(BEFORE_HOP400_ACTIVATION)
                 .withFederationStorageProvider(federationStorageProvider)
                 .build();
-            setUpFeePerKb();
-        }
-
-        @Test
-        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withNoPegoutRequests_shouldReturnZeroFees() throws IOException {
-            // Arrange
-            BridgeSupport bridgeSupport =  BridgeSupportBuilder.builder()
+            bridgeSupport = BridgeSupportBuilder.builder()
                 .withBridgeConstants(BRIDGE_CONSTANTS)
                 .withProvider(bridgeStorageProvider)
                 .withActivations(BEFORE_HOP400_ACTIVATION)
@@ -106,6 +101,10 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 .withFeePerKbSupport(feePerKbSupport)
                 .build();
 
+        }
+
+        @Test
+        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withNoPegoutRequests_shouldReturnZeroFees() throws IOException {
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
@@ -118,14 +117,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, Coin.COIN);
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(BEFORE_HOP400_ACTIVATION)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -142,14 +133,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 Address receiver = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "receiver" + i);
                 releaseRequestQueue.add(receiver, Coin.COIN);
             }
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(BEFORE_HOP400_ACTIVATION)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -168,6 +151,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
 
         @BeforeEach
         void setUp() throws IOException {
+            setUpFeePerKb();
             bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, BRIDGE_CONSTANTS.getBtcParams(), POST_HOP400_PRE_FINGERROOT_ACTIVATIONS);
             federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
             federationSupport = FederationSupportBuilder.builder()
@@ -175,7 +159,13 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 .withActivations(POST_HOP400_PRE_FINGERROOT_ACTIVATIONS)
                 .withFederationStorageProvider(federationStorageProvider)
                 .build();
-            setUpFeePerKb();
+            bridgeSupport = BridgeSupportBuilder.builder()
+                .withBridgeConstants(BRIDGE_CONSTANTS)
+                .withProvider(bridgeStorageProvider)
+                .withActivations(POST_HOP400_PRE_FINGERROOT_ACTIVATIONS)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .build();
         }
 
         @Test
@@ -183,14 +173,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             federationStorageProvider.setNewFederation(standardMultisigFederation);
             bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS, BridgeSerializationUtils::serializeUTXOList);
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_HOP400_PRE_FINGERROOT_ACTIVATIONS)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -207,14 +189,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, Coin.COIN);
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_HOP400_PRE_FINGERROOT_ACTIVATIONS)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -235,14 +209,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 releaseRequestQueue.add(receiver, Coin.COIN);
             }
 
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_HOP400_PRE_FINGERROOT_ACTIVATIONS)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
-
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
@@ -255,14 +221,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             federationStorageProvider.setNewFederation(p2shErpFederation);
             bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), P2SH_SINGLE_INPUT_UTXOS, BridgeSerializationUtils::serializeUTXOList);
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_HOP400_PRE_FINGERROOT_ACTIVATIONS)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -279,14 +237,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, Coin.COIN);
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_HOP400_PRE_FINGERROOT_ACTIVATIONS)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -306,14 +256,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 Address receiver = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "receiver" + i);
                 releaseRequestQueue.add(receiver, Coin.COIN);
             }
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_HOP400_PRE_FINGERROOT_ACTIVATIONS)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -332,6 +274,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
 
         @BeforeEach
         void setUp() throws IOException {
+            setUpFeePerKb();
             bridgeStorageProvider =  new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, BRIDGE_CONSTANTS.getBtcParams(), POST_FINGERROOT_PRE_REED_ACTIVATIONS);
             federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
             federationSupport = FederationSupportBuilder.builder()
@@ -339,7 +282,13 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 .withActivations(BEFORE_HOP400_ACTIVATION)
                 .withFederationStorageProvider(federationStorageProvider)
                 .build();
-            setUpFeePerKb();
+            bridgeSupport = BridgeSupportBuilder.builder()
+                .withBridgeConstants(BRIDGE_CONSTANTS)
+                .withProvider(bridgeStorageProvider)
+                .withActivations(POST_FINGERROOT_PRE_REED_ACTIVATIONS)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .build();
         }
 
         @Test
@@ -347,14 +296,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             federationStorageProvider.setNewFederation(standardMultisigFederation);
             bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS, BridgeSerializationUtils::serializeUTXOList);
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_FINGERROOT_PRE_REED_ACTIVATIONS)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -372,14 +313,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, Coin.COIN);
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_FINGERROOT_PRE_REED_ACTIVATIONS)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -401,14 +334,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 releaseRequestQueue.add(receiver, Coin.COIN);
             }
 
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_FINGERROOT_PRE_REED_ACTIVATIONS)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
-
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
@@ -422,14 +347,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             federationStorageProvider.setNewFederation(p2shErpFederation);
             bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), P2SH_SINGLE_INPUT_UTXOS, BridgeSerializationUtils::serializeUTXOList);
             federationStorageProvider.save(FEDERATION_CONSTANTS.getBtcParams(), POST_FINGERROOT_PRE_REED_ACTIVATIONS);
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_FINGERROOT_PRE_REED_ACTIVATIONS)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -447,14 +364,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, Coin.COIN);
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_FINGERROOT_PRE_REED_ACTIVATIONS)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -475,14 +384,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 releaseRequestQueue.add(receiver, Coin.COIN);
             }
 
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_FINGERROOT_PRE_REED_ACTIVATIONS)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
-
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
@@ -498,7 +399,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         @BeforeEach
         void setUp() throws IOException {
             Repository repository = createRepository();
-
+            setUpFeePerKb();
             bridgeStorageProvider =  new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, BRIDGE_CONSTANTS.getBtcParams(), POST_REED_ACTIVATION);
             FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
             federationStorageProvider.setNewFederation(p2shP2wshErpFederation);
@@ -507,21 +408,19 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
                 .withActivations(POST_REED_ACTIVATION)
                 .withFederationStorageProvider(federationStorageProvider)
                 .build();
-            setUpFeePerKb();
-        }
-
-        @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withNoPegoutRequests_shouldEstimateFeesFromTransactionSimulation() throws IOException {
-            // Arrange
-            bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), P2SH_P2WSH_SINGLE_INPUT_UTXOS, BridgeSerializationUtils::serializeUTXOList);
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+            bridgeSupport = BridgeSupportBuilder.builder()
                 .withBridgeConstants(BRIDGE_CONSTANTS)
                 .withProvider(bridgeStorageProvider)
                 .withActivations(POST_REED_ACTIVATION)
                 .withFederationSupport(federationSupport)
                 .withFeePerKbSupport(feePerKbSupport)
                 .build();
+        }
+
+        @Test
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withNoPegoutRequests_shouldEstimateFeesFromTransactionSimulation() throws IOException {
+            // Arrange
+            bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), P2SH_P2WSH_SINGLE_INPUT_UTXOS, BridgeSerializationUtils::serializeUTXOList);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -532,15 +431,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
 
         @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithNoUtxos_withNoPegoutRequests_shouldFallBackToEstimateFeesFromInputAndOutputCount() throws IOException {
-            // Arrange
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_REED_ACTIVATION)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
-
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
@@ -553,14 +443,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Arrange
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_REED_ACTIVATION)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -576,14 +458,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_REED_ACTIVATION)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -601,13 +475,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             releaseRequestQueue.add(RECEIVER_1, BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
             releaseRequestQueue.add(RECEIVER_2, BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.valueOf(1_000L)));
 
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_REED_ACTIVATION)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -626,14 +493,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             releaseRequestQueue.add(RECEIVER_2, BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.valueOf(1_000L)));
             releaseRequestQueue.add(RECEIVER_3, BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.valueOf(2_000L)));
 
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_REED_ACTIVATION)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
-
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
@@ -649,14 +508,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
             releaseRequestQueue.add(RECEIVER_2, Coin.COIN.multiply(10));
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_REED_ACTIVATION)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -675,14 +526,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             releaseRequestQueue.add(RECEIVER_2, BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.valueOf(1_000L)));
             releaseRequestQueue.add(RECEIVER_3, Coin.COIN.multiply(10));
 
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_REED_ACTIVATION)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
-
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
@@ -700,14 +543,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             releaseRequestQueue.add(RECEIVER_2, BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.valueOf(1_000L)));
             releaseRequestQueue.add(RECEIVER_3, BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.valueOf(2_000L)));
             releaseRequestQueue.add(RECEIVER_4, Coin.COIN.multiply(10));
-
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBridgeConstants(BRIDGE_CONSTANTS)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(POST_REED_ACTIVATION)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .build();
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
