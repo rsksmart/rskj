@@ -21,6 +21,8 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.util.List;
@@ -104,31 +106,11 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
 
         }
 
-        @Test
-        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withNoPegoutRequests_shouldReturnZeroFees() throws IOException {
-            // Act
-            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
-
-            // Assert
-            assertEquals(Coin.ZERO, estimatedFeesForNextPegout);
-        }
-
-        @Test
-        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withOnePegoutRequest_shouldReturnZeroFees() throws IOException {
+        @ParameterizedTest
+        @ValueSource(ints = {0, 1, 150})
+        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_shouldReturnZeroFees(int pegoutRequestsCount) throws IOException {
             // Arrange
-            addPegoutRequests(1);
-
-            // Act
-            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
-
-            // Assert
-            assertEquals(Coin.ZERO, estimatedFeesForNextPegout);
-        }
-
-        @Test
-        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withManyPegoutRequests_shouldReturnZeroFees() throws IOException {
-            // Arrange
-            addPegoutRequests(150);
+            addPegoutRequests(pegoutRequestsCount);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
