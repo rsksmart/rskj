@@ -280,7 +280,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
             federationSupport = FederationSupportBuilder.builder()
                 .withFederationConstants(FEDERATION_CONSTANTS)
-                .withActivations(BEFORE_HOP400_ACTIVATION)
+                .withActivations(POST_FINGERROOT_PRE_REED_ACTIVATIONS)
                 .withFederationStorageProvider(federationStorageProvider)
                 .build();
             bridgeSupport = BridgeSupportBuilder.builder()
