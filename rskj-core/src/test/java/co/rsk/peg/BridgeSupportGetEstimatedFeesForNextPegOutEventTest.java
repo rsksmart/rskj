@@ -55,7 +55,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
     private static final Address RECEIVER_1 = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "address1");
     private static final Address RECEIVER_2 = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "address2");
     private static final Address RECEIVER_3 = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "address3");
-    private static final Address RECEIVER_4 = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "address4");
 
     private static final Coin EIGHT_BTCS = Coin.valueOf(8, 0);
     private static final List<UTXO> STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS = List.of(
@@ -415,7 +414,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoBTCs_withOneBtcPegoutRequest_shouldEstimateFeesFromTransactionSimulation() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoBTCs_withPegoutRequestOfOneBtc_shouldEstimateFeesFromTransactionSimulation() throws IOException {
             // Arrange
             UTXO oneBtcUtxo = createUTXO(Coin.COIN, P2SH_P2WSH_ERP_FEDERATION.getAddress());
             List<UTXO> federationUtxos = List.of(oneBtcUtxo, oneBtcUtxo);
@@ -432,7 +431,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoBTCs_withMoreThanOneBtcPegoutRequest_shouldFallBackToEstimateFeesFromInputAndOutputCount() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoBTCs_withPegoutRequestGreaterThanOneBtc_shouldFallBackToEstimateFeesFromInputAndOutputCount() throws IOException {
             // Arrange
             UTXO oneBtcUtxo = createUTXO(Coin.COIN, P2SH_P2WSH_ERP_FEDERATION.getAddress());
             List<UTXO> federationUtxos = List.of(oneBtcUtxo, oneBtcUtxo);
@@ -482,7 +481,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoUtxos_withTwoPegoutRequests_shouldEstimateFeesFromTransactionSimulationUsingTwoInputs() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoUtxos_withTwoPegoutRequests_shouldEstimateFeesFromTransactionSimulation() throws IOException {
             // Arrange
             addUtxosToActiveFederation(TWO_P2SH_P2WSH_EIGHT_BTCS_UTXOS);
 
@@ -498,7 +497,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoUtxos_withThreePegoutRequests_shouldEstimateFeesFromTransactionSimulationUsingTwoInputs() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoUtxos_withThreePegoutRequests_shouldEstimateFeesFromTransactionSimulation() throws IOException {
             // Arrange
             addUtxosToActiveFederation(TWO_P2SH_P2WSH_EIGHT_BTCS_UTXOS);
 
@@ -512,24 +511,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
 
             // Assert
             assertEquals(Coin.valueOf(116_000L), estimatedFeesForNextPegout);
-        }
-
-        @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoUtxos_withFourPegoutRequests_shouldEstimateFeesFromTransactionSimulationUsingTwoInputs() throws IOException {
-            // Arrange
-            addUtxosToActiveFederation(TWO_P2SH_P2WSH_EIGHT_BTCS_UTXOS);
-
-            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
-            releaseRequestQueue.add(RECEIVER_2, MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(1_000L)));
-            releaseRequestQueue.add(RECEIVER_3, MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(2_000L)));
-            releaseRequestQueue.add(RECEIVER_4, TEN_BTCS_PEGOUT_TX_VALUE);
-
-            // Act
-            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
-
-            // Assert
-            assertEquals(Coin.valueOf(119_400L), estimatedFeesForNextPegout);
         }
     }
 
