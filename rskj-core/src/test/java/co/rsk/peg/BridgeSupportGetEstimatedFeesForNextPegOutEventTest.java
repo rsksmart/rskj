@@ -57,21 +57,22 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
     private static final Address RECEIVER_3 = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "address3");
     private static final Address RECEIVER_4 = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "address4");
 
+    private static final Coin EIGHT_BTCS = Coin.valueOf(8, 0);
     private static final List<UTXO> STANDARD_MULTISIG_FED_SINGLE_INPUT_UTXOS = List.of(
-        createUTXO(Coin.valueOf(8, 0), STANDARD_MULTISIG_FEDERATION.getAddress())
+        createUTXO(EIGHT_BTCS, STANDARD_MULTISIG_FEDERATION.getAddress())
     );
 
     private static final List<UTXO> P2SH_SINGLE_INPUT_UTXOS = List.of(
-        createUTXO(Coin.valueOf(8, 0), P2SH_ERP_FEDERATION.getAddress())
+        createUTXO(EIGHT_BTCS, P2SH_ERP_FEDERATION.getAddress())
     );
-    private static final List<UTXO> P2SH_P2WSH_SINGLE_INPUT_UTXOS = List.of(
-        createUTXO(Coin.valueOf(8, 0), P2SH_P2WSH_ERP_FEDERATION.getAddress())
+    private static final List<UTXO> ONE_P2SH_P2WSH_EIGHT_BTCS_UTXO = List.of(
+        createUTXO(EIGHT_BTCS, P2SH_P2WSH_ERP_FEDERATION.getAddress())
     );
-    private static final List<UTXO> P2SH_P2WSH_TWO_INPUT_UTXOS = List.of(
-        createUTXO(Coin.valueOf(8, 0), P2SH_P2WSH_ERP_FEDERATION.getAddress()),
-        createUTXO(Coin.valueOf(13, 0), P2SH_P2WSH_ERP_FEDERATION.getAddress())
+    private static final List<UTXO> TWO_P2SH_P2WSH_EIGHT_BTCS_UTXOS = List.of(
+        createUTXO(EIGHT_BTCS, P2SH_P2WSH_ERP_FEDERATION.getAddress()),
+        createUTXO(EIGHT_BTCS, P2SH_P2WSH_ERP_FEDERATION.getAddress())
     );
-    public static final Coin BIG_PEGOUT_TX_VALUE = Coin.COIN.multiply(10);
+    public static final Coin TEN_BTCS_PEGOUT_TX_VALUE = Coin.COIN.multiply(10);
     public static final Coin MINIMUM_PEGOUT_TX_VALUE = BRIDGE_CONSTANTS.getMinimumPegoutTxValue();
 
     private BridgeStorageProvider bridgeStorageProvider;
@@ -367,7 +368,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withNoPegoutRequests_shouldEstimateFeesFromTransactionSimulation() throws IOException {
             // Arrange
-            addUtxosToActiveFederation(P2SH_P2WSH_SINGLE_INPUT_UTXOS);
+            addUtxosToActiveFederation(ONE_P2SH_P2WSH_EIGHT_BTCS_UTXO);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -401,7 +402,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withOnePegoutRequest_shouldEstimateFeesFromTransactionSimulation() throws IOException {
             // Arrange
-            addUtxosToActiveFederation(P2SH_P2WSH_SINGLE_INPUT_UTXOS);
+            addUtxosToActiveFederation(ONE_P2SH_P2WSH_EIGHT_BTCS_UTXO);
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
@@ -450,7 +451,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withTwoPegoutRequests_shouldEstimateFeesFromTransactionSimulation() throws IOException {
             // Arrange
-            addUtxosToActiveFederation(P2SH_P2WSH_SINGLE_INPUT_UTXOS);
+            addUtxosToActiveFederation(ONE_P2SH_P2WSH_EIGHT_BTCS_UTXO);
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
@@ -466,7 +467,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withThreePegoutRequests_shouldEstimateFeesFromTransactionSimulation() throws IOException {
             // Arrange
-            addUtxosToActiveFederation(P2SH_P2WSH_SINGLE_INPUT_UTXOS);
+            addUtxosToActiveFederation(ONE_P2SH_P2WSH_EIGHT_BTCS_UTXO);
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
@@ -483,11 +484,11 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoUtxos_withTwoPegoutRequests_shouldEstimateFeesFromTransactionSimulationUsingTwoInputs() throws IOException {
             // Arrange
-            addUtxosToActiveFederation(P2SH_P2WSH_TWO_INPUT_UTXOS);
+            addUtxosToActiveFederation(TWO_P2SH_P2WSH_EIGHT_BTCS_UTXOS);
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
-            releaseRequestQueue.add(RECEIVER_2, BIG_PEGOUT_TX_VALUE);
+            releaseRequestQueue.add(RECEIVER_2, TEN_BTCS_PEGOUT_TX_VALUE);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -499,12 +500,12 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoUtxos_withThreePegoutRequests_shouldEstimateFeesFromTransactionSimulationUsingTwoInputs() throws IOException {
             // Arrange
-            addUtxosToActiveFederation(P2SH_P2WSH_TWO_INPUT_UTXOS);
+            addUtxosToActiveFederation(TWO_P2SH_P2WSH_EIGHT_BTCS_UTXOS);
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
             releaseRequestQueue.add(RECEIVER_2, MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(1_000L)));
-            releaseRequestQueue.add(RECEIVER_3, BIG_PEGOUT_TX_VALUE);
+            releaseRequestQueue.add(RECEIVER_3, TEN_BTCS_PEGOUT_TX_VALUE);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -516,13 +517,13 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoUtxos_withFourPegoutRequests_shouldEstimateFeesFromTransactionSimulationUsingTwoInputs() throws IOException {
             // Arrange
-            addUtxosToActiveFederation(P2SH_P2WSH_TWO_INPUT_UTXOS);
+            addUtxosToActiveFederation(TWO_P2SH_P2WSH_EIGHT_BTCS_UTXOS);
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
             releaseRequestQueue.add(RECEIVER_2, MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(1_000L)));
             releaseRequestQueue.add(RECEIVER_3, MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(2_000L)));
-            releaseRequestQueue.add(RECEIVER_4, BIG_PEGOUT_TX_VALUE);
+            releaseRequestQueue.add(RECEIVER_4, TEN_BTCS_PEGOUT_TX_VALUE);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
