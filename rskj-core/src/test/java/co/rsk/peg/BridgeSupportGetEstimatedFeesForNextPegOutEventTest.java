@@ -464,6 +464,40 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         }
 
         @Test
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoBTCs_withOneBtcPegoutRequest_shouldEstimateFeesFromTransactionSimulation() throws IOException {
+            // Arrange
+            UTXO oneBtcUtxo = createUTXO(Coin.COIN, p2shP2wshErpFederation.getAddress());
+            List<UTXO> federationUtxos = List.of(oneBtcUtxo, oneBtcUtxo);
+            addUtxosToActiveFederation(federationUtxos);
+
+            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
+            releaseRequestQueue.add(RECEIVER_1, Coin.COIN);
+
+            // Act
+            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
+
+            // Assert
+            assertEquals(Coin.valueOf(106_000L), estimatedFeesForNextPegout);
+        }
+
+        @Test
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoBTCs_withMoreThanOneBtcPegoutRequest_shouldFallBackToEstimateFeesFromInputAndOutputCount() throws IOException {
+            // Arrange
+            UTXO oneBtcUtxo = createUTXO(Coin.COIN, p2shP2wshErpFederation.getAddress());
+            List<UTXO> federationUtxos = List.of(oneBtcUtxo, oneBtcUtxo);
+            addUtxosToActiveFederation(federationUtxos);
+
+            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
+            releaseRequestQueue.add(RECEIVER_1, Coin.COIN.add(Coin.SATOSHI));
+
+            // Act
+            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
+
+            // Assert
+            assertEquals(Coin.valueOf(99_000L), estimatedFeesForNextPegout);
+        }
+
+        @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withTwoPegoutRequests_shouldEstimateFeesFromTransactionSimulation() throws IOException {
             // Arrange
             addUtxosToActiveFederation(P2SH_P2WSH_SINGLE_INPUT_UTXOS);
