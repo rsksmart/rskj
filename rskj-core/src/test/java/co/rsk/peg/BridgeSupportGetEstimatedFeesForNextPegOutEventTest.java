@@ -43,7 +43,6 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
     private static final ActivationConfig.ForBlock POST_HOP400_PRE_FINGERROOT_ACTIVATIONS = ActivationConfigsForTest.hop400().forBlock(0L);
     private static final ActivationConfig.ForBlock POST_FINGERROOT_PRE_REED_ACTIVATIONS = ActivationConfigsForTest.fingerroot500().forBlock(0L);
     private static final ActivationConfig.ForBlock POST_REED_ACTIVATION = ActivationConfigsForTest.all().forBlock(0L);
-    private static final Coin FEE_PER_KB = Coin.MILLICOIN;
 
     private static final Federation STANDARD_MULTISIG_FEDERATION = FederationTestUtils.getGenesisFederation(FEDERATION_CONSTANTS);
     private static final ErpFederation P2SH_ERP_FEDERATION = P2shErpFederationBuilder.builder()
@@ -72,6 +71,8 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         createUTXO(Coin.valueOf(8, 0), P2SH_P2WSH_ERP_FEDERATION.getAddress()),
         createUTXO(Coin.valueOf(13, 0), P2SH_P2WSH_ERP_FEDERATION.getAddress())
     );
+    public static final Coin BIG_PEGOUT_TX_VALUE = Coin.COIN.multiply(10);
+    public static final Coin MINIMUM_PEGOUT_TX_VALUE = BRIDGE_CONSTANTS.getMinimumPegoutTxValue();
 
     private BridgeStorageProvider bridgeStorageProvider;
     private FederationSupport federationSupport;
@@ -388,7 +389,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithNoUtxos_withOnePegoutRequest_shouldFallBackToEstimateFeesFromInputAndOutputCount() throws IOException {
             // Arrange
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            releaseRequestQueue.add(RECEIVER_1, BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
+            releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -403,7 +404,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             addUtxosToActiveFederation(P2SH_P2WSH_SINGLE_INPUT_UTXOS);
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            releaseRequestQueue.add(RECEIVER_1, BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
+            releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -452,8 +453,8 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             addUtxosToActiveFederation(P2SH_P2WSH_SINGLE_INPUT_UTXOS);
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            releaseRequestQueue.add(RECEIVER_1, BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
-            releaseRequestQueue.add(RECEIVER_2, BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.valueOf(1_000L)));
+            releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
+            releaseRequestQueue.add(RECEIVER_2, MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(1_000L)));
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -468,9 +469,9 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             addUtxosToActiveFederation(P2SH_P2WSH_SINGLE_INPUT_UTXOS);
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            releaseRequestQueue.add(RECEIVER_1, BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
-            releaseRequestQueue.add(RECEIVER_2, BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.valueOf(1_000L)));
-            releaseRequestQueue.add(RECEIVER_3, BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.valueOf(2_000L)));
+            releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
+            releaseRequestQueue.add(RECEIVER_2, MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(1_000L)));
+            releaseRequestQueue.add(RECEIVER_3, MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(2_000L)));
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -485,8 +486,8 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             addUtxosToActiveFederation(P2SH_P2WSH_TWO_INPUT_UTXOS);
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            releaseRequestQueue.add(RECEIVER_1, BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
-            releaseRequestQueue.add(RECEIVER_2, Coin.COIN.multiply(10));
+            releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
+            releaseRequestQueue.add(RECEIVER_2, BIG_PEGOUT_TX_VALUE);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -501,9 +502,9 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             addUtxosToActiveFederation(P2SH_P2WSH_TWO_INPUT_UTXOS);
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            releaseRequestQueue.add(RECEIVER_1, BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
-            releaseRequestQueue.add(RECEIVER_2, BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.valueOf(1_000L)));
-            releaseRequestQueue.add(RECEIVER_3, Coin.COIN.multiply(10));
+            releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
+            releaseRequestQueue.add(RECEIVER_2, MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(1_000L)));
+            releaseRequestQueue.add(RECEIVER_3, BIG_PEGOUT_TX_VALUE);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -518,10 +519,10 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             addUtxosToActiveFederation(P2SH_P2WSH_TWO_INPUT_UTXOS);
 
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
-            releaseRequestQueue.add(RECEIVER_1, BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
-            releaseRequestQueue.add(RECEIVER_2, BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.valueOf(1_000L)));
-            releaseRequestQueue.add(RECEIVER_3, BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.valueOf(2_000L)));
-            releaseRequestQueue.add(RECEIVER_4, Coin.COIN.multiply(10));
+            releaseRequestQueue.add(RECEIVER_1, MINIMUM_PEGOUT_TX_VALUE);
+            releaseRequestQueue.add(RECEIVER_2, MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(1_000L)));
+            releaseRequestQueue.add(RECEIVER_3, MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(2_000L)));
+            releaseRequestQueue.add(RECEIVER_4, BIG_PEGOUT_TX_VALUE);
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
@@ -537,7 +538,8 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
 
     private void setUpFeePerKb() {
         feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(FEE_PER_KB);
+        Coin feePerKb = Coin.MILLICOIN;
+        when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
     }
 
     private void addPegoutRequests(int pegOutRequestCount) throws IOException {
