@@ -2641,8 +2641,10 @@ public class BridgeSupport {
             releaseRequestQueue.getEntries().stream()
                 .map(rr -> new ReleaseRequestQueue.Entry(rr.getDestination(), rr.getAmount())).toList());
 
-        // One more pegout to estimate what the fee would be for with an extra pegout if requested
-        releaseRequestListCopy.add(new ReleaseRequestQueue.Entry(new BtcECKey().toAddress(this.networkParameters), Coin.valueOf(1, 0)));
+        Coin estimatedNextPegoutAmount = activations.isActive(RSKIP540)
+            ? bridgeConstants.getMinimumPegoutTxValue()
+            : Coin.valueOf(1, 0);
+        releaseRequestListCopy.add(new ReleaseRequestQueue.Entry(new BtcECKey().toAddress(this.networkParameters), estimatedNextPegoutAmount));
 
         Wallet activeFederationWallet = getActiveFederationWallet(true);
         Federation activeFederation = getActiveFederation();
