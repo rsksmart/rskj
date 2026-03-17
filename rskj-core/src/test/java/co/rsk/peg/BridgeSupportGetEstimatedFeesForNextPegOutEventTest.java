@@ -451,7 +451,7 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
         void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationWithTwoBTCs_withPegoutRequestGreaterThanOneBtc_shouldEstimateFeesFromTransactionSimulation() throws IOException {
             // Arrange
             addUtxosToActiveFederation(TWO_P2SH_P2WSH_UTXOS_OF_ONE_BTCS);
-            addPegoutRequests(1, Coin.COIN);
+            addPegoutRequests(1, Coin.COIN.add(Coin.SATOSHI));
 
             // Act
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
