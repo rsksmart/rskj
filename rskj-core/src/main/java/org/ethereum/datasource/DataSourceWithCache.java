@@ -274,12 +274,16 @@ public class DataSourceWithCache implements KeyValueDataSource {
                     uncommittedBatch.put(key, value);
                 }
             });
-
+            long updateBatchTime = System.nanoTime();
             Set<ByteArrayWrapper> uncommittedKeysToRemove = uncommittedCache.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey).collect(Collectors.toSet());
             base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
+            metrics.onStoreFlushBatchUpdate(uncommittedBatch.size(), uncommittedKeysToRemove.size(),  System.nanoTime() - updateBatchTime);
+
+            long updateCommittedAndUncommittedTime = System.nanoTime();
             metrics.onCacheCommittedWritePutAll(uncommittedCache.size());
             committedCache.putAll(uncommittedCache);
             uncommittedCache.clear();
+            metrics.onStoreFlushCommitedAndUncommittedUpdate(System.nanoTime()-updateCommittedAndUncommittedTime);
 
             long totalTime = System.nanoTime() - saveTime;
 

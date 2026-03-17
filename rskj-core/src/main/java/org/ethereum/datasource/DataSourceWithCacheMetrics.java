@@ -77,6 +77,15 @@ public final class DataSourceWithCacheMetrics {
     private final LongAdder write_flush_nanos = new LongAdder();  // flush duration (manual/size/close)
     private final LongAdder write_batch_nanos = new LongAdder();  // updateBatch duration
 
+    //flush operation
+    private final LongAdder store_flush_to_update = new LongAdder();
+    private final LongAdder store_flush_to_remove = new LongAdder();
+    private final LongAdder store_flush_nanos = new LongAdder();
+    private final LongAdder store_flush_counts = new LongAdder();
+
+    private final LongAdder store_flush_committed_and_uncommitted_nanos = new LongAdder();
+    private final LongAdder store_flush_committed_and_uncommitted_count = new LongAdder();
+
     public DataSourceWithCacheMetrics(Logger logger,
                                       String name,
                                       String owner,
@@ -89,6 +98,20 @@ public final class DataSourceWithCacheMetrics {
         this.committedSize = committedSize;
         this.uncommittedSize = uncommittedSize;
         this.emitEveryOps = emitEveryOps;
+    }
+
+    public void onStoreFlushBatchUpdate(int  entriesToUpdate, int keysToRemove, long nanos) {
+        store_flush_to_update.add(entriesToUpdate);
+        store_flush_to_remove.add(keysToRemove);
+        store_flush_counts.increment();
+        store_flush_nanos.add(nanos);
+        maybeEmit();
+    }
+
+    public void onStoreFlushCommitedAndUncommittedUpdate( long nanos) {
+        store_flush_committed_and_uncommitted_nanos.add(nanos);
+        store_flush_committed_and_uncommitted_count.increment();
+        maybeEmit();
     }
 
     // USER-PERSPECTIVE: one increment per API call
@@ -236,6 +259,12 @@ public final class DataSourceWithCacheMetrics {
         long avgWriteFlushNs = avg(write_flush_nanos.sum(), userFlushes);
         long avgWriteBatchNs = avg(write_batch_nanos.sum(), userBatches);
 
+        //flush operation
+        long storeFlushToUpdateCount = store_flush_to_update.sum();
+        long storeFlushToRemoveCount = store_flush_to_remove.sum();
+        long storeFlushToUpdateNs = avg(store_flush_nanos.sum(), store_flush_counts.sum());
+        long storeFlushCommittedAndUncommittedNs = avg(store_flush_committed_and_uncommitted_nanos.sum(), store_flush_committed_and_uncommitted_count.sum());
+
         return String.format(Locale.ROOT,
                 "owner=%s " +
                         "ds_cache_metrics name=%s " +
@@ -259,6 +288,9 @@ public final class DataSourceWithCacheMetrics {
                         "committed_size=%d uncommitted_size=%d " +
                         // TIMINGS
                         "avg_read_store_ns=%d avg_write_flush_ns=%d avg_write_batch_ns=%d",
+                        //Flush
+                        "store_flush_to_update=%d store_flush_to_remove=%d store_flush_to_update_ns=%d store_flush_committed_and_uncommitted_ns=%d" ,
+
                 owner,
                 name,
                 userGets, userPuts, userDels, userBatches, userFlushes,
@@ -272,7 +304,8 @@ public final class DataSourceWithCacheMetrics {
                 invPut,
                 fMan, fSize, fClose,
                 committedSize.getAsInt(), uncommittedSize.getAsInt(),
-                avgReadStoreNs, avgWriteFlushNs, avgWriteBatchNs
+                avgReadStoreNs, avgWriteFlushNs, avgWriteBatchNs,
+                storeFlushToUpdateCount, storeFlushToRemoveCount, storeFlushToUpdateNs, storeFlushCommittedAndUncommittedNs
         );
     }
 
