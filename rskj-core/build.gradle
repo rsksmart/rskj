@@ -42,8 +42,20 @@ java {
 
 application {
     mainClass = 'co.rsk.Start'
-    applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-Xmx5G", "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow"]
+    applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-Xmx8G",
+    "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow"
+    ]
 }
+
+tasks.named('run', JavaExec) {
+    // This allows you to change logging level like this
+    // ./gradlew run --args='--regtest' -Plogging.stdout=WARN
+    if (project.hasProperty('logging.stdout')) {
+        systemProperty('logging.stdout', project.property('logging.stdout'));
+    } else {
+        systemProperty('logging.stdout', 'INFO');
+    }
+ }
 
 def getFilteredFiles() {
     def timestamp = ext.timestamp
