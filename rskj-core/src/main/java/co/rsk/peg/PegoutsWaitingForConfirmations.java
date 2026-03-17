@@ -88,7 +88,8 @@ public class PegoutsWaitingForConfirmations {
     private Set<Entry> entries;
 
     public PegoutsWaitingForConfirmations(Set<Entry> entries) {
-        this.entries = new HashSet<>(entries);
+	this.entries = new HashSet<>(Math.max((int) (entries.size()/.75f) + 1, 16));
+	this.entries.addAll(entries);
     }
 
     public Set<Entry> getEntriesWithoutHash() {
