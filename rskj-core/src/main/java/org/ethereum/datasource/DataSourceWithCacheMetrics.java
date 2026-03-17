@@ -287,7 +287,7 @@ public final class DataSourceWithCacheMetrics {
                         // SIZES
                         "committed_size=%d uncommitted_size=%d " +
                         // TIMINGS
-                        "avg_read_store_ns=%d avg_write_flush_ns=%d avg_write_batch_ns=%d",
+                        "avg_read_store_ns=%d avg_write_flush_ns=%d avg_write_batch_ns=%d " +
                         //Flush
                         "store_flush_to_update=%d store_flush_to_remove=%d store_flush_to_update_ns=%d store_flush_committed_and_uncommitted_ns=%d" ,
 
