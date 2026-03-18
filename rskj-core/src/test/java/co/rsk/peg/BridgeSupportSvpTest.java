@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
@@ -46,6 +47,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.IntStream;
 
+import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
@@ -135,11 +137,18 @@ class BridgeSupportSvpTest {
             .build();
         federationStorageProvider.setNewFederation(activeFederation);
 
-        List<UTXO> activeFederationUTXOs = Arrays.asList(
-            BitcoinTestUtils.createUTXO(1, 0, svpFundTxOutpointsValues.get(0), activeFederation.getAddress()),
-            BitcoinTestUtils.createUTXO(2, 0, svpFundTxOutpointsValues.get(1), activeFederation.getAddress()),
-            BitcoinTestUtils.createUTXO(3, 0, svpFundTxOutpointsValues.get(2), activeFederation.getAddress())
-        );
+        List<UTXO> activeFederationUTXOs = new ArrayList<>();
+        Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
+        int numberOfUtxos = 3;
+        for (int i = 0; i < numberOfUtxos; i++) {
+            Sha256Hash transactionHash = createHash(i + 1);
+            UTXO utxo = UTXOBuilder.builder()
+                .withScriptPubKey(outputScript)
+                .withTransactionHash(transactionHash)
+                .withValue(svpFundTxOutpointsValues.get(i))
+                .build();
+            activeFederationUTXOs.add(utxo);
+        }
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
         proposedFederation = P2shP2wshErpFederationBuilder.builder()
@@ -161,7 +170,6 @@ class BridgeSupportSvpTest {
         repository = createRepository();
         bridgeStorageProvider = new BridgeStorageProvider(
             repository,
-            bridgeContractAddress,
             btcMainnetParams,
             allActivations
         );
@@ -462,11 +470,20 @@ class BridgeSupportSvpTest {
                 .withMembersBtcPublicKeys(activeFederationMembersBtcPublicKeys)
                 .build();
             federationStorageProvider.setNewFederation(activeFederation);
-            List<UTXO> activeFederationUTXOs = Arrays.asList(
-                BitcoinTestUtils.createUTXO(1, 0, svpFundTxOutpointsValues.get(0), activeFederation.getAddress()),
-                BitcoinTestUtils.createUTXO(2, 0, svpFundTxOutpointsValues.get(1), activeFederation.getAddress()),
-                BitcoinTestUtils.createUTXO(3, 0, svpFundTxOutpointsValues.get(2), activeFederation.getAddress())
-            );
+
+            List<UTXO> activeFederationUTXOs = new ArrayList<>();
+            Script outputScript = ScriptBuilder.createOutputScript(activeFederation.getAddress());
+            int numberOfUtxos = 3;
+            for (int i = 0; i < numberOfUtxos; i++) {
+                Sha256Hash transactionHash = createHash(i + 1);
+                UTXO utxo = UTXOBuilder.builder()
+                    .withScriptPubKey(outputScript)
+                    .withTransactionHash(transactionHash)
+                    .withValue(svpFundTxOutpointsValues.get(i))
+                    .build();
+                activeFederationUTXOs.add(utxo);
+            }
+
             bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
             int activeFederationUtxosSizeBeforeCreatingFundTx = federationSupport.getActiveFederationBtcUTXOs().size();

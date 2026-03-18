@@ -87,7 +87,7 @@ public class BridgeBuilder {
 
     public Bridge build() {
         BridgeSupportFactory bridgeSupportFactory = mock(BridgeSupportFactory.class);
-        when(bridgeSupportFactory.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupport);
+        when(bridgeSupportFactory.newInstance(any(), any(), any())).thenReturn(bridgeSupport);
 
         Bridge bridge = new Bridge(
             contractAddress,

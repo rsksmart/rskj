@@ -398,7 +398,7 @@ class RepositoryImplTest {
         RskAddress accAddress1 = TestUtils.generateAddress("acc");
         RskAddress accAddress2 = TestUtils.generateAddress("acc2");
 
-        Repository repository = createRepositoryWithCache();
+        Repository repository = createRepository();
 
         repository.createAccount(accAddress1);
         repository.createAccount(accAddress2);
@@ -424,9 +424,5 @@ class RepositoryImplTest {
 
         MatcherAssert.assertThat(repository.isContract(rskAddressA), is(true));
         MatcherAssert.assertThat(repository.isContract(rskAddressB), is(false));
-    }
-
-    private static Repository createRepositoryWithCache() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 }
