@@ -161,7 +161,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(237_000L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(12_240L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -175,7 +175,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(713_800L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(50_384L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -202,7 +202,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(182_600L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(14_608L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -216,7 +216,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(659_400L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(52_752L), estimatedFeesForNextPegout);
         }
     }
 
@@ -238,7 +238,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(179_400L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(14_352L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -250,7 +250,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(182_600L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(14_608L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -262,7 +262,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(659_400L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(52_752L), estimatedFeesForNextPegout);
         }
     }
 
@@ -285,7 +285,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(56_700L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(4_536L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -294,7 +294,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(95_800L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(7_664L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -306,14 +306,14 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(99_000L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(7_920L), estimatedFeesForNextPegout);
         }
 
         @ParameterizedTest
         @CsvSource({
-            "1, 109200",
-            "2, 112600",
-            "3, 116000"
+            "1, 8736",
+            "2, 9008",
+            "3, 9280"
         })
         void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withMinPegoutValueRequests_shouldEstimateFeesFromTransactionSimulation(int pegoutRequestCount, long expectedEstimatedFees) throws IOException {
             // Arrange
@@ -337,7 +337,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(106_000L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(8_480L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -350,7 +350,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(99_000L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(7_920L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -364,7 +364,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(112_600L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(9_008L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -378,7 +378,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(116_000L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(9_280L), estimatedFeesForNextPegout);
         }
     }
 
@@ -402,7 +402,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(56_700L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(4_536L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -411,7 +411,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(95_800L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(7_664L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -423,14 +423,14 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(99_000L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(7_920L), estimatedFeesForNextPegout);
         }
 
         @ParameterizedTest
         @CsvSource({
-            "1, 60100",
-            "2, 63500",
-            "3, 66900"
+            "1, 4808",
+            "2, 5080",
+            "3, 5352"
         })
         void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withMinPegoutValueRequests_shouldEstimateFeesFromTransactionSimulation(
             int pegoutRequestCount, long expectedEstimatedFees) throws IOException {
@@ -455,7 +455,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(109_200L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(8_736L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -468,7 +468,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(109_200L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(8_736L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -481,7 +481,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(106_000L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(8_480L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -494,7 +494,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(99_000L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(7_920L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -508,7 +508,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(112_600L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(9_008L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -522,7 +522,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(116_000L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(9_280L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -534,7 +534,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForPegout = bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(MIN_PEGOUT_TX_VALUE));
 
             // Assert
-            assertEquals(Coin.valueOf(56_700L), estimatedFeesForPegout);
+            assertEquals(Coin.valueOf(4_536L), estimatedFeesForPegout);
         }
 
         @Test
@@ -546,14 +546,14 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForPegout = bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(Coin.COIN));
 
             // Assert
-            assertEquals(Coin.valueOf(56_700L), estimatedFeesForPegout);
+            assertEquals(Coin.valueOf(4_536L), estimatedFeesForPegout);
         }
 
         @ParameterizedTest
         @CsvSource({
-            "1, 109200",
-            "2, 112600",
-            "3, 116000"
+            "1, 8736",
+            "2, 9008",
+            "3, 9280"
         })
         void getEstimatedFeesForPegOutAmount_withP2shP2wshErpFederation_withPegoutRequestsOfMinPegoutValue_shouldEstimateFeesFromTransactionSimulation(
             int pegoutRequestCount, long expectedEstimatedFees) throws Exception {
@@ -570,9 +570,9 @@ class BridgeSupportGetEstimatedFeesTest {
 
         @ParameterizedTest
         @CsvSource({
-            "1, 60100",
-            "2, 63500",
-            "3, 66900"
+            "1, 4808",
+            "2, 5080",
+            "3, 5352"
         })
         void getEstimatedFeesForPegOutAmount_withP2shP2wshErpFederation_withPegoutRequestOfMinPegoutValue_shouldEstimateFeesFromTransactionSimulation(
             int pegoutRequestCount, long expectedEstimatedFees) throws Exception {
@@ -597,7 +597,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForPegout = bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(MIN_PEGOUT_TX_VALUE.multiply(3)));
 
             // Assert
-            assertEquals(Coin.valueOf(63_500L), estimatedFeesForPegout);
+            assertEquals(Coin.valueOf(5_080L), estimatedFeesForPegout);
         }
 
         @Test
@@ -610,7 +610,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForPegout = bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(Coin.COIN.multiply(2)));
 
             // Assert
-            assertEquals(Coin.valueOf(161_700L), estimatedFeesForPegout);
+            assertEquals(Coin.valueOf(12_936L), estimatedFeesForPegout);
         }
 
         @Test
@@ -623,7 +623,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForPegout = bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(MIN_PEGOUT_TX_VALUE.add(Coin.valueOf(1_000L))));
 
             // Assert
-            assertEquals(Coin.valueOf(63_500L), estimatedFeesForPegout);
+            assertEquals(Coin.valueOf(5_080L), estimatedFeesForPegout);
         }
 
         @Test
@@ -687,7 +687,7 @@ class BridgeSupportGetEstimatedFeesTest {
 
     private void setUpFeePerKb() {
         feePerKbSupport = mock(FeePerKbSupport.class);
-        Coin feePerKb = Coin.MILLICOIN;
+        Coin feePerKb = Coin.valueOf(8_000L);
         when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
     }
 
