@@ -60,6 +60,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.time.Instant;
 import java.util.*;
@@ -67,6 +68,7 @@ import java.util.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
@@ -2669,7 +2671,8 @@ public class BridgeSupport {
             releaseRequestQueue.getEntries().stream()
                 .map(rr -> new ReleaseRequestQueue.Entry(rr.getDestination(), rr.getAmount())).toList());
 
-        releaseRequestListCopy.add(new ReleaseRequestQueue.Entry(new BtcECKey().toAddress(this.networkParameters), estimatedNextPegoutAmount));
+        Address recipient = getRecipientAddress();
+        releaseRequestListCopy.add(new ReleaseRequestQueue.Entry(recipient, estimatedNextPegoutAmount));
 
         Wallet activeFederationWallet = getActiveFederationWallet(true);
         Federation activeFederation = getActiveFederation();
@@ -2699,6 +2702,13 @@ public class BridgeSupport {
         Coin outputSum = buildResult.btcTx().getOutputSum();
 
         return inputSum.minus(outputSum);
+    }
+
+    private Address getRecipientAddress() {
+        String seed = "recipient";
+        byte[] privKey = HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8));
+        BtcECKey key = BtcECKey.fromPrivate(privKey);
+        return key.toAddress(networkParameters);
     }
 
     public BigInteger registerFlyoverBtcTransaction(
