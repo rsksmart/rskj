@@ -514,6 +514,30 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             assertEquals(Coin.valueOf(116_000L), estimatedFeesForNextPegout);
         }
 
+        @Test
+        void getEstimatedFeesForPegOutAmount_withMinPegoutTxValue_withP2shP2wshErpFederation_withNoPegoutRequests_shouldEstimateFeesFromTransactionSimulation() throws Exception {
+            // Arrange
+            addUtxosToActiveFederation(TWO_P2SH_P2WSH_UTXOS_OF_EIGHT_BTCS);
+
+            // Act
+            Coin estimatedFeesForPegout = bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(MIN_PEGOUT_TX_VALUE));
+
+            // Assert
+            assertEquals(Coin.valueOf(56_700L), estimatedFeesForPegout);
+        }
+
+        @Test
+        void getEstimatedFeesForPegOutAmount_withOneBtc_withP2shP2wshErpFederation_withNoPegoutRequests_shouldEstimateFeesFromTransactionSimulation() throws Exception {
+            // Arrange
+            addUtxosToActiveFederation(TWO_P2SH_P2WSH_UTXOS_OF_EIGHT_BTCS);
+
+            // Act
+            Coin estimatedFeesForPegout = bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(Coin.COIN));
+
+            // Assert
+            assertEquals(Coin.valueOf(56_700L), estimatedFeesForPegout);
+        }
+
         @ParameterizedTest
         @CsvSource({
             "1, 109200",
