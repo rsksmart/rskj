@@ -106,6 +106,7 @@ class BridgeSupportGetEstimatedFeesTest {
         @BeforeEach
         void setUp() {
             setUpBridgeAndFederationSupport(IRIS300_ACTIVATION);
+            // Before Hop activation, the only federation is the legacy standard multisig federation.
             federationStorageProvider.setNewFederation(STANDARD_MULTISIG_FEDERATION);
             addUtxosToActiveFederation(THREE_STANDARD_MULTISIG_UTXOS_OF_EIGHT_BTCS);
 
@@ -130,6 +131,8 @@ class BridgeSupportGetEstimatedFeesTest {
 
         @BeforeEach
         void setUp() {
+            // Between Hop 400 and Fingerroot, there are two federation types: Standard Multisig and P2SH ERP.
+            // Hop 401 activation marks the transition from Standard Multisig to P2SH ERP federations.
             setUpBridgeAndFederationSupport(HOP400_ACTIVATION);
         }
 
@@ -222,6 +225,8 @@ class BridgeSupportGetEstimatedFeesTest {
         @BeforeEach
         void setUp() {
             setUpBridgeAndFederationSupport(FINGERROOT_ACTIVATION);
+            // After Hop401, which is before Fingerroot the federation is P2SH ERP.
+            // Therefore, after Fingerroot the federation is P2SH ERP.
             federationStorageProvider.setNewFederation(P2SH_ERP_FEDERATION);
             addUtxosToActiveFederation(ONE_P2SH_UTXO_OF_ONE_BTC);
         }
@@ -266,6 +271,7 @@ class BridgeSupportGetEstimatedFeesTest {
         @BeforeEach
         void setUp() {
             setUpBridgeAndFederationSupport(REED_ACTIVATION);
+            // Reed activation marks the transition from P2SH ERP to P2SH-P2WSH ERP federations.
             federationStorageProvider.setNewFederation(P2SH_P2WSH_ERP_FEDERATION);
         }
 
@@ -381,6 +387,8 @@ class BridgeSupportGetEstimatedFeesTest {
         @BeforeEach
         void setUp() {
             setUpBridgeAndFederationSupport(VETIVER_ACTIVATION);
+            // After Reed activation, which is before Vetiver, the federation is P2SH-P2WSH ERP.
+            // Therefore, after Vetiver the federation is P2SH-P2WSH ERP.
             federationStorageProvider.setNewFederation(P2SH_P2WSH_ERP_FEDERATION);
         }
 
