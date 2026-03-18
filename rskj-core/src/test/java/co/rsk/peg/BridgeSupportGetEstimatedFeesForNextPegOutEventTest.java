@@ -32,6 +32,7 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -512,6 +513,104 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             // Assert
             assertEquals(Coin.valueOf(116_000L), estimatedFeesForNextPegout);
         }
+
+        @ParameterizedTest
+        @CsvSource({
+            "1, 109200",
+            "2, 112600",
+            "3, 116000"
+        })
+        void getEstimatedFeesForPegOutAmount_withP2shP2wshErpFederation_withPegoutRequestsOfMinPegoutValue_shouldEstimateFeesFromTransactionSimulation(
+            int pegoutRequestCount, long expectedEstimatedFees) throws Exception {
+            // Arrange
+            addUtxosToActiveFederation(FOUR_P2SH_P2WSH_UTXO_OF_ONE_BTCS);
+            addPegoutRequests(pegoutRequestCount, MIN_PEGOUT_TX_VALUE);
+
+            // Act
+            Coin estimatedFeesForPegout = bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(Coin.COIN));
+
+            // Assert
+            assertEquals(Coin.valueOf(expectedEstimatedFees), estimatedFeesForPegout);
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+            "1, 60100",
+            "2, 63500",
+            "3, 66900"
+        })
+        void getEstimatedFeesForPegOutAmount_withP2shP2wshErpFederation_withPegoutRequestOfMinPegoutValue_shouldEstimateFeesFromTransactionSimulation(
+            int pegoutRequestCount, long expectedEstimatedFees) throws Exception {
+            // Arrange
+            addUtxosToActiveFederation(FOUR_P2SH_P2WSH_UTXO_OF_ONE_BTCS);
+            addPegoutRequests(pegoutRequestCount, MIN_PEGOUT_TX_VALUE);
+
+            // Act
+            Coin estimatedFeesForPegout = bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(MIN_PEGOUT_TX_VALUE));
+
+            // Assert
+            assertEquals(Coin.valueOf(expectedEstimatedFees), estimatedFeesForPegout);
+        }
+
+        @Test
+        void getEstimatedFeesForPegOutAmount_withP2shP2wshErpFederation_withTwoMinPegoutRequestsOfThreeTimesMinPegoutValue_shouldEstimateFeesFromTransactionSimulation() throws Exception {
+            // Arrange
+            addUtxosToActiveFederation(FOUR_P2SH_P2WSH_UTXO_OF_ONE_BTCS);
+            addPegoutRequests(2, MIN_PEGOUT_TX_VALUE);
+
+            // Act
+            Coin estimatedFeesForPegout = bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(MIN_PEGOUT_TX_VALUE.multiply(3)));
+
+            // Assert
+            assertEquals(Coin.valueOf(63_500L), estimatedFeesForPegout);
+        }
+
+        @Test
+        void getEstimatedFeesForPegOutAmount_withP2shP2wshErpFederation_withTwoMinPegoutRequestsOfTwoBtc_shouldEstimateFeesFromTransactionSimulation() throws Exception {
+            // Arrange
+            addUtxosToActiveFederation(FOUR_P2SH_P2WSH_UTXO_OF_ONE_BTCS);
+            addPegoutRequests(2, MIN_PEGOUT_TX_VALUE);
+
+            // Act
+            Coin estimatedFeesForPegout = bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(Coin.COIN.multiply(2)));
+
+            // Assert
+            assertEquals(Coin.valueOf(161_700L), estimatedFeesForPegout);
+        }
+
+        @Test
+        void getEstimatedFeesForPegOutAmount_withP2shP2wshErpFederation_withTwoMinPegoutRequestsOfMinPegoutValuePlusOneThousandSatoshis_shouldEstimateFeesFromTransactionSimulation() throws Exception {
+            // Arrange
+            addUtxosToActiveFederation(FOUR_P2SH_P2WSH_UTXO_OF_ONE_BTCS);
+            addPegoutRequests(2, MIN_PEGOUT_TX_VALUE);
+
+            // Act
+            Coin estimatedFeesForPegout = bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(MIN_PEGOUT_TX_VALUE.add(Coin.valueOf(1_000L))));
+
+            // Assert
+            assertEquals(Coin.valueOf(63_500L), estimatedFeesForPegout);
+        }
+
+        @Test
+        void getEstimatedFeesForPegOutAmount_withP2shP2wshErpFederation_withAmountBelowMinPegoutValue_shouldThrowBridgeIllegalArgumentException() {
+            // Arrange
+            addUtxosToActiveFederation(FOUR_P2SH_P2WSH_UTXO_OF_ONE_BTCS);
+
+            // Act & Assert
+            assertThrows(
+                BridgeIllegalArgumentException.class,
+                () -> bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(MIN_PEGOUT_TX_VALUE.subtract(Coin.SATOSHI)))
+            );
+        }
+
+        @Test
+        void getEstimatedFeesForPegOutAmount_withP2shP2wshErpFederation_whenPegoutTransactionCannotBeBuilt_shouldThrowBridgeIllegalArgumentException() {
+            // Act & Assert
+            assertThrows(
+                BridgeIllegalArgumentException.class,
+                () -> bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(MIN_PEGOUT_TX_VALUE))
+            );
+        }
     }
 
     void setUpBridgeAndFederationSupport(ActivationConfig.ForBlock activationConfig) {
@@ -550,6 +649,10 @@ class BridgeSupportGetEstimatedFeesForNextPegOutEventTest {
             Address receiver = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "receiver" + i);
             releaseRequestQueue.add(receiver, value);
         }
+    }
+
+    private co.rsk.core.Coin toWeis(Coin bitcoinAmount) {
+        return co.rsk.core.Coin.fromBitcoin(bitcoinAmount);
     }
 
 }

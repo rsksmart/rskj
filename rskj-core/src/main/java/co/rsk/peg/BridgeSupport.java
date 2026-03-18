@@ -2621,6 +2621,18 @@ public class BridgeSupport {
 
     }
 
+    public Coin getEstimatedFeesForPegOutAmount(co.rsk.core.Coin pegoutAmountInWeis) throws IOException, BridgeIllegalArgumentException {
+        Coin pegOutAmount = pegoutAmountInWeis.toBitcoin();
+
+        if (pegOutAmount.isLessThan(bridgeConstants.getMinimumPegoutTxValue())) {
+            throw new BridgeIllegalArgumentException(
+                String.format("Peg-out amount %s is below the minimum peg-out value %s", pegOutAmount, bridgeConstants.getMinimumPegoutTxValue())
+            );
+        }
+
+        return getEstimatedFeesFromPegoutTransactionSimulation(pegOutAmount);
+    }
+
     private Coin getEstimatedFeesFromInputsAndOutputsCount() throws IOException {
 
         int outputsCount = getQueuedPegoutsCount() + 2;
@@ -2636,16 +2648,28 @@ public class BridgeSupport {
     }
 
     private Coin getEstimatedFeesFromPegoutTransactionSimulation() throws IOException {
+        Coin estimatedNextPegoutAmount = activations.isActive(RSKIP540)
+            ? bridgeConstants.getMinimumPegoutTxValue()
+            : Coin.valueOf(1, 0);
+
+        try {
+            return getEstimatedFeesFromPegoutTransactionSimulation(estimatedNextPegoutAmount);
+        } catch (BridgeIllegalArgumentException e) {
+            logger.debug(
+                "[getEstimatedFeesFromPegoutTransactionSimulation] Cannot simulate a pegout btc release transaction. Will fallback to old logic.",
+                e
+            );
+            return getEstimatedFeesFromInputsAndOutputsCount();
+        }
+    }
+
+    private Coin getEstimatedFeesFromPegoutTransactionSimulation(Coin estimatedNextPegoutAmount) throws IOException, BridgeIllegalArgumentException {
         ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
         List<ReleaseRequestQueue.Entry> releaseRequestListCopy = new ArrayList<>(
             releaseRequestQueue.getEntries().stream()
                 .map(rr -> new ReleaseRequestQueue.Entry(rr.getDestination(), rr.getAmount())).toList());
 
-        // One more pegout to estimate what the fee would be for with an extra pegout if requested
-        Coin estimatedNextPegoutamount = activations.isActive(RSKIP540)
-            ? bridgeConstants.getMinimumPegoutTxValue()
-            : Coin.valueOf(1, 0);
-        releaseRequestListCopy.add(new ReleaseRequestQueue.Entry(new BtcECKey().toAddress(this.networkParameters), estimatedNextPegoutamount));
+        releaseRequestListCopy.add(new ReleaseRequestQueue.Entry(new BtcECKey().toAddress(this.networkParameters), estimatedNextPegoutAmount));
 
         Wallet activeFederationWallet = getActiveFederationWallet(true);
         Federation activeFederation = getActiveFederation();
@@ -2663,9 +2687,12 @@ public class BridgeSupport {
 
         if(buildResult.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
             logger.debug(
-                "[getEstimatedFeesFromPegoutTransactionSimulation] Simulated pegout btc transaction failed to be created with response code: {}. Cannot simulate a pegout btc release transaction. Will fallback to old logic."
-            , buildResult.responseCode());
-            return getEstimatedFeesFromInputsAndOutputsCount();
+                "[getEstimatedFeesFromPegoutTransactionSimulation] Simulated pegout btc transaction failed to be created with response code: {}.",
+                buildResult.responseCode()
+            );
+            throw new BridgeIllegalArgumentException(
+                String.format("Cannot simulate peg-out btc transaction. Builder response code: %s", buildResult.responseCode())
+            );
         }
 
         Coin inputSum = buildResult.btcTx().getInputSum();
