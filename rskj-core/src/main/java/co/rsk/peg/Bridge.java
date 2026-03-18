@@ -1469,6 +1469,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getEstimatedFeesForNextPegOutEvent().value;
     }
 
+    public long getEstimatedFeesForPegOutAmount(Object[] args) throws IOException, BridgeIllegalArgumentException {
+        logger.trace("getEstimatedFeesForPegOutAmount");
+
+        co.rsk.core.Coin pegOutAmountInWeis = new co.rsk.core.Coin((BigInteger) args[0]);
+        return bridgeSupport.getEstimatedFeesForPegOutAmount(pegOutAmountInWeis).value;
+    }
+
     public int setUnionBridgeContractAddressForTestnet(Object[] args) {
         logger.trace("setUnionBridgeContractAddressForTestnet");
         // A DataWord cast is used because a SolidityType "address" is decoded using this specific type.
