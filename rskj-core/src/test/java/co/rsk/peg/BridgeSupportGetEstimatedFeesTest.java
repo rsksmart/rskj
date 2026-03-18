@@ -26,6 +26,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.List;
 
 import static co.rsk.RskTestUtils.createRepository;
@@ -634,6 +635,19 @@ class BridgeSupportGetEstimatedFeesTest {
             assertThrows(
                 BridgeIllegalArgumentException.class,
                 () -> bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(MIN_PEGOUT_TX_VALUE.subtract(Coin.SATOSHI)))
+            );
+        }
+
+        @Test
+        void getEstimatedFeesForPegOutAmount_withP2shP2wshErpFederation_withAmountBelowMinPegoutValueForOneWei_shouldThrowBridgeIllegalArgumentException() {
+            // Arrange
+            addUtxosToActiveFederation(FOUR_P2SH_P2WSH_UTXOS_OF_ONE_BTC);
+            co.rsk.core.Coin oneWei = new co.rsk.core.Coin(BigInteger.ONE);
+
+            // Act & Assert
+            assertThrows(
+                BridgeIllegalArgumentException.class,
+                () -> bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(MIN_PEGOUT_TX_VALUE).subtract(oneWei))
             );
         }
 
