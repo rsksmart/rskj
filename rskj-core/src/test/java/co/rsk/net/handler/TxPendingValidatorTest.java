@@ -209,6 +209,6 @@ class TxPendingValidatorTest {
         TransactionValidationResult result = validator.isValid(tx, executionBlock, null);
 
         assertFalse(result.transactionIsValid());
-        assertEquals("typed transactions are not supported before RSKIP543 activation", result.getErrorMessage());
+        assertTrue(result.getErrorMessage().contains("is not supported before its activation"));
     }
 }

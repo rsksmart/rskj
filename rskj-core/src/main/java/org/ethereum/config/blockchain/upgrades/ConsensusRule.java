@@ -114,6 +114,7 @@ public enum ConsensusRule {
     RSKIP536("rskip536"), // Additional methods for BlockHeader precompiled contract
     RSKIP544("rskip544"), // From EIP-3541 Reject new contract code starting with the 0xEF byte
     RSKIP543("rskip543"), // Typed transactions
+    RSKIP546("rskip546"), // Type 1 and Type 2 transaction formats (EIP-2930/EIP-1559 encoding)
     ;
 
     private final String configKey;

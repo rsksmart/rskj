@@ -79,6 +79,8 @@ public class GasCost {
     public static final long TX_NO_ZERO_DATA = 68;
     public static final long TX_NO_ZERO_DATA_EIP2028 = 16; // https://eips.ethereum.org/EIPS/eip-2028
     public static final long TX_ZERO_DATA = 4;
+    /** RSKIP-546: 80 gas per byte of access list (access lists not interpreted, charge for bandwidth) */
+    public static final long ACCESS_LIST_GAS_PER_BYTE = 80;
     public static final long TRANSACTION = 21000;
     public static final long TRANSACTION_DEFAULT = 90000; //compatibility with ethereum (mmarquez)
     public static final long TRANSACTION_CREATE_CONTRACT = 53000;

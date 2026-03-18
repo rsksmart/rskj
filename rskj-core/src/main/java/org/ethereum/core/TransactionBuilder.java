@@ -38,6 +38,7 @@ public final class TransactionBuilder {
 	private Coin gasPrice = Coin.ZERO;
 	private byte[] gasLimit = ByteUtil.cloneBytes(null);
 	private byte[] data = ByteUtil.cloneBytes(null);
+	private byte[] accessListBytes = null;
 	private byte chainId = 0;
 
 	TransactionBuilder() {
@@ -108,6 +109,11 @@ public final class TransactionBuilder {
 		return this;
 	}
 
+	public TransactionBuilder accessList(byte[] accessListRlp) {
+		this.accessListBytes = ByteUtil.cloneBytes(accessListRlp);
+		return this;
+	}
+
 	public TransactionBuilder chainId(byte chainId) {
 		this.chainId = chainId;
 		return this;
@@ -138,6 +144,9 @@ public final class TransactionBuilder {
 	public Transaction build() {
 		TransactionType effectiveType = this.type != null ? this.type : TransactionType.LEGACY;
 		TransactionTypePrefix prefix = TransactionTypePrefix.of(effectiveType, this.rskSubtype);
+		if (this.accessListBytes != null) {
+			return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall, prefix, this.accessListBytes);
+		}
 		return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall, prefix);
 	}
 
