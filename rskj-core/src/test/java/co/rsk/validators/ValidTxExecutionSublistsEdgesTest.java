@@ -38,6 +38,7 @@ class ValidTxExecutionSublistsEdgesTest {
     private void mockActivationOfRSKIPP351_RSKIP144(boolean rskip351andRskip144Activated) {
         Mockito.when(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)).thenReturn(rskip351andRskip144Activated);
         Mockito.when(activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)).thenReturn(rskip351andRskip144Activated);
+        Mockito.when(activationConfig.areActive(blockNumber, ConsensusRule.RSKIP351, ConsensusRule.RSKIP144 )).thenReturn(rskip351andRskip144Activated);
     }
 
     private void mockGetTxExecutionListsEdges (short[] edges) {
