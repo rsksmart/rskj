@@ -212,8 +212,7 @@ public final class BlockFactory implements BtcHeaderSizeRule {
 
         if ((!isBlockHeaderCompressionEnabled(blockNumber) || !compressed)
             && rlpHeader.size() > r
-            && activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)
-                && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
+            && activationConfig.areActive(blockNumber, ConsensusRule.RSKIP351, ConsensusRule.RSKIP144)) {
                 txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
             }
 
