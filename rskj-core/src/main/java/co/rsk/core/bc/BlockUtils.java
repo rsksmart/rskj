@@ -128,40 +128,39 @@ public class BlockUtils {
     /**
      * Returns the gas limit assigned to the sequential sublist or to each parallel sublist for a given block.
      *
-     * The block gas limit {@code B} is split across {@code T = P + 1} sublists, where {@code P} is the number of
+     * The block gas limit {@code blockGasLimit} is split across {@code totalThreads = transactionExecutionThreads + 1} sublists, where {@code transactionExecutionThreads} is the number of
      * parallel execution threads and the extra {@code +1} represents the sequential sublist.
      *
      * Allocation rules:
-     * CASE I:(when {@code B/T >= M}) : The block gas limit is big enough to give the minimum M to each sublist.
-     *  Each parallel sublist gets an equal share of the block gas limit {@code (B / T)}, with any remainder ({@code B % T}) added to the sequential sublist.
-     * CASE II:(when {@code B <= M}: The block gas limit is less than or equal to the minimum required for the sequential list.
-     *  Each parallel sublist gets {@code 0} (Parallel execution is completely disabled) and the sequential sublist gets the entire block gas limit {@code B} (entire block).
-     * Case III:(when {@code M < B < T * M}: The block gas limit is bigger than the minimum sequential guarantee, but not big enough to give that minimum to every sublist.
-     *  Each parallel sublist gets an equal share of the gas remaining {@code (B - M)} after reserving M for sequential and the sequential sublist gets the minimum {@code M}
+     * CASE I:(when {@code blockGasLimit/totalThreads >= minSequentialListGasLimit}) : The block gas limit is big enough to give the minimum minSequentialListGasLimit to each sublist.
+     *  Each parallel sublist gets an equal share of the block gas limit {@code (blockGasLimit/totalThreads)}, with any remainder ({@code blockGasLimit % totalThreads}) added to the sequential sublist.
+     * CASE II:(when {@code blockGasLimit <= minSequentialListGasLimit}: The block gas limit is less than or equal to the minimum required for the sequential list.
+     *  Each parallel sublist gets {@code 0} (Parallel execution is completely disabled) and the sequential sublist gets the entire block gas limit {@code blockGasLimit} (entire block).
+     * Case III:(when {@code minSequentialListGasLimit < blockGasLimit < totalThreads * minSequentialListGasLimit}: The block gas limit is bigger than the minimum sequential guarantee, but not big enough to give that minimum to every sublist.
+     *  Each parallel sublist gets an equal share of the gas remaining {@code (blockGasLimit - minSequentialListGasLimit)} after reserving minSequentialListGasLimit for sequential and the sequential sublist gets the minimum {@code minSequentialListGasLimit}
      *  plus any remainder left after allocating to parallel sublists.
      *
-     * WARNING: Assumes B, P, T, and M are strictly positive (> 0).
+     * WARNING: Assumes blockGasLimit, transactionExecutionThreads, totalThreads, and minSequentialListGasLimit are strictly positive (> 0).
      *
-     * @param block the block providing the total gas limit {@code B}
+     * @param block the block providing the total gas limit {@code blockGasLimit}
      * @param isSequentialList {@code true} to return the sequential sublist limit, {@code false} to return the per-parallel-sublist limit
-     * @param minSequentialListGasLimit the minimum gas limit reserved for the sequential sublist ({@code M})
+     * @param minSequentialListGasLimit the minimum gas limit reserved for the sequential sublist ({@code minSequentialListGasLimit})
      * @return the gas limit for the requested sublist (sequential or per parallel sublist)
      */
     public static long getSublistGasLimit(Block block, boolean isSequentialList, long minSequentialListGasLimit) {
-        long B = GasCost.toGas(block.getGasLimit());
-        int P = Constants.getTransactionExecutionThreads();
-        int T = P + SEQUENTIAL_THREAD_COUNT;
-        long M = minSequentialListGasLimit;
+        long blockGasLimit = GasCost.toGas(block.getGasLimit());
+        int transactionExecutionThreads = Constants.getTransactionExecutionThreads();
+        int totalThreads = transactionExecutionThreads + SEQUENTIAL_THREAD_COUNT;
 
-        if ( B/T >= M) { // This is the same as (T * M <= B) but avoids long multiplication that can overflow.
-            long parallel = B / T; // Does not include the reminder, which is added to the sequential sublist.
-            return isSequentialList ? B - (P * parallel) :  parallel;
+        if ( blockGasLimit/totalThreads >= minSequentialListGasLimit) { // This is the same as (totalThreads * minSequentialListGasLimit <= blockGasLimit) but avoids long multiplication that can overflow.
+            long parallel = blockGasLimit / totalThreads; // Does not include the reminder, which is added to the sequential sublist.
+            return isSequentialList ? blockGasLimit - (transactionExecutionThreads * parallel) :  parallel;
         }
-        if (B <= M) {
-            return isSequentialList ? B : 0;
+        if (blockGasLimit <= minSequentialListGasLimit) {
+            return isSequentialList ? blockGasLimit : 0;
         }
-        long parallelListGasLimit = (B - M) / P; // Does not include the reminder, which is added to the sequential sublist.
-        long sequentialListGasLimit = B - (parallelListGasLimit * P); // Includes the remainder after dividing the remaining gas across parallel sublists.
+        long parallelListGasLimit = (blockGasLimit - minSequentialListGasLimit) / transactionExecutionThreads; // Does not include the reminder, which is added to the sequential sublist.
+        long sequentialListGasLimit = blockGasLimit - (parallelListGasLimit * transactionExecutionThreads); // Includes the remainder after dividing the remaining gas across parallel sublists.
         return isSequentialList ? sequentialListGasLimit : parallelListGasLimit;
     }
 }
