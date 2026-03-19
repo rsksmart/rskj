@@ -138,7 +138,7 @@ class BridgeSupportGetEstimatedFeesTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withNoPegoutRequests_shouldEstimateZeroFees() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withStandardMultisigFederation_withNoPegoutRequests_shouldEstimateZeroFees() throws IOException {
             // Arrange
             setUpFederation(STANDARD_MULTISIG_FEDERATION, THREE_STANDARD_MULTISIG_UTXOS_OF_EIGHT_BTCS);
 
@@ -150,7 +150,7 @@ class BridgeSupportGetEstimatedFeesTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withOnePegoutRequest_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withStandardMultisigFederation_withOnePegoutRequest_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
             // Arrange
             setUpFederation(STANDARD_MULTISIG_FEDERATION, THREE_STANDARD_MULTISIG_UTXOS_OF_EIGHT_BTCS);
             addPegoutRequests(1, Coin.COIN);
@@ -163,7 +163,7 @@ class BridgeSupportGetEstimatedFeesTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withStandardFederation_withManyPegoutRequests_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withStandardMultisigFederation_withManyPegoutRequests_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
             // Arrange
             setUpFederation(STANDARD_MULTISIG_FEDERATION, THREE_STANDARD_MULTISIG_UTXOS_OF_EIGHT_BTCS);
             addPegoutRequests(150, Coin.COIN);
@@ -214,7 +214,7 @@ class BridgeSupportGetEstimatedFeesTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withManyPegoutRequests_withHigherFeePerKBs_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withManyPegoutRequests_withHigherFeePerKB_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
             // Arrange
             setUpBridgeAndFederationSupport(HOP400_ACTIVATION, DOUBLE_FEE_PER_KB);
             setUpFederation(P2SH_ERP_FEDERATION, ONE_P2SH_UTXO_OF_EIGHT_BTCS);
@@ -273,7 +273,7 @@ class BridgeSupportGetEstimatedFeesTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withManyPegoutRequests_withHigherFeePerKBs_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withManyPegoutRequests_withHigherFeePerKB_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
             // Arrange
             setUpBridgeAndFederationSupport(FINGERROOT_ACTIVATION, DOUBLE_FEE_PER_KB);
             setUpFederation(P2SH_ERP_FEDERATION, ONE_P2SH_UTXO_OF_EIGHT_BTCS);
@@ -403,7 +403,7 @@ class BridgeSupportGetEstimatedFeesTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withTwoUtxos_withThreePegoutRequests_withHigherFees_shouldEstimateFeesFromTransactionSimulation() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withTwoUtxos_withThreePegoutRequests_withHigherFeePerKB_shouldEstimateFeesFromTransactionSimulation() throws IOException {
             // Arrange
             setUpBridgeAndFederationSupport(REED_ACTIVATION, DOUBLE_FEE_PER_KB);
             setUpFederation(P2SH_P2WSH_ERP_FEDERATION, TWO_P2SH_P2WSH_UTXOS_OF_EIGHT_BTCS);
@@ -563,7 +563,7 @@ class BridgeSupportGetEstimatedFeesTest {
         }
 
         @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withTwoUtxos_withThreePegoutRequests_withHigherFees_shouldEstimateFeesFromTransactionSimulation() throws IOException {
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withTwoUtxos_withThreePegoutRequests_withHigherFeePerKB_shouldEstimateFeesFromTransactionSimulation() throws IOException {
             // Arrange
             setUpBridgeAndFederationSupport(VETIVER_ACTIVATION, DOUBLE_FEE_PER_KB);
             setUpFederation(P2SH_P2WSH_ERP_FEDERATION, TWO_P2SH_P2WSH_UTXOS_OF_EIGHT_BTCS);
