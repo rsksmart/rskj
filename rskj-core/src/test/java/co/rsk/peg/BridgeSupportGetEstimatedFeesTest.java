@@ -108,7 +108,7 @@ class BridgeSupportGetEstimatedFeesTest {
         @BeforeEach
         void setUp() {
             setUpBridgeAndFederationSupport(IRIS300_ACTIVATION, FEE_PER_KB);
-            // Before Hop activation, the only federation is the legacy standard multisig federation.
+            // Before Hop activation, the only federation is the Standard Multisig federation.
             setUpFederation(STANDARD_MULTISIG_FEDERATION, THREE_STANDARD_MULTISIG_UTXOS_OF_EIGHT_BTCS);
 
         }
