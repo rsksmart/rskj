@@ -9,7 +9,8 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
-import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.feeperkb.*;
+import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.BridgeSupportBuilder;
@@ -34,8 +35,6 @@ import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class BridgeSupportGetEstimatedFeesTest {
 
@@ -716,10 +715,10 @@ class BridgeSupportGetEstimatedFeesTest {
     }
 
     void setUpBridgeAndFederationSupport(ActivationConfig.ForBlock activationConfig, Coin feePerKb) {
-        setUpFeePerKb(feePerKb);
         Repository repository = createRepository();
         bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, activationConfig);
         bridgeStorageAccessor = new InMemoryStorage();
+        setUpFeePerKb(feePerKb);
         federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(FEDERATION_CONSTANTS)
@@ -745,8 +744,10 @@ class BridgeSupportGetEstimatedFeesTest {
     }
 
     private void setUpFeePerKb(Coin feePerKb) {
-        feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
+        bridgeStorageAccessor.saveToRepository(FeePerKbStorageIndexKey.FEE_PER_KB.getKey(), feePerKb, BridgeSerializationUtils::serializeCoin);
+        FeePerKbConstants feePerKbConstants = BRIDGE_CONSTANTS.getFeePerKbConstants();
+        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
+        feePerKbSupport = new FeePerKbSupportImpl(feePerKbConstants, feePerKbStorageProvider);
     }
 
     private void addPegoutRequests(int pegoutRequestCount, Coin value) throws IOException {
