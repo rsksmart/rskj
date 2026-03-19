@@ -922,14 +922,24 @@ class Web3ImplLogsTest {
         assertEquals(logsLastTwo.length,2, "Last two blocks should have at least one log");
 
 	// When
-        // Query range greater than 2 blocks
+        // Query range 2 blocks + 1
         FilterRequestParam frThreeBlocks = new FilterRequestParam(
-                new BlockIdentifierParam("0x1"), new BlockIdentifierParam("0x4"), null, null, null);
-        RskJsonRpcRequestException ex = Assertions.assertThrows(RskJsonRpcRequestException.class,
+                new BlockIdentifierParam("0x1"), new BlockIdentifierParam("0x3"), null, null, null);
+        RskJsonRpcRequestException ex3 = Assertions.assertThrows(RskJsonRpcRequestException.class,
                 () -> web3.eth_getLogs(frThreeBlocks));
 
 	// Then
-        assertEquals(JsonRpcError.MAX_ETH_GET_LOGS_LIMIT, ex.getCode());
+        assertEquals(JsonRpcError.MAX_ETH_GET_LOGS_LIMIT, ex3.getCode());
+	
+	// When
+        // Query range greater than 2 blocks
+        FilterRequestParam frFourBlocks = new FilterRequestParam(
+                new BlockIdentifierParam("0x1"), new BlockIdentifierParam("0x4"), null, null, null);
+        RskJsonRpcRequestException ex4 = Assertions.assertThrows(RskJsonRpcRequestException.class,
+                () -> web3.eth_getLogs(frFourBlocks));
+
+	// Then
+        assertEquals(JsonRpcError.MAX_ETH_GET_LOGS_LIMIT, ex4.getCode());
     }
 
     @Test

@@ -79,6 +79,26 @@ LogFilterTest {
     }
 
     @Test
+    void maxBlocksToQuery() {
+	LogFilter filter = new LogFilter.LogFilterBuilder()
+	    .maxBlocksToQuery(10).build();
+
+	assertThrows(RskJsonRpcRequestException.class, () -> {
+	    filter.checkLimit(55, 66);
+	});
+
+	assertThrows(RskJsonRpcRequestException.class, () -> {
+	    // Expect error because range is inclusive
+	    filter.checkLimit(50, 60);
+	});
+
+	// Valid ranges
+	filter.checkLimit(1, 2);
+	filter.checkLimit(1, 5);
+	filter.checkLimit(1, 9);
+    }
+
+    @Test
     void eventAfterBlockWithEvent() {
         RskTestFactory factory = new RskTestFactory(tempDir);
         Blockchain blockchain = factory.getBlockchain();
@@ -281,5 +301,4 @@ LogFilterTest {
 
         return block;
     }
-
 }
