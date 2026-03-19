@@ -176,6 +176,20 @@ class BridgeSupportGetEstimatedFeesTest {
         }
 
         @Test
+        void getEstimatedFeesForNextPegOutEvent_withStandardMultisigFederation_withManyPegoutRequests_withHigherFeePerKB_shouldEstimateFeesFromInputAndOutputCount() throws IOException {
+            // Arrange
+            setUpBridgeAndFederationSupport(HOP400_ACTIVATION, DOUBLE_FEE_PER_KB);
+            setUpFederation(STANDARD_MULTISIG_FEDERATION, THREE_STANDARD_MULTISIG_UTXOS_OF_EIGHT_BTCS);
+            addPegoutRequests(150, Coin.COIN);
+
+            // Act
+            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
+
+            // Assert
+            assertEquals(Coin.valueOf(100_768L), estimatedFeesForNextPegout);
+        }
+
+        @Test
         void getEstimatedFeesForNextPegOutEvent_withP2shErpFederation_withNoPegoutRequests_shouldEstimateZeroFees() throws IOException {
             // Arrange
             setUpFederation(P2SH_ERP_FEDERATION, ONE_P2SH_UTXO_OF_EIGHT_BTCS);
