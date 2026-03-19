@@ -1,0 +1,45 @@
+
+comment
+
+// Regression test for Blake2F precompile null data handling.
+// A transaction sent directly to the Blake2F precompile address (0x09)
+// with no calldata must not crash block execution. The 'immutable' flag
+// causes the transaction to go through RLP encode/decode (ImmutableTransaction),
+// which produces getData() == null for empty calldata -- the exact scenario
+// that triggers the bug.
+// The malformed precompile tx should revert gracefully, and a subsequent
+// normal transfer in the same block should succeed.
+
+end
+
+account_new acc1 10000000000
+
+# tx01: call Blake2F precompile (0x09) with no data, through ImmutableTransaction
+transaction_build tx01
+    sender acc1
+    receiverAddress 0000000000000000000000000000000000000009
+    value 0
+    gas 30000
+    immutable
+    build
+
+# tx02: normal value transfer to verify the block is not invalidated
+transaction_build tx02
+    sender acc1
+    nonce 1
+    receiverAddress 0000000000000000000000000000000000000002
+    value 1
+    gas 30000
+    immutable
+    build
+
+block_build b01
+    parent g00
+    gasLimit 6800000
+    transactions tx01 tx02
+    build
+
+block_connect b01
+
+assert_best b01
+assert_connect best

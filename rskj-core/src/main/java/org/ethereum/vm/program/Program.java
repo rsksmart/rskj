@@ -1635,7 +1635,7 @@ public class Program {
                     msg.getOutDataSize().intValue());
             this.stackPushOne();
             track.commit();
-        } catch (VMException e) {
+        } catch (Exception e) {
             logger.trace("Precompiled execution error. Pushing Zero to stack and performing rollback.", e);
             this.stackPushZero();
             track.rollback();
