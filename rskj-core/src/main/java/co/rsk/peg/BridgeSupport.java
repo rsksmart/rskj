@@ -2670,7 +2670,7 @@ public class BridgeSupport {
             releaseRequestQueue.getEntries().stream()
                 .map(rr -> new ReleaseRequestQueue.Entry(rr.getDestination(), rr.getAmount())).toList());
 
-        // This public key is used to derive a deterministic recipient address for the hypothetical pegout simulation.
+        // This public key was generated just to derive a deterministic recipient address for the hypothetical pegout simulation.
         Address recipient = BtcECKey
             .fromPublicOnly(Hex.decode("0329f519f8d13a7e3dd35fa5c2480c6bf6c0489da40081e8311a91813492083953"))
             .toAddress(networkParameters);
