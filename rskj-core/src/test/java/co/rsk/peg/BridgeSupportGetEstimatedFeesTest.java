@@ -681,6 +681,20 @@ class BridgeSupportGetEstimatedFeesTest {
         }
 
         @Test
+        void getEstimatedFeesForPegOutAmount_withP2shP2wshErpFederation_withTwoMinPegoutRequestsOfTwoBtc_withHigherFeePerKB_shouldEstimateFeesFromTransactionSimulation() throws Exception {
+            // Arrange
+            setUpBridgeAndFederationSupport(VETIVER_ACTIVATION, DOUBLE_FEE_PER_KB);
+            setUpFederation(P2SH_P2WSH_ERP_FEDERATION, FOUR_P2SH_P2WSH_UTXOS_OF_ONE_BTC);
+            addPegoutRequests(2, MIN_PEGOUT_TX_VALUE);
+
+            // Act
+            Coin estimatedFeesForPegout = bridgeSupport.getEstimatedFeesForPegOutAmount(toWeis(Coin.COIN.multiply(2)));
+
+            // Assert
+            assertEquals(Coin.valueOf(25_872L), estimatedFeesForPegout);
+        }
+
+        @Test
         void getEstimatedFeesForPegOutAmount_withP2shP2wshErpFederation_withTwoMinPegoutRequestsOfMinPegoutValuePlusOneThousandSatoshis_shouldEstimateFeesFromTransactionSimulation() throws Exception {
             // Arrange
             addUtxosToActiveFederation(FOUR_P2SH_P2WSH_UTXOS_OF_ONE_BTC);
