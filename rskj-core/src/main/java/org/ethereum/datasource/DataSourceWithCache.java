@@ -142,7 +142,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
             if (priorValue != null && Arrays.equals(priorValue, value)) {
                 return value;
             }
-            metrics.onCacheCommittedWriteRemove(priorValue.length==0);
+            metrics.onCacheCommittedWriteRemove(priorValue==null);
             committedCache.remove(wrappedKey);
             this.putKeyValue(wrappedKey, value);
         } finally {
@@ -190,7 +190,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
             // a null value means we know for a fact that the key doesn't exist in the underlying store, so this is a noop
             if (valueToRemove != null) {
                 this.putKeyValue(wrappedKey, null);
-                metrics.onCacheCommittedWriteRemove();
+                metrics.onCacheCommittedWriteRemove(false);
                 committedCache.remove(wrappedKey);
 
             }
