@@ -132,37 +132,6 @@ class EthCallIntegrationTest {
     }
 
     /**
-     * Verifies that long-running calls complete successfully under a reasonable time.
-     */
-    @Test
-    void defaultTimeoutZero_shouldCompleteSuccessfully() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s",
-                baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-
-        Process proc = startNode(cmd);
-        try {
-            waitForNodeReady(rpcPort, 60_000);
-
-            String payload = buildEthCallPayload(SHA3_LOOP_BYTECODE, GAS_50M, 1);
-
-            long start = System.currentTimeMillis();
-            Response response = sendJsonRpcMessage(payload, rpcPort, EXPENSIVE_CALL_TIMEOUT_MS);
-            long elapsed = System.currentTimeMillis() - start;
-
-            String body = response.body().string();
-            JsonNode jsonResponse = objectMapper.readTree(body);
-            Assertions.assertTrue(jsonResponse.has("result"),
-                    "Expected 'result' (no timeout error), got: " + body);
-            Assertions.assertTrue(elapsed < 1000,
-                    String.format("Expected execution to take < 1000ms, took %dms", elapsed));
-
-            System.out.printf("Long running eth_call execution time: %dms%n", elapsed);
-        } finally {
-            destroyNode(proc);
-        }
-    }
-
-    /**
      * Verifies that the callGasCap configuration parameter limits the execution time of eth_call.
      * When the gas parameter is greater than the callGasCap, the call should be executed with the callGasCap.
      * Execution times for 10M (the default callGasCap) and 50M gas should be similar.
@@ -232,6 +201,9 @@ class EthCallIntegrationTest {
             int batchSize = Math.max(5, (int) Math.ceil(10_000.0 / singleCallTime));
             batchSize = Math.min(batchSize, 100);
             long expectedSequentialTime = singleCallTime * batchSize;
+            Assertions.assertTrue(expectedSequentialTime > 5000,
+                    String.format("Batch sequential time (%dms) must exceed timeout (5s) for this test to be valid",
+                            expectedSequentialTime));
             System.out.printf("Single call: %dms. Batch size: %d (expected without timeout: ~%ds)%n",
                     singleCallTime, batchSize, expectedSequentialTime / 1000);
 

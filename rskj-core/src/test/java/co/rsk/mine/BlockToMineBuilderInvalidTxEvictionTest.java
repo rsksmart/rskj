@@ -108,7 +108,7 @@ class BlockToMineBuilderInvalidTxEvictionTest {
 
     @Test
     void build_whenBlockResultHasInvalidTxs_shouldEvictThemFromPool() {
-        runMocked((parent) -> {
+        runMocked(parent -> {
             Transaction invalidTx = mock(Transaction.class);
             List<Transaction> invalidTxs = Collections.singletonList(invalidTx);
 
@@ -126,7 +126,7 @@ class BlockToMineBuilderInvalidTxEvictionTest {
 
     @Test
     void build_whenBlockResultHasNoInvalidTxs_shouldNotEvictFromPool() {
-        runMocked((parent) -> {
+        runMocked(parent -> {
             BlockResult blockResult = mock(BlockResult.class);
             when(blockResult.getInvalidTransactions()).thenReturn(Collections.emptyList());
 
@@ -167,7 +167,7 @@ class BlockToMineBuilderInvalidTxEvictionTest {
                 EMPTY_BYTE_ARRAY, 0L, 0L, EMPTY_BYTE_ARRAY, Coin.ZERO,
                 EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY,
                 Coin.ZERO, 0, false, true, false,
-                new byte[0], null
+                new byte[0], null, null
         );
     }
 }
