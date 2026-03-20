@@ -42,7 +42,15 @@ java {
 
 application {
     mainClass = 'co.rsk.Start'
-    applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-Xmx5G", "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow"]
+    applicationDefaultJvmArgs = [
+            "-server",
+            "-Xss32m",
+            "-Xms3G",
+            "-Xmx5G",
+            "-XX:+UseCompressedOops",
+            "-XX:-OmitStackTraceInFastThrow",
+            "-javaagent:/Users/darcycamargo/RSK_node/rskj/jmx_prometheus_javaagent-0.20.0.jar=9100:/Users/darcycamargo/RSK_node/rskj/config.yaml"
+    ]
 }
 
 def getFilteredFiles() {

@@ -57,9 +57,11 @@ import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
+import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -266,6 +268,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private MinGasPriceProvider minGasPriceProvider;
     private StateOverrideApplier stateOverrideApplier;
     private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
+    private ForkAwareConsensus forkAwareConsensus;
+
 
     private volatile boolean closed;
 
@@ -1419,7 +1423,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 getBlocksBloomStore(),
                 getWeb3InformationRetriever(),
                 getSyncProcessor(),
-                getBlockTxSignatureCache());
+                getBlockTxSignatureCache(),
+                getForkAwareConsensus());
     }
 
     protected synchronized Web3InformationRetriever getWeb3InformationRetriever() {
@@ -1731,7 +1736,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockExecutor(),
                     getGenesis(),
                     getStateRootHandler(),
-                    getRepositoryLocator()
+                    getRepositoryLocator(),
+                    getBtcBlockStoreFactory(),
+                    getForkAwareConsensus(),
+                    getRskSystemProperties()
             );
         }
 
@@ -2346,5 +2354,19 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (closed) {
             throw new IllegalStateException("RSK Context is closed and cannot be in use anymore");
         }
+    }
+
+    private ForkAwareConsensus getForkAwareConsensus() {
+        if (forkAwareConsensus == null) {
+            BridgeConstants bridgeConstants = getRskSystemProperties()
+                    .getNetworkConstants()
+                    .getBridgeConstants();
+
+            forkAwareConsensus = new ForkAwareConsensus(
+                    bridgeConstants.getBtcParams()
+            );
+        }
+
+        return forkAwareConsensus;
     }
 }

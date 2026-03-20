@@ -1113,6 +1113,7 @@ class Web3ImplLogsTest {
                 blocksBloomStore,
                 mock(Web3InformationRetriever.class),
                 null,
+                null,
                 null);
     }
 

@@ -1,0 +1,5 @@
+rules:
+  - pattern: ".*"
+# This next line is the magic trick - it tells the agent to look outside java.lang
+lowercaseOutputName: true
+attrNameSnakeCase: true

@@ -18,22 +18,29 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.util.FormatUtils;
 import co.rsk.validators.BlockValidator;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,6 +92,11 @@ public class BlockChainImpl implements Blockchain {
     private final StateRootHandler stateRootHandler;
     private final EthereumListener listener;
     private BlockValidator blockValidator;
+    private ForkAwareConsensus forkAwareConsensus;
+    private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private final RepositoryLocator repositoryLocator;
+    private final RskSystemProperties rskSystemProperties;
+
 
     private volatile BlockChainStatus status = new BlockChainStatus(null, BlockDifficulty.ZERO);
 
@@ -101,7 +113,10 @@ public class BlockChainImpl implements Blockchain {
                           EthereumListener listener,
                           BlockValidator blockValidator,
                           BlockExecutor blockExecutor,
-                          StateRootHandler stateRootHandler) {
+                          StateRootHandler stateRootHandler,
+                          BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
+                          RepositoryLocator repositoryLocator,
+                          RskSystemProperties rskSystemProperties) {
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.listener = listener;
@@ -109,6 +124,40 @@ public class BlockChainImpl implements Blockchain {
         this.blockExecutor = blockExecutor;
         this.transactionPool = transactionPool;
         this.stateRootHandler = stateRootHandler;
+        this.btcBlockStoreFactory = btcBlockStoreFactory;
+        this.repositoryLocator = repositoryLocator;
+        this.rskSystemProperties = rskSystemProperties;
+    }
+
+    public void setForkAwareConsensus(ForkAwareConsensus forkAwareConsensus) {
+        this.forkAwareConsensus = forkAwareConsensus;
+    }
+
+    private BtcBlockStoreWithCache newBtcBlockStoreForExecutedBlock(Block block) {
+        Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
+        if (parent == null) {
+            throw new IllegalStateException("Could not find parent block for: " + block.getPrintableHash());
+        }
+        Repository parentRepository = repositoryLocator.findSnapshotAt(parent.getHeader())
+                .orElseThrow(() -> new IllegalStateException("Could not find repository for parent block: " + parent.getPrintableHash()))
+                .startTracking();
+
+        BridgeConstants bridgeConstants = rskSystemProperties.getNetworkConstants().getBridgeConstants();
+        ActivationConfig.ForBlock activations = rskSystemProperties.getActivationConfig().forBlock(block.getNumber());
+
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                parentRepository,
+                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeConstants.getBtcParams(),
+                activations
+        );
+
+        return btcBlockStoreFactory.newInstance(
+                parentRepository,
+                bridgeConstants,
+                bridgeStorageProvider,
+                activations
+        );
     }
 
     @VisibleForTesting
@@ -278,6 +327,7 @@ public class BlockChainImpl implements Blockchain {
 
             // the block is valid at this point
             stateRootHandler.register(block.getHeader(), result.getFinalState());
+
             profiler.stop(metric);
         }
 
@@ -293,6 +343,15 @@ public class BlockChainImpl implements Blockchain {
                         bestBlock.getPrintableHash(), block.getPrintableHash(), bestBlock.getNumber(), block.getNumber(),
                         status.getTotalDifficulty(), totalDifficulty);
                 blockStore.reBranch(block);
+                if (forkAwareConsensus != null) {
+                    BlockFork fork = new BlockchainBranchComparator(blockStore).calculateFork(bestBlock, block);
+                    forkAwareConsensus.onReorganization(
+                            fork.getCommonAncestor(),
+                            fork.getNewBlocks(),
+                            this::newBtcBlockStoreForExecutedBlock);
+                }
+            } else if (forkAwareConsensus != null) {
+                forkAwareConsensus.updateMetricsState(block, newBtcBlockStoreForExecutedBlock(block));
             }
 
             logger.trace("Start switchToBlockChain");

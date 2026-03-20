@@ -88,4 +88,6 @@ public interface BlockStore extends RemascCache {
     Bloom bloomByBlockNumber(long blockNumber);
 
     void rewind(long blockNumber);
+
+
 }

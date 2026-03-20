@@ -51,6 +51,7 @@ import org.ethereum.rpc.Web3Impl;
 import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import co.rsk.core.bc.ForkAwareConsensus;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -97,11 +98,12 @@ public class Web3RskImpl extends Web3Impl {
             BlocksBloomStore blocksBloomStore,
             Web3InformationRetriever retriever,
             SyncProcessor syncProcessor,
-            SignatureCache signatureCache) {
+            SignatureCache signatureCache,
+            ForkAwareConsensus forkAwareConsensus) {
             super(eth, blockchain, blockStore, receiptStore, properties, minerClient, minerServer,
                     personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule, traceModule, rskModule,
                     channelManager, peerScoringManager, peerServer, nodeBlockProcessor,
-                    hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore, retriever, syncProcessor, signatureCache);
+                    hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore, retriever, syncProcessor, signatureCache, forkAwareConsensus);
 
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;

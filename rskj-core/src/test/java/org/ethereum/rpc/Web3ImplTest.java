@@ -2869,6 +2869,7 @@ class Web3ImplTest {
                         mock(RepositoryLocator.class),
                         mock(ExecutionBlockRetriever.class)),
                 null,
+                null,
                 null);
     }
 
@@ -2994,7 +2995,8 @@ class Web3ImplTest {
                 null,
                 retriever,
                 syncProcessor,
-                signatureCache
+                signatureCache,
+                null
         );
     }
 
@@ -3064,7 +3066,8 @@ class Web3ImplTest {
                 null,
                 retriever,
                 null,
-                signatureCache);
+                signatureCache,
+                null);
     }
 
     private TransactionExecutorFactory buildTransactionExecutorFactory(

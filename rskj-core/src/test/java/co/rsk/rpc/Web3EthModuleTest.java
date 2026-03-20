@@ -84,7 +84,8 @@ class Web3EthModuleTest {
                 mock(BlocksBloomStore.class),
                 mock(Web3InformationRetriever.class),
                 mock(SyncProcessor.class),
-                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()),
+                null);
 
         assertThat(web3.eth_chainId(), is("0x21"));
     }
@@ -121,7 +122,8 @@ class Web3EthModuleTest {
                 mock(BlocksBloomStore.class),
                 mock(Web3InformationRetriever.class),
                 mock(SyncProcessor.class),
-                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()),
+                null);
 
         String expectedValue = HexUtils.toQuantityJsonHex(BigInteger.ZERO);
         String result = web3.eth_hashrate();

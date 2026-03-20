@@ -695,6 +695,7 @@ class TransactionModuleTest {
                 null,
                 null,
                 null,
+                null,
                 null);
     }
 

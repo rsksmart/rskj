@@ -20,6 +20,7 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.ForkAwareConsensus;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.crypto.Keccak256;
 import co.rsk.logfilter.BlocksBloomStore;
@@ -120,6 +121,7 @@ public class Web3Impl implements Web3 {
     private final SyncProcessor syncProcessor;
 
     private final SignatureCache signatureCache;
+    private final ForkAwareConsensus forkAwareConsensus;
 
     private Ethereum eth;
 
@@ -149,7 +151,8 @@ public class Web3Impl implements Web3 {
             BlocksBloomStore blocksBloomStore,
             Web3InformationRetriever web3InformationRetriever,
             SyncProcessor syncProcessor,
-            SignatureCache signatureCache) {
+            SignatureCache signatureCache,
+            @Nullable ForkAwareConsensus forkAwareConsensus) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -176,6 +179,7 @@ public class Web3Impl implements Web3 {
         this.web3InformationRetriever = web3InformationRetriever;
         this.syncProcessor = syncProcessor;
         this.signatureCache = signatureCache;
+        this.forkAwareConsensus = forkAwareConsensus;
 
         personalModule.init();
     }
@@ -741,6 +745,14 @@ public class Web3Impl implements Web3 {
         String bnOrId = identifierParam.getIdentifier();
 
         try {
+            if ("safe".equals(bnOrId) || "finalized".equals(bnOrId)) {
+                if (forkAwareConsensus == null) {
+                    return null;
+                }
+                Block safeBlock = forkAwareConsensus.getLastSafeRskBlockObj();
+                s = (safeBlock == null ? null : getBlockResult(safeBlock, fullTransactionObjects));
+                return s;
+            }
 
             s = web3InformationRetriever.getBlock(bnOrId)
                     .map(b -> getBlockResult(b, fullTransactionObjects))

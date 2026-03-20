@@ -245,7 +245,8 @@ public class Web3TestBuilder {
                 blocksBloomStore,
                 web3InformationRetriever,
                 syncProcessor,
-                signatureCache);
+                signatureCache,
+                null);
     }
 
     public Ethereum getEthereum() {

@@ -20,12 +20,15 @@
 package org.ethereum.core.genesis;
 
 import co.rsk.cli.tools.RewindBlocks;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.ForkAwareConsensus;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Genesis;
@@ -55,6 +58,9 @@ public class BlockChainLoader {
     private final Genesis genesis;
     private final StateRootHandler stateRootHandler;
     private final RepositoryLocator repositoryLocator;
+    private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private final ForkAwareConsensus forkAwareConsensus;
+    private final RskSystemProperties rskSystemProperties;
 
     public BlockChainLoader(
             BlockStore blockStore,
@@ -65,7 +71,10 @@ public class BlockChainLoader {
             BlockExecutor blockExecutor,
             Genesis genesis,
             StateRootHandler stateRootHandler,
-            RepositoryLocator repositoryLocator) {
+            RepositoryLocator repositoryLocator,
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
+            ForkAwareConsensus forkAwareConsensus,
+            RskSystemProperties rskSystemProperties) {
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.transactionPool = transactionPool;
@@ -75,6 +84,9 @@ public class BlockChainLoader {
         this.genesis = genesis;
         this.stateRootHandler = stateRootHandler;
         this.repositoryLocator = repositoryLocator;
+        this.btcBlockStoreFactory = btcBlockStoreFactory;
+        this.forkAwareConsensus = forkAwareConsensus;
+        this.rskSystemProperties = rskSystemProperties;
     }
 
     public BlockChainImpl loadBlockchain() {
@@ -112,8 +124,12 @@ public class BlockChainLoader {
                 listener,
                 blockValidator,
                 blockExecutor,
-                stateRootHandler
+                stateRootHandler,
+                btcBlockStoreFactory,
+                repositoryLocator,
+                rskSystemProperties
         );
+        blockchain.setForkAwareConsensus(forkAwareConsensus);
         blockchain.setStatus(bestBlock, totalDifficulty);
 
         return blockchain;
