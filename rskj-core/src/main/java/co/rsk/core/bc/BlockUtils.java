@@ -152,14 +152,14 @@ public class BlockUtils {
         int transactionExecutionThreads = Constants.getTransactionExecutionThreads();
         int totalThreads = transactionExecutionThreads + SEQUENTIAL_THREAD_COUNT;
 
-        if ( blockGasLimit/totalThreads >= minSequentialListGasLimit) { // This is the same as (totalThreads * minSequentialListGasLimit <= blockGasLimit) but avoids long multiplication that can overflow.
+        if ( blockGasLimit / totalThreads >= minSequentialListGasLimit) { // This is the same as (totalThreads * minSequentialListGasLimit <= blockGasLimit) but avoids long multiplication that can overflow.
             long parallel = blockGasLimit / totalThreads; // Does not include the reminder, which is added to the sequential sublist.
             return isSequentialList ? blockGasLimit - (transactionExecutionThreads * parallel) :  parallel;
         }
         if (blockGasLimit <= minSequentialListGasLimit) {
             return isSequentialList ? blockGasLimit : 0;
         }
-        long parallelListGasLimit = (blockGasLimit - minSequentialListGasLimit) / transactionExecutionThreads; // Does not include the reminder, which is added to the sequential sublist.
+        long parallelListGasLimit = (blockGasLimit - minSequentialListGasLimit) / transactionExecutionThreads; // Does not include the remainder, which is added to the sequential sublist.
         long sequentialListGasLimit = blockGasLimit - (parallelListGasLimit * transactionExecutionThreads); // Includes the remainder after dividing the remaining gas across parallel sublists.
         return isSequentialList ? sequentialListGasLimit : parallelListGasLimit;
     }
