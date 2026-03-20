@@ -50,10 +50,11 @@ public final class DataSourceWithCacheMetrics {
     // committedCache internal ops
     private final LongAdder cache_committed_contains = new LongAdder(); //as “contains attempts”.
     private final LongAdder cache_committed_get = new LongAdder();
-    private final LongAdder cache_committed_put = new LongAdder();
+    private final LongAdder cache_committed_put_with_value = new LongAdder();
+    private final LongAdder cache_committed_put_absent = new LongAdder();
     private final LongAdder cache_committed_remove = new LongAdder();
     private final LongAdder cache_committed_remove_known_absent = new LongAdder();
-    private final LongAdder cache_committed_putAll = new LongAdder(); // counts calls, not entries
+
     // uncommittedCache internal ops
     private final LongAdder cache_uncommitted_contains = new LongAdder();
     private final LongAdder cache_uncommitted_get = new LongAdder();
@@ -87,29 +88,6 @@ public final class DataSourceWithCacheMetrics {
     private final LongAdder store_flush_committed_and_uncommitted_nanos = new LongAdder();
     private final LongAdder store_flush_committed_and_uncommitted_count = new LongAdder();
 
-
-    // Lock metrics
-    private final LongAdder readLockAcquireTotal = new LongAdder();
-    private final LongAdder writeLockAcquireTotal = new LongAdder();
-
-    private final LongAdder readLockWaitNanos = new LongAdder();
-    private final LongAdder writeLockWaitNanos = new LongAdder();
-
-    private final LongAdder readLockHeldNanos = new LongAdder();
-    private final LongAdder writeLockHeldNanos = new LongAdder();
-
-    // Method latency metrics
-    private final LongAdder getLatencyTotal = new LongAdder();
-    private final LongAdder putLatencyTotal = new LongAdder();
-    private final LongAdder deleteLatencyTotal = new LongAdder();
-    private final LongAdder flushLatencyTotal = new LongAdder();
-    private final LongAdder batchLatencyTotal = new LongAdder();
-
-    private final LongAdder getLatencyNanos = new LongAdder();
-    private final LongAdder putLatencyNanos = new LongAdder();
-    private final LongAdder deleteLatencyNanos = new LongAdder();
-    private final LongAdder flushLatencyNanos = new LongAdder();
-    private final LongAdder batchLatencyNanos = new LongAdder();
 
     public DataSourceWithCacheMetrics(Logger logger,
                                       String name,
@@ -198,14 +176,15 @@ public final class DataSourceWithCacheMetrics {
     public void onCacheCommittedReadContains() { cache_committed_contains.increment(); }
     public void onCacheCommittedReadGet() { cache_committed_get.increment(); }
     // committedCache WRITE
-    public void onCacheCommittedWritePut() { cache_committed_put.increment();}
     public void onCacheCommittedWriteRemove(boolean knownAbsent) {
         if (knownAbsent) cache_committed_remove_known_absent.increment();
         else cache_committed_remove.increment();
     }
-    public void onCacheCommittedWritePutAll(int entries) {
-        cache_committed_putAll.increment();
-        cache_committed_put.add(entries);
+    public void onCacheCommittedWritePutWithValue(int entries) {
+        cache_committed_put_with_value.add(entries);
+    }
+    public void onCacheCommittedWritePutAbsent(int entries) {
+        cache_committed_put_absent.add(entries);
     }
     // committedCache READ
     public void onCacheUncommittedReadContains() { cache_uncommitted_contains.increment(); }
@@ -225,48 +204,7 @@ public final class DataSourceWithCacheMetrics {
     public void onWriteInvalidateCommittedOnPut() {
         write_invalidate_committed_on_put.increment();
     }
-    public void onReadLockWait(long nanos) {
-        readLockAcquireTotal.increment();
-        readLockWaitNanos.add(nanos);
-    }
 
-    public void onWriteLockWait(long nanos) {
-        writeLockAcquireTotal.increment();
-        writeLockWaitNanos.add(nanos);
-    }
-
-    public void onReadLockHeld(long nanos) {
-        readLockHeldNanos.add(nanos);
-    }
-
-    public void onWriteLockHeld(long nanos) {
-        writeLockHeldNanos.add(nanos);
-    }
-
-    public void onGetLatency(long nanos) {
-        getLatencyTotal.increment();
-        getLatencyNanos.add(nanos);
-    }
-
-    public void onPutLatency(long nanos) {
-        putLatencyTotal.increment();
-        putLatencyNanos.add(nanos);
-    }
-
-    public void onDeleteLatency(long nanos) {
-        deleteLatencyTotal.increment();
-        deleteLatencyNanos.add(nanos);
-    }
-
-    public void onFlushLatency(long nanos) {
-        flushLatencyTotal.increment();
-        flushLatencyNanos.add(nanos);
-    }
-
-    public void onBatchLatency(long nanos) {
-        batchLatencyTotal.increment();
-        batchLatencyNanos.add(nanos);
-    }
 
     private void maybeEmit() {
         if (!logger.isInfoEnabled()) return;
@@ -305,10 +243,11 @@ public final class DataSourceWithCacheMetrics {
         // INTERNAL cache ops
         long cContains = cache_committed_contains.sum();
         long cGet = cache_committed_get.sum();
-        long cPut = cache_committed_put.sum();
+        long cPutWithValue = cache_committed_put_with_value.sum();
+        long cPutAbsent = cache_committed_put_absent.sum();
         long cRem = cache_committed_remove.sum();
         long cRemAbsent = cache_committed_remove_known_absent.sum();
-        long cPutAll = cache_committed_putAll.sum();
+
 
         long uContains = cache_uncommitted_contains.sum();
         long uGet = cache_uncommitted_get.sum();
@@ -337,18 +276,6 @@ public final class DataSourceWithCacheMetrics {
         long storeFlushToUpdateNs = avg(store_flush_nanos.sum(), store_flush_counts.sum());
         long storeFlushCommittedAndUncommittedNs = avg(store_flush_committed_and_uncommitted_nanos.sum(), store_flush_committed_and_uncommitted_count.sum());
 
-        // Lock metrics
-        long avgReadLockWaitNs = avg(readLockWaitNanos.sum(), readLockAcquireTotal.sum());
-        long avgWriteLockWaitNs = avg(writeLockWaitNanos.sum(), writeLockAcquireTotal.sum());
-
-        long avgReadLockHeldNs = avg(readLockHeldNanos.sum(), readLockAcquireTotal.sum());
-        long avgWriteLockHeldNs = avg(writeLockHeldNanos.sum(), writeLockAcquireTotal.sum());
-
-        long avgGetLatencyNs = avg(getLatencyNanos.sum(), getLatencyTotal.sum());
-        long avgPutLatencyNs = avg(putLatencyNanos.sum(), putLatencyTotal.sum());
-        long avgDeleteLatencyNs = avg(deleteLatencyNanos.sum(), deleteLatencyTotal.sum());
-        long avgFlushLatencyNs = avg(flushLatencyNanos.sum(), flushLatencyTotal.sum());
-        long avgBatchLatencyNs = avg(batchLatencyNanos.sum(), batchLatencyTotal.sum());
 
         return String.format(Locale.ROOT,
                 "owner=%s " +
@@ -361,7 +288,7 @@ public final class DataSourceWithCacheMetrics {
                         "user_read_from_store_value=%d user_read_from_store_known_absent=%d " +
                         "user_read_cache_rate=%.4f " +
                         // INTERNAL committed ops
-                        "cache_committed_contains=%d cache_committed_get=%d cache_committed_put=%d cache_committed_remove=%d cache_committed_remove_absent=%d cache_committed_putAll=%d " +
+                        "cache_committed_contains=%d cache_committed_get=%d cache_committed_put=%d cache_committed_put_absent=%d cache_committed_remove=%d cache_committed_remove_absent=%d " +
                         // INTERNAL uncommitted ops
                         "cache_uncommitted_contains=%d cache_uncommitted_get=%d cache_uncommitted_put=%d cache_uncommitted_remove=%d " +
                         // SEMANTICS
@@ -374,9 +301,8 @@ public final class DataSourceWithCacheMetrics {
                         // TIMINGS
                         "avg_read_store_ns=%d avg_write_flush_ns=%d avg_write_batch_ns=%d " +
                         //Flush
-                        "store_flush_to_update=%d store_flush_to_remove=%d store_flush_to_update_ns=%d store_flush_committed_and_uncommitted_ns=%d "+
-                        //Lock metrics
-                        "read_lock_acquire_total=%d write_lock_acquire_total=%d avg_read_lock_wait_ns=%d avg_write_lock_wait_ns=%d avg_read_lock_held_ns=%d avg_write_lock_held_ns=%d avg_get_latency_ns=%d avg_put_latency_ns=%d avg_delete_latency_ns=%d avg_flush_latency_ns=%d avg_batch_latency_ns=%d",
+                        "store_flush_to_update=%d store_flush_to_remove=%d store_flush_to_update_ns=%d store_flush_committed_and_uncommitted_ns=%d "
+                        ,
                 owner,
                 name,
                 userGets, userPuts, userDels, userBatches, userFlushes,
@@ -384,7 +310,7 @@ public final class DataSourceWithCacheMetrics {
                 ruV, ruA,
                 rsV, rsA,
                 userReadCacheRate,
-                cContains, cGet, cPut, cRem, cRemAbsent, cPutAll,
+                cContains, cGet, cPutWithValue, cPutAbsent, cRem, cRemAbsent,
                 uContains, uGet, uPut, uRem,
                 rtV, rtA,
                 invPut, //write_invalidate_committed_on_put
@@ -392,13 +318,7 @@ public final class DataSourceWithCacheMetrics {
                 committedSize.getAsInt(), uncommittedSize.getAsInt(),
                 avgReadStoreNs, avgWriteFlushNs, avgWriteBatchNs,
                 //flush
-                storeFlushToUpdateCount, storeFlushToRemoveCount, storeFlushToUpdateNs, storeFlushCommittedAndUncommittedNs,
-                //lock metrics
-                readLockAcquireTotal.sum(), writeLockAcquireTotal.sum(),
-                avgReadLockWaitNs, avgWriteLockWaitNs,
-                avgReadLockHeldNs, avgWriteLockHeldNs,
-                avgGetLatencyNs, avgPutLatencyNs, avgDeleteLatencyNs, avgFlushLatencyNs, avgBatchLatencyNs
-        );
+                storeFlushToUpdateCount, storeFlushToRemoveCount, storeFlushToUpdateNs, storeFlushCommittedAndUncommittedNs);
     }
 
     private static long avg(long total, long count) {

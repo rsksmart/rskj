@@ -109,7 +109,11 @@ public class DataSourceWithCache implements KeyValueDataSource {
             }
 
             //null value, as expected, is allowed here to be stored in committedCache
-            metrics.onCacheCommittedWritePut();
+            if(value != null) {
+                metrics.onCacheCommittedWritePutWithValue(1);
+            }else{
+                metrics.onCacheCommittedWritePutAbsent(1);
+            }
             committedCache.put(wrappedKey, value);
             metrics.onReadThroughFillCommittedFromStore(value == null);
         } finally {
@@ -285,7 +289,10 @@ public class DataSourceWithCache implements KeyValueDataSource {
             metrics.onStoreFlushBatchUpdate(uncommittedBatch.size(), uncommittedKeysToRemove.size(),  System.nanoTime() - updateBatchTime);
 
             long updateCommittedAndUncommittedTime = System.nanoTime();
-            metrics.onCacheCommittedWritePutAll(uncommittedCache.size());
+            metrics.onCacheCommittedWritePutAbsent(uncommittedKeysToRemove.size());
+            metrics.onCacheCommittedWritePutWithValue(uncommittedBatch.size());
+
+
             committedCache.putAll(uncommittedCache);
             uncommittedCache.clear();
             metrics.onStoreFlushCommitedAndUncommittedUpdate(System.nanoTime()-updateCommittedAndUncommittedTime);
@@ -319,7 +326,9 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
             Set<ByteArrayWrapper> uncommittedKeysToRemove = uncommittedCache.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey).collect(Collectors.toSet());
             base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
-            metrics.onCacheCommittedWritePutAll(uncommittedCache.size());
+            metrics.onCacheCommittedWritePutAbsent(uncommittedKeysToRemove.size());
+            metrics.onCacheCommittedWritePutWithValue(uncommittedBatch.size());
+
             committedCache.putAll(uncommittedCache);
             uncommittedCache.clear();
 
