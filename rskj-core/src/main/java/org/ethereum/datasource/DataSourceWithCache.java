@@ -142,7 +142,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
             if (priorValue != null && Arrays.equals(priorValue, value)) {
                 return value;
             }
-            metrics.onCacheCommittedWriteRemove();
+            metrics.onCacheCommittedWriteRemove(priorValue.length==0);
             committedCache.remove(wrappedKey);
             this.putKeyValue(wrappedKey, value);
         } finally {
@@ -238,6 +238,8 @@ public class DataSourceWithCache implements KeyValueDataSource {
         return new DefaultKeyIterator(base.keys());
     }
 
+
+
     @Override
     public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
         if (rows.containsKey(null) || rows.containsValue(null)) {
@@ -258,6 +260,9 @@ public class DataSourceWithCache implements KeyValueDataSource {
             metrics.onUserWriteBatch(nanos);
         }
     }
+
+
+
 
     @Override
     public void flush() {

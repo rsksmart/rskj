@@ -52,6 +52,7 @@ public final class DataSourceWithCacheMetrics {
     private final LongAdder cache_committed_get = new LongAdder();
     private final LongAdder cache_committed_put = new LongAdder();
     private final LongAdder cache_committed_remove = new LongAdder();
+    private final LongAdder cache_committed_remove_known_absent = new LongAdder();
     private final LongAdder cache_committed_putAll = new LongAdder(); // counts calls, not entries
     // uncommittedCache internal ops
     private final LongAdder cache_uncommitted_contains = new LongAdder();
@@ -174,7 +175,10 @@ public final class DataSourceWithCacheMetrics {
     public void onCacheCommittedReadGet() { cache_committed_get.increment(); }
     // committedCache WRITE
     public void onCacheCommittedWritePut() { cache_committed_put.increment();}
-    public void onCacheCommittedWriteRemove() { cache_committed_remove.increment();}
+    public void onCacheCommittedWriteRemove(boolean knownAbsent) {
+        if (knownAbsent) cache_committed_remove_known_absent.increment();
+        else cache_committed_remove.increment();
+    }
     public void onCacheCommittedWritePutAll(int entries) {
         cache_committed_putAll.increment();
         cache_committed_put.add(entries);
@@ -237,12 +241,14 @@ public final class DataSourceWithCacheMetrics {
         long cGet = cache_committed_get.sum();
         long cPut = cache_committed_put.sum();
         long cRem = cache_committed_remove.sum();
+        long cRemAbsent = cache_committed_remove_known_absent.sum();
         long cPutAll = cache_committed_putAll.sum();
 
         long uContains = cache_uncommitted_contains.sum();
         long uGet = cache_uncommitted_get.sum();
         long uPut = cache_uncommitted_put.sum();
         long uRem = cache_uncommitted_remove.sum();
+
 
         // Semantics
         long rtV = read_through_fill_committed_from_store_value.sum();
@@ -276,7 +282,7 @@ public final class DataSourceWithCacheMetrics {
                         "user_read_from_store_value=%d user_read_from_store_known_absent=%d " +
                         "user_read_cache_rate=%.4f " +
                         // INTERNAL committed ops
-                        "cache_committed_contains=%d cache_committed_get=%d cache_committed_put=%d cache_committed_remove=%d cache_committed_putAll=%d " +
+                        "cache_committed_contains=%d cache_committed_get=%d cache_committed_put=%d cache_committed_remove=%d cache_committed_remove_absent=%d cache_committed_putAll=%d " +
                         // INTERNAL uncommitted ops
                         "cache_uncommitted_contains=%d cache_uncommitted_get=%d cache_uncommitted_put=%d cache_uncommitted_remove=%d " +
                         // SEMANTICS
@@ -298,10 +304,10 @@ public final class DataSourceWithCacheMetrics {
                 ruV, ruA,
                 rsV, rsA,
                 userReadCacheRate,
-                cContains, cGet, cPut, cRem, cPutAll,
+                cContains, cGet, cPut, cRem, cRemAbsent, cPutAll,
                 uContains, uGet, uPut, uRem,
                 rtV, rtA,
-                invPut,
+                invPut, //write_invalidate_committed_on_put
                 fMan, fSize, fClose,
                 committedSize.getAsInt(), uncommittedSize.getAsInt(),
                 avgReadStoreNs, avgWriteFlushNs, avgWriteBatchNs,
