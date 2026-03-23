@@ -9,10 +9,14 @@ comment
 // that triggers the bug.
 // The malformed precompile tx should revert gracefully, and a subsequent
 // normal transfer in the same block should succeed.
+// tx02 uses a different sender (acc2) so its nonce stays 0 even when tx01
+// is discarded (e.g. NPE before RSKIP-552 caught by BlockExecutor), matching
+// acc1 still at nonce 0.
 
 end
 
 account_new acc1 10000000000
+account_new acc2 10000000000
 
 # tx01: call Blake2F precompile (0x09) with no data, through ImmutableTransaction
 transaction_build tx01
@@ -25,8 +29,7 @@ transaction_build tx01
 
 # tx02: normal value transfer to verify the block is not invalidated
 transaction_build tx02
-    sender acc1
-    nonce 1
+    sender acc2
     receiverAddress 0000000000000000000000000000000000000002
     value 1
     gas 30000

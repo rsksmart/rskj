@@ -25,29 +25,28 @@ class Blake2fNullDataTest {
 
     /**
      * Before RSKIP-552 is active, a direct transaction to Blake2F with null data triggers
-     * an NPE in TransactionExecutor.call() at getGasForData(tx.getData()), which is outside
-     * any try-catch and propagates up through BlockExecutor, crashing block processing.
-     * This is the actual DoS vector: an attacker submits a transaction with no calldata
-     * directly to address 0x09.
+     * an NPE in Blake2F.getGasForData (via TransactionExecutor.call()). BlockExecutor now
+     * catches unexpected exceptions per transaction, rolls back that tx, and continues
+     * (executeAndFill uses discardInvalidTxs=true). This test asserts the DSL block still imports successfully.
      */
     @Test
-    void blake2fWithNullData_beforeRskip552_shouldCrashBlockExecution() throws FileNotFoundException {
+    void blake2fWithNullData_beforeRskip552_blockExecutorHandlesUnexpectedException() throws FileNotFoundException {
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(0))
-                         .withValue("blockchain.config.hardforkActivationHeights.vetiver900", ConfigValueFactory.fromAnyRef(-1))
+                         .withValue("blockchain.config.consensusRules.rskip552", ConfigValueFactory.fromAnyRef(-1))
         );
         World world = new World(config);
         WorldDslProcessor processor = new WorldDslProcessor(world);
         DslParser parser = DslParser.fromResource("dsl/blake2b/blake2f_null_data.txt");
 
-        Assertions.assertThrows(NullPointerException.class, () -> processor.processCommands(parser));
+        Assertions.assertDoesNotThrow(() -> processor.processCommands(parser));
     }
 
     @Test
     void blake2fWithNullData_shouldNotInvalidateBlock() throws FileNotFoundException, DslProcessorException {
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(0))
-                         .withValue("blockchain.config.hardforkActivationHeights.vetiver900", ConfigValueFactory.fromAnyRef(0))
+                         .withValue("blockchain.config.consensusRules.rskip552", ConfigValueFactory.fromAnyRef(0))
         );
         World world = new World(config);
         WorldDslProcessor processor = new WorldDslProcessor(world);
