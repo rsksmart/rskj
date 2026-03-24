@@ -657,8 +657,9 @@ class Rskip543DslTest {
         TransactionReceipt decoded = new TransactionReceipt(encoded);
 
         assertArrayEquals(original.getStatus(), decoded.getStatus());
-        assertArrayEquals(original.getGasUsed(), decoded.getGasUsed());
         assertArrayEquals(original.getCumulativeGas(), decoded.getCumulativeGas());
+        // RSKIP-546 Type 1 receipt body omits per-tx gasUsed; it is not recoverable from RLP alone.
+        assertArrayEquals(new byte[0], decoded.getGasUsed());
     }
 
     @Test

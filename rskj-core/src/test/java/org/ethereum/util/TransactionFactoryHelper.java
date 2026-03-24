@@ -127,6 +127,8 @@ public class TransactionFactoryHelper {
                 Optional.ofNullable(args.getTo()).filter(p -> !p.isEmpty()).map(HexAddressParam::new).orElse(null),
                 Optional.ofNullable(args.getGas()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
                 Optional.ofNullable(args.getGasPrice()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
+                Optional.ofNullable(args.getMaxPriorityFeePerGas()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
+                Optional.ofNullable(args.getMaxFeePerGas()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
                 Optional.ofNullable(args.getGasLimit()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
                 Optional.ofNullable(args.getNonce()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
                 Optional.ofNullable(args.getChainId()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),

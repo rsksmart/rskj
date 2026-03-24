@@ -171,6 +171,8 @@ public class CallArgumentsParamTest {
                 new HexNumberParam(GAS),
                 new HexNumberParam(GAS_PRICE),
                 null,
+                null,
+                null,
                 new HexNumberParam(NONCE),
                 new HexNumberParam(CHAIN_ID),
                 new HexNumberParam(VALUE),
@@ -186,6 +188,8 @@ public class CallArgumentsParamTest {
         assertEquals(TO, callArguments.getTo());
         assertEquals(GAS, callArguments.getGas());
         assertEquals(GAS_PRICE, callArguments.getGasPrice());
+        assertNull(callArguments.getMaxPriorityFeePerGas());
+        assertNull(callArguments.getMaxFeePerGas());
         assertEquals(NONCE, callArguments.getNonce());
         assertEquals(CHAIN_ID, callArguments.getChainId());
         assertEquals(VALUE, callArguments.getValue());
@@ -201,6 +205,8 @@ public class CallArgumentsParamTest {
                 new HexNumberParam(GAS),
                 new HexNumberParam(GAS_PRICE),
                 null,
+                null,
+                null,
                 new HexNumberParam(NONCE),
                 new HexNumberParam(CHAIN_ID),
                 new HexNumberParam(VALUE),
@@ -216,6 +222,8 @@ public class CallArgumentsParamTest {
         assertEquals(TO, callArguments.getTo());
         assertEquals(GAS, callArguments.getGas());
         assertEquals(GAS_PRICE, callArguments.getGasPrice());
+        assertNull(callArguments.getMaxPriorityFeePerGas());
+        assertNull(callArguments.getMaxFeePerGas());
         assertEquals(NONCE, callArguments.getNonce());
         assertEquals(CHAIN_ID, callArguments.getChainId());
         assertEquals(VALUE, callArguments.getValue());
@@ -246,6 +254,8 @@ public class CallArgumentsParamTest {
         assertNull(callArgumentsParam.getTo());
         assertNull(callArgumentsParam.getGas());
         assertNull(callArgumentsParam.getGasPrice());
+        assertNull(callArgumentsParam.getMaxPriorityFeePerGas());
+        assertNull(callArgumentsParam.getMaxFeePerGas());
         assertNull(callArgumentsParam.getValue());
         assertNull(callArgumentsParam.getData());
         assertNull(callArgumentsParam.getNonce());
@@ -267,6 +277,8 @@ public class CallArgumentsParamTest {
         assertNull(callArgumentsParam.getTo());
         assertNull(callArgumentsParam.getGas());
         assertNull(callArgumentsParam.getGasPrice());
+        assertNull(callArgumentsParam.getMaxPriorityFeePerGas());
+        assertNull(callArgumentsParam.getMaxFeePerGas());
         assertNull(callArgumentsParam.getValue());
         assertNull(callArgumentsParam.getData());
         assertNull(callArgumentsParam.getNonce());
@@ -284,7 +296,7 @@ public class CallArgumentsParamTest {
 
         String result = callArgumentsParam.toString();
 
-        String expected = "CallArguments{from='null', to='null', gas='null', gasLimit='null', gasPrice='null', value='null', data='null', nonce='null', chainId='null', type='null', rskSubtype='null'}";
+        String expected = "CallArguments{from='null', to='null', gas='null', gasLimit='null', gasPrice='null', maxPriorityFeePerGas='null', maxFeePerGas='null', value='null', data='null', nonce='null', chainId='null', type='null', rskSubtype='null'}";
         assertEquals(expected, result);
     }
 
@@ -303,8 +315,29 @@ public class CallArgumentsParamTest {
 
         String result = callArgumentsParam.toString();
 
-        String expected = "CallArguments{from='7986b3df570230288501eea3d890bd66948c9b79', to='e7b8e91401bf4d1669f54dc5f98109d7efbc4eea', gas='0x76c0', gasLimit='null', gasPrice='0x9184e72a000', value='null', data='null', nonce='0x1', chainId='0x539', type='null', rskSubtype='null'}";
+        String expected = "CallArguments{from='7986b3df570230288501eea3d890bd66948c9b79', to='e7b8e91401bf4d1669f54dc5f98109d7efbc4eea', gas='0x76c0', gasLimit='null', gasPrice='0x9184e72a000', maxPriorityFeePerGas='null', maxFeePerGas='null', value='null', data='null', nonce='0x1', chainId='0x539', type='null', rskSubtype='null'}";
         assertEquals(expected, result);
+    }
+
+    @Test
+    public void testMaxPriorityFeePerGasAndMaxFeePerGasAreDeserialized() throws JsonProcessingException {
+        String callArgumentsInput = "{\n" +
+                "            \"from\": \"" + FROM + "\"," +
+                "            \"to\" : \"" + TO + "\"," +
+                "            \"maxPriorityFeePerGas\": \"0xa\"," +
+                "            \"maxFeePerGas\": \"0x64\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+        CallArgumentsParam callArgumentsParam = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
+
+        assertNotNull(callArgumentsParam.getMaxPriorityFeePerGas());
+        assertEquals("0xa", callArgumentsParam.getMaxPriorityFeePerGas().getHexNumber());
+        assertNotNull(callArgumentsParam.getMaxFeePerGas());
+        assertEquals("0x64", callArgumentsParam.getMaxFeePerGas().getHexNumber());
+
+        CallArguments callArguments = callArgumentsParam.toCallArguments();
+        assertEquals("0xa", callArguments.getMaxPriorityFeePerGas());
+        assertEquals("0x64", callArguments.getMaxFeePerGas());
     }
 
     @Test

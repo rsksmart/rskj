@@ -20,10 +20,14 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -55,6 +59,9 @@ class TypedTransactionReceiptTest {
             "Type 1 receipt should start with 0x01 prefix");
         assertTrue(encoded[1] >= (byte) 0xc0,
             "Second byte should be RLP list marker");
+        ArrayList<RLPElement> inner = RLP.decode2(Arrays.copyOfRange(encoded, 1, encoded.length));
+        RLPList body = (RLPList) inner.get(0);
+        assertEquals(4, body.size(), "RSKIP-546 Type 1 receipt body should have 4 RLP elements");
     }
 
     @Test
@@ -67,6 +74,9 @@ class TypedTransactionReceiptTest {
             "Type 2 receipt should start with 0x02 prefix");
         assertTrue(encoded[1] >= (byte) 0xc0,
             "Second byte should be RLP list marker");
+        ArrayList<RLPElement> inner = RLP.decode2(Arrays.copyOfRange(encoded, 1, encoded.length));
+        RLPList body = (RLPList) inner.get(0);
+        assertEquals(4, body.size(), "RSKIP-546 standard Type 2 receipt body should have 4 RLP elements");
     }
 
     @Test
@@ -126,8 +136,13 @@ class TypedTransactionReceiptTest {
                 "PostTxState mismatch for " + type.getTypeName());
             assertArrayEquals(originalReceipt.getCumulativeGas(), decodedReceipt.getCumulativeGas(),
                 "CumulativeGas mismatch for " + type.getTypeName());
-            assertArrayEquals(originalReceipt.getGasUsed(), decodedReceipt.getGasUsed(),
-                "GasUsed mismatch for " + type.getTypeName());
+            if (type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2) {
+                assertArrayEquals(EMPTY_BYTE_ARRAY, decodedReceipt.getGasUsed(),
+                    "RSKIP-546 omits gasUsed on the wire for " + type.getTypeName());
+            } else {
+                assertArrayEquals(originalReceipt.getGasUsed(), decodedReceipt.getGasUsed(),
+                    "GasUsed mismatch for " + type.getTypeName());
+            }
             assertArrayEquals(originalReceipt.getStatus(), decodedReceipt.getStatus(),
                 "Status mismatch for " + type.getTypeName());
         }

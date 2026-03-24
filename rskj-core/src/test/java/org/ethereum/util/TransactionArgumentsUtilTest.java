@@ -20,7 +20,9 @@ package org.ethereum.util;
 
 import java.math.BigInteger;
 
+import co.rsk.core.Coin;
 import org.ethereum.config.Constants;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionArguments;
 import org.ethereum.core.TransactionType;
 import org.ethereum.datasource.HashMapDB;
@@ -170,6 +172,32 @@ class TransactionArgumentsUtilTest {
 		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId());
 		assertEquals(TransactionType.TYPE_2, txArgs.getType());
 		assertEquals((byte) 0x03, txArgs.getRskSubtype());
+	}
+
+	@Test
+	void processArguments_type2Standard_includesMaxPriorityAndMaxFeeFromRequest() {
+		CallArguments args = new CallArguments();
+		args.setFrom("0x0000000000000000000000000000000000000001");
+		args.setTo("0x0000000000000000000000000000000000000002");
+		args.setGas("0x5208");
+		args.setGasPrice("0x0");
+		args.setMaxPriorityFeePerGas("0xa");
+		args.setMaxFeePerGas("0x64");
+		args.setValue("0x0");
+		args.setNonce("0x1");
+		args.setType("0x2");
+		args.setChainId("0x21");
+
+		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId());
+		assertEquals(TransactionType.TYPE_2, txArgs.getType());
+		assertNull(txArgs.getRskSubtype());
+		assertEquals(BigInteger.TEN, txArgs.getMaxPriorityFeePerGas());
+		assertEquals(BigInteger.valueOf(100), txArgs.getMaxFeePerGas());
+
+		Transaction tx = Transaction.builder().withTransactionArguments(txArgs).build();
+		assertEquals(Coin.valueOf(10), tx.getMaxPriorityFeePerGas());
+		assertEquals(Coin.valueOf(100), tx.getMaxFeePerGas());
+		assertEquals(Coin.valueOf(10), tx.getGasPrice());
 	}
 
 }

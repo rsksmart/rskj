@@ -30,6 +30,9 @@ public class TransactionArguments {
 	private BigInteger gas;
 	private BigInteger gasLimit;
 	private BigInteger gasPrice;
+	/** EIP-1559; null if omitted from the request */
+	private BigInteger maxPriorityFeePerGas;
+	private BigInteger maxFeePerGas;
 	private BigInteger value;
 	private String data; // compiledCode
 	private BigInteger nonce;
@@ -73,6 +76,22 @@ public class TransactionArguments {
 
 	public void setGasPrice(BigInteger gasPrice) {
 		this.gasPrice = gasPrice;
+	}
+
+	public BigInteger getMaxPriorityFeePerGas() {
+		return maxPriorityFeePerGas;
+	}
+
+	public void setMaxPriorityFeePerGas(BigInteger maxPriorityFeePerGas) {
+		this.maxPriorityFeePerGas = maxPriorityFeePerGas;
+	}
+
+	public BigInteger getMaxFeePerGas() {
+		return maxFeePerGas;
+	}
+
+	public void setMaxFeePerGas(BigInteger maxFeePerGas) {
+		this.maxFeePerGas = maxFeePerGas;
 	}
 
 	public BigInteger getValue() {
@@ -130,6 +149,8 @@ public class TransactionArguments {
 			", to='" + Arrays.toString(to) + '\'' +
 			", gasLimit='" + ((gas != null)?gas:gasLimit) + '\'' +
 			", gasPrice='" + gasPrice + '\'' +
+			", maxPriorityFeePerGas='" + maxPriorityFeePerGas + '\'' +
+			", maxFeePerGas='" + maxFeePerGas + '\'' +
 			", value='" + value + '\'' +
 			", data='" + data + '\'' +
 			", nonce='" + nonce + '\'' +
