@@ -26,7 +26,7 @@ public class ValidTxExecutionSublistsEdgesRule implements BlockValidationRule {
 
     @Override
     public boolean isValid(Block block) {
-        if (!activationConfig.isActive(ConsensusRule.RSKIP144, block.getHeader().getNumber())) {
+        if (!(activationConfig.areActive(block.getHeader().getNumber(), ConsensusRule.RSKIP351, ConsensusRule.RSKIP144))) {
             return true;
         }
 
