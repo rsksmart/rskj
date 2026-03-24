@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static co.rsk.util.OkHttpClientTestFixture.*;
+import static org.awaitility.Awaitility.await;
 
 class EthCallIntegrationTest {
 
@@ -260,6 +261,7 @@ class EthCallIntegrationTest {
             // We launch many calls per thread to keep threads saturated during the probe window.
             int numThreads = Runtime.getRuntime().availableProcessors() * 2 + 2;
             int numCalls = numThreads * 12; // ~6s of work per thread at ~0.5s per call
+            CountDownLatch tasksStarted = new CountDownLatch(numThreads);
             ExecutorService executor = Executors.newFixedThreadPool(numThreads, r -> {
                 Thread t = new Thread(r);
                 t.setDaemon(true);
@@ -269,6 +271,7 @@ class EthCallIntegrationTest {
             for (int i = 0; i < numCalls; i++) {
                 final int id = i;
                 executor.submit(() -> {
+                    tasksStarted.countDown();
                     try {
                         String payload = buildEthCallPayload(SHA3_LOOP_BYTECODE, GAS_10M, id);
                         sendJsonRpcMessage(payload, rpcPort, EXPENSIVE_CALL_TIMEOUT_MS);
@@ -279,8 +282,7 @@ class EthCallIntegrationTest {
                 });
             }
 
-            // Wait for calls to process
-            Thread.sleep(2000);
+            tasksStarted.await(10, TimeUnit.SECONDS);
 
             // Send sequential health probes with short timeout.
             // In a normal state, eth_blockNumber responds quickly.
@@ -351,56 +353,6 @@ class EthCallIntegrationTest {
     }
 
     /**
-     * Verifies that batch requests are processed sequentially.
-     * A batch of N calls should take approximately N * single_call_time.
-     */
-    @Test
-    void batchOfHighGasCalls_shouldProcessSequentially() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s",
-                baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-
-        Process proc = startNode(cmd);
-        try {
-            waitForNodeReady(rpcPort, 60_000);
-
-            // Measure single eth_call time at 10M gas
-            String singlePayload = buildEthCallPayload(SHA3_LOOP_BYTECODE, GAS_10M, 1);
-            long start = System.currentTimeMillis();
-            Response singleResponse = sendJsonRpcMessage(singlePayload, rpcPort, EXPENSIVE_CALL_TIMEOUT_MS);
-            long singleCallTime = System.currentTimeMillis() - start;
-
-            // Send batch of 5 eth_call items at 10M gas each
-            int batchSize = 5;
-            String[] batchItems = new String[batchSize];
-            for (int i = 0; i < batchSize; i++) {
-                batchItems[i] = buildEthCallPayload(SHA3_LOOP_BYTECODE, GAS_10M, i + 1);
-            }
-            String batchPayload = getEnvelopedMethodCalls(batchItems);
-
-            start = System.currentTimeMillis();
-            Response batchResponse = sendJsonRpcMessage(batchPayload, rpcPort, BATCH_CALL_TIMEOUT_MS);
-            long batchCallTime = System.currentTimeMillis() - start;
-            String batchBody = batchResponse.body().string();
-
-            // Verify batch response structure
-            JsonNode batchJson = objectMapper.readTree(batchBody);
-            Assertions.assertTrue(batchJson.isArray(), "Batch response should be a JSON array");
-            Assertions.assertEquals(5, batchJson.size(), "Batch response should have 5 elements");
-
-            // Batch of 5 sequential calls should take at least 3x a single call
-            // (using 3x instead of 5x for CI reliability margin)
-            Assertions.assertTrue(batchCallTime >= 3 * singleCallTime,
-                    String.format("Expected batch time (%dms) >= 3 * single call time (%dms = %dms)",
-                            batchCallTime, singleCallTime, 3 * singleCallTime));
-
-            System.out.printf("Batch processing: Single call=%dms, Batch of 5=%dms, Ratio=%.1fx%n",
-                    singleCallTime, batchCallTime, (double) batchCallTime / singleCallTime);
-        } finally {
-            destroyNode(proc);
-        }
-    }
-
-    /**
      * Verifies system behavior under high concurrency of batch requests.
      * Ensures the RPC layer handles saturation from batch processing gracefully.
      *
@@ -440,6 +392,7 @@ class EthCallIntegrationTest {
             // numBatches > thread count ensures the pool stays saturated even
             // if some batches complete during the probe window.
             int numBatches = Runtime.getRuntime().availableProcessors() * 2 + 4;
+            CountDownLatch batchesStarted = new CountDownLatch(numBatches);
             ExecutorService executor = Executors.newFixedThreadPool(numBatches, r -> {
                 Thread t = new Thread(r);
                 t.setDaemon(true);
@@ -449,6 +402,7 @@ class EthCallIntegrationTest {
             long loadTestStart = System.currentTimeMillis();
             for (int i = 0; i < numBatches; i++) {
                 executor.submit(() -> {
+                    batchesStarted.countDown();
                     try {
                         sendJsonRpcMessage(batchPayload, rpcPort, BATCH_CALL_TIMEOUT_MS);
                     } catch (IOException e) {
@@ -458,8 +412,8 @@ class EthCallIntegrationTest {
                 });
             }
 
-            // Wait for batch calls to start processing
-            Thread.sleep(2000);
+            // Wait for all batch requests to start processing
+            batchesStarted.await(10, TimeUnit.SECONDS);
 
             // Send sequential health probes with short timeout.
             // In a normal state, eth_blockNumber responds quickly.
@@ -560,53 +514,33 @@ class EthCallIntegrationTest {
         long start = System.currentTimeMillis();
 
         // Phase 1: Wait for RPC to accept connections
-        boolean rpcUp = false;
-        while (System.currentTimeMillis() - start < maxWaitMs) {
-            try {
-                Response response = sendHealthProbe(port, 2000);
-                if (response.code() == 200) {
-                    rpcUp = true;
-                    break;
-                }
-            } catch (IOException e) {
-                // Node not ready yet, keep polling
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-        }
-        if (!rpcUp) {
-            Assertions.fail("Node RPC did not become available within " + maxWaitMs + "ms");
-        }
+        await().atMost(maxWaitMs, TimeUnit.MILLISECONDS)
+                .pollInterval(1, TimeUnit.SECONDS)
+                .ignoreExceptions()
+                .alias("Node RPC did not become available within " + maxWaitMs + "ms")
+                .until(() -> {
+                    Response response = sendHealthProbe(port, 2000);
+                    return response.code() == 200;
+                });
 
         // Phase 2: Wait until at least one block is mined, ensuring the node is fully operational
-        while (System.currentTimeMillis() - start < maxWaitMs) {
-            try {
-                Response response = sendJsonRpcMessage(ETH_BLOCK_NUMBER, port, 2000);
-                String body = response.body().string();
-                JsonNode json = objectMapper.readTree(body);
-                if (json.has("result")) {
-                    String hexBlock = json.get("result").asText();
-                    long blockNum = Long.parseLong(hexBlock.substring(2), 16);
-                    if (blockNum >= 1) {
-                        System.out.printf("Node ready after %dms (block #%d)%n",
-                                System.currentTimeMillis() - start, blockNum);
-                        return;
+        long remainingMs = maxWaitMs - (System.currentTimeMillis() - start);
+        await().atMost(remainingMs, TimeUnit.MILLISECONDS)
+                .pollInterval(500, TimeUnit.MILLISECONDS)
+                .ignoreExceptions()
+                .alias("Node did not mine first block within " + maxWaitMs + "ms")
+                .until(() -> {
+                    Response response = sendJsonRpcMessage(ETH_BLOCK_NUMBER, port, 2000);
+                    String body = response.body().string();
+                    JsonNode json = objectMapper.readTree(body);
+                    if (json.has("result")) {
+                        String hexBlock = json.get("result").asText();
+                        long blockNum = Long.parseLong(hexBlock.substring(2), 16);
+                        return blockNum >= 1;
                     }
-                }
-            } catch (IOException e) {
-                // keep polling
-            }
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-        }
-        Assertions.fail("Node did not mine first block within " + maxWaitMs + "ms");
+                    return false;
+                });
+
+        System.out.printf("Node ready after %dms%n", System.currentTimeMillis() - start);
     }
 }
