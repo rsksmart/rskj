@@ -222,7 +222,7 @@ class TypedTransactionTest {
     // ========================================================================
 
     @ParameterizedTest
-    @EnumSource(value = TransactionType.class, names = "LEGACY", mode = EnumSource.Mode.EXCLUDE)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"}, mode = EnumSource.Mode.EXCLUDE)
     void typedTransactionEncoding_isOneByteLongerThanLegacy(TransactionType type) {
         Transaction legacyTx = createSignedTransaction(TransactionType.LEGACY, EMPTY_DATA);
         Transaction typedTx = createSignedTransaction(type, EMPTY_DATA);
@@ -282,6 +282,42 @@ class TypedTransactionTest {
     void emptyRawData_throwsException() {
         assertThrows(IllegalArgumentException.class,
             () -> new Transaction(new byte[0]));
+    }
+
+    @Test
+    void type2Standard_effectiveGasPrice_isMinOfMaxPriorityAndMaxFee() {
+        Transaction tx = Transaction.builder()
+                .nonce(BigInteger.ONE.toByteArray())
+                .maxPriorityFeePerGas(Coin.valueOf(10))
+                .maxFeePerGas(Coin.valueOf(100))
+                .gasLimit(BigInteger.valueOf(21_000))
+                .destination(TEST_ADDRESS)
+                .value(Coin.ZERO)
+                .data(EMPTY_DATA)
+                .chainId((byte) 33)
+                .type(TransactionType.TYPE_2)
+                .build();
+
+        assertEquals(Coin.valueOf(10), tx.getGasPrice());
+        assertEquals(Coin.valueOf(10), tx.getMaxPriorityFeePerGas());
+        assertEquals(Coin.valueOf(100), tx.getMaxFeePerGas());
+    }
+
+    @Test
+    void type2Standard_whenMaxFeeIsLower_effectiveGasPriceUsesMaxFee() {
+        Transaction tx = Transaction.builder()
+                .nonce(BigInteger.ONE.toByteArray())
+                .maxPriorityFeePerGas(Coin.valueOf(50))
+                .maxFeePerGas(Coin.valueOf(20))
+                .gasLimit(BigInteger.valueOf(21_000))
+                .destination(TEST_ADDRESS)
+                .value(Coin.ZERO)
+                .data(EMPTY_DATA)
+                .chainId((byte) 33)
+                .type(TransactionType.TYPE_2)
+                .build();
+
+        assertEquals(Coin.valueOf(20), tx.getGasPrice());
     }
 
     // ========================================================================
