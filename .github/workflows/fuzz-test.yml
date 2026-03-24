@@ -47,7 +47,6 @@ jobs:
           path: |
             gradle/wrapper/gradle-wrapper.jar
           key: gradle-wrapper-v1
-          fail-on-cache-miss: true
 
       - name: Run fuzz tests
         run: |
