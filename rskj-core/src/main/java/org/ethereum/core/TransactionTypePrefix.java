@@ -17,7 +17,9 @@
  */
 package org.ethereum.core;
 
-import java.util.Arrays;
+import co.rsk.core.types.bytes.Bytes;
+import co.rsk.core.types.bytes.BytesSlice;
+
 import java.util.Objects;
 
 /**
@@ -120,12 +122,10 @@ public sealed interface TransactionTypePrefix
         };
     }
 
-    /** Returns only the RLP payload after removing the detected prefix. */
-    static byte[] stripPrefix(byte[] rawData) {
-        TransactionTypePrefix prefix = fromRawData(rawData);
-        if (prefix.length() == 0) {
-            return rawData;
-        }
-        return Arrays.copyOfRange(rawData, prefix.length(), rawData.length);
+    /** Returns the RLP payload after removing the given prefix. */
+    static BytesSlice stripPrefix(byte[] rawData, TransactionTypePrefix prefix) {
+        BytesSlice slice = Bytes.of(rawData);
+        int len = prefix.length();
+        return len == 0 ? slice : slice.slice(len, rawData.length);
     }
 }

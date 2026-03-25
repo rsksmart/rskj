@@ -3,7 +3,7 @@ package co.rsk.validators;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockTxCodec;
+import org.ethereum.core.BlockBodyCodec;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
@@ -17,7 +17,7 @@ public class BlockUnclesHashValidationRule implements BlockValidationRule {
     @Override
     public boolean isValid(Block block) {
         byte[] unclesHeader = block.getHeader().getUnclesHash();
-        byte[] unclesBlock = HashUtil.keccak256(BlockTxCodec.encodeUncles(block.getUncleList()));
+        byte[] unclesBlock = HashUtil.keccak256(BlockBodyCodec.encodeUncles(block.getUncleList()));
 
         if (!ByteUtil.fastEquals(unclesHeader, unclesBlock)) {
             String message = String.format("Block's given Uncle Hash doesn't match: %s != %s",

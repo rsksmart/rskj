@@ -18,7 +18,7 @@
 
 package co.rsk.net.messages;
 
-import org.ethereum.core.BlockTxCodec;
+import org.ethereum.core.BlockBodyCodec;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 
@@ -48,7 +48,7 @@ public class TransactionsMessage extends Message {
         byte[][] encodedElements = new byte[transactions.size()][];
 
         for (int i = 0; i < transactions.size(); i++) {
-            encodedElements[i] = BlockTxCodec.encodeTransaction(transactions.get(i));
+            encodedElements[i] = BlockBodyCodec.encodeTransaction(transactions.get(i));
         }
 
         return RLP.encodeList(encodedElements);
