@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
@@ -1738,7 +1739,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         networkParameters = bridgeConstants.getBtcParams();
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
 
-        bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeContractAddress, networkParameters, activations);
+        bridgeStorageProvider = new BridgeStorageProvider(repository, networkParameters, activations);
         logs = new ArrayList<>();
         bridgeEventLogger = new BridgeEventLoggerImpl(
             bridgeConstants,

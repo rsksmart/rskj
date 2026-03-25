@@ -76,7 +76,6 @@ jobs:
           path: |
             gradle/wrapper/gradle-wrapper.jar
           key: gradle-wrapper-v1
-          fail-on-cache-miss: true
 
       - name: Download build artifacts
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 #v6.0.0
@@ -198,7 +197,6 @@ jobs:
           path: |
             gradle/wrapper/gradle-wrapper.jar
           key: gradle-wrapper-v1
-          fail-on-cache-miss: true
 
       - name: Download build artifacts
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 #v6.0.0
@@ -251,7 +249,6 @@ jobs:
           path: |
             gradle/wrapper/gradle-wrapper.jar
           key: gradle-wrapper-v1
-          fail-on-cache-miss: true
 
       - name: Run tests
         run: |
@@ -299,7 +296,6 @@ jobs:
           path: |
             gradle/wrapper/gradle-wrapper.jar
           key: gradle-wrapper-v1
-          fail-on-cache-miss: true
 
       - name: Run tests
         run: |

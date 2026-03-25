@@ -11,6 +11,7 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
+import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -26,6 +27,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -61,13 +63,13 @@ class BridgeSupportSigHashTest {
     @ParameterizedTest
     @MethodSource("pegoutTxIndexArgsProvider")
     void test_pegoutTxIndex_when_pegout_batch_is_created(ActivationConfig.ForBlock activations) throws IOException {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants.getFederationConstants());
-        Address federationAddress = genesisFederation.getAddress();
         // Arrange
-        List<UTXO> fedUTXOs = PegTestUtils.createUTXOs(
-            10,
-            federationAddress
-        );
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants.getFederationConstants());
+        int numberOfUtxos = 10;
+        List<UTXO> fedUTXOs = UTXOBuilder.builder()
+            .withScriptPubKey(genesisFederation.getP2SHScript())
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
         when(federationStorageProvider.getNewFederationBtcUTXOs(btcMainnetParams, activations))
             .thenReturn(fedUTXOs);
 
@@ -136,7 +138,10 @@ class BridgeSupportSigHashTest {
         when(federationStorageProvider.getNewFederation(federationMainnetConstants, activations)).thenReturn(newFederation);
 
         // Utxos to migrate
-        List<UTXO> utxos = PegTestUtils.createUTXOs(10, oldFederation.getAddress());
+        int numberOfUtxos = 10;
+        List<UTXO> utxos = UTXOBuilder.builder()
+            .withScriptPubKey(oldFederation.getP2SHScript())
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
         when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(utxos);
 
         // Advance blockchain to migration phase. Migration phase starts 1 block after migration age is reached.
@@ -216,10 +221,15 @@ class BridgeSupportSigHashTest {
         when(federationStorageProvider.getNewFederation(federationMainnetConstants, activations)).thenReturn(newFederation);
 
         // Utxos to migrate
-        List<UTXO> utxos = PegTestUtils.createUTXOs(10, oldFederation.getAddress());
+        int numberOfUtxos = 10;
+        List<UTXO> utxos = UTXOBuilder.builder()
+            .withScriptPubKey(oldFederation.getP2SHScript())
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
         when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(utxos);
 
-        List<UTXO> utxosNew = PegTestUtils.createUTXOs(10, newFederation.getAddress());
+        List<UTXO> utxosNew = UTXOBuilder.builder()
+            .withScriptPubKey(newFederation.getP2SHScript())
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
         when(federationStorageProvider.getNewFederationBtcUTXOs(btcMainnetParams, activations)).thenReturn(utxosNew);
 
         // Advance blockchain to migration phase. Migration phase starts 1 block after migration age is reached.
