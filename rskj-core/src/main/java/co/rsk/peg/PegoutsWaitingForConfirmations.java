@@ -88,8 +88,11 @@ public class PegoutsWaitingForConfirmations {
     private Set<Entry> entries;
 
     public PegoutsWaitingForConfirmations(Set<Entry> entries) {
-	this.entries = new HashSet<>(Math.max((int) (entries.size()/.75f) + 1, 16));
-	this.entries.addAll(entries);
+        // This is a standart code for `new HashSet<>(entries);` in Java 17
+        // Coefficients were changed in Java 21
+        // Need to hardcode Java 17 init params here to preserve old behaviour in Java 21+
+        this.entries = new HashSet<>(Math.max((int) (entries.size()/.75f) + 1, 16));
+        this.entries.addAll(entries);
     }
 
     public Set<Entry> getEntriesWithoutHash() {
