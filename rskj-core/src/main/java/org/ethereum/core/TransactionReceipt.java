@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
     import co.rsk.core.types.bytes.Bytes;
+    import co.rsk.core.types.bytes.BytesSlice;
     import org.bouncycastle.util.BigIntegers;
     import org.ethereum.util.*;
     import org.ethereum.vm.LogInfo;
@@ -65,7 +66,8 @@ public class TransactionReceipt {
             throw new IllegalArgumentException("Receipt RLP data cannot be null or empty");
         }
 
-        byte[] receiptData = TransactionTypePrefix.stripPrefix(rlp);
+        TransactionTypePrefix prefix = TransactionTypePrefix.fromRawData(rlp);
+        BytesSlice receiptData = TransactionTypePrefix.stripPrefix(rlp, prefix);
 
         ArrayList<RLPElement> params = RLP.decode2(receiptData);
         RLPList receipt = (RLPList) params.get(0);

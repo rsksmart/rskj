@@ -389,6 +389,10 @@ public class RLP {
      * Parse and verify that the passed data has just one list encoded as RLP
      */
     public static RLPList decodeList(byte[] msgData) {
+        return decodeList(Bytes.of(msgData));
+    }
+
+    public static RLPList decodeList(BytesSlice msgData) {
         List<RLPElement> decoded = RLP.decode2(msgData);
         if (decoded.size() != 1) {
             throw new IllegalArgumentException(String.format("Expected one RLP item but got %d", decoded.size()));

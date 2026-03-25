@@ -22,7 +22,9 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Transaction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

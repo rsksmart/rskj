@@ -262,11 +262,11 @@ public class Block {
     }
 
     private byte[] getTransactionsEncoded() {
-        return BlockTxCodec.encodeTransactions(transactionsList);
+        return BlockBodyCodec.encodeTransactions(transactionsList);
     }
 
     private byte[] getUnclesEncoded() {
-        return BlockTxCodec.encodeUncles(uncleList);
+        return BlockBodyCodec.encodeUncles(uncleList);
     }
 
     public byte[] getEncoded() {
