@@ -20,6 +20,7 @@ package org.ethereum.datasource;
 
 import co.rsk.util.FormatUtils;
 
+import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
@@ -28,6 +29,9 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -39,7 +43,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 public class DataSourceWithCache implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("datasourcewithcache");
-    private final DataSourceWithLockMetrics metrics;
     private final int cacheSize;
     //private final int uncommittedMaxSize;
     private final KeyValueDataSource base;
@@ -49,7 +52,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     private final AtomicInteger numOfPuts = new AtomicInteger();
     private final AtomicInteger numOfGets = new AtomicInteger();
     private final AtomicInteger numOfGetsFromStore = new AtomicInteger();
-
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     @Nullable
@@ -62,13 +65,12 @@ public class DataSourceWithCache implements KeyValueDataSource {
     public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize,
                                @Nullable CacheSnapshotHandler cacheSnapshotHandler, String owner) {
         this.cacheSize = cacheSize;
-        String instanceId = Integer.toHexString(System.identityHashCode(this));
-        //this.uncommittedMaxSize= Math.max(1, cacheSize / 8);
         this.base = Objects.requireNonNull(base);
         this.uncommittedCache = new LinkedHashMap<>(cacheSize / 8, (float) 0.75, false);
         this.cache = makeCommittedCache(cacheSize, cacheSnapshotHandler);
         this.cacheSnapshotHandler = cacheSnapshotHandler;
-        this.metrics = new DataSourceWithLockMetrics(logger, getName() + "#" + instanceId, owner, 10_000);
+        String instanceId = Integer.toHexString(System.identityHashCode(this));
+        startCacheStatsLogging( getName() + "#" + instanceId, owner);
     }
 
     // Cache population is intentionally allowed under read lock because the cache
@@ -76,14 +78,10 @@ public class DataSourceWithCache implements KeyValueDataSource {
     @Override
     public byte[] get(byte[] key) {
         Objects.requireNonNull(key);
-        long methodStart = System.nanoTime();
         boolean traceEnabled = logger.isTraceEnabled();
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
         byte[] value;
-        long lockWaitStart = System.nanoTime();
         this.lock.readLock().lock();
-        metrics.onReadLockWait(System.nanoTime() - lockWaitStart);
-        long lockHeldStart = System.nanoTime();
         try {
             if (uncommittedCache.containsKey(wrappedKey)) {
                 byte[] result = uncommittedCache.get(wrappedKey);
@@ -98,19 +96,15 @@ public class DataSourceWithCache implements KeyValueDataSource {
             if (traceEnabled) {
                 numOfGetsFromStore.incrementAndGet();
             }
-
             if (value != null) {
                 cache.put(wrappedKey, value);
             }
         } finally {
-            metrics.onReadLockHeld( System.nanoTime() - lockHeldStart);
             if (traceEnabled) {
                 numOfGets.incrementAndGet();
             }
             this.lock.readLock().unlock();
-            metrics.onGetLatency(System.nanoTime() - methodStart);
         }
-
         return value;
     }
 
@@ -123,11 +117,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     private byte[] put(ByteArrayWrapper wrappedKey, byte[] value) {
         Objects.requireNonNull(value);
-        long methodStart = System.nanoTime();
-        long lockWaitStart = System.nanoTime();
         this.lock.writeLock().lock();
-        metrics.onWriteLockWait(System.nanoTime() - lockWaitStart);
-        long lockHeldStart = System.nanoTime();
         try {
 
             byte[] pendingValue = uncommittedCache.get(wrappedKey);
@@ -152,12 +142,10 @@ public class DataSourceWithCache implements KeyValueDataSource {
             return value;
 
         } finally {
-            metrics.onWriteLockHeld(System.nanoTime() - lockHeldStart);
             if (logger.isTraceEnabled()) {
                 numOfPuts.incrementAndGet();
             }
             this.lock.writeLock().unlock();
-            metrics.onPutLatency(System.nanoTime() - methodStart);
         }
     }
 
@@ -168,20 +156,14 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     private void delete(ByteArrayWrapper wrappedKey) {
-        long methodStart = System.nanoTime();
-        long lockWaitStart = System.nanoTime();
         this.lock.writeLock().lock();
-        metrics.onWriteLockWait(System.nanoTime() - lockWaitStart);
-        long lockHeldStart = System.nanoTime();
         try {
             uncommittedCache.remove(wrappedKey);
             cache.invalidate(wrappedKey);
             base.delete(wrappedKey.getData());
 
         } finally {
-            metrics.onWriteLockHeld(System.nanoTime() - lockHeldStart);
             this.lock.writeLock().unlock();
-            metrics.onDeleteLatency( System.nanoTime() - methodStart);
         }
     }
 
@@ -214,31 +196,19 @@ public class DataSourceWithCache implements KeyValueDataSource {
         if (keysToRemove.contains(null)) {
             throw new IllegalArgumentException("Cannot remove null keys");
         }
-        long methodStart = System.nanoTime();
         rows.keySet().removeAll(keysToRemove);
-        long start = System.nanoTime();
-        long lockWaitStart = System.nanoTime();
         this.lock.writeLock().lock();
-        metrics.onWriteLockWait( System.nanoTime() - lockWaitStart);
-        long lockHeldStart = System.nanoTime();
         try {
             rows.forEach(this::put);
             keysToRemove.forEach(this::delete);
         } finally {
-            metrics.onWriteLockHeld(System.nanoTime() - lockHeldStart);
             this.lock.writeLock().unlock();
-            long nanos = System.nanoTime() - start;
-            metrics.onBatchLatency(System.nanoTime() - methodStart);
         }
     }
 
     @Override
     public void flush() {
-        long methodStart = System.nanoTime();
-        long lockWaitStart = System.nanoTime();
         this.lock.writeLock().lock();
-        metrics.onWriteLockWait(System.nanoTime() - lockWaitStart);
-        long lockHeldStart = System.nanoTime();
         try {
             long saveTime = System.nanoTime();
 
@@ -256,19 +226,12 @@ public class DataSourceWithCache implements KeyValueDataSource {
             }
             base.flush();
         } finally {
-            metrics.onWriteLockHeld(System.nanoTime() - lockHeldStart);
             this.lock.writeLock().unlock();
-            long methodNanos = System.nanoTime() - methodStart;
-            metrics.onFlushLatency(DataSourceWithCacheMetrics.FlushReason.MANUAL, methodNanos);
         }
     }
 
     public void flushNotManual(DataSourceWithCacheMetrics.FlushReason reason) {
-        long methodStart = System.nanoTime();
-        long lockWaitStart = System.nanoTime();
         this.lock.writeLock().lock();
-        metrics.onWriteLockWait(System.nanoTime() - lockWaitStart);
-        long lockHeldStart = System.nanoTime();
         try {
             long saveTime = System.nanoTime();
 
@@ -284,9 +247,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
             }
             base.flush();
         } finally {
-            metrics.onWriteLockHeld(System.nanoTime() - lockHeldStart);
             this.lock.writeLock().unlock();
-            metrics.onFlushLatency(reason,  System.nanoTime() - methodStart);
         }
     }
 
@@ -336,7 +297,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     @Nonnull
     private static Cache<ByteArrayWrapper, byte[]> makeCommittedCache(int cacheSize, @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
-        Cache<ByteArrayWrapper, byte[]> cache = Caffeine.newBuilder().maximumSize(cacheSize).build();
+        Cache<ByteArrayWrapper, byte[]> cache = Caffeine.newBuilder().maximumSize(cacheSize).recordStats().build();
         if (cacheSnapshotHandler != null) {
             Map<ByteArrayWrapper, byte[]> snapshot = new LinkedHashMap<>();
             cacheSnapshotHandler.load(snapshot);
@@ -348,5 +309,27 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
 
         return cache;
+    }
+
+    private void startCacheStatsLogging(String name, String owner ) {
+        scheduler.scheduleAtFixedRate(() -> {
+            CacheStats stats = cache.stats();
+
+            logger.info(
+                    "ds_caffeine_metrics owner={} name={} requests={} hits={} misses={} hitRate={} evictions={} size={} loadSuccess={} loadFailure={} avgLoadPenaltyNs={}",
+                    owner,
+                    name,
+                    stats.requestCount(),
+                    stats.hitCount(),
+                    stats.missCount(),
+                    stats.hitRate(),
+                    stats.evictionCount(),
+                    cache.estimatedSize(),
+                    stats.loadSuccessCount(),
+                    stats.loadFailureCount(),
+                    stats.averageLoadPenalty()
+            );
+
+        }, 1, 1, TimeUnit.MINUTES); // initial delay + period
     }
 }
