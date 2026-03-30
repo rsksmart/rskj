@@ -1490,7 +1490,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             CacheSnapshotHandler cacheSnapshotHandler = rskSystemProperties.shouldPersistStatesCacheSnapshot()
                     ? new CacheSnapshotHandler(resolveCacheSnapshotPath(trieStorePath))
                     : null;
-            ds = new DataSourceWithCache(ds, statesCacheSize, cacheSnapshotHandler, "StatesCache");
+            ds = new DataSourceWithCache(ds, statesCacheSize, cacheSnapshotHandler, "StateCache");
         }
 
         return new TrieStoreImpl(ds);

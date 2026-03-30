@@ -23,7 +23,6 @@ public final class DataSourceWithCacheMetrics {
 
 
 
-
     public enum FlushReason { SIZE, MANUAL, CLOSE }
 
     private final Logger logger;
@@ -36,11 +35,12 @@ public final class DataSourceWithCacheMetrics {
     private final long emitEveryOps;
 
     // USER-PERSPECTIVE counters (increment once per API call)
-    private final LongAdder user_read_get_total = new LongAdder();
     private final LongAdder user_write_put_total = new LongAdder();
     private final LongAdder user_write_delete_total = new LongAdder();
     private final LongAdder user_write_batch_total = new LongAdder();
     private final LongAdder user_write_flush_total = new LongAdder();
+    private final LongAdder user_read_get_total = new LongAdder();
+
 
     // READ source breakdown (user get() outcome)
     private final LongAdder user_read_from_committed_cache_value = new LongAdder();
@@ -49,6 +49,16 @@ public final class DataSourceWithCacheMetrics {
     private final LongAdder user_read_from_uncommitted_cache_known_absent = new LongAdder();
     private final LongAdder user_read_from_store_value = new LongAdder();
     private final LongAdder user_read_from_store_known_absent = new LongAdder();
+    private final LongAdder user_read_write_to_committed_cache = new LongAdder();
+
+
+
+    // WRITE
+    private final LongAdder user_write_uncommitted_cache_get_total = new LongAdder();
+    private final LongAdder user_write_uncommitted_cache_new_value_added_total = new LongAdder();
+    private final LongAdder user_write_committed_cache_get_total = new LongAdder();
+    private final LongAdder user_write_committed_cache_value_invalidated_total = new LongAdder();
+
 
     // INTERNAL cache operations (independent of user perspective)
     // committedCache internal ops
@@ -69,9 +79,6 @@ public final class DataSourceWithCacheMetrics {
     private final LongAdder read_through_fill_committed_from_store_value = new LongAdder();
     private final LongAdder read_through_fill_committed_from_store_known_absent = new LongAdder();
 
-    // A write invalidated committed entry (e.g., put() removes committed before staging into uncommitted).
-    private final LongAdder write_invalidate_committed_on_put = new LongAdder();
-
     // Flush reason breakdown (user flushes)
     private final LongAdder write_flush_manual = new LongAdder();
     private final LongAdder write_flush_size = new LongAdder();
@@ -83,12 +90,17 @@ public final class DataSourceWithCacheMetrics {
     private final LongAdder write_flush_nanos = new LongAdder();  // flush duration (manual/size/close)
     private final LongAdder write_batch_nanos = new LongAdder();  // updateBatch duration
 
+
+
+
+
     //flush operation
     private final LongAdder store_flush_to_update = new LongAdder();
     private final LongAdder store_flush_to_remove = new LongAdder();
+    private final LongAdder store_delete = new LongAdder();
     private final LongAdder store_flush_nanos = new LongAdder();
     private final LongAdder store_flush_counts = new LongAdder();
-    private LongAdder store_delete = new LongAdder();
+
 
     private final LongAdder store_flush_committed_and_uncommitted_nanos = new LongAdder();
     private final LongAdder store_flush_committed_and_uncommitted_count = new LongAdder();
@@ -122,6 +134,31 @@ public final class DataSourceWithCacheMetrics {
         maybeEmit();
     }
 
+    public void onUserReadWriteToCommittedCache() {
+        user_read_write_to_committed_cache.increment();
+        maybeEmit();
+    }
+
+    public void onUserWriteUncommittedCacheGet() {
+        user_write_uncommitted_cache_get_total.increment();
+        maybeEmit();
+    }
+
+    public void onUserWriteCommittedCacheGet() {
+        user_write_committed_cache_get_total.increment();
+        maybeEmit();
+    }
+
+
+    public void onUserWriteUncommittedCacheNewValueAdded() {
+        user_write_uncommitted_cache_new_value_added_total.increment();
+        maybeEmit();
+    }
+
+    public void onUserWriteCommitedCacheValueInvalidated() {
+        user_write_committed_cache_value_invalidated_total.increment();
+        maybeEmit();
+    }
 
 
     // USER-PERSPECTIVE: one increment per API call
@@ -162,8 +199,6 @@ public final class DataSourceWithCacheMetrics {
         maybeEmit();
     }
 
-
-    // USER READ OUTCOME: exactly one of these per get() call (after caches/store)
     public void onUserReadGetFromCommittedCache(boolean knownAbsent) {
         if (knownAbsent) user_read_from_committed_cache_known_absent.increment();
         else user_read_from_committed_cache_value.increment();
@@ -183,27 +218,24 @@ public final class DataSourceWithCacheMetrics {
         maybeEmit();
     }
 
-    // INTERNAL CACHE OPS: call whenever you actually call the map methods
-    // committedCache READ
-    public void onCacheCommittedReadContains() { cache_committed_contains.increment(); }
-    public void onCacheCommittedReadGet() { cache_committed_get.increment(); }
-    // committedCache WRITE
-    public void onCacheCommittedWriteRemove(boolean knownAbsent) {
+
+    public void onCacheCommittedContains() { cache_committed_contains.increment(); }
+    public void onCacheCommittedGet() { cache_committed_get.increment(); }
+
+    public void onCacheCommittedRemove(boolean knownAbsent) {
         if (knownAbsent) cache_committed_remove_known_absent.increment();
         else cache_committed_remove.increment();
     }
-    public void onCacheCommittedWritePutWithValue(int entries) {
+    public void onCacheCommittedPutWithValue(int entries) {
         cache_committed_put_with_value.add(entries);
     }
-    public void onCacheCommittedWritePutAbsent(int entries) {
+    public void onCacheCommittedPutAbsent(int entries) {
         cache_committed_put_absent.add(entries);
     }
-    // committedCache READ
-    public void onCacheUncommittedReadContains() { cache_uncommitted_contains.increment(); }
-    public void onCacheUncommittedReadGet() { cache_uncommitted_get.increment(); }
-    // committedCache WRITE
-    public void onCacheUncommittedWritePut() { cache_uncommitted_put.increment(); }
-    public void onCacheUncommittedWriteRemove() { cache_uncommitted_remove.increment(); }
+    public void onCacheUncommittedContains() { cache_uncommitted_contains.increment(); }
+    public void onCacheUncommittedGet() { cache_uncommitted_get.increment(); }
+    public void onCacheUncommittedPut() { cache_uncommitted_put.increment(); }
+    public void onCacheUncommittedRemove() { cache_uncommitted_remove.increment(); }
 
 
     /** READ-through: a user READ miss hit store and filled committed cache. */
@@ -211,12 +243,6 @@ public final class DataSourceWithCacheMetrics {
         if (knownAbsent) read_through_fill_committed_from_store_known_absent.increment();
         else read_through_fill_committed_from_store_value.increment();
     }
-
-    /** WRITE effect: a user WRITE invalidated committed entry (e.g., put removes committed before staging). */
-    public void onWriteInvalidateCommittedOnPut() {
-        write_invalidate_committed_on_put.increment();
-    }
-
 
     private void maybeEmit() {
         if (!logger.isInfoEnabled()) return;
@@ -241,18 +267,29 @@ public final class DataSourceWithCacheMetrics {
         long userBatches = user_write_batch_total.sum();
         long userFlushes = user_write_flush_total.sum();
 
+        //user write outcomes
+        long userWriteUncommitedCacheGetTotal = user_write_uncommitted_cache_get_total.sum();
+        long userWriteUncommitedCacheNewValueAddedTotal = user_write_uncommitted_cache_new_value_added_total.sum();
+        long userWriteCommitedCacheGetTotal = user_write_committed_cache_get_total.sum();
+        long userWriteCommittedCacheValueInvalidatedTotal = user_write_committed_cache_value_invalidated_total.sum();
+
         // USER read outcomes
-        long rcV = user_read_from_committed_cache_value.sum();
-        long rcA = user_read_from_committed_cache_known_absent.sum();
-        long ruV = user_read_from_uncommitted_cache_value.sum();
-        long ruA = user_read_from_uncommitted_cache_known_absent.sum();
+        long userReadFromCommittedCacheWithValue = user_read_from_committed_cache_value.sum();
+        long userReadFromCommittedCacheWithAbsentValue = user_read_from_committed_cache_known_absent.sum();
+        long userReadFromUNCommittedCacheWithValue = user_read_from_uncommitted_cache_value.sum();
+        long userReadFromUNCommittedCacheAbsentValue = user_read_from_uncommitted_cache_known_absent.sum();
+
         long rsV = user_read_from_store_value.sum();
         long rsA = user_read_from_store_known_absent.sum();
+        long userReadWriteToCommittedCache = user_read_write_to_committed_cache.sum();
 
-        long userReadFromCache = rcV + rcA + ruV + ruA;
+
+        long userReadFromCache = userReadFromCommittedCacheWithValue + userReadFromCommittedCacheWithAbsentValue
+                + userReadFromUNCommittedCacheWithValue + userReadFromUNCommittedCacheAbsentValue;
         double userReadCacheRate = userGets == 0 ? 0.0 : (double) userReadFromCache / (double) userGets;
 
         // INTERNAL cache ops
+        //committed
         long cContains = cache_committed_contains.sum();
         long cGet = cache_committed_get.sum();
         long cPutWithValue = cache_committed_put_with_value.sum();
@@ -260,7 +297,7 @@ public final class DataSourceWithCacheMetrics {
         long cRem = cache_committed_remove.sum();
         long cRemAbsent = cache_committed_remove_known_absent.sum();
 
-
+        //uncommitted
         long uContains = cache_uncommitted_contains.sum();
         long uGet = cache_uncommitted_get.sum();
         long uPut = cache_uncommitted_put.sum();
@@ -270,7 +307,6 @@ public final class DataSourceWithCacheMetrics {
         // Semantics
         long rtV = read_through_fill_committed_from_store_value.sum();
         long rtA = read_through_fill_committed_from_store_known_absent.sum();
-        long invPut = write_invalidate_committed_on_put.sum();
 
         // Flush reasons
         long fMan = write_flush_manual.sum();
@@ -295,10 +331,12 @@ public final class DataSourceWithCacheMetrics {
                         "ds_cache_metrics name=%s " +
                         // USER totals
                         "user_get_total=%d user_put_total=%d user_delete_total=%d user_batch_total=%d user_flush_total=%d " +
+                       // User write outcomes
+                        "user_write_uncommitted_cache_get_total=%d user_write_uncommitted_cache_new_value_added_total=%d user_write_committed_cache_get_total=%d user_write_committed_cache_value_invalidated_total=%d " +
                         // USER read outcomes
                         "user_read_from_committed_cache_value=%d user_read_from_committed_cache_known_absent=%d " +
                         "user_read_from_uncommitted_cache_value=%d user_read_from_uncommitted_cache_known_absent=%d " +
-                        "user_read_from_store_value=%d user_read_from_store_known_absent=%d " +
+                        "user_read_from_store_value=%d user_read_from_store_known_absent=%d  user_read_write_to_committed_cache=%d "+
                         "user_read_cache_rate=%.4f " +
                         // INTERNAL committed ops
                         "cache_committed_contains=%d cache_committed_get=%d cache_committed_put=%d cache_committed_put_absent=%d cache_committed_remove=%d cache_committed_remove_absent=%d " +
@@ -306,7 +344,6 @@ public final class DataSourceWithCacheMetrics {
                         "cache_uncommitted_contains=%d cache_uncommitted_get=%d cache_uncommitted_put=%d cache_uncommitted_remove=%d " +
                         // SEMANTICS
                         "read_through_fill_committed_from_store_value=%d read_through_fill_committed_from_store_known_absent=%d " +
-                        "write_invalidate_committed_on_put=%d " +
                         // FLUSH reasons
                         "write_flush_manual=%d write_flush_size=%d write_flush_close=%d " +
                         // SIZES
@@ -319,14 +356,14 @@ public final class DataSourceWithCacheMetrics {
                 owner,
                 name,
                 userGets, userPuts, userDels, userBatches, userFlushes,
-                rcV, rcA,
-                ruV, ruA,
-                rsV, rsA,
+                userWriteUncommitedCacheGetTotal, userWriteUncommitedCacheNewValueAddedTotal, userWriteCommitedCacheGetTotal, userWriteCommittedCacheValueInvalidatedTotal,
+                userReadFromCommittedCacheWithValue, userReadFromCommittedCacheWithAbsentValue,
+                userReadFromUNCommittedCacheWithValue, userReadFromUNCommittedCacheAbsentValue,
+                rsV, rsA, userReadWriteToCommittedCache,
                 userReadCacheRate,
                 cContains, cGet, cPutWithValue, cPutAbsent, cRem, cRemAbsent,
                 uContains, uGet, uPut, uRem,
                 rtV, rtA,
-                invPut, //write_invalidate_committed_on_put
                 fMan, fSize, fClose,
                 committedSize.getAsInt(), uncommittedSize.getAsInt(),
                 avgReadStoreNs, avgWriteFlushNs, avgWriteBatchNs,

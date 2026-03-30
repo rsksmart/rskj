@@ -34,8 +34,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import picocli.CommandLine;
-
 
 public class DataSourceWithCache implements KeyValueDataSource {
 
@@ -93,17 +91,19 @@ public class DataSourceWithCache implements KeyValueDataSource {
         this.lock.readLock().lock();
 
         try {
-            metrics.onCacheUncommittedReadContains();
+            metrics.onCacheUncommittedContains();
             if (uncommittedCache.containsKey(wrappedKey)) {
-                metrics.onCacheUncommittedReadGet();
+                metrics.onCacheUncommittedGet();
                 byte[] result = uncommittedCache.get(wrappedKey);
                 metrics.onUserReadGetFromUncommittedCache(result == null);
                 return result;
             }
-            metrics.onCacheCommittedReadContains();
+
             byte[] cachedValue = cache.getIfPresent(wrappedKey);
+            metrics.onCacheCommittedContains();
             if (cachedValue != null) {
-                metrics.onCacheCommittedReadGet();
+                metrics.onCacheCommittedGet();
+                metrics.onUserReadGetFromCommittedCache(false);
                 return cachedValue;
             }
 
@@ -119,7 +119,8 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
             if (value != null) {
                 cache.put(wrappedKey, value);
-                metrics.onCacheCommittedWritePutWithValue(1);
+                metrics.onCacheCommittedPutWithValue(1);
+                metrics.onUserReadWriteToCommittedCache();
             }
             metrics.onReadThroughFillCommittedFromStore(value == null);
         } finally {
@@ -142,33 +143,44 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     private byte[] put(ByteArrayWrapper wrappedKey, byte[] value) {
         Objects.requireNonNull(value);
-
         this.lock.writeLock().lock();
 
         try {
+            metrics.onUserWritePut();
 
             byte[] pendingValue = uncommittedCache.get(wrappedKey);
+            metrics.onCacheUncommittedGet();
+
             if (pendingValue != null && Arrays.equals(pendingValue, value)) {
-                // Same value is already scheduled to be flushed.
+                metrics.onUserWriteUncommittedCacheGet();
                 return value;
             }
 
             byte[] cachedValue = cache.getIfPresent(wrappedKey);
+            metrics.onCacheCommittedContains();
+
             if (cachedValue != null) {
-                metrics.onCacheCommittedReadGet();
+                metrics.onCacheCommittedGet();
             }
             if (cachedValue != null && Arrays.equals(cachedValue, value)) {
                 // Requested value already matches committed state, so any pending write is redundant.
+
+
                 uncommittedCache.remove(wrappedKey);
+                metrics.onCacheUncommittedRemove();
+                metrics.onUserWriteCommittedCacheGet();
                 return value;
             }
 
             uncommittedCache.put(wrappedKey, value);
-            metrics.onCacheUncommittedWritePut();
+            metrics.onCacheUncommittedPut();
+            metrics.onUserWriteUncommittedCacheNewValueAdded();
 
             cache.invalidate(wrappedKey);
             boolean absent = cachedValue == null;
-            metrics.onCacheCommittedWriteRemove(absent);
+            metrics.onCacheCommittedRemove(absent);
+            metrics.onUserWriteCommitedCacheValueInvalidated();
+
             if (uncommittedCache.size() > this.cacheSize) {
                 long start = System.nanoTime();
                 flushNotManual();
@@ -199,8 +211,8 @@ public class DataSourceWithCache implements KeyValueDataSource {
             cache.invalidate(wrappedKey);
             base.delete(wrappedKey.getData());
 
-            metrics.onCacheCommittedWriteRemove(false);
-            metrics.onCacheUncommittedWriteRemove();
+            metrics.onCacheCommittedRemove(false);
+            metrics.onCacheUncommittedRemove();
             metrics.onStoreDelete();
 
         } finally {
@@ -267,10 +279,10 @@ public class DataSourceWithCache implements KeyValueDataSource {
             metrics.onStoreFlushBatchUpdate(uncommittedBatch.size(), uncommittedKeysToRemove.size(),  System.nanoTime() - updateBatchTime);
 
             long updateCommittedAndUncommittedTime = System.nanoTime();
-            metrics.onCacheCommittedWritePutAbsent(uncommittedKeysToRemove.size());
-            metrics.onCacheCommittedWritePutWithValue(uncommittedBatch.size());
-
+            metrics.onCacheCommittedPutAbsent(uncommittedKeysToRemove.size());
+            metrics.onCacheCommittedPutWithValue(uncommittedBatch.size());
             uncommittedBatch.forEach(cache::put);
+
             uncommittedCache.clear();
             metrics.onStoreFlushCommitedAndUncommittedUpdate(System.nanoTime()-updateCommittedAndUncommittedTime);
             long totalTime = System.nanoTime() - saveTime;
@@ -299,8 +311,8 @@ public class DataSourceWithCache implements KeyValueDataSource {
             metrics.onStoreFlushBatchUpdate(uncommittedBatch.size(), uncommittedKeysToRemove.size(),  System.nanoTime() - updateBatchTime);
 
             long updateCommittedAndUncommittedTime = System.nanoTime();
-            metrics.onCacheCommittedWritePutAbsent(uncommittedKeysToRemove.size());
-            metrics.onCacheCommittedWritePutWithValue(uncommittedBatch.size());
+            metrics.onCacheCommittedPutAbsent(uncommittedKeysToRemove.size());
+            metrics.onCacheCommittedPutWithValue(uncommittedBatch.size());
 
             uncommittedBatch.forEach(cache::put);
             uncommittedCache.clear();
