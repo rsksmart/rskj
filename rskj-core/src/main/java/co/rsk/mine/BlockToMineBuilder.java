@@ -141,7 +141,15 @@ public class BlockToMineBuilder {
         final Block newBlock = createBlock(mainchainHeaders, uncles, txs, minimumGasPrice, extraData);
 
         removePendingTransactions(txsToRemove);
-        return executor.executeAndFill(newBlock, newBlockParentHeader);
+        BlockResult result = executor.executeAndFill(newBlock, newBlockParentHeader);
+
+        List<Transaction> invalidTxs = result.getInvalidTransactions();
+        if (!invalidTxs.isEmpty()) {
+            logger.warn("Evicting {} invalid transaction(s) from pool after exception during block execution", invalidTxs.size());
+            removePendingTransactions(invalidTxs);
+        }
+
+        return result;
     }
 
     private List<BlockHeader> getUnclesHeaders(BlockHeader newBlockParentHeader) {
