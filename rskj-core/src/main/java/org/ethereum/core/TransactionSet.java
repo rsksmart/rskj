@@ -17,9 +17,11 @@
  */
 package org.ethereum.core;
 
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -112,5 +114,11 @@ public class TransactionSet {
         }
 
         return list;
+    }
+
+    public List<Transaction> getTransactionsWithSameNonce(RskAddress sender, BigInteger nonce) {
+        return getTransactionsWithSender(sender).stream()
+                .filter(t -> nonce.equals(t.getNonceAsInteger()))
+                .toList();
     }
 }

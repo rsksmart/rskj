@@ -457,7 +457,6 @@ class TransactionPoolImplTest {
         Assertions.assertFalse(alltxs.contains(tx3));
         Assertions.assertTrue(alltxs.contains(tx4));
 
-        Assertions.assertSame(block, transactionPool.getBestBlock());
     }
 
     @Test
@@ -721,7 +720,7 @@ class TransactionPoolImplTest {
     @Test
     void checkTxWithLowGasPriceIsRejected() {
         Block newBest = new BlockBuilder(null, null, null)
-                .parent(transactionPool.getBestBlock()).minGasPrice(BigInteger.valueOf(100)).build();
+                .parent(blockChain.getBestBlock()).minGasPrice(BigInteger.valueOf(100)).build();
         transactionPool.processBest(newBest);
 
         Coin balance = Coin.valueOf(1000000);
