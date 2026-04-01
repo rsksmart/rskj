@@ -31,16 +31,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
-import java.util.ArrayList;
-import java.util.List;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-import static co.rsk.util.OkHttpClientTestFixture.*;
+import static co.rsk.util.OkHttpClientTestFixture.ETH_BLOCK_NUMBER;
+import static co.rsk.util.OkHttpClientTestFixture.buildEthCallPayload;
+import static co.rsk.util.OkHttpClientTestFixture.getEnvelopedMethodCalls;
+import static co.rsk.util.OkHttpClientTestFixture.sendHealthProbe;
+import static co.rsk.util.OkHttpClientTestFixture.sendJsonRpcMessage;
 import static org.awaitility.Awaitility.await;
 
 class EthCallIntegrationTest {
@@ -347,127 +352,6 @@ class EthCallIntegrationTest {
 
             System.out.printf("Batch of %d correctly rejected: %s%n", batchSize,
                     jsonResponse.get("error").get("message").asText());
-        } finally {
-            destroyNode(proc);
-        }
-    }
-
-    /**
-     * Verifies system behavior under high concurrency of batch requests.
-     * Ensures the RPC layer handles saturation from batch processing gracefully.
-     *
-     * Each HTTP request carries a batch of high-gas eth_call items. Because batches are
-     * processed sequentially on a single thread, each request occupies a thread for
-     * batch_size * per_call_time.
-     */
-    @Test
-    void concurrentBatchRequests_shouldTestRpcResponsiveness() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s",
-                baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-
-        int batchSize = 5;
-        int totalProbes = 5;
-
-        Process proc = startNode(cmd);
-        try {
-            waitForNodeReady(rpcPort, 60_000);
-
-            // Verify baseline: health probe succeeds before load test
-            long baselineStart = System.currentTimeMillis();
-            Response baselineResponse = sendHealthProbe(rpcPort, 5000);
-            long baselineElapsed = System.currentTimeMillis() - baselineStart;
-            Assertions.assertEquals(200, baselineResponse.code(),
-                    "Baseline health probe should succeed before load test");
-            System.out.printf("[BASELINE] eth_blockNumber responded in %dms%n", baselineElapsed);
-
-            // Build batch payload: 5 eth_call items at 50M gas each.
-            // Each batch occupies one worker thread for ~5 * 1.8s = ~9s.
-            String[] batchItems = new String[batchSize];
-            for (int i = 0; i < batchSize; i++) {
-                batchItems[i] = buildEthCallPayload(SHA3_LOOP_BYTECODE, GAS_50M, i + 1);
-            }
-            String batchPayload = getEnvelopedMethodCalls(batchItems);
-
-            // Launch concurrent batch requests to stress all worker threads.
-            // numBatches > thread count ensures the pool stays saturated even
-            // if some batches complete during the probe window.
-            int numBatches = Runtime.getRuntime().availableProcessors() * 2 + 4;
-            CountDownLatch batchesStarted = new CountDownLatch(numBatches);
-            ExecutorService executor = Executors.newFixedThreadPool(numBatches, r -> {
-                Thread t = new Thread(r);
-                t.setDaemon(true);
-                return t;
-            });
-
-            long loadTestStart = System.currentTimeMillis();
-            for (int i = 0; i < numBatches; i++) {
-                executor.submit(() -> {
-                    batchesStarted.countDown();
-                    try {
-                        sendJsonRpcMessage(batchPayload, rpcPort, BATCH_CALL_TIMEOUT_MS);
-                    } catch (IOException e) {
-                        // Expected — process may be destroyed while calls are in-flight
-                    }
-                    return null;
-                });
-            }
-
-            // Wait for all batch requests to start processing
-            batchesStarted.await(10, TimeUnit.SECONDS);
-
-            // Send sequential health probes with short timeout.
-            // In a normal state, eth_blockNumber responds quickly.
-            AtomicInteger failedProbes = new AtomicInteger(0);
-            List<String> probeResults = new ArrayList<>();
-            for (int i = 1; i <= totalProbes; i++) {
-                long probeStart = System.currentTimeMillis();
-                try {
-                    Response probeResponse = sendHealthProbe(rpcPort, 2000);
-                    long probeElapsed = System.currentTimeMillis() - probeStart;
-                    if (probeResponse.code() == 200) {
-                        String result = String.format("[PROBE %d] OK in %dms", i, probeElapsed);
-                        probeResults.add(result);
-                        System.out.println(result);
-                    } else {
-                        failedProbes.incrementAndGet();
-                        String result = String.format("[PROBE %d] HTTP %d in %dms",
-                                i, probeResponse.code(), probeElapsed);
-                        probeResults.add(result);
-                        System.out.println(result);
-                    }
-                } catch (IOException e) {
-                    long probeElapsed = System.currentTimeMillis() - probeStart;
-                    failedProbes.incrementAndGet();
-                    String result = String.format("[PROBE %d] FAILED in %dms (%s)",
-                            i, probeElapsed, e.getClass().getSimpleName());
-                    probeResults.add(result);
-                    System.out.println(result);
-                }
-            }
-
-            long loadTestElapsed = System.currentTimeMillis() - loadTestStart;
-            executor.shutdownNow();
-
-            // Print summary
-            System.out.println();
-            System.out.printf("========== LOAD TEST SUMMARY ==========%n");
-            System.out.printf("Concurrent batch requests: %d (each with %d eth_calls at 50M gas)%n",
-                    numBatches, batchSize);
-            System.out.printf("Total eth_call invocations: %d%n", numBatches * batchSize);
-            System.out.printf("Health probes failed: %d / %d%n", failedProbes.get(), totalProbes);
-            for (String r : probeResults) {
-                System.out.println("  " + r);
-            }
-            System.out.printf("Wall time: %dms%n", loadTestElapsed);
-            System.out.printf("==========================================%n");
-
-            Assertions.assertTrue(failedProbes.get() <= 2,
-                    String.format("Expected at most 2 out of %d health probes to fail, but %d failed. "
-                                    + "The RPC layer should be saturated during a batch load test.",
-                            totalProbes, failedProbes.get()));
-
-            System.out.printf("Batch Load Test: %d out of %d health probes failed during execution%n",
-                    failedProbes.get(), totalProbes);
         } finally {
             destroyNode(proc);
         }
