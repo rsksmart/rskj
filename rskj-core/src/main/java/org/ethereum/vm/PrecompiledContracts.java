@@ -55,7 +55,9 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -148,9 +150,8 @@ public class PrecompiledContracts {
                     new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153),
                     new AbstractMap.SimpleEntry<>(ENVIRONMENT_ADDR, ConsensusRule.RSKIP203),
                     new AbstractMap.SimpleEntry<>(SECP256K1_ADD_ADDR, ConsensusRule.RSKIP516),
-                    new AbstractMap.SimpleEntry<>(SECP256K1_MUL_ADDR, ConsensusRule.RSKIP516)
-            ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-    );
+                    new AbstractMap.SimpleEntry<>(SECP256K1_MUL_ADDR, ConsensusRule.RSKIP516))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
     private static ECRecover ecRecover = new ECRecover();
     private static Sha256 sha256 = new Sha256();
@@ -163,8 +164,8 @@ public class PrecompiledContracts {
     private final RemascConfig remascConfig;
 
     public PrecompiledContracts(RskSystemProperties config,
-                                BridgeSupportFactory bridgeSupportFactory,
-                                SignatureCache signatureCache) {
+            BridgeSupportFactory bridgeSupportFactory,
+            SignatureCache signatureCache) {
         this.config = config;
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.signatureCache = signatureCache;
@@ -185,6 +186,21 @@ public class PrecompiledContracts {
 
     public boolean precompiledContactExists(RskAddress address) {
         return GENESIS_ADDRESSES.contains(address) || CONSENSUS_ENABLED_ADDRESSES.containsKey(address);
+    }
+
+    // TODO: EIP-2929 must add function to return set/collection of all precompiled
+    // contracts
+    public Collection<RskAddress> getPreCompiledContracts(ActivationConfig.ForBlock activations) {
+        Collection<RskAddress> addrs = new ArrayList<>(GENESIS_ADDRESSES.size() + CONSENSUS_ENABLED_ADDRESSES.size());
+        addrs.addAll(GENESIS_ADDRESSES);
+
+        for (var entry : CONSENSUS_ENABLED_ADDRESSES.entrySet()) {
+            if (activations.isActive(entry.getValue())) {
+                addrs.add(entry.getKey());
+            }
+        }
+
+        return addrs;
     }
 
     public PrecompiledContract getContractForAddress(ActivationConfig.ForBlock activations, DataWord address) {
@@ -281,7 +297,7 @@ public class PrecompiledContracts {
          */
         @Deprecated
         public final void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore,
-                               ReceiptStore receiptStore, List<LogInfo> logs) {
+                ReceiptStore receiptStore, List<LogInfo> logs) {
             PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
                     .transaction(tx)
                     .executionBlock(executionBlock)
@@ -447,8 +463,10 @@ public class PrecompiledContracts {
      * Computes modular exponentiation on big numbers
      * <p>
      * format of data[] array:
-     * [length_of_BASE] [length_of_EXPONENT] [length_of_MODULUS] [BASE] [EXPONENT] [MODULUS]
-     * where every length is a 32-byte left-padded integer representing the number of bytes.
+     * [length_of_BASE] [length_of_EXPONENT] [length_of_MODULUS] [BASE] [EXPONENT]
+     * [MODULUS]
+     * where every length is a 32-byte left-padded integer representing the number
+     * of bytes.
      * Call data is assumed to be infinitely right-padded with zero bytes.
      * <p>
      * Returns an output as a byte array with the same length as the modulus
