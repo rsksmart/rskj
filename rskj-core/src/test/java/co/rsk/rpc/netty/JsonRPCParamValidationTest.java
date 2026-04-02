@@ -54,15 +54,17 @@ class JsonRPCParamValidationTest {
     void eth_getBlockByHash() throws Exception {
         BlockResultDTO blockResultDTO = mock(BlockResultDTO.class);
 
-        String requestBody = "{\n" +
-                "\t\"jsonrpc\":\"2.0\",\n" +
-                "\t\"method\":\"eth_getBlockByHash\",\n" +
-                "\t\"params\":[\n" +
-                "\t\t\"0xad1328d13f833b8af722117afdc406a762033321df8e48c00cd372d462f48169\", \n" +
-                "\t\ttrue\n" +
-                "\t],\n" +
-                "\t\"id\":1\n" +
-                "}";
+        String requestBody = """
+                {
+                    "jsonrpc":"2.0",
+                    "method":"eth_getBlockByHash",
+                    "params":[
+                        "0xad1328d13f833b8af722117afdc406a762033321df8e48c00cd372d462f48169",
+                        true
+                    ],
+                    "id":1
+                }
+                """;
         JsonNode request = objectMapper.readTree(requestBody);
 
         when(handler.eth_getBlockByHash(any(), any())).thenReturn(blockResultDTO);
@@ -76,15 +78,17 @@ class JsonRPCParamValidationTest {
     void eth_getBlockByHash_invalidHexCharInHash_returnsError() throws Exception {
         BlockResultDTO blockResultDTO = mock(BlockResultDTO.class);
 
-        String requestBody = "{\n" +
-                "\t\"jsonrpc\":\"2.0\",\n" +
-                "\t\"method\":\"eth_getBlockByHash\",\n" +
-                "\t\"params\":[\n" +
-                "\t\t\"0xc2b835zzz172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8\", \n" +
-                "\t\ttrue\n" +
-                "\t],\n" +
-                "\t\"id\":1\n" +
-                "}";
+        String requestBody = """
+                {
+                    "jsonrpc":"2.0",
+                    "method":"eth_getBlockByHash",
+                    "params":[
+                        "0xc2b835zzz172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8",
+                        true
+                    ],
+                    "id":1
+                }
+                """;
         JsonNode request = objectMapper.readTree(requestBody);
 
         when(handler.eth_getBlockByHash(any(), any())).thenReturn(blockResultDTO);
@@ -98,15 +102,17 @@ class JsonRPCParamValidationTest {
     @Test
     void eth_getBlockByHash_invalidHashLength_returnsError() throws Exception {
         BlockResultDTO blockResultDTO = mock(BlockResultDTO.class);
-        String requestBody = "{\n" +
-                "\t\"jsonrpc\":\"2.0\",\n" +
-                "\t\"method\":\"eth_getBlockByHash\",\n" +
-                "\t\"params\":[\n" +
-                "\t\t\"0xec576f474ea123c581c08008bea2\", \n" +
-                "\t\ttrue\n" +
-                "\t],\n" +
-                "\t\"id\":1\n" +
-                "}";
+        String requestBody = """
+                {
+                    "jsonrpc":"2.0",
+                    "method":"eth_getBlockByHash",
+                    "params":[
+                        "0xec576f474ea123c581c08008bea2",
+                        true
+                    ],
+                    "id":1
+                }
+                """;
         JsonNode request = objectMapper.readTree(requestBody);
 
         when(handler.eth_getBlockByHash(any(), any())).thenReturn(blockResultDTO);
@@ -121,15 +127,17 @@ class JsonRPCParamValidationTest {
     @Test
     void eth_getTransactionByBlockHashAndIndex_invalidHash_returnsError() throws Exception {
         TransactionResultDTO resultDTO = mock(TransactionResultDTO.class);
-        String requestBody = "{\n" +
-                "\t\"jsonrpc\":\"2.0\",\n" +
-                "\t\"method\":\"eth_getTransactionByBlockHashAndIndex\",\n" +
-                "\t\"params\":[\n" +
-                "\t\t\"0x3c82bc62179602b6731037c49cba84e31ffe6e465a21c521a7\", \n" +
-                "\t\t\"0x0\"\n" +
-                "\t],\n" +
-                "\t\"id\":1\n" +
-                "}";
+        String requestBody = """
+                {
+                    "jsonrpc":"2.0",
+                    "method":"eth_getTransactionByBlockHashAndIndex",
+                    "params":[
+                        "0x3c82bc62179602b6731037c49cba84e31ffe6e465a21c521a7",
+                        "0x0"
+                    ],
+                    "id":1
+                }
+                """;
         JsonNode request = objectMapper.readTree(requestBody);
         when(handler.eth_getTransactionByBlockHashAndIndex(any(), any())).thenReturn(resultDTO);
         JsonResponse response = jsonRpcServer.handleJsonNodeRequest(request);
@@ -142,15 +150,17 @@ class JsonRPCParamValidationTest {
     @Test
     void eth_getTransactionByBlockHashAndIndex_invalidIndex_returnsError() throws Exception {
         TransactionResultDTO resultDTO = mock(TransactionResultDTO.class);
-        String requestBody = "{\n" +
-                "\t\"jsonrpc\":\"2.0\",\n" +
-                "\t\"method\":\"eth_getTransactionByBlockHashAndIndex\",\n" +
-                "\t\"params\":[\n" +
-                "\t\t\"0x3c82bc62179602b67318c013c10f99011037c49cba84e31ffe6e465a21c521a7\", \n" +
-                "\t\t\"abc\"\n" +
-                "\t],\n" +
-                "\t\"id\":1\n" +
-                "}";
+        String requestBody = """
+                {
+                    "jsonrpc":"2.0",
+                    "method":"eth_getTransactionByBlockHashAndIndex",
+                    "params":[
+                        "0x3c82bc62179602b67318c013c10f99011037c49cba84e31ffe6e465a21c521a7",
+                        "abc"
+                    ],
+                    "id":1
+                }
+                """;
         JsonNode request = objectMapper.readTree(requestBody);
         when(handler.eth_getTransactionByBlockHashAndIndex(any(), any())).thenReturn(resultDTO);
         JsonResponse response = jsonRpcServer.handleJsonNodeRequest(request);
@@ -161,14 +171,16 @@ class JsonRPCParamValidationTest {
 
     @Test
     void eth_getBlockTransactionCountByHash_invalidHash_returnsError() throws Exception {
-        String requestBody = "{\n" +
-                "\t\"jsonrpc\":\"2.0\",\n" +
-                "\t\"method\":\"eth_getBlockTransactionCountByHash\",\n" +
-                "\t\"params\":[\n" +
-                "\t\t\"0x3c82bc62179602b6731037c49cba84e31ffe6e465a21c521a7\"\n" +
-                "\t],\n" +
-                "\t\"id\":1\n" +
-                "}";
+        String requestBody = """
+                {
+                    "jsonrpc":"2.0",
+                    "method":"eth_getBlockTransactionCountByHash",
+                    "params":[
+                        "0x3c82bc62179602b6731037c49cba84e31ffe6e465a21c521a7"
+                    ],
+                    "id":1
+                }
+                """;
         JsonNode request = objectMapper.readTree(requestBody);
         when(handler.eth_getBlockTransactionCountByHash(any())).thenReturn("0x0");
         JsonResponse response = jsonRpcServer.handleJsonNodeRequest(request);
@@ -180,14 +192,16 @@ class JsonRPCParamValidationTest {
     @Test
     void eth_getTransactionByHash_invalidHash_returnsError() throws Exception {
         TransactionResultDTO resultDTO = mock(TransactionResultDTO.class);
-        String requestBody = "{\n" +
-                "\t\"jsonrpc\":\"2.0\",\n" +
-                "\t\"method\":\"eth_getTransactionByHash\",\n" +
-                "\t\"params\":[\n" +
-                "\t\t\"0xc2b835zzz172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8\"\n" +
-                "\t],\n" +
-                "\t\"id\":1\n" +
-                "}";
+        String requestBody = """
+                {
+                    "jsonrpc":"2.0",
+                    "method":"eth_getTransactionByHash",
+                    "params":[
+                        "0xc2b835zzz172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8"
+                    ],
+                    "id":1
+                }
+                """;
         JsonNode request = objectMapper.readTree(requestBody);
         JsonResponse response = jsonRpcServer.handleJsonNodeRequest(request);
         assertEquals(-32602, response.getCode());
@@ -198,15 +212,17 @@ class JsonRPCParamValidationTest {
     @Test
     void eth_getUncleByBlockHashAndIndex_invalidHash_returnsError() throws Exception {
         BlockResultDTO blockResultDTO = mock(BlockResultDTO.class);
-        String requestBody = "{\n" +
-                "\t\"jsonrpc\":\"2.0\",\n" +
-                "\t\"method\":\"eth_getUncleByBlockHashAndIndex\",\n" +
-                "\t\"params\":[\n" +
-                "\t\t\"0x3c82bc62179602b6731037c49cba84e31ffe6e465a21c521a7\", \n" +
-                "\t\t\"0x0\"\n" +
-                "\t],\n" +
-                "\t\"id\":1\n" +
-                "}";
+        String requestBody = """
+                {
+                    "jsonrpc":"2.0",
+                    "method":"eth_getUncleByBlockHashAndIndex",
+                    "params":[
+                        "0x3c82bc62179602b6731037c49cba84e31ffe6e465a21c521a7",
+                        "0x0"
+                    ],
+                    "id":1
+                }
+                """;
         JsonNode request = objectMapper.readTree(requestBody);
 
         when(handler.eth_getUncleByBlockHashAndIndex(any(), any())).thenReturn(blockResultDTO);
@@ -220,15 +236,17 @@ class JsonRPCParamValidationTest {
     @Test
     void eth_getUncleByBlockHashAndIndex_invalidIndex_returnsError() throws Exception {
         BlockResultDTO blockResultDTO = mock(BlockResultDTO.class);
-        String requestBody = "{\n" +
-                "\t\"jsonrpc\":\"2.0\",\n" +
-                "\t\"method\":\"eth_getUncleByBlockHashAndIndex\",\n" +
-                "\t\"params\":[\n" +
-                "\t\t\"0x3c82bc62179602b67318c013c10f99011037c49cba84e31ffe6e465a21c521a7\", \n" +
-                "\t\t\"122\"\n" +
-                "\t],\n" +
-                "\t\"id\":1\n" +
-                "}";
+        String requestBody = """
+                {
+                    "jsonrpc":"2.0",
+                    "method":"eth_getUncleByBlockHashAndIndex",
+                    "params":[
+                        "0x3c82bc62179602b67318c013c10f99011037c49cba84e31ffe6e465a21c521a7",
+                        "122"
+                    ],
+                    "id":1
+                }
+                """;
         JsonNode request = objectMapper.readTree(requestBody);
 
         when(handler.eth_getUncleByBlockHashAndIndex(any(), any())).thenReturn(blockResultDTO);

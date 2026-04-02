@@ -46,7 +46,7 @@ jobs:
 
       - name: Build
         run: |
-          ./gradlew --no-daemon --stacktrace build -x test -x checkstyleMain -x checkstyleTest -x checkstyleJmh -x checkstyleIntegrationTest -x spotlessApply -x spotlessJavaCheck
+          ./gradlew --no-daemon --stacktrace build -x test
 
       - name: Archive build artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
