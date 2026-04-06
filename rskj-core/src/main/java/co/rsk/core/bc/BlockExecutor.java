@@ -412,20 +412,31 @@ public class BlockExecutor {
 
         int logIndexOffset = 0;
 
+        List<Transaction> invalidTransactions = new ArrayList<>();
+
         for (Transaction tx : block.getTransactionsList()) {
             loggingApplyBlockToTx(block, i);
 
+            Repository txSubTrack = track.startTracking();
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
                     txindex++,
                     block.getCoinbase(),
-                    track,
+                    txSubTrack,
                     block,
                     totalGasUsed,
                     vmTrace,
                     vmTraceOptions,
                     deletedAccounts);
-            boolean transactionExecuted = txExecutor.executeTransaction();
+            boolean transactionExecuted;
+            try {
+                transactionExecuted = txExecutor.executeTransaction();
+            } catch (Exception e) {
+                logger.error("Unexpected exception executing tx [{}], skipping", tx.getHash(), e);
+                txSubTrack.rollback();
+                transactionExecuted = false;
+                invalidTransactions.add(tx);
+            }
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (!discardInvalidTxs) {
@@ -435,6 +446,9 @@ public class BlockExecutor {
                 continue;
             }
 
+            if (transactionExecuted) {
+                txSubTrack.commit();
+            }
             registerExecutedTx(programTraceProcessor, vmTrace, executedTransactions, tx, txExecutor);
 
             long gasUsed = txExecutor.getGasConsumed();
@@ -466,8 +480,8 @@ public class BlockExecutor {
                 null,
                 totalGasUsed,
                 totalPaidFees,
-                vmTrace ? null : track.getTrie()
-
+                vmTrace ? null : track.getTrie(),
+                invalidTransactions
         );
         profiler.stop(metric);
         logger.trace("End execute pre RSKIP144.");
@@ -702,14 +716,16 @@ public class BlockExecutor {
         ParallelizeTransactionHandler parallelizeTransactionHandler = ParallelizeTransactionHandler.create((short) transactionExecutionThreads, block, minSequentialSetGasLimit);
 
         int logIndexOffset = 0;
+        List<Transaction> invalidTransactions = new ArrayList<>();
         for (Transaction tx : transactionsList) {
             loggingApplyBlockToTx(block, i);
 
+            Repository txSubTrack = track.startTracking();
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
                     txindex,
                     block.getCoinbase(),
-                    track,
+                    txSubTrack,
                     block,
                     parallelizeTransactionHandler.getGasUsedInSequential(),
                     false,
@@ -718,7 +734,15 @@ public class BlockExecutor {
                     true,
                     Math.max(BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit), BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit))
             );
-            boolean transactionExecuted = txExecutor.executeTransaction();
+            boolean transactionExecuted;
+            try {
+                transactionExecuted = txExecutor.executeTransaction();
+            } catch (Exception e) {
+                logger.error("Unexpected exception executing tx [{}], skipping", tx.getHash(), e);
+                txSubTrack.rollback();
+                transactionExecuted = false;
+                invalidTransactions.add(tx);
+            }
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (!discardInvalidTxs) {
@@ -728,6 +752,10 @@ public class BlockExecutor {
                 loggingDiscardedBlock(block, tx);
                 txindex++;
                 continue;
+            }
+
+            if (transactionExecuted) {
+                txSubTrack.commit();
             }
 
             Optional<Long> sublistGasAccumulated = addTxToSublistAndGetAccumulatedGas(
@@ -793,7 +821,8 @@ public class BlockExecutor {
                 sublistOrder,
                 totalGasUsed,
                 totalPaidFees,
-                track.getTrie()
+                track.getTrie(),
+                invalidTransactions
         );
         profiler.stop(metric);
         logger.trace("End executeForMining.");

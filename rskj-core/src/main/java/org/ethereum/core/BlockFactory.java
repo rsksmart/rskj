@@ -18,10 +18,12 @@
 package org.ethereum.core;
 
 import co.rsk.config.MiningConfig;
+import co.rsk.config.RskMiningConstants;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
+import co.rsk.validators.BtcHeaderSizeRule;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -53,7 +55,7 @@ import static org.ethereum.core.BlockHeaderIndex.UNCLES_HASH;
 import static org.ethereum.core.BlockHeaderIndex.UNCLE_COUNT;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
-public class BlockFactory {
+public final class BlockFactory implements BtcHeaderSizeRule {
     private static final int NUMBER_OF_EXTRA_HEADER_FIELDS = 3;
     // Maximum RLP header sizes (when all optional fields are present)
     private static final int MAX_RLP_HEADER_SIZE_WITHOUT_MINING = 20;
@@ -224,6 +226,7 @@ public class BlockFactory {
         byte[] bitcoinMergedMiningCoinbaseTransaction = null;
         if (rlpHeader.size() > r) {
             bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
+            validateBitcoinMergedMiningHeader(bitcoinMergedMiningHeader, blockNumber);
             bitcoinMergedMiningMerkleProof = rlpHeader.get(r++).getRLPRawData();
             bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r).getRLPData();
         }
@@ -239,6 +242,15 @@ public class BlockFactory {
                 txExecutionSublistsEdges,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 useRskip92Encoding, includeForkDetectionData);
+    }
+
+    private void validateBitcoinMergedMiningHeader(byte[] bitcoinMergedMiningHeader, long blockNumber) {
+        boolean isRskip98Active = activationConfig.isActive(ConsensusRule.RSKIP98, blockNumber);
+        if (!isValidBtcMergedMiningHeaderSize(bitcoinMergedMiningHeader, blockNumber, isRskip98Active)) {
+            throw new IllegalArgumentException("Bitcoin merged mining header must be "
+                    + RskMiningConstants.BTC_HEADER_SIZE + " bytes but was "
+                    + (bitcoinMergedMiningHeader != null ? bitcoinMergedMiningHeader.length : "null"));
+        }
     }
 
     private BlockHeader createBlockHeader(boolean compressed, boolean sealed, byte[] parentHash, byte[] unclesHash,

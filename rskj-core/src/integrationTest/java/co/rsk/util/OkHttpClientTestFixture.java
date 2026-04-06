@@ -39,6 +39,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public class OkHttpClientTestFixture {
 
@@ -77,6 +78,29 @@ public class OkHttpClientTestFixture {
                     true
                 ],
                 "id": 1,
+                "jsonrpc": "2.0"
+            }
+            """;
+
+    public static final String ETH_BLOCK_NUMBER = """
+            {
+                "method": "eth_blockNumber",
+                "params": [],
+                "id": 1,
+                "jsonrpc": "2.0"
+            }
+            """;
+
+    public static final String ETH_CALL = """
+            {
+                "method": "eth_call",
+                "params": [{
+                    "from": "<FROM>",
+                    "to": null,
+                    "data": "<DATA>",
+                    "gas": "<GAS>"
+                }, "latest"],
+                "id": <ID>,
                 "jsonrpc": "2.0"
             }
             """;
@@ -166,6 +190,31 @@ public class OkHttpClientTestFixture {
                 .addHeader("Accept-Encoding", "identity")
                 .post(requestBody).build();
         return getUnsafeOkHttpClient().newCall(request).execute();
+    }
+
+    public static Response sendJsonRpcMessage(String content, int port, long readTimeoutMs) throws IOException {
+        RequestBody requestBody = RequestBody.create(MediaType.parse("application/json-rpc"), content);
+        URL url = new URL("http", "localhost", port, "/");
+        Request request = new Request.Builder().url(url)
+                .addHeader("Host", "localhost")
+                .addHeader("Accept-Encoding", "identity")
+                .post(requestBody).build();
+        OkHttpClient client = getUnsafeOkHttpClient();
+        client.setReadTimeout(readTimeoutMs, TimeUnit.MILLISECONDS);
+        client.setConnectTimeout(readTimeoutMs, TimeUnit.MILLISECONDS);
+        return client.newCall(request).execute();
+    }
+
+    public static String buildEthCallPayload(String dataHex, String gasHex, int id) {
+        return ETH_CALL
+                .replace("<FROM>", PRE_FUNDED_ACCOUNTS.get(0))
+                .replace("<DATA>", dataHex)
+                .replace("<GAS>", gasHex)
+                .replace("<ID>", String.valueOf(id));
+    }
+
+    public static Response sendHealthProbe(int port, long timeoutMs) throws IOException {
+        return sendJsonRpcMessage(ETH_BLOCK_NUMBER, port, timeoutMs);
     }
 
     public static Response sendJsonRpcGetBestBlockMessage(int port) throws IOException {
