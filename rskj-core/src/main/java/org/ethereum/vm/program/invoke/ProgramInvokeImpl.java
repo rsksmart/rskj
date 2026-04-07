@@ -37,7 +37,7 @@ import java.util.Objects;
  */
 public class ProgramInvokeImpl implements ProgramInvoke {
 
-    private final BlockStore blockStore;
+    private BlockStore blockStore;
     /**
      * TRANSACTION  env **
      */
@@ -47,8 +47,9 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private final DataWord balance;
     private final DataWord txGasPrice;
     private final DataWord callValue;
-    private final long gas;
-    private final BytesSlice msgData;
+    private long gas;
+
+    BytesSlice msgData;
 
     /**
      * BLOCK  env **

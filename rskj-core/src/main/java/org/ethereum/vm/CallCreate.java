@@ -17,6 +17,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 package org.ethereum.vm;
 
 import co.rsk.core.types.bytes.BytesSlice;
@@ -27,10 +28,11 @@ import co.rsk.core.types.bytes.BytesSlice;
  */
 public class CallCreate {
 
-    private final BytesSlice data;
-    private final byte[] destination;
-    private final long gasLimit;
-    private final byte[] value;
+    final BytesSlice data;
+    final byte[] destination;
+    final long gasLimit;
+    final byte[] value;
+
 
     public CallCreate(BytesSlice data, byte[] destination, long gasLimit, byte[] value) {
         this.data = data;

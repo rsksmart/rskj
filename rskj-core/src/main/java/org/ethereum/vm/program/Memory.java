@@ -38,7 +38,7 @@ public class Memory implements ProgramListenerAware {
     private static final int CHUNK_SIZE = 1024;
     private static final int WORD_SIZE = 32;
 
-    private final List<byte[]> chunks = new LinkedList<>();
+    private List<byte[]> chunks = new LinkedList<>();
     private int softSize;
     private ProgramListener traceListener;
 
