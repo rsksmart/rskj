@@ -19,8 +19,6 @@
 
 package org.ethereum.vm.program.invoke;
 
-import co.rsk.core.types.bytes.Bytes;
-import co.rsk.core.types.bytes.BytesSlice;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
@@ -49,7 +47,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private final DataWord callValue;
     private long gas;
 
-    BytesSlice msgData;
+    byte[] msgData;
 
     /**
      * BLOCK  env **
@@ -75,7 +73,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     public ProgramInvokeImpl(DataWord address, DataWord origin, DataWord caller, DataWord balance,
                              DataWord txGasPrice,
                              long gas,
-                             DataWord callValue, BytesSlice msgData,
+                             DataWord callValue, byte[] msgData,
                              DataWord lastHash, DataWord coinbase, DataWord timestamp, DataWord number, DataWord transactionIndex, DataWord
                                      difficulty,
                              DataWord gaslimit, DataWord minimumGasPrice, Repository repository, int callDeep, BlockStore blockStore,
@@ -116,7 +114,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                              byte[] gaslimit, byte[] minimumGasPrice,
                              Repository repository, BlockStore blockStore,
                              boolean byTestingSuite) {
-        this(address, origin, caller, balance, txGasPrice, gas, callValue, Bytes.of(msgData), lastHash, coinbase,
+        this(address, origin, caller, balance, txGasPrice, gas, callValue, msgData, lastHash, coinbase,
                 timestamp, number, transactionIndex, difficulty, gaslimit, minimumGasPrice, repository, blockStore);
 
         this.byTestingSuite = byTestingSuite;
@@ -124,7 +122,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
 
     public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, byte[] balance,
-                             byte[] txGasPrice, byte[] gas, byte[] callValue, BytesSlice msgData,
+                             byte[] txGasPrice, byte[] gas, byte[] callValue, byte[] msgData,
                              byte[] lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
                              byte[] gaslimit, byte[] minimumGasPrice,
                              Repository repository, BlockStore blockStore) {
@@ -211,16 +209,16 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         int index = tempIndex.intValue(); // possible overflow is caught below
         int size = 32; // maximum datavalue size
 
-        if (msgData == null || index >= msgData.length()
+        if (msgData == null || index >= msgData.length
                 || tempIndex.compareTo(maxMsgData) == 1) {
             return DataWord.ZERO;
         }
-        if (index + size > msgData.length()) {
-            size = msgData.length() - index;
+        if (index + size > msgData.length) {
+            size = msgData.length - index;
         }
 
         byte[] data = new byte[32];
-        msgData.arraycopy(index, data, 0, size);
+        System.arraycopy(msgData, index, data, 0, size);
         return DataWord.valueOf(data);
     }
 
@@ -228,10 +226,10 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     @Override
     public DataWord getDataSize() {
 
-        if (msgData == null || msgData.length() == 0) {
+        if (msgData == null || msgData.length == 0) {
             return DataWord.ZERO;
         }
-        int size = msgData.length();
+        int size = msgData.length;
         return DataWord.valueOf(size);
     }
 
@@ -247,14 +245,14 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         if (msgData == null) {
             return data;
         }
-        if (offset > msgData.length()) {
+        if (offset > msgData.length) {
             return data;
         }
-        if (offset + length > msgData.length()) {
-            length = msgData.length() - offset;
+        if (offset + length > msgData.length) {
+            length = msgData.length - offset;
         }
 
-        msgData.arraycopy(offset, data, 0, length);
+        System.arraycopy(msgData, offset, data, 0, length);
 
         return data;
     }
@@ -390,7 +388,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         if (minimumGasPrice != null ? !minimumGasPrice.equals(that.minimumGasPrice) : that.minimumGasPrice != null) {
             return false;
         }
-        if (!BytesSlice.equals(msgData, that.msgData)) {
+        if (!Arrays.equals(msgData, that.msgData)) {
             return false;
         }
         if (number != null ? !number.equals(that.number) : that.number != null) {
@@ -418,7 +416,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     @Override
     public int hashCode() {
         int result = Objects.hash(address, origin, caller, balance, txGasPrice, callValue, gas, prevHash, coinbase, timestamp, number, difficulty, gaslimit, minimumGasPrice, storage, repository, byTransaction, byTestingSuite);
-        result = 31 * result + BytesSlice.hashCode(msgData);
+        result = 31 * result + Arrays.hashCode(msgData);
         return result;
     }
 
@@ -432,7 +430,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                 ", gas=" + gas +
                 ", txGasPrice=" + txGasPrice +
                 ", callValue=" + callValue +
-                ", msgData=" + msgData +
+                ", msgData=" + Arrays.toString(msgData) +
                 ", prevHash=" + prevHash +
                 ", coinbase=" + coinbase +
                 ", timestamp=" + timestamp +

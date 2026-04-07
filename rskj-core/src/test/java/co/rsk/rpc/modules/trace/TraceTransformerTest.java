@@ -18,7 +18,6 @@
 
 package co.rsk.rpc.modules.trace;
 
-import co.rsk.core.types.bytes.Bytes;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
@@ -53,7 +52,7 @@ class TraceTransformerTest {
                 null,
                 gas,
                 callValue,
-                Bytes.of(data),
+                data,
                 null, null, null, null, null, null, null,
                 null, null, 0, null, false, false);
 

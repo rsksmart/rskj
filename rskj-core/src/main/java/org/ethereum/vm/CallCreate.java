@@ -20,28 +20,26 @@
 
 package org.ethereum.vm;
 
-import co.rsk.core.types.bytes.BytesSlice;
-
 /**
  * @author Roman Mandeleil
  * @since 03.07.2014
  */
 public class CallCreate {
 
-    final BytesSlice data;
+    final byte[] data;
     final byte[] destination;
     final long gasLimit;
     final byte[] value;
 
 
-    public CallCreate(BytesSlice data, byte[] destination, long gasLimit, byte[] value) {
+    public CallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value) {
         this.data = data;
         this.destination = destination;
         this.gasLimit = gasLimit;
         this.value = value;
     }
 
-    public BytesSlice getData() {
+    public byte[] getData() {
         return data;
     }
 

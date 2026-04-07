@@ -18,20 +18,26 @@
  */
 package org.ethereum.vm.program;
 
-import co.rsk.config.VmConfig;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.types.bytes.Bytes;
-import co.rsk.core.types.bytes.BytesSlice;
-import co.rsk.crypto.Keccak256;
-import co.rsk.pcc.NativeContract;
-import co.rsk.peg.Bridge;
-import co.rsk.remasc.RemascContract;
-import co.rsk.rpc.modules.trace.CallType;
-import co.rsk.rpc.modules.trace.CreationData;
-import co.rsk.rpc.modules.trace.ProgramSubtrace;
-import co.rsk.vm.BitSet;
-import com.google.common.annotations.VisibleForTesting;
+import static co.rsk.util.ListArrayUtil.getLength;
+import static co.rsk.util.ListArrayUtil.isEmpty;
+import static co.rsk.util.ListArrayUtil.nullToEmpty;
+import static java.lang.String.format;
+import static org.ethereum.util.BIUtil.isNotCovers;
+import static org.ethereum.util.BIUtil.isPositive;
+import static org.ethereum.util.BIUtil.toBI;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.vm.PrecompiledContracts.NO_LIMIT_ON_MAX_INPUT;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
+
+import javax.annotation.Nonnull;
+
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -69,25 +75,20 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Optional;
-import java.util.Set;
+import com.google.common.annotations.VisibleForTesting;
 
-import static co.rsk.util.ListArrayUtil.getLength;
-import static co.rsk.util.ListArrayUtil.isEmpty;
-import static co.rsk.util.ListArrayUtil.nullToEmpty;
-import static java.lang.String.format;
-import static org.ethereum.util.BIUtil.isNotCovers;
-import static org.ethereum.util.BIUtil.isPositive;
-import static org.ethereum.util.BIUtil.toBI;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTES_SLICE;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.vm.PrecompiledContracts.NO_LIMIT_ON_MAX_INPUT;
+import co.rsk.config.VmConfig;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.core.types.bytes.Bytes;
+import co.rsk.crypto.Keccak256;
+import co.rsk.pcc.NativeContract;
+import co.rsk.peg.Bridge;
+import co.rsk.remasc.RemascContract;
+import co.rsk.rpc.modules.trace.CallType;
+import co.rsk.rpc.modules.trace.CreationData;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import co.rsk.vm.BitSet;
 
 /**
  * @author Roman Mandeleil
@@ -389,10 +390,6 @@ public class Program {
         return memory.readWord(addr.intValue());
     }
 
-    public BytesSlice memorySlice(int offset, int size) {
-        return memory.readSlice(offset, size);
-    }
-
     public byte[] memoryChunk(int offset, int size) {
         return memory.read(offset, size);
     }
@@ -479,10 +476,10 @@ public class Program {
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void createContract2(DataWord value, DataWord memStart, DataWord memSize, DataWord salt) {
         RskAddress senderAddress = new RskAddress(getOwnerAddress());
-        BytesSlice programCode = memorySlice(memStart.intValue(), memSize.intValue());
+        byte[] programCode = memoryChunk(memStart.intValue(), memSize.intValue());
 
         if (programCode == null) {
-            programCode = EMPTY_BYTES_SLICE;
+            programCode = EMPTY_BYTE_ARRAY;
         }
 
         byte[] newAddressBytes = HashUtil.calcSaltAddr(senderAddress, programCode, salt.getData());
@@ -525,7 +522,7 @@ public class Program {
 
         if (byTestingSuite()) {
             // This keeps track of the contracts created for a test
-            getResult().addCallCreate(Bytes.of(programCode), EMPTY_BYTE_ARRAY,
+            getResult().addCallCreate(programCode, EMPTY_BYTE_ARRAY,
                     gasLimit,
                     value.getNoLeadZeroesData());
         }
@@ -779,10 +776,10 @@ public class Program {
             return;
         }
 
-        BytesSlice data = memorySlice(msg.getInDataOffs().intValue(), msg.getInDataSize().intValue());
+        byte[] data = memoryChunk(msg.getInDataOffs().intValue(), msg.getInDataSize().intValue());
 
         if (data == null) {
-            data = EMPTY_BYTES_SLICE;
+            data = EMPTY_BYTE_ARRAY;
         }
 
         // FETCH THE SAVED STORAGE
@@ -885,7 +882,7 @@ public class Program {
             Repository track,
             byte[] programCode,
             RskAddress senderAddress,
-            BytesSlice data) {
+            byte[] data) {
 
         returnDataBuffer = null; // reset return buffer right before the call
         ProgramResult childResult;
@@ -1470,7 +1467,7 @@ public class Program {
 
         if (byTestingSuite()) {
             // This keeps track of the calls created for a test
-            this.getResult().addCallCreate(Bytes.of(data),
+            this.getResult().addCallCreate(data,
                     codeAddress.getBytes(),
                     msg.getGas().longValueSafe(),
                     msg.getEndowment().getNoLeadZeroesData());
@@ -1768,7 +1765,6 @@ public class Program {
     /**
      * used mostly for testing reasons
      */
-    @VisibleForTesting
     public byte[] getMemory() {
         return memory.read(0, memory.size());
     }

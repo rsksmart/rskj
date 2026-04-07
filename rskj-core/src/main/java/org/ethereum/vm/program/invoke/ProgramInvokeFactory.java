@@ -19,7 +19,6 @@
 package org.ethereum.vm.program.invoke;
 
 import co.rsk.core.Coin;
-import co.rsk.core.types.bytes.BytesSlice;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.SignatureCache;
@@ -40,7 +39,7 @@ public interface ProgramInvokeFactory {
 
     ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
                                       DataWord inValue, long inGas,
-                                      Coin balanceInt, BytesSlice dataIn,
+                                      Coin balanceInt, byte[] dataIn,
                                       Repository repository, BlockStore blockStore,
                                       boolean isStaticCall, boolean byTestingSuite);
 }
