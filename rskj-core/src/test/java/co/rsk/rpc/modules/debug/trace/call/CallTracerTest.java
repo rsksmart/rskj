@@ -101,17 +101,14 @@ class CallTracerTest {
     }
 
     /**
-     * Reproduces RSKCORE-5466: debug_traceTransaction with callTracer fails with
-     * "Memory was changed during slice lifetime" on transactions with internal calls.
+     * Regression test for RSKCORE-5466: verifies that debug_traceTransaction with callTracer
+     * succeeds on transactions with internal calls.
      *
-     * The contract calls itself recursively via this.recurse(depth - 1). During execution,
-     * Program.callToAddress() creates a MemorySlice for the call data, which gets stored
-     * in the child ProgramInvokeImpl. After the child returns, memorySaveLimited() writes
-     * return data to parent Memory, incrementing its version and invalidating the slice.
-     * CallTraceTransformer.buildForCall() then tries to read the stale slice and throws.
-     *
-     * TODO: Once the fix is applied, this test should be changed to assert success
-     *       (remove assertThrows, uncomment the assertions below).
+     * The contract calls itself recursively via this.recurse(depth - 1). Previously,
+     * Program.callToAddress() created a MemorySlice for the call data which got stored
+     * in the child ProgramInvokeImpl. After the child returned, memorySaveLimited() wrote
+     * return data to parent Memory, invalidating the slice and causing an IllegalStateException
+     * when CallTraceTransformer.buildForCall() tried to read it.
      */
     @Test
     void traceTransactionWithInternalCalls() throws Exception {
@@ -126,24 +123,18 @@ class CallTracerTest {
 
         TransactionReceipt txReceipt = world.getTransactionReceiptByName("tx02");
         assertNotNull(txReceipt, "tx02 receipt should exist");
-        assertArrayEquals(new byte[]{0x01}, txReceipt.getStatus(), "tx02 should have succeeded");
+        assertTrue(txReceipt.isSuccessful(), "tx02 should have succeeded");
 
         CallTracer callTracer = new CallTracer(world.getBlockStore(), world.getBlockExecutor(), web3InformationRetriever, receiptStore, world.getBlockChain());
         String txHash = txReceipt.getTransaction().getHash().toJsonString();
 
-        // RSKCORE-5466: callTracer throws IllegalStateException due to stale MemorySlice
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> callTracer.traceTransaction(txHash, new TraceOptions()));
-        assertTrue(exception.getMessage().contains("Memory was changed during slice lifetime"));
-
-        // TODO: After fix, replace the assertThrows above with the following:
-        // JsonNode result = callTracer.traceTransaction(txHash, new TraceOptions());
-        // assertNotNull(result);
-        // TxTraceResult traceResult = objectMapper.treeToValue(result, TxTraceResult.class);
-        // assertNotNull(traceResult);
-        // assertEquals("CALL", traceResult.getType());
-        // assertNotNull(traceResult.getCalls(), "Should have internal calls");
-        // assertFalse(traceResult.getCalls().isEmpty(), "Should have at least one internal call");
+        JsonNode result = callTracer.traceTransaction(txHash, new TraceOptions());
+        assertNotNull(result);
+        TxTraceResult traceResult = objectMapper.treeToValue(result, TxTraceResult.class);
+        assertNotNull(traceResult);
+        assertEquals("CALL", traceResult.getType());
+        assertNotNull(traceResult.getCalls(), "Should have internal calls");
+        assertFalse(traceResult.getCalls().isEmpty(), "Should have at least one internal call");
     }
 
     private static void assertOOGError(TxTraceResult trace) {
