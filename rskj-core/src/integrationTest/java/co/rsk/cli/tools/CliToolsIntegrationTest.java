@@ -23,11 +23,13 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.util.DataBytesFixture;
 import co.rsk.util.HexUtils;
+import co.rsk.util.IntegrationTestUtils;
 import co.rsk.util.OkHttpClientTestFixture;
 import co.rsk.util.cli.CommandLineFixture;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.Response;
+import org.awaitility.core.ConditionTimeoutException;
 import org.ethereum.core.Block;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FileUtil;
@@ -41,6 +43,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -53,12 +56,14 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class CliToolsIntegrationTest {
 
-    private final int port = 9999;
+    private int port;
+    private int peerPort;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private String buildLibsPath;
     private String jarName;
@@ -79,6 +84,8 @@ class CliToolsIntegrationTest {
             String integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
             String logbackXmlFile = String.format("%s/logback.xml", integrationTestResourcesPath);
             String rskConfFile = String.format("%s/integration-test-rskj.conf", integrationTestResourcesPath);
+            port = IntegrationTestUtils.findFreePort();
+            peerPort = IntegrationTestUtils.findFreePort();
             try (Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath))) {
                 jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
                         .map(p -> p.getFileName().toString())
@@ -93,6 +100,7 @@ class CliToolsIntegrationTest {
                     String.format("-Xdatabase.dir=%s", databaseDir),
                     "--regtest",
                     "-Xkeyvalue.datasource=leveldb",
+                    String.format("-Xpeer.port=%s", peerPort),
                     String.format("-Xrpc.providers.web.http.port=%s", port)
             };
             strBaseArgs = String.join(" ", baseArgs);
@@ -446,12 +454,7 @@ class CliToolsIntegrationTest {
                 if (attempt == maxRetries - 1) {
                     throw new IOException("Failed to create file " + filePath + " after " + maxRetries + " attempts", e);
                 }
-                try {
-                    Thread.sleep(retryDelayMs * (attempt + 1));
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new IOException("Interrupted while retrying file creation", ie);
-                }
+                IntegrationTestUtils.waitFor(retryDelayMs * (attempt + 1), TimeUnit.MILLISECONDS);
             }
         }
         throw new IOException("Failed to create file " + filePath + " after " + maxRetries + " attempts");
@@ -490,34 +493,23 @@ class CliToolsIntegrationTest {
                         // Log warning but don't fail the test
                         System.err.println("Warning: Failed to delete file " + filePath + " after " + maxRetries + " attempts: " + e.getMessage());
                     } else {
-                        try {
-                            Thread.sleep(retryDelayMs * (attempt + 1));
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
-                            return;
-                        }
+                        IntegrationTestUtils.waitFor(retryDelayMs * (attempt + 1), TimeUnit.MILLISECONDS);
                     }
                 }
             }
         }
     }
 
-    private void waitForFile(Path filePath, long timeoutMs) throws IOException, TimeoutException {
-        long startTime = System.currentTimeMillis();
+    private void waitForFile(Path filePath, long timeoutMs) throws TimeoutException {
         long checkInterval = 100; // Check every 100ms
-
-        while (System.currentTimeMillis() - startTime < timeoutMs) {
-            if (Files.exists(filePath) && Files.isReadable(filePath)) {
-                return;
-            }
-            try {
-                Thread.sleep(checkInterval);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IOException("Interrupted while waiting for file " + filePath, e);
-            }
+        try {
+            await()
+                    .atMost(Duration.ofMillis(timeoutMs))
+                    .pollInterval(Duration.ofMillis(checkInterval))
+                    .until(() -> Files.exists(filePath) && Files.isReadable(filePath));
+        } catch (ConditionTimeoutException e) {
+            throw new TimeoutException("File " + filePath + " did not become available within " + timeoutMs + "ms");
         }
-        throw new TimeoutException("File " + filePath + " did not become available within " + timeoutMs + "ms");
     }
 
     /**

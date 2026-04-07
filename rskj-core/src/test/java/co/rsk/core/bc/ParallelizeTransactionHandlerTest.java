@@ -31,11 +31,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 
 class ParallelizeTransactionHandlerTest {
 
@@ -73,7 +79,7 @@ class ParallelizeTransactionHandlerTest {
         aWrappedKey = new ByteArrayWrapper(aKey);
         sublists = 2;
         sequentialSublistNumber = sublists;
-        handler = new ParallelizeTransactionHandler(sublists, executionBlock, minSequentialSetGasLimit);
+        handler = ParallelizeTransactionHandler.create(sublists, executionBlock, minSequentialSetGasLimit);
         tx = new TransactionBuilder().nonce(1).sender(sender).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx2 = new TransactionBuilder().nonce(1).sender(sender2).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx3 = new TransactionBuilder().nonce(1).sender(sender3).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
@@ -704,20 +710,24 @@ class ParallelizeTransactionHandlerTest {
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
     }
 
+    //Only one tx (the big one) gets accepted into this sequential sublist given the gas constraints / policy; subsequent tx is rejected and state remains unchanged.
     @Test
-    void aTxDirectedToAPrecompiledContractAddedShouldBeInTheSequentialSublist() {
+    void addingTxExceedingSequentialSublistCapacityShouldBeRejectedAndNotAffectState() {
         List<Transaction> expectedListOfTxs = Collections.singletonList(bigSequentialTx);
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByBigSequentialTx = GasCost.toGas(bigSequentialTx.getGasLimit());
+        Set<ByteArrayWrapper> readKeys =  new HashSet<>();
+        Set<ByteArrayWrapper> writtenKeys =  new HashSet<>();
 
         Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> sequentialSublistGasUsedAfterBigTx = handler.addTxToSequentialSublist(bigSequentialTx, gasUsedByBigSequentialTx);
+        Optional<Long> sequentialSublistGasUsedAfterBigTx = handler.addTxToSequentialSublist(bigSequentialTx, gasUsedByBigSequentialTx, new HashSet<>(), new HashSet<>());
         Assertions.assertTrue(sequentialSublistGasUsedAfterBigTx.isPresent());
         Assertions.assertEquals(gasUsedByBigSequentialTx, handler.getGasUsedIn(sequentialSublistNumber));
         Assertions.assertEquals(gasUsedByBigSequentialTx, (long) sequentialSublistGasUsedAfterBigTx.get());
 
-        Optional<Long> sequentialSublistGasUsedAfterTx = handler.addTxToSequentialSublist(tx, gasUsedByTx);
+        Optional<Long> sequentialSublistGasUsedAfterTx = handler.addTxToSequentialSublist(tx, gasUsedByTx, readKeys, writtenKeys);
+        //tx fails (Optional is empty) and does not change gas used or transaction order.
         Assertions.assertFalse(sequentialSublistGasUsedAfterTx.isPresent());
 
         Assertions.assertEquals(gasUsedByBigSequentialTx, handler.getGasUsedIn(sequentialSublistNumber));
@@ -725,12 +735,14 @@ class ParallelizeTransactionHandlerTest {
     }
 
     @Test
-    void aTxDirectedToAPrecompiledContractAddedWithSequentialSublistFullShouldNotBeAdded() {
+    void addingTxToEmptySequentialSublistShouldSucceedAndUpdateGasUsed() {
         List<Transaction> expectedListOfTxs = Collections.singletonList(tx);
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
+        Set<ByteArrayWrapper> readKeys =  new HashSet<>();
+        Set<ByteArrayWrapper> writtenKeys =  new HashSet<>();
 
         Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
-        Optional<Long> sequentialSublistGasUsed = handler.addTxToSequentialSublist(tx, gasUsedByTx);
+        Optional<Long> sequentialSublistGasUsed = handler.addTxToSequentialSublist(tx, gasUsedByTx, readKeys, writtenKeys);
 
         Assertions.assertTrue(sequentialSublistGasUsed.isPresent());
         Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));
@@ -739,20 +751,22 @@ class ParallelizeTransactionHandlerTest {
     }
 
     @Test
-    void whenATxCallsAPrecompiledAnotherWithTheSameSenderShouldGoToSequential() {
+    void whenSequentialAlreadyContainsTx_thenAddTransactionAddsAnotherToSequential() {
         List<Transaction> expectedListOfTxsPreSecondTx = Collections.singletonList(tx);
         List<Transaction> expectedListOfTxsPostSecondTx = Arrays.asList(tx, tx);
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
+        Set<ByteArrayWrapper> readKeys =  new HashSet<>();
+        Set<ByteArrayWrapper> writtenKeys =  new HashSet<>();
 
         Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
-        Optional<Long> sequentialSublistGasUsed = handler.addTxToSequentialSublist(tx, gasUsedByTx);
+        Optional<Long> sequentialSublistGasUsed = handler.addTxToSequentialSublist(tx, gasUsedByTx, readKeys, writtenKeys);
 
         Assertions.assertTrue(sequentialSublistGasUsed.isPresent());
         Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));
         Assertions.assertEquals(gasUsedByTx, (long) sequentialSublistGasUsed.get());
         Assertions.assertEquals(expectedListOfTxsPreSecondTx, handler.getTransactionsInOrder());
 
-        Optional<Long> sequentialSublistGasUsedByTx2 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        Optional<Long> sequentialSublistGasUsedByTx2 = handler.addTransaction(tx, readKeys, writtenKeys, gasUsedByTx);
 
         Assertions.assertTrue(sequentialSublistGasUsedByTx2.isPresent());
         Assertions.assertEquals(gasUsedByTx*2, handler.getGasUsedIn(sequentialSublistNumber));
@@ -878,7 +892,7 @@ class ParallelizeTransactionHandlerTest {
 
         AccountBuilder accountBuilder = new AccountBuilder();
 
-        ParallelizeTransactionHandler handler = new ParallelizeTransactionHandler((short) 2, executionBlock, minSequentialSetGasLimit);
+        ParallelizeTransactionHandler handler = ParallelizeTransactionHandler.create((short) 2, executionBlock, minSequentialSetGasLimit);
 
         // write X with 800
         handler.addTransaction(
@@ -899,7 +913,7 @@ class ParallelizeTransactionHandlerTest {
         );
 
         // last write of X is in sequential because of out of gas. 800 + 300 > 1000
-        Assertions.assertArrayEquals(new short[]{ 1 }, handler.getTransactionsPerSublistInOrder());
+        Assertions.assertArrayEquals(new short[]{}, handler.getTransactionsPerSublistInOrder());
 
         // read X with 100
         handler.addTransaction(
@@ -911,7 +925,140 @@ class ParallelizeTransactionHandlerTest {
         );
 
         // should go to sequential
-        Assertions.assertArrayEquals(new short[]{ 1 }, handler.getTransactionsPerSublistInOrder());
+        Assertions.assertArrayEquals(new short[]{}, handler.getTransactionsPerSublistInOrder());
+    }
+
+    @Test
+    void whenSequentialWritesAKeyOtherTXReadsSameKeyShouldBeSequential() {
+        HashSet<ByteArrayWrapper> setWithX = createASetAndAddKeys(aWrappedKey);
+        AccountBuilder accountBuilder = new AccountBuilder();
+
+        //tx0BySender1  write X
+        Transaction tx0BySender1 = new TransactionBuilder().sender(accountBuilder.name("sender1").build()).build();
+        handler.addTxToSequentialSublist(tx0BySender1, 10000, new HashSet<>(), setWithX);
+
+        //tx0BySender2  read X
+        Transaction tx0BySender2 = new TransactionBuilder().sender(accountBuilder.name("sender2").build()).build();
+        handler.addTransaction( tx0BySender2, setWithX, new HashSet<>(), 10000);
+
+        Assertions.assertArrayEquals(new short[]{}, handler.getTransactionsPerSublistInOrder());
+        List<Transaction> expectedListOfTxs = Arrays.asList(tx0BySender1, tx0BySender2);
+        Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+
+        //Adding a not collided transaction.
+        Transaction tx0BySender3 = new TransactionBuilder().sender(accountBuilder.name("sender3").build()).build();
+        handler.addTransaction( tx0BySender3, new HashSet<>(), new HashSet<>(), 10000);
+
+        Assertions.assertArrayEquals(new short[]{1}, handler.getTransactionsPerSublistInOrder());
+        expectedListOfTxs = Arrays.asList(tx0BySender3, tx0BySender1, tx0BySender2);
+        Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+
+    }
+
+    @Test
+    void whenSequentialWriteAKeyOtherTXWritesSameKeyShouldBeSequential() {
+        HashSet<ByteArrayWrapper> setWithX = createASetAndAddKeys(aWrappedKey);
+        AccountBuilder accountBuilder = new AccountBuilder();
+
+        //tx0BySender1  write X
+        Transaction tx0BySender1 = new TransactionBuilder().sender(accountBuilder.name("sender1").build()).build();
+        handler.addTxToSequentialSublist(tx0BySender1, 10000, new HashSet<>(), setWithX);
+
+        //tx0BySender2  write X
+        Transaction tx0BySender2 = new TransactionBuilder().sender(accountBuilder.name("sender2").build()).build();
+        handler.addTransaction( tx0BySender2, new HashSet<>(), setWithX, 10000);
+
+        Assertions.assertArrayEquals(new short[]{}, handler.getTransactionsPerSublistInOrder());
+        List<Transaction> expectedListOfTxs = Arrays.asList(tx0BySender1, tx0BySender2);
+        Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+
+        //Adding a not collided transaction.
+        Transaction tx0BySender3 = new TransactionBuilder().sender(accountBuilder.name("sender3").build()).build();
+        handler.addTransaction( tx0BySender3, new HashSet<>(), new HashSet<>(), 10000);
+
+        Assertions.assertArrayEquals(new short[]{1}, handler.getTransactionsPerSublistInOrder());
+        expectedListOfTxs = Arrays.asList(tx0BySender3, tx0BySender1, tx0BySender2);
+        Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+    }
+
+    @Test
+    void whenSequentialReadsAKeyOtherTXWritesSameKeyShouldBeSequential() {
+        HashSet<ByteArrayWrapper> setWithX = createASetAndAddKeys(aWrappedKey);
+        AccountBuilder accountBuilder = new AccountBuilder();
+
+        //tx0BySender1  reads X
+        Transaction tx0BySender1 = new TransactionBuilder().sender(accountBuilder.name("sender1").build()).build();
+        handler.addTxToSequentialSublist(tx0BySender1, 10000,  setWithX, new HashSet<>());
+
+        //tx0BySender2  write X
+        Transaction tx0BySender2 = new TransactionBuilder().sender(accountBuilder.name("sender2").build()).build();
+        handler.addTransaction( tx0BySender2, new HashSet<>(), setWithX, 10000);
+
+        Assertions.assertArrayEquals(new short[]{}, handler.getTransactionsPerSublistInOrder());
+        List<Transaction> expectedListOfTxs = Arrays.asList(tx0BySender1, tx0BySender2);
+        Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+
+        //Adding a not collided transaction.
+        Transaction tx0BySender3 = new TransactionBuilder().sender(accountBuilder.name("sender3").build()).build();
+        handler.addTransaction( tx0BySender3, new HashSet<>(), new HashSet<>(), 10000);
+
+        Assertions.assertArrayEquals(new short[]{1}, handler.getTransactionsPerSublistInOrder());
+        expectedListOfTxs = Arrays.asList(tx0BySender3, tx0BySender1, tx0BySender2);
+        Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+    }
+
+    @Test
+    void whenSequentialWriteOrReadAKeyOtherTXWritesOrReadSameKeyShouldBeSequential() {
+        HashSet<ByteArrayWrapper> setWithX = createASetAndAddKeys(aWrappedKey);
+        AccountBuilder accountBuilder = new AccountBuilder();
+
+        //tx0BySender1  reads X
+        Transaction tx0BySender1 = new TransactionBuilder().sender(accountBuilder.name("sender1").build()).build();
+        handler.addTxToSequentialSublist(tx0BySender1, 10000,  setWithX, new HashSet<>());
+
+        //tx0BySender2  write X
+        Transaction tx0BySender2 = new TransactionBuilder().sender(accountBuilder.name("sender2").build()).build();
+        handler.addTransaction( tx0BySender2, new HashSet<>(), setWithX, 10000);
+
+        // tx0BySender3 write X
+        Transaction tx0BySender3 = new TransactionBuilder().sender(accountBuilder.name("sender3").build()).build();
+        handler.addTransaction( tx0BySender3, new HashSet<>(), setWithX, 10000);
+
+        // tx0BySender4 write X
+        Transaction tx0BySender4 = new TransactionBuilder().sender(accountBuilder.name("sender4").build()).build();
+        handler.addTransaction( tx0BySender4, new HashSet<>(), setWithX, 10000);
+
+        Assertions.assertArrayEquals(new short[]{}, handler.getTransactionsPerSublistInOrder());
+        List<Transaction>  expectedListOfTxs = Arrays.asList(tx0BySender1, tx0BySender2, tx0BySender3, tx0BySender4);
+        Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+
+        //Adding a not collided transaction.
+        Transaction tx0BySender5 = new TransactionBuilder().sender(accountBuilder.name("sender5").build()).build();
+        handler.addTransaction( tx0BySender5, new HashSet<>(), new HashSet<>(), 10000);
+
+        Assertions.assertArrayEquals(new short[]{1}, handler.getTransactionsPerSublistInOrder());
+        expectedListOfTxs = Arrays.asList(tx0BySender5, tx0BySender1, tx0BySender2, tx0BySender3, tx0BySender4);
+        Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+
+
+        //Sender1  sends another transaction --> MUST go to the end of sequential list
+        Transaction tx1BySender1 = new TransactionBuilder().sender(accountBuilder.name("sender1").build()).build();
+        handler.addTxToSequentialSublist(tx1BySender1, 10000,  new HashSet<>(), new HashSet<>());
+
+        Assertions.assertArrayEquals(new short[]{1}, handler.getTransactionsPerSublistInOrder());
+        expectedListOfTxs = Arrays.asList(tx0BySender5, tx0BySender1, tx0BySender2, tx0BySender3, tx0BySender4, tx1BySender1);
+        Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+
+        //Sender1  sends another transaction --> MUST go to the end of sequential list.
+        // there is a tx with the same sender in the sequential sublist
+        Transaction tx1BySender2 = new TransactionBuilder().sender(accountBuilder.name("sender2").build()).build();
+        handler.addTransaction(tx1BySender2,  new HashSet<>(), new HashSet<>(), 10000);
+
+        Assertions.assertArrayEquals(new short[]{1}, handler.getTransactionsPerSublistInOrder());
+        expectedListOfTxs = Arrays.asList(tx0BySender5, tx0BySender1, tx0BySender2, tx0BySender3, tx0BySender4, tx1BySender1, tx1BySender2);
+        Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+
+
     }
 
     private HashSet<ByteArrayWrapper> createASetAndAddKeys(ByteArrayWrapper... aKey) {

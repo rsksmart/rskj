@@ -29,6 +29,7 @@ import co.rsk.panic.PanicProcessor;
 import com.google.common.collect.ImmutableList;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.core.exception.SealedBlockException;
 import org.ethereum.util.RLP;
 
 import javax.annotation.Nonnull;
@@ -51,11 +52,11 @@ import java.util.List;
 public class Block {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private BlockHeader header;
+    private final BlockHeader header;
 
     private List<Transaction> transactionsList;
 
-    private List<BlockHeader> uncleList;
+    private final List<BlockHeader> uncleList;
 
     /* Private */
     private byte[] rlpEncoded;
@@ -378,6 +379,10 @@ public class Block {
 
     public BigInteger getGasLimitAsInteger() {
         return (this.getGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getGasLimit());
+    }
+
+    public byte[] getBaseEvent() {
+        return this.header.getBaseEvent();
     }
 
     public void flushRLP() {

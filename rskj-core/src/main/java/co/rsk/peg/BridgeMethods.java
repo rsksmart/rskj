@@ -825,6 +825,18 @@ public enum BridgeMethods {
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
+    GET_ESTIMATED_FEES_FOR_PEGOUT_AMOUNT(
+        CallTransaction.Function.fromSignature(
+                "getEstimatedFeesForPegOutAmount",
+                new String[]{UINT256},
+                new String[]{UINT256}
+        ),
+        fixedCost(10_000L),
+        (BridgeMethodExecutorTyped<Long>) Bridge::getEstimatedFeesForPegOutAmount,
+        activations -> activations.isActive(RSKIP540),
+        fixedPermission(false),
+        CallTypeHelper.ALLOW_STATIC_CALL
+    ),
     // Union Bridge Methods
     SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET(
         CallTransaction.Function.fromSignature(

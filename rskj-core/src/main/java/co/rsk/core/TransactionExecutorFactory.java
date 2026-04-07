@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.core;
 
 import co.rsk.config.RskSystemProperties;
@@ -29,6 +28,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 public class TransactionExecutorFactory {
@@ -65,7 +65,18 @@ public class TransactionExecutorFactory {
             Repository track,
             Block block,
             long totalGasUsed) {
-        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, 0, new HashSet<>());
+        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, null);
+    }
+
+    public TransactionExecutor newInstance(
+            Transaction tx,
+            int txindex,
+            RskAddress coinbase,
+            Repository track,
+            Block block,
+            long totalGasUsed,
+            PrecompiledContracts precompiledContracts) {
+        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, 0, new HashSet<>(), precompiledContracts);
     }
     // TODO(JULI): newInstance calls a second newInstance hardcoding Postpone payment fees and sublist gas limit as block.gasLimit()
 
@@ -81,6 +92,22 @@ public class TransactionExecutorFactory {
             Set<DataWord> deletedAccounts,
             boolean postponeFeePayment,
             long sublistGasLimit) {
+        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, vmTrace, vmTraceOptions, deletedAccounts, postponeFeePayment, sublistGasLimit, null);
+    }
+
+    public TransactionExecutor newInstance(
+            Transaction tx,
+            int txindex,
+            RskAddress coinbase,
+            Repository track,
+            Block block,
+            long totalGasUsed,
+            boolean vmTrace,
+            int vmTraceOptions,
+            Set<DataWord> deletedAccounts,
+            boolean postponeFeePayment,
+            long sublistGasLimit,
+            PrecompiledContracts precompiledContracts) {
         // Tracing configuration is scattered across different files (VM, DetailedProgramTrace, etc.) and
         // TransactionExecutor#extractTrace doesn't work when called independently.
         // It would be great to decouple from VmConfig#vmTrace, but sadly that's a major refactor we can't do now.
@@ -111,7 +138,7 @@ public class TransactionExecutorFactory {
                 totalGasUsed,
                 vmConfig,
                 config.isRemascEnabled(),
-                precompiledContracts,
+                Optional.ofNullable(precompiledContracts).orElse(this.precompiledContracts),
                 deletedAccounts,
                 blockTxSignatureCache,
                 postponeFeePayment,
@@ -129,7 +156,21 @@ public class TransactionExecutorFactory {
             boolean vmTrace,
             int vmTraceOptions,
             Set<DataWord> deletedAccounts) {
-        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, vmTrace, vmTraceOptions, deletedAccounts, false, GasCost.toGas(block.getGasLimit()));
+        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, vmTrace, vmTraceOptions, deletedAccounts, null);
+    }
+
+    public TransactionExecutor newInstance(
+            Transaction tx,
+            int txindex,
+            RskAddress coinbase,
+            Repository track,
+            Block block,
+            long totalGasUsed,
+            boolean vmTrace,
+            int vmTraceOptions,
+            Set<DataWord> deletedAccounts,
+            PrecompiledContracts precompiledContracts) {
+        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, vmTrace, vmTraceOptions, deletedAccounts, false, GasCost.toGas(block.getGasLimit()), precompiledContracts);
     }
     // TODO(JULI): set the sublist gas limit as the whole block is wrong. However, this method is just used either when RSKIP144 is deactivated or for testing.
 }

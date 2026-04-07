@@ -105,23 +105,76 @@ sync {
     client {
       enabled = true
       checkHistoricalHeaders = true
-      parallel = false
+      parallel = true
       chunkSize = 50
       limit = 10000
       snapBootNodes = [
         {
           nodeId = "f0093935353f94c723a9b67d143ad62464aaf3c959dc05a87f00b637f9c734513493d53f7223633514ea33f2a685878620f0d002cabc05d7f37e6c152774d5da"
           ip     = "snapshot-sync-euw2-1.mainnet.rskcomputing.net"
-          port   = 4444
+          port   = 5050
         },
         {
           nodeId = "e3a25521354aa99424f5de89cdd2e36aa9b9a96d965d1f7f47d876be0cdbd29c7df327a74170f6a9ea44f54f6ab8ae0dae28e40bb89dbd572a617e2008cfc215"
-          ip     = " snapshot-sync-use1-1.mainnet.rskcomputing.net"
-          port   = 4444
+          ip     = "snapshot-sync-use1-1.mainnet.rskcomputing.net"
+          port   = 5050
         }
       ]
     }
   }
+}
+peer {
+  # Boot node list
+  # Use to connect to specific nodes
+    discovery {
+        enabled = false
+    }
+    active = [{
+        url = "enode://e3a25521354aa99424f5de89cdd2e36aa9b9a96d965d1f7f47d876be0cdbd29c7df327a74170f6a9ea44f54f6ab8ae0dae28e40bb89dbd572a617e2008cfc215@snapshot-sync-use1-1.mainnet.rskcomputing.net:5050"
+    },{
+        url = "enode://f0093935353f94c723a9b67d143ad62464aaf3c959dc05a87f00b637f9c734513493d53f7223633514ea33f2a685878620f0d002cabc05d7f37e6c152774d5da@snapshot-sync-euw2-1.mainnet.rskcomputing.net:5050"
+    }]
+}
+```
+
+For `testnet`, use the port 50505 and the nodeId and ip shared above for `testnet`.
+
+```yaml
+sync {
+  enabled = true
+  snapshot {
+    client {
+      enabled = true
+      checkHistoricalHeaders = true
+      parallel = true
+      chunkSize = 50
+      limit = 10000
+      snapBootNodes = [
+        {
+          nodeId = "f0093935353f94c723a9b67d143ad62464aaf3c959dc05a87f00b637f9c734513493d53f7223633514ea33f2a685878620f0d002cabc05d7f37e6c152774d5da"
+          ip     = "snapshot-sync-euw2-1.mainnet.rskcomputing.net"
+          port   = 5050
+        },
+        {
+          nodeId = "e3a25521354aa99424f5de89cdd2e36aa9b9a96d965d1f7f47d876be0cdbd29c7df327a74170f6a9ea44f54f6ab8ae0dae28e40bb89dbd572a617e2008cfc215"
+          ip     = "snapshot-sync-use1-1.mainnet.rskcomputing.net"
+          port   = 5050
+        }
+      ]
+    }
+  }
+}
+peer {
+  # Boot node list
+  # Use to connect to specific nodes
+    discovery {
+        enabled = false
+    }
+    active = [{
+        url = "enode://e3a25521354aa99424f5de89cdd2e36aa9b9a96d965d1f7f47d876be0cdbd29c7df327a74170f6a9ea44f54f6ab8ae0dae28e40bb89dbd572a617e2008cfc215@snapshot-sync-use1-1.mainnet.rskcomputing.net:5050"
+    },{
+        url = "enode://f0093935353f94c723a9b67d143ad62464aaf3c959dc05a87f00b637f9c734513493d53f7223633514ea33f2a685878620f0d002cabc05d7f37e6c152774d5da@snapshot-sync-euw2-1.mainnet.rskcomputing.net:5050"
+    }]
 }
 ```
 

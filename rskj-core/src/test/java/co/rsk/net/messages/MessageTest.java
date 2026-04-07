@@ -220,8 +220,8 @@ class MessageTest {
     }
 
     @Test
-    void encodeDecodeBlockHeadersResponseMessageWithoutRSKIP351() {
-        ActivationConfig activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351);
+    void encodeDecodeBlockHeadersResponseMessageWithoutRSKIP351AndRSKIP535() {
+        ActivationConfig activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351, ConsensusRule.RSKIP535);
         BlockFactory anotherBlockFactory = new BlockFactory(activationConfig);
         BlockMiner blockMiner = new BlockMiner(activationConfig);
 

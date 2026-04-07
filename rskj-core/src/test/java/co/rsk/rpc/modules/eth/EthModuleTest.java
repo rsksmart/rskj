@@ -51,6 +51,7 @@ import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.OverrideablePrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.hamcrest.MatcherAssert;
@@ -97,6 +98,10 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
+        StateOverrideApplier stateOverrideApplierMock = mock(DefaultStateOverrideApplier.class);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
@@ -107,14 +112,13 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
-                null);
+                stateOverrideApplierMock);
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
 
@@ -148,8 +152,10 @@ class EthModuleTest {
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
 
         EthModule eth = new EthModule(
                 null,
@@ -161,14 +167,13 @@ class EthModuleTest {
                 repositoryLocator,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                new PrecompiledContracts(config, null, null),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 true,
-                new DefaultStateOverrideApplier());
+                new DefaultStateOverrideApplier(config.getActivationConfig()));
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
 
@@ -186,6 +191,8 @@ class EthModuleTest {
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
         List<AccountOverride> accountOverrideList = List.of(new AccountOverride(TestUtils.generateAddress("test")));
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
@@ -196,14 +203,13 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                new PrecompiledContracts(config, null, null),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
-                new DefaultStateOverrideApplier());
+                new DefaultStateOverrideApplier(config.getActivationConfig()));
 
         // When
         RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
@@ -216,16 +222,21 @@ class EthModuleTest {
     }
 
     @Test
-    void testCall_whenCalledWithAccountOverrideOverPrecompileContractAddress_throwsExceptionAsExpected() {
+    void testCall_accountOverrideOnPrecompiledUpdatingState_throwsExceptionAsExpected() {
+
         // Given
-        RskAddress address = TestUtils.generateAddress("test");
+
+        RskAddress address = TestUtils.generateAddress("This PC will have a state change and must fail");
         DataWord addressInDataWordForm = DataWord.valueFromHex(address.toHexString());
         String blockIdentifierString = "latest";
         long blockNumber = 1L;
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(new CallArguments());
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam(blockIdentifierString);
-        List<AccountOverride> accountOverrideList = List.of(new AccountOverride(address));
+
+        AccountOverride accountOverride = new AccountOverride(address);
+        accountOverride.setBalance(BigInteger.ONE);
+        List<AccountOverride> accountOverrideList = List.of(accountOverride);
 
         ExecutionBlockRetriever.Result blockResultMock = mock(ExecutionBlockRetriever.Result.class);
 
@@ -243,12 +254,15 @@ class EthModuleTest {
         ActivationConfig activationConfigMock = mock(ActivationConfig.class);
         when(activationConfigMock.forBlock(blockNumber)).thenReturn(forBlockMock);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, null, null, signatureCache);
+
         PrecompiledContracts.PrecompiledContract precompiledContractMock = mock(PrecompiledContracts.PrecompiledContract.class);
 
-        PrecompiledContracts precompiledContractsMock = mock(PrecompiledContracts.class);
-        when(precompiledContractsMock.getContractForAddress(forBlockMock, addressInDataWordForm)).thenReturn(precompiledContractMock);
+        OverrideablePrecompiledContracts overrideablePrecompiledContractsMock = mock(OverrideablePrecompiledContracts.class);
+        when(overrideablePrecompiledContractsMock.getContractForAddress(forBlockMock, addressInDataWordForm)).thenReturn(precompiledContractMock);
 
-        EthModule eth = new EthModule(
+        EthModule eth = spy(new EthModule(
                 null,
                 (byte) 1,
                 null,
@@ -258,25 +272,113 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 activationConfigMock,
-                precompiledContractsMock,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 true,
-                new DefaultStateOverrideApplier());
+                new DefaultStateOverrideApplier(activationConfigMock)));
+
+        doReturn(overrideablePrecompiledContractsMock).when(eth).getOverridablePrecompiledContracts();
 
         // When
+
         RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
             eth.call(callArgumentsParam, blockIdentifierParam, accountOverrideList);
         });
 
         // Then
+
         assertEquals(-32602, exception.getCode());
         assertEquals("Precompiled contracts can not be overridden", exception.getMessage());
         verify(activationConfigMock, times(1)).forBlock(blockNumber);
-        verify(precompiledContractsMock, times(1)).getContractForAddress(forBlockMock, addressInDataWordForm);
+        verify(overrideablePrecompiledContractsMock, times(1)).getContractForAddress(forBlockMock, addressInDataWordForm);
+
+    }
+
+    @Test
+    void testCall_movePrecompileToDirtyAddress_throwsExceptionAsExpected() {
+
+        // Given
+
+        RskAddress address1 = TestUtils.generateAddress("This will have a state change (It'll get dirty)");
+        RskAddress address2 = TestUtils.generateAddress("This PC will be moved to address1 and must fail");
+        DataWord addressInDataWordForm = DataWord.valueFromHex(address2.toHexString());
+        String blockIdentifierString = "latest";
+        long blockNumber = 1L;
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(new CallArguments());
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam(blockIdentifierString);
+
+        // 1st make address #1 dirty by adding balance to it
+        AccountOverride accountOverrideToMakeAddressDirty = new AccountOverride(address1);
+        accountOverrideToMakeAddressDirty.setBalance(BigInteger.ONE);
+
+        // 2nd set move precompiled to address #1 (a dirty address)
+        // Also we're simulating that address2 contains a PCC
+        AccountOverride accountOverrideToMovePrecompiled = new AccountOverride(address2);
+        accountOverrideToMovePrecompiled.setMovePrecompileToAddress(address1);
+
+        List<AccountOverride> accountOverrideList = List.of(accountOverrideToMakeAddressDirty, accountOverrideToMovePrecompiled);
+
+        ExecutionBlockRetriever.Result blockResultMock = mock(ExecutionBlockRetriever.Result.class);
+
+        Block blockMock = mock(Block.class);
+        when(blockMock.getNumber()).thenReturn(blockNumber);
+
+        ExecutionBlockRetriever executionBlockRetrieverMock = mock(ExecutionBlockRetriever.class);
+        when(executionBlockRetrieverMock.retrieveExecutionBlock(blockIdentifierString))
+                .thenReturn(blockResultMock);
+        when(blockResultMock.getBlock()).thenReturn(blockMock);
+        when(blockResultMock.getFinalState()).thenReturn(new Trie());
+
+        ActivationConfig.ForBlock forBlockMock = mock(ActivationConfig.ForBlock.class);
+
+        ActivationConfig activationConfigMock = mock(ActivationConfig.class);
+        when(activationConfigMock.forBlock(blockNumber)).thenReturn(forBlockMock);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                null, null, null, signatureCache);
+
+        PrecompiledContracts.PrecompiledContract precompiledContractMock = mock(PrecompiledContracts.PrecompiledContract.class);
+
+        OverrideablePrecompiledContracts overrideablePrecompiledContractsMock = mock(OverrideablePrecompiledContracts.class);
+        when(overrideablePrecompiledContractsMock.getContractForAddress(forBlockMock, addressInDataWordForm)).thenReturn(precompiledContractMock);
+
+        EthModule eth = spy(new EthModule(
+                null,
+                (byte) 1,
+                null,
+                null,
+                null,
+                executionBlockRetrieverMock,
+                null,
+                null,
+                null,
+                bridgeSupportFactory,
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                activationConfigMock,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
+                true,
+                new DefaultStateOverrideApplier(activationConfigMock)));
+
+        doReturn(overrideablePrecompiledContractsMock).when(eth).getOverridablePrecompiledContracts();
+
+        // When
+
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            eth.call(callArgumentsParam, blockIdentifierParam, accountOverrideList);
+        });
+
+        // Then
+
+        assertEquals(-32602, exception.getCode());
+        assertEquals("Precompiled contracts can not be moved to an overridden address", exception.getMessage());
+        verify(activationConfigMock, times(1)).forBlock(blockNumber);
+        verify(overrideablePrecompiledContractsMock, times(1)).getContractForAddress(forBlockMock, addressInDataWordForm);
+
     }
 
     @Test
@@ -303,8 +405,10 @@ class EthModuleTest {
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
 
         EthModule eth = new EthModule(
                 null,
@@ -316,14 +420,13 @@ class EthModuleTest {
                 repositoryLocator,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                new PrecompiledContracts(config, null, null),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 true,
-                new DefaultStateOverrideApplier());
+                new DefaultStateOverrideApplier(config.getActivationConfig()));
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
 
@@ -354,6 +457,8 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
@@ -364,12 +469,11 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -407,6 +511,8 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
@@ -417,12 +523,11 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -461,6 +566,8 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 0,
@@ -471,12 +578,11 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -620,6 +726,8 @@ class EthModuleTest {
         doReturn(expectedCode).when(mockPendingState).getCode(any(RskAddress.class));
         doReturn(mockPendingState).when(mockTransactionPool).getPendingState();
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 0,
@@ -630,16 +738,11 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null,
-                        null,
-                        null,
-                        signatureCache
-                ),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null
         );
@@ -651,6 +754,7 @@ class EthModuleTest {
 
     @Test
     void chainId() {
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         EthModule eth = new EthModule(
                 mock(BridgeConstants.class),
                 (byte) 33,
@@ -665,7 +769,7 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactoryMock, signatureCache),
                 false,
                 mock(DefaultStateOverrideApplier.class)
         );
@@ -692,6 +796,8 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
@@ -702,12 +808,11 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -742,6 +847,8 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
@@ -752,12 +859,11 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -793,6 +899,8 @@ class EthModuleTest {
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 (byte) 1,
@@ -803,12 +911,11 @@ class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -844,6 +951,8 @@ class EthModuleTest {
         when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 Constants.REGTEST_CHAIN_ID,
@@ -854,12 +963,11 @@ class EthModuleTest {
                 mock(RepositoryLocator.class),
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -893,6 +1001,8 @@ class EthModuleTest {
         when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 Constants.REGTEST_CHAIN_ID,
@@ -903,12 +1013,11 @@ class EthModuleTest {
                 mock(RepositoryLocator.class),
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -940,6 +1049,8 @@ class EthModuleTest {
         when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 Constants.REGTEST_CHAIN_ID,
@@ -950,12 +1061,11 @@ class EthModuleTest {
                 mock(RepositoryLocator.class),
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -990,6 +1100,8 @@ class EthModuleTest {
         when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule eth = new EthModule(
                 null,
                 Constants.REGTEST_CHAIN_ID,
@@ -1000,12 +1112,11 @@ class EthModuleTest {
                 mock(RepositoryLocator.class),
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -1136,6 +1247,8 @@ class EthModuleTest {
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule ethModule  = new EthModule(
                 null,
                 Constants.REGTEST_CHAIN_ID,
@@ -1146,12 +1259,11 @@ class EthModuleTest {
                 mock(RepositoryLocator.class),
                 ethModuleWalletMock,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -1169,6 +1281,8 @@ class EthModuleTest {
         Blockchain blockchain = mock(Blockchain.class);
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule ethModule = new EthModule(
                 null,
                 Constants.REGTEST_CHAIN_ID,
@@ -1179,11 +1293,11 @@ class EthModuleTest {
                 mock(RepositoryLocator.class),
                 ethModuleWallet,
                 null,
-                new BridgeSupportFactory(null, null, null, signatureCache),
+                bridgeSupportFactory,
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -1209,6 +1323,8 @@ class EthModuleTest {
         Blockchain blockchain = mock(Blockchain.class);
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule ethModule = new EthModule(
                 null,
                 Constants.REGTEST_CHAIN_ID,
@@ -1223,7 +1339,7 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 
@@ -1247,6 +1363,8 @@ class EthModuleTest {
         Blockchain blockchain = mock(Blockchain.class);
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
         EthModule ethModule = new EthModule(
                 null,
                 Constants.REGTEST_CHAIN_ID,
@@ -1261,7 +1379,7 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 config.getActivationConfig(),
-                null,
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 false,
                 null);
 

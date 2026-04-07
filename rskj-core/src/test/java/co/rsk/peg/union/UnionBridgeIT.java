@@ -1,5 +1,6 @@
 package co.rsk.peg.union;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.BridgeEvents.*;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
@@ -43,7 +44,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(Lifecycle.PER_CLASS)
 class UnionBridgeIT {
-
     // Boolean constants for transfer permissions
     private static final boolean REQUEST_PERMISSION_ENABLED = true;
     private static final boolean REQUEST_PERMISSION_DISABLED = false;
@@ -77,15 +77,13 @@ class UnionBridgeIT {
     private static final int LOCKING_CAP_INCREMENTS_MULTIPLIER = unionBridgeMainNetConstants.getLockingCapIncrementsMultiplier();
     private static final Coin INITIAL_LOCKING_CAP = unionBridgeMainNetConstants.getInitialLockingCap();
     private static final Coin INITIAL_MAX_LOCKING_CAP_INCREMENT = INITIAL_LOCKING_CAP
-        .multiply(BigInteger.valueOf(
-            LOCKING_CAP_INCREMENTS_MULTIPLIER));
+        .multiply(BigInteger.valueOf(LOCKING_CAP_INCREMENTS_MULTIPLIER));
 
     private static final Coin NEW_LOCKING_CAP_1 = INITIAL_MAX_LOCKING_CAP_INCREMENT.subtract(Coin.valueOf(20));
 
-    private static final BigInteger ONE_ETH = BigInteger.TEN.pow(
-        18); // 1 ETH = 1000000000000000000 wei
-    private static final Coin AMOUNT_TO_REQUEST = new co.rsk.core.Coin(ONE_ETH.multiply(BigInteger.TWO));
-    private static final Coin AMOUNT_TO_RELEASE = new co.rsk.core.Coin(ONE_ETH);
+    private static final BigInteger ONE_ETH = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+    private static final Coin AMOUNT_TO_REQUEST = new co.rsk.core.Coin(ONE_ETH.divide(BigInteger.TWO));
+    private static final Coin AMOUNT_TO_RELEASE = new co.rsk.core.Coin(ONE_ETH).divide(BigInteger.valueOf(4));
 
     private Repository repository;
     private StorageAccessor storageAccessor;
@@ -104,7 +102,7 @@ class UnionBridgeIT {
     @BeforeAll
     void lovellSetup() {
         ForBlock lovellActivationsForBlock = lovellActivations.forBlock(0);
-        repository = BridgeSupportTestUtil.createRepository();
+        repository = createRepository();
         repository.addBalance(BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeMainNetConstants.getMaxRbtc()));
         storageAccessor = new BridgeStorageAccessorImpl(repository);
 
@@ -119,8 +117,7 @@ class UnionBridgeIT {
             logs
         );
 
-        UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(
-            storageAccessor);
+        UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(storageAccessor);
         UnionBridgeSupport unionBridgeSupport = unionBridgeSupportBuilder
             .withStorageProvider(unionBridgeStorageProvider)
             .withConstants(unionBridgeMainNetConstants)
@@ -130,7 +127,6 @@ class UnionBridgeIT {
 
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
             repository,
-            BRIDGE_ADDR,
             bridgeMainNetConstants.getBtcParams(),
             lovellActivationsForBlock
         );
@@ -157,7 +153,6 @@ class UnionBridgeIT {
         ForBlock allActivationsForBlock = allActivations.forBlock(0);
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
             repository,
-            BRIDGE_ADDR,
             bridgeMainNetConstants.getBtcParams(),
             allActivationsForBlock
         );

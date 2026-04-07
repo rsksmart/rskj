@@ -17,8 +17,14 @@
  */
 package co.rsk.rpc.modules.eth;
 
+import co.rsk.core.RskAddress;
+import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
+import org.ethereum.vm.OverrideablePrecompiledContracts;
+
+import java.util.List;
 
 public interface StateOverrideApplier {
-    void applyToRepository(Repository repository, AccountOverride accountOverride);
+    void validateOperationOverPrecompiledContract(AccountOverride accountOverride, List<RskAddress> dirtyAddresses);
+    void applyToRepository(Block block, Repository repository, AccountOverride accountOverride, OverrideablePrecompiledContracts overrideablePrecompiledContracts);
 }

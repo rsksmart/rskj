@@ -18,26 +18,20 @@
  */
 package org.ethereum.vm.program;
 
-import static co.rsk.util.ListArrayUtil.getLength;
-import static co.rsk.util.ListArrayUtil.isEmpty;
-import static co.rsk.util.ListArrayUtil.nullToEmpty;
-import static java.lang.String.format;
-import static org.ethereum.util.BIUtil.isNotCovers;
-import static org.ethereum.util.BIUtil.isPositive;
-import static org.ethereum.util.BIUtil.toBI;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.vm.PrecompiledContracts.NO_LIMIT_ON_MAX_INPUT;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Optional;
-import java.util.Set;
-
-import javax.annotation.Nonnull;
-
+import co.rsk.config.VmConfig;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.core.types.bytes.Bytes;
+import co.rsk.core.types.bytes.BytesSlice;
+import co.rsk.crypto.Keccak256;
+import co.rsk.pcc.NativeContract;
+import co.rsk.peg.Bridge;
+import co.rsk.remasc.RemascContract;
+import co.rsk.rpc.modules.trace.CallType;
+import co.rsk.rpc.modules.trace.CreationData;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import co.rsk.vm.BitSet;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -75,20 +69,25 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
+import javax.annotation.Nonnull;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
 
-import co.rsk.config.VmConfig;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.types.bytes.Bytes;
-import co.rsk.crypto.Keccak256;
-import co.rsk.pcc.NativeContract;
-import co.rsk.peg.Bridge;
-import co.rsk.remasc.RemascContract;
-import co.rsk.rpc.modules.trace.CallType;
-import co.rsk.rpc.modules.trace.CreationData;
-import co.rsk.rpc.modules.trace.ProgramSubtrace;
-import co.rsk.vm.BitSet;
+import static co.rsk.util.ListArrayUtil.getLength;
+import static co.rsk.util.ListArrayUtil.isEmpty;
+import static co.rsk.util.ListArrayUtil.nullToEmpty;
+import static java.lang.String.format;
+import static org.ethereum.util.BIUtil.isNotCovers;
+import static org.ethereum.util.BIUtil.isPositive;
+import static org.ethereum.util.BIUtil.toBI;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTES_SLICE;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.vm.PrecompiledContracts.NO_LIMIT_ON_MAX_INPUT;
 
 /**
  * @author Roman Mandeleil
@@ -390,6 +389,10 @@ public class Program {
         return memory.readWord(addr.intValue());
     }
 
+    public BytesSlice memorySlice(int offset, int size) {
+        return memory.readSlice(offset, size);
+    }
+
     public byte[] memoryChunk(int offset, int size) {
         return memory.read(offset, size);
     }
@@ -476,10 +479,10 @@ public class Program {
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void createContract2(DataWord value, DataWord memStart, DataWord memSize, DataWord salt) {
         RskAddress senderAddress = new RskAddress(getOwnerAddress());
-        byte[] programCode = memoryChunk(memStart.intValue(), memSize.intValue());
+        BytesSlice programCode = memorySlice(memStart.intValue(), memSize.intValue());
 
         if (programCode == null) {
-            programCode = EMPTY_BYTE_ARRAY;
+            programCode = EMPTY_BYTES_SLICE;
         }
 
         byte[] newAddressBytes = HashUtil.calcSaltAddr(senderAddress, programCode, salt.getData());
@@ -522,7 +525,7 @@ public class Program {
 
         if (byTestingSuite()) {
             // This keeps track of the contracts created for a test
-            getResult().addCallCreate(programCode, EMPTY_BYTE_ARRAY,
+            getResult().addCallCreate(Bytes.of(programCode), EMPTY_BYTE_ARRAY,
                     gasLimit,
                     value.getNoLeadZeroesData());
         }
@@ -682,52 +685,97 @@ public class Program {
                 returnDataBuffer = result.getHReturn();
             }
         } else {
-            // CREATE THE CONTRACT OUT OF RETURN
             byte[] code = programResult.getHReturn();
             int codeLength = getLength(code);
-
             long storageCost = GasCost.multiply(GasCost.CREATE_DATA, codeLength);
-            long afterSpend = programInvoke.getGas() - storageCost - programResult.getGasUsed();
 
-            if (afterSpend < 0) {
-                programResult.setException(
-                        ExceptionHelper.notEnoughSpendingGas(
-                                this,
-                                "No gas to return just created contract",
-                                storageCost));
-
-                if (activations.isActive(ConsensusRule.RSKIP453)) {
-                    track.rollback();
-                    stackPushZero();
-                    return null;
-                }
-            } else if (codeLength > Constants.getMaxContractSize()) {
-                programResult.setException(
-                        ExceptionHelper.tooLargeContractSize(
-                                this,
-                                Constants.getMaxContractSize(),
-                                codeLength));
-
-                if (activations.isActive(ConsensusRule.RSKIP453)) {
-                    track.rollback();
-                    stackPushZero();
-                    return null;
-                }
-            } else {
-                programResult.spendGas(storageCost);
-                track.saveCode(contractAddress, code);
+            if (hasInvalidCodePrefix(code, codeLength, contractAddress, programResult, track)) {
+                return null;
             }
 
-            track.commit();
+            if (hasInsufficientGasForStorage(programInvoke, storageCost, programResult, track)) {
+                return null;
+            }
 
-            getResult().addDeleteAccounts(programResult.getDeleteAccounts());
-            getResult().addLogInfos(programResult.getLogInfoList());
+            if (exceedsMaxContractSize(codeLength, programResult, track)) {
+                return null;
+            }
 
-            // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
-            stackPush(DataWord.valueOf(contractAddress.getBytes()));
+            finalizeContractCreation(code, storageCost, contractAddress, programResult, track);
         }
 
         return programResult;
+    }
+
+    private boolean hasInvalidCodePrefix(byte[] code, int codeLength, RskAddress contractAddress,
+                                         ProgramResult programResult, Repository track) {
+        if (activations.isActive(ConsensusRule.RSKIP544) && codeLength > 0 && code[0] == (byte) 0xEF) {
+            if (isLogEnabled) {
+                logger.info("contract creation rejected: code starts with 0xEF (RSKIP544), contract: [{}]",
+                        contractAddress);
+            }
+            programResult.setException(ExceptionHelper.invalidCodePrefix(this));
+
+            if (activations.isActive(ConsensusRule.RSKIP453)) {
+                track.rollback();
+                stackPushZero();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasInsufficientGasForStorage(ProgramInvoke programInvoke, long storageCost,
+                                                  ProgramResult programResult, Repository track) {
+        long afterSpend = programInvoke.getGas() - storageCost - programResult.getGasUsed();
+        if (afterSpend < 0) {
+            programResult.setException(
+                    ExceptionHelper.notEnoughSpendingGas(
+                            this,
+                            "No gas to return just created contract",
+                            storageCost));
+
+            if (activations.isActive(ConsensusRule.RSKIP453)) {
+                track.rollback();
+                stackPushZero();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean exceedsMaxContractSize(int codeLength,
+                                           ProgramResult programResult, Repository track) {
+        if (codeLength > Constants.getMaxContractSize()) {
+            programResult.setException(
+                    ExceptionHelper.tooLargeContractSize(
+                            this,
+                            Constants.getMaxContractSize(),
+                            codeLength));
+
+            if (activations.isActive(ConsensusRule.RSKIP453)) {
+                track.rollback();
+                stackPushZero();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void finalizeContractCreation(byte[] code, long storageCost,
+                                          RskAddress contractAddress, ProgramResult programResult,
+                                          Repository track) {
+        if (programResult.getException() == null) {
+            programResult.spendGas(storageCost);
+            track.saveCode(contractAddress, code);
+        }
+
+        track.commit();
+
+        getResult().addDeleteAccounts(programResult.getDeleteAccounts());
+        getResult().addLogInfos(programResult.getLogInfoList());
+
+        stackPush(DataWord.valueOf(contractAddress.getBytes()));
     }
 
     public static long limitToMaxLong(DataWord gas) {
@@ -776,10 +824,10 @@ public class Program {
             return;
         }
 
-        byte[] data = memoryChunk(msg.getInDataOffs().intValue(), msg.getInDataSize().intValue());
+        BytesSlice data = memorySlice(msg.getInDataOffs().intValue(), msg.getInDataSize().intValue());
 
         if (data == null) {
-            data = EMPTY_BYTE_ARRAY;
+            data = EMPTY_BYTES_SLICE;
         }
 
         // FETCH THE SAVED STORAGE
@@ -882,7 +930,7 @@ public class Program {
             Repository track,
             byte[] programCode,
             RskAddress senderAddress,
-            byte[] data) {
+            BytesSlice data) {
 
         returnDataBuffer = null; // reset return buffer right before the call
         ProgramResult childResult;
@@ -1467,7 +1515,7 @@ public class Program {
 
         if (byTestingSuite()) {
             // This keeps track of the calls created for a test
-            this.getResult().addCallCreate(data,
+            this.getResult().addCallCreate(Bytes.of(data),
                     codeAddress.getBytes(),
                     msg.getGas().longValueSafe(),
                     msg.getEndowment().getNoLeadZeroesData());
@@ -1587,7 +1635,7 @@ public class Program {
                     msg.getOutDataSize().intValue());
             this.stackPushOne();
             track.commit();
-        } catch (VMException e) {
+        } catch (Exception e) {
             logger.trace("Precompiled execution error. Pushing Zero to stack and performing rollback.", e);
             this.stackPushZero();
             track.rollback();
@@ -1743,6 +1791,11 @@ public class Program {
                     actualSize, extractTxHash(program)));
         }
 
+        public static RuntimeException invalidCodePrefix(@Nonnull Program program) {
+            return new RuntimeException(format("Contract code cannot start with 0xEF byte (RSKIP544/EIP-3541), tx: %s",
+                    extractTxHash(program)));
+        }
+
         public static AddressCollisionException addressCollisionException(@Nonnull Program program,
                 RskAddress address) {
             return new AddressCollisionException("Trying to create a contract with existing contract address: 0x"
@@ -1765,6 +1818,7 @@ public class Program {
     /**
      * used mostly for testing reasons
      */
+    @VisibleForTesting
     public byte[] getMemory() {
         return memory.read(0, memory.size());
     }

@@ -382,6 +382,7 @@ ext {
 // WARN: consider different setups and sure to not use GPG elements without checksums or without signature file
 // in the remote repository (see https://github.com/gradle/gradle/security/advisories/GHSA-j6wc-xfg8-jx2j)
 dependencies {
+    jmhImplementation project(path: ':rskj-core')
     jmhImplementation "${jmhLibs.jmhCore}"
     jmhImplementation "${jmhLibs.web3jCore}"
     jmhImplementation "${libs.slf4jApiLib}"
@@ -427,6 +428,7 @@ dependencies {
     integrationTestImplementation "${testLibs.junitSuite}"
     integrationTestImplementation "${testLibs.mockitoLib}"
     integrationTestImplementation "${testLibs.mockitoJupiter}"
+    integrationTestImplementation "${testLibs.awaitilityLib}"
     integrationTestImplementation "${testLibs.jacksonLib}"
     integrationTestImplementation "${testLibs.okhttpWsLib}"
     integrationTestImplementation "${libs.commonsLang3Lib}"

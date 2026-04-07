@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.core;
 
 import co.rsk.core.BlockDifficulty;
@@ -32,11 +31,12 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class BlockHeaderBuilder {
 
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
-
+    private final ActivationConfig activationConfig;
     private byte[] parentHash;
     private byte[] unclesHash;
     private RskAddress coinbase;
@@ -50,23 +50,18 @@ public class BlockHeaderBuilder {
     private byte[] gasLimit;
     private long gasUsed;
     private Coin paidFees;
-
     private byte[] extraData;
     private byte[] bitcoinMergedMiningHeader;
     private byte[] bitcoinMergedMiningMerkleProof;
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
     private byte[] mergedMiningForkDetectionData;
     private byte[] ummRoot;
+    private byte[] baseEvent;
     private short[] txExecutionSublistsEdges;
-
     private Coin minimumGasPrice;
     private int uncleCount;
-
     private boolean useRskip92Encoding;
     private boolean includeForkDetectionData;
-
-    private final ActivationConfig activationConfig;
-
     private boolean createConsensusCompliantHeader;
     private boolean createUmmCompliantHeader;
     private boolean createParallelCompliantHeader;
@@ -264,6 +259,11 @@ public class BlockHeaderBuilder {
         return this;
     }
 
+    public BlockHeaderBuilder setBaseEvent(byte[] baseEvent) {
+        this.baseEvent = copy(baseEvent, null);
+        return this;
+    }
+
     public BlockHeaderBuilder setTxExecutionSublistsEdges(short[] edges) {
         if (edges != null) {
             this.txExecutionSublistsEdges = new short[edges.length];
@@ -326,10 +326,8 @@ public class BlockHeaderBuilder {
         }
 
         if (createUmmCompliantHeader) {
-            if (activationConfig.isActive(ConsensusRule.RSKIPUMM, number)) {
-                if (ummRoot == null) {
-                    ummRoot = new byte[0];
-                }
+            if (activationConfig.isActive(ConsensusRule.RSKIPUMM, number) && ummRoot == null) {
+                ummRoot = EMPTY_BYTE_ARRAY;
             }
         }
 
@@ -337,8 +335,16 @@ public class BlockHeaderBuilder {
             txExecutionSublistsEdges = new short[0];
         }
 
-        if (activationConfig.getHeaderVersion(number) == 0x1) {
-            return new BlockHeaderV1(
+        if (activationConfig.isActive(ConsensusRule.RSKIP535, number)
+                && activationConfig.isActive(ConsensusRule.RSKIP351, number)
+                && baseEvent == null) {
+            baseEvent = EMPTY_BYTE_ARRAY;
+        }
+
+        byte version = activationConfig.getHeaderVersion(number);
+
+        return switch (version) {
+            case 0x2 -> new BlockHeaderV2(
                     parentHash, unclesHash, coinbase,
                     stateRoot, txTrieRoot, receiptTrieRoot,
                     logsBloom, difficulty, number,
@@ -349,22 +355,33 @@ public class BlockHeaderBuilder {
                     mergedMiningForkDetectionData,
                     minimumGasPrice, uncleCount,
                     false, useRskip92Encoding,
-                    includeForkDetectionData, ummRoot, txExecutionSublistsEdges, false
-            );
-        }
+                    includeForkDetectionData, ummRoot, baseEvent, txExecutionSublistsEdges, false);
 
-        return new BlockHeaderV0(
-                parentHash, unclesHash, coinbase,
-                stateRoot, txTrieRoot, receiptTrieRoot,
-                logsBloom, difficulty, number,
-                gasLimit, gasUsed, timestamp, extraData, paidFees,
-                bitcoinMergedMiningHeader,
-                bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction,
-                mergedMiningForkDetectionData,
-                minimumGasPrice, uncleCount,
-                false, useRskip92Encoding,
-                includeForkDetectionData, ummRoot, txExecutionSublistsEdges
-        );
+            case 0x1 -> new BlockHeaderV1(
+                    parentHash, unclesHash, coinbase,
+                    stateRoot, txTrieRoot, receiptTrieRoot,
+                    logsBloom, difficulty, number,
+                    gasLimit, gasUsed, timestamp, extraData, paidFees,
+                    bitcoinMergedMiningHeader,
+                    bitcoinMergedMiningMerkleProof,
+                    bitcoinMergedMiningCoinbaseTransaction,
+                    mergedMiningForkDetectionData,
+                    minimumGasPrice, uncleCount,
+                    false, useRskip92Encoding,
+                    includeForkDetectionData, ummRoot, txExecutionSublistsEdges, false);
+
+            default -> new BlockHeaderV0(
+                    parentHash, unclesHash, coinbase,
+                    stateRoot, txTrieRoot, receiptTrieRoot,
+                    logsBloom, difficulty, number,
+                    gasLimit, gasUsed, timestamp, extraData, paidFees,
+                    bitcoinMergedMiningHeader,
+                    bitcoinMergedMiningMerkleProof,
+                    bitcoinMergedMiningCoinbaseTransaction,
+                    mergedMiningForkDetectionData,
+                    minimumGasPrice, uncleCount,
+                    false, useRskip92Encoding,
+                    includeForkDetectionData, ummRoot, baseEvent, txExecutionSublistsEdges);
+        };
     }
 }

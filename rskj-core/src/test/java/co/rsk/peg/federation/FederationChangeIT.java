@@ -1,8 +1,10 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,6 +40,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.IntStream;
 
+import co.rsk.test.builders.UTXOBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -197,11 +200,11 @@ class FederationChangeIT {
     }
 
     private void setUp() throws Exception {
-        repository = BridgeSupportTestUtil.createRepository();
+        repository = createRepository();
         repository.addBalance(BRIDGE_ADDRESS, co.rsk.core.Coin.fromBitcoin(BRIDGE_CONSTANTS.getMaxRbtc()));
 
         bridgeStorageProvider =
-            new BridgeStorageProvider(repository, BRIDGE_ADDRESS, NETWORK_PARAMS, ACTIVATIONS);
+            new BridgeStorageProvider(repository, NETWORK_PARAMS, ACTIVATIONS);
 
         btcBlockStoreFactory =
             new RepositoryBtcBlockStoreWithCache.Factory(NETWORK_PARAMS, 100, 100);
@@ -275,7 +278,19 @@ class FederationChangeIT {
         federationStorageProvider.setNewFederation(originalFederation);
 
         // Set new UTXOs
-        var originalUTXOs = createUTXOs(originalFederation.getAddress());
+        int numberOfUtxos = 50;
+        List<UTXO> originalUTXOs = new ArrayList<>();
+        Address originalFederationAddress = originalFederation.getAddress();
+        Script outputScript = ScriptBuilder.createOutputScript(originalFederationAddress);
+        for (int i = 0; i < numberOfUtxos; i++) {
+            Sha256Hash transactionHash = createHash(i + 1);
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(transactionHash)
+                .withScriptPubKey(outputScript)
+                .build();
+            originalUTXOs.add(utxo);
+        }
+
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), originalUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
         return originalFederation;
@@ -808,20 +823,6 @@ class FederationChangeIT {
         blockStore.setChainHead(storedBlock);
     }
 
-    private List<UTXO> createUTXOs(Address owner) {
-        var outputScript = ScriptBuilder.createOutputScript(owner);
-        List<UTXO> utxos = new ArrayList<>();
-
-        var howMany = 50;
-        for (int i = 1; i < howMany; i++) {
-            Coin value = Coin.COIN;
-            Sha256Hash utxoHash = BitcoinTestUtils.createHash(i);
-            utxos.add(new UTXO(utxoHash, 0, value, 0, false, outputScript));
-        }
-
-        return utxos;
-    }
-
     private Script getFederationDefaultRedeemScript(Federation federation) {
         return federation instanceof ErpFederation ?
             ((ErpFederation) federation).getDefaultRedeemScript() :
@@ -879,7 +880,9 @@ class FederationChangeIT {
 
     private void assertActiveAndRetiringFederationsHaveExpectedAddress(Address expectedNewFederationAddress, Address expectedOldFederationAddress) {
         assertEquals(expectedNewFederationAddress, bridgeSupport.getActiveFederationAddress());
-        assertEquals(expectedOldFederationAddress, bridgeSupport.getRetiringFederationAddress());
+        Optional<Address> retiringFederationAddress = bridgeSupport.getRetiringFederationAddress();
+        assertTrue(retiringFederationAddress.isPresent());
+        assertEquals(expectedOldFederationAddress, retiringFederationAddress.get());
     }
 
     private void assertNextFederationCreationBlockHeight(long newFederationCreationBlockNumber) {
@@ -907,7 +910,8 @@ class FederationChangeIT {
     private void assertOnlyActiveFedIsLive(Federation newFederation) {
         // New active federation still there, retiring federation no longer there
         assertEquals(newFederation, bridgeSupport.getActiveFederation());
-        assertNull(bridgeSupport.getRetiringFederationAddress());
+        Optional<Address> retiringFederationAddress = bridgeSupport.getRetiringFederationAddress();
+        assertTrue(retiringFederationAddress.isEmpty());
     }
     
     private void assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(

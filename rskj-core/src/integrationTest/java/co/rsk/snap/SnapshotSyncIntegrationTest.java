@@ -18,7 +18,11 @@
  */
 package co.rsk.snap;
 
-import co.rsk.util.*;
+import co.rsk.util.FilesHelper;
+import co.rsk.util.HexUtils;
+import co.rsk.util.IntegrationTestUtils;
+import co.rsk.util.OkHttpClientTestFixture;
+import co.rsk.util.RskjConfigurationFileFixture;
 import co.rsk.util.cli.NodeIntegrationTestCommandLine;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.squareup.okhttp.Response;
@@ -34,20 +38,22 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static co.rsk.util.FilesHelper.readBytesFromFile;
 import static co.rsk.util.OkHttpClientTestFixture.FromToAddressPair.of;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SnapshotSyncIntegrationTest {
-    private static final int TEN_MINUTES_IN_MILLISECONDS = 600000;
+    private static final Duration SNAP_SYNC_TIMEOUT = Duration.ofMinutes(12);
+    private static final Duration SNAP_SYNC_POLL_INTERVAL = Duration.ofSeconds(20);
     private static final String TAG_TO_REPLACE_SERVER_RPC_PORT = "<SERVER_NODE_RPC_PORT>";
     private static final String TAG_TO_REPLACE_SERVER_PORT = "<SERVER_NODE_PORT>";
     private static final String TAG_TO_REPLACE_SERVER_DATABASE_PATH = "<SERVER_NODE_DATABASE_PATH>";
@@ -72,7 +78,7 @@ class SnapshotSyncIntegrationTest {
 
     @AfterEach
     void tearDown() throws InterruptedException {
-        for (NodeIntegrationTestCommandLine node : Stream.of(clientNode, serverNode).filter(Objects::nonNull).collect(Collectors.toList())) {
+        for (NodeIntegrationTestCommandLine node : Stream.of(clientNode, serverNode).filter(Objects::nonNull).toList()) {
             node.killNode();
         }
     }
@@ -86,7 +92,7 @@ class SnapshotSyncIntegrationTest {
         String rskConfFileChangedServer = configureServerWithGeneratedInformation(serverDbDir);
         serverNode = new NodeIntegrationTestCommandLine(rskConfFileChangedServer, "--regtest");
         serverNode.startNode();
-        ThreadTimerHelper.waitForSeconds(60);
+        IntegrationTestUtils.waitFor(60, SECONDS);
         generateBlocks();
 
         JsonNode serverBestBlockResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portServerRpc, "latest");
@@ -100,27 +106,45 @@ class SnapshotSyncIntegrationTest {
 
         //then
         long startTime = System.currentTimeMillis();
-        long endTime = startTime + TEN_MINUTES_IN_MILLISECONDS;
+        long endTime = startTime + SNAP_SYNC_TIMEOUT.toMillis();
         boolean isClientSynced = false;
+        boolean snapStarted = false;
+        boolean snapFinished = false;
+        String lastClientBestBlockNumber = "unknown";
 
         while (System.currentTimeMillis() < endTime) {
-            if (clientNode.getOutput().contains("Starting Snap sync") && clientNode.getOutput().contains("Snap sync finished successfully")) {
-                try {
-                    JsonNode jsonResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portClientRpc, serverBestBlockNumber);
-                    JsonNode jsonResult = jsonResponse.get(0).get("result");
-                    if (jsonResult.isObject()) {
-                        String bestBlockNumber = jsonResult.get("number").asText();
-                        if (bestBlockNumber.equals(serverBestBlockNumber)) { // We reached the tip of the test database imported on server on the client
-                            isClientSynced = true;
-                            break;
-                        }
+            String clientOutput = clientNode.getOutput();
+            snapStarted |= clientOutput.contains("Starting Snap sync");
+            snapFinished |= clientOutput.contains("Snap sync finished successfully");
+
+            try {
+                JsonNode jsonResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portClientRpc, "latest");
+                JsonNode jsonResult = jsonResponse.get(0).get("result");
+                if (jsonResult.isObject()) {
+                    String bestBlockNumber = jsonResult.get("number").asText();
+                    lastClientBestBlockNumber = bestBlockNumber;
+                    if (HexUtils.jsonHexToLong(bestBlockNumber) >= HexUtils.jsonHexToLong(serverBestBlockNumber)) { // Client reached or passed the server tip
+                        isClientSynced = true;
+                        break;
                     }
-                } catch (Exception e) {
-                    System.out.println("Error while trying to get the best block number from the client: " + e.getMessage());
-                    System.out.println("We will try again in 20 seconds.");
                 }
+            } catch (Exception e) {
+                System.out.println("Error while trying to get the best block number from the client: " + e.getMessage());
+                System.out.println("We will try again in " + SNAP_SYNC_POLL_INTERVAL.getSeconds() + " seconds.");
             }
-            ThreadTimerHelper.waitForSeconds(20);
+
+            IntegrationTestUtils.waitFor(SNAP_SYNC_POLL_INTERVAL.getSeconds(), SECONDS);
+        }
+
+        System.out.printf(
+                "Snapshot sync status after %.2f minutes -> synced: %s, snapStarted: %s, snapFinished: %s, serverTip: %s, clientTip: %s%n",
+                (System.currentTimeMillis() - startTime) / 60000d, isClientSynced, snapStarted, snapFinished, serverBestBlockNumber, lastClientBestBlockNumber
+        );
+
+        if (!isClientSynced) {
+            String output = clientNode.getOutput();
+            int start = Math.max(0, output.length() - 1500);
+            System.out.println("Client output tail:\n" + output.substring(start));
         }
 
         assertTrue(isClientSynced);
@@ -176,7 +200,13 @@ class SnapshotSyncIntegrationTest {
                     .mapToObj(n -> of(accounts.get(rand.nextInt(accounts.size())), accounts.get(rand.nextInt(accounts.size()))))
                     .toArray(OkHttpClientTestFixture.FromToAddressPair[]::new);
             Response response = OkHttpClientTestFixture.sendBulkTransactions(portServerRpc, pairs);
-            assertTrue(response.isSuccessful());
+            try {
+                assertTrue(response.isSuccessful());
+            } finally {
+                if (response.body() != null) {
+                    response.body().close();
+                }
+            }
         }
     }
 }

@@ -27,7 +27,12 @@ import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
-import org.iq80.leveldb.*;
+import org.iq80.leveldb.CompressionType;
+import org.iq80.leveldb.DB;
+import org.iq80.leveldb.DBException;
+import org.iq80.leveldb.DBIterator;
+import org.iq80.leveldb.Options;
+import org.iq80.leveldb.WriteBatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +40,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -50,9 +58,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     private final String databaseDir;
     private final String name;
-    private DB db;
-    private boolean alive;
-
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
     // accessing a closed DB.
@@ -60,11 +65,23 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // This ReadWriteLock still permits concurrent execution of insert/delete/update operations
     // however blocks them on init/close/delete operations
     private final ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
+    private DB db;
+    private boolean alive;
 
     public LevelDbDataSource(String name, String databaseDir) {
         this.databaseDir = databaseDir;
         this.name = name;
         logger.info("New LevelDbDataSource: {}", name);
+        logger.warn("LevelDB will be deprecated soon, please migrate your data to RocksDB to ensure the node keeps operating as expected in the future. " +
+                "More info in how to do it, check this tutorial: https://dev.rootstock.io/node-operators/setup/configuration/preferences/#using-rocksdb.");
+    }
+
+    public static Path getPathForName(String name, String databaseDir) {
+        if (Paths.get(databaseDir).isAbsolute()) {
+            return Paths.get(databaseDir, name);
+        } else {
+            return Paths.get(getProperty("user.dir"), databaseDir, name);
+        }
     }
 
     @Override
@@ -109,14 +126,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
         } finally {
             profiler.stop(metric);
             resetDbLock.writeLock().unlock();
-        }
-    }
-
-    public static Path getPathForName(String name, String databaseDir) {
-        if (Paths.get(databaseDir).isAbsolute()) {
-            return Paths.get(databaseDir, name);
-        } else {
-            return Paths.get(getProperty("user.dir"), databaseDir, name);
         }
     }
 

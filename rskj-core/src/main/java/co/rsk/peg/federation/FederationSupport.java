@@ -1,6 +1,7 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.crypto.Keccak256;
@@ -9,7 +10,7 @@ import co.rsk.peg.vote.ABICallSpec;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.Nullable;
+
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 
@@ -74,58 +75,73 @@ public interface FederationSupport {
     void clearRetiredFederation();
 
     /**
-     * Returns the currently retiring federation.
+     * Returns the currently retiring federation, if it exists.
      * See getRetiringFederationReference() for details.
-     * @return the retiring federation.
+     *
+     * @return An {@link Optional} containing the retiring federation,
+     * or an empty {@link Optional} if no retiring federation exists.
      */
-    @Nullable
-    Federation getRetiringFederation();
+    Optional<Federation> getRetiringFederation();
 
     /**
-     * Returns the retiring federation bitcoin address.
-     * @return the retiring federation bitcoin address, null if no retiring federation exists
+     * Returns the retiring federation bitcoin address, if it exists.
+     *
+     * @return An {@link Optional} containing the retiring federation
+     * bitcoin address, or an empty {@link Optional} if no retiring
+     * federation exists.
      */
-    Address getRetiringFederationAddress();
+    Optional<Address> getRetiringFederationAddress();
 
     /**
-     * Returns the retiring federation's size
-     * @return the retiring federation size, -1 if no retiring federation exists
+     * Returns the currently retiring federation size, if it exists.
+     *
+     * @return An {@link Optional} containing the retiring federation size,
+     * or an empty {@link Optional} if no retiring federation exists
      */
-    int getRetiringFederationSize();
+    Optional<Integer> getRetiringFederationSize();
 
     /**
-     * Returns the retiring federation's minimum required signatures
-     * @return the retiring federation minimum required signatures, -1 if no retiring federation exists
+     * Returns the currently retiring federation's minimum required signatures, if it exists.
+     *
+     * @return An {@link Optional} containing the retiring federation minimum required signatures,
+     * or an empty {@link Optional} if no retiring federation exists.
      */
-    int getRetiringFederationThreshold();
+    Optional<Integer> getRetiringFederationThreshold();
 
     /**
-     * Returns the retiring federation's creation time
-     * @return the retiring federation creation time, null if no retiring federation exists
+     * Returns the retiring currently federation's creation time, if it exists.
+     *
+     * @return An {@link Optional} containing the retiring federation creation time,
+     * or an empty {@link Optional} if no retiring federation exists.
      */
-    Instant getRetiringFederationCreationTime();
+    Optional<Instant> getRetiringFederationCreationTime();
 
     /**
-     * Returns the retiring federation's creation block number
-     * @return the retiring federation creation block number,
-     * -1 if no retiring federation exists
+     * Returns the retiring federation's creation block number, if it exists.
+     *
+     * @return An {@link Optional} containing the retiring federation's creation block number,
+     * or an empty {@link Optional} if no retiring federation exists.
      */
-    long getRetiringFederationCreationBlockNumber();
+    Optional<Long> getRetiringFederationCreationBlockNumber();
 
     /**
      * Returns the public key of the retiring federation's federator at the given index
+     *
      * @param index the retiring federator's index (zero-based)
-     * @return the retiring federator's public key, null if no retiring federation exists
+     * @return An {@link Optional} containing the retiring federator's public key,
+     * or an empty {@link Optional} if no retiring federation exists.
      */
-    byte[] getRetiringFederatorBtcPublicKey(int index);
+    Optional<BtcECKey> getRetiringFederatorBtcPublicKey(int index);
 
     /**
      * Returns the public key of the given type of the retiring federation's federator at the given index
+     *
      * @param index the retiring federator's index (zero-based)
      * @param keyType the key type
-     * @return the retiring federator's public key of the given type, null if no retiring federation exists
+     * @return An {@link Optional} containing the retiring federator's public key of the given type,
+     * or an empty {@link Optional} if no retiring federation exists.
      */
-    byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
+    Optional<byte[]> getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
     /**
      * Returns the currently live federations
@@ -255,6 +271,11 @@ public interface FederationSupport {
         SignatureCache signatureCache,
         BridgeEventLogger eventLogger
     );
+
+    boolean isActiveFederationInMigrationAge();
+
+    boolean isActiveFederationPastMigrationAge();
+
     long getActiveFederationCreationBlockHeight();
 
     void updateFederationCreationBlockHeights();

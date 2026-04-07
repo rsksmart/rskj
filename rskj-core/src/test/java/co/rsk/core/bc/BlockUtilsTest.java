@@ -24,7 +24,10 @@ import co.rsk.net.NetBlockStore;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.config.Constants;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.ImportResult;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
@@ -32,7 +35,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -185,7 +191,7 @@ class BlockUtilsTest {
 
     @Test
     void sublistGasLimit_ShouldDivideGasLimitEquallyAmongAllSets() {
-        long minSequentialSetGasLimit = Constants.regtest().getMinSequentialSetGasLimit();
+        long minSequentialSetGasLimit = 2_000_000L;
         long mockedBlockGasLimit =  9_000_000L;
         Block block = mock(Block.class);
         when(block.getGasLimit()).thenReturn(BigInteger.valueOf(mockedBlockGasLimit).toByteArray());
@@ -197,12 +203,13 @@ class BlockUtilsTest {
 
     @Test
     void sublistGasLimit_ShouldAssignLessGasLimitToParallelSets() {
-        long minSequentialSetGasLimit = 6_800_000L;
-        long mockedBlockGasLimit =  10_000_000L;
+        long minSequentialSetGasLimit = Constants.regtest().getMinSequentialSetGasLimit();
+        long mockedBlockGasLimit = 10_000_000L;
         Block block = mock(Block.class);
         when(block.getGasLimit()).thenReturn(BigInteger.valueOf(mockedBlockGasLimit).toByteArray());
 
-        assertEquals(minSequentialSetGasLimit, BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit));
+        long expectedSequentialLimit = minSequentialSetGasLimit;
+        assertEquals(expectedSequentialLimit, BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit));
 
         long expectedParallelLimit = (mockedBlockGasLimit - minSequentialSetGasLimit) / (Constants.getTransactionExecutionThreads());
         assertEquals(expectedParallelLimit, BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit));
@@ -211,14 +218,14 @@ class BlockUtilsTest {
     @Test
     void sublistGasLimit_ShouldAssignExtraGasLimitToSequentialSet() {
         long minSequentialSetGasLimit = Constants.regtest().getMinSequentialSetGasLimit();
-        long mockedBlockGasLimit =  10_000_010L;
+        long mockedBlockGasLimit =  10_000_011L;
         Block block = mock(Block.class);
         when(block.getGasLimit()).thenReturn(BigInteger.valueOf(mockedBlockGasLimit).toByteArray());
 
-        long expectedSequentialLimit = 3_333_338L;
+        long expectedSequentialLimit = minSequentialSetGasLimit + 1;
         assertEquals(expectedSequentialLimit, BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit));
 
-        long expectedParallelLimit = 3_333_336L;
+        long expectedParallelLimit = (mockedBlockGasLimit - minSequentialSetGasLimit) / Constants.getTransactionExecutionThreads();
         assertEquals(expectedParallelLimit, BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit));
     }
 }

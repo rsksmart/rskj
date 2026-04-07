@@ -24,7 +24,14 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.GasCost;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.Set;
 
 public class ParallelizeTransactionHandler {
     private final HashMap<ByteArrayWrapper, TransactionSublist> sublistsHavingWrittenToKey;
@@ -32,15 +39,27 @@ public class ParallelizeTransactionHandler {
     private final Map<RskAddress, TransactionSublist> sublistOfSender;
     private final ArrayList<TransactionSublist> sublists;
 
-    public ParallelizeTransactionHandler(short numberOfSublists, Block block, long minSequentialSetGasLimit) {
+    private ParallelizeTransactionHandler(List<TransactionSublist> sublists) {
         this.sublistOfSender = new HashMap<>();
         this.sublistsHavingWrittenToKey = new HashMap<>();
         this.sublistsHavingReadFromKey = new HashMap<>();
-        this.sublists = new ArrayList<>();
-        for (short i = 0; i < numberOfSublists; i++){
-            this.sublists.add(new TransactionSublist(BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit), false));
+        this.sublists = new ArrayList<>(sublists);
+    }
+
+    public static ParallelizeTransactionHandler create(short numberOfSublists, Block block, long minSequentialSetGasLimit) {
+        return new ParallelizeTransactionHandler(buildSublists(numberOfSublists, block, minSequentialSetGasLimit));
+    }
+
+    private static List<TransactionSublist> buildSublists(short numberOfSublists, Block block, long minSequentialSetGasLimit) {
+        long parallelSublistGasLimit = BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit);
+        long sequentialSublistGasLimit = BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit);
+        List<TransactionSublist> sublists = new ArrayList<>(numberOfSublists + 1);
+
+        for (short i = 0; i < numberOfSublists; i++) {
+            sublists.add(new TransactionSublist(parallelSublistGasLimit, false));
         }
-        this.sublists.add(new TransactionSublist(BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit), true));
+        sublists.add(new TransactionSublist(sequentialSublistGasLimit, true));
+        return sublists;
     }
 
     public Optional<Long> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {
@@ -72,11 +91,13 @@ public class ParallelizeTransactionHandler {
         return Optional.of(sequentialSublist.getGasUsed());
     }
 
-    // Unlike the smart contracts execution, Precompiled contracts persist the changes in the repository when they
-    // complete the execution. So, there is no way for the ParallelTransactionHandler to track the keys if the execution
-    // fails since the Precompiled contract rolls back the repository.
-    // Therefore, the tx is added to the sequential sublist to avoid possible race conditions.
-    public Optional<Long> addTxToSequentialSublist(Transaction tx, long gasUsedByTx) {
+    // Transactions that invoke certain precompiled contracts are conservatively
+    // executed in the sequential sublist to avoid potential race conditions in
+    // parallel execution. Even if such a transaction reverts and repository state
+    // changes are rolled back, its accessed read/write keys are still tracked.
+    // This method places the transaction in the sequential sublist and registers
+    // its read/write keys so that subsequent transactions can be scheduled safely.
+    public Optional<Long> addTxToSequentialSublist(Transaction tx, long gasUsedByTx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
         TransactionSublist sequentialSublist = getSequentialSublist();
 
         if (sublistDoesNotHaveEnoughGas(tx, sequentialSublist)) {
@@ -84,7 +105,7 @@ public class ParallelizeTransactionHandler {
         }
 
         sequentialSublist.addTransaction(tx, gasUsedByTx);
-        addNewKeysToMaps(tx.getSender(), sequentialSublist, new HashSet<>(), new HashSet<>());
+        addNewKeysToMaps(tx.getSender(), sequentialSublist, newReadKeys, newWrittenKeys);
 
         return Optional.of(sequentialSublist.getGasUsed());
     }
@@ -160,8 +181,8 @@ public class ParallelizeTransactionHandler {
 
         for (TransactionSublist sublist : sublists) {
             if (!sublist.isSequential() && sublist.hasGasAvailable(txGasLimit) && sublist.getGasUsed() < gasUsed) {
-                    sublistCandidate = Optional.of(sublist);
-                    gasUsed = sublist.getGasUsed();
+                sublistCandidate = Optional.of(sublist);
+                gasUsed = sublist.getGasUsed();
             }
         }
 

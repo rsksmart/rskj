@@ -1,12 +1,16 @@
 package co.rsk.vm.precompiles;
 
 import static org.ethereum.vm.PrecompiledContracts.NO_LIMIT_ON_MAX_INPUT;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -143,6 +147,54 @@ class PrecompiledContractsCallErrorHandlingTests {
         // when - then
         // The actual contract execution is tested in AltBN128Test
         Assertions.assertNotNull(contracts);
+    }
+
+    @Test
+    void blake2fGetGasForData_whenNullData_shouldNotThrowNPE() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP552)).thenReturn(true);
+        PrecompiledContracts.Blake2F blake2f = new PrecompiledContracts.Blake2F(activations);
+        Assertions.assertDoesNotThrow(() -> blake2f.getGasForData(null));
+        Assertions.assertEquals(0, blake2f.getGasForData(null));
+    }
+
+    @Test
+    void blake2fExecute_whenNullData_shouldThrowVMException() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP552)).thenReturn(true);
+        PrecompiledContracts.Blake2F blake2f = new PrecompiledContracts.Blake2F(activations);
+        Assertions.assertThrows(
+                org.ethereum.vm.exception.VMException.class,
+                () -> blake2f.execute(null)
+        );
+    }
+
+    @Test
+    void blake2fGetGasForData_whenNullData_andRskipB2FInactive_shouldThrowNPE() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP552)).thenReturn(false);
+        PrecompiledContracts.Blake2F blake2f = new PrecompiledContracts.Blake2F(activations);
+        Assertions.assertThrows(NullPointerException.class, () -> blake2f.getGasForData(null));
+    }
+
+    @Test
+    void blake2fExecute_whenNullData_andRskipB2FInactive_shouldThrowNPE() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP552)).thenReturn(false);
+        PrecompiledContracts.Blake2F blake2f = new PrecompiledContracts.Blake2F(activations);
+        Assertions.assertThrows(NullPointerException.class, () -> blake2f.execute(null));
+    }
+
+    @Test
+    void blake2fGetGasForData_whenNullData_andNullActivations_shouldThrowNPE() {
+        PrecompiledContracts.Blake2F blake2f = new PrecompiledContracts.Blake2F();
+        Assertions.assertThrows(NullPointerException.class, () -> blake2f.getGasForData(null));
+    }
+
+    @Test
+    void blake2fExecute_whenNullData_andNullActivations_shouldThrowNPE() {
+        PrecompiledContracts.Blake2F blake2f = new PrecompiledContracts.Blake2F();
+        Assertions.assertThrows(NullPointerException.class, () -> blake2f.execute(null));
     }
 
     @Test
