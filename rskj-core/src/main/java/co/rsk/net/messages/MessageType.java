@@ -220,6 +220,7 @@ public enum MessageType {
                 Transaction tx = new ImmutableTransaction(txdata);
 
                 if (tx.isRemascTransaction(k, rlpTransactions.size())) {
+                    BlockBodyCodec.validateRemascIsLegacy(tx);
                     tx = new RemascTransaction(txdata);
                 }
 

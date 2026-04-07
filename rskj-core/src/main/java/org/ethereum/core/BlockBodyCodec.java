@@ -99,12 +99,19 @@ public final class BlockBodyCodec {
             Transaction tx = new ImmutableTransaction(rawData);
 
             if (tx.isRemascTransaction(i, transactionList.size())) {
+                validateRemascIsLegacy(tx);
                 tx = new RemascTransaction(rawData);
             }
             parsedTxs.add(tx);
         }
 
         return Collections.unmodifiableList(parsedTxs);
+    }
+
+    public static void validateRemascIsLegacy(Transaction tx) {
+        if (tx.getTypePrefix().isTyped()) {
+            throw new IllegalArgumentException("Remasc transaction must be legacy, but got typed transaction: " + tx.getTypePrefix().toFullString());
+        }
     }
 
     public static byte[] encodeUncles(List<BlockHeader> uncleList) {
