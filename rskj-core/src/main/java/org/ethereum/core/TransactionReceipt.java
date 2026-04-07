@@ -42,6 +42,7 @@ package org.ethereum.core;
 public class TransactionReceipt {
 
     private Transaction transaction;
+    private TransactionTypePrefix typePrefix = TransactionTypePrefix.legacy();
 
     protected static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
     protected static final byte[] SUCCESS_STATUS = new byte[]{0x01};
@@ -67,6 +68,7 @@ public class TransactionReceipt {
         }
 
         TransactionTypePrefix prefix = TransactionTypePrefix.fromRawData(rlp);
+        this.typePrefix = prefix;
         BytesSlice receiptData = TransactionTypePrefix.stripPrefix(rlp, prefix);
 
         ArrayList<RLPElement> params = RLP.decode2(receiptData);
@@ -173,10 +175,10 @@ public class TransactionReceipt {
     }
 
     private byte[] getReceiptTypePrefix() {
-        if (transaction == null) {
-            return new byte[0];
+        if (transaction != null) {
+            return transaction.getTypePrefix().toBytes();
         }
-        return transaction.getTypePrefix().toBytes();
+        return typePrefix.toBytes();
     }
 
     public void setStatus(byte[] status) {
@@ -240,6 +242,9 @@ public class TransactionReceipt {
     public void setTransaction(Transaction transaction) {
         this.rlpEncoded = null;
         this.transaction = transaction;
+        if (transaction != null) {
+            this.typePrefix = transaction.getTypePrefix();
+        }
     }
 
     public Transaction getTransaction() {
