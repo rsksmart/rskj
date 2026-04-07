@@ -200,5 +200,3 @@ public class PeerScoringInformation {
                 '}';
     }
 }
-
-

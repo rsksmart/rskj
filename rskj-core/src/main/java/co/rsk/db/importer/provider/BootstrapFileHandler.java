@@ -39,6 +39,7 @@ public class BootstrapFileHandler {
     private static final Logger logger = LoggerFactory.getLogger(BootstrapFileHandler.class);
     private static final String BOOTSTRAP_DATA_NAME = "bootstrap-data.zip";
     private static final String EXTRACTED_PATH = "bootstrap-data.bin";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final BootstrapURLProvider bootstrapUrlProvider;
     private final Unzipper unzipper;
@@ -71,7 +72,7 @@ public class BootstrapFileHandler {
         Path zipPath = tempPath.resolve(BOOTSTRAP_DATA_NAME);
 
         List<String> publicKeys = new ArrayList<>(selectedEntries.keySet());
-        String publicKey = publicKeys.get(new SecureRandom().nextInt(publicKeys.size()));
+        String publicKey = publicKeys.get(SECURE_RANDOM.nextInt(publicKeys.size()));
         String expectedHash = selectedEntries.get(publicKey).getHash();
 
         String dbSuffix = selectedEntries.get(publicKey).getDb();
