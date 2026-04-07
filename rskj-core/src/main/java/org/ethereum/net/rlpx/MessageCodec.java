@@ -34,13 +34,16 @@ import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.P2pMessageCodes;
 import org.ethereum.net.p2p.P2pMessageFactory;
 import org.ethereum.net.server.Channel;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.LRUMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Math.min;
