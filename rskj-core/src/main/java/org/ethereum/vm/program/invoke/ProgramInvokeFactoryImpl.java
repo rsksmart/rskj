@@ -164,7 +164,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         long agas = inGas;
         DataWord callValue = inValue;
 
-        BytesSlice data = dataIn;
+        BytesSlice data = dataIn != null ? dataIn.copyBytes() : null;
         DataWord lastHash = program.getPrevHash();
         DataWord coinbase = program.getCoinbase();
         DataWord timestamp = program.getTimestamp();
