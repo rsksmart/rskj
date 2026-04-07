@@ -61,4 +61,3 @@ public class SyncPeerStatus {
         return clock.instant().isAfter(this.lastActivity.plus(timeout));
     }
 }
-
