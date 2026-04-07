@@ -39,10 +39,7 @@ public class Memory implements ProgramListenerAware {
     private static final int WORD_SIZE = 32;
 
     private final List<byte[]> chunks = new LinkedList<>();
-
     private int softSize;
-    private int version; // versioning for memory changes
-
     private ProgramListener traceListener;
 
     @Override
@@ -57,7 +54,7 @@ public class Memory implements ProgramListenerAware {
 
         extend(address, size);
 
-        return new MemorySlice(address, size, version);
+        return new MemorySlice(address, size);
     }
 
     public byte[] read(int address, int size) {
@@ -90,8 +87,6 @@ public class Memory implements ProgramListenerAware {
     }
 
     public void write(int address, byte[] data, int dataSize, boolean limited) {
-        version++;
-
         if (data.length < dataSize) {
             dataSize = data.length;
         }
@@ -127,6 +122,7 @@ public class Memory implements ProgramListenerAware {
             traceListener.onMemoryWrite(address, data, dataSize);
         }
     }
+
 
     public void extendAndWrite(int address, int allocSize, byte[] data) {
         extend(address, allocSize);
@@ -243,18 +239,15 @@ public class Memory implements ProgramListenerAware {
     private final class MemorySlice implements BytesSlice {
         private final int address;
         private final int size;
-        private final int memVersion;
 
-        MemorySlice(int address, int size, int memVersion) {
+        MemorySlice(int address, int size) {
             this.address = address;
             this.size = size;
-            this.memVersion = memVersion;
         }
 
         @Override
         public void arraycopy(int srcPos, byte[] dest, int destPos, int length) {
             BoundaryUtils.checkArraycopyParams(length(), srcPos, dest, destPos, length);
-            checkVersion();
 
             int chunkIndex = (address + srcPos) / CHUNK_SIZE;
             int chunkOffset = (address + srcPos) % CHUNK_SIZE;
@@ -283,15 +276,7 @@ public class Memory implements ProgramListenerAware {
         @Override
         public byte byteAt(int index) {
             BoundaryUtils.checkArrayIndexParam(length(), index);
-            checkVersion();
-
             return readByte(address + index);
-        }
-
-        private void checkVersion() {
-            if (this.memVersion != Memory.this.version) {
-                throw new IllegalStateException("Memory was changed during slice lifetime");
-            }
         }
     }
 }
