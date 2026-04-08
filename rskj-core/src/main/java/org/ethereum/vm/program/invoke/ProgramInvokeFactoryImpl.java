@@ -50,74 +50,76 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
     public ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block, Repository repository,
                                              BlockStore blockStore, SignatureCache signatureCache) {
 
-        /***         ADDRESS op       ***/
+        // ADDRESS op
         // YP: Get address of currently executing account.
         RskAddress addr = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
 
-        /***         ORIGIN op       ***/
+        // ORIGIN op
         // YP: This is the sender of original transaction; it is never a contract.
         byte[] origin = tx.getSender(signatureCache).getBytes();
 
-        /***         CALLER op       ***/
+        // CALLER op
         // YP: This is the address of the account that is directly responsible for this execution.
         byte[] caller = tx.getSender(signatureCache).getBytes();
 
-        /***         BALANCE op       ***/
+        // BALANCE op
         Coin balance = repository.getBalance(addr);
 
-        /***         GASPRICE op       ***/
+        // GASPRICE op
         Coin txGasPrice = tx.getGasPrice();
 
-        /*** GAS op ***/
+        // GAS op
         byte[] gas = tx.getGasLimit();
 
-        /***        CALLVALUE op      ***/
+        // CALLVALUE op
         Coin callValue = tx.getValue();
 
-        /***     CALLDATALOAD  op   ***/
-        /***     CALLDATACOPY  op   ***/
-        /***     CALLDATASIZE  op   ***/
+        // CALLDATALOAD op
+        // CALLDATACOPY op
+        // CALLDATASIZE op
         byte[] data = tx.isContractCreation() ? ByteUtil.EMPTY_BYTE_ARRAY : nullToEmpty(tx.getData());
 
-        /***    PREVHASH  op  ***/
+        // PREVHASH op
         byte[] lastHash = block.getParentHash().getBytes();
 
-        /***   COINBASE  op ***/
+        // COINBASE op
         byte[] coinbase = block.getCoinbase().getBytes();
 
-        /*** TIMESTAMP  op  ***/
+        // TIMESTAMP op
         long timestamp = block.getTimestamp();
 
-        /*** NUMBER  op  ***/
+        // NUMBER op
         long number = block.getNumber();
 
-        /*** DIFFICULTY  op  ***/
+        // DIFFICULTY op
         byte[] difficulty = block.getDifficulty().getBytes();
 
-        /*** GASLIMIT op ***/
+        // GASLIMIT op
         byte[] gaslimit = block.getGasLimit();
 
-        /*** BASEFEE op ***/
+        // BASEFEE op
         Coin minimumGasPrice = block.getMinimumGasPrice();
 
         if (logger.isInfoEnabled()) {
-            logger.info("Top level call: \n" +
-                            "address={}\n" +
-                            "origin={}\n" +
-                            "caller={}\n" +
-                            "balance={}\n" +
-                            "txGasPrice={}\n" +
-                            "gas={}\n" +
-                            "callValue={}\n" +
-                            "data={}\n" +
-                            "lastHash={}\n" +
-                            "coinbase={}\n" +
-                            "timestamp={}\n" +
-                            "blockNumber={}\n" +
-                            "transactionIndex={}\n" +
-                            "difficulty={}\n" +
-                            "gaslimit={}\n" +
-                            "minimumGasPrice={}\n",
+            logger.info("""
+                            Top level call:
+                            address={}
+                            origin={}
+                            caller={}
+                            balance={}
+                            txGasPrice={}
+                            gas={}
+                            callValue={}
+                            data={}
+                            lastHash={}
+                            coinbase={}
+                            timestamp={}
+                            blockNumber={}
+                            transactionIndex={}
+                            difficulty={}
+                            gaslimit={}
+                            minimumGasPrice={}
+                            """,
 
                     addr,
                     Bytes.of(origin),
@@ -175,23 +177,25 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         DataWord minimumGasPrice = program.getMinimumGasPrice();
 
         if (logger.isInfoEnabled()) {
-            logger.info("Internal call: \n" +
-                            "address={}\n" +
-                            "origin={}\n" +
-                            "caller={}\n" +
-                            "balance={}\n" +
-                            "txGasPrice={}\n" +
-                            "gas={}\n" +
-                            "callValue={}\n" +
-                            "data={}\n" +
-                            "lastHash={}\n" +
-                            "coinbase={}\n" +
-                            "timestamp={}\n" +
-                            "blockNumber={}\n" +
-                            "transactionIndex={}\n" +
-                            "difficulty={}\n" +
-                            "gaslimit={}\n" +
-                            "minimumGasPrice={}\n",
+            logger.info("""
+                            Internal call:
+                            address={}
+                            origin={}
+                            caller={}
+                            balance={}
+                            txGasPrice={}
+                            gas={}
+                            callValue={}
+                            data={}
+                            lastHash={}
+                            coinbase={}
+                            timestamp={}
+                            blockNumber={}
+                            transactionIndex={}
+                            difficulty={}
+                            gaslimit={}
+                            minimumGasPrice={}
+                            """,
                     Bytes.of(address.getLast20Bytes()),
                     Bytes.of(origin.getLast20Bytes()),
                     Bytes.of(caller.getLast20Bytes()),
