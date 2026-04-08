@@ -18,23 +18,29 @@
 
 package co.rsk.core.bc;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
-
-import java.math.BigInteger;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-
+import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
+import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BtcBlockStoreWithCache.Factory;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.union.UnionBridgeStorageIndexKey;
+import co.rsk.remasc.RemascTransaction;
+import co.rsk.test.World;
+import co.rsk.test.dsl.DslParser;
+import co.rsk.test.dsl.WorldDslProcessor;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
+import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -76,31 +82,22 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.typesafe.config.ConfigValueFactory;
+import java.math.BigInteger;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
-import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
-import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
-import co.rsk.core.types.bytes.Bytes;
-import co.rsk.db.MutableTrieImpl;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.RepositorySnapshot;
-import co.rsk.db.StateRootHandler;
-import co.rsk.db.StateRootsStoreImpl;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BtcBlockStoreWithCache.Factory;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.peg.union.UnionBridgeStorageIndexKey;
-import co.rsk.remasc.RemascTransaction;
-import co.rsk.test.World;
-import co.rsk.test.dsl.DslParser;
-import co.rsk.test.dsl.WorldDslProcessor;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStore;
-import co.rsk.trie.TrieStoreImpl;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 /**
  * Created by ajlopez on 29/07/2016.
@@ -168,7 +165,7 @@ public class BlockExecutorTest {
 
     private static byte[] sha3(byte[] input) {
         Keccak256 digest = new Keccak256();
-        digest.update(Bytes.of(input));
+        digest.update(input);
         return digest.digest();
     }
 

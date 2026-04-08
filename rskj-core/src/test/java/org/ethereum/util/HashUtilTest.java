@@ -20,7 +20,6 @@
 package org.ethereum.util;
 
 import co.rsk.core.RskAddress;
-import co.rsk.core.types.bytes.Bytes;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.junit.jupiter.api.Assertions;
@@ -200,9 +199,9 @@ class HashUtilTest {
     private void runTestCalSaltAddr(String address, String saltString, String code, String expected){
         RskAddress r = new RskAddress(address);
         byte[] salt = Hex.decode(saltString);
-        byte[] initCode = Hex.decode(code);
+        byte[] init_code = Hex.decode(code);
 
-        String result = ByteUtil.toHexString(HashUtil.calcSaltAddr(r, Bytes.of(initCode), salt));
+        String result = ByteUtil.toHexString(HashUtil.calcSaltAddr(r,init_code,salt));
         assertEquals(expected.toUpperCase(), result.toUpperCase());
     }
 }

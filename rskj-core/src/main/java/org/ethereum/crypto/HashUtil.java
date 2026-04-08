@@ -20,8 +20,6 @@
 package org.ethereum.crypto;
 
 import co.rsk.core.RskAddress;
-import co.rsk.core.types.bytes.Bytes;
-import co.rsk.core.types.bytes.BytesSlice;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.ethereum.crypto.cryptohash.Keccak256;
@@ -61,10 +59,6 @@ public class HashUtil {
     }
 
     public static byte[] keccak256(byte[] input) {
-        return keccak256(Bytes.of(input));
-    }
-
-    public static byte[] keccak256(BytesSlice input) {
         Keccak256 digest =  new Keccak256();
         digest.update(input);
         return digest.digest();
@@ -131,7 +125,7 @@ public class HashUtil {
      * @param salt - salt to make different result addresses
      * @return new address
      */
-    public static byte[] calcSaltAddr(RskAddress senderAddress, BytesSlice initCode, byte[] salt) {
+    public static byte[] calcSaltAddr(RskAddress senderAddress, byte[] initCode, byte[] salt) {
         // 0xff is of length 1
         // keccak-256 of the address is of length 32
         // Then we add the lengths of the senderAddress and the salt
