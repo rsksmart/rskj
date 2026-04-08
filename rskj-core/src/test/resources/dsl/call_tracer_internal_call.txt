@@ -4,8 +4,6 @@ comment
 pragma solidity ^0.8.0;
 
 // Minimal contract with self-calling recursion to trigger internal CALL opcodes.
-// Used to reproduce RSKCORE-5466: MemorySlice becomes stale after child call
-// returns and parent memory is written to via memorySaveLimited().
 contract InternalCallTest {
     function recurse(uint256 depth) public returns (uint256) {
         if (depth == 0) return 1;
