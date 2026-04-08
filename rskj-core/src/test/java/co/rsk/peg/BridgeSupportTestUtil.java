@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -144,6 +146,10 @@ public final class BridgeSupportTestUtil {
         PegoutsWaitingForConfirmations.Entry pegoutEntry = iterator.next();
 
         return pegoutEntry.getBtcTransaction();
+    }
+
+    public static boolean shouldMarkRejectedPeginAsProcessed(ActivationConfig.ForBlock activations) {
+        return activations.isActive(ConsensusRule.RSKIP459) && !activations.isActive(ConsensusRule.RSKIP551);
     }
 
     public static void assertWitnessAndScriptSigHaveExpectedInputRedeemData(TransactionWitness witness, TransactionInput input, Script expectedRedeemScript) {

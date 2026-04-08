@@ -1786,7 +1786,11 @@ class BridgeSupportSvpTest {
     private void assertTxIsRejectedPeginAndMarkedAsProcessed(BtcTransaction rejectedPegin)
         throws IOException {
         Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(rejectedPegin.getHash());
-        assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+        if (BridgeSupportTestUtil.shouldMarkRejectedPeginAsProcessed(allActivations)) {
+            assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+        } else {
+            assertFalse(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+        }
 
         byte[] btcTxHashSerialized = rejectedPegin.getHash().getBytes();
 

@@ -34,15 +34,20 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.stream.Stream;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP92;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP98;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP110;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP351;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP535;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP92;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIPUMM;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -923,6 +928,63 @@ class BlockFactoryTest {
         assertArrayEquals(baseEvent, decodedHeader.getBaseEvent());
     }
 
+    @ParameterizedTest(name = "btcHeaderSize={0}, shouldSucceed={1} — {2}")
+    @MethodSource("btcHeaderSizeValidationArgs")
+    void decodeHeaderValidatesBtcHeaderSize(int btcHeaderSize, boolean shouldSucceed, String description) {
+        long number = 20L;
+        enableRulesAt(number, RSKIP92, RSKIP98);
+
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(
+                number, new byte[0], null, null, null, new byte[btcHeaderSize]);
+        byte[] encodedHeader = header.getFullEncoded();
+
+        if (shouldSucceed) {
+            BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, false);
+            assertThat(header.getHash(), is(decodedHeader.getHash()));
+            assertThat(decodedHeader.getBitcoinMergedMiningHeader().length, is(80));
+        } else {
+            assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(encodedHeader, false));
+        }
+    }
+
+    private static Stream<Arguments> btcHeaderSizeValidationArgs() {
+        return Stream.of(
+            Arguments.of(80, true, "valid 80-byte header"),
+            Arguments.of(79, false, "undersized header"),
+            Arguments.of(81, false, "oversized header (full BTC block)"),
+            Arguments.of(160, false, "double-sized header")
+        );
+    }
+
+    @ParameterizedTest(name = "oversized BTC header rejected when {0}")
+    @MethodSource("btcHeaderSizeWithActiveRulesArgs")
+    void decodeHeaderRejectsOversizedBtcHeaderWithVariousActiveRules(String description, boolean ummActive, boolean rskip144Active) {
+        long number = 500L;
+        if (ummActive) {
+            enableRulesAt(number, RSKIP92, RSKIP98, RSKIPUMM);
+        }
+        if (rskip144Active) {
+            enableRulesAt(number, RSKIP92, RSKIP98, RSKIP144);
+            enableRskip351At(number);
+        }
+
+        byte[] ummRoot = ummActive ? new byte[0] : null;
+        short[] edges = rskip144Active ? TestUtils.randomShortArray("edges", 4) : null;
+
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(
+                number, new byte[0], ummRoot, edges, null, new byte[81]);
+        byte[] encodedHeader = header.getFullEncoded();
+
+        assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(encodedHeader, false));
+    }
+
+    private static Stream<Arguments> btcHeaderSizeWithActiveRulesArgs() {
+        return Stream.of(
+            Arguments.of("RSKIPUMM active", true, false),
+            Arguments.of("RSKIP144 active", false, true)
+        );
+    }
+
     private void enableRulesAt(long number, ConsensusRule... consensusRules) {
         for (ConsensusRule consensusRule : consensusRules) {
             when(activationConfig.isActive(eq(consensusRule), geq(number))).thenReturn(true);
@@ -965,6 +1027,16 @@ class BlockFactoryTest {
             byte[] ummRoot,
             short[] edges,
             byte[] logsBloom) {
+        return createBlockHeaderWithMergedMiningFields(number, forkDetectionData, ummRoot, edges, logsBloom, new byte[80]);
+    }
+
+    private BlockHeader createBlockHeaderWithMergedMiningFields(
+            long number,
+            byte[] forkDetectionData,
+            byte[] ummRoot,
+            short[] edges,
+            byte[] logsBloom,
+            byte[] btcHeader) {
         byte[] difficulty = BigInteger.ONE.toByteArray();
         byte[] gasLimit = BigInteger.valueOf(6800000).toByteArray();
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
@@ -983,7 +1055,7 @@ class BlockFactoryTest {
                 .setGasUsed(3000000L)
                 .setTimestamp(timestamp)
                 .setEmptyExtraData()
-                .setBitcoinMergedMiningHeader(new byte[80])
+                .setBitcoinMergedMiningHeader(btcHeader)
                 .setBitcoinMergedMiningMerkleProof(new byte[32])
                 .setBitcoinMergedMiningCoinbaseTransaction(new byte[128])
                 .setMergedMiningForkDetectionData(forkDetectionData)

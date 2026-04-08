@@ -573,11 +573,14 @@ public class BridgeSupport {
         );
         eventLogger.logNonRefundablePegin(btcTx, nonRefundablePeginReason);
 
-        if (!activations.isActive(RSKIP459)) {
-            return;
+        if (shouldMarkRejectedPeginAsProcessed()) {
+            // Between RSKIP459 and RSKIP551 rejected peg-ins should be marked as processed
+            markTxAsProcessed(btcTx);
         }
-        // Since RSKIP459, rejected peg-ins should be marked as processed
-        markTxAsProcessed(btcTx);
+    }
+
+    private boolean shouldMarkRejectedPeginAsProcessed() {
+        return activations.isActive(ConsensusRule.RSKIP459) && !activations.isActive(ConsensusRule.RSKIP551);
     }
 
     /**
