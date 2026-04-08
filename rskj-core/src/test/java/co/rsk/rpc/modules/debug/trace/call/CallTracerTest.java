@@ -104,14 +104,8 @@ class CallTracerTest {
     }
 
     /**
-     * Regression test for RSKCORE-5466: verifies that debug_traceTransaction with callTracer
-     * succeeds on transactions with internal calls.
-     *
-     * The contract calls itself recursively via this.recurse(depth - 1). Previously,
-     * Program.callToAddress() created a MemorySlice for the call data which got stored
-     * in the child ProgramInvokeImpl. After the child returned, memorySaveLimited() wrote
-     * return data to parent Memory, invalidating the slice and causing an IllegalStateException
-     * when CallTraceTransformer.buildForCall() tried to read it.
+     * Verifies that callTracer succeeds on transactions with internal calls.
+     * The contract calls itself recursively via this.recurse(depth - 1).
      */
     @Test
     void traceTransactionWithInternalCalls() throws Exception {
@@ -137,7 +131,14 @@ class CallTracerTest {
         assertNotNull(traceResult);
         assertEquals("CALL", traceResult.getType());
         assertNotNull(traceResult.getCalls(), "Should have internal calls");
-        assertFalse(traceResult.getCalls().isEmpty(), "Should have at least one internal call");
+        assertEquals(1, traceResult.getCalls().size());
+
+        TxTraceResult level1 = traceResult.getCalls().get(0);
+        assertEquals("CALL", level1.getType());
+        assertEquals(1, level1.getCalls().size());
+
+        TxTraceResult level2 = level1.getCalls().get(0);
+        assertEquals("CALL", level2.getType());
     }
 
     private static void assertOOGError(TxTraceResult trace) {
