@@ -31,6 +31,9 @@ public class CallArguments {
     private String gas;
     private String gasLimit;
     private String gasPrice;
+    /** EIP-1559 (Type 2); optional hex quantity */
+    private String maxPriorityFeePerGas;
+    private String maxFeePerGas;
     private String value;
     private String data; // compiledCode
     private String nonce;
@@ -76,6 +79,22 @@ public class CallArguments {
 
     public void setGasPrice(String gasPrice) {
         this.gasPrice = gasPrice;
+    }
+
+    public String getMaxPriorityFeePerGas() {
+        return maxPriorityFeePerGas;
+    }
+
+    public void setMaxPriorityFeePerGas(String maxPriorityFeePerGas) {
+        this.maxPriorityFeePerGas = maxPriorityFeePerGas;
+    }
+
+    public String getMaxFeePerGas() {
+        return maxFeePerGas;
+    }
+
+    public void setMaxFeePerGas(String maxFeePerGas) {
+        this.maxFeePerGas = maxFeePerGas;
     }
 
     public String getValue() {
@@ -142,6 +161,8 @@ public class CallArguments {
                 ", gas='" + gas + '\'' +
                 ", gasLimit='" + gasLimit + '\'' +
                 ", gasPrice='" + gasPrice + '\'' +
+                ", maxPriorityFeePerGas='" + maxPriorityFeePerGas + '\'' +
+                ", maxFeePerGas='" + maxFeePerGas + '\'' +
                 ", value='" + value + '\'' +
                 ", data='" + data + '\'' +
                 ", nonce='" + nonce + '\'' +

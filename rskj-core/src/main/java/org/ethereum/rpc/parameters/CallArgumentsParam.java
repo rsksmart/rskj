@@ -35,6 +35,8 @@ public class CallArgumentsParam {
     private final HexAddressParam to;
     private final HexNumberParam gas;
     private final HexNumberParam gasPrice;
+    private final HexNumberParam maxPriorityFeePerGas;
+    private final HexNumberParam maxFeePerGas;
     private final HexNumberParam gasLimit;
     private final HexNumberParam nonce;
     private final HexNumberParam chainId;
@@ -45,13 +47,16 @@ public class CallArgumentsParam {
     private final HexNumberParam rskSubtype;
 
     public CallArgumentsParam(HexAddressParam from, HexAddressParam to, HexNumberParam gas,
-                              HexNumberParam gasPrice, HexNumberParam gasLimit, HexNumberParam nonce,
+                              HexNumberParam gasPrice, HexNumberParam maxPriorityFeePerGas, HexNumberParam maxFeePerGas,
+                              HexNumberParam gasLimit, HexNumberParam nonce,
                               HexNumberParam chainId, HexNumberParam value, HexDataParam data, HexDataParam input,
                               HexNumberParam type, HexNumberParam rskSubtype) {
         this.from = from;
         this.to = to;
         this.gas = gas;
         this.gasPrice = gasPrice;
+        this.maxPriorityFeePerGas = maxPriorityFeePerGas;
+        this.maxFeePerGas = maxFeePerGas;
         this.gasLimit = gasLimit;
         this.nonce = nonce;
         this.chainId = chainId;
@@ -76,6 +81,14 @@ public class CallArgumentsParam {
 
     public HexNumberParam getGasPrice() {
         return gasPrice;
+    }
+
+    public HexNumberParam getMaxPriorityFeePerGas() {
+        return maxPriorityFeePerGas;
+    }
+
+    public HexNumberParam getMaxFeePerGas() {
+        return maxFeePerGas;
     }
 
     public HexNumberParam getGasLimit() {
@@ -115,6 +128,8 @@ public class CallArgumentsParam {
         String caTo = this.to == null ? null : this.to.getAddress().toJsonString();
         String caGas = this.gas == null ? null : this.gas.getHexNumber();
         String caGasPrice = this.gasPrice == null ? null : this.gasPrice.getHexNumber();
+        String caMaxPriorityFeePerGas = this.maxPriorityFeePerGas == null ? null : this.maxPriorityFeePerGas.getHexNumber();
+        String caMaxFeePerGas = this.maxFeePerGas == null ? null : this.maxFeePerGas.getHexNumber();
         String caGasLimit = this.gasLimit == null ? null : this.gasLimit.getHexNumber();
         String caNonce = this.nonce == null ? null : this.nonce.getHexNumber();
         String caChainId = this.chainId == null ? null : this.chainId.getHexNumber();
@@ -129,6 +144,8 @@ public class CallArgumentsParam {
         callArguments.setTo(caTo);
         callArguments.setGas(caGas);
         callArguments.setGasPrice(caGasPrice);
+        callArguments.setMaxPriorityFeePerGas(caMaxPriorityFeePerGas);
+        callArguments.setMaxFeePerGas(caMaxFeePerGas);
         callArguments.setGasLimit(caGasLimit);
         callArguments.setNonce(caNonce);
         callArguments.setChainId(caChainId);
@@ -153,6 +170,8 @@ public class CallArgumentsParam {
                 ", gas='" + gas + '\'' +
                 ", gasLimit='" + gasLimit + '\'' +
                 ", gasPrice='" + gasPrice + '\'' +
+                ", maxPriorityFeePerGas='" + maxPriorityFeePerGas + '\'' +
+                ", maxFeePerGas='" + maxFeePerGas + '\'' +
                 ", value='" + value + '\'' +
                 ", data='" + (data != null ? data.getAsHexString() : null) + '\'' +
                 ", nonce='" + nonce + '\'' +
@@ -177,6 +196,8 @@ public class CallArgumentsParam {
             HexAddressParam to = paramOrNull(node, "to", HexAddressParam::new);
             HexNumberParam gas = paramOrNull(node, "gas", HexNumberParam::new);
             HexNumberParam gasPrice = paramOrNull(node, "gasPrice", HexNumberParam::new);
+            HexNumberParam maxPriorityFeePerGas = paramOrNull(node, "maxPriorityFeePerGas", HexNumberParam::new);
+            HexNumberParam maxFeePerGas = paramOrNull(node, "maxFeePerGas", HexNumberParam::new);
             HexNumberParam gasLimit = paramOrNull(node, "gasLimit", HexNumberParam::new);
             HexNumberParam nonce = paramOrNull(node, "nonce", HexNumberParam::new);
             HexNumberParam chainId = paramOrNull(node, "chainId", HexNumberParam::new);
@@ -186,7 +207,7 @@ public class CallArgumentsParam {
             HexNumberParam type = paramOrNull(node, "type", HexNumberParam::new);
             HexNumberParam rskSubtype = paramOrNull(node, "rskSubtype", HexNumberParam::new);
 
-            return new CallArgumentsParam(from, to, gas, gasPrice, gasLimit, nonce, chainId, value, data, input, type, rskSubtype);
+            return new CallArgumentsParam(from, to, gas, gasPrice, maxPriorityFeePerGas, maxFeePerGas, gasLimit, nonce, chainId, value, data, input, type, rskSubtype);
         }
 
         @Nullable

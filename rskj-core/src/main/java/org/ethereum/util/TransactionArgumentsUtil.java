@@ -80,6 +80,9 @@ public class TransactionArgumentsUtil {
 
 		argsRet.setGasPrice(strHexOrStrNumberToBigInteger(argsParam.getGasPrice(), () -> BigInteger.ZERO));
 
+		argsRet.setMaxPriorityFeePerGas(strHexOrStrNumberToBigInteger(argsParam.getMaxPriorityFeePerGas(), () -> null));
+		argsRet.setMaxFeePerGas(strHexOrStrNumberToBigInteger(argsParam.getMaxFeePerGas(), () -> null));
+
 		argsRet.setGasLimit(strHexOrStrNumberToBigInteger(argsParam.getGas(), () -> null));
 
 		if (argsRet.getGasLimit() == null) {
