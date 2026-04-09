@@ -53,7 +53,6 @@ public class BridgeRegTestConstants extends BridgeConstants {
         unionBridgeConstants = UnionBridgeRegTestConstants.getInstance();
 
         btc2RskMinimumAcceptableConfirmations = 3;
-        btc2RskMinimumAcceptableConfirmationsOnRsk = 5;
         rsk2BtcMinimumAcceptableConfirmations = 3;
 
         updateBridgeExecutionPeriod = 15_000; //15 seconds in millis
