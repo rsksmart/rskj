@@ -20,7 +20,6 @@ public class BridgeMainNetConstants extends BridgeConstants {
         unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
 
         btc2RskMinimumAcceptableConfirmations = 100;
-        btc2RskMinimumAcceptableConfirmationsOnRsk = 1000;
         rsk2BtcMinimumAcceptableConfirmations = 4000;
 
         updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
