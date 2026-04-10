@@ -353,7 +353,7 @@ public class EthModule
     public ProofResultDTO getProof(RskAddress address, List<DataWord> storageKeys, String blockId,
             boolean useRlpEncoding) {
         if (blockId == null) {
-            throw new NullPointerException("blockId cannot be null");
+            throw invalidParamError("blockId cannot be null");
         }
 
         try {
