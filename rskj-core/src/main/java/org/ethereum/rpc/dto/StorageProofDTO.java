@@ -18,6 +18,7 @@
 package org.ethereum.rpc.dto;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * DTO for storage proof in eth_getProof response.
@@ -51,15 +52,15 @@ public class StorageProofDTO {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         StorageProofDTO that = (StorageProofDTO) o;
-        return key.equals(that.key) &&
-                value.equals(that.value) &&
+        return Objects.equals(key, that.key) &&
+                Objects.equals(value, that.value) &&
                 Arrays.equals(proof, that.proof);
     }
 
     @Override
     public int hashCode() {
-        int result = key.hashCode();
-        result = 31 * result + value.hashCode();
+        int result = Objects.hashCode(key);
+        result = 31 * result + Objects.hashCode(value);
         result = 31 * result + Arrays.hashCode(proof);
         return result;
     }

@@ -77,7 +77,12 @@ public class HexDataArrayParam implements Serializable {
      */
     public List<DataWord> getAsDataWords() {
         List<DataWord> result = new ArrayList<>(dataList.size());
-        for (byte[] data : dataList) {
+        for (int i = 0; i < dataList.size(); i++) {
+            byte[] data = dataList.get(i);
+            if (data.length > DataWord.BYTES) {
+                throw RskJsonRpcRequestException.invalidParamError(
+                        String.format("Invalid hex data at index %d: exceeds 32 bytes (%d bytes)", i, data.length));
+            }
             result.add(DataWord.valueOf(data));
         }
         return result;
