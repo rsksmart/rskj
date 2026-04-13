@@ -867,18 +867,29 @@ public class Web3Impl implements Web3 {
 
         byte[] blockHash = block.getHash().getBytes();
         int logIndexAcc = 0;
+        long prevCumulativeGas = 0;
         for(Transaction tx: block.getTransactionsList()) {
 
             if(tx.getHash().equals(transactionHash.getHash())){
                 txInfo.setTransaction(tx);
                 break;
             }
-            logIndexAcc += Optional.ofNullable(blockchain.getTransactionInfoByBlock(tx,blockHash))
-                    .map(TransactionInfo::getReceipt)
-                    .map(TransactionReceipt::getLogInfoList).map(List::size)
-                    .orElse(0);
+            TransactionInfo prevTxInfo = blockchain.getTransactionInfoByBlock(tx, blockHash);
+            if (prevTxInfo != null) {
+                logIndexAcc += Optional.ofNullable(prevTxInfo.getReceipt().getLogInfoList()).map(List::size).orElse(0);
+                prevCumulativeGas = prevTxInfo.getReceipt().getCumulativeGasLong();
+            }
 
         }
+
+        // For Type 1 / standard Type 2 receipts the 4-field RLP format does not store gasUsed.
+        // Derive it here from the cumulative gas difference before building the DTO.
+        TransactionReceipt receipt = txInfo.getReceipt();
+        if (receipt.getGasUsed().length == 0) {
+            long perTxGas = receipt.getCumulativeGasLong() - prevCumulativeGas;
+            receipt.setGasUsed(perTxGas);
+        }
+
         return new TransactionReceiptDTO(block, txInfo, signatureCache, logIndexAcc);
     }
 

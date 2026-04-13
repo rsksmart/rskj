@@ -160,8 +160,12 @@ public final class TransactionBuilder {
 		if (effectiveType == TransactionType.TYPE_2 && this.rskSubtype == null) {
 			Coin maxP = this.maxPriorityFeePerGas != null ? this.maxPriorityFeePerGas : this.gasPrice;
 			Coin maxF = this.maxFeePerGas != null ? this.maxFeePerGas : this.gasPrice;
-			Coin effectiveGasPrice = maxP.compareTo(maxF) <= 0 ? maxP : maxF;
-			return new Transaction(this.nonce, effectiveGasPrice, this.gasLimit, this.receiveAddress, this.value,
+			if (maxP.compareTo(maxF) > 0) {
+				throw new IllegalArgumentException(
+						"Type 2 transaction maxPriorityFeePerGas (" + maxP
+								+ ") must not exceed maxFeePerGas (" + maxF + ")");
+			}
+			return new Transaction(this.nonce, maxP, this.gasLimit, this.receiveAddress, this.value,
 					this.data, this.chainId, this.isLocalCall, prefix, this.accessListBytes, maxP, maxF);
 		}
 		if (this.accessListBytes != null) {
@@ -191,6 +195,9 @@ public final class TransactionBuilder {
 		value(BigIntegers.asUnsignedByteArray(args.getValue()));
         type(args.getType());
         rskSubtype(args.getRskSubtype());
+		if (args.getAccessListBytes() != null) {
+			accessList(args.getAccessListBytes());
+		}
 
 		return this;
 

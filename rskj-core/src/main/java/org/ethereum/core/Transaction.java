@@ -907,10 +907,7 @@ public class Transaction {
             throw new IllegalArgumentException(
                     "Type 1 transaction must have exactly " + TYPE_1_FIELD_COUNT + " elements");
         }
-        byte[] chainIdData = txFields.get(0).getRLPData();
-        byte chainId = chainIdData != null && chainIdData.length > 0
-                ? (byte) (new BigInteger(1, chainIdData).byteValue())
-                : 0;
+        byte chainId = parseTypedTxChainId(txFields.get(0).getRLPData());
         byte[] nonce = txFields.get(1).getRLPData();
         Coin gasPrice = RLP.parseCoinNonNullZero(txFields.get(2).getRLPData());
         byte[] gasLimit = txFields.get(3).getRLPData();
@@ -918,12 +915,14 @@ public class Transaction {
         Coin value = RLP.parseCoinNullZero(txFields.get(5).getRLPData());
         byte[] data = txFields.get(6).getRLPData();
         byte[] accessListBytes = txFields.get(7).getRLPRawData();
+        validateAccessListRlp(accessListBytes);
 
         // yParity=0 is RLP-encoded as 0x80, so getRLPData() returns null; treat null as 0
         ECDSASignature signature = null;
         byte[] yParityData = txFields.get(8).getRLPData();
         byte yParity = (yParityData != null && yParityData.length > 0) ? yParityData[0] : 0;
-        byte v = (byte) (LOWER_REAL_V + (yParity & 1));
+        validateYParity(yParity);
+        byte v = (byte) (LOWER_REAL_V + yParity);
         byte[] r = txFields.get(9).getRLPData();
         byte[] s = txFields.get(10).getRLPData();
         if (r != null || s != null) {
@@ -934,35 +933,36 @@ public class Transaction {
                 accessListBytes, null, null);
     }
 
-
-    // TODO: Review all payload parsing methods and standardize the parsing of the fields.
-    
     /** Parses Type 2 (EIP-1559) payload: 12 elements per RSKIP-546. */
     private static ParsedFields parseType2Payload(RLPList txFields) {
         if (txFields.size() != TYPE_2_FIELD_COUNT) {
             throw new IllegalArgumentException(
                     "Type 2 transaction must have exactly " + TYPE_2_FIELD_COUNT + " elements");
         }
-        byte[] chainIdData = txFields.get(0).getRLPData();
-        byte chainId = chainIdData != null && chainIdData.length > 0
-                ? (byte) (new BigInteger(1, chainIdData).byteValue())
-                : 0;
+        byte chainId = parseTypedTxChainId(txFields.get(0).getRLPData());
         byte[] nonce = txFields.get(1).getRLPData();
         Coin maxPriorityFeePerGas = Objects.requireNonNull(
                 RLP.parseCoinNonNullZero(txFields.get(2).getRLPData()), "Type 2 maxPriorityFeePerGas");
         Coin maxFeePerGas = Objects.requireNonNull(
                 RLP.parseCoinNonNullZero(txFields.get(3).getRLPData()), "Type 2 maxFeePerGas");
-        Coin gasPrice = maxPriorityFeePerGas.compareTo(maxFeePerGas) <= 0 ? maxPriorityFeePerGas : maxFeePerGas;
+        if (maxPriorityFeePerGas.compareTo(maxFeePerGas) > 0) {
+            throw new IllegalArgumentException(
+                    "Type 2 transaction maxPriorityFeePerGas (" + maxPriorityFeePerGas
+                            + ") must not exceed maxFeePerGas (" + maxFeePerGas + ")");
+        }
+        Coin gasPrice = maxPriorityFeePerGas;
         byte[] gasLimit = txFields.get(4).getRLPData();
         RskAddress receiveAddress = RLP.parseRskAddress(txFields.get(5).getRLPData());
         Coin value = RLP.parseCoinNullZero(txFields.get(6).getRLPData());
         byte[] data = txFields.get(7).getRLPData();
         byte[] accessListBytes = txFields.get(8).getRLPRawData();
+        validateAccessListRlp(accessListBytes);
 
         ECDSASignature signature = null;
         byte[] yParityData = txFields.get(9).getRLPData();
         byte yParity = (yParityData != null && yParityData.length > 0) ? yParityData[0] : 0;
-        byte v = (byte) (LOWER_REAL_V + (yParity & 1));
+        validateYParity(yParity);
+        byte v = (byte) (LOWER_REAL_V + yParity);
         byte[] r = txFields.get(10).getRLPData();
         byte[] s = txFields.get(11).getRLPData();
         if (r != null || s != null) {
@@ -971,6 +971,56 @@ public class Transaction {
 
         return new ParsedFields(nonce, gasPrice, gasLimit, receiveAddress, value, data, chainId, signature,
                 accessListBytes, maxPriorityFeePerGas, maxFeePerGas);
+    }
+
+    /**
+     * Parses the chain ID for typed transactions (Type 1 / Type 2).
+     * Per EIP-2718, the chain ID must be a canonical integer that fits in a single unsigned byte
+     * (values 1–255). A zero chain ID is rejected: typed transactions require a chain ID.
+     * Values larger than 255 are rejected to prevent cross-chain replay via silent truncation.
+     */
+    private static byte parseTypedTxChainId(byte[] chainIdData) {
+        if (chainIdData == null || chainIdData.length == 0) {
+            throw new IllegalArgumentException("Typed transaction chainId must not be zero or absent");
+        }
+        BigInteger chainIdValue = new BigInteger(1, chainIdData);
+        if (chainIdValue.signum() == 0) {
+            throw new IllegalArgumentException("Typed transaction chainId must not be zero");
+        }
+        if (chainIdValue.compareTo(BigInteger.valueOf(255)) > 0) {
+            throw new IllegalArgumentException(
+                    "Typed transaction chainId exceeds maximum supported value of 255, got: " + chainIdValue);
+        }
+        return chainIdValue.byteValue();
+    }
+
+    /**
+     * Validates that yParity is strictly 0 or 1 as required by EIP-2930 and EIP-1559.
+     * Silently masking with {@code & 1} would allow malformed transactions (e.g. yParity=5)
+     * to be accepted, which deviates from the spec and could indicate signature manipulation.
+     */
+    private static void validateYParity(byte yParity) {
+        if (yParity != 0 && yParity != 1) {
+            throw new IllegalArgumentException(
+                    "Typed transaction yParity must be 0 or 1, got: " + (yParity & 0xFF));
+        }
+    }
+
+    /**
+     * Validates that the access list field contains well-formed RLP.
+     * Rootstock does not interpret access list contents, but an unparseable blob would be stored
+     * on-chain and could cause issues in downstream tooling. A null or empty-list (0xc0) value
+     * is always valid.
+     */
+    private static void validateAccessListRlp(byte[] accessListBytes) {
+        if (accessListBytes == null || accessListBytes.length == 0) {
+            return;
+        }
+        try {
+            RLP.decode2(accessListBytes);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Access list contains invalid RLP encoding", e);
+        }
     }
 
     /** Prepends the RSKIP543 type prefix when present. */

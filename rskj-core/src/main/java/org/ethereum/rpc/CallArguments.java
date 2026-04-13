@@ -18,6 +18,8 @@
 
 package org.ethereum.rpc;
 
+import java.util.List;
+
 /**
  * Wraps call arguments for several json-rpc methods.
  * Take account to fill up the arguments using the right hex value encoding (QUANTITY and UNFORMATTED DATA),
@@ -40,6 +42,34 @@ public class CallArguments {
     private String chainId;
     private String type; // This was ignored before (see https://github.com/rsksmart/rskj/pull/1601)
     private String rskSubtype;
+    /** EIP-2930 / EIP-1559 access list; null or empty means no access list entries */
+    private List<AccessListEntry> accessList;
+
+    /**
+     * A single entry in an EIP-2930 / EIP-1559 access list.
+     * {@code address} is a hex-encoded 20-byte Ethereum address.
+     * {@code storageKeys} is a list of hex-encoded 32-byte storage slot keys.
+     */
+    public static class AccessListEntry {
+        private String address;
+        private List<String> storageKeys;
+
+        public String getAddress() {
+            return address;
+        }
+
+        public void setAddress(String address) {
+            this.address = address;
+        }
+
+        public List<String> getStorageKeys() {
+            return storageKeys;
+        }
+
+        public void setStorageKeys(List<String> storageKeys) {
+            this.storageKeys = storageKeys;
+        }
+    }
 
     public String getFrom() {
         return from;
@@ -145,6 +175,14 @@ public class CallArguments {
         this.rskSubtype = rskSubtype;
     }
 
+    public List<AccessListEntry> getAccessList() {
+        return accessList;
+    }
+
+    public void setAccessList(List<AccessListEntry> accessList) {
+        this.accessList = accessList;
+    }
+
     public String getInput() {
         return this.data;
     }
@@ -169,6 +207,7 @@ public class CallArguments {
                 ", chainId='" + chainId + '\'' +
                 ", type='" + type + '\'' +
                 ", rskSubtype='" + rskSubtype + '\'' +
+                ", accessList=" + accessList +
                 '}';
     }
 }
