@@ -72,10 +72,16 @@ jobs:
 
       - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 #v4.3.0
         name: Restore Gradle Wrapper
+        id: cache-gradle-wrapper
         with:
           path: |
             gradle/wrapper/gradle-wrapper.jar
           key: gradle-wrapper-v1
+
+      - name: Get Gradle wrapper
+        if: steps.cache-gradle-wrapper.outputs.cache-hit != 'true'
+        run: |
+          ./configure.sh
 
       - name: Download build artifacts
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 #v6.0.0
@@ -193,10 +199,16 @@ jobs:
 
       - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 #v4.3.0
         name: Restore Gradle Wrapper
+        id: cache-gradle-wrapper
         with:
           path: |
             gradle/wrapper/gradle-wrapper.jar
           key: gradle-wrapper-v1
+
+      - name: Get Gradle wrapper
+        if: steps.cache-gradle-wrapper.outputs.cache-hit != 'true'
+        run: |
+          ./configure.sh
 
       - name: Download build artifacts
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 #v6.0.0
@@ -245,10 +257,16 @@ jobs:
 
       - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 #v4.3.0
         name: Restore Gradle Wrapper
+        id: cache-gradle-wrapper
         with:
           path: |
             gradle/wrapper/gradle-wrapper.jar
           key: gradle-wrapper-v1
+
+      - name: Get Gradle wrapper
+        if: steps.cache-gradle-wrapper.outputs.cache-hit != 'true'
+        run: |
+          ./configure.sh
 
       - name: Run tests
         run: |
@@ -292,10 +310,16 @@ jobs:
 
       - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 #v4.3.0
         name: Restore Gradle Wrapper
+        id: cache-gradle-wrapper
         with:
           path: |
             gradle/wrapper/gradle-wrapper.jar
           key: gradle-wrapper-v1
+
+      - name: Get Gradle wrapper
+        if: steps.cache-gradle-wrapper.outputs.cache-hit != 'true'
+        run: |
+          ./configure.sh
 
       - name: Run tests
         run: |

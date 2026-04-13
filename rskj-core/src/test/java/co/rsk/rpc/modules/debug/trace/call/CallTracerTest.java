@@ -33,7 +33,10 @@ import org.ethereum.db.ReceiptStoreImpl;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CallTracerTest {
 
@@ -98,6 +101,44 @@ class CallTracerTest {
 
         assertFalse(traceResult.getCalls().get(0).getCalls().isEmpty());
         assertOOGError(traceResult.getCalls().get(0).getCalls().get(0));
+    }
+
+    /**
+     * Verifies that callTracer succeeds on transactions with internal calls.
+     * The contract calls itself recursively via this.recurse(depth - 1).
+     */
+    @Test
+    void traceTransactionWithInternalCalls() throws Exception {
+        DslParser parser = DslParser.fromResource("dsl/call_tracer_internal_call.txt");
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+        ExecutionBlockRetriever executionBlockRetriever = Mockito.mock(ExecutionBlockRetriever.class);
+        Web3InformationRetriever web3InformationRetriever = new Web3InformationRetriever(world.getTransactionPool(), world.getBlockChain(), world.getRepositoryLocator(), executionBlockRetriever);
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        TransactionReceipt txReceipt = world.getTransactionReceiptByName("tx02");
+        assertNotNull(txReceipt, "tx02 receipt should exist");
+        assertTrue(txReceipt.isSuccessful(), "tx02 should have succeeded");
+
+        CallTracer callTracer = new CallTracer(world.getBlockStore(), world.getBlockExecutor(), web3InformationRetriever, receiptStore, world.getBlockChain());
+        String txHash = txReceipt.getTransaction().getHash().toJsonString();
+
+        JsonNode result = callTracer.traceTransaction(txHash, new TraceOptions());
+        assertNotNull(result);
+        TxTraceResult traceResult = objectMapper.treeToValue(result, TxTraceResult.class);
+        assertNotNull(traceResult);
+        assertEquals("CALL", traceResult.getType());
+        assertNotNull(traceResult.getCalls(), "Should have internal calls");
+        assertEquals(1, traceResult.getCalls().size());
+
+        TxTraceResult level1 = traceResult.getCalls().get(0);
+        assertEquals("CALL", level1.getType());
+        assertEquals(1, level1.getCalls().size());
+
+        TxTraceResult level2 = level1.getCalls().get(0);
+        assertEquals("CALL", level2.getType());
     }
 
     private static void assertOOGError(TxTraceResult trace) {
