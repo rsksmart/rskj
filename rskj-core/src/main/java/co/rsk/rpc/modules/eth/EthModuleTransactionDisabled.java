@@ -31,7 +31,7 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
 public class EthModuleTransactionDisabled extends EthModuleTransactionBase {
 
     public EthModuleTransactionDisabled(Constants constants, TransactionPool transactionPool, TransactionGateway transactionGateway) {
-        // wallet is only used from EthModuleTransactionBase::sendTransaction, which is overrode
+        // wallet is only used from EthModuleTransactionBase::sendTransaction, which is overridden
         super(constants, null, transactionPool, transactionGateway);
     }
 

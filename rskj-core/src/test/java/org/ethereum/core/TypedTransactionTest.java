@@ -67,7 +67,7 @@ class TypedTransactionTest {
     }
 
     // ========================================================================
-    // Round-trip (encode -> decode) for all types
+    // Encode -> decode for all types
     // ========================================================================
 
     @ParameterizedTest
@@ -176,7 +176,7 @@ class TypedTransactionTest {
         byte[] secondEncode = decoded.getEncoded();
 
         assertArrayEquals(firstEncode, secondEncode,
-            "Re-encoding a decoded transaction should produce identical bytes");
+            "Encoding a decoded transaction should produce identical bytes");
     }
 
     // ========================================================================
@@ -224,8 +224,8 @@ class TypedTransactionTest {
     @ParameterizedTest
     @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"}, mode = EnumSource.Mode.EXCLUDE)
     void typedTransactionEncoding_isOneByteLongerThanLegacy(TransactionType type) {
-        Transaction legacyTx = createSignedTransaction(TransactionType.LEGACY, EMPTY_DATA);
-        Transaction typedTx = createSignedTransaction(type, EMPTY_DATA);
+        Transaction legacyTx = createTransaction(TransactionType.LEGACY, EMPTY_DATA);
+        Transaction typedTx = createTransaction(type, EMPTY_DATA);
 
         int legacyLen = legacyTx.getEncoded().length;
         int typedLen = typedTx.getEncoded().length;
@@ -304,8 +304,8 @@ class TypedTransactionTest {
     }
 
     @Test
-    void type2Standard_whenMaxFeeIsLower_effectiveGasPriceUsesMaxFee() {
-        Transaction tx = Transaction.builder()
+    void type2Standard_whenMaxPriorityExceedsMaxFee_buildShouldThrow() {
+        assertThrows(IllegalArgumentException.class, () -> Transaction.builder()
                 .nonce(BigInteger.ONE.toByteArray())
                 .maxPriorityFeePerGas(Coin.valueOf(50))
                 .maxFeePerGas(Coin.valueOf(20))
@@ -315,9 +315,8 @@ class TypedTransactionTest {
                 .data(EMPTY_DATA)
                 .chainId((byte) 33)
                 .type(TransactionType.TYPE_2)
-                .build();
-
-        assertEquals(Coin.valueOf(20), tx.getGasPrice());
+                .build(),
+                "Building Type 2 tx with maxPriorityFeePerGas > maxFeePerGas must throw per EIP-1559");
     }
 
     // ========================================================================
@@ -335,11 +334,37 @@ class TypedTransactionTest {
 
     private Transaction createTransaction(TransactionType type, byte[] data) {
         byte[] nonce = ByteUtil.bigIntegerToBytes(BigInteger.ONE);
-        byte[] gasPrice = Coin.valueOf(1_000_000_000).getBytes();
         byte[] gasLimit = ByteUtil.bigIntegerToBytes(BigInteger.valueOf(21_000));
         byte[] receiveAddress = TEST_ADDRESS.getBytes();
         byte[] value = Coin.valueOf(1_000_000_000_000_000_000L).getBytes();
 
+        if (type == TransactionType.TYPE_1) {
+            return Transaction.builder()
+                    .type(TransactionType.TYPE_1)
+                    .chainId((byte) 33)
+                    .nonce(nonce)
+                    .gasPrice(Coin.valueOf(1_000_000_000))
+                    .gasLimit(BigInteger.valueOf(21_000))
+                    .destination(TEST_ADDRESS)
+                    .value(Coin.valueOf(1_000_000_000_000_000_000L))
+                    .data(data)
+                    .build();
+        }
+        if (type == TransactionType.TYPE_2) {
+            return Transaction.builder()
+                    .type(TransactionType.TYPE_2)
+                    .chainId((byte) 33)
+                    .nonce(nonce)
+                    .maxPriorityFeePerGas(Coin.valueOf(1_000_000_000))
+                    .maxFeePerGas(Coin.valueOf(1_000_000_000))
+                    .gasLimit(BigInteger.valueOf(21_000))
+                    .destination(TEST_ADDRESS)
+                    .value(Coin.valueOf(1_000_000_000_000_000_000L))
+                    .data(data)
+                    .build();
+        }
+
+        byte[] gasPrice = Coin.valueOf(1_000_000_000).getBytes();
         return new Transaction(nonce, gasPrice, gasLimit, receiveAddress, value, data, type);
     }
 
@@ -351,6 +376,36 @@ class TypedTransactionTest {
 
     private Transaction createSignedTransactionWith(TransactionType type, BigInteger nonce,
                                                     Coin value, byte[] data) {
+        if (type == TransactionType.TYPE_1) {
+            Transaction tx = Transaction.builder()
+                    .type(TransactionType.TYPE_1)
+                    .chainId((byte) 33)
+                    .nonce(nonce.toByteArray())
+                    .gasPrice(Coin.valueOf(1_000_000_000))
+                    .gasLimit(BigInteger.valueOf(21_000))
+                    .destination(TEST_ADDRESS)
+                    .value(value)
+                    .data(data)
+                    .build();
+            tx.sign(TEST_KEY.getPrivKeyBytes());
+            return tx;
+        }
+        if (type == TransactionType.TYPE_2) {
+            Transaction tx = Transaction.builder()
+                    .type(TransactionType.TYPE_2)
+                    .chainId((byte) 33)
+                    .nonce(nonce.toByteArray())
+                    .maxPriorityFeePerGas(Coin.valueOf(1_000_000_000))
+                    .maxFeePerGas(Coin.valueOf(1_000_000_000))
+                    .gasLimit(BigInteger.valueOf(21_000))
+                    .destination(TEST_ADDRESS)
+                    .value(value)
+                    .data(data)
+                    .build();
+            tx.sign(TEST_KEY.getPrivKeyBytes());
+            return tx;
+        }
+
         byte[] nonceBytes = ByteUtil.bigIntegerToBytes(nonce);
         byte[] gasPrice = Coin.valueOf(1_000_000_000).getBytes();
         byte[] gasLimit = ByteUtil.bigIntegerToBytes(BigInteger.valueOf(21_000));

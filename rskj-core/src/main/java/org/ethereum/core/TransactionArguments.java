@@ -37,6 +37,8 @@ public class TransactionArguments {
 	private String data; // compiledCode
 	private BigInteger nonce;
 	private byte chainId; // NOSONAR
+	/** EIP-2930 / EIP-1559: raw RLP-encoded access list bytes; null means no access list */
+	private byte[] accessListBytes;
 
 	public String getFrom() {
 		return from;
@@ -140,6 +142,14 @@ public class TransactionArguments {
 
     public Byte getRskSubtype() {
         return rskSubtype;
+    }
+
+    public byte[] getAccessListBytes() {
+        return accessListBytes;
+    }
+
+    public void setAccessListBytes(byte[] accessListBytes) {
+        this.accessListBytes = accessListBytes;
     }
 
 	@Override

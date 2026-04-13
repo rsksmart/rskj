@@ -23,6 +23,8 @@ import co.rsk.core.Wallet;
 import co.rsk.net.TransactionGateway;
 import co.rsk.util.RLPException;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -31,6 +33,8 @@ import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.TransactionArgumentsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
@@ -42,12 +46,25 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
     private final TransactionPool transactionPool;
     private final Constants constants;
     private final TransactionGateway transactionGateway;
+    @Nullable
+    private final ActivationConfig activationConfig;
+    @Nullable
+    private final Blockchain blockchain;
 
     public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool, TransactionGateway transactionGateway) {
+        this(constants, wallet, transactionPool, transactionGateway, null, null);
+    }
+
+    public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool,
+                                     TransactionGateway transactionGateway,
+                                     @Nullable ActivationConfig activationConfig,
+                                     @Nullable Blockchain blockchain) {
         this.wallet = wallet;
         this.transactionPool = transactionPool;
         this.constants = constants;
         this.transactionGateway = transactionGateway;
+        this.activationConfig = activationConfig;
+        this.blockchain = blockchain;
     }
 
     @Override
@@ -68,6 +85,8 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
         try {
             TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, constants.getChainId());
+
+            checkTypedTransactionActivation(txArgs.getType());
 
             synchronized (transactionPool) {
                 if (txArgs.getNonce() == null) {
@@ -104,6 +123,8 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 throw invalidParamError("Missing parameter, gasPrice, gas or value");
             }
 
+            checkTypedTransactionActivation(tx.getType());
+
             if (!tx.acceptTransactionSignature(constants.getChainId())) {
                 throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + tx.getChainId());
             }
@@ -125,5 +146,25 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
         }
     }
 
+    /**
+     * Checks that the transaction type is allowed by the current activation config at the head block.
+     * This provides an early, clear error at the RPC layer before the transaction reaches the pool.
+     * Typed transactions (RSKIP543) and Type 1/2 specifically (RSKIP546) must be active.
+     * The check is skipped when no {@link ActivationConfig} or {@link Blockchain} was provided.
+     */
+    private void checkTypedTransactionActivation(@Nullable TransactionType type) {
+        if (activationConfig == null || blockchain == null || type == null || type == TransactionType.LEGACY) {
+            return;
+        }
+        long bestBlockNumber = blockchain.getBestBlock().getNumber();
+        ActivationConfig.ForBlock activations = activationConfig.forBlock(bestBlockNumber);
+        if (!activations.isActive(ConsensusRule.RSKIP543)) {
+            throw invalidParamError("Typed transactions (type " + type + ") are not supported before RSKIP-543 activation");
+        }
+        if ((type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2)
+                && !activations.isActive(ConsensusRule.RSKIP546)) {
+            throw invalidParamError("Type 1 / Type 2 transactions are not supported before RSKIP-546 activation");
+        }
+    }
 
 }
