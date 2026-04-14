@@ -165,6 +165,12 @@ public class TransactionExecutor {
             return true;
         }
 
+        if (tx.isTypedTransactionNotAllowed(activations)) {
+            logger.warn("Typed transactions are not supported before RSKIP543 activation, tx {}", tx.getHash());
+            execError("typed transactions are not supported before RSKIP543 activation");
+            return false;
+        }
+
         if (tx.isInitCodeSizeInvalidForTx(activations)) {
 
             String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());

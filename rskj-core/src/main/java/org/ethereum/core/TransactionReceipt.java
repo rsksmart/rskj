@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
     import co.rsk.core.types.bytes.Bytes;
+    import co.rsk.core.types.bytes.BytesSlice;
     import org.bouncycastle.util.BigIntegers;
     import org.ethereum.util.*;
     import org.ethereum.vm.LogInfo;
@@ -41,6 +42,7 @@ package org.ethereum.core;
 public class TransactionReceipt {
 
     private Transaction transaction;
+    private TransactionTypePrefix typePrefix = TransactionTypePrefix.legacy();
 
     protected static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
     protected static final byte[] SUCCESS_STATUS = new byte[]{0x01};
@@ -59,9 +61,17 @@ public class TransactionReceipt {
     public TransactionReceipt() {
     }
 
+    /** Decodes legacy and typed receipts from encoded bytes. */
     public TransactionReceipt(byte[] rlp) {
+        if (rlp == null || rlp.length == 0) {
+            throw new IllegalArgumentException("Receipt RLP data cannot be null or empty");
+        }
 
-        ArrayList<RLPElement> params = RLP.decode2(rlp);
+        TransactionTypePrefix prefix = TransactionTypePrefix.fromRawData(rlp);
+        this.typePrefix = prefix;
+        BytesSlice receiptData = TransactionTypePrefix.stripPrefix(rlp, prefix);
+
+        ArrayList<RLPElement> params = RLP.decode2(receiptData);
         RLPList receipt = (RLPList) params.get(0);
 
         RLPItem postTxStateRLP = (RLPItem) receipt.get(0);
@@ -155,9 +165,20 @@ public class TransactionReceipt {
             logInfoListRLP = RLP.encodeList();
         }
 
-        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, statusRLP);
+        byte[] receiptData = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP,
+                logInfoListRLP, gasUsedRLP, statusRLP);
+
+        byte[] prefix = getReceiptTypePrefix();
+        rlpEncoded = prefix.length == 0 ? receiptData : ByteUtil.merge(prefix, receiptData);
 
         return rlpEncoded;
+    }
+
+    private byte[] getReceiptTypePrefix() {
+        if (transaction != null) {
+            return transaction.getTypePrefix().toBytes();
+        }
+        return typePrefix.toBytes();
     }
 
     public void setStatus(byte[] status) {
@@ -219,7 +240,11 @@ public class TransactionReceipt {
     }
 
     public void setTransaction(Transaction transaction) {
+        this.rlpEncoded = null;
         this.transaction = transaction;
+        if (transaction != null) {
+            this.typePrefix = transaction.getTypePrefix();
+        }
     }
 
     public Transaction getTransaction() {

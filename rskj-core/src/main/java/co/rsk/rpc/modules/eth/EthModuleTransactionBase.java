@@ -116,6 +116,8 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
             return s = tx.getHash().toJsonString();
         } catch (RLPException e) {
             throw invalidParamError("Invalid input: " + e.getMessage(), e);
+        } catch (IllegalArgumentException e) {
+            throw invalidParamError("Invalid transaction: " + e.getMessage(), e);
         } finally {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("eth_sendRawTransaction({}): {}", rawData, s);

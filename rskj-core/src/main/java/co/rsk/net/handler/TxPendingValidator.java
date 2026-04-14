@@ -78,6 +78,10 @@ public class TxPendingValidator {
                 : BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
+        if (tx.isTypedTransactionNotAllowed(activations)) {
+            return TransactionValidationResult.withError("typed transactions are not supported before RSKIP543 activation");
+        }
+
         long basicTxCost = tx.transactionCost(constants, activations, signatureCache);
 
         if (state == null && basicTxCost != 0) {

@@ -47,7 +47,8 @@ public class TransactionInfo {
     public TransactionInfo(byte[] rlp) {
         ArrayList<RLPElement> params = RLP.decode2(rlp);
         RLPList txInfo = (RLPList) params.get(0);
-        RLPList receiptRLP = (RLPList) txInfo.get(0);
+        
+        RLPElement receiptRLP = txInfo.get(0);
         RLPItem blockHashRLP  = (RLPItem) txInfo.get(1);
         RLPItem indexRLP = (RLPItem) txInfo.get(2);
 
@@ -67,7 +68,7 @@ public class TransactionInfo {
     /* [receipt, blockHash, index] */
     public byte[] getEncoded() {
 
-        byte[] receiptRLP = this.receipt.getEncoded();
+        byte[] receiptRLP = RLP.encodeElement(this.receipt.getEncoded());
         byte[] blockHashRLP = RLP.encodeElement(blockHash);
         byte[] indexRLP = RLP.encodeInt(index);
 

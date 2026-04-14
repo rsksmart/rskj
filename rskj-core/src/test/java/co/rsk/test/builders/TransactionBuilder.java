@@ -18,17 +18,24 @@
 
 package co.rsk.test.builders;
 
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
-import org.ethereum.core.Account;
-import org.ethereum.core.ImmutableTransaction;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
+import org.mockito.Mockito;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Optional;
+import java.util.Random;
+
+import static org.mockito.Mockito.any;
 
 /**
  * Created by ajlopez on 8/6/2016.
@@ -44,6 +51,8 @@ public class TransactionBuilder {
     private BigInteger nonce = BigInteger.ZERO;
     private Byte chainId = null;
     private boolean immutable;
+    private Byte transactionType = null;
+    private Byte rskSubtype = null;
 
     public TransactionBuilder sender(Account sender) {
         this.sender = sender;
@@ -100,6 +109,16 @@ public class TransactionBuilder {
         return this;
     }
 
+    public TransactionBuilder transactionType(byte transactionType) {
+        this.transactionType = transactionType;
+        return this;
+    }
+
+    public TransactionBuilder rskSubtype(byte rskSubtype) {
+        this.rskSubtype = rskSubtype;
+        return this;
+    }
+
     public Transaction build() {
         byte chainId = Optional.ofNullable(this.chainId).orElse(Constants.REGTEST_CHAIN_ID);
 
@@ -114,19 +133,34 @@ public class TransactionBuilder {
         byte[] data = this.data;
         BigInteger value = this.value;
 
-        return build(to, nonce, gasLimit, gasPrice, chainId, data, value, sender.getEcKey().getPrivKeyBytes(), this.immutable);
+        return createSignedTransaction(to, nonce, gasLimit, gasPrice, chainId, data, value, sender.getEcKey().getPrivKeyBytes(), this.immutable);
     }
 
-    private Transaction build(String to, BigInteger nonce, BigInteger gasLimit, BigInteger gasPrice, byte chainId, byte[] data, BigInteger value, byte[] privKeyBytes, boolean immutable) {
-        Transaction tx = Transaction.builder()
+    private Transaction createSignedTransaction(String to, BigInteger nonce, BigInteger gasLimit, BigInteger gasPrice, byte chainId, byte[] data, BigInteger value, byte[] privKeyBytes, boolean immutable) {
+        org.ethereum.core.TransactionBuilder txBuilder = org.ethereum.core.Transaction.builder()
                 .destination(to)
                 .nonce(nonce)
                 .gasLimit(gasLimit)
                 .gasPrice(gasPrice)
                 .chainId(chainId)
                 .data(data)
-                .value(value)
-                .build();
+                .value(value);
+        
+        if (this.transactionType != null) {
+            org.ethereum.core.TransactionType txType = org.ethereum.core.TransactionType.fromByte(this.transactionType);
+            if (txType == null || txType.isLegacy()) {
+                throw new IllegalArgumentException(String.format(
+                        "transaction type not supported: 0x%02x",
+                        this.transactionType & 0xFF));
+            }
+            txBuilder.type(txType);
+        }
+        
+        if (this.rskSubtype != null) {
+            txBuilder.rskSubtype(this.rskSubtype);
+        }
+        
+        Transaction tx = txBuilder.build();
         tx.sign(privKeyBytes);
 
         if (immutable) {
@@ -139,11 +173,11 @@ public class TransactionBuilder {
     /**
      * Generates a random transaction
      */
-    public Transaction buildRandomTransaction() {
-       return buildRandomTransaction(TransactionBuilder.class.hashCode());
+    public Transaction createRandomTransaction() {
+       return createRandomTransaction(TransactionBuilder.class.hashCode());
     }
 
-    public Transaction buildRandomTransaction(long seed) {
+    public Transaction createRandomTransaction(long seed) {
         int i = TestUtils.generateInt(String.valueOf(seed));
         long k = i * -1L;
 
@@ -160,6 +194,61 @@ public class TransactionBuilder {
         BigInteger value = randomPositiveVal;
         byte[] privateKey = ECKey.fromPrivate(randomPositiveVal).getPrivKeyBytes();
 
-        return build(to, nonce, gasLimit, gasPrice, chainId, data, value, privateKey, false);
+        return createSignedTransaction(to, nonce, gasLimit, gasPrice, chainId, data, value, privateKey, false);
+    }
+
+    public static Transaction createMockTransaction(
+            RskSystemProperties config,
+            long value,
+            long gaslimit,
+            long gasprice,
+            long nonce,
+            long data,
+            long sender) {
+        Random r = new Random(sender);
+        Transaction transaction = Mockito.mock(Transaction.class);
+        Mockito.when(transaction.getValue()).thenReturn(new Coin(BigInteger.valueOf(value)));
+        Mockito.when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(gaslimit).toByteArray());
+        Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(gaslimit));
+        Mockito.when(transaction.getGasPrice()).thenReturn(Coin.valueOf(gasprice));
+        Mockito.when(transaction.getNonce()).thenReturn(BigInteger.valueOf(nonce).toByteArray());
+        Mockito.when(transaction.getNonceAsInteger()).thenReturn(BigInteger.valueOf(nonce));
+
+        byte[] returnSenderBytes = new byte[20];
+        r.nextBytes(returnSenderBytes);
+        RskAddress returnSender = new RskAddress(returnSenderBytes);
+
+        byte[] returnReceiveAddressBytes = new byte[20];
+        r.nextBytes(returnReceiveAddressBytes);
+        RskAddress returnReceiveAddress = new RskAddress(returnReceiveAddressBytes);
+
+        byte[] randomBytes = TestUtils.generateBytes(TransactionBuilder.class, "txHash", 32);
+        Mockito.when(transaction.getSender(any(SignatureCache.class))).thenReturn(returnSender);
+        Mockito.when(transaction.getHash()).thenReturn(new Keccak256(randomBytes));
+        Mockito.when(transaction.acceptTransactionSignature(config.getNetworkConstants().getChainId())).thenReturn(Boolean.TRUE);
+        Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);
+        ArrayList<Byte> bytes = new ArrayList<>();
+        long amount = 21000;
+        if (data != 0) {
+            data /= 2;
+            for (long i = 0; i < data / 4; i++) {
+                bytes.add((byte) 0);
+                amount += 4;
+            }
+            for (long i = 0; i < data / 68; i++) {
+                bytes.add((byte) 1);
+                amount += 68;
+            }
+        }
+        int n = bytes.size();
+        byte[] b = new byte[n];
+        for (int i = 0; i < n; i++) {
+            b[i] = bytes.get(i);
+        }
+        Mockito.when(transaction.getData()).thenReturn(b);
+        Mockito.when(transaction.transactionCost(any(), any(), any())).thenReturn(amount);
+        Mockito.when(transaction.getTypePrefix()).thenReturn(TransactionTypePrefix.legacy());
+
+        return transaction;
     }
 }

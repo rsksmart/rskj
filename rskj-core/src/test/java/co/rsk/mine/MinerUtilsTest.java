@@ -17,7 +17,7 @@
  */
 package co.rsk.mine;
 
-import co.rsk.TestHelpers.Tx;
+import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -87,7 +87,7 @@ class MinerUtilsTest {
 
     @Test
     void validTransactionRepositoryNonceTest() {
-        Transaction tx = Tx.create(config, 0, 50000, 5, 0, 0, 0);
+        Transaction tx = TransactionBuilder.createMockTransaction(config, 0, 50000, 5, 0, 0, 0);
         //Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
@@ -101,7 +101,7 @@ class MinerUtilsTest {
 
     @Test
     void validTransactionAccWrapNonceTest() {
-        Transaction tx = Tx.create(config, 0, 50000, 5, 1, 0, 0);
+        Transaction tx = TransactionBuilder.createMockTransaction(config, 0, 50000, 5, 1, 0, 0);
         //Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
@@ -115,7 +115,7 @@ class MinerUtilsTest {
 
     @Test
     void invalidNonceTransactionTest() {
-        Transaction tx = Tx.create(config, 0, 50000, 2, 0, 0, 0);
+        Transaction tx = TransactionBuilder.createMockTransaction(config, 0, 50000, 2, 0, 0, 0);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Map<RskAddress, BigInteger> accountNounces = new HashMap<>();
@@ -130,7 +130,7 @@ class MinerUtilsTest {
 
     @Test
     void invalidGasPriceTransactionTest() {
-        Transaction tx = Tx.create(config, 0, 50000, 1, 0, 0, 0);
+        Transaction tx = TransactionBuilder.createMockTransaction(config, 0, 50000, 1, 0, 0, 0);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Map<RskAddress, BigInteger> accountNounces = new HashMap<>();
@@ -147,7 +147,7 @@ class MinerUtilsTest {
 
     @Test
     void harmfulTransactionTest() {
-        Transaction tx = Tx.create(config, 0, 50000, 1, 0, 0, 0);
+        Transaction tx = TransactionBuilder.createMockTransaction(config, 0, 50000, 1, 0, 0, 0);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Mockito.when(tx.getGasPrice()).thenReturn(null);
@@ -169,8 +169,8 @@ class MinerUtilsTest {
         Coin minGasPrice = Coin.valueOf(minGasPriceRef);
         long capGasPrice = minGasPriceRef * 100;
 
-        Transaction txLessGasPriceThanCap = Tx.create(config, 0, 50000, capGasPrice - 1, 1, 0, 0);
-        Transaction txMoreGasPriceThanCap = Tx.create(config, 0, 50000, capGasPrice + 1_000_000_000_000L, 1, 0, 1);
+        Transaction txLessGasPriceThanCap = TransactionBuilder.createMockTransaction(config, 0, 50000, capGasPrice - 1, 1, 0, 0);
+        Transaction txMoreGasPriceThanCap = TransactionBuilder.createMockTransaction(config, 0, 50000, capGasPrice + 1_000_000_000_000L, 1, 0, 1);
         List<Transaction> txs = new LinkedList<>();
         txs.add(txLessGasPriceThanCap);
         txs.add(txMoreGasPriceThanCap);
@@ -192,8 +192,8 @@ class MinerUtilsTest {
         Coin minGasPrice = Coin.valueOf(minGasPriceRef);
         long capGasPrice = minGasPriceRef * 100;
 
-        Transaction txLessGasPriceThanCap = Tx.create(config, 0, 50000, capGasPrice - 1, 1, 0, 0);
-        Transaction txMoreGasPriceThanCap = Tx.create(config, 0, 50000, capGasPrice + 1, 1, 0, 1);
+        Transaction txLessGasPriceThanCap = TransactionBuilder.createMockTransaction(config, 0, 50000, capGasPrice - 1, 1, 0, 0);
+        Transaction txMoreGasPriceThanCap = TransactionBuilder.createMockTransaction(config, 0, 50000, capGasPrice + 1, 1, 0, 1);
         List<Transaction> txs = new LinkedList<>();
         txs.add(txLessGasPriceThanCap);
         txs.add(txMoreGasPriceThanCap);
