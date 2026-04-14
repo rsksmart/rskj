@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * <p>Consolidates tests for:
  * <ul>
- *   <li>Block body encoding via {@link BlockTxCodec} (typed wrapping as RLP byte strings)</li>
+ *   <li>Block body encoding via {@link BlockBodyCodec} (typed wrapping as RLP byte strings)</li>
  *   <li>P2P relay via {@link TransactionsMessage}</li>
  *   <li>Transaction hash consistency across construction, encoding, and mining paths</li>
  *   <li>End-to-end Type 2 (EIP-1559) mining and receipt verification</li>
@@ -86,7 +86,7 @@ class TypedTransactionIntegrationTest {
     @Test
     void legacyTransaction_isNotWrappedInBlockBody() {
         Transaction legacy = buildLegacy(0);
-        byte[] encoded = BlockTxCodec.encodeTransaction(legacy);
+        byte[] encoded = BlockBodyCodec.encodeTransaction(legacy);
 
         assertTrue((encoded[0] & 0xFF) >= 0xC0,
                 "Legacy tx in block body must be raw RLP list, first byte: 0x"
@@ -96,7 +96,7 @@ class TypedTransactionIntegrationTest {
     @Test
     void type1Transaction_isWrappedAsRlpByteStringInBlockBody() {
         Transaction type1 = buildType1(0);
-        byte[] encoded = BlockTxCodec.encodeTransaction(type1);
+        byte[] encoded = BlockBodyCodec.encodeTransaction(type1);
 
         assertTrue((encoded[0] & 0xFF) >= 0x80 && (encoded[0] & 0xFF) <= 0xBF,
                 "Type 1 tx must be wrapped as RLP byte string in block body, first byte: 0x"
@@ -109,7 +109,7 @@ class TypedTransactionIntegrationTest {
     @Test
     void type2Transaction_isWrappedAsRlpByteStringInBlockBody() {
         Transaction type2 = buildType2(0);
-        byte[] encoded = BlockTxCodec.encodeTransaction(type2);
+        byte[] encoded = BlockBodyCodec.encodeTransaction(type2);
 
         assertTrue((encoded[0] & 0xFF) >= 0x80 && (encoded[0] & 0xFF) <= 0xBF,
                 "Type 2 tx must be wrapped as RLP byte string in block body");
@@ -121,45 +121,45 @@ class TypedTransactionIntegrationTest {
     @Test
     void rskNamespaceTransaction_isWrappedAsRlpByteStringInBlockBody() {
         Transaction rsk = buildRskNamespace(0, (byte) 0x03);
-        byte[] encoded = BlockTxCodec.encodeTransaction(rsk);
+        byte[] encoded = BlockBodyCodec.encodeTransaction(rsk);
 
         assertTrue((encoded[0] & 0xFF) >= 0x80 && (encoded[0] & 0xFF) <= 0xBF,
                 "RSK namespace tx must be wrapped as RLP byte string in block body");
     }
 
     // =========================================================================
-    // BlockTxCodec encode / decode
+    // BlockBodyCodec encode / decode
     // =========================================================================
 
     @Test
-    void legacyTransaction_encodesAndDecodesViaBlockTxCodec() {
-        assertBlockTxCodecEncodeDecode(List.of(buildLegacy(0)));
+    void legacyTransaction_encodesAndDecodesViaBlockBodyCodec() {
+        assertBlockBodyCodecEncodeDecode(List.of(buildLegacy(0)));
     }
 
     @Test
-    void type1Transaction_encodesAndDecodesViaBlockTxCodec() {
-        assertBlockTxCodecEncodeDecode(List.of(buildType1(0)));
+    void type1Transaction_encodesAndDecodesViaBlockBodyCodec() {
+        assertBlockBodyCodecEncodeDecode(List.of(buildType1(0)));
     }
 
     @Test
-    void type2Transaction_encodesAndDecodesViaBlockTxCodec() {
-        assertBlockTxCodecEncodeDecode(List.of(buildType2(0)));
+    void type2Transaction_encodesAndDecodesViaBlockBodyCodec() {
+        assertBlockBodyCodecEncodeDecode(List.of(buildType2(0)));
     }
 
     @Test
-    void rskNamespaceTransaction_encodesAndDecodesViaBlockTxCodec() {
-        assertBlockTxCodecEncodeDecode(List.of(buildRskNamespace(0, (byte) 0x03)));
+    void rskNamespaceTransaction_encodesAndDecodesViaBlockBodyCodec() {
+        assertBlockBodyCodecEncodeDecode(List.of(buildRskNamespace(0, (byte) 0x03)));
     }
 
     @Test
-    void mixedBlock_allTransactionTypesEncodeAndDecodeViaBlockTxCodec() {
+    void mixedBlock_allTransactionTypesEncodeAndDecodeViaBlockBodyCodec() {
         List<Transaction> txs = List.of(
                 buildLegacy(0),
                 buildType1(1),
                 buildType2(2),
                 buildRskNamespace(3, (byte) 0x05)
         );
-        assertBlockTxCodecEncodeDecode(txs);
+        assertBlockBodyCodecEncodeDecode(txs);
     }
 
     @Test
@@ -176,15 +176,15 @@ class TypedTransactionIntegrationTest {
                 .build();
         original.sign(sender.getEcKey().getPrivKeyBytes());
 
-        byte[] blockBodyEncoded = BlockTxCodec.encodeTransactions(List.of(original));
+        byte[] blockBodyEncoded = BlockBodyCodec.encodeTransactions(List.of(original));
         RLPList decoded = RLP.decodeList(blockBodyEncoded);
-        List<Transaction> decodedTxs = BlockTxCodec.decodeTransactions(decoded);
+        List<Transaction> decodedTxs = BlockBodyCodec.decodeTransactions(decoded);
 
         Transaction decoded0 = decodedTxs.get(0);
         assertEquals(Coin.valueOf(5_000_000_000L), decoded0.getMaxPriorityFeePerGas(),
-                "maxPriorityFeePerGas must be preserved after BlockTxCodec encode/decode");
+                "maxPriorityFeePerGas must be preserved after BlockBodyCodec encode/decode");
         assertEquals(Coin.valueOf(10_000_000_000L), decoded0.getMaxFeePerGas(),
-                "maxFeePerGas must be preserved after BlockTxCodec encode/decode");
+                "maxFeePerGas must be preserved after BlockBodyCodec encode/decode");
     }
 
     // =========================================================================
@@ -270,31 +270,31 @@ class TypedTransactionIntegrationTest {
     }
 
     // =========================================================================
-    // Hash consistency: builder -> BlockTxCodec encode/decode
+    // Hash consistency: builder -> BlockBodyCodec encode/decode
     // =========================================================================
 
     @Test
-    void legacyTransaction_hashConsistentViaBlockTxCodec() {
-        assertHashConsistencyViaBlockTxCodec(buildLegacy(0));
+    void legacyTransaction_hashConsistentViaBlockBodyCodec() {
+        assertHashConsistencyViaBlockBodyCodec(buildLegacy(0));
     }
 
     @Test
-    void type1Transaction_hashConsistentViaBlockTxCodec() {
-        assertHashConsistencyViaBlockTxCodec(buildType1(0));
+    void type1Transaction_hashConsistentViaBlockBodyCodec() {
+        assertHashConsistencyViaBlockBodyCodec(buildType1(0));
     }
 
     @Test
-    void type2Transaction_hashConsistentViaBlockTxCodec() {
-        assertHashConsistencyViaBlockTxCodec(buildType2(0));
+    void type2Transaction_hashConsistentViaBlockBodyCodec() {
+        assertHashConsistencyViaBlockBodyCodec(buildType2(0));
     }
 
     @Test
-    void rskNamespaceTransaction_hashConsistentViaBlockTxCodec() {
-        assertHashConsistencyViaBlockTxCodec(buildRskNamespace(0, (byte) 0x05));
+    void rskNamespaceTransaction_hashConsistentViaBlockBodyCodec() {
+        assertHashConsistencyViaBlockBodyCodec(buildRskNamespace(0, (byte) 0x05));
     }
 
     @Test
-    void mixedTransactions_allHashesConsistentViaBlockTxCodec() {
+    void mixedTransactions_allHashesConsistentViaBlockBodyCodec() {
         List<Transaction> txs = List.of(
                 buildLegacy(0),
                 buildType1(1),
@@ -302,9 +302,9 @@ class TypedTransactionIntegrationTest {
                 buildRskNamespace(3, (byte) 0x07)
         );
 
-        byte[] blockBodyEncoded = BlockTxCodec.encodeTransactions(txs);
+        byte[] blockBodyEncoded = BlockBodyCodec.encodeTransactions(txs);
         RLPList txList = RLP.decodeList(blockBodyEncoded);
-        List<Transaction> decoded = BlockTxCodec.decodeTransactions(txList);
+        List<Transaction> decoded = BlockBodyCodec.decodeTransactions(txList);
 
         assertEquals(txs.size(), decoded.size());
         for (int i = 0; i < txs.size(); i++) {
@@ -628,10 +628,10 @@ class TypedTransactionIntegrationTest {
     // Helpers: assertions
     // =========================================================================
 
-    private void assertBlockTxCodecEncodeDecode(List<Transaction> originals) {
-        byte[] blockBodyEncoded = BlockTxCodec.encodeTransactions(originals);
+    private void assertBlockBodyCodecEncodeDecode(List<Transaction> originals) {
+        byte[] blockBodyEncoded = BlockBodyCodec.encodeTransactions(originals);
         RLPList txList = RLP.decodeList(blockBodyEncoded);
-        List<Transaction> decoded = BlockTxCodec.decodeTransactions(txList);
+        List<Transaction> decoded = BlockBodyCodec.decodeTransactions(txList);
 
         assertEquals(originals.size(), decoded.size());
         for (int i = 0; i < originals.size(); i++) {
@@ -652,14 +652,14 @@ class TypedTransactionIntegrationTest {
                 "Encoded bytes must be stable after encode/decode");
     }
 
-    private void assertHashConsistencyViaBlockTxCodec(Transaction original) {
-        byte[] blockBodyEncoded = BlockTxCodec.encodeTransactions(List.of(original));
+    private void assertHashConsistencyViaBlockBodyCodec(Transaction original) {
+        byte[] blockBodyEncoded = BlockBodyCodec.encodeTransactions(List.of(original));
         RLPList txList = RLP.decodeList(blockBodyEncoded);
-        List<Transaction> decoded = BlockTxCodec.decodeTransactions(txList);
+        List<Transaction> decoded = BlockBodyCodec.decodeTransactions(txList);
 
         assertEquals(1, decoded.size());
         assertArrayEquals(original.getHash().getBytes(), decoded.get(0).getHash().getBytes(),
-                "Hash must be identical after BlockTxCodec encode/decode for type: " + original.getType());
+                "Hash must be identical after BlockBodyCodec encode/decode for type: " + original.getType());
     }
 
     private void assertHashConsistencyAfterMining(Transaction original) {

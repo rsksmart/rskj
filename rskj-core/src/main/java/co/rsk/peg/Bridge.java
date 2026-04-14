@@ -372,7 +372,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.bridgeSupport = bridgeSupportFactory.newInstance(
             args.getRepository(),
             rskExecutionBlock,
-            contractAddress,
             args.getLogs()
         );
     }
@@ -1468,6 +1467,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getEstimatedFeesForNextPegOutEvent");
 
         return bridgeSupport.getEstimatedFeesForNextPegOutEvent().value;
+    }
+
+    public long getEstimatedFeesForPegOutAmount(Object[] args) throws IOException, BridgeIllegalArgumentException {
+        logger.trace("getEstimatedFeesForPegOutAmount");
+
+        co.rsk.core.Coin pegOutAmountInWeis = new co.rsk.core.Coin((BigInteger) args[0]);
+        return bridgeSupport.getEstimatedFeesForPegOutAmount(pegOutAmountInWeis).value;
     }
 
     public int setUnionBridgeContractAddressForTestnet(Object[] args) {

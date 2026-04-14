@@ -245,7 +245,7 @@ public class ReleaseTransactionBuilder {
         sr.recipientsPayFees = true;
     };
 
-    protected enum Response {
+    public enum Response {
         SUCCESS,
         INSUFFICIENT_MONEY,
         COULD_NOT_ADJUST_DOWNWARDS,

@@ -32,6 +32,7 @@ import java.util.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -44,12 +45,11 @@ import org.spongycastle.util.encoders.Hex;
  */
 public class BridgeStorageProvider {
     private static final Logger logger = LoggerFactory.getLogger(BridgeStorageProvider.class);
-
+    private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
     // Dummy value to use when saving key only indexes
     private static final byte TRUE_VALUE = (byte) 1;
 
     private final Repository repository;
-    private final RskAddress contractAddress;
     private final NetworkParameters networkParameters;
     private final ActivationConfig.ForBlock activations;
 
@@ -92,11 +92,9 @@ public class BridgeStorageProvider {
 
     public BridgeStorageProvider(
         Repository repository,
-        RskAddress contractAddress,
         NetworkParameters networkParameters,
         ActivationConfig.ForBlock activations) {
         this.repository = repository;
-        this.contractAddress = contractAddress;
         this.networkParameters = networkParameters;
         this.activations = activations;
     }

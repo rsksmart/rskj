@@ -69,7 +69,7 @@ public class BlockFactory {
     }
 
     private static List<Transaction> parseTxs(RLPList transactionList) {
-        return BlockTxCodec.decodeTransactions(transactionList);
+        return BlockBodyCodec.decodeTransactions(transactionList);
     }
 
     public BlockHeaderBuilder getBlockHeaderBuilder() {

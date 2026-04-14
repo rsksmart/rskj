@@ -112,8 +112,9 @@ public enum ConsensusRule {
     RSKIP529("rskip529"), // New storage cells in Bridge native contract for base and super events info
     RSKIP535("rskip535"), // BaseEvent for the union bridge
     RSKIP536("rskip536"), // Additional methods for BlockHeader precompiled contract
-    RSKIP544("rskip544"), // From EIP-3541 Reject new contract code starting with the 0xEF byte
+    RSKIP540("rskip540"), // Min pegout value as the extra pegout in getEstimatedFeesForNextPegOutEvent, and enables getEstimatedFeesForPegOutAmount
     RSKIP543("rskip543"), // Typed transactions
+    RSKIP544("rskip544"), // From EIP-3541 Reject new contract code starting with the 0xEF byte
     RSKIP546("rskip546"), // Type 1 and Type 2 transaction formats (EIP-2930/EIP-1559 encoding)
     ;
 

@@ -20,6 +20,7 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.types.bytes.BytesSlice;
 import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
@@ -139,8 +140,7 @@ public class Transaction {
 
         this.typePrefix = TransactionTypePrefix.fromRawData(rawData);
 
-        int prefixLen = this.typePrefix.length();
-        byte[] payload = prefixLen == 0 ? rawData : java.util.Arrays.copyOfRange(rawData, prefixLen, rawData.length);
+        BytesSlice payload = TransactionTypePrefix.stripPrefix(rawData, this.typePrefix);
         RLPList txFields = RLP.decodeList(payload);
         ParsedFields parsed = switch (typePrefix.type()) {
             case LEGACY -> parseFields(txFields);

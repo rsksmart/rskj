@@ -186,6 +186,30 @@ class TypedTransactionReceiptTest {
     }
 
     @Test
+    void typedReceiptPreservesPrefixAfterCacheInvalidation_withoutSetTransaction() {
+        for (TransactionType type : new TransactionType[]{
+            TransactionType.TYPE_1,
+            TransactionType.TYPE_2,
+            TransactionType.TYPE_3,
+            TransactionType.TYPE_4
+        }) {
+            Transaction tx = createTransaction(type);
+            TransactionReceipt originalReceipt = createReceipt(tx);
+            byte[] encoded = originalReceipt.getEncoded();
+
+            TransactionReceipt decodedReceipt = new TransactionReceipt(encoded);
+
+            decodedReceipt.setTxStatus(true);
+
+            byte[] reEncoded = decodedReceipt.getEncoded();
+            assertEquals(type.getByteCode(), reEncoded[0],
+                "Prefix lost after cache invalidation for " + type.getTypeName()
+                    + ": expected type byte 0x" + String.format("%02x", type.getByteCode())
+                    + " but got 0x" + String.format("%02x", reEncoded[0] & 0xff));
+        }
+    }
+
+    @Test
     void receiptStatusSuccess() {
         Transaction tx = createTransaction(TransactionType.TYPE_1);
         TransactionReceipt receipt = createReceipt(tx);
