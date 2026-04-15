@@ -21,6 +21,9 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.crypto.Keccak256;
 import com.google.common.primitives.UnsignedBytes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,6 +36,8 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public class PegoutsWaitingForConfirmations {
+    private static final Logger logger = LoggerFactory.getLogger(PegoutsWaitingForConfirmations.class);
+
     public static class Entry {
         // Compares entries using the lexicographical order of the btc tx's serialized bytes
         public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<Entry>() {
@@ -88,11 +93,20 @@ public class PegoutsWaitingForConfirmations {
     private Set<Entry> entries;
 
     public PegoutsWaitingForConfirmations(Set<Entry> entries) {
+        logger.warn("PEGOUTS storing {} entries", entries.size());
+
         // This is a standart code for `new HashSet<>(entries);` in Java 17
         // Coefficients were changed in Java 21
         // Need to hardcode Java 17 init params here to preserve old behaviour in Java 21+
         this.entries = new HashSet<>(Math.max((int) (entries.size()/.75f) + 1, 16));
-        this.entries.addAll(entries);
+
+        // Trying to check if we have issues related to ordering of the input set
+        var sorted = entries
+            .stream()
+            .sorted(Comparator.comparing(Entry::hashCode))
+            .toList();
+
+        this.entries.addAll(sorted);
     }
 
     public Set<Entry> getEntriesWithoutHash() {
