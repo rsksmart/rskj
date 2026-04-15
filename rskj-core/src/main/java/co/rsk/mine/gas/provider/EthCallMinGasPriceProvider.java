@@ -71,6 +71,7 @@ public class EthCallMinGasPriceProvider extends StableMinGasPriceProvider {
                 new HexDataParam(data),
                 null,
                 null,
+                null,
                 null
         );
         try {

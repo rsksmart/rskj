@@ -179,6 +179,7 @@ public class CallArgumentsParamTest {
                 new HexDataParam(DATA),
                 null,
                 null,
+                null,
                 null
         );
 
@@ -212,6 +213,7 @@ public class CallArgumentsParamTest {
                 new HexNumberParam(VALUE),
                 null,
                 new HexDataParam(DATA),
+                null,
                 null,
                 null
         );

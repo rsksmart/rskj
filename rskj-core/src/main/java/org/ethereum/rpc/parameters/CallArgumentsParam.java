@@ -26,6 +26,8 @@ import org.ethereum.rpc.CallArguments;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 @JsonDeserialize(using = CallArgumentsParam.Deserializer.class)
@@ -45,12 +47,14 @@ public class CallArgumentsParam {
     private final HexDataParam input;
     private final HexNumberParam type;
     private final HexNumberParam rskSubtype;
+    private final List<CallArguments.AccessListEntry> accessList;
 
     public CallArgumentsParam(HexAddressParam from, HexAddressParam to, HexNumberParam gas,
                               HexNumberParam gasPrice, HexNumberParam maxPriorityFeePerGas, HexNumberParam maxFeePerGas,
                               HexNumberParam gasLimit, HexNumberParam nonce,
                               HexNumberParam chainId, HexNumberParam value, HexDataParam data, HexDataParam input,
-                              HexNumberParam type, HexNumberParam rskSubtype) {
+                              HexNumberParam type, HexNumberParam rskSubtype,
+                              List<CallArguments.AccessListEntry> accessList) {
         this.from = from;
         this.to = to;
         this.gas = gas;
@@ -65,6 +69,7 @@ public class CallArgumentsParam {
         this.input = input;
         this.type = type;
         this.rskSubtype = rskSubtype;
+        this.accessList = accessList;
     }
 
     public HexAddressParam getFrom() {
@@ -123,6 +128,10 @@ public class CallArgumentsParam {
         return rskSubtype;
     }
 
+    public List<CallArguments.AccessListEntry> getAccessList() {
+        return accessList;
+    }
+
     public CallArguments toCallArguments() {
         String caFrom = this.from == null ? null : this.from.getAddress().toJsonString();
         String caTo = this.to == null ? null : this.to.getAddress().toJsonString();
@@ -158,6 +167,7 @@ public class CallArgumentsParam {
         }
         callArguments.setType(caType);
         callArguments.setRskSubtype(caRskSubtype);
+        callArguments.setAccessList(this.accessList);
 
         return callArguments;
     }
@@ -206,8 +216,34 @@ public class CallArgumentsParam {
             HexDataParam input = paramOrNull(node, "input", HexDataParam::new);
             HexNumberParam type = paramOrNull(node, "type", HexNumberParam::new);
             HexNumberParam rskSubtype = paramOrNull(node, "rskSubtype", HexNumberParam::new);
+            List<CallArguments.AccessListEntry> accessList = parseAccessList(node.get("accessList"));
 
-            return new CallArgumentsParam(from, to, gas, gasPrice, maxPriorityFeePerGas, maxFeePerGas, gasLimit, nonce, chainId, value, data, input, type, rskSubtype);
+            return new CallArgumentsParam(from, to, gas, gasPrice, maxPriorityFeePerGas, maxFeePerGas, gasLimit, nonce, chainId, value, data, input, type, rskSubtype, accessList);
+        }
+
+        @Nullable
+        private static List<CallArguments.AccessListEntry> parseAccessList(@Nullable JsonNode arrayNode) {
+            if (arrayNode == null || arrayNode.isNull() || !arrayNode.isArray()) {
+                return null;
+            }
+            List<CallArguments.AccessListEntry> entries = new ArrayList<>();
+            for (JsonNode entryNode : arrayNode) {
+                CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+                JsonNode addressNode = entryNode.get("address");
+                if (addressNode != null && !addressNode.isNull()) {
+                    entry.setAddress(addressNode.asText());
+                }
+                JsonNode keysNode = entryNode.get("storageKeys");
+                if (keysNode != null && keysNode.isArray()) {
+                    List<String> keys = new ArrayList<>();
+                    for (JsonNode keyNode : keysNode) {
+                        keys.add(keyNode.asText());
+                    }
+                    entry.setStorageKeys(keys);
+                }
+                entries.add(entry);
+            }
+            return entries;
         }
 
         @Nullable
