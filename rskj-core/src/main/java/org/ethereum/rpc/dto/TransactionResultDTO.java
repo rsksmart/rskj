@@ -28,6 +28,7 @@ import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.HexUtils;
@@ -39,6 +40,7 @@ import java.util.List;
 /**
  * Created by Ruben on 8/1/2016.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class TransactionResultDTO {
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionResultDTO.class);
@@ -98,7 +100,7 @@ public class TransactionResultDTO {
         if (!isRemasc) {
             ECDSASignature signature = tx.getSignature();
 
-            v = String.format("0x%02x", tx.getEncodedV());
+            v = HexUtils.toQuantityJsonHex(tx.getEncodedV());
 
             r = HexUtils.toQuantityJsonHex(signature.getR());
             s = HexUtils.toQuantityJsonHex(signature.getS());

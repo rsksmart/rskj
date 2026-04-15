@@ -136,7 +136,8 @@ public class TransactionFactoryHelper {
                 Optional.ofNullable(args.getData()).filter(p -> !p.isEmpty()).map(HexDataParam::new).orElse(null),
                 Optional.ofNullable(args.getInput()).filter(p -> !p.isEmpty()).map(HexDataParam::new).orElse(null),
                 Optional.ofNullable(args.getType()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
-                Optional.ofNullable(args.getRskSubtype()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null)
+                Optional.ofNullable(args.getRskSubtype()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
+                args.getAccessList()
         );
     }
 
