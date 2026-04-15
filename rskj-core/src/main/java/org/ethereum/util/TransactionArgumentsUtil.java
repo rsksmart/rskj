@@ -24,7 +24,6 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionType;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.util.RLP;
 import org.ethereum.vm.GasCost;
 
 import java.math.BigInteger;

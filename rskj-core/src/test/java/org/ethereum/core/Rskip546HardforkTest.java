@@ -17,7 +17,6 @@
  */
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
