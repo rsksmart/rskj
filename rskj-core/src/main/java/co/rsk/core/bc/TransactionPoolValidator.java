@@ -26,13 +26,10 @@ public class TransactionPoolValidator {
     private final SignatureCache signatureCache;
 
 
-    public TransactionPoolValidator(RskSystemProperties config,
-                                    TxPendingValidator pendingValidator,
-                                    SignatureCache signatureCache) {
+    public TransactionPoolValidator(RskSystemProperties config, SignatureCache signatureCache) {
         this.config = config;
-        this.validator = pendingValidator;
+        this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots(), signatureCache);
         this.signatureCache = signatureCache;
-
     }
 
     public Optional<TransactionPoolAddResult> rejectIfTransactionAlreadyKnown(final Transaction tx,  final TransactionSet pendingTransactions,

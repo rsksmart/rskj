@@ -23,7 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.net.handler.quota.TxQuotaChecker;
+import co.rsk.net.handler.quota.TxQuotaCheckerImpl;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.TestUtils;
@@ -63,7 +63,7 @@ class TransactionPoolImplTest {
     private TransactionPoolImpl transactionPool;
     private Repository repository;
     private ReceivedTxSignatureCache signatureCache;
-    private TxQuotaChecker quotaChecker;
+    private TxQuotaCheckerImpl quotaChecker;
 
     @BeforeEach
     void setUp() {
@@ -97,10 +97,10 @@ class TransactionPoolImplTest {
                 signatureCache,
                 10,
                 100,
-                Mockito.mock(TxQuotaChecker.class),
+                Mockito.mock(TxQuotaCheckerImpl.class),
                 Mockito.mock(GasPriceTracker.class));
 
-        quotaChecker = mock(TxQuotaChecker.class);
+        quotaChecker = mock(TxQuotaCheckerImpl.class);
         when(quotaChecker.acceptTx(any(), any(), any())).thenReturn(true);
         TestUtils.setInternalState(transactionPool, "quotaChecker", quotaChecker);
 
@@ -117,25 +117,12 @@ class TransactionPoolImplTest {
         rskTestContext.close();
     }
 
-    @Test
-    void usingInit() {
-        Assertions.assertFalse(transactionPool.hasCleanerFuture());
-        Assertions.assertNotEquals(0, transactionPool.getOutdatedThreshold());
-        Assertions.assertNotEquals(0, transactionPool.getOutdatedTimeout());
-    }
 
     @Test
     void usingCleanUp() {
         transactionPool.cleanUp();
 
         Assertions.assertTrue(transactionPool.getPendingTransactions().isEmpty());
-    }
-
-    @Test
-    void usingStart() {
-        Assertions.assertFalse(transactionPool.hasCleanerFuture());
-        transactionPool.start();
-        Assertions.assertTrue(transactionPool.hasCleanerFuture());
     }
 
     @Test
@@ -478,7 +465,7 @@ class TransactionPoolImplTest {
         Block block = new BlockBuilder(null, null, null)
                 .parent(new BlockGenerator().getGenesisBlock()).transactions(txs).build();
 
-        transactionPool.retractBlock(block);
+        transactionPool.reintroduceBlockTransactions(block);
 
         List<Transaction> alltxs = transactionPool.getPendingTransactions();
 

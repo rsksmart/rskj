@@ -43,8 +43,8 @@ class TxQuotaCheckerIntegrationTest {
     private static final int BLOCK_GAS_LIMIT = 6_800_000;
     private static final long MAX_GAS_PER_SECOND = Math.round(BLOCK_GAS_LIMIT * 0.9);
 
-    private TxQuotaChecker quotaChecker;
-    private TxQuotaChecker.CurrentContext currentContext;
+    private TxQuotaCheckerImpl quotaChecker;
+    private TxQuotaCheckerImpl.CurrentContext currentContext;
     private GasPriceTracker gasPriceTracker;
 
     private PendingState state;
@@ -107,11 +107,11 @@ class TxQuotaCheckerIntegrationTest {
         gasPriceTracker = mock(GasPriceTracker.class);
         when(gasPriceTracker.getGasPrice()).thenReturn(Coin.valueOf(BLOCK_AVG_GAS_PRICE));
 
-        currentContext = new TxQuotaChecker.CurrentContext(mockedBlock, state, repository, gasPriceTracker);
+        currentContext = new TxQuotaCheckerImpl.CurrentContext(mockedBlock, state, repository, gasPriceTracker);
 
         timeProvider = mock(TimeProvider.class);
 
-        quotaChecker = new TxQuotaChecker(timeProvider, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        quotaChecker = new TxQuotaCheckerImpl(timeProvider, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         // 3 items to facilitate testing
         TestUtils.setInternalState(quotaChecker, "accountQuotas", new MaxSizeHashMap<>(3, true));

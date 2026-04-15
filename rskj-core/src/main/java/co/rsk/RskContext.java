@@ -53,7 +53,7 @@ import co.rsk.net.eth.MessageFilter;
 import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
-import co.rsk.net.handler.quota.TxQuotaChecker;
+import co.rsk.net.handler.quota.TxQuotaCheckerImpl;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
@@ -260,7 +260,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private ReceivedTxSignatureCache receivedTxSignatureCache;
     private BlockTxSignatureCache blockTxSignatureCache;
     private PeerScoringReporterService peerScoringReporterService;
-    private TxQuotaChecker txQuotaChecker;
+    private TxQuotaCheckerImpl txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
     private BlockChainFlusher blockChainFlusher;
     private MinGasPriceProvider minGasPriceProvider;
@@ -405,11 +405,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return transactionPool;
     }
 
-    public TxQuotaChecker getTxQuotaChecker() {
+    public TxQuotaCheckerImpl getTxQuotaChecker() {
         checkIfNotClosed();
 
         if (this.txQuotaChecker == null) {
-            this.txQuotaChecker = new TxQuotaChecker(System::currentTimeMillis, getReceivedTxSignatureCache());
+            this.txQuotaChecker = new TxQuotaCheckerImpl(System::currentTimeMillis, getReceivedTxSignatureCache());
         }
         return txQuotaChecker;
     }

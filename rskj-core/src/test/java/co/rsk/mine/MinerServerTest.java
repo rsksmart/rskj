@@ -32,7 +32,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.mine.gas.provider.FixedMinGasPriceProvider;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.NodeBlockProcessor;
-import co.rsk.net.handler.quota.TxQuotaChecker;
+import co.rsk.net.handler.quota.TxQuotaCheckerImpl;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
@@ -124,7 +124,7 @@ public abstract class MinerServerTest {
                 signatureCache,
                 10,
                 100,
-                mock(TxQuotaChecker.class),
+                mock(TxQuotaCheckerImpl.class),
                 mock(GasPriceTracker.class));
 
         transactionPool.processBest(standardBlockchain.getBestBlock());
