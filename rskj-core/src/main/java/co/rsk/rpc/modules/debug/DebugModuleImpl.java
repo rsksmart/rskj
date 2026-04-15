@@ -21,7 +21,7 @@ package co.rsk.rpc.modules.debug;
 import co.rsk.core.RskAddress;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.handler.quota.TxQuota;
-import co.rsk.net.handler.quota.TxQuotaChecker;
+import co.rsk.net.handler.quota.TxQuotaCheckerImpl;
 import co.rsk.rpc.modules.debug.trace.DebugTracer;
 import co.rsk.rpc.modules.debug.trace.TraceProvider;
 import co.rsk.rpc.modules.debug.trace.TracerType;
@@ -37,9 +37,9 @@ public class DebugModuleImpl implements DebugModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
     private final TraceProvider traceProvider;
     private final MessageHandler messageHandler;
-    private final TxQuotaChecker txQuotaChecker;
+    private final TxQuotaCheckerImpl txQuotaChecker;
 
-    public DebugModuleImpl(TraceProvider traceProvider, MessageHandler messageHandler, TxQuotaChecker txQuotaChecker) {
+    public DebugModuleImpl(TraceProvider traceProvider, MessageHandler messageHandler, TxQuotaCheckerImpl txQuotaChecker) {
         this.traceProvider = traceProvider;
         this.messageHandler = messageHandler;
         this.txQuotaChecker = txQuotaChecker;

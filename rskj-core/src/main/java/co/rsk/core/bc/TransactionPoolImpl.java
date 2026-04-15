@@ -18,22 +18,21 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
-import co.rsk.net.TransactionValidationResult;
-import co.rsk.net.handler.TxPendingValidator;
+import co.rsk.net.handler.quota.NoOpTxQuotaChecker;
 import co.rsk.net.handler.quota.TxQuotaChecker;
+import co.rsk.net.handler.quota.TxQuotaCheckerImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
+import org.ethereum.listener.NoOpEthereumListener;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +40,6 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.ethereum.util.BIUtil.toBI;
@@ -54,9 +52,12 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private final TransactionSet pendingTransactions;
     private final TransactionSet queuedTransactions;
-
     private final Map<Keccak256, Long> transactionBlocks = new HashMap<>();
     private final Map<Keccak256, Long> transactionTimes = new HashMap<>();
+    private final SignatureCache signatureCache;
+    private Block bestBlock;
+    private final TransactionPoolValidator transactionPoolValidator;
+
 
     private final RskSystemProperties config;
     private final BlockStore blockStore;
@@ -64,108 +65,111 @@ public class TransactionPoolImpl implements TransactionPool {
     private final BlockFactory blockFactory;
     private final EthereumListener listener;
     private final TransactionExecutorFactory transactionExecutorFactory;
-    private final SignatureCache signatureCache;
+
     private final int outdatedThreshold;
     private final int outdatedTimeout;
 
-    private ScheduledExecutorService cleanerTimer;
-    private ScheduledFuture<?> cleanerFuture;
-
-    private ScheduledExecutorService accountTxRateLimitCleanerTimer;
-
-    private Block bestBlock;
-
-    private final TxPendingValidator validator;
-
+    private final ScheduledExecutorService cleanerTimer;
+    private final ScheduledExecutorService accountTxRateLimitCleanerTimer;
     private final TxQuotaChecker quotaChecker;
-
     private final GasPriceTracker gasPriceTracker;
 
-    private final TransactionPoolValidator transactionPoolValidator;
+
 
     @java.lang.SuppressWarnings("squid:S107")
-    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaChecker txQuotaChecker, GasPriceTracker gasPriceTracker) {
-        this.config = config;
-        this.blockStore = blockStore;
-        this.repositoryLocator = repositoryLocator;
-        this.blockFactory = blockFactory;
-        this.listener = listener;
-        this.transactionExecutorFactory = transactionExecutorFactory;
-        this.signatureCache = signatureCache;
+    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaCheckerImpl txQuotaChecker, GasPriceTracker gasPriceTracker) {
+        this.config = Objects.requireNonNull(config, "config must not be null");
+        this.repositoryLocator = Objects.requireNonNull(repositoryLocator, "repositoryLocator must not be null");
+        this.blockStore = Objects.requireNonNull(blockStore, "blockStore must not be null");
+        this.blockFactory = Objects.requireNonNull(blockFactory, "blockFactory must not be null");
+        this.transactionExecutorFactory = Objects.requireNonNull(transactionExecutorFactory, "transactionExecutorFactory must not be null");
+        this.signatureCache = Objects.requireNonNull(signatureCache, "signatureCache must not be null");
+        this.gasPriceTracker = Objects.requireNonNull(gasPriceTracker, "gasPriceTracker must not be null");
+        if (outdatedThreshold <0) {
+            throw new IllegalArgumentException("outdatedThreshold must be >= 0");
+        }
+        if (outdatedTimeout <= 0) {
+            throw new IllegalArgumentException("outdatedTimeout must be > 0");
+        }
+        if (config.isAccountTxRateLimitEnabled() && txQuotaChecker == null) {
+            throw new IllegalArgumentException("txQuotaChecker must not be null when account tx rate limit is enabled");
+        }
+        if (this.config.accountTxRateLimitCleanerPeriod() <= 0 ) {
+            throw new IllegalArgumentException("AccountTxRateLimitCleanerPeriod must be > 0");
+        }
+
+        this.listener = listener != null ? listener :  NoOpEthereumListener.INSTANCE;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
-        this.quotaChecker = txQuotaChecker;
-        this.gasPriceTracker = gasPriceTracker;
-        pendingTransactions = new TransactionSet(this.signatureCache);
-        queuedTransactions = new TransactionSet(this.signatureCache);
 
-        this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots(), signatureCache);
+        this.pendingTransactions = new TransactionSet(this.signatureCache);
+        this.queuedTransactions = new TransactionSet(this.signatureCache);
+        this.transactionPoolValidator = new TransactionPoolValidator(config, this.signatureCache);
 
-        if (this.outdatedTimeout > 0) {
-            this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
-        }
+        this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
+        this.accountTxRateLimitCleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TxQuotaCleanerTimer"));
 
-        if (this.quotaChecker != null && this.config.isAccountTxRateLimitEnabled() && this.config.accountTxRateLimitCleanerPeriod() > 0) {
-            this.accountTxRateLimitCleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TxQuotaCleanerTimer"));
-        }
-        this.transactionPoolValidator = new TransactionPoolValidator(config, this.validator, this.signatureCache);
+        this.quotaChecker = txQuotaChecker != null ? txQuotaChecker : NoOpTxQuotaChecker.INSTANCE;
     }
 
     @Override
     public void start() {
         processBest(blockStore.getBestBlock());
-
-        if (this.outdatedTimeout > 0 && this.cleanerTimer != null) {
-            this.cleanerFuture = this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
-        }
-
-        if (this.accountTxRateLimitCleanerTimer != null) {
+        this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
+        if (isAccountTxRateLimitCleanerEnabled()) {
             this.accountTxRateLimitCleanerTimer.scheduleAtFixedRate(this.quotaChecker::cleanMaxQuotas, this.config.accountTxRateLimitCleanerPeriod(), this.config.accountTxRateLimitCleanerPeriod(), TimeUnit.MINUTES);
         }
     }
 
     @Override
     public void stop() {
-        if (cleanerTimer != null) {
-            cleanerTimer.shutdown();
-        }
-
-        if (accountTxRateLimitCleanerTimer != null) {
-            accountTxRateLimitCleanerTimer.shutdown();
-        }
-    }
-
-    public boolean hasCleanerFuture() {
-        return this.cleanerFuture != null;
-    }
-
-    public void cleanUp() {
-        final long timestampSeconds = this.getCurrentTimeInSeconds();
-        this.removeObsoleteTransactions(timestampSeconds - this.outdatedTimeout);
-    }
-
-    public int getOutdatedThreshold() {
-        return outdatedThreshold;
-    }
-
-    public int getOutdatedTimeout() {
-        return outdatedTimeout;
-    }
-
-
-    @Override
-    public void setBestBlock(Block bestBlock) {
-        this.bestBlock = bestBlock;
+        cleanerTimer.shutdown();
+        accountTxRateLimitCleanerTimer.shutdown();
     }
 
     @Override
-    public synchronized PendingState getPendingState() {
-        return getPendingState(getCurrentRepository());
+    public synchronized List<Transaction> getPendingTransactions() {
+        this.removeObsoleteTransactions(this.getBestBlockNumber(),this.outdatedThreshold, this.outdatedTimeout);
+        return Collections.unmodifiableList(pendingTransactions.getTransactions());
     }
 
-    private PendingState getPendingState(RepositorySnapshot currentRepository) {
-        removeObsoleteTransactions(this.outdatedThreshold, this.outdatedTimeout);
-        return new PendingState(currentRepository, new TransactionSet(pendingTransactions, signatureCache), (repository, tx) -> transactionExecutorFactory.newInstance(tx, 0, bestBlock.getCoinbase(), repository, createFakePendingBlock(bestBlock), 0), signatureCache);
+    @Override
+    public synchronized List<Transaction> getQueuedTransactions() {
+        this.removeObsoleteTransactions(this.getBestBlockNumber(),this.outdatedThreshold, this.outdatedTimeout);
+        return new ArrayList<>(queuedTransactions.getTransactions());
+    }
+
+    private boolean isAccountTxRateLimitCleanerEnabled() {
+        return config.isAccountTxRateLimitEnabled() && config.accountTxRateLimitCleanerPeriod() > 0;
+    }
+
+    /**
+     * Handles chain reorganization (fork) by updating the transaction pool and stays consistent with the current best chain.
+     * <p>
+     * Example: Old chain: A → B → C → D  || New chain: A → B → X → Y
+     * If a fork occurs, transactions from blocks that were removed [C, D] from the main chain are reintroduced into the pool.
+     * Transactions included in newly added blocks are removed [X, Y] from the pool, as they are now considered confirmed.
+     * After applying fork changes, obsolete transactions are pruned based on the current
+     * <p>
+     * Note: The best block is updated before processing the fork to ensure that
+     * any transaction validation operates on the latest best block state.
+     *
+     * @param newBlock the new best block of the blockchain
+     */
+    @Override
+    public synchronized void processBest(Block newBlock) {
+        logger.trace("Processing best block {} {}", newBlock.getNumber(), newBlock.getPrintableHash());
+
+        BlockFork fork = calculateFork(newBlock);
+        this.bestBlock = newBlock;
+
+        if (fork != null) {
+            fork.getOldBlocks().forEach(this::reintroduceBlockTransactions);
+            fork.getNewBlocks().forEach(block -> removeTransactions(block.getTransactionsList()));
+        }
+
+        this.removeObsoleteTransactions(this.getBestBlockNumber(),this.outdatedThreshold, this.outdatedTimeout);
+        this.notifyTransactionPoolChanged();
     }
 
     @Override
@@ -194,12 +198,37 @@ public class TransactionPoolImpl implements TransactionPool {
             pendingTransactionsAdded.addAll(collectPendingTransactionsUnlockedBy(tx));
         }
 
-        this.emitEvents(pendingTransactionsAdded);
+        this.notifyTransactionPoolUpdated(pendingTransactionsAdded);
 
         return TransactionPoolAddResult.ok(result.getQueuedTransactionsAdded(), pendingTransactionsAdded);
     }
 
-    private RepositorySnapshot getCurrentRepository() {
+    @Override
+    public synchronized void removeTransactions(List<Transaction> txs) {
+        txs.forEach(tx->removeTransactionByHash(tx.getHash()));
+    }
+
+    public void cleanUp() {
+        final long timestampSeconds = this.getCurrentTimeInSeconds();
+        this.removeObsoleteByTime(timestampSeconds - this.outdatedTimeout);
+    }
+
+    @Override
+    public void setBestBlock(Block bestBlock) {
+        this.bestBlock = bestBlock;
+    }
+
+    @Override
+    public synchronized PendingState getPendingState() {
+        return getPendingState(getRepositoryAtBestBlock());
+    }
+
+    private PendingState getPendingState(RepositorySnapshot currentRepository) {
+        this.removeObsoleteTransactions(this.getBestBlockNumber(),this.outdatedThreshold, this.outdatedTimeout);
+        return new PendingState(currentRepository, new TransactionSet(pendingTransactions, signatureCache), (repository, tx) -> transactionExecutorFactory.newInstance(tx, 0, bestBlock.getCoinbase(), repository, createFakePendingBlock(bestBlock), 0), signatureCache);
+    }
+
+    private RepositorySnapshot getRepositoryAtBestBlock() {
         return repositoryLocator.snapshotAt(this.bestBlock.getHeader());
     }
 
@@ -222,13 +251,17 @@ public class TransactionPoolImpl implements TransactionPool {
         return promotedTransactions;
     }
 
-    private void emitEvents(List<Transaction> addedPendingTransactions) {
-        if (listener != null && !addedPendingTransactions.isEmpty()) {
+    private void notifyTransactionPoolUpdated(List<Transaction> addedPendingTransactions) {
+        if (!addedPendingTransactions.isEmpty()) {
             EventDispatchThread.invokeLater(() -> {
                 listener.onPendingTransactionsReceived(addedPendingTransactions);
                 listener.onTransactionPoolChanged(TransactionPoolImpl.this);
             });
         }
+    }
+
+    private void notifyTransactionPoolChanged() {
+        EventDispatchThread.invokeLater(() -> listener.onTransactionPoolChanged(TransactionPoolImpl.this));
     }
 
     private List<Transaction> collectPendingTransactionsUnlockedBy(Transaction tx) {
@@ -247,11 +280,9 @@ public class TransactionPoolImpl implements TransactionPool {
                 .findFirst();
     }
 
-
     private TransactionPoolAddResult processAndAddTransactionToPool(final Transaction tx) {
-        RepositorySnapshot repository = getCurrentRepository();
-        PendingState pendingState = getPendingState(repository);
-        var ctx = new TransactionPoolAddingContext(tx, repository, pendingState, bestBlock, signatureCache);
+        var repository= getRepositoryAtBestBlock();
+        var ctx = new TransactionPoolAddingContext(tx, repository, getPendingState(repository), bestBlock, signatureCache);
 
         Optional<TransactionPoolAddResult> duplicateResult = transactionPoolValidator.rejectIfTransactionAlreadyKnown(ctx.tx(), pendingTransactions, queuedTransactions);
 
@@ -259,7 +290,7 @@ public class TransactionPoolImpl implements TransactionPool {
             return duplicateResult.get();
         }
 
-        AccountState senderState = repository.getAccountState(ctx.sender());
+        AccountState senderState = ctx.repository().getAccountState(ctx.sender());
         Optional<TransactionPoolAddResult> validationResult = transactionPoolValidator.validateTransaction(ctx.tx(), ctx.bestBlock(), senderState);
         if (validationResult.isPresent()) {
             return validationResult.get();
@@ -272,15 +303,14 @@ public class TransactionPoolImpl implements TransactionPool {
             return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
         }
 
-        transactionBlocks.put(tx.getHash(), this.getCurrentBestBlockNumber());
-        transactionTimes.put(tx.getHash(),  this.getCurrentTimeInSeconds());
+        trackTransaction(tx);
 
-        if (queueIfNonceTooHigh(tx, ctx.sender())) {
+        if (queueIfNonceTooHigh(tx, ctx.sender(), ctx.repository())) {
             signatureCache.storeSender(tx);
             return TransactionPoolAddResult.okQueuedTransaction(tx);
         }
 
-        if (isAccountQuotaExceeded(tx, existingTx)) {
+        if (isAccountQuotaExceeded(tx, existingTx, ctx.repository(), ctx.pendingState())) {
             return TransactionPoolAddResult.withError("account exceeds quota");
         }
 
@@ -297,18 +327,22 @@ public class TransactionPoolImpl implements TransactionPool {
         return TransactionPoolAddResult.okPendingTransaction(tx);
     }
 
+    private void trackTransaction(Transaction tx) {
+        Keccak256 hash = tx.getHash();
+        transactionBlocks.put(hash, getBestBlockNumber());
+        transactionTimes.put(hash, getCurrentTimeInSeconds());
+    }
 
+    private boolean isAccountQuotaExceeded(Transaction tx, Optional<Transaction> existingTx, RepositorySnapshot repository, PendingState pendingState) {
 
-    private boolean isAccountQuotaExceeded(Transaction tx, Optional<Transaction> existingTx) {
-        RepositorySnapshot currentRepository = this.getCurrentRepository();
         if (!config.isAccountTxRateLimitEnabled()) {
             return false;
         }
-        TxQuotaChecker.CurrentContext context =
-                new TxQuotaChecker.CurrentContext(
+        TxQuotaCheckerImpl.CurrentContext context =
+                new TxQuotaCheckerImpl.CurrentContext(
                         this.bestBlock,
-                        getPendingState(),
-                        currentRepository,
+                        pendingState,
+                        repository,
                         this.gasPriceTracker
                 );
 
@@ -316,160 +350,80 @@ public class TransactionPoolImpl implements TransactionPool {
 
     }
 
-    private boolean queueIfNonceTooHigh(Transaction tx,  RskAddress rskAddress) {
-        RepositorySnapshot currentRepository = this.getCurrentRepository();
-        BigInteger expectedNonce = this.getPendingState(currentRepository).getNonce(rskAddress);
+    private boolean queueIfNonceTooHigh(Transaction tx,  RskAddress rskAddress, RepositorySnapshot repository) {
+        BigInteger expectedNonce = this.getPendingState(repository).getNonce(rskAddress);
         BigInteger txNonce = tx.getNonceAsInteger();
         if (txNonce.compareTo(expectedNonce) > 0) {
-            addQueuedTransaction(tx);
+            this.queuedTransactions.addTransaction(tx);
             return true;
         }
         return false;
     }
 
-    @Override
-    public synchronized void processBest(Block newBlock) {
-        logger.trace("Processing best block {} {}", newBlock.getNumber(), newBlock.getPrintableHash());
-
-        BlockFork fork = getFork(this.bestBlock, newBlock);
-
-        //we need to update the bestBlock before calling retractBlock
-        //or else the transactions would be validated against outdated account state.
-        this.setBestBlock(newBlock);
-
-        if (fork != null) {
-            for (Block blk : fork.getOldBlocks()) {
-                retractBlock(blk);
-            }
-
-            for (Block blk : fork.getNewBlocks()) {
-                acceptBlock(blk);
-            }
-        }
-
-        removeObsoleteTransactions(this.outdatedThreshold, this.outdatedTimeout);
-
-        if (listener != null) {
-            EventDispatchThread.invokeLater(() -> listener.onTransactionPoolChanged(TransactionPoolImpl.this));
-        }
-    }
-
-    private BlockFork getFork(Block oldBestBlock, Block newBestBlock) {
-        if (oldBestBlock != null) {
-            BlockchainBranchComparator branchComparator = new BlockchainBranchComparator(blockStore);
-            return branchComparator.calculateFork(oldBestBlock, newBestBlock);
-        } else {
-            return null;
-        }
+    private BlockFork calculateFork(Block newBestBlock) {
+        return this.bestBlock == null ? null : new BlockchainBranchComparator(blockStore).calculateFork(this.bestBlock, newBestBlock);
     }
 
     @VisibleForTesting
-    public void acceptBlock(Block block) {
+    public void reintroduceBlockTransactions(Block block) {
         List<Transaction> txs = block.getTransactionsList();
-
-        removeTransactions(txs);
-    }
-
-    @VisibleForTesting
-    public void retractBlock(Block block) {
-        List<Transaction> txs = block.getTransactionsList();
-
         logger.trace("Retracting block {} {} with {} txs", block.getNumber(), block.getPrintableHash(), txs.size());
-
         this.addTransactions(txs);
     }
 
-    private void removeObsoleteTransactions(int depth, int timeout) {
-        this.removeObsoleteTransactions(this.getCurrentBestBlockNumber(), depth, timeout);
-    }
 
     @VisibleForTesting
-    public void removeObsoleteTransactions(long currentBlock, int depth, int timeout) {
-        List<Keccak256> toremove = new ArrayList<>();
-        final long timestampSeconds = this.getCurrentTimeInSeconds();
+    public synchronized void removeObsoleteTransactions(long currentBlock, int depth, int timeout) {
+        removeObsoleteByBlock(currentBlock, depth);
+        if (timeout > 0) {
+            long cutoffTime = getCurrentTimeInSeconds() - timeout;
+            removeObsoleteByTime(cutoffTime);
+        }
+    }
 
+    private synchronized void removeObsoleteByBlock(long currentBlock, int depth) {
+        List<Keccak256> toRemove = new ArrayList<>();
         for (Map.Entry<Keccak256, Long> entry : transactionBlocks.entrySet()) {
-            long block = entry.getValue().longValue();
-
+            long block = entry.getValue();
             if (block < currentBlock - depth) {
-                toremove.add(entry.getKey());
+                toRemove.add(entry.getKey());
                 logger.trace("Clear outdated transaction, block.number: [{}] hash: [{}]", block, entry.getKey());
             }
         }
-
-        removeTransactionList(toremove);
-
-        if (timeout > 0) {
-            this.removeObsoleteTransactions(timestampSeconds - timeout);
-        }
+        toRemove.forEach(this::removeTransactionByHash);
     }
 
-    @VisibleForTesting
-    public synchronized void removeObsoleteTransactions(long timeSeconds) {
-        List<Keccak256> toremove = new ArrayList<>();
-
+    private synchronized void removeObsoleteByTime(long cutoffTimeInSeconds) {
+        List<Keccak256> toRemove = new ArrayList<>();
         for (Map.Entry<Keccak256, Long> entry : transactionTimes.entrySet()) {
-            long txtime = entry.getValue().longValue();
-
-            if (txtime <= timeSeconds) {
-                toremove.add(entry.getKey());
+            long time = entry.getValue();
+            if (time <= cutoffTimeInSeconds) {
+                toRemove.add(entry.getKey());
                 logger.trace("Clear outdated transaction, hash: [{}]", entry.getKey());
             }
         }
 
-        removeTransactionList(toremove);
+        toRemove.forEach(this::removeTransactionByHash);
     }
 
-    private void removeTransactionList(List<Keccak256> toremove) {
-        for (Keccak256 key : toremove) {
-            pendingTransactions.removeTransactionByHash(key);
-            queuedTransactions.removeTransactionByHash(key);
-
-            transactionBlocks.remove(key);
-            transactionTimes.remove(key);
-        }
-    }
-
-    @Override
-    public synchronized void removeTransactions(List<Transaction> txs) {
-        for (Transaction tx : txs) {
-            Keccak256 khash = tx.getHash();
-            pendingTransactions.removeTransactionByHash(khash);
-            queuedTransactions.removeTransactionByHash(khash);
-
-            logger.trace("Clear transaction, hash: [{}]", khash);
-        }
-    }
-
-    @Override
-    public synchronized List<Transaction> getPendingTransactions() {
-        removeObsoleteTransactions(this.outdatedThreshold, this.outdatedTimeout);
-        return Collections.unmodifiableList(pendingTransactions.getTransactions());
-    }
-
-    @Override
-    public synchronized List<Transaction> getQueuedTransactions() {
-        removeObsoleteTransactions(this.outdatedThreshold, this.outdatedTimeout);
-        List<Transaction> ret = new ArrayList<>();
-        ret.addAll(queuedTransactions.getTransactions());
-        return ret;
-    }
-
-    private void addQueuedTransaction(Transaction tx) {
-        this.queuedTransactions.addTransaction(tx);
+    private synchronized void removeTransactionByHash(Keccak256 hash) {
+        pendingTransactions.removeTransactionByHash(hash);
+        queuedTransactions.removeTransactionByHash(hash);
+        transactionBlocks.remove(hash);
+        transactionTimes.remove(hash);
+        logger.trace("Clear transaction, hash: [{}]", hash);
     }
 
     private long getCurrentTimeInSeconds() {
         return System.currentTimeMillis() / 1000;
     }
 
-    private long getCurrentBestBlockNumber() {
-        if (bestBlock == null) {
-            return -1;
-        }
-
-        return bestBlock.getNumber();
+    private long getBestBlockNumber() {
+        return bestBlock == null ? -1 :bestBlock.getNumber();
     }
+
+
+
 
     private Block createFakePendingBlock(Block best) {
         // creating fake lightweight calculated block with no hashes calculations
@@ -482,5 +436,10 @@ public class TransactionPoolImpl implements TransactionPool {
                                         .build(),
                 Collections.emptyList(), Collections.emptyList());
     }
+
+    //FOR TESTING
+
+    public int getOutdatedThreshold() { return outdatedThreshold; }
+    public int getOutdatedTimeout() { return outdatedTimeout; }
 
 }

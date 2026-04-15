@@ -22,7 +22,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.handler.quota.TxQuota;
-import co.rsk.net.handler.quota.TxQuotaChecker;
+import co.rsk.net.handler.quota.TxQuotaCheckerImpl;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.trace.DebugTracer;
 import co.rsk.rpc.modules.debug.trace.RskTracer;
@@ -58,7 +58,7 @@ class DebugModuleImplTest {
     private BlockStore blockStoreMock;
     private ReceiptStore receiptStoreMock;
     private MessageHandler messageHandlerMock;
-    private TxQuotaChecker txQuotaCheckerMock;
+    private TxQuotaCheckerImpl txQuotaCheckerMock;
     private Web3InformationRetriever web3InformationRetrieverMock;
 
     private DebugModuleImpl mockedDebugModule;
@@ -68,7 +68,7 @@ class DebugModuleImplTest {
         blockStoreMock = Web3Mocks.getMockBlockStore();
         receiptStoreMock = Web3Mocks.getMockReceiptStore();
         messageHandlerMock = Web3Mocks.getMockMessageHandler();
-        txQuotaCheckerMock = mock(TxQuotaChecker.class);
+        txQuotaCheckerMock = mock(TxQuotaCheckerImpl.class);
         web3InformationRetrieverMock = mock(Web3InformationRetriever.class);
         mockedDebugModule = getDebugModule(blockStoreMock, Web3Mocks.getMockBlockExecutor(), receiptStoreMock, messageHandlerMock, txQuotaCheckerMock, web3InformationRetrieverMock);
     }
@@ -409,7 +409,7 @@ class DebugModuleImplTest {
         Assertions.assertNull(txQuotaRetrieved);
     }
 
-    private DebugModuleImpl getDebugModule(BlockStore bockStore, BlockExecutor blockExecutor, ReceiptStore receiptStore, MessageHandler messageHandler, TxQuotaChecker txQuotaChecker, Web3InformationRetriever web3InformationRetriever) {
+    private DebugModuleImpl getDebugModule(BlockStore bockStore, BlockExecutor blockExecutor, ReceiptStore receiptStore, MessageHandler messageHandler, TxQuotaCheckerImpl txQuotaChecker, Web3InformationRetriever web3InformationRetriever) {
         DebugTracer tracer = new RskTracer(bockStore, receiptStore, blockExecutor, web3InformationRetriever);
         TraceProvider traceProvider = new TraceProvider(List.of(tracer));
         return new DebugModuleImpl(traceProvider, messageHandler, txQuotaChecker);
