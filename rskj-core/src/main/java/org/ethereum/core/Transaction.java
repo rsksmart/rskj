@@ -124,9 +124,7 @@ public class Transaction {
      * RSKIP-546: EIP-1559 fee fields for <em>standard</em> Type 2 only ({@code null} for legacy, Type 1, Type 3/4,
      * and RSK-namespace Type 2). Effective gas price is {@code min(maxPriorityFeePerGas, maxFeePerGas)}.
      */
-    @Nullable
     private final Coin maxPriorityFeePerGas;
-    @Nullable
     private final Coin maxFeePerGas;
 
     /**
@@ -304,11 +302,8 @@ public class Transaction {
         }
         // RSKIP-546 gates Type 1 and Type 2 specifically
         TransactionType type = typePrefix.type();
-        if ((type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2)
-                && !activations.isActive(ConsensusRule.RSKIP546)) {
-            return true;
-        }
-        return false;
+        return (type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2)
+                && !activations.isActive(ConsensusRule.RSKIP546);
     }
 
     public boolean isInitCodeSizeInvalidForTx(ActivationConfig.ForBlock activations) {
