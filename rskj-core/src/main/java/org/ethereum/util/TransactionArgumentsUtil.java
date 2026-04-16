@@ -182,7 +182,7 @@ public class TransactionArgumentsUtil {
      */
     static byte[] encodeAccessList(List<CallArguments.AccessListEntry> accessList) {
         if (accessList == null || accessList.isEmpty()) {
-            return null;
+            return new byte[0];
         }
         byte[][] encodedEntries = new byte[accessList.size()][];
         for (int i = 0; i < accessList.size(); i++) {

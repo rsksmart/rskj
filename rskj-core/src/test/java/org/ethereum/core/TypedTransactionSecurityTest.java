@@ -392,11 +392,6 @@ class TypedTransactionSecurityTest {
      * Builds a raw Type 1 transaction where the access list field bytes are inserted as-is
      * into the outer RLP list (not wrapped). This allows testing with truncated RLP.
      */
-    /**
-     * Builds a raw Type 1 transaction whose access list field bytes are inserted verbatim
-     * (not properly RLP-framed). If the bytes are truncated RLP (e.g. {@code {0xC4, 0x01}}),
-     * the outer transaction RLP decoder will fail reading the declared-but-missing bytes.
-     */
     private byte[] buildRawType1WithRawAccessListRlp(byte chainId, byte[] rawAccessListRlp) {
         byte[] fields = ByteUtil.merge(
                 RLP.encodeByte(chainId),
