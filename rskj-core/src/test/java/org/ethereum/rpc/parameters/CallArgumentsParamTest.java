@@ -41,7 +41,7 @@ public class CallArgumentsParamTest {
     private static final String NULL = "null";
 
     @Test
-    public void testValidCallArgumentsParam() throws JsonProcessingException {
+    void testValidCallArgumentsParam() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"from\": \"" + FROM + "\"," +
                 "            \"to\" : \"" + TO + "\"," +
@@ -68,7 +68,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidFromInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidFromInCallArgumentsParam() throws JsonProcessingException {
         String from = "0x7986b3df570230288501eea3d890bd66948c9b7s";
 
         String callArgumentsInput = "{\n" +
@@ -80,7 +80,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidToInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidToInCallArgumentsParam() throws JsonProcessingException {
         String to = "0xe7b8e91401bf4d1669f54dc5f98109d7efbc4esw";
 
         String callArgumentsInput = "{\n" +
@@ -92,7 +92,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidGasInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidGasInCallArgumentsParam() throws JsonProcessingException {
         String gas = "0x76cz";
 
         String callArgumentsInput = "{\n" +
@@ -104,7 +104,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidGasPriceInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidGasPriceInCallArgumentsParam() throws JsonProcessingException {
         String gasPrice = "0x9184e72a0zq";
 
         String callArgumentsInput = "{\n" +
@@ -116,7 +116,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidValueInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidValueInCallArgumentsParam() throws JsonProcessingException {
         String value = "0x9184e7tq";
 
         String callArgumentsInput = "{\n" +
@@ -128,7 +128,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidDataInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidDataInCallArgumentsParam() throws JsonProcessingException {
         String data = "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f0724456pl";
 
         String callArgumentsInput = "{\n" +
@@ -140,7 +140,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidNonceInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidNonceInCallArgumentsParam() throws JsonProcessingException {
         String nonce = "0xj";
 
         String callArgumentsInput = "{\n" +
@@ -152,7 +152,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidChainIdInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidChainIdInCallArgumentsParam() throws JsonProcessingException {
         String chainId = "0xb2r";
 
         String callArgumentsInput = "{\n" +
@@ -164,7 +164,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testToCallArgumentsWithData() {
+    void testToCallArgumentsWithData() {
         CallArgumentsParam callArgumentsParam = new CallArgumentsParam(
                 new HexAddressParam(FROM),
                 new HexAddressParam(TO),
@@ -199,7 +199,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testToCallArgumentsWithInput() {
+    void testToCallArgumentsWithInput() {
         CallArgumentsParam callArgumentsParam = new CallArgumentsParam(
                 new HexAddressParam(FROM),
                 new HexAddressParam(TO),
@@ -234,7 +234,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testNullCallArgumentsParams() throws JsonProcessingException {
+    void testNullCallArgumentsParams() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"from\": " + NULL + ", " +
                 "            \"to\" : " + NULL + ", " +
@@ -267,7 +267,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testNoCallArgumentsParams() throws JsonProcessingException {
+    void testNoCallArgumentsParams() throws JsonProcessingException {
         String callArgumentsInput = "{ }";
 
         JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
@@ -290,7 +290,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testToStringWithNoArgsParams() throws JsonProcessingException {
+    void testToStringWithNoArgsParams() throws JsonProcessingException {
         String callArgumentsInput = "{ }";
 
         JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
@@ -303,7 +303,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testToStringIncludesFields() throws JsonProcessingException {
+    void testToStringIncludesFields() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"from\": \"" + FROM + "\"," +
                 "            \"to\" : \"" + TO + "\"," +
@@ -322,7 +322,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testMaxPriorityFeePerGasAndMaxFeePerGasAreDeserialized() throws JsonProcessingException {
+    void testMaxPriorityFeePerGasAndMaxFeePerGasAreDeserialized() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"from\": \"" + FROM + "\"," +
                 "            \"to\" : \"" + TO + "\"," +
@@ -343,7 +343,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testTypeIsDeserialized() throws JsonProcessingException {
+    void testTypeIsDeserialized() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"from\": \"" + FROM + "\"," +
                 "            \"to\" : \"" + TO + "\"," +
@@ -360,7 +360,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testRskSubtypeIsDeserialized() throws JsonProcessingException {
+    void testRskSubtypeIsDeserialized() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"from\": \"" + FROM + "\"," +
                 "            \"to\" : \"" + TO + "\"," +
@@ -381,7 +381,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testTypeAndRskSubtypeAreNullWhenOmitted() throws JsonProcessingException {
+    void testTypeAndRskSubtypeAreNullWhenOmitted() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"from\": \"" + FROM + "\"}";
 
@@ -397,7 +397,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testNullTypeAndRskSubtypeAreHandled() throws JsonProcessingException {
+    void testNullTypeAndRskSubtypeAreHandled() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"type\": " + NULL + "," +
                 "            \"rskSubtype\": " + NULL + "}";

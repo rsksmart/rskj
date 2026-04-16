@@ -286,7 +286,7 @@ public class Transaction {
                 && accessListBytes != null && accessListBytes.length > 1) {
             // RSKIP-546: 80 gas/byte of access-list RLP; only standard Type 1 / EIP-1559 Type 2 (not RSK-namespace 0x02||subtype).
             // length > 1: empty list (0xc0) is 1 byte and should not be charged.
-            accessListGas = (long) accessListBytes.length * GasCost.ACCESS_LIST_GAS_PER_BYTE;
+            accessListGas = accessListBytes.length * GasCost.ACCESS_LIST_GAS_PER_BYTE;
         }
 
         return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost + accessListGas;

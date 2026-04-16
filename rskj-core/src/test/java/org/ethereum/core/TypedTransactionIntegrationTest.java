@@ -663,8 +663,8 @@ class TypedTransactionIntegrationTest {
     }
 
     private void assertHashConsistencyAfterMining(Transaction original) {
-        Block block = mineBlock(world.getBlockChain().getBestBlock(), original);
-        Block minedBlock = world.getBlockChain().getBestBlock();
+        Block parent = world.getBlockChain().getBestBlock();
+        Block minedBlock = mineBlock(parent, original);
         Transaction fromBlock = minedBlock.getTransactionsList().get(0);
 
         assertArrayEquals(original.getHash().getBytes(), fromBlock.getHash().getBytes(),
