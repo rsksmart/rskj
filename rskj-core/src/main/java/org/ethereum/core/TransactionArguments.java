@@ -30,10 +30,15 @@ public class TransactionArguments {
 	private BigInteger gas;
 	private BigInteger gasLimit;
 	private BigInteger gasPrice;
+	/** EIP-1559; null if omitted from the request */
+	private BigInteger maxPriorityFeePerGas;
+	private BigInteger maxFeePerGas;
 	private BigInteger value;
 	private String data; // compiledCode
 	private BigInteger nonce;
 	private byte chainId; // NOSONAR
+	/** EIP-2930 / EIP-1559: raw RLP-encoded access list bytes; null means no access list */
+	private byte[] accessListBytes;
 
 	public String getFrom() {
 		return from;
@@ -73,6 +78,22 @@ public class TransactionArguments {
 
 	public void setGasPrice(BigInteger gasPrice) {
 		this.gasPrice = gasPrice;
+	}
+
+	public BigInteger getMaxPriorityFeePerGas() {
+		return maxPriorityFeePerGas;
+	}
+
+	public void setMaxPriorityFeePerGas(BigInteger maxPriorityFeePerGas) {
+		this.maxPriorityFeePerGas = maxPriorityFeePerGas;
+	}
+
+	public BigInteger getMaxFeePerGas() {
+		return maxFeePerGas;
+	}
+
+	public void setMaxFeePerGas(BigInteger maxFeePerGas) {
+		this.maxFeePerGas = maxFeePerGas;
 	}
 
 	public BigInteger getValue() {
@@ -123,6 +144,14 @@ public class TransactionArguments {
         return rskSubtype;
     }
 
+    public byte[] getAccessListBytes() {
+        return accessListBytes;
+    }
+
+    public void setAccessListBytes(byte[] accessListBytes) {
+        this.accessListBytes = accessListBytes;
+    }
+
 	@Override
 	public String toString() {
 		return "TransactionArguments{" +
@@ -130,6 +159,8 @@ public class TransactionArguments {
 			", to='" + Arrays.toString(to) + '\'' +
 			", gasLimit='" + ((gas != null)?gas:gasLimit) + '\'' +
 			", gasPrice='" + gasPrice + '\'' +
+			", maxPriorityFeePerGas='" + maxPriorityFeePerGas + '\'' +
+			", maxFeePerGas='" + maxFeePerGas + '\'' +
 			", value='" + value + '\'' +
 			", data='" + data + '\'' +
 			", nonce='" + nonce + '\'' +

@@ -26,6 +26,8 @@ import org.slf4j.LoggerFactory;
 import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
 
+import java.math.BigInteger;
+
 /**
  * Created by martin.medina on 3/7/17.
  */
@@ -39,12 +41,21 @@ public class CallArgumentsToByteArray {
     }
 
     public byte[] getGasPrice() {
-        byte[] gasPrice = new byte[] {0};
-        if (args.getGasPrice() != null && args.getGasPrice().length() != 0) {
-            gasPrice = HexUtils.strHexOrStrNumberToByteArray(args.getGasPrice());
+        if (args.getGasPrice() != null && !args.getGasPrice().isEmpty()) {
+            return HexUtils.strHexOrStrNumberToByteArray(args.getGasPrice());
         }
-
-        return gasPrice;
+        // Per RSKIP-546: for Type 2 (EIP-1559) calls without gasPrice, use min(maxPriorityFeePerGas, maxFeePerGas)
+        // since RSK has no base fee (baseFeePerGas = 0).
+        if (args.getMaxFeePerGas() != null && !args.getMaxFeePerGas().isEmpty()
+                && args.getMaxPriorityFeePerGas() != null && !args.getMaxPriorityFeePerGas().isEmpty()) {
+            BigInteger maxFee = HexUtils.strHexOrStrNumberToBigInteger(args.getMaxFeePerGas());
+            BigInteger maxPriority = HexUtils.strHexOrStrNumberToBigInteger(args.getMaxPriorityFeePerGas());
+            return maxPriority.min(maxFee).toByteArray();
+        }
+        if (args.getMaxFeePerGas() != null && !args.getMaxFeePerGas().isEmpty()) {
+            return HexUtils.strHexOrStrNumberToByteArray(args.getMaxFeePerGas());
+        }
+        return new byte[]{0};
     }
 
     public byte[] getGasLimit() {

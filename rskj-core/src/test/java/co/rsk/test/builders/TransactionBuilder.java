@@ -53,6 +53,8 @@ public class TransactionBuilder {
     private boolean immutable;
     private Byte transactionType = null;
     private Byte rskSubtype = null;
+    private BigInteger maxFeePerGas = null;
+    private BigInteger maxPriorityFeePerGas = null;
 
     public TransactionBuilder sender(Account sender) {
         this.sender = sender;
@@ -119,6 +121,16 @@ public class TransactionBuilder {
         return this;
     }
 
+    public TransactionBuilder maxFeePerGas(BigInteger maxFeePerGas) {
+        this.maxFeePerGas = maxFeePerGas;
+        return this;
+    }
+
+    public TransactionBuilder maxPriorityFeePerGas(BigInteger maxPriorityFeePerGas) {
+        this.maxPriorityFeePerGas = maxPriorityFeePerGas;
+        return this;
+    }
+
     public Transaction build() {
         byte chainId = Optional.ofNullable(this.chainId).orElse(Constants.REGTEST_CHAIN_ID);
 
@@ -145,7 +157,14 @@ public class TransactionBuilder {
                 .chainId(chainId)
                 .data(data)
                 .value(value);
-        
+
+        if (this.maxFeePerGas != null) {
+            txBuilder.maxFeePerGas(new co.rsk.core.Coin(this.maxFeePerGas));
+        }
+        if (this.maxPriorityFeePerGas != null) {
+            txBuilder.maxPriorityFeePerGas(new co.rsk.core.Coin(this.maxPriorityFeePerGas));
+        }
+
         if (this.transactionType != null) {
             org.ethereum.core.TransactionType txType = org.ethereum.core.TransactionType.fromByte(this.transactionType);
             if (txType == null || txType.isLegacy()) {

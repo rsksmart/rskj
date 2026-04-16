@@ -64,9 +64,12 @@ public class EthCallMinGasPriceProvider extends StableMinGasPriceProvider {
                 null,
                 null,
                 null,
+                null,
+                null,
                 new HexNumberParam(ethModule.chainId()),
                 null,
                 new HexDataParam(data),
+                null,
                 null,
                 null,
                 null

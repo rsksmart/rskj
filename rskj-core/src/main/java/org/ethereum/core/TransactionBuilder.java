@@ -36,8 +36,12 @@ public final class TransactionBuilder {
 	private Coin value = Coin.ZERO;
 	private RskAddress receiveAddress = RskAddress.nullAddress();
 	private Coin gasPrice = Coin.ZERO;
+	/** RSKIP-546 standard Type 2; optional if {@link #gasPrice} alone is used */
+	private Coin maxPriorityFeePerGas = null;
+	private Coin maxFeePerGas = null;
 	private byte[] gasLimit = ByteUtil.cloneBytes(null);
 	private byte[] data = ByteUtil.cloneBytes(null);
+	private byte[] accessListBytes = null;
 	private byte chainId = 0;
 
 	TransactionBuilder() {
@@ -93,6 +97,16 @@ public final class TransactionBuilder {
 		return this;
 	}
 
+	public TransactionBuilder maxPriorityFeePerGas(Coin maxPriorityFeePerGas) {
+		this.maxPriorityFeePerGas = maxPriorityFeePerGas;
+		return this;
+	}
+
+	public TransactionBuilder maxFeePerGas(Coin maxFeePerGas) {
+		this.maxFeePerGas = maxFeePerGas;
+		return this;
+	}
+
 	public TransactionBuilder gasPrice(byte[] gasPrice) {
 		this.gasPrice(RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPrice)));
 		return this;
@@ -105,6 +119,11 @@ public final class TransactionBuilder {
 
 	public TransactionBuilder data(byte[] data) {
 		this.data = ByteUtil.cloneBytes(data);
+		return this;
+	}
+
+	public TransactionBuilder accessList(byte[] accessListRlp) {
+		this.accessListBytes = ByteUtil.cloneBytes(accessListRlp);
 		return this;
 	}
 
@@ -138,6 +157,20 @@ public final class TransactionBuilder {
 	public Transaction build() {
 		TransactionType effectiveType = this.type != null ? this.type : TransactionType.LEGACY;
 		TransactionTypePrefix prefix = TransactionTypePrefix.of(effectiveType, this.rskSubtype);
+		if (effectiveType == TransactionType.TYPE_2 && this.rskSubtype == null) {
+			Coin maxP = this.maxPriorityFeePerGas != null ? this.maxPriorityFeePerGas : this.gasPrice;
+			Coin maxF = this.maxFeePerGas != null ? this.maxFeePerGas : this.gasPrice;
+			if (maxP.compareTo(maxF) > 0) {
+				throw new IllegalArgumentException(
+						"Type 2 transaction maxPriorityFeePerGas (" + maxP
+								+ ") must not exceed maxFeePerGas (" + maxF + ")");
+			}
+			return new Transaction(this.nonce, maxP, this.gasLimit, this.receiveAddress, this.value,
+					this.data, this.chainId, this.isLocalCall, prefix, this.accessListBytes, maxP, maxF);
+		}
+		if (this.accessListBytes != null) {
+			return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall, prefix, this.accessListBytes);
+		}
 		return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall, prefix);
 	}
 
@@ -149,6 +182,12 @@ public final class TransactionBuilder {
 
 		nonce(args.getNonce());
 		gasPrice(args.getGasPrice());
+		if (args.getMaxPriorityFeePerGas() != null) {
+			maxPriorityFeePerGas(new Coin(args.getMaxPriorityFeePerGas()));
+		}
+		if (args.getMaxFeePerGas() != null) {
+			maxFeePerGas(new Coin(args.getMaxFeePerGas()));
+		}
 		gasLimit(args.getGasLimit());
 		destination(args.getTo());
 		data(args.getData());
@@ -156,6 +195,9 @@ public final class TransactionBuilder {
 		value(BigIntegers.asUnsignedByteArray(args.getValue()));
         type(args.getType());
         rskSubtype(args.getRskSubtype());
+		if (args.getAccessListBytes() != null) {
+			accessList(args.getAccessListBytes());
+		}
 
 		return this;
 

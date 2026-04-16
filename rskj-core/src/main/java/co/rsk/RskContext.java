@@ -2017,7 +2017,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                         getBlockExecutor()
                 );
             } else {
-                ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, getTransactionGateway());
+                ethModuleTransaction = new EthModuleTransactionBase(
+                        constants, wallet, transactionPool, getTransactionGateway(),
+                        getRskSystemProperties().getActivationConfig(), getBlockchain()
+                );
             }
         }
 
