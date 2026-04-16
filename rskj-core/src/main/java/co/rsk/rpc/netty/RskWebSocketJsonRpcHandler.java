@@ -115,7 +115,7 @@ public class RskWebSocketJsonRpcHandler extends SimpleChannelInboundHandler<Byte
         // get the json representation of the response object
         JsonNode jsonNodeResponse = mapper.valueToTree(response);
 
-        // set its ID with the the one that was provided in the request
+        // set its ID with the one that was provided in the request
         ((ObjectNode) jsonNodeResponse).set(ID, jsonNodeRequest.get(ID));
 
         // creates the string json payload
