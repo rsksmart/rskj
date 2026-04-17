@@ -25,6 +25,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionArguments;
 import org.ethereum.core.TransactionType;
+import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -64,15 +65,14 @@ class TransactionArgumentsUtilTest {
 
 	@Test
 	void hexToTransactionType_nullReturnsLegacy() {
-		assertEquals(TransactionType.LEGACY,
-				TransactionArgumentsUtil.hexToTransactionType(null));
+		assertEquals(TransactionType.LEGACY, TransactionType.fromHex(null));
 	}
 
 	@Test
 	void hexToTransactionType_explicitZero_isRejected() {
 		RskJsonRpcRequestException ex = assertThrows(
 				RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.hexToTransactionType("0"));
+				() -> TransactionType.fromHex("0"));
 		assertTrue(ex.getMessage().contains("explicit type 0x00 is not allowed"),
 				"Error should mention explicit 0x00 is not allowed, got: " + ex.getMessage());
 	}
@@ -80,7 +80,7 @@ class TransactionArgumentsUtilTest {
 	@ParameterizedTest
 	@ValueSource(strings = {"1", "2", "3", "4", "0x1", "0x2", "0x3", "0x4", "0x01", "0x02", "0x03", "0x04"})
 	void hexToTransactionType_validTypes_areAccepted(String hex) {
-		TransactionType type = TransactionArgumentsUtil.hexToTransactionType(hex);
+		TransactionType type = TransactionType.fromHex(hex);
 
 		assertNotNull(type);
 		assertNotEquals(TransactionType.LEGACY, type);
@@ -90,7 +90,7 @@ class TransactionArgumentsUtilTest {
 	@ValueSource(strings = {"5", "6", "10", "127", "0x5", "0x0a", "0x7f"})
 	void hexToTransactionType_unknownTypes_areRejected(String hex) {
 		assertThrows(RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.hexToTransactionType(hex));
+				() -> TransactionType.fromHex(hex));
 	}
 
 	@ParameterizedTest
@@ -98,7 +98,7 @@ class TransactionArgumentsUtilTest {
 	void hexToTransactionType_explicitZeroHex_isRejected(String hex) {
 		RskJsonRpcRequestException ex = assertThrows(
 				RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.hexToTransactionType(hex));
+				() -> TransactionType.fromHex(hex));
 		assertTrue(ex.getMessage().contains("explicit type 0x00 is not allowed"),
 				"Error should mention explicit 0x00 is not allowed, got: " + ex.getMessage());
 	}
@@ -107,7 +107,7 @@ class TransactionArgumentsUtilTest {
 	@ValueSource(strings = {"abc", "0xff", "", "0x80", "-1"})
 	void hexToTransactionType_invalidStrings_areRejected(String hex) {
 		assertThrows(RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.hexToTransactionType(hex));
+				() -> TransactionType.fromHex(hex));
 	}
 
 	@Test
@@ -141,13 +141,13 @@ class TransactionArgumentsUtilTest {
 
 	@Test
 	void hexToRskSubtype_nullReturnsNull() {
-		assertNull(TransactionArgumentsUtil.hexToRskSubtype(null));
+		assertNull(TransactionTypePrefix.hexToRskSubtype(null));
 	}
 
 	@ParameterizedTest
 	@ValueSource(strings = {"0", "1", "127", "0x0", "0x1", "0x7f", "0x00", "0x01"})
 	void hexToRskSubtype_validValues_areAccepted(String hex) {
-		Byte result = TransactionArgumentsUtil.hexToRskSubtype(hex);
+		Byte result = TransactionTypePrefix.hexToRskSubtype(hex);
 		assertNotNull(result);
 	}
 
@@ -155,7 +155,7 @@ class TransactionArgumentsUtilTest {
 	@ValueSource(strings = {"128", "0x80", "0xff", "-1", "abc", ""})
 	void hexToRskSubtype_invalidValues_areRejected(String hex) {
 		assertThrows(RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.hexToRskSubtype(hex));
+				() -> TransactionTypePrefix.hexToRskSubtype(hex));
 	}
 
 	@Test

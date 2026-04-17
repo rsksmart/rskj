@@ -17,6 +17,10 @@
  */
 package org.ethereum.core;
 
+import co.rsk.util.HexUtils;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+
+import java.math.BigInteger;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +37,10 @@ public enum TransactionType {
     public static final byte RSK_NAMESPACE_PREFIX = 0x02;
     public static final byte MAX_TYPE_VALUE = 0x7f;
     public static final byte RESERVED_BYTE = (byte) 0xff;
+
+    static final String ERR_INVALID_TX_TYPE = "Invalid transaction type: ";
+    static final String ERR_INVALID_RSK_SUBTYPE = "Invalid RSK subtype: ";
+
 
     private static final Map<Byte, TransactionType> lookup = new HashMap<>();
 
@@ -79,4 +87,30 @@ public enum TransactionType {
                 && rawData[0] == RSK_NAMESPACE_PREFIX
                 && (rawData[1] & 0xFF) <= MAX_TYPE_VALUE;
     }
+
+    public static TransactionType fromHex(String hex) {
+        try {
+            BigInteger value = HexUtils.strHexOrStrNumberToBigInteger(hex);
+            if (value.signum() < 0 || value.compareTo(BigInteger.valueOf(TransactionType.MAX_TYPE_VALUE)) > 0) {
+                throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex);
+            }
+
+            TransactionType txType = TransactionType.fromByte(value.byteValue());
+            if (txType == null) {
+                throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex);
+            }
+            if (txType == TransactionType.LEGACY) {
+                throw RskJsonRpcRequestException.invalidParamError(
+                        ERR_INVALID_TX_TYPE + hex +
+                                "; explicit type 0x00 is not allowed, omit the type field for legacy transactions");
+            }
+
+            return txType;
+        } catch (RskJsonRpcRequestException e) {
+            throw e;
+        } catch (Exception ex) {
+            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_TX_TYPE + hex, ex);
+        }
+    }
+
 }
