@@ -1102,9 +1102,9 @@ public class BridgeSupportIT {
             tx3.addInput(txs.getOutput(0));
             tx3.getInput(0).disconnect();
             tx3.addOutput(Coin.COIN, new BtcECKey());
-            provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
-            provider0.getPegoutsWaitingForConfirmations().add(tx2, 1L);
-            provider0.getPegoutsWaitingForConfirmations().add(tx3, 1L);
+            provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx1, 1L));
+            provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx2, 1L));
+            provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx3, 1L));
 
             provider0.save();
 

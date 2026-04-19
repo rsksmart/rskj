@@ -24,8 +24,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
@@ -1273,9 +1272,9 @@ class BridgeSerializationUtilsTest {
 
         PegoutsWaitingForConfirmations result = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, params);
 
-        Set<PegoutsWaitingForConfirmations.Entry> entries = result.getEntries();
+        var entries = result.getEntries();
 
-        assertEquals(expectedEntries, entries);
+        assertEquals(expectedEntries, new HashSet<>(entries));
     }
 
     @Test

@@ -200,7 +200,7 @@ class BridgeIT {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, regtestParameters, activationConfigAll);
 
-        provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L, PegTestUtils.createHash3(0));
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx1, 1L, PegTestUtils.createHash3(0)));
         provider0.save();
 
         track.commit();
@@ -248,9 +248,9 @@ class BridgeIT {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, regtestParameters, activationConfig.forBlock(0));
 
-        provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
-        provider0.getPegoutsWaitingForConfirmations().add(tx2, 2L);
-        provider0.getPegoutsWaitingForConfirmations().add(tx3, 3L);
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx1, 1L));
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx2, 2L));
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx3, 3L));
 
         provider0.save();
 
@@ -304,9 +304,9 @@ class BridgeIT {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, regtestParameters, activationConfig.forBlock(0));
 
-        provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
-        provider0.getPegoutsWaitingForConfirmations().add(tx2, 2L);
-        provider0.getPegoutsWaitingForConfirmations().add(tx3, 3L);
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx1, 1L));
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx2, 2L));
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx3, 3L));
 
         provider0.save();
 

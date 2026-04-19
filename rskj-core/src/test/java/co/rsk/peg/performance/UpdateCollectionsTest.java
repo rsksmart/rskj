@@ -278,7 +278,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 btcTx.addInput(inputHash, 0, genesisFederationScript);
                 btcTx.addOutput(Helper.randomCoin(Coin.CENT, minCentOutput, maxCentOutput), new BtcECKey());
                 long blockNumber = Helper.randomInRange(minBlockNumber, maxBlockNumber);
-                txSet.add(btcTx, blockNumber);
+                txSet.add(new PegoutsWaitingForConfirmations.Entry(btcTx, blockNumber));
             }
         };
 
