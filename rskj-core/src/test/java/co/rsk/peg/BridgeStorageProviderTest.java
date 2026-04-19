@@ -1752,6 +1752,10 @@ class BridgeStorageProviderTest {
 
     @Test
     void getPegoutsWaitingForConfirmations_before_rskip_146_activation() throws IOException {
+        // RSKIP559 sorting fix
+        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
+        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
+
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock,
             testnetBtcParams, activationsBeforeFork);
@@ -1762,7 +1766,7 @@ class BridgeStorageProviderTest {
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey())))
             .then((InvocationOnMock invocation) ->
-                BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(new PegoutsWaitingForConfirmations(oldEntriesSet)));
+                BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(new PegoutsWaitingForConfirmations(oldEntriesSet, pegoutsActivation)));
 
         PegoutsWaitingForConfirmations result = storageProvider.getPegoutsWaitingForConfirmations();
 
@@ -1774,6 +1778,10 @@ class BridgeStorageProviderTest {
 
     @Test
     void getPegoutsWaitingForConfirmations_after_rskip_146_activation() throws IOException {
+        // RSKIP559 sorting fix
+        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
+        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
+
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -1784,7 +1792,7 @@ class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey())))
-            .thenReturn(BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(new PegoutsWaitingForConfirmations(oldEntriesSet)));
+            .thenReturn(BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(new PegoutsWaitingForConfirmations(oldEntriesSet, pegoutsActivation)));
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(
             repositoryMock,
@@ -1794,11 +1802,12 @@ class BridgeStorageProviderTest {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = storageProvider.getPegoutsWaitingForConfirmations();
 
-        pegoutsWaitingForConfirmations.add(new SimpleBtcTransaction(
-            testnetBtcParams,
-            BitcoinTestUtils.createHash(0)),
-            1L,
-            PegTestUtils.createHash3(0)
+        pegoutsWaitingForConfirmations.add(
+            new PegoutsWaitingForConfirmations.Entry(
+                new SimpleBtcTransaction(testnetBtcParams, BitcoinTestUtils.createHash(0)),
+                1L,
+                PegTestUtils.createHash3(0)
+            )
         );
 
         PegoutsWaitingForConfirmations result = storageProvider.getPegoutsWaitingForConfirmations();
@@ -1808,18 +1817,28 @@ class BridgeStorageProviderTest {
 
     @Test
     void savePegoutsWaitingForConfirmations_before_rskip_146_activations() throws IOException {
+        // RSKIP559 sorting fix
+        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
+        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.getActivationConfig()).thenReturn(pegoutsActivation);
+
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, testnetBtcParams, activationsBeforeFork);
 
-        Set<PegoutsWaitingForConfirmations.Entry> oldEntriesSet = new HashSet<>(Collections.singletonList(
-            new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(testnetBtcParams), 1L)
-        ));
+        Set<PegoutsWaitingForConfirmations.Entry> oldEntriesSet = new HashSet<>(
+            Collections.singletonList(
+                new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(testnetBtcParams), 1L)
+            )
+        );
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = storageProvider.getPegoutsWaitingForConfirmations();
-        pegoutsWaitingForConfirmations.add(new BtcTransaction(testnetBtcParams), 1L);
+        pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(testnetBtcParams), 1L));
 
         doAnswer(i -> {
-            Set<PegoutsWaitingForConfirmations.Entry> entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams).getEntries();
+            var entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams, activations).getEntries();
             Assertions.assertEquals(oldEntriesSet, entries);
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()), any(byte[].class));
@@ -1832,40 +1851,50 @@ class BridgeStorageProviderTest {
 
     @Test
     void savePegoutsWaitingForConfirmations_after_rskip_146_activations() throws IOException {
+        // RSKIP559 sorting fix
+        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
+        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
+
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.getActivationConfig()).thenReturn(pegoutsActivation);
 
-        Set<PegoutsWaitingForConfirmations.Entry> newEntriesSet = new HashSet<>(Collections.singletonList(
-            new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(testnetBtcParams), 1L, PegTestUtils.createHash3(0))
-        ));
+        Set<PegoutsWaitingForConfirmations.Entry> newEntriesSet = new HashSet<>(
+            Collections.singletonList(
+                new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(testnetBtcParams), 1L, PegTestUtils.createHash3(0))
+            )
+        );
 
-        Set<PegoutsWaitingForConfirmations.Entry> oldEntriesSet = new HashSet<>(Collections.singletonList(
-            new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(testnetBtcParams), 1L)
-        ));
+        Set<PegoutsWaitingForConfirmations.Entry> oldEntriesSet = new HashSet<>(
+            Collections.singletonList(
+                new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(testnetBtcParams), 1L)
+            )
+        );
 
         Repository repositoryMock = mock(Repository.class);
 
         when(repositoryMock.getStorageBytes(any(),eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()))).
-            thenReturn(BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(new PegoutsWaitingForConfirmations(oldEntriesSet)));
+            thenReturn(BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(new PegoutsWaitingForConfirmations(oldEntriesSet, activations.getActivationConfig())));
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, testnetBtcParams, activations);
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = storageProvider.getPegoutsWaitingForConfirmations();
 
-        pegoutsWaitingForConfirmations.add(new SimpleBtcTransaction(
-            testnetBtcParams,
-            BitcoinTestUtils.createHash(1)),
-            1L,
-            PegTestUtils.createHash3(0)
+        pegoutsWaitingForConfirmations.add(
+            new PegoutsWaitingForConfirmations.Entry(
+                new SimpleBtcTransaction(testnetBtcParams, BitcoinTestUtils.createHash(1)),
+                1L,
+                PegTestUtils.createHash3(0)
+            )
         );
 
         doAnswer(i -> {
-            Set<PegoutsWaitingForConfirmations.Entry> entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams).getEntries();
+            var entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams, activations).getEntries();
             Assertions.assertEquals(entries, oldEntriesSet);
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()), any(byte[].class));
 
         doAnswer(i -> {
-            Set<PegoutsWaitingForConfirmations.Entry> entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams, true).getEntries();
+            var entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams, true, activations).getEntries();
             Assertions.assertEquals(entries, newEntriesSet);
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY.getKey()), any(byte[].class));
@@ -1895,9 +1924,9 @@ class BridgeStorageProviderTest {
             activations
         );
 
-        provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L, PegTestUtils.createHash3(0));
-        provider0.getPegoutsWaitingForConfirmations().add(tx2, 2L, PegTestUtils.createHash3(1));
-        provider0.getPegoutsWaitingForConfirmations().add(tx3, 3L, PegTestUtils.createHash3(2));
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx1, 1L, PegTestUtils.createHash3(0)));
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx2, 2L, PegTestUtils.createHash3(1)));
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx3, 3L, PegTestUtils.createHash3(2)));
 
         provider0.save();
 

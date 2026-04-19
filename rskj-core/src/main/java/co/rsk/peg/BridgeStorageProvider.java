@@ -211,18 +211,18 @@ public class BridgeStorageProvider {
         }
 
         Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>(getFromRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS,
-                data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters).getEntries()));
+                data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, activations).getEntries()));
 
         if (!activations.isActive(RSKIP146)) {
-            pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
+            pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries, this.activations.getActivationConfig());
             return pegoutsWaitingForConfirmations;
         }
 
         entries.addAll(getFromRepository(
             PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY,
-            data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, true).getEntries()));
+            data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, true, activations).getEntries()));
 
-        pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
+        pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries, this.activations.getActivationConfig());
 
         return pegoutsWaitingForConfirmations;
     }

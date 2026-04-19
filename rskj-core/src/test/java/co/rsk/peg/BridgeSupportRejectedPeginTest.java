@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
@@ -159,7 +160,11 @@ class BridgeSupportRejectedPeginTest {
             any(ActivationConfig.ForBlock.class)))
             .thenReturn(activeFederationUtxos);
 
-        pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
+
+        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
+        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
+
+        pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), pegoutsActivation);
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(
             pegoutsWaitingForConfirmations);
 

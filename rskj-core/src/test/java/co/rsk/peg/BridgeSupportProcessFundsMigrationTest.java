@@ -147,7 +147,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet(), activations.getActivationConfig()));
 
         FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getOldFederation(federationConstants, activations)).thenReturn(oldFederation);

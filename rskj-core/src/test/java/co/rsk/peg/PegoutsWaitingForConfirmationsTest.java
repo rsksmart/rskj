@@ -21,6 +21,8 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.TestSystemProperties;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,8 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigInteger;
 import java.util.*;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PegoutsWaitingForConfirmationsTest {
@@ -41,6 +42,10 @@ class PegoutsWaitingForConfirmationsTest {
 
     @BeforeEach
     void createSet() {
+        // RSKIP559 sorting fix
+        ActivationConfig activations = mock(ActivationConfig.class);
+        when(activations.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
+
         setEntries = new HashSet<>(Arrays.asList(
             new PegoutsWaitingForConfirmations.Entry(createTransaction(2, Coin.valueOf(150)), 32L),
             new PegoutsWaitingForConfirmations.Entry(createTransaction(5, Coin.COIN), 100L),
@@ -48,7 +53,7 @@ class PegoutsWaitingForConfirmationsTest {
             new PegoutsWaitingForConfirmations.Entry(createTransaction(3, Coin.MILLICOIN), 10L),
             new PegoutsWaitingForConfirmations.Entry(createTransaction(8, Coin.CENT.times(5)), 5L)
         ));
-        set = new PegoutsWaitingForConfirmations(setEntries);
+        set = new PegoutsWaitingForConfirmations(setEntries, activations);
     }
 
     @Test
@@ -99,6 +104,10 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void entriesCopy() {
+        // RSKIP559 sorting fix
+        ActivationConfig activations = mock(ActivationConfig.class);
+        when(activations.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
+
         Assertions.assertNotSame(setEntries, set.getEntries());
         Assertions.assertEquals(setEntries, set.getEntries());
 
@@ -110,26 +119,26 @@ class PegoutsWaitingForConfirmationsTest {
                 new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L, PegTestUtils.createHash3(0))
         ));
 
-        PegoutsWaitingForConfirmations transactionSetWithoutHash = new PegoutsWaitingForConfirmations(entryWithoutHash);
-        PegoutsWaitingForConfirmations transactionSetWithHash = new PegoutsWaitingForConfirmations(entryWithHash);
+        PegoutsWaitingForConfirmations transactionSetWithoutHash = new PegoutsWaitingForConfirmations(entryWithoutHash, activations);
+        PegoutsWaitingForConfirmations transactionSetWithHash = new PegoutsWaitingForConfirmations(entryWithHash, activations);
 
-        Set<PegoutsWaitingForConfirmations.Entry> resultCallWithoutHash = transactionSetWithoutHash.getEntriesWithoutHash();
+        var resultCallWithoutHash = transactionSetWithoutHash.getEntriesWithoutHash();
         Assertions.assertEquals(resultCallWithoutHash, entryWithoutHash);
 
-        Set<PegoutsWaitingForConfirmations.Entry> resultCallWithHash = transactionSetWithoutHash.getEntriesWithHash();
+        var resultCallWithHash = transactionSetWithoutHash.getEntriesWithHash();
         Assertions.assertEquals(0, resultCallWithHash.size());
 
-        Set<PegoutsWaitingForConfirmations.Entry> resultCallWithoutHash2 = transactionSetWithHash.getEntriesWithoutHash();
+        var resultCallWithoutHash2 = transactionSetWithHash.getEntriesWithoutHash();
         Assertions.assertEquals(0, resultCallWithoutHash2.size());
 
-        Set<PegoutsWaitingForConfirmations.Entry> resultCallWithHash2 = transactionSetWithHash.getEntriesWithHash();
+        var resultCallWithHash2 = transactionSetWithHash.getEntriesWithHash();
         Assertions.assertEquals(resultCallWithHash2, entryWithHash);
     }
 
     @Test
     void add_nonExisting() {
         Assertions.assertFalse(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(createTransaction(123, Coin.COIN.multiply(3)), 34L)));
-        set.add(createTransaction(123, Coin.COIN.multiply(3)), 34L);
+        set.add(new PegoutsWaitingForConfirmations.Entry(createTransaction(123, Coin.COIN.multiply(3)), 34L));
         Assertions.assertTrue(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(createTransaction(123, Coin.COIN.multiply(3)), 34L)));
     }
 
@@ -137,10 +146,10 @@ class PegoutsWaitingForConfirmationsTest {
     void add_existing() {
         Assertions.assertTrue(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(createTransaction(2, Coin.valueOf(150)), 32L)));
         Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getBtcTransaction().equals(createTransaction(2, Coin.valueOf(150)))).count());
-        set.add(createTransaction(2, Coin.valueOf(150)), 23L);
+        set.add(new PegoutsWaitingForConfirmations.Entry(createTransaction(2, Coin.valueOf(150)), 23L));
         Assertions.assertTrue(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(createTransaction(2, Coin.valueOf(150)), 32L)));
         int size = set.getEntries().size();
-        set.add(createTransaction(2, Coin.valueOf(150)), 23L);
+        set.add(new PegoutsWaitingForConfirmations.Entry(createTransaction(2, Coin.valueOf(150)), 23L));
         Assertions.assertEquals(set.getEntries().size(), size);
         Assertions.assertFalse(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(createUniqueTransaction(2, Coin.valueOf(150)), 23L)));
         Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getBtcTransaction().equals(createTransaction(2, Coin.valueOf(150)))).count());

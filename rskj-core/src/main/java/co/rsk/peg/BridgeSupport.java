@@ -147,6 +147,7 @@ public class BridgeSupport {
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
         ActivationConfig.ForBlock activations,
         SignatureCache signatureCache) {
+
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = executionBlock;
@@ -1398,10 +1399,10 @@ public class BridgeSupport {
         long rskExecutionBlockNumber = rskExecutionBlock.getNumber();
 
         if (!activations.isActive(RSKIP146)) {
-            pegoutsWaitingForConfirmations.add(pegoutTransaction, rskExecutionBlockNumber);
+            pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(pegoutTransaction, rskExecutionBlockNumber));
             return;
         }
-        pegoutsWaitingForConfirmations.add(pegoutTransaction, rskExecutionBlockNumber, releaseCreationTxHash);
+        pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(pegoutTransaction, rskExecutionBlockNumber, releaseCreationTxHash));
     }
 
     private void savePegoutTxSigHash(BtcTransaction pegoutTx) {

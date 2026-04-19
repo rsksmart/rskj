@@ -116,6 +116,7 @@ public enum ConsensusRule {
     RSKIP544("rskip544"), // From EIP-3541 Reject new contract code starting with the 0xEF byte
     RSKIP551("rskip551"), // Disable RSKIP459
     RSKIP552("rskip552"), // Blake2F improvements in data handling
+    RSKIP559("rskip559"), // Pegouts deterministic sorting
     ;
 
     private final String configKey;

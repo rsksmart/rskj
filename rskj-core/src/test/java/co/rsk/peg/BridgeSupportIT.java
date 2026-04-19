@@ -77,6 +77,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -862,6 +863,10 @@ public class BridgeSupportIT {
 
     @Test
     void minimumProcessFundsMigrationValue() throws IOException {
+        // RSKIP559 sorting fix
+        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
+        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
+
         Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstants);
         BtcECKey key = new BtcECKey(new SecureRandom());
         FederationMember member = new FederationMember(key, new ECKey(), new ECKey());
@@ -878,7 +883,7 @@ public class BridgeSupportIT {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet(), pegoutsActivation));
         when(federationStorageProvider.getOldFederation(federationConstants, activationsBeforeForks)).thenReturn(oldFederation);
         when(federationStorageProvider.getNewFederation(federationConstants, activationsBeforeForks)).thenReturn(newFederation);
 
@@ -1102,9 +1107,9 @@ public class BridgeSupportIT {
             tx3.addInput(txs.getOutput(0));
             tx3.getInput(0).disconnect();
             tx3.addOutput(Coin.COIN, new BtcECKey());
-            provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
-            provider0.getPegoutsWaitingForConfirmations().add(tx2, 1L);
-            provider0.getPegoutsWaitingForConfirmations().add(tx3, 1L);
+            provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx1, 1L));
+            provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx2, 1L));
+            provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx3, 1L));
 
             provider0.save();
 
