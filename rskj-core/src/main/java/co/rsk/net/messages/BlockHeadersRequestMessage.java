@@ -60,4 +60,3 @@ public class BlockHeadersRequestMessage extends MessageWithId {
         v.apply(this);
     }
 }
-
