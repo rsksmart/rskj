@@ -1,24 +1,23 @@
 package co.rsk.peg.bitcoin;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Utils;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class NonStandardErpRedeemScriptBuilderTest {
 
@@ -27,24 +26,23 @@ class NonStandardErpRedeemScriptBuilderTest {
     private static final List<BtcECKey> defaultKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
     );
-    private static final int defaultThreshold = defaultKeys.size() / 2 + 1;
+    private static final int DEFAULT_THRESHOLD = defaultKeys.size() / 2 + 1;
 
     private static final List<BtcECKey> erpKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[]{"fb01", "fb02", "fb03", "fb04"}, true
     );
-    private static final int erpThreshold = erpKeys.size() / 2 + 1;
-
-    private static long CSV_VALUE = bridgeMainnetConstants.getFederationConstants().getErpFedActivationDelay();
+    private static final int ERP_THRESHOLD = erpKeys.size() / 2 + 1;
+    private static final long CSV_VALUE = bridgeMainnetConstants.getFederationConstants().getErpFedActivationDelay();
 
     @Test
     void of_whenValidValues_returnRedeemScript() {
         // act
         Script redeemScript = NonStandardErpRedeemScriptBuilder.builder().of(
-            defaultKeys, defaultThreshold, erpKeys, erpThreshold, CSV_VALUE
+            defaultKeys, DEFAULT_THRESHOLD, erpKeys, ERP_THRESHOLD, CSV_VALUE
         );
 
         // assert
-        validateNonStandardErpRedeemScript(redeemScript, CSV_VALUE);
+        validateNonStandardErpRedeemScript(redeemScript);
     }
 
     @ParameterizedTest()
@@ -55,13 +53,13 @@ class NonStandardErpRedeemScriptBuilderTest {
         Integer defaultThreshold,
         List<BtcECKey> erpKeys,
         Integer erpThreshold,
-        Long CSV_VALUE
+        Long csvValue
     ) {
         assertThrows(
             expectedException,
             () ->
                 NonStandardErpRedeemScriptBuilder.builder().of(
-                    defaultKeys, defaultThreshold, erpKeys, erpThreshold, CSV_VALUE
+                    defaultKeys, defaultThreshold, erpKeys, erpThreshold, csvValue
                 )
         );
     }
@@ -69,32 +67,38 @@ class NonStandardErpRedeemScriptBuilderTest {
     private static Stream<Arguments> invalidInputsArgsProvider() {
         long surpassingMaxCsvValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1;
         return Stream.of(
-            Arguments.of(NullPointerException.class, null, 0, erpKeys, erpThreshold, CSV_VALUE),
+            Arguments.of(NullPointerException.class, null, 0, erpKeys, ERP_THRESHOLD, CSV_VALUE),
             // empty default keys
-            Arguments.of(IllegalArgumentException.class, Collections.emptyList(), 0, erpKeys, erpThreshold, CSV_VALUE),
-            Arguments.of(NullPointerException.class, defaultKeys, null, erpKeys, erpThreshold, CSV_VALUE),
-            Arguments.of(IllegalArgumentException.class, defaultKeys, -1, erpKeys, erpThreshold, CSV_VALUE),
+            Arguments.of(IllegalArgumentException.class, Collections.emptyList(), 0, erpKeys,
+                ERP_THRESHOLD, CSV_VALUE),
+            Arguments.of(NullPointerException.class, defaultKeys, null, erpKeys, ERP_THRESHOLD, CSV_VALUE),
+            Arguments.of(IllegalArgumentException.class, defaultKeys, -1, erpKeys, ERP_THRESHOLD, CSV_VALUE),
             // threshold greater than default keys size
-            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultKeys.size()+1, erpKeys, erpThreshold, CSV_VALUE),
-            Arguments.of(NullPointerException.class, defaultKeys, defaultThreshold, null, erpThreshold, CSV_VALUE),
+            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultKeys.size()+1, erpKeys,
+                ERP_THRESHOLD, CSV_VALUE),
+            Arguments.of(NullPointerException.class, defaultKeys, DEFAULT_THRESHOLD, null,
+                ERP_THRESHOLD, CSV_VALUE),
             // empty erp keys
-            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultThreshold, Collections.emptyList(), erpThreshold, CSV_VALUE),
-            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultThreshold, erpKeys, -1, CSV_VALUE),
+            Arguments.of(IllegalArgumentException.class, defaultKeys, DEFAULT_THRESHOLD, Collections.emptyList(),
+                ERP_THRESHOLD, CSV_VALUE),
+            Arguments.of(IllegalArgumentException.class, defaultKeys, DEFAULT_THRESHOLD, erpKeys, -1, CSV_VALUE),
             // erp threshold greater than erp keys size
-            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultThreshold, erpKeys, erpKeys.size() + 1, CSV_VALUE),
-            Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultThreshold, erpKeys, erpThreshold, -1L),
-            Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultThreshold, erpKeys, erpThreshold, 0L),
-            Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultThreshold, erpKeys, erpThreshold, 0L),
-            Arguments.of(NullPointerException.class, defaultKeys, defaultThreshold, erpKeys, erpThreshold, null),
-            Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultThreshold, erpKeys, erpThreshold, surpassingMaxCsvValue)
+            Arguments.of(IllegalArgumentException.class, defaultKeys, DEFAULT_THRESHOLD, erpKeys, erpKeys.size() + 1, CSV_VALUE),
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, DEFAULT_THRESHOLD, erpKeys,
+                ERP_THRESHOLD, -1L),
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, DEFAULT_THRESHOLD, erpKeys,
+                ERP_THRESHOLD, 0L),
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, DEFAULT_THRESHOLD, erpKeys,
+                ERP_THRESHOLD, 0L),
+            Arguments.of(NullPointerException.class, defaultKeys, DEFAULT_THRESHOLD, erpKeys,
+                ERP_THRESHOLD, null),
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, DEFAULT_THRESHOLD, erpKeys,
+                ERP_THRESHOLD, surpassingMaxCsvValue)
         );
     }
 
-    private void validateNonStandardErpRedeemScript(
-        Script nonStandardErpRedeemScript,
-        Long csvValue
-    ) {
-        /***
+    private void validateNonStandardErpRedeemScript(Script nonStandardErpRedeemScript) {
+        /*
          * Expected structure:
          * OP_NOTIF
          *  OP_M
@@ -111,8 +115,8 @@ class NonStandardErpRedeemScriptBuilderTest {
          * OP_ENDIF
          * OP_CHECKMULTISIG
          */
-        int expectedCsvValueLength = BigInteger.valueOf(csvValue).toByteArray().length;
-        byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(csvValue);
+        int expectedCsvValueLength = BigInteger.valueOf(CSV_VALUE).toByteArray().length;
+        byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(CSV_VALUE);
 
         byte[] nonStandardErpRedeemScriptProgram = nonStandardErpRedeemScript.getProgram();
         assertTrue(nonStandardErpRedeemScriptProgram.length > 0);
@@ -122,15 +126,14 @@ class NonStandardErpRedeemScriptBuilderTest {
         assertEquals(ScriptOpCodes.OP_NOTIF, nonStandardErpRedeemScriptProgram[OP_NOT_IF_INDEX]);
 
         // Next byte should equal M, from an M/N multisig
-        int M_STANDARD_VALUE_INDEX = OP_NOT_IF_INDEX + 1;
+        final int M_STANDARD_VALUE_INDEX = OP_NOT_IF_INDEX + 1;
 
-        int expectedMStandardFederation = defaultThreshold;
-        assertEquals(ScriptOpCodes.getOpCode(String.valueOf(expectedMStandardFederation)), nonStandardErpRedeemScriptProgram[M_STANDARD_VALUE_INDEX]);
+        int expectedMStandardFederation = ScriptOpCodes.getOpCode(String.valueOf(DEFAULT_THRESHOLD));
+        assertEquals(expectedMStandardFederation, nonStandardErpRedeemScriptProgram[M_STANDARD_VALUE_INDEX]);
 
         // Assert public keys
         int pubKeysIndex = M_STANDARD_VALUE_INDEX + 1;
-        for (int i = 0; i < defaultKeys.size(); i++) {
-            BtcECKey btcFederatorKey = defaultKeys.get(i);
+        for (BtcECKey btcFederatorKey : defaultKeys) {
             byte actualPubKeyLength = nonStandardErpRedeemScriptProgram[pubKeysIndex++];
 
             byte[] expectedFederatorPubKey = btcFederatorKey.getPubKey();
@@ -171,15 +174,15 @@ class NonStandardErpRedeemScriptBuilderTest {
         // Next byte should equal M, from an M/N multisig
         final int OP_M_ERP_INDEX = OP_DROP_INDEX + 1;
 
-        int expectedMErpFederation = erpThreshold;
-        assertEquals(ScriptOpCodes.getOpCode(String.valueOf(expectedMErpFederation)), nonStandardErpRedeemScriptProgram[OP_M_ERP_INDEX]);
+        int expectedMErpFederation = ScriptOpCodes.getOpCode(String.valueOf(ERP_THRESHOLD));
+        assertEquals(expectedMErpFederation, nonStandardErpRedeemScriptProgram[OP_M_ERP_INDEX]);
 
         int erpPubKeysIndex = OP_M_ERP_INDEX + 1;
         for (BtcECKey btcErpEcKey : erpKeys) {
             byte actualErpKeyLength = nonStandardErpRedeemScriptProgram[erpPubKeysIndex++];
 
             byte[] erpPubKey = btcErpEcKey.getPubKey();
-            byte expectedLength = Integer.valueOf(erpPubKey.length).byteValue();
+            byte expectedLength = (byte) erpPubKey.length;
             assertEquals(expectedLength, actualErpKeyLength);
             for (byte characterErpPubKey : erpPubKey) {
                 assertEquals(characterErpPubKey, nonStandardErpRedeemScriptProgram[erpPubKeysIndex++]);
