@@ -168,7 +168,7 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
             'checkstyleTest'           : 'src/test/java',
             'checkstyleIntegrationTest': 'src/integrationTest/java',
             'checkstyleJmh'            : 'src/jmh/java',
-            'checkstyleFuzz'           : 'src/fuzzTest/java',
+            'checkstyleFuzzTest'       : 'src/fuzzTest/java',
             'checkstyleFile'           : ''
     ]
 
@@ -634,7 +634,7 @@ static def amendPathIfNeeded(details) {
 task checkstyleAll {
     group = 'Verification'
     description = 'Run all Checkstyle checks'
-    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzz'
+    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzzTest'
 }
 
 task checkstyleFile(type: Checkstyle) {

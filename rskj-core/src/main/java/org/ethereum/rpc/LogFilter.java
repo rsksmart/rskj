@@ -340,12 +340,12 @@ public class LogFilter extends Filter {
         return "latest".equalsIgnoreCase(id) || "pending".equalsIgnoreCase(id) || "earliest".equalsIgnoreCase(id);
     }
 
-    private void checkLimit(long from, long to) {
+    void checkLimit(long from, long to) {
         long totalToQuery = to - from;
         if (this.maxBlocksToQuery == 0 || totalToQuery == 0) {
             return;
         }
-        if (totalToQuery > this.maxBlocksToQuery) {
+        if (totalToQuery >= this.maxBlocksToQuery) {
             throw new RskJsonRpcRequestException(JsonRpcError.MAX_ETH_GET_LOGS_LIMIT, "Cannot query more than " + this.maxBlocksToQuery + " blocks at once");
         }
     }
