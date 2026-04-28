@@ -98,7 +98,7 @@ class BlockExecutorInvalidTxTest {
 
     @Test
     void executeForMining_postRSKIP144_whenTxThrows_shouldSkipTxAndContinue() {
-        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), anyLong())).thenReturn(true);
+        when(activationConfig.areActive(anyLong(), eq(ConsensusRule.RSKIP351), eq(ConsensusRule.RSKIP144))).thenReturn(true);
         when(activationConfig.forBlock(anyLong())).thenReturn(forBlock);
         when(repositoryLocator.startTrackingAt(any(BlockHeader.class), any())).thenReturn(track);
 
@@ -132,7 +132,7 @@ class BlockExecutorInvalidTxTest {
 
     @Test
     void executeForMining_preRSKIP144_whenTxThrows_shouldSkipTxAndContinue() {
-        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), anyLong())).thenReturn(false);
+        when(activationConfig.areActive(anyLong(), eq(ConsensusRule.RSKIP351), eq(ConsensusRule.RSKIP144))).thenReturn(false);
         when(activationConfig.forBlock(anyLong())).thenReturn(forBlock);
         when(repositoryLocator.startTrackingAt(any(BlockHeader.class))).thenReturn(track);
         when(track.getTrie()).thenReturn(mock(Trie.class));
@@ -161,7 +161,7 @@ class BlockExecutorInvalidTxTest {
 
     @Test
     void executeForMining_blockImport_whenTxThrows_shouldReturnInterrupted() {
-        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), anyLong())).thenReturn(false);
+        when(activationConfig.areActive(anyLong(), eq(ConsensusRule.RSKIP351), eq(ConsensusRule.RSKIP144))).thenReturn(false);
         when(activationConfig.forBlock(anyLong())).thenReturn(forBlock);
         when(repositoryLocator.startTrackingAt(any(BlockHeader.class))).thenReturn(track);
 
@@ -183,7 +183,7 @@ class BlockExecutorInvalidTxTest {
 
     @Test
     void executeForMining_preRSKIP144_whenTxReturnsFalse_shouldNotBeInInvalidList() {
-        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), anyLong())).thenReturn(false);
+        when(activationConfig.areActive(anyLong(), eq(ConsensusRule.RSKIP351), eq(ConsensusRule.RSKIP144))).thenReturn(false);
         when(activationConfig.forBlock(anyLong())).thenReturn(forBlock);
         when(repositoryLocator.startTrackingAt(any(BlockHeader.class))).thenReturn(track);
         when(track.getTrie()).thenReturn(mock(Trie.class));
