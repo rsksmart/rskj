@@ -33,14 +33,21 @@ import org.ethereum.util.RLPList;
 import org.ethereum.vm.GasCost;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * DSL integration tests for RSKIP-546: Type 1 and Type 2 transaction encoding.
+ *
+ * <p>Parallel Type 1 / Type 2 scenarios use JUnit 5 {@link org.junit.jupiter.params.ParameterizedTest}
+ * with shared {@link org.junit.jupiter.params.provider.MethodSource} data to avoid duplicated test bodies.
  *
  * <p>Covers:
  * <ul>
@@ -77,24 +84,52 @@ class Rskip546DslTest {
     }
 
     // =========================================================================
-    // Type 1 basics
+    // Type 1 & Type 2 basics
     // =========================================================================
 
-    @Test
-    void type1Transaction_hasCorrectType() {
-        Transaction tx = world.getTransactionByName("txType1Basic");
+    static Stream<Arguments> typedTransactionNameAndKind() {
+        return Stream.of(
+                Arguments.of("txType1Basic", TransactionType.TYPE_1),
+                Arguments.of("txType2PriorityLower", TransactionType.TYPE_2)
+        );
+    }
+
+    static Stream<Arguments> typedTransactionNameAndTypeByte() {
+        return Stream.of(
+                Arguments.of("txType1Basic", (byte) 0x01),
+                Arguments.of("txType2PriorityLower", (byte) 0x02)
+        );
+    }
+
+    static Stream<Arguments> typedTransactionNameAndRpcTypeHex() {
+        return Stream.of(
+                Arguments.of("txType1Basic", "0x1"),
+                Arguments.of("txType2PriorityLower", "0x2")
+        );
+    }
+
+    /** Names of DSL transactions under "Type 1 & Type 2 basics" (not receipt-specific txs). */
+    static Stream<String> typedBasicTxNames() {
+        return Stream.of("txType1Basic", "txType2PriorityLower");
+    }
+
+    @ParameterizedTest
+    @MethodSource("typedTransactionNameAndKind")
+    void typedTransaction_hasCorrectType(String txName, TransactionType expectedType) {
+        Transaction tx = world.getTransactionByName(txName);
 
         assertNotNull(tx);
-        assertEquals(TransactionType.TYPE_1, tx.getType());
+        assertEquals(expectedType, tx.getType());
         assertFalse(tx.isRskNamespaceTransaction());
     }
 
-    @Test
-    void type1Transaction_encodingStartsWith0x01() {
-        Transaction tx = world.getTransactionByName("txType1Basic");
+    @ParameterizedTest
+    @MethodSource("typedTransactionNameAndTypeByte")
+    void typedTransaction_encodingStartsWithTypeByte(String txName, byte typeByte) {
+        Transaction tx = world.getTransactionByName(txName);
         byte[] encoded = tx.getEncoded();
 
-        assertEquals((byte) 0x01, encoded[0], "Type 1 tx must start with 0x01");
+        assertEquals(typeByte, encoded[0], "Typed tx must start with type byte");
         assertTrue((encoded[1] & 0xFF) >= 0xc0, "Payload must start with RLP list marker");
     }
 
@@ -107,51 +142,65 @@ class Rskip546DslTest {
                 "Type 1 signing hash input must be prefixed with 0x01");
     }
 
-    @Test
-    void type1Transaction_executesSuccessfully() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txType1Basic");
-
+    @ParameterizedTest
+    @MethodSource("typedBasicTxNames")
+    void typedTransaction_executesSuccessfully(String txName) {
+        TransactionReceipt receipt = world.getTransactionReceiptByName(txName);
         assertNotNull(receipt);
         assertArrayEquals(new byte[]{1}, receipt.getStatus());
     }
 
-    @Test
-    void type1Transaction_rpcTypeFieldIs0x1() {
-        Transaction tx = world.getTransactionByName("txType1Basic");
+    @ParameterizedTest
+    @MethodSource("typedTransactionNameAndRpcTypeHex")
+    void typedTransaction_rpcTypeField(String txName, String expectedRpcHex) {
+        Transaction tx = world.getTransactionByName(txName);
 
-        assertEquals("0x1", tx.getTypeAsHex());
+        assertEquals(expectedRpcHex, tx.getTypeAsHex());
     }
 
     // =========================================================================
-    // Type 1 receipt encoding (RSKIP-546: 4-field body, 0x01 prefix)
+    // Typed receipt encoding (RSKIP-546: 4-field body, 0x01 / 0x02 prefix)
     // =========================================================================
 
-    @Test
-    void type1Receipt_startsWithTypeByte0x01() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txType1Receipt");
-        byte[] encoded = receipt.getEncoded();
-
-        assertEquals((byte) 0x01, encoded[0],
-                "Type 1 receipt must start with 0x01");
+    static Stream<Arguments> typedReceiptPrefixCases() {
+        return Stream.of(
+                Arguments.of("txType1Receipt", (byte) 0x01),
+                Arguments.of("txType2Receipt", (byte) 0x02)
+        );
     }
 
-    @Test
-    void type1Receipt_bodyHasFourFields() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txType1Receipt");
+    static Stream<String> typedReceiptTxNames() {
+        return Stream.of("txType1Receipt", "txType2Receipt");
+    }
+
+    @ParameterizedTest
+    @MethodSource("typedReceiptPrefixCases")
+    void typedReceipt_startsWithExpectedTypeByte(String txName, byte typePrefix) {
+        TransactionReceipt receipt = world.getTransactionReceiptByName(txName);
         byte[] encoded = receipt.getEncoded();
 
-        // Skip the 0x01 prefix and decode the RLP body
+        assertEquals(typePrefix, encoded[0],
+                "Typed receipt must start with type byte " + String.format("0x%02x", typePrefix));
+    }
+
+    @ParameterizedTest
+    @MethodSource("typedReceiptTxNames")
+    void typedReceipt_bodyHasFourFields(String txName) {
+        TransactionReceipt receipt = world.getTransactionReceiptByName(txName);
+        byte[] encoded = receipt.getEncoded();
+
         byte[] body = new byte[encoded.length - 1];
         System.arraycopy(encoded, 1, body, 0, body.length);
         RLPList fields = RLP.decodeList(body);
 
         assertEquals(4, fields.size(),
-                "Type 1 receipt body must have exactly 4 fields: status, cumulativeGas, bloom, logs");
+                "Typed receipt body must have exactly 4 fields: status, cumulativeGas, bloom, logs");
     }
 
-    @Test
-    void type1Receipt_survivesEncodeDecode() {
-        TransactionReceipt original = world.getTransactionReceiptByName("txType1Receipt");
+    @ParameterizedTest
+    @MethodSource("typedReceiptTxNames")
+    void typedReceipt_survivesEncodeDecode(String txName) {
+        TransactionReceipt original = world.getTransactionReceiptByName(txName);
         TransactionReceipt decoded = new TransactionReceipt(original.getEncoded());
 
         assertArrayEquals(original.getStatus(), decoded.getStatus());
@@ -159,76 +208,46 @@ class Rskip546DslTest {
         assertArrayEquals(original.getBloomFilter().getData(), decoded.getBloomFilter().getData());
     }
 
-    @Test
-    void type1ReceiptDTO_typeIs0x1() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txType1Receipt");
-        Block block = world.getBlockByName("b04");
+    static Stream<Arguments> typedReceiptDtoCases() {
+        return Stream.of(
+                Arguments.of("txType1Receipt", "b04", "0x1"),
+                Arguments.of("txType2Receipt", "b05", "0x2")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("typedReceiptDtoCases")
+    void typedReceiptDTO_typeMatchesTransaction(String receiptTxName, String blockName,
+            String expectedRpcType) {
+        TransactionReceipt receipt = world.getTransactionReceiptByName(receiptTxName);
+        Block block = world.getBlockByName(blockName);
         TransactionInfo txInfo = new TransactionInfo(receipt, block.getHash().getBytes(), 0);
 
         TransactionReceiptDTO dto = new TransactionReceiptDTO(block, txInfo, world.getBlockTxSignatureCache());
 
-        assertEquals("0x1", dto.getType());
-    }
-
-    // =========================================================================
-    // Type 2 basics
-    // =========================================================================
-
-    @Test
-    void type2Transaction_hasCorrectType() {
-        Transaction tx = world.getTransactionByName("txType2PriorityLower");
-
-        assertNotNull(tx);
-        assertEquals(TransactionType.TYPE_2, tx.getType());
-        assertFalse(tx.isRskNamespaceTransaction());
-    }
-
-    @Test
-    void type2Transaction_encodingStartsWith0x02() {
-        Transaction tx = world.getTransactionByName("txType2PriorityLower");
-        byte[] encoded = tx.getEncoded();
-
-        assertEquals((byte) 0x02, encoded[0], "Standard Type 2 tx must start with 0x02");
-        assertTrue((encoded[1] & 0xFF) >= 0xc0, "Payload must start with RLP list marker");
-    }
-
-    @Test
-    void type2Transaction_executesSuccessfully() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txType2PriorityLower");
-
-        assertNotNull(receipt);
-        assertArrayEquals(new byte[]{1}, receipt.getStatus());
-    }
-
-    @Test
-    void type2Transaction_rpcTypeFieldIs0x2() {
-        Transaction tx = world.getTransactionByName("txType2PriorityLower");
-
-        assertEquals("0x2", tx.getTypeAsHex());
+        assertEquals(expectedRpcType, dto.getType());
     }
 
     // =========================================================================
     // Effective gas price: min(maxPriorityFeePerGas, maxFeePerGas)
     // =========================================================================
 
-    @Test
-    void type2_effectiveGasPrice_whenPriorityLowerThanMaxFee_isMaxPriority() {
-        Transaction tx = world.getTransactionByName("txType2PriorityLower");
-        // maxPriority=500000000, maxFee=2000000000 → effective = 500000000
-        Coin expected = Coin.valueOf(500_000_000L);
-
-        assertEquals(expected, tx.getGasPrice(),
-                "Effective gas price must be min(maxPriority, maxFee) = maxPriority when priority < maxFee");
+    static Stream<Arguments> type2EffectiveGasPriceCases() {
+        return Stream.of(
+                Arguments.of("txType2PriorityLower", Coin.valueOf(500_000_000L),
+                        "min(maxPriority, maxFee) when priority < maxFee"),
+                Arguments.of("txType2EqualFees", Coin.valueOf(1_000_000_000L),
+                        "both fee fields equal")
+        );
     }
 
-    @Test
-    void type2_effectiveGasPrice_whenFeesAreEqual_isEitherValue() {
-        Transaction tx = world.getTransactionByName("txType2EqualFees");
-        // maxPriority=1000000000, maxFee=1000000000 → effective = 1000000000
-        Coin expected = Coin.valueOf(1_000_000_000L);
+    @ParameterizedTest(name = "[{0}] {2}")
+    @MethodSource("type2EffectiveGasPriceCases")
+    void type2_effectiveGasPrice(String txName, Coin expected, String ignoredCaseLabel) {
+        Transaction tx = world.getTransactionByName(txName);
 
         assertEquals(expected, tx.getGasPrice(),
-                "Effective gas price must equal both fee fields when they are equal");
+                "Effective gas price must be min(maxPriority, maxFee)");
     }
 
     @Test
@@ -245,53 +264,6 @@ class Rskip546DslTest {
 
         assertNotNull(tx.getMaxFeePerGas());
         assertEquals(Coin.valueOf(2_000_000_000L), tx.getMaxFeePerGas());
-    }
-
-    // =========================================================================
-    // Type 2 receipt encoding (RSKIP-546: 4-field body, 0x02 prefix)
-    // =========================================================================
-
-    @Test
-    void type2Receipt_startsWithTypeByte0x02() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txType2Receipt");
-        byte[] encoded = receipt.getEncoded();
-
-        assertEquals((byte) 0x02, encoded[0],
-                "Standard Type 2 receipt must start with 0x02");
-    }
-
-    @Test
-    void type2Receipt_bodyHasFourFields() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txType2Receipt");
-        byte[] encoded = receipt.getEncoded();
-
-        byte[] body = new byte[encoded.length - 1];
-        System.arraycopy(encoded, 1, body, 0, body.length);
-        RLPList fields = RLP.decodeList(body);
-
-        assertEquals(4, fields.size(),
-                "Type 2 receipt body must have exactly 4 fields: status, cumulativeGas, bloom, logs");
-    }
-
-    @Test
-    void type2Receipt_survivesEncodeDecode() {
-        TransactionReceipt original = world.getTransactionReceiptByName("txType2Receipt");
-        TransactionReceipt decoded = new TransactionReceipt(original.getEncoded());
-
-        assertArrayEquals(original.getStatus(), decoded.getStatus());
-        assertArrayEquals(original.getCumulativeGas(), decoded.getCumulativeGas());
-        assertArrayEquals(original.getBloomFilter().getData(), decoded.getBloomFilter().getData());
-    }
-
-    @Test
-    void type2ReceiptDTO_typeIs0x2() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txType2Receipt");
-        Block block = world.getBlockByName("b05");
-        TransactionInfo txInfo = new TransactionInfo(receipt, block.getHash().getBytes(), 0);
-
-        TransactionReceiptDTO dto = new TransactionReceiptDTO(block, txInfo, world.getBlockTxSignatureCache());
-
-        assertEquals("0x2", dto.getType());
     }
 
     @Test
@@ -403,70 +375,78 @@ class Rskip546DslTest {
         assertEquals(TransactionType.TYPE_2, b06.getTransactionsList().get(2).getType());
     }
 
-    @Test
-    void mixedBlock_allTransactionsSucceed() {
-        assertArrayEquals(new byte[]{1},
-                world.getTransactionReceiptByName("txMixedLegacy").getStatus());
-        assertArrayEquals(new byte[]{1},
-                world.getTransactionReceiptByName("txMixedType1").getStatus());
-        assertArrayEquals(new byte[]{1},
-                world.getTransactionReceiptByName("txMixedType2").getStatus());
+    static Stream<String> mixedBlockSuccessfulTxNames() {
+        return Stream.of("txMixedLegacy", "txMixedType1", "txMixedType2");
     }
 
-    @Test
-    void mixedBlock_receiptsHaveCorrectPrefixes() {
-        TransactionReceipt legacyReceipt = world.getTransactionReceiptByName("txMixedLegacy");
-        TransactionReceipt type1Receipt = world.getTransactionReceiptByName("txMixedType1");
-        TransactionReceipt type2Receipt = world.getTransactionReceiptByName("txMixedType2");
+    @ParameterizedTest
+    @MethodSource("mixedBlockSuccessfulTxNames")
+    void mixedBlock_eachTransactionSucceeds(String txName) {
+        assertArrayEquals(new byte[]{1},
+                world.getTransactionReceiptByName(txName).getStatus());
+    }
 
-        // Legacy receipt: no type prefix, starts with RLP list marker
-        assertTrue((legacyReceipt.getEncoded()[0] & 0xFF) >= 0xc0,
-                "Legacy receipt must start with RLP list marker");
+    /** {@code -1}: legacy receipt (RLP list marker only); else expected first byte (0x01 / 0x02). */
+    static Stream<Arguments> mixedReceiptPrefixCases() {
+        final int legacyListMarkerOnly = -1;
+        return Stream.of(
+                Arguments.of("txMixedLegacy", legacyListMarkerOnly),
+                Arguments.of("txMixedType1", 0x01),
+                Arguments.of("txMixedType2", 0x02)
+        );
+    }
 
-        // Type 1 receipt: 0x01 prefix
-        assertEquals((byte) 0x01, type1Receipt.getEncoded()[0],
-                "Type 1 receipt must start with 0x01");
-
-        // Type 2 receipt: 0x02 prefix
-        assertEquals((byte) 0x02, type2Receipt.getEncoded()[0],
-                "Type 2 receipt must start with 0x02");
+    @ParameterizedTest
+    @MethodSource("mixedReceiptPrefixCases")
+    void mixedBlock_receiptHasCorrectPrefix(String txName, int expectedFirstByteOrLegacy) {
+        byte[] encoded = world.getTransactionReceiptByName(txName).getEncoded();
+        if (expectedFirstByteOrLegacy < 0) {
+            assertTrue((encoded[0] & 0xFF) >= 0xc0,
+                    "Legacy receipt must start with RLP list marker");
+        } else {
+            assertEquals((byte) expectedFirstByteOrLegacy, encoded[0],
+                    "Typed receipt must start with type byte");
+        }
     }
 
     // =========================================================================
     // Block encode/decode preserves typed transactions
     // =========================================================================
 
-    @Test
-    void type1Block_surviveEncodeDecode_preservesType() {
-        Block original = world.getBlockByName("b01");
-        BlockFactory blockFactory = new BlockFactory(world.getConfig().getActivationConfig());
-        Block decoded = blockFactory.decodeBlock(original.getEncoded());
-
-        assertEquals(1, decoded.getTransactionsList().size());
-        assertEquals(TransactionType.TYPE_1, decoded.getTransactionsList().get(0).getType());
+    static Stream<Arguments> singleTxTypedBlocks() {
+        return Stream.of(
+                Arguments.of("b01", TransactionType.TYPE_1),
+                Arguments.of("b02", TransactionType.TYPE_2)
+        );
     }
 
-    @Test
-    void type1Block_surviveEncodeDecode_preservesHash() {
-        Block original = world.getBlockByName("b01");
-        BlockFactory blockFactory = new BlockFactory(world.getConfig().getActivationConfig());
-        Block decoded = blockFactory.decodeBlock(original.getEncoded());
-
-        assertEquals(original.getTransactionsList().get(0).getHash(),
-                decoded.getTransactionsList().get(0).getHash(),
-                "Type 1 tx hash must be preserved through block encode/decode");
+    static Stream<String> singleTxTypedBlockNames() {
+        return Stream.of("b01", "b02");
     }
 
-    @Test
-    void type2Block_surviveEncodeDecode_preservesType() {
-        Block original = world.getBlockByName("b02");
+    @ParameterizedTest
+    @MethodSource("singleTxTypedBlocks")
+    void typedBlock_surviveEncodeDecode_preservesType(String blockName, TransactionType expectedTxType) {
+        Block original = world.getBlockByName(blockName);
         BlockFactory blockFactory = new BlockFactory(world.getConfig().getActivationConfig());
         Block decoded = blockFactory.decodeBlock(original.getEncoded());
 
         assertEquals(1, decoded.getTransactionsList().size());
         Transaction decodedTx = decoded.getTransactionsList().get(0);
-        assertEquals(TransactionType.TYPE_2, decodedTx.getType());
+        assertEquals(expectedTxType, decodedTx.getType());
         assertFalse(decodedTx.isRskNamespaceTransaction());
+    }
+
+    @ParameterizedTest
+    @MethodSource("singleTxTypedBlockNames")
+    void typedBlock_surviveEncodeDecode_preservesHash(String blockName) {
+        Block original = world.getBlockByName(blockName);
+        BlockFactory blockFactory = new BlockFactory(world.getConfig().getActivationConfig());
+        Block decoded = blockFactory.decodeBlock(original.getEncoded());
+
+        assertEquals(original.getTransactionsList().get(0).getHash(),
+                decoded.getTransactionsList().get(0).getHash(),
+                "Typed tx hash must be preserved through block encode/decode");
     }
 
     @Test
@@ -523,24 +503,28 @@ class Rskip546DslTest {
     // Access list gas: 80 gas/byte for non-empty, no charge for empty (0xc0)
     // =========================================================================
 
-    @Test
-    void type1Transaction_emptyAccessList_noExtraGas() {
-        Transaction tx = world.getTransactionByName("txType1Basic");
+    static Stream<String> typedTxWithEmptyAccessListByDefault() {
+        return Stream.of("txType1Basic", "txType2PriorityLower");
+    }
+
+    @ParameterizedTest
+    @MethodSource("typedTxWithEmptyAccessListByDefault")
+    void typedTransaction_emptyAccessList_noExtraGas(String txName) {
+        Transaction tx = world.getTransactionByName(txName);
 
         // Empty access list = 0xc0 (1 byte). Per RSKIP-546 length > 1 check, no charge.
         byte[] accessList = tx.getAccessListBytes();
         boolean isEmpty = (accessList == null || accessList.length <= 1);
         assertTrue(isEmpty,
-                "DSL-built Type 1 without explicit accessList must have empty access list");
+                "DSL-built tx without explicit accessList must have empty access list");
 
-        // Base intrinsic gas for a simple transfer is 21000; no access list surcharge
         RskSystemProperties config = world.getConfig();
         long cost = tx.transactionCost(
                 config.getNetworkConstants(),
                 config.getActivationConfig().forBlock(1),
                 world.getBlockTxSignatureCache());
         assertEquals(GasCost.TRANSACTION, cost,
-                "Type 1 with empty access list must have base intrinsic gas of 21000");
+                "Typed tx with empty access list must have base intrinsic gas of 21000");
     }
 
     @Test
@@ -585,23 +569,6 @@ class Rskip546DslTest {
                         ", extra=" + expectedExtra);
     }
 
-    @Test
-    void type2Transaction_emptyAccessList_noExtraGas() {
-        Transaction tx = world.getTransactionByName("txType2PriorityLower");
-
-        byte[] accessList = tx.getAccessListBytes();
-        boolean isEmpty = (accessList == null || accessList.length <= 1);
-        assertTrue(isEmpty, "DSL-built Type 2 without explicit accessList must have empty access list");
-
-        RskSystemProperties config = world.getConfig();
-        long cost = tx.transactionCost(
-                config.getNetworkConstants(),
-                config.getActivationConfig().forBlock(1),
-                world.getBlockTxSignatureCache());
-        assertEquals(GasCost.TRANSACTION, cost,
-                "Type 2 with empty access list must have base intrinsic gas of 21000");
-    }
-
     // =========================================================================
     // Contract deployment and interaction
     // =========================================================================
@@ -619,13 +586,23 @@ class Rskip546DslTest {
         assertNotNull(tx.getContractAddress(), "Contract address must be set after deployment");
     }
 
-    @Test
-    void type1Deploy_receipt_hasType1Prefix() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txType1Deploy");
+    static Stream<Arguments> contractScenarioTypedReceipts() {
+        return Stream.of(
+                Arguments.of("txType1Deploy", (byte) 0x01,
+                        "Contract deployment via Type 1 must produce a 0x01-prefixed receipt"),
+                Arguments.of("txType2CallSetValue", (byte) 0x02,
+                        "Contract call via Type 2 must produce a 0x02-prefixed receipt")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("contractScenarioTypedReceipts")
+    void contractScenario_typedReceiptStartsWithExpectedByte(String txName, byte typePrefix,
+            String assertionMessage) {
+        TransactionReceipt receipt = world.getTransactionReceiptByName(txName);
         byte[] encoded = receipt.getEncoded();
 
-        assertEquals((byte) 0x01, encoded[0],
-                "Contract deployment via Type 1 must produce a 0x01-prefixed receipt");
+        assertEquals(typePrefix, encoded[0], assertionMessage);
     }
 
     @Test
@@ -634,15 +611,6 @@ class Rskip546DslTest {
 
         assertNotNull(receipt);
         assertArrayEquals(new byte[]{1}, receipt.getStatus());
-    }
-
-    @Test
-    void type2ContractCall_receipt_hasType2Prefix() {
-        TransactionReceipt receipt = world.getTransactionReceiptByName("txType2CallSetValue");
-        byte[] encoded = receipt.getEncoded();
-
-        assertEquals((byte) 0x02, encoded[0],
-                "Contract call via Type 2 must produce a 0x02-prefixed receipt");
     }
 
     // =========================================================================

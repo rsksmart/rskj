@@ -516,5 +516,36 @@ class TransactionTest {
 
         assertEquals(53000, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
     }
-}
 
+    @Test
+    void getEncodedV_onUnsignedLegacyTx_returnsZeroWithoutNpe() {
+        Transaction unsigned = Transaction.builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21_000))
+                .destination(new RskAddress("0000000000000000000000000000000000000002").getBytes())
+                .value(BigInteger.ZERO)
+                .chainId(chainId)
+                .build();
+
+        assertNull(unsigned.getSignature(), "precondition: transaction must not be signed");
+        assertEquals((byte) 0, unsigned.getEncodedV(),
+                "getEncodedV on an unsigned tx must return 0 instead of throwing NPE");
+    }
+
+    @Test
+    void getEncodedV_onUnsignedType1Tx_returnsZeroWithoutNpe() {
+        Transaction unsigned = Transaction.builder()
+                .type(TransactionType.TYPE_1)
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21_000))
+                .destination(new RskAddress("0000000000000000000000000000000000000002").getBytes())
+                .value(BigInteger.ZERO)
+                .chainId(chainId)
+                .build();
+
+        assertNull(unsigned.getSignature());
+        assertEquals((byte) 0, unsigned.getEncodedV());
+    }
+}

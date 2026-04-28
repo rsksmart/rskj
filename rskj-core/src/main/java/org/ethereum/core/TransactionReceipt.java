@@ -264,22 +264,27 @@ public class TransactionReceipt {
     }
 
     public void setPostTxState(byte[] postTxState) {
+        this.rlpEncoded = null;
         this.postTxState = postTxState;
     }
 
     public void setCumulativeGas(long cumulativeGas) {
+        this.rlpEncoded = null;
         this.cumulativeGas = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(cumulativeGas));
     }
 
     public void setGasUsed(long gasUsed) {
+        this.rlpEncoded = null;
         this.gasUsed = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(gasUsed));
     }
 
     public void setCumulativeGas(byte[] cumulativeGas) {
+        this.rlpEncoded = null;
         this.cumulativeGas = cumulativeGas;
     }
 
     public void setGasUsed(byte[] gasUsed) {
+        this.rlpEncoded = null;
         this.gasUsed = gasUsed;
     }
 

@@ -40,6 +40,8 @@ public class TransactionArgumentsUtil {
     public static final String ERR_INVALID_RSK_SUBTYPE = "Invalid RSK subtype: ";
 	public static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
 	public static final String ERR_COULD_NOT_FIND_ACCOUNT = "Could not find account for address: ";
+    public static final String ERR_TYPE_2_MISSING_FEES =
+            "Type 0x02 (EIP-1559) transactions require both maxFeePerGas and maxPriorityFeePerGas";
 
     private TransactionArgumentsUtil() {}
 
@@ -61,6 +63,15 @@ public class TransactionArgumentsUtil {
             throw RskJsonRpcRequestException.invalidParamError(
                     "rskSubtype can only be used with type 0x02 (RSK namespace), got type: "
                             + (argsParam.getType() == null ? "legacy (omitted)" : argsParam.getType()));
+        }
+
+        // RSKIP-546: standard Type 2 (EIP-1559) MUST carry both maxFeePerGas and maxPriorityFeePerGas.
+        if (type == TransactionType.TYPE_2 && rskSubtype == null) {
+            boolean maxPriorityAbsent = isAbsent(argsParam.getMaxPriorityFeePerGas());
+            boolean maxFeeAbsent = isAbsent(argsParam.getMaxFeePerGas());
+            if (maxPriorityAbsent || maxFeeAbsent) {
+                throw RskJsonRpcRequestException.invalidParamError(ERR_TYPE_2_MISSING_FEES);
+            }
         }
 
         argsRet.setType(type);
@@ -110,6 +121,10 @@ public class TransactionArgumentsUtil {
         return Optional.ofNullable(value).map(HexUtils::stringHexToByteArray).orElse(null);
     }
 
+    private static boolean isAbsent(String hexValue) {
+        return hexValue == null || hexValue.isEmpty();
+    }
+
 	private static BigInteger strHexOrStrNumberToBigInteger(String value, Supplier<BigInteger> getDefaultValue) {
 		return Optional.ofNullable(value).map(HexUtils::strHexOrStrNumberToBigInteger).orElseGet(getDefaultValue);
 	}
@@ -120,11 +135,18 @@ public class TransactionArgumentsUtil {
 		}
 		try {
 			byte[] bytes = HexUtils.strHexOrStrNumberToByteArray(hex);
+			// Canonical hex for zero ("0x00", "0x0", "0") is normalized to an empty byte array.
+			// Treat this as "zero / use default chainId" rather than an invalid value.
+			if (bytes.length == 0) {
+				return 0;
+			}
 			if (bytes.length != 1) {
 				throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex);
 			}
 
 			return bytes[0];
+		} catch (RskJsonRpcRequestException e) {
+			throw e;
 		} catch (Exception e) {
 			throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex, e);
 		}
@@ -182,7 +204,7 @@ public class TransactionArgumentsUtil {
      */
     static byte[] encodeAccessList(List<CallArguments.AccessListEntry> accessList) {
         if (accessList == null || accessList.isEmpty()) {
-            return new byte[0];
+            return null;
         }
         byte[][] encodedEntries = new byte[accessList.size()][];
         for (int i = 0; i < accessList.size(); i++) {

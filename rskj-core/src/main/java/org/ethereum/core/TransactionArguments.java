@@ -37,7 +37,6 @@ public class TransactionArguments {
 	private String data; // compiledCode
 	private BigInteger nonce;
 	private byte chainId; // NOSONAR
-	/** EIP-2930 / EIP-1559: raw RLP-encoded access list bytes; null means no access list */
 	private byte[] accessListBytes;
 
 	public String getFrom() {
@@ -145,11 +144,11 @@ public class TransactionArguments {
     }
 
     public byte[] getAccessListBytes() {
-        return accessListBytes;
+        return accessListBytes == null ? null : accessListBytes.clone();
     }
 
     public void setAccessListBytes(byte[] accessListBytes) {
-        this.accessListBytes = accessListBytes;
+        this.accessListBytes = accessListBytes == null ? null : accessListBytes.clone();
     }
 
 	@Override
@@ -167,6 +166,7 @@ public class TransactionArguments {
 			", chainId='" + chainId + '\'' +
             ", type='" + type + '\'' +
             ", rskSubtype='" + rskSubtype + '\'' +
+            ", accessListBytes=" + (accessListBytes == null ? "null" : "len=" + accessListBytes.length) +
 			"}";
     }
 }

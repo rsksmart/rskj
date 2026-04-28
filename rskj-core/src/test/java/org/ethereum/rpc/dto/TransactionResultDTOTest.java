@@ -20,6 +20,8 @@ package org.ethereum.rpc.dto;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.junit.jupiter.api.Assertions;
@@ -129,5 +131,34 @@ class TransactionResultDTOTest {
 
         Assertions.assertEquals("0x0", dto.getType());
     }
-}
 
+    @Test
+    void pendingLegacyTransaction_serializesBlockFieldsAsJsonNull() throws Exception {
+        Transaction originalTransaction = CallTransaction.createCallTransaction(
+                1, 0, 100000000000000L,
+                new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
+                CallTransaction.Function.fromSignature("get"), chainId);
+        originalTransaction.sign(new byte[]{});
+
+        // Pending tx: no block, no index.
+        TransactionResultDTO dto = new TransactionResultDTO(null, null, originalTransaction, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        JsonNode json = new ObjectMapper().valueToTree(dto);
+
+        Assertions.assertTrue(json.has("blockHash"), "blockHash must be present in JSON for pending tx");
+        Assertions.assertTrue(json.get("blockHash").isNull(), "blockHash must serialize as JSON null");
+        Assertions.assertTrue(json.has("blockNumber"), "blockNumber must be present in JSON for pending tx");
+        Assertions.assertTrue(json.get("blockNumber").isNull(), "blockNumber must serialize as JSON null");
+        Assertions.assertTrue(json.has("transactionIndex"), "transactionIndex must be present in JSON for pending tx");
+        Assertions.assertTrue(json.get("transactionIndex").isNull(), "transactionIndex must serialize as JSON null");
+
+        // Typed-only fields must be OMITTED (not null) for legacy transactions.
+        Assertions.assertFalse(json.has("chainId"), "chainId must be omitted from JSON for legacy tx");
+        Assertions.assertFalse(json.has("yParity"), "yParity must be omitted from JSON for legacy tx");
+        Assertions.assertFalse(json.has("accessList"), "accessList must be omitted from JSON for legacy tx");
+        Assertions.assertFalse(json.has("maxFeePerGas"), "maxFeePerGas must be omitted from JSON for legacy tx");
+        Assertions.assertFalse(json.has("maxPriorityFeePerGas"),
+                "maxPriorityFeePerGas must be omitted from JSON for legacy tx");
+    }
+}
