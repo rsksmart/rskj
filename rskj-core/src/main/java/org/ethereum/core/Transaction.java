@@ -586,6 +586,9 @@ public class Transaction {
     }
 
     public byte getEncodedV() {
+        if (this.signature == null) {
+            return 0;
+        }
         if (typePrefix.type().isTyped()) {
             // EIP-2718 typed transactions use yParity (0 or 1) instead of EIP-155 V
             return (byte) (this.signature.getV() - LOWER_REAL_V);

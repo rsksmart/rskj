@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc.converters;
 
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
@@ -45,12 +46,13 @@ public class CallArgumentsToByteArray {
             return HexUtils.strHexOrStrNumberToByteArray(args.getGasPrice());
         }
         // Per RSKIP-546: for Type 2 (EIP-1559) calls without gasPrice, use min(maxPriorityFeePerGas, maxFeePerGas)
-        // since RSK has no base fee (baseFeePerGas = 0).
+        // since RSK has no base fee (baseFeePerGas = 0). Use the unsigned encoding to avoid a spurious
+        // sign byte when the most-significant bit of the value is set (BigInteger.toByteArray is signed).
         if (args.getMaxFeePerGas() != null && !args.getMaxFeePerGas().isEmpty()
                 && args.getMaxPriorityFeePerGas() != null && !args.getMaxPriorityFeePerGas().isEmpty()) {
             BigInteger maxFee = HexUtils.strHexOrStrNumberToBigInteger(args.getMaxFeePerGas());
             BigInteger maxPriority = HexUtils.strHexOrStrNumberToBigInteger(args.getMaxPriorityFeePerGas());
-            return maxPriority.min(maxFee).toByteArray();
+            return BigIntegers.asUnsignedByteArray(maxPriority.min(maxFee));
         }
         if (args.getMaxFeePerGas() != null && !args.getMaxFeePerGas().isEmpty()) {
             return HexUtils.strHexOrStrNumberToByteArray(args.getMaxFeePerGas());

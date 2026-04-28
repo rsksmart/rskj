@@ -69,7 +69,7 @@ public class BlockResultDTO {
     private final short[] rskPteEdges;
     private final String baseEvent;
     // RSKIP546/EIP-1559: RSK has no dynamic base fee; always zero to signal EIP-1559 awareness to tooling
-    private static final String baseFeePerGas = "0x0";
+    private static final String BASE_FEE_PER_GAS = "0x0";
 
     private BlockResultDTO(
             Long number,
@@ -334,6 +334,6 @@ public class BlockResultDTO {
     }
 
     public String getBaseFeePerGas() {
-        return baseFeePerGas;
+        return BASE_FEE_PER_GAS;
     }
 }

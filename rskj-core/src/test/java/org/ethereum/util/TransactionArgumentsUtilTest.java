@@ -200,4 +200,72 @@ class TransactionArgumentsUtilTest {
 		assertEquals(Coin.valueOf(10), tx.getGasPrice());
 	}
 
+	@Test
+	void processArguments_type2Standard_missingBothMaxFees_isRejected() {
+		CallArguments args = baseType2Args();
+		args.setGasPrice("0x7d0");
+
+		RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
+				() -> TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId()));
+		assertTrue(ex.getMessage().contains("Type 0x02"),
+				"Error must mention Type 0x02 context, got: " + ex.getMessage());
+	}
+
+	@Test
+	void processArguments_type2Standard_missingOnlyMaxPriorityFee_isRejected() {
+		CallArguments args = baseType2Args();
+		args.setMaxFeePerGas("0x64");
+
+		assertThrows(RskJsonRpcRequestException.class,
+				() -> TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId()));
+	}
+
+	@Test
+	void processArguments_type2Standard_missingOnlyMaxFee_isRejected() {
+		CallArguments args = baseType2Args();
+		args.setMaxPriorityFeePerGas("0x5");
+
+		assertThrows(RskJsonRpcRequestException.class,
+				() -> TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId()));
+	}
+
+	@Test
+	void processArguments_type2RskNamespace_doesNotRequireMaxFees() {
+		CallArguments args = baseType2Args();
+		args.setGasPrice("0x1");
+		args.setRskSubtype("0x3");
+
+		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId());
+		assertEquals(TransactionType.TYPE_2, txArgs.getType());
+		assertEquals((byte) 0x03, txArgs.getRskSubtype());
+	}
+
+	private static CallArguments baseType2Args() {
+		CallArguments args = new CallArguments();
+		args.setFrom("0x0000000000000000000000000000000000000001");
+		args.setTo("0x0000000000000000000000000000000000000002");
+		args.setGas("0x5208");
+		args.setValue("0x0");
+		args.setNonce("0x1");
+		args.setType("0x2");
+		args.setChainId("0x21");
+		return args;
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"0x0", "0x00", "0"})
+	void processArguments_chainIdZero_fallsThroughToDefault(String chainIdHex) {
+		CallArguments args = new CallArguments();
+		args.setFrom("0x0000000000000000000000000000000000000001");
+		args.setTo("0x0000000000000000000000000000000000000002");
+		args.setGas("0x5208");
+		args.setGasPrice("0x1");
+		args.setValue("0x0");
+		args.setChainId(chainIdHex);
+
+		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId());
+		assertEquals(Constants.regtest().getChainId(), txArgs.getChainId(),
+				"chainId=" + chainIdHex + " must fall through to the default chainId");
+	}
+
 }

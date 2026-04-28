@@ -82,4 +82,62 @@ class TransactionReceiptTest {
         logger.info("{}", txReceipt);
     }
 
+    @Test
+    void setGasUsed_afterEncoded_invalidatesCache() {
+        byte[] rlp = Hex.decode("f8c5a0966265cc49fa1f10f0445f035258d116563931022a3570a640af5d73a214a8da822b6fb84" +
+                "0000000100000000100000000000080000000000000000000000000000000000000000000000000000000000200000000000" +
+                "00014000000000400000000000440f85cf85a94d5ccd26ba09ce1d85148b5081fa3ed77949417bef842a0000000000000000" +
+                "000000000459d3a7595df9eba241365f4676803586d7d199ca0436f696e73000000000000000000000000000000000000000" +
+                "0000000000000008002");
+        TransactionReceipt receipt = new TransactionReceipt(rlp);
+
+        byte[] firstEncoding = receipt.getEncoded();
+        receipt.setGasUsed(21000L);
+        byte[] secondEncoding = receipt.getEncoded();
+
+        assertFalse(Arrays.equals(firstEncoding, secondEncoding),
+                "getEncoded() must return a fresh encoding after setGasUsed()");
+        TransactionReceipt roundTripped = new TransactionReceipt(secondEncoding);
+        assertEquals(21000L, ByteUtil.byteArrayToLong(roundTripped.getGasUsed()));
+    }
+
+    @Test
+    void setCumulativeGas_afterEncoded_invalidatesCache() {
+        byte[] rlp = Hex.decode("f8c5a0966265cc49fa1f10f0445f035258d116563931022a3570a640af5d73a214a8da822b6fb84" +
+                "0000000100000000100000000000080000000000000000000000000000000000000000000000000000000000200000000000" +
+                "00014000000000400000000000440f85cf85a94d5ccd26ba09ce1d85148b5081fa3ed77949417bef842a0000000000000000" +
+                "000000000459d3a7595df9eba241365f4676803586d7d199ca0436f696e73000000000000000000000000000000000000000" +
+                "0000000000000008002");
+        TransactionReceipt receipt = new TransactionReceipt(rlp);
+
+        byte[] firstEncoding = receipt.getEncoded();
+        receipt.setCumulativeGas(99999L);
+        byte[] secondEncoding = receipt.getEncoded();
+
+        assertFalse(Arrays.equals(firstEncoding, secondEncoding),
+                "getEncoded() must return a fresh encoding after setCumulativeGas()");
+        TransactionReceipt roundTripped = new TransactionReceipt(secondEncoding);
+        assertEquals(99999L, ByteUtil.byteArrayToLong(roundTripped.getCumulativeGas()));
+    }
+
+    @Test
+    void setPostTxState_afterEncoded_invalidatesCache() {
+        byte[] rlp = Hex.decode("f8c5a0966265cc49fa1f10f0445f035258d116563931022a3570a640af5d73a214a8da822b6fb84" +
+                "0000000100000000100000000000080000000000000000000000000000000000000000000000000000000000200000000000" +
+                "00014000000000400000000000440f85cf85a94d5ccd26ba09ce1d85148b5081fa3ed77949417bef842a0000000000000000" +
+                "000000000459d3a7595df9eba241365f4676803586d7d199ca0436f696e73000000000000000000000000000000000000000" +
+                "0000000000000008002");
+        TransactionReceipt receipt = new TransactionReceipt(rlp);
+
+        byte[] firstEncoding = receipt.getEncoded();
+        byte[] newState = new byte[] {0x01};
+        receipt.setPostTxState(newState);
+        byte[] secondEncoding = receipt.getEncoded();
+
+        assertFalse(Arrays.equals(firstEncoding, secondEncoding),
+                "getEncoded() must return a fresh encoding after setPostTxState()");
+        TransactionReceipt roundTripped = new TransactionReceipt(secondEncoding);
+        assertArrayEquals(newState, roundTripped.getPostTxState());
+    }
+
 }

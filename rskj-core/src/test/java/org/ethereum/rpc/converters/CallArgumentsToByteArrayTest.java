@@ -176,4 +176,50 @@ class CallArgumentsToByteArrayTest {
         Assertions.assertEquals(1, ByteUtil.byteArrayToLong(
                 callArgumentsToByteArray.gasLimitForCall(config.getCallGasCap())));
     }
+
+    @Test
+    void getGasPrice_whenMaxFeeHasHighBitSet_returnsUnsignedEncoding() {
+        CallArguments args = new CallArguments();
+        args.setMaxFeePerGas("0x80");            // 128 — high bit set
+        args.setMaxPriorityFeePerGas("0xff");    // 255 — higher than maxFee, so min selects maxFee
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertArrayEquals(new byte[] {(byte) 0x80}, byteArrayArgs.getGasPrice(),
+                "min(maxPriority, maxFee) must be encoded as unsigned bytes; no 0x00 sign byte prefix");
+    }
+
+    @Test
+    void getGasPrice_whenPriorityIsLowerAndHasHighBitSet_returnsUnsignedEncoding() {
+        CallArguments args = new CallArguments();
+        args.setMaxFeePerGas("0xff");
+        args.setMaxPriorityFeePerGas("0x81");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertArrayEquals(new byte[] {(byte) 0x81}, byteArrayArgs.getGasPrice(),
+                "min selected and must be unsigned");
+    }
+
+    @Test
+    void getGasPrice_whenOnlyMaxFeeIsSet_usesMaxFee() {
+        CallArguments args = new CallArguments();
+        args.setMaxFeePerGas("0x64");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertArrayEquals(new byte[] {0x64}, byteArrayArgs.getGasPrice());
+    }
+
+    @Test
+    void getGasPrice_whenGasPriceExplicitlySet_takesPrecedenceOverMaxFees() {
+        CallArguments args = new CallArguments();
+        args.setGasPrice("0x7");
+        args.setMaxFeePerGas("0xff");
+        args.setMaxPriorityFeePerGas("0xff");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertArrayEquals(new byte[] {0x7}, byteArrayArgs.getGasPrice());
+    }
 }

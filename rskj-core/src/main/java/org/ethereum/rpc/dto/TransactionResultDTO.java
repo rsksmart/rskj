@@ -39,8 +39,12 @@ import java.util.List;
 
 /**
  * Created by Ruben on 8/1/2016.
+ *
+ * Fields defined for legacy transactions (blockHash, blockNumber, transactionIndex, etc.) are always
+ * serialized, including as JSON null, per the Ethereum JSON-RPC contract. Only the EIP-2718 / EIP-1559
+ * typed-transaction fields below are annotated with {@link JsonInclude.Include#NON_NULL} so they are
+ * omitted entirely for legacy transactions that do not have them.
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class TransactionResultDTO {
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionResultDTO.class);
@@ -62,13 +66,18 @@ public class TransactionResultDTO {
     private String r;
     private String s;
 
-    // EIP-2718 typed transaction fields (null for legacy transactions)
+    // Typed transaction fields (omitted from JSON for legacy transactions)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String chainId;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<AccessListEntryDTO> accessList;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String yParity;
 
-    // EIP-1559 Type 2 only fields (null for legacy and Type 1)
+    // Type 2 only fields (omitted from JSON for legacy and Type 1)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String maxPriorityFeePerGas;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String maxFeePerGas;
 
     public TransactionResultDTO(Block b, Integer index, Transaction tx, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
@@ -110,7 +119,7 @@ public class TransactionResultDTO {
             s = HEX_ZERO;
         }
 
-        // Populate EIP-2718 typed transaction fields
+        // Populate typed transaction fields
         TransactionType txType = tx.getType();
         boolean isType1OrStandardType2 = (txType == TransactionType.TYPE_1)
                 || (txType == TransactionType.TYPE_2 && !tx.getTypePrefix().isRskNamespace());
@@ -118,7 +127,7 @@ public class TransactionResultDTO {
         if (isType1OrStandardType2) {
             chainId = HexUtils.toQuantityJsonHex(tx.getChainId() & 0xFF);
             accessList = decodeAccessList(tx.getAccessListBytes());
-            yParity = String.format("0x%x", tx.getEncodedV());
+            yParity = HexUtils.toQuantityJsonHex(tx.getEncodedV() & 0xFF);
 
             if (txType == TransactionType.TYPE_2) {
                 Coin maxP = tx.getMaxPriorityFeePerGas();
@@ -137,7 +146,11 @@ public class TransactionResultDTO {
      * Decodes the RLP-encoded access list bytes into a list of {@link AccessListEntryDTO} objects.
      * The access list RLP format is: {@code [[address, [storageKey, ...]], ...]}
      * where {@code address} is 20 bytes and each {@code storageKey} is 32 bytes.
-     * Returns an empty list on any decoding failure to avoid breaking the RPC response.
+     *
+     * <p>Since the access-list RLP is already validated at transaction ingress
+     * ({@code Transaction.validateAccessListRlp}), a decoding failure here indicates data corruption
+     * or an encoder bug. We log at ERROR with full context so the incident is visible, and still
+     * return an empty list to avoid breaking the RPC response for other clients.
      */
     private static List<AccessListEntryDTO> decodeAccessList(byte[] accessListBytes) {
         if (accessListBytes == null || accessListBytes.length == 0) {
@@ -163,7 +176,8 @@ public class TransactionResultDTO {
             }
             return result;
         } catch (Exception e) {
-            logger.warn("Failed to decode access list bytes, returning empty list", e);
+            logger.error("Failed to decode access list bytes (length={}); returning empty list. This indicates stored access-list RLP is corrupt or was encoded incorrectly.",
+                    accessListBytes.length, e);
             return Collections.emptyList();
         }
     }

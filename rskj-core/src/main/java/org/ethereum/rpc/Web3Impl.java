@@ -879,18 +879,20 @@ public class Web3Impl implements Web3 {
                 logIndexAcc += Optional.ofNullable(prevTxInfo.getReceipt().getLogInfoList()).map(List::size).orElse(0);
                 prevCumulativeGas = prevTxInfo.getReceipt().getCumulativeGasLong();
             }
-
         }
 
-        // For Type 1 / standard Type 2 receipts the 4-field RLP format does not store gasUsed.
-        // Derive it here from the cumulative gas difference before building the DTO.
+        // For Type 1 / standard Type 2 receipts the 4-field RLP format does not store gasUsed
+        // (only the cumulative total). Derive the per-tx value from the cumulative gas difference
+        // and pass it to the DTO — we intentionally do NOT mutate the receipt instance here,
+        // because receipts are shared read-only domain objects and mutating them would leak a
+        // view-layer concern into storage.
         TransactionReceipt receipt = txInfo.getReceipt();
+        Long overrideGasUsed = null;
         if (receipt.getGasUsed().length == 0) {
-            long perTxGas = receipt.getCumulativeGasLong() - prevCumulativeGas;
-            receipt.setGasUsed(perTxGas);
+            overrideGasUsed = receipt.getCumulativeGasLong() - prevCumulativeGas;
         }
 
-        return new TransactionReceiptDTO(block, txInfo, signatureCache, logIndexAcc);
+        return new TransactionReceiptDTO(block, txInfo, signatureCache, logIndexAcc, overrideGasUsed);
     }
 
     @Override

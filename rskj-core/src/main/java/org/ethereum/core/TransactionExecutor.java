@@ -214,11 +214,7 @@ public class TransactionExecutor {
             return false;
         }
 
-        if (!transactionAddressesAreValid()) {
-            return false;
-        }
-
-        return true;
+        return transactionAddressesAreValid();
     }
 
 
