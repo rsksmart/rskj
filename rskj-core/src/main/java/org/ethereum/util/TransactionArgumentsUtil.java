@@ -27,6 +27,8 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.GasCost;
 
 import java.math.BigInteger;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -38,6 +40,8 @@ public class TransactionArgumentsUtil {
     public static final String ERR_INVALID_RSK_SUBTYPE = "Invalid RSK subtype: ";
 	public static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
 	public static final String ERR_COULD_NOT_FIND_ACCOUNT = "Could not find account for address: ";
+    public static final String ERR_TYPE_2_MISSING_FEES =
+            "Type 0x02 (EIP-1559) transactions require both maxFeePerGas and maxPriorityFeePerGas";
 
     private TransactionArgumentsUtil() {}
 
@@ -61,6 +65,15 @@ public class TransactionArgumentsUtil {
                             + (argsParam.getType() == null ? "legacy (omitted)" : argsParam.getType()));
         }
 
+        // RSKIP-546: standard Type 2 (EIP-1559) MUST carry both maxFeePerGas and maxPriorityFeePerGas.
+        if (type == TransactionType.TYPE_2 && rskSubtype == null) {
+            boolean maxPriorityAbsent = isAbsent(argsParam.getMaxPriorityFeePerGas());
+            boolean maxFeeAbsent = isAbsent(argsParam.getMaxFeePerGas());
+            if (maxPriorityAbsent || maxFeeAbsent) {
+                throw RskJsonRpcRequestException.invalidParamError(ERR_TYPE_2_MISSING_FEES);
+            }
+        }
+
         argsRet.setType(type);
         argsRet.setRskSubtype(rskSubtype);
 
@@ -80,6 +93,9 @@ public class TransactionArgumentsUtil {
 
 		argsRet.setGasPrice(strHexOrStrNumberToBigInteger(argsParam.getGasPrice(), () -> BigInteger.ZERO));
 
+		argsRet.setMaxPriorityFeePerGas(strHexOrStrNumberToBigInteger(argsParam.getMaxPriorityFeePerGas(), () -> null));
+		argsRet.setMaxFeePerGas(strHexOrStrNumberToBigInteger(argsParam.getMaxFeePerGas(), () -> null));
+
 		argsRet.setGasLimit(strHexOrStrNumberToBigInteger(argsParam.getGas(), () -> null));
 
 		if (argsRet.getGasLimit() == null) {
@@ -91,16 +107,22 @@ public class TransactionArgumentsUtil {
 			argsParam.setData(argsRet.getData()); // needs to change the parameter because some places expect the changed value after sendTransaction call
 		}
 
-		argsRet.setChainId(hexToChainId(argsParam.getChainId()));
-		if (argsRet.getChainId() == 0) {
-			argsRet.setChainId(defaultChainId);
-		}
+	argsRet.setChainId(hexToChainId(argsParam.getChainId()));
+	if (argsRet.getChainId() == 0) {
+		argsRet.setChainId(defaultChainId);
+	}
 
-		return argsRet;
+	argsRet.setAccessListBytes(encodeAccessList(argsParam.getAccessList()));
+
+	return argsRet;
 	}
 
     private static byte[] stringHexToByteArray(String value) {
         return Optional.ofNullable(value).map(HexUtils::stringHexToByteArray).orElse(null);
+    }
+
+    private static boolean isAbsent(String hexValue) {
+        return hexValue == null || hexValue.isEmpty();
     }
 
 	private static BigInteger strHexOrStrNumberToBigInteger(String value, Supplier<BigInteger> getDefaultValue) {
@@ -113,11 +135,18 @@ public class TransactionArgumentsUtil {
 		}
 		try {
 			byte[] bytes = HexUtils.strHexOrStrNumberToByteArray(hex);
+			// Canonical hex for zero ("0x00", "0x0", "0") is normalized to an empty byte array.
+			// Treat this as "zero / use default chainId" rather than an invalid value.
+			if (bytes.length == 0) {
+				return 0;
+			}
 			if (bytes.length != 1) {
 				throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex);
 			}
 
 			return bytes[0];
+		} catch (RskJsonRpcRequestException e) {
+			throw e;
 		} catch (Exception e) {
 			throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex, e);
 		}
@@ -166,6 +195,44 @@ public class TransactionArgumentsUtil {
         } catch (Exception ex) {
             throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_RSK_SUBTYPE + hex, ex);
         }
+    }
+
+    /**
+     * Encodes an access list (from JSON-RPC call arguments) to RLP bytes.
+     * The resulting format is {@code rlp([[address, [storageKey, ...]], ...])} per EIP-2930.
+     * Returns {@code null} if the access list is null or empty (no access list field).
+     */
+    static byte[] encodeAccessList(List<CallArguments.AccessListEntry> accessList) {
+        if (accessList == null || accessList.isEmpty()) {
+            return null;
+        }
+        byte[][] encodedEntries = new byte[accessList.size()][];
+        for (int i = 0; i < accessList.size(); i++) {
+            CallArguments.AccessListEntry entry = accessList.get(i);
+            if (entry.getAddress() == null) {
+                throw RskJsonRpcRequestException.invalidParamError("Access list entry missing address at index " + i);
+            }
+            byte[] addressBytes = HexUtils.stringHexToByteArray(entry.getAddress());
+            if (addressBytes == null || addressBytes.length != 20) {
+                throw RskJsonRpcRequestException.invalidParamError(
+                        "Access list entry address must be a 20-byte hex value at index " + i);
+            }
+            byte[] encodedAddress = RLP.encodeElement(addressBytes);
+
+            List<String> storageKeys = entry.getStorageKeys() != null ? entry.getStorageKeys() : Collections.emptyList();
+            byte[][] encodedKeys = new byte[storageKeys.size()][];
+            for (int k = 0; k < storageKeys.size(); k++) {
+                byte[] keyBytes = HexUtils.stringHexToByteArray(storageKeys.get(k));
+                if (keyBytes == null || keyBytes.length != 32) {
+                    throw RskJsonRpcRequestException.invalidParamError(
+                            "Access list storage key must be a 32-byte hex value at entry " + i + ", key " + k);
+                }
+                encodedKeys[k] = RLP.encodeElement(keyBytes);
+            }
+            byte[] encodedKeyList = RLP.encodeList(encodedKeys);
+            encodedEntries[i] = RLP.encodeList(encodedAddress, encodedKeyList);
+        }
+        return RLP.encodeList(encodedEntries);
     }
 
 }

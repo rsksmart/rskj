@@ -79,6 +79,13 @@ public class Transaction {
 
     /** Number of required fields in a transaction RLP list. */
     private static final int TX_FIELD_COUNT = 9;
+    /** Type 1 (EIP-2930): 11 elements */
+    private static final int TYPE_1_FIELD_COUNT = 11;
+    /** Type 2 (EIP-1559, RSKIP-546): 12 elements */
+    private static final int TYPE_2_FIELD_COUNT = 12;
+
+    /** Empty RLP list (0xc0) for default access list */
+    private static final byte[] EMPTY_ACCESS_LIST_RLP = new byte[]{(byte) 0xc0};
 
     private final TransactionTypePrefix typePrefix;
 
@@ -110,6 +117,16 @@ public class Transaction {
     private Keccak256 hash;
     private Keccak256 rawHash;
 
+    /** RSKIP546: Access list bytes (RLP-encoded) for Type 1 and Type 2 */
+    private final byte[] accessListBytes;
+
+    /**
+     * RSKIP-546: EIP-1559 fee fields for <em>standard</em> Type 2 only ({@code null} for legacy, Type 1, Type 3/4,
+     * and RSK-namespace Type 2). Effective gas price is {@code min(maxPriorityFeePerGas, maxFeePerGas)}.
+     */
+    private final Coin maxPriorityFeePerGas;
+    private final Coin maxFeePerGas;
+
     /**
      * Constructor for parsing raw transaction data.
      * Supports legacy and typed transactions.
@@ -123,7 +140,14 @@ public class Transaction {
 
         BytesSlice payload = TransactionTypePrefix.stripPrefix(rawData, this.typePrefix);
         RLPList txFields = RLP.decodeList(payload);
-        ParsedFields parsed = parseFields(txFields);
+        ParsedFields parsed = switch (typePrefix.type()) {
+            case LEGACY -> parseFields(txFields);
+            case TYPE_1 -> parseType1Payload(txFields);
+            case TYPE_2 -> typePrefix.isRskNamespace() ? parseFields(txFields) : parseType2Payload(txFields);
+            case TYPE_3, TYPE_4 -> parseFields(txFields);  // legacy payload format until properly implemented
+            default -> throw new IllegalArgumentException(
+                    "Transaction type " + typePrefix.type() + " not yet supported for parsing");
+        };
 
         this.nonce = parsed.nonce;
         this.gasPrice = parsed.gasPrice;
@@ -133,6 +157,9 @@ public class Transaction {
         this.data = parsed.data;
         this.chainId = parsed.chainId;
         this.signature = parsed.signature;
+        this.accessListBytes = parsed.accessListBytes;
+        this.maxPriorityFeePerGas = parsed.maxPriorityFeePerGas;
+        this.maxFeePerGas = parsed.maxFeePerGas;
     }
 
     /* creation contract tx
@@ -173,6 +200,27 @@ public class Transaction {
     /** Canonical constructor used by all overloads. */
     protected Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
                           byte chainId, final boolean localCall, TransactionTypePrefix typePrefix) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId, localCall, typePrefix,
+                typePrefix.type() == TransactionType.TYPE_1
+                        || (typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace())
+                        ? EMPTY_ACCESS_LIST_RLP : null,
+                typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace() ? gasPriceRaw : null,
+                typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace() ? gasPriceRaw : null);
+    }
+
+    /** Canonical constructor with optional access list for Type 1 and Type 2 (max fee fields null). */
+    protected Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
+                          byte chainId, final boolean localCall, TransactionTypePrefix typePrefix, byte[] accessListBytes) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId, localCall, typePrefix,
+                accessListBytes, null, null);
+    }
+
+    /**
+     * Full canonical constructor: access list RLP and optional Type 2 max fees (RSK namespace uses null max fees).
+     */
+    protected Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
+                          byte chainId, final boolean localCall, TransactionTypePrefix typePrefix, byte[] accessListBytes,
+                          @Nullable Coin maxPriorityFeePerGas, @Nullable Coin maxFeePerGas) {
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = gasPriceRaw;
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
@@ -182,6 +230,9 @@ public class Transaction {
         this.chainId = chainId;
         this.isLocalCall = localCall;
         this.typePrefix = typePrefix;
+        this.accessListBytes = accessListBytes == null ? null : accessListBytes.clone();
+        this.maxPriorityFeePerGas = maxPriorityFeePerGas;
+        this.maxFeePerGas = maxFeePerGas;
     }
 
     public static TransactionBuilder builder() {
@@ -229,12 +280,30 @@ public class Transaction {
 
         long txNonZeroDataCost = getTxNonZeroDataCost(activations);
 
-        return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost;
+        long accessListGas = 0;
+        if (activations.isActive(ConsensusRule.RSKIP546)
+                && isType1OrStandardType2()
+                && accessListBytes != null && accessListBytes.length > 1) {
+            // RSKIP-546: 80 gas/byte of access-list RLP; only standard Type 1 / EIP-1559 Type 2 (not RSK-namespace 0x02||subtype).
+            // length > 1: empty list (0xc0) is 1 byte and should not be charged.
+            accessListGas = accessListBytes.length * GasCost.ACCESS_LIST_GAS_PER_BYTE;
+        }
+
+        return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost + accessListGas;
     }
 
 
     public boolean isTypedTransactionNotAllowed(ActivationConfig.ForBlock activations) {
-        return this.typePrefix.isTyped() && !activations.isActive(ConsensusRule.RSKIP543);
+        if (!this.typePrefix.isTyped()) {
+            return false;
+        }
+        if (!activations.isActive(ConsensusRule.RSKIP543)) {
+            return true;
+        }
+        // RSKIP-546 gates Type 1 and Type 2 specifically
+        TransactionType type = typePrefix.type();
+        return (type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2)
+                && !activations.isActive(ConsensusRule.RSKIP546);
     }
 
     public boolean isInitCodeSizeInvalidForTx(ActivationConfig.ForBlock activations) {
@@ -294,8 +363,9 @@ public class Transaction {
 
     public Keccak256 getRawHash() {
         if (rawHash == null) {
-            byte[] plainMsg = this.getEncodedRaw();
-            this.rawHash = new Keccak256(HashUtil.keccak256(plainMsg));
+            // For Type 1: getEncodedRaw() returns 0x01 || rlp([chainId, nonce, gasPrice, gasLimit, to, value, data, accessList])
+            // For legacy: getEncodedRaw() returns rlp([nonce, gasPrice, gasLimit, to, value, data{, chainId, 0, 0}])
+            this.rawHash = new Keccak256(HashUtil.keccak256(this.getEncodedRaw()));
         }
 
         return this.rawHash;
@@ -316,11 +386,34 @@ public class Transaction {
     public Coin getGasPrice() {
         // some blocks have zero encoded as null, but if we altered the internal field then re-encoding the value would
         // give a different value than the original.
+        if (isStandardType2() && maxPriorityFeePerGas != null && maxFeePerGas != null) {
+            return maxPriorityFeePerGas.compareTo(maxFeePerGas) <= 0 ? maxPriorityFeePerGas : maxFeePerGas;
+        }
         if (gasPrice == null) {
             return Coin.ZERO;
         }
 
         return gasPrice;
+    }
+
+    @Nullable
+    public Coin getMaxPriorityFeePerGas() {
+        return maxPriorityFeePerGas;
+    }
+
+    @Nullable
+    public Coin getMaxFeePerGas() {
+        return maxFeePerGas;
+    }
+
+    /** Standard EIP-1559 Type 2 ({@code 0x02} + 12-field RLP), not RSK namespace ({@code 0x02} || subtype || legacy). */
+    private boolean isStandardType2() {
+        return typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace();
+    }
+
+    /** Types that use RSKIP-546 access-list field and intrinsic gas for that field (excludes RSK-namespace Type 2). */
+    private boolean isType1OrStandardType2() {
+        return typePrefix.type() == TransactionType.TYPE_1 || isStandardType2();
     }
 
     public byte[] getGasLimit() {
@@ -339,6 +432,11 @@ public class Transaction {
         ECDSASignature signature = getSignature();
         if (signature == null || !signature.validateComponents() || signature.getS().compareTo(SECP256K1N_HALF) >= 0) {
             return false;
+        }
+
+        if (typePrefix.type() == TransactionType.TYPE_1 || isStandardType2()) {
+            // EIP-2930 / EIP-1559 mandate chainId; chainId == 0 is not valid
+            return this.getChainId() != 0 && this.getChainId() == currentChainId;
         }
 
         return this.getChainId() == 0 || this.getChainId() == currentChainId;
@@ -458,6 +556,11 @@ public class Transaction {
         return chainId;
     }
 
+    @Nullable
+    public byte[] getAccessListBytes() {
+        return accessListBytes == null ? null : accessListBytes.clone();
+    }
+
     public TransactionTypePrefix getTypePrefix() {
         return typePrefix;
     }
@@ -483,6 +586,13 @@ public class Transaction {
     }
 
     public byte getEncodedV() {
+        if (this.signature == null) {
+            return 0;
+        }
+        if (typePrefix.type().isTyped()) {
+            // EIP-2718 typed transactions use yParity (0 or 1) instead of EIP-155 V
+            return (byte) (this.signature.getV() - LOWER_REAL_V);
+        }
         return this.chainId == 0
                 ? this.signature.getV()
                 : (byte) (this.signature.getV() - LOWER_REAL_V + CHAIN_ID_INC + this.chainId * 2);
@@ -498,6 +608,9 @@ public class Transaction {
                 ", receiveAddress=" + receiveAddress +
                 ", value=" + value +
                 ", data=" + ByteUtil.toHexStringOrEmpty(data) +
+                (accessListBytes != null ? ", accessListLen=" + accessListBytes.length : "") +
+                (maxPriorityFeePerGas != null ? ", maxPriorityFeePerGas=" + maxPriorityFeePerGas : "") +
+                (maxFeePerGas != null ? ", maxFeePerGas=" + maxFeePerGas : "") +
                 ", signatureV=" + (signature == null ? "" : signature.getV()) +
                 ", signatureR=" + (signature == null ? "" : ByteUtil.toHexStringOrEmpty(BigIntegers.asUnsignedByteArray(signature.getR()))) +
                 ", signatureS=" + (signature == null ? "" : ByteUtil.toHexStringOrEmpty(BigIntegers.asUnsignedByteArray(signature.getS()))) +
@@ -507,17 +620,21 @@ public class Transaction {
     public byte[] getEncodedRaw() {
         if (this.rawRlpEncoding == null) {
             byte[] txData;
-
-            // Since EIP-155 use chainId for v
-            if (chainId == 0) {
-                txData = encode(null, null, null);
+            if (typePrefix.type() == TransactionType.TYPE_1) {
+                txData = encodeType1UnsignedPayload();
+            } else if (isStandardType2()) {
+                txData = encodeType2UnsignedPayload();
             } else {
-                byte[] v = RLP.encodeByte(chainId);
-                byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-                byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-                txData = encode(v, r, s);
+                // Legacy
+                if (chainId == 0) {
+                    txData = encode(null, null, null);
+                } else {
+                    byte[] v = RLP.encodeByte(chainId);
+                    byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+                    byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+                    txData = encode(v, r, s);
+                }
             }
-
             this.rawRlpEncoding = prependTypePrefix(txData);
         }
 
@@ -532,14 +649,21 @@ public class Transaction {
         return rlpEncode().length;
     }
 
-    private byte[] encode(byte[] v, byte[] r, byte[] s) {
-        // parse null as 0 for nonce
-        byte[] toEncodeNonce;
-        if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
-            toEncodeNonce = RLP.encodeElement(null);
-        } else {
-            toEncodeNonce = RLP.encodeElement(this.nonce);
+    /** RLP-encoded nonce element (null or single zero byte → empty scalar). */
+    private byte[] toEncodeNonce() {
+        if (nonce == null || (nonce.length == 1 && nonce[0] == 0)) {
+            return RLP.encodeElement(null);
         }
+        return RLP.encodeElement(nonce);
+    }
+
+    /** RLP access list bytes for typed txs, or empty list {@link #EMPTY_ACCESS_LIST_RLP} when absent. */
+    private byte[] toEncodeAccessList() {
+        return accessListBytes != null ? accessListBytes : EMPTY_ACCESS_LIST_RLP;
+    }
+
+    private byte[] encode(byte[] v, byte[] r, byte[] s) {
+        byte[] toEncodeNonce = toEncodeNonce();
         byte[] toEncodeGasPrice = RLP.encodeCoinNonNullZero(this.gasPrice);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
         byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
@@ -553,6 +677,87 @@ public class Transaction {
 
         return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
                 toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
+    }
+
+    /** Encodes the 8 shared Type 1 fields: [chainId, nonce, gasPrice, gasLimit, to, value, data, accessList] */
+    private byte[][] encodeType1Fields() {
+        return new byte[][]{
+                RLP.encodeByte(chainId),
+                toEncodeNonce(),
+                RLP.encodeCoinNonNullZero(gasPrice),
+                RLP.encodeElement(gasLimit),
+                RLP.encodeRskAddress(receiveAddress),
+                RLP.encodeCoinNullZero(value),
+                RLP.encodeElement(data),
+                toEncodeAccessList()
+        };
+    }
+
+    /** Type 1 unsigned payload for signing: rlp([chainId, nonce, gasPrice, gasLimit, to, value, data, accessList]) */
+    private byte[] encodeType1UnsignedPayload() {
+        return RLP.encodeList(encodeType1Fields());
+    }
+
+    private byte[][] encodeType2Fields() {
+        if (maxPriorityFeePerGas == null || maxFeePerGas == null) {
+            throw new IllegalStateException("Standard Type 2 transaction requires maxPriorityFeePerGas and maxFeePerGas");
+        }
+        return new byte[][]{
+                RLP.encodeByte(chainId),
+                toEncodeNonce(),
+                RLP.encodeCoinNonNullZero(maxPriorityFeePerGas),
+                RLP.encodeCoinNonNullZero(maxFeePerGas),
+                RLP.encodeElement(gasLimit),
+                RLP.encodeRskAddress(receiveAddress),
+                RLP.encodeCoinNullZero(value),
+                RLP.encodeElement(data),
+                toEncodeAccessList()
+        };
+    }
+
+    /** Type 2 unsigned payload for signing (RSKIP-546). */
+    private byte[] encodeType2UnsignedPayload() {
+        return RLP.encodeList(encodeType2Fields());
+    }
+
+    /** Type 2 full encoding: 12 elements with signature */
+    private byte[] encodeType2() {
+        byte[][] fields = encodeType2Fields();
+        byte[] yParity = signature != null
+                ? RLP.encodeByte((byte) (signature.getV() - LOWER_REAL_V))
+                : RLP.encodeByte((byte) 0);
+        byte[] r = signature != null
+                ? RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getR()))
+                : RLP.encodeElement(EMPTY_BYTE_ARRAY);
+        byte[] s = signature != null
+                ? RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getS()))
+                : RLP.encodeElement(EMPTY_BYTE_ARRAY);
+        byte[][] all = new byte[fields.length + 3][];
+        System.arraycopy(fields, 0, all, 0, fields.length);
+        all[fields.length] = yParity;
+        all[fields.length + 1] = r;
+        all[fields.length + 2] = s;
+        return RLP.encodeList(all);
+    }
+
+    /** Type 1 full encoding: 11 elements with signature */
+    private byte[] encodeType1() {
+        byte[][] fields = encodeType1Fields();
+        byte[] yParity = signature != null
+                ? RLP.encodeByte((byte) (signature.getV() - LOWER_REAL_V))
+                : RLP.encodeByte((byte) 0);
+        byte[] r = signature != null
+                ? RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getR()))
+                : RLP.encodeElement(EMPTY_BYTE_ARRAY);
+        byte[] s = signature != null
+                ? RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getS()))
+                : RLP.encodeElement(EMPTY_BYTE_ARRAY);
+        byte[][] all = new byte[fields.length + 3][];
+        System.arraycopy(fields, 0, all, 0, fields.length);
+        all[fields.length] = yParity;
+        all[fields.length + 1] = r;
+        all[fields.length + 2] = s;
+        return RLP.encodeList(all);
     }
 
     public BigInteger getGasLimitAsInteger() {
@@ -635,21 +840,26 @@ public class Transaction {
     @java.lang.SuppressWarnings("squid:S2384")
     private byte[] rlpEncode() {
         if (this.rlpEncoding == null) {
-            byte[] v;
-            byte[] r;
-            byte[] s;
-
-            if (this.signature != null) {
-                v = RLP.encodeByte((byte) (chainId == 0 ? signature.getV() : (signature.getV() - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
-                r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getR()));
-                s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getS()));
+            byte[] txData;
+            if (typePrefix.type() == TransactionType.TYPE_1) {
+                txData = encodeType1();
+            } else if (isStandardType2()) {
+                txData = encodeType2();
             } else {
-                v = chainId == 0 ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeByte(chainId);
-                r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-                s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+                byte[] v;
+                byte[] r;
+                byte[] s;
+                if (this.signature != null) {
+                    v = RLP.encodeByte((byte) (chainId == 0 ? signature.getV() : (signature.getV() - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
+                    r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getR()));
+                    s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getS()));
+                } else {
+                    v = chainId == 0 ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeByte(chainId);
+                    r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+                    s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+                }
+                txData = encode(v, r, s);
             }
-
-            byte[] txData = encode(v, r, s);
             this.rlpEncoding = prependTypePrefix(txData);
         }
 
@@ -686,7 +896,129 @@ public class Transaction {
             logger.trace("RLP encoded tx is not signed!");
         }
 
-        return new ParsedFields(nonce, gasPrice, gasLimit, receiveAddress, value, data, chainId, signature);
+        return new ParsedFields(nonce, gasPrice, gasLimit, receiveAddress, value, data, chainId, signature, null, null, null);
+    }
+
+    /** Parses Type 1 (EIP-2930) payload: 11 elements per RSKIP-546. */
+    private static ParsedFields parseType1Payload(RLPList txFields) {
+        if (txFields.size() != TYPE_1_FIELD_COUNT) {
+            throw new IllegalArgumentException(
+                    "Type 1 transaction must have exactly " + TYPE_1_FIELD_COUNT + " elements");
+        }
+        byte chainId = parseTypedTxChainId(txFields.get(0).getRLPData());
+        byte[] nonce = txFields.get(1).getRLPData();
+        Coin gasPrice = RLP.parseCoinNonNullZero(txFields.get(2).getRLPData());
+        byte[] gasLimit = txFields.get(3).getRLPData();
+        RskAddress receiveAddress = RLP.parseRskAddress(txFields.get(4).getRLPData());
+        Coin value = RLP.parseCoinNullZero(txFields.get(5).getRLPData());
+        byte[] data = txFields.get(6).getRLPData();
+        byte[] accessListBytes = txFields.get(7).getRLPRawData();
+        validateAccessListRlp(accessListBytes);
+
+        // yParity=0 is RLP-encoded as 0x80, so getRLPData() returns null; treat null as 0
+        ECDSASignature signature = null;
+        byte[] yParityData = txFields.get(8).getRLPData();
+        byte yParity = (yParityData != null && yParityData.length > 0) ? yParityData[0] : 0;
+        validateYParity(yParity);
+        byte v = (byte) (LOWER_REAL_V + yParity);
+        byte[] r = txFields.get(9).getRLPData();
+        byte[] s = txFields.get(10).getRLPData();
+        if (r != null || s != null) {
+            signature = ECDSASignature.fromComponents(r, s, v);
+        }
+
+        return new ParsedFields(nonce, gasPrice, gasLimit, receiveAddress, value, data, chainId, signature,
+                accessListBytes, null, null);
+    }
+
+    /** Parses Type 2 (EIP-1559) payload: 12 elements per RSKIP-546. */
+    private static ParsedFields parseType2Payload(RLPList txFields) {
+        if (txFields.size() != TYPE_2_FIELD_COUNT) {
+            throw new IllegalArgumentException(
+                    "Type 2 transaction must have exactly " + TYPE_2_FIELD_COUNT + " elements");
+        }
+        byte chainId = parseTypedTxChainId(txFields.get(0).getRLPData());
+        byte[] nonce = txFields.get(1).getRLPData();
+        Coin maxPriorityFeePerGas = Objects.requireNonNull(
+                RLP.parseCoinNonNullZero(txFields.get(2).getRLPData()), "Type 2 maxPriorityFeePerGas");
+        Coin maxFeePerGas = Objects.requireNonNull(
+                RLP.parseCoinNonNullZero(txFields.get(3).getRLPData()), "Type 2 maxFeePerGas");
+        if (maxPriorityFeePerGas.compareTo(maxFeePerGas) > 0) {
+            throw new IllegalArgumentException(
+                    "Type 2 transaction maxPriorityFeePerGas (" + maxPriorityFeePerGas
+                            + ") must not exceed maxFeePerGas (" + maxFeePerGas + ")");
+        }
+        Coin gasPrice = maxPriorityFeePerGas;
+        byte[] gasLimit = txFields.get(4).getRLPData();
+        RskAddress receiveAddress = RLP.parseRskAddress(txFields.get(5).getRLPData());
+        Coin value = RLP.parseCoinNullZero(txFields.get(6).getRLPData());
+        byte[] data = txFields.get(7).getRLPData();
+        byte[] accessListBytes = txFields.get(8).getRLPRawData();
+        validateAccessListRlp(accessListBytes);
+
+        ECDSASignature signature = null;
+        byte[] yParityData = txFields.get(9).getRLPData();
+        byte yParity = (yParityData != null && yParityData.length > 0) ? yParityData[0] : 0;
+        validateYParity(yParity);
+        byte v = (byte) (LOWER_REAL_V + yParity);
+        byte[] r = txFields.get(10).getRLPData();
+        byte[] s = txFields.get(11).getRLPData();
+        if (r != null || s != null) {
+            signature = ECDSASignature.fromComponents(r, s, v);
+        }
+
+        return new ParsedFields(nonce, gasPrice, gasLimit, receiveAddress, value, data, chainId, signature,
+                accessListBytes, maxPriorityFeePerGas, maxFeePerGas);
+    }
+
+    /**
+     * Parses the chain ID for typed transactions (Type 1 / Type 2).
+     * Per EIP-2718, the chain ID must be a canonical integer that fits in a single unsigned byte
+     * (values 1–255). A zero chain ID is rejected: typed transactions require a chain ID.
+     * Values larger than 255 are rejected to prevent cross-chain replay via silent truncation.
+     */
+    private static byte parseTypedTxChainId(byte[] chainIdData) {
+        if (chainIdData == null || chainIdData.length == 0) {
+            throw new IllegalArgumentException("Typed transaction chainId must not be zero or absent");
+        }
+        BigInteger chainIdValue = new BigInteger(1, chainIdData);
+        if (chainIdValue.signum() == 0) {
+            throw new IllegalArgumentException("Typed transaction chainId must not be zero");
+        }
+        if (chainIdValue.compareTo(BigInteger.valueOf(255)) > 0) {
+            throw new IllegalArgumentException(
+                    "Typed transaction chainId exceeds maximum supported value of 255, got: " + chainIdValue);
+        }
+        return chainIdValue.byteValue();
+    }
+
+    /**
+     * Validates that yParity is strictly 0 or 1 as required by EIP-2930 and EIP-1559.
+     * Silently masking with {@code & 1} would allow malformed transactions (e.g. yParity=5)
+     * to be accepted, which deviates from the spec and could indicate signature manipulation.
+     */
+    private static void validateYParity(byte yParity) {
+        if (yParity != 0 && yParity != 1) {
+            throw new IllegalArgumentException(
+                    "Typed transaction yParity must be 0 or 1, got: " + (yParity & 0xFF));
+        }
+    }
+
+    /**
+     * Validates that the access list field contains well-formed RLP.
+     * Rootstock does not interpret access list contents, but an unparseable blob would be stored
+     * on-chain and could cause issues in downstream tooling. A null or empty-list (0xc0) value
+     * is always valid.
+     */
+    private static void validateAccessListRlp(byte[] accessListBytes) {
+        if (accessListBytes == null || accessListBytes.length == 0) {
+            return;
+        }
+        try {
+            RLP.decode2(accessListBytes);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Access list contains invalid RLP encoding", e);
+        }
     }
 
     /** Prepends the RSKIP543 type prefix when present. */
@@ -697,7 +1029,8 @@ public class Transaction {
 
     private record ParsedFields(byte[] nonce, Coin gasPrice, byte[] gasLimit,
                                     RskAddress receiveAddress, Coin value, byte[] data,
-                                    byte chainId, ECDSASignature signature) {
+                                    byte chainId, ECDSASignature signature, byte[] accessListBytes,
+                                    Coin maxPriorityFeePerGas, Coin maxFeePerGas) {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -709,15 +1042,19 @@ public class Transaction {
                     && Objects.equals(receiveAddress, that.receiveAddress)
                     && Objects.equals(value, that.value)
                     && Arrays.equals(data, that.data)
-                    && Objects.equals(signature, that.signature);
+                    && Objects.equals(signature, that.signature)
+                    && Arrays.equals(accessListBytes, that.accessListBytes)
+                    && Objects.equals(maxPriorityFeePerGas, that.maxPriorityFeePerGas)
+                    && Objects.equals(maxFeePerGas, that.maxFeePerGas);
         }
 
         @Override
         public int hashCode() {
-            int result = Objects.hash(gasPrice, receiveAddress, value, chainId, signature);
+            int result = Objects.hash(gasPrice, receiveAddress, value, chainId, signature, maxPriorityFeePerGas, maxFeePerGas);
             result = 31 * result + Arrays.hashCode(nonce);
             result = 31 * result + Arrays.hashCode(gasLimit);
             result = 31 * result + Arrays.hashCode(data);
+            result = 31 * result + Arrays.hashCode(accessListBytes);
             return result;
         }
 

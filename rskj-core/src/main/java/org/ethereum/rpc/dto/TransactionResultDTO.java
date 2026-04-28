@@ -20,17 +20,34 @@ package org.ethereum.rpc.dto;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionType;
 import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.HexUtils;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Created by Ruben on 8/1/2016.
+ *
+ * Fields defined for legacy transactions (blockHash, blockNumber, transactionIndex, etc.) are always
+ * serialized, including as JSON null, per the Ethereum JSON-RPC contract. Only the EIP-2718 / EIP-1559
+ * typed-transaction fields below are annotated with {@link JsonInclude.Include#NON_NULL} so they are
+ * omitted entirely for legacy transactions that do not have them.
  */
 public class TransactionResultDTO {
 
+    private static final Logger logger = LoggerFactory.getLogger(TransactionResultDTO.class);
     private static final String HEX_ZERO = "0x0";
 
     private String type;
@@ -48,6 +65,20 @@ public class TransactionResultDTO {
     private String v;
     private String r;
     private String s;
+
+    // Typed transaction fields (omitted from JSON for legacy transactions)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String chainId;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private List<AccessListEntryDTO> accessList;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String yParity;
+
+    // Type 2 only fields (omitted from JSON for legacy and Type 1)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String maxPriorityFeePerGas;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String maxFeePerGas;
 
     public TransactionResultDTO(Block b, Integer index, Transaction tx, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
         type = tx.getTypeAsHex();
@@ -78,7 +109,7 @@ public class TransactionResultDTO {
         if (!isRemasc) {
             ECDSASignature signature = tx.getSignature();
 
-            v = String.format("0x%02x", tx.getEncodedV());
+            v = HexUtils.toQuantityJsonHex(tx.getEncodedV());
 
             r = HexUtils.toQuantityJsonHex(signature.getR());
             s = HexUtils.toQuantityJsonHex(signature.getS());
@@ -86,6 +117,90 @@ public class TransactionResultDTO {
             v = HEX_ZERO;
             r = HEX_ZERO;
             s = HEX_ZERO;
+        }
+
+        // Populate typed transaction fields
+        TransactionType txType = tx.getType();
+        boolean isType1OrStandardType2 = (txType == TransactionType.TYPE_1)
+                || (txType == TransactionType.TYPE_2 && !tx.getTypePrefix().isRskNamespace());
+
+        if (isType1OrStandardType2) {
+            chainId = HexUtils.toQuantityJsonHex(tx.getChainId() & 0xFF);
+            accessList = decodeAccessList(tx.getAccessListBytes());
+            yParity = HexUtils.toQuantityJsonHex(tx.getEncodedV() & 0xFF);
+
+            if (txType == TransactionType.TYPE_2) {
+                Coin maxP = tx.getMaxPriorityFeePerGas();
+                Coin maxF = tx.getMaxFeePerGas();
+                if (maxP != null) {
+                    maxPriorityFeePerGas = HexUtils.toQuantityJsonHex(maxP.getBytes());
+                }
+                if (maxF != null) {
+                    maxFeePerGas = HexUtils.toQuantityJsonHex(maxF.getBytes());
+                }
+            }
+        }
+    }
+
+    /**
+     * Decodes the RLP-encoded access list bytes into a list of {@link AccessListEntryDTO} objects.
+     * The access list RLP format is: {@code [[address, [storageKey, ...]], ...]}
+     * where {@code address} is 20 bytes and each {@code storageKey} is 32 bytes.
+     *
+     * <p>Since the access-list RLP is already validated at transaction ingress
+     * ({@code Transaction.validateAccessListRlp}), a decoding failure here indicates data corruption
+     * or an encoder bug. We log at ERROR with full context so the incident is visible, and still
+     * return an empty list to avoid breaking the RPC response for other clients.
+     */
+    private static List<AccessListEntryDTO> decodeAccessList(byte[] accessListBytes) {
+        if (accessListBytes == null || accessListBytes.length == 0) {
+            return Collections.emptyList();
+        }
+        try {
+            RLPList outer = RLP.decodeList(accessListBytes);
+            List<AccessListEntryDTO> result = new ArrayList<>(outer.size());
+            for (int i = 0; i < outer.size(); i++) {
+                RLPElement entryElem = outer.get(i);
+                RLPList entry = RLP.decodeList(entryElem.getRLPRawData());
+
+                byte[] addressBytes = entry.get(0).getRLPData();
+                String address = HexUtils.toUnformattedJsonHex(addressBytes);
+
+                RLPList keysList = RLP.decodeList(entry.get(1).getRLPRawData());
+                List<String> storageKeys = new ArrayList<>(keysList.size());
+                for (int k = 0; k < keysList.size(); k++) {
+                    byte[] keyBytes = keysList.get(k).getRLPData();
+                    storageKeys.add(HexUtils.toUnformattedJsonHex(keyBytes));
+                }
+                result.add(new AccessListEntryDTO(address, storageKeys));
+            }
+            return result;
+        } catch (Exception e) {
+            logger.error("Failed to decode access list bytes (length={}); returning empty list. This indicates stored access-list RLP is corrupt or was encoded incorrectly.",
+                    accessListBytes.length, e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Represents a single entry in an EIP-2930 / EIP-1559 access list.
+     * Serializes as {@code {"address": "0x...", "storageKeys": ["0x...", ...]}} in JSON.
+     */
+    public static class AccessListEntryDTO {
+        private final String address;
+        private final List<String> storageKeys;
+
+        public AccessListEntryDTO(String address, List<String> storageKeys) {
+            this.address = address;
+            this.storageKeys = Collections.unmodifiableList(storageKeys);
+        }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public List<String> getStorageKeys() {
+            return storageKeys;
         }
     }
 
@@ -147,5 +262,25 @@ public class TransactionResultDTO {
 
     public String getType() {
         return type;
+    }
+
+    public String getChainId() {
+        return chainId;
+    }
+
+    public List<AccessListEntryDTO> getAccessList() {
+        return accessList;
+    }
+
+    public String getYParity() {
+        return yParity;
+    }
+
+    public String getMaxPriorityFeePerGas() {
+        return maxPriorityFeePerGas;
+    }
+
+    public String getMaxFeePerGas() {
+        return maxFeePerGas;
     }
 }
