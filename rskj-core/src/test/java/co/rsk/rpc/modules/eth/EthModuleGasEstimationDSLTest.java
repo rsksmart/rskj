@@ -85,10 +85,16 @@ class EthModuleGasEstimationDSLTest {
         Exception e = Assertions.assertThrows(GasCost.InvalidGasException.class, () -> runWithArgumentsAndBlock(eth, args, block));
         assertEquals("Got invalid gas value, tried operation: 20999 - 21000", e.getMessage());
 
-        // Try to estimate with not enough gas
+        // Calling estimateGas with a hint smaller than the actual minimum
+        // gas must NOT depend on the hint's value — the simulation runs at
+        // the cap regardless of the caller's gas (RSKCORE-5410-a). Pre-fix
+        // this threw GasCost.InvalidGasException because the simulation
+        // literally tried to subtract 21000 (intrinsic) from 1000 (the hint
+        // used as budget).
         args.setGas(HexUtils.toQuantityJsonHex(1000));
-        e = Assertions.assertThrows(GasCost.InvalidGasException.class, () -> estimateGas(eth, args, BlockTag.LATEST.getTag()));
-        assertEquals("Got invalid gas value, tried operation: 1000 - 21000", e.getMessage());
+        long estimateBelowIntrinsic = estimateGas(eth, args, BlockTag.LATEST.getTag());
+        assertEquals(21000, estimateBelowIntrinsic,
+                "estimateGas must return the true minimum (21000) regardless of the caller's gas hint");
     }
 
     /**
