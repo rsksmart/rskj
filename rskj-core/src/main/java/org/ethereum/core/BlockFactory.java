@@ -212,7 +212,7 @@ public final class BlockFactory implements BtcHeaderSizeRule {
 
         if ((!isBlockHeaderCompressionEnabled(blockNumber) || !compressed)
             && rlpHeader.size() > r
-            && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
+            && activationConfig.areActive(blockNumber, ConsensusRule.RSKIP351, ConsensusRule.RSKIP144)) {
                 txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
             }
 
@@ -356,7 +356,7 @@ public final class BlockFactory implements BtcHeaderSizeRule {
             // RSKIPUMM is not active, field ummRoot is not present
             expectedFullSize -= 1;
         }
-        if (!activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
+        if (!(activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))) {
             // Parallel tx execution is not active, field txExecutionSublistsEdges is not
             // present
             expectedFullSize -= 1;
@@ -402,7 +402,7 @@ public final class BlockFactory implements BtcHeaderSizeRule {
             // In compressed mode, version, edges, and baseEvent are stored in extension
             int extraHeaderFieldsToRemoveWhenCompressed = NUMBER_OF_EXTRA_HEADER_FIELDS;
             // If PTE deactivated, there is no need to remove edges in the counting
-            if (!activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
+            if (!(activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))) {
                 extraHeaderFieldsToRemoveWhenCompressed -= 1;
             }
             // If baseEvent deactivated, there is no need to remove baseEvent in the

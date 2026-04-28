@@ -795,6 +795,7 @@ class NodeBlockProcessorTest {
     void processBodyRequestMessageUsingBlockInBlockchainWithoutRskip351() throws UnknownHostException {
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.consensusRules.rskip351", ConfigValueFactory.fromAnyRef(-1))
+                        .withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(-1))
         );
         final Blockchain blockchain = new BlockChainBuilder()
                 .setConfig(config)
