@@ -39,7 +39,6 @@ public abstract class BridgeConstants {
     protected UnionBridgeConstants unionBridgeConstants;
 
     protected int btc2RskMinimumAcceptableConfirmations;
-    protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
     protected int rsk2BtcMinimumAcceptableConfirmations;
 
     protected int updateBridgeExecutionPeriod;
@@ -85,11 +84,6 @@ public abstract class BridgeConstants {
 
     public String getBtcParamsString() {
         return btcParamsString;
-    }
-
-    // Used by powpeg-node
-    public int getBtc2RskMinimumAcceptableConfirmationsOnRsk() {
-        return btc2RskMinimumAcceptableConfirmationsOnRsk;
     }
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
