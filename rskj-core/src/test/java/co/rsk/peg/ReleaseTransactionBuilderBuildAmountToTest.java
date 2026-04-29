@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.ReleaseTransactionBuilder.*;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE;
@@ -9,8 +10,7 @@ import static co.rsk.peg.ReleaseTransactionBuilder.Response.SUCCESS;
 import static co.rsk.peg.ReleaseTransactionBuilderAssertions.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
@@ -35,11 +35,13 @@ import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ReleaseTransactionBuilderBuildAmountToTest {
 
+    public static final int EXPECTED_NUMBER_OF_USER_OUTPUTS = 1;
     private static final int EXPECTED_NUMBER_OF_CHANGE_OUTPUTS = 1;
     private static final ActivationConfig.ForBlock IRIS_ACTIVATIONS = ActivationConfigsForTest.iris300().forBlock(0);
     private static final ActivationConfig.ForBlock PAPYRUS_ACTIVATIONS = ActivationConfigsForTest.papyrus200().forBlock(0);
@@ -86,9 +88,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
         // Assert
-        assertBuildResultResponseCode(INSUFFICIENT_MONEY, amountToResult);
-        assertNull(amountToResult.btcTx());
-        assertNull(amountToResult.selectedUTXOs());
+        assertBuildFailedWithResponseCode(amountToResult, INSUFFICIENT_MONEY);
     }
 
     @Test
@@ -107,20 +107,13 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
         // Assert
-        assertBuildResultResponseCode(SUCCESS, amountToResult);
-        BtcTransaction pegoutTransaction = amountToResult.btcTx();
-        assertBtcTxVersionIs1(pegoutTransaction);
-
-        List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int expectedNumberOfInputs = 1;
-        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
-        assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-            pegoutTransaction,
-            federationRedeemScript,
-            federationUTXOs
+        int expectedInputCount = 1;
+        assertReleaseTransactionIsBuiltSuccessfullyWithNonDustChange(
+            amountToResult,
+            BTC_TX_VERSION_1,
+            expectedInputCount,
+            MINIMUM_PEGOUT_TX_VALUE
         );
-        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
-        assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
     @Test
@@ -137,51 +130,39 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
         // Assert
-        assertBuildResultResponseCode(SUCCESS, amountToResult);
-        BtcTransaction pegoutTransaction = amountToResult.btcTx();
-        assertBtcTxVersionIs2(pegoutTransaction);
-
-        List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int expectedNumberOfInputs = 1;
-        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
-        assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-            pegoutTransaction,
-            federationRedeemScript,
-            federationUTXOs
+        int expectedInputCount = 1;
+        assertReleaseTransactionIsBuiltSuccessfullyWithNonDustChange(
+            amountToResult,
+            BTC_TX_VERSION_2,
+            expectedInputCount,
+            MINIMUM_PEGOUT_TX_VALUE
         );
-        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
-        assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
     @Test
     void buildAmountTo_whenMultipleUtxosCoverRequestedAmount_shouldCreatePegoutTx() {
         // Arrange
-        int numberOfUtxos = 10;
+        // Two large UTXOs are required so the wallet selects more than one input; change stays above dust.
         federationUTXOs = UTXOBuilder.builder()
             .withScriptPubKey(federationOutputScript)
-            .withValue(MINIMUM_PEGOUT_TX_VALUE)
-            .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            .withValue(MINIMUM_PEGIN_TX_VALUE)
+            .buildMany(10, i -> createHash(i + 1));
+        Coin amountToSend = MINIMUM_PEGIN_TX_VALUE.multiply(2)
+            .subtract(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
+            .subtract(Coin.valueOf(20_000));
         ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-        Coin amountToSend = MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(1000));
 
         // Act
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
         // Assert
-        assertBuildResultResponseCode(SUCCESS, amountToResult);
-        BtcTransaction pegoutTransaction = amountToResult.btcTx();
-        assertBtcTxVersionIs2(pegoutTransaction);
-
-        List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int expectedNumberOfInputs = 2;
-        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
-        assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-            pegoutTransaction,
-            federationRedeemScript,
-            federationUTXOs
+        int expectedInputCount = 2;
+        assertReleaseTransactionIsBuiltSuccessfullyWithNonDustChange(
+            amountToResult,
+            BTC_TX_VERSION_2,
+            expectedInputCount,
+            amountToSend
         );
-        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, amountToSend);
-        assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
     @Test
@@ -199,41 +180,12 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
         // Assert
-        assertBuildResultResponseCode(SUCCESS, amountToResult);
-        BtcTransaction pegoutTransaction = amountToResult.btcTx();
-        assertBtcTxVersionIs2(pegoutTransaction);
-
-        List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int expectedNumberOfInputs = federationUTXOs.size();
-        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
-        assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-            pegoutTransaction,
-            federationRedeemScript,
-            federationUTXOs
+        int expectedInputCount = 1;
+        assertReleaseTransactionIsBuiltSuccessfullyWithNoChange(
+            amountToResult,
+            BTC_TX_VERSION_2,
+            expectedInputCount
         );
-        assertPegoutTxWithOnlyUserOutputs(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
-        assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
-    }
-
-    @Test
-    void buildAmountTo_whenInsufficientFundsForPegoutRequest_shouldReturnInsufficientMoney() {
-        // Arrange
-        federationUTXOs = List.of(
-            UTXOBuilder.builder()
-                .withScriptPubKey(federationOutputScript)
-                .withValue(MINIMUM_PEGOUT_TX_VALUE)
-                .build()
-        );
-        ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-        Coin amountExceedingFederationBalance = MINIMUM_PEGOUT_TX_VALUE.add(Coin.SATOSHI);
-
-        // Act
-        BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountExceedingFederationBalance);
-
-        // Assert
-        assertBuildResultResponseCode(INSUFFICIENT_MONEY, amountToResult);
-        assertNull(amountToResult.btcTx());
-        assertNull(amountToResult.selectedUTXOs());
     }
 
     @Test
@@ -253,20 +205,32 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
         // Assert
-        assertBuildResultResponseCode(SUCCESS, amountToResult);
-        BtcTransaction pegoutTransaction = amountToResult.btcTx();
-        assertBtcTxVersionIs2(pegoutTransaction);
-
-        List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int expectedNumberOfInputs = 1;
-        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
-        assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-            pegoutTransaction,
-            federationRedeemScript,
-            federationUTXOs
+        int expectedInputCount = 1;
+        assertReleaseTransactionIsBuiltSuccessfullyWithDustChange(
+            amountToResult,
+            BTC_TX_VERSION_2,
+            expectedInputCount,
+            MINIMUM_PEGOUT_TX_VALUE
         );
-        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
-        assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
+    }
+
+    @Test
+    void buildAmountTo_whenInsufficientFundsForPegoutRequest_shouldReturnInsufficientMoney() {
+        // Arrange
+        federationUTXOs = List.of(
+            UTXOBuilder.builder()
+                .withScriptPubKey(federationOutputScript)
+                .withValue(MINIMUM_PEGOUT_TX_VALUE)
+                .build()
+        );
+        ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+        Coin amountExceedingFederationBalance = MINIMUM_PEGOUT_TX_VALUE.add(Coin.SATOSHI);
+
+        // Act
+        BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountExceedingFederationBalance);
+
+        // Assert
+        assertBuildFailedWithResponseCode(amountToResult, INSUFFICIENT_MONEY);
     }
 
     @Test
@@ -284,20 +248,13 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
         // Assert
-        assertBuildResultResponseCode(SUCCESS, amountToResult);
-        BtcTransaction pegoutTransaction = amountToResult.btcTx();
-        assertBtcTxVersionIs2(pegoutTransaction);
-
-        List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int expectedNumberOfInputs = 1;
-        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
-        assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-            pegoutTransaction,
-            federationRedeemScript,
-            federationUTXOs
+        int expectedInputCount = 1;
+        assertReleaseTransactionIsBuiltSuccessfullyWithNonDustChange(
+            amountToResult,
+            BTC_TX_VERSION_2,
+            expectedInputCount,
+            MINIMUM_PEGOUT_TX_VALUE
         );
-        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
-        assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
     @Test
@@ -315,20 +272,13 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, MINIMUM_PEGOUT_TX_VALUE);
 
         // Assert
-        assertBuildResultResponseCode(SUCCESS, amountToResult);
-        BtcTransaction pegoutTransaction = amountToResult.btcTx();
-        assertBtcTxVersionIs2(pegoutTransaction);
-
-        List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int expectedNumberOfInputs = 1;
-        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
-        assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-            pegoutTransaction,
-            federationRedeemScript,
-            federationUTXOs
+        int expectedInputCount = 1;
+        assertReleaseTransactionIsBuiltSuccessfullyWithDustChange(
+            amountToResult,
+            BTC_TX_VERSION_2,
+            expectedInputCount,
+            MINIMUM_PEGOUT_TX_VALUE
         );
-        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsDust(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
-        assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
     @Test
@@ -349,9 +299,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
         // Assert
-        assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, amountToResult);
-        assertNull(amountToResult.btcTx());
-        assertNull(amountToResult.selectedUTXOs());
+        assertBuildFailedWithResponseCode(amountToResult, COULD_NOT_ADJUST_DOWNWARDS);
     }
 
     /** DUST_VALUE is unrealistic; real pegouts must be at least
@@ -372,9 +320,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, DUST_VALUE);
 
         // Assert
-        assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, amountToResult);
-        assertNull(amountToResult.btcTx());
-        assertNull(amountToResult.selectedUTXOs());
+        assertBuildFailedWithResponseCode(amountToResult, DUSTY_SEND_REQUESTED);
     }
 
     @Test
@@ -394,9 +340,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
             MINIMUM_PEGOUT_TX_VALUE);
 
         // Assert
-        assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, amountToResult);
-        assertNull(amountToResult.btcTx());
-        assertNull(amountToResult.selectedUTXOs());
+        assertBuildFailedWithResponseCode(amountToResult, COULD_NOT_ADJUST_DOWNWARDS);
     }
 
     @Test
@@ -416,20 +360,13 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, requestedAmount);
 
         // Assert
-        assertBuildResultResponseCode(SUCCESS, amountToResult);
-        BtcTransaction pegoutTransaction = amountToResult.btcTx();
-        assertBtcTxVersionIs2(pegoutTransaction);
-
-        List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int expectedNumberOfInputs = 1;
-        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
-        assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-            pegoutTransaction,
-            federationRedeemScript,
-            federationUTXOs
+        int expectedInputCount = 1;
+        assertReleaseTransactionIsBuiltSuccessfullyWithNonDustChange(
+            amountToResult,
+            BTC_TX_VERSION_2,
+            expectedInputCount,
+            requestedAmount
         );
-        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, requestedAmount);
-        assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
     }
 
     @Test
@@ -447,9 +384,7 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
 
         // Assert
-        assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, amountToResult);
-        assertNull(amountToResult.btcTx());
-        assertNull(amountToResult.selectedUTXOs());
+        assertBuildFailedWithResponseCode(amountToResult, EXCEED_MAX_TRANSACTION_SIZE);
     }
 
     @Test
@@ -467,20 +402,70 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         BuildResult amountToResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, requestedAmount);
 
         // Assert
-        assertBuildResultResponseCode(SUCCESS, amountToResult);
-        BtcTransaction pegoutTransaction = amountToResult.btcTx();
-        assertBtcTxVersionIs2(pegoutTransaction);
-
-        List<TransactionInput> pegoutInputs = pegoutTransaction.getInputs();
-        int expectedNumberOfInputs = federationUTXOs.size();
-        assertEquals(expectedNumberOfInputs, pegoutInputs.size());
-        assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-            pegoutTransaction,
-            federationRedeemScript,
-            federationUTXOs
+        int expectedInputCount = federationUTXOs.size();
+        assertReleaseTransactionIsBuiltSuccessfullyWithNonDustChange(
+            amountToResult,
+            BTC_TX_VERSION_2,
+            expectedInputCount,
+            requestedAmount
         );
-        assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(pegoutTransaction, requestedAmount);
+    }
+
+    private static void assertBuildFailedWithResponseCode(BuildResult amountToResult, Response expectedResponseCode) {
+        assertBuildResultResponseCode(expectedResponseCode, amountToResult);
+        assertNull(amountToResult.btcTx());
+        assertNull(amountToResult.selectedUTXOs());
+    }
+
+    private void assertBuiltReleaseTransactionVersionAndInputs(
+        BuildResult amountToResult,
+        int expectedReleaseTransactionVersion,
+        int expectedInputCount
+    ) {
+        BtcTransaction releaseTransaction = amountToResult.btcTx();
+        assertBuildResultResponseCode(SUCCESS, amountToResult);
+        assertEquals(expectedReleaseTransactionVersion, releaseTransaction.getVersion());
+
+        List<TransactionInput> pegoutInputs = releaseTransaction.getInputs();
+        assertInputs(releaseTransaction, expectedInputCount);
         assertSelectedUtxosBelongToTheInputs(amountToResult.selectedUTXOs(), pegoutInputs);
+    }
+
+    private void assertReleaseTransactionIsBuiltSuccessfullyWithNoChange(
+        BuildResult amountToResult,
+        int expectedVersion,
+        int expectedInputCount
+    ) {
+        assertBuiltReleaseTransactionVersionAndInputs(amountToResult, expectedVersion, expectedInputCount);
+
+        BtcTransaction releaseTransaction = amountToResult.btcTx();
+        assertOutputsWithNoChange(releaseTransaction);
+
+    }
+
+    private void assertReleaseTransactionIsBuiltSuccessfullyWithNonDustChange(
+        BuildResult amountToResult,
+        int expectedReleaseTransactionVersion,
+        int expectedInputCount,
+        Coin requestedAmount
+    ) {
+        assertBuiltReleaseTransactionVersionAndInputs(amountToResult, expectedReleaseTransactionVersion, expectedInputCount);
+
+        BtcTransaction releaseTransaction = amountToResult.btcTx();
+        assertOutputsWithNonDustChange(releaseTransaction, requestedAmount);
+    }
+
+    private void assertReleaseTransactionIsBuiltSuccessfullyWithDustChange(
+        BuildResult amountToResult,
+        int expectedVersion,
+        int expectedInputCount,
+        Coin requestedAmount
+    ) {
+
+        assertBuiltReleaseTransactionVersionAndInputs(amountToResult, expectedVersion, expectedInputCount);
+
+        BtcTransaction releaseTransaction = amountToResult.btcTx();
+        assertOutputsWithDustChange(releaseTransaction, requestedAmount);
     }
 
     private void setUpActivations(ActivationConfig.ForBlock activations) {
@@ -531,67 +516,72 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         );
     }
 
-    private void assertPegoutTxOutputAndChangeOutputsNumbers(BtcTransaction pegoutTransaction,
-                                                             int expectedNumberOfUserOutputs,
-                                                             int expectedNumberOfChangeOutputs) {
-        List<TransactionOutput> userOutputs = getUserOutputs(pegoutTransaction);
-        assertReleaseTxNumberOfOutputs(expectedNumberOfUserOutputs, userOutputs);
-
-        List<TransactionOutput> pegoutTransactionChangeOutputs = getChangeOutputs(pegoutTransaction);
-        assertReleaseTxNumberOfOutputs(expectedNumberOfChangeOutputs, pegoutTransactionChangeOutputs);
-
-        int expectedNumberOfOutputs = expectedNumberOfUserOutputs + expectedNumberOfChangeOutputs;
-        assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, pegoutTransaction.getOutputs());
-    }
-
-    private void assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsNonDust(BtcTransaction pegoutTransaction,
-                                                                                   Coin requestedAmount
-    ) {
-        assertNumberOfOutputs(pegoutTransaction);
-        List<TransactionOutput> changeOutputs = getChangeOutputs(pegoutTransaction);
-        assertUserAndChangeOutputsValuesWhenOriginalChangeIsNonDust(
+    private void assertInputs(BtcTransaction pegoutTransaction, int expectedNumberOfInputs) {
+        assertEquals(expectedNumberOfInputs, pegoutTransaction.getInputs().size());
+        assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
             pegoutTransaction,
-            changeOutputs,
-            requestedAmount
+            federationRedeemScript,
+            federationUTXOs
         );
     }
 
-    private void assertPegoutTxWithUserAndChangeOutputsWhenOriginalChangeIsDust(
-        BtcTransaction pegoutTransaction,
-        Coin requestedAmount
-    ) {
-        assertNumberOfOutputs(pegoutTransaction);
-        List<TransactionOutput> changeOutputs = getChangeOutputs(pegoutTransaction);
-        assertUserAndChangeOutputsValuesWhenOriginalChangeIsDust(
-            pegoutTransaction,
-            changeOutputs,
-            requestedAmount
-        );
+    private void assertOutputsWithNoChange(BtcTransaction pegoutTransaction) {
+        int expectedNumberOfChangeOutputs = 0;
+        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, EXPECTED_NUMBER_OF_USER_OUTPUTS, expectedNumberOfChangeOutputs);
+        assertDestinationAddress(pegoutTransaction.getOutputs(), RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
+        assertReleaseTxWithOnlyUserOutputsAmounts(pegoutTransaction, MINIMUM_PEGOUT_TX_VALUE);
     }
 
-    private void assertNumberOfOutputs(BtcTransaction pegoutTransaction) {
-        int expectedNumberOfUserOutputs = 1;
-        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfUserOutputs, EXPECTED_NUMBER_OF_CHANGE_OUTPUTS);
+    private void assertOutputsWithNonDustChange(BtcTransaction pegoutTransaction, Coin requestedAmount) {
+        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, EXPECTED_NUMBER_OF_USER_OUTPUTS, EXPECTED_NUMBER_OF_CHANGE_OUTPUTS);
+        assertUserAndChangeOutputsDestinationAddresses(pegoutTransaction);
 
+        List<TransactionOutput> changeOutputs = getChangeOutputs(pegoutTransaction);
+        assertPegoutValuesWithOriginalNonDustChange(pegoutTransaction, requestedAmount, changeOutputs);
+    }
+
+    private void assertUserAndChangeOutputsDestinationAddresses(BtcTransaction pegoutTransaction) {
         List<TransactionOutput> userOutputs = getUserOutputs(pegoutTransaction);
         assertDestinationAddress(userOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
-
         List<TransactionOutput> changeOutputs = getChangeOutputs(pegoutTransaction);
         assertDestinationAddress(changeOutputs, federationAddress, BTC_MAINNET_PARAMS);
     }
 
-    private void assertPegoutTxWithOnlyUserOutputs(
-        BtcTransaction pegoutTransaction,
-        Coin requestedAmount
-    ) {
-        int expectedNumberOfUserOutputs = 1;
-        int expectedNumberOfChangeOutputs = 0;
-        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfUserOutputs, expectedNumberOfChangeOutputs);
+    private void assertOutputsWithDustChange(BtcTransaction pegoutTransaction, Coin requestedAmount) {
+        assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, EXPECTED_NUMBER_OF_USER_OUTPUTS, EXPECTED_NUMBER_OF_CHANGE_OUTPUTS);
+        assertUserAndChangeOutputsDestinationAddresses(pegoutTransaction);
 
-        List<TransactionOutput> pegoutTransactionOutputs = pegoutTransaction.getOutputs();
-        assertDestinationAddress(pegoutTransactionOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
+        List<TransactionOutput> changeOutputs = getChangeOutputs(pegoutTransaction);
+        assertPegoutValuesWithOriginalDustChange(pegoutTransaction, requestedAmount, changeOutputs);
+    }
 
-        assertReleaseTxWithOnlyUserOutputsAmounts(pegoutTransaction, requestedAmount);
+    private static void assertPegoutValuesWithOriginalNonDustChange(BtcTransaction pegoutTransaction, Coin requestedAmount, List<TransactionOutput> changeOutputs) {
+        Coin inputTotalAmount = pegoutTransaction.getInputSum();
+        Coin expectedChangeAmount = inputTotalAmount.subtract(requestedAmount);
+        assertUserAndChangeOutputsValues(pegoutTransaction, changeOutputs, requestedAmount, expectedChangeAmount);
+    }
+
+    private static void assertPegoutValuesWithOriginalDustChange(BtcTransaction pegoutTransaction, Coin requestedAmount, List<TransactionOutput> changeOutputs) {
+        Coin inputTotalAmount = pegoutTransaction.getInputSum();
+        Coin originalChangeAmount = inputTotalAmount.subtract(requestedAmount);
+        Assertions.assertTrue(isDust(originalChangeAmount));
+
+        Coin amountToGetNonDustValue = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(originalChangeAmount);
+        requestedAmount = requestedAmount.subtract(amountToGetNonDustValue);
+        assertUserAndChangeOutputsValues(pegoutTransaction, changeOutputs, requestedAmount, MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
+    }
+
+    private void assertPegoutTxOutputAndChangeOutputsNumbers(BtcTransaction pegoutTransaction,
+                                                             int expectedNumberOfUserOutputs,
+                                                             int expectedNumberOfChangeOutputs) {
+        List<TransactionOutput> userOutputs = getUserOutputs(pegoutTransaction);
+        assertEquals(expectedNumberOfUserOutputs, userOutputs.size());
+
+        List<TransactionOutput> pegoutTransactionChangeOutputs = getChangeOutputs(pegoutTransaction);
+        assertEquals(expectedNumberOfChangeOutputs, pegoutTransactionChangeOutputs.size());
+
+        int expectedNumberOfOutputs = expectedNumberOfUserOutputs + expectedNumberOfChangeOutputs;
+        assertEquals(expectedNumberOfOutputs, pegoutTransaction.getOutputs().size());
     }
 
     private List<TransactionOutput> getUserOutputs(BtcTransaction pegoutTransaction) {

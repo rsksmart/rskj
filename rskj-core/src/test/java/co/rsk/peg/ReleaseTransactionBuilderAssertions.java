@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public final class ReleaseTransactionBuilderAssertions {
 
-    public static void assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+    public static void assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
         BtcTransaction releaseTransaction,
         Script federationRedeemScript,
         List<UTXO> federationUTXOs) {
@@ -28,7 +28,7 @@ public final class ReleaseTransactionBuilderAssertions {
         }
     }
 
-    public static void assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+    public static void assertInputsHasProperFormatAndBelongsToP2shErpFederation(
         BtcTransaction releaseTransaction,
         Script federationRedeemScript,
         List<UTXO> federationUTXOs) {
@@ -39,7 +39,7 @@ public final class ReleaseTransactionBuilderAssertions {
         }
     }
 
-    public static void assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
+    public static void assertInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
         BtcTransaction releaseTransaction,
         Script federationRedeemScript,
         List<UTXO> federationUTXOs) {
@@ -117,7 +117,7 @@ public final class ReleaseTransactionBuilderAssertions {
         assertUserAndChangeOutputsValues(releaseTransaction, releaseTransactionChangeOutputs, requestedAmount, expectedChangeAmount);
     }
 
-    private static void assertUserAndChangeOutputsValues(BtcTransaction releaseTransaction,
+    public static void assertUserAndChangeOutputsValues(BtcTransaction releaseTransaction,
                                                          List<TransactionOutput> releaseTransactionChangeOutputs,
                                                          Coin requestedAmount,
                                                          Coin expectedChangeAmount) {
@@ -139,7 +139,7 @@ public final class ReleaseTransactionBuilderAssertions {
             .orElse(Coin.ZERO);
     }
 
-    private static boolean isDust(Coin expectedChangeAmount) {
+    public static boolean isDust(Coin expectedChangeAmount) {
         return expectedChangeAmount.compareTo(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT) < 0;
     }
 
