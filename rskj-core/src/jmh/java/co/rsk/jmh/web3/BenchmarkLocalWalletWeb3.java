@@ -25,7 +25,7 @@ import org.web3j.protocol.core.methods.request.Transaction;
 
 import java.util.concurrent.TimeUnit;
 
-// annotated fields at class, method or field level are providing default values that can be overriden via CLI or Runner parameters
+// annotated fields at class, method or field level are providing default values that can be overridden via CLI or Runner parameters
 @BenchmarkMode({Mode.SingleShotTime})
 @Warmup(iterations = 3)
 @Measurement(iterations = 20)
