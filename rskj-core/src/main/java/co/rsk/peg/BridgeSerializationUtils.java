@@ -800,19 +800,13 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static PegoutsWaitingForConfirmations deserializePegoutsWaitingForConfirmations(byte[] data, NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
-        return deserializePegoutsWaitingForConfirmations(data, networkParameters, false, activations);
+    public static PegoutsWaitingForConfirmations deserializePegoutsWaitingForConfirmations(byte[] data, NetworkParameters networkParameters) {
+        return deserializePegoutsWaitingForConfirmations(data, networkParameters, false);
     }
 
-    public static PegoutsWaitingForConfirmations deserializePegoutsWaitingForConfirmations(
-        byte[] data,
-        NetworkParameters networkParameters,
-        boolean hasTxHash,
-        ActivationConfig.ForBlock activations
-   ) {
-
+    public static PegoutsWaitingForConfirmations deserializePegoutsWaitingForConfirmations(byte[] data, NetworkParameters networkParameters, boolean hasTxHash) {
         if (data == null || data.length == 0) {
-            return new PegoutsWaitingForConfirmations(new HashSet<>(), activations.getActivationConfig());
+            return new PegoutsWaitingForConfirmations(new HashSet<>());
         }
 
         int elementsMultipleCount = hasTxHash ? 3 : 2;
@@ -823,18 +817,11 @@ public class BridgeSerializationUtils {
             throw new RuntimeException(String.format("Invalid serialized pegoutsWaitingForConfirmations. Expected a multiple of %d number of elements, but got %d", elementsMultipleCount, rlpList.size()));
         }
 
-        if (hasTxHash) {
-            return deserializePegoutWaitingForConfirmationsWithTxHash(rlpList, networkParameters, activations);
-        }
-        return deserializePegoutsWaitingForConfirmationsWithoutTxHash(rlpList, networkParameters, activations);
+        return hasTxHash ? deserializePegoutWaitingForConfirmationsWithTxHash(rlpList, networkParameters) : deserializePegoutsWaitingForConfirmationsWithoutTxHash(rlpList, networkParameters);
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializePegoutsWaitingForConfirmations
-    private static PegoutsWaitingForConfirmations deserializePegoutsWaitingForConfirmationsWithoutTxHash(
-        RLPList rlpList,
-        NetworkParameters networkParameters,
-        ActivationConfig.ForBlock activations
-    ) {
+    private static PegoutsWaitingForConfirmations deserializePegoutsWaitingForConfirmationsWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
         Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>();
 
         int n = rlpList.size() / 2;
@@ -847,14 +834,10 @@ public class BridgeSerializationUtils {
             entries.add(new PegoutsWaitingForConfirmations.Entry(tx, height));
         }
 
-        return new PegoutsWaitingForConfirmations(entries, activations.getActivationConfig());
+        return new PegoutsWaitingForConfirmations(entries);
     }
 
-    private static PegoutsWaitingForConfirmations deserializePegoutWaitingForConfirmationsWithTxHash(
-        RLPList rlpList,
-        NetworkParameters networkParameters,
-        ActivationConfig.ForBlock activations
-    ) {
+    private static PegoutsWaitingForConfirmations deserializePegoutWaitingForConfirmationsWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
         Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>();
 
         int n = rlpList.size() / 3;
@@ -868,7 +851,7 @@ public class BridgeSerializationUtils {
             entries.add(new PegoutsWaitingForConfirmations.Entry(tx, height, rskTxHash));
         }
 
-        return new PegoutsWaitingForConfirmations(entries, activations.getActivationConfig());
+        return new PegoutsWaitingForConfirmations(entries);
     }
 
     public static byte[] serializeBoolean(Boolean value) {
@@ -993,12 +976,12 @@ public class BridgeSerializationUtils {
     // arg_1, ..., arg_n
     private static byte[] serializeABICallSpec(ABICallSpec spec) {
         byte[][] encodedArguments = Arrays.stream(spec.getArguments())
-            .map(RLP::encodeElement)
-            .toArray(byte[][]::new);
+                .map(RLP::encodeElement)
+                .toArray(byte[][]::new);
         return RLP.encodeList(
                 RLP.encodeElement(spec.getFunction().getBytes(StandardCharsets.UTF_8)),
                 RLP.encodeList(encodedArguments)
-                );
+        );
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeABICallSpec
@@ -1025,9 +1008,9 @@ public class BridgeSerializationUtils {
     // using the lexicographical order of the voters' unsigned bytes
     private static byte[] serializeVoters(List<RskAddress> voters) {
         List<byte[]> encodedKeys = voters.stream()
-            .sorted(RskAddress.LEXICOGRAPHICAL_COMPARATOR)
-            .map(key -> RLP.encodeElement(key.getBytes()))
-            .toList();
+                .sorted(RskAddress.LEXICOGRAPHICAL_COMPARATOR)
+                .map(key -> RLP.encodeElement(key.getBytes()))
+                .toList();
         return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
     }
 

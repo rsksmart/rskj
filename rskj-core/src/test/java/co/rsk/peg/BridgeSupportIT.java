@@ -77,7 +77,6 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -863,10 +862,6 @@ public class BridgeSupportIT {
 
     @Test
     void minimumProcessFundsMigrationValue() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstants);
         BtcECKey key = new BtcECKey(new SecureRandom());
         FederationMember member = new FederationMember(key, new ECKey(), new ECKey());
@@ -883,7 +878,7 @@ public class BridgeSupportIT {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet(), pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(federationStorageProvider.getOldFederation(federationConstants, activationsBeforeForks)).thenReturn(oldFederation);
         when(federationStorageProvider.getNewFederation(federationConstants, activationsBeforeForks)).thenReturn(newFederation);
 

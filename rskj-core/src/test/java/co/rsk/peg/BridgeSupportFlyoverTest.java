@@ -122,11 +122,6 @@ class BridgeSupportFlyoverTest {
         activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
-
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-        when(activations.getActivationConfig()).thenReturn(pegoutsActivation);
-
         bridgeSupportBuilder = BridgeSupportBuilder.builder();
         lockingCapSupport = mock(LockingCapSupport.class);
         whitelistSupport = mock(WhitelistSupport.class);
@@ -697,7 +692,7 @@ class BridgeSupportFlyoverTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), activations.getActivationConfig());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcRegTestParams, "refund");
@@ -2071,7 +2066,7 @@ class BridgeSupportFlyoverTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeConstants.getBtcParams(), activations));
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), activations.getActivationConfig());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -2258,7 +2253,7 @@ class BridgeSupportFlyoverTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeConstants.getBtcParams(), activations));
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), activations.getActivationConfig());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -2452,7 +2447,7 @@ class BridgeSupportFlyoverTest {
 
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), activations.getActivationConfig());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -2617,7 +2612,7 @@ class BridgeSupportFlyoverTest {
 
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), activations.getActivationConfig());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -3075,7 +3070,7 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), activations.getActivationConfig());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         BtcLockSender btcLockSender = mock(BtcLockSender.class);
@@ -3155,7 +3150,7 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), activations.getActivationConfig());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);

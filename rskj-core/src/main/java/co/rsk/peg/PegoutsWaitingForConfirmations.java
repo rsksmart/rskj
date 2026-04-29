@@ -19,7 +19,6 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import com.google.common.primitives.UnsignedBytes;
 
@@ -30,7 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 /**
@@ -42,13 +41,10 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
  */
 public class PegoutsWaitingForConfirmations {
 
-    private final ActivationConfig activationConfig;
-
     private EntriesStore entries;
 
-    public PegoutsWaitingForConfirmations(Set<Entry> entries, ActivationConfig activationConfig) {
+    public PegoutsWaitingForConfirmations(Set<Entry> entries) {
         this.entries = new EntriesStore(entries);
-        this.activationConfig = activationConfig;
     }
 
     public Collection<Entry> getEntriesWithoutHash() {
@@ -67,15 +63,18 @@ public class PegoutsWaitingForConfirmations {
      * Given a block number and a minimum number of confirmations,
      * returns a subset of transactions within the set that have
      * at least that number of confirmations.
-     * Optionally supply a maximum slice size to limit the output
-     * size.
+     *
+     * Optionally supply a maximum slice size to limit the output size.
      * Sliced items are also removed from the set (thus the name, slice).
+     *
      * @param currentBlockNumber the current execution block number (height).
      * @param minimumConfirmations the minimum desired confirmations for the slice elements.
+     * @param activations activations for a current block that determine entries ordering/filtering.
+     *
      * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
      */
-    public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations) {
-        var rskip559 = this.activationConfig.isActive(ConsensusRule.RSKIP559, currentBlockNumber);
+    public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations, ForBlock activations) {
+        var rskip559 = activations.isActive(ConsensusRule.RSKIP559);
         return this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, rskip559);
     }
 
@@ -101,8 +100,7 @@ public class PegoutsWaitingForConfirmations {
         HashSet<Entry> entriesSet;
 
         public EntriesStore() {
-            // must be equal to new HashSet() call in Java 17
-            // but here we are fixing init coefficients
+            // this must be equal to new HashSet() call in Java 17
             this.entriesSet = new HashSet<>(0, DEFAULT_LOAD_FACTOR);
         }
 
@@ -110,7 +108,7 @@ public class PegoutsWaitingForConfirmations {
             // This is a standart code for `new HashSet<>(entries);` in Java 17
             // Coefficients were changed in Java 21
             // Need to hardcode Java 17 init params here to preserve old behaviour in Java 21+
-            this.entriesSet = new HashSet<>(Math.max((int) (entries.size()/.75f) + 1, 16));
+            this.entriesSet = new HashSet<>(Math.max((int) (entries.size()/DEFAULT_LOAD_FACTOR) + 1, 16));
             this.entriesSet.addAll(entries);
         }
 
@@ -118,10 +116,13 @@ public class PegoutsWaitingForConfirmations {
             return (currentBlockNumber - entry.getPegoutCreationRskBlockNumber()) >= minimumConfirmations;
         }
 
-        public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations, boolean withRskip559) {
+        /**
+         * @param withTxComparator turns on deterministic order for entries before filtering.
+         */
+        public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations, boolean withTxComparator) {
             var entries = entriesSet.stream();
 
-            if (withRskip559) {
+            if (withTxComparator) {
                 entries = entries.sorted(Entry.BTC_TX_COMPARATOR);
             }
 
@@ -153,11 +154,19 @@ public class PegoutsWaitingForConfirmations {
             }
             this.entriesSet.add(entry);
         }
-
     }
 
     public static class Entry {
-        // Compares entries using the lexicographical order of the btc tx's serialized bytes
+
+        private BtcTransaction btcTransaction;
+
+        private Long pegoutCreationRskBlockNumber;
+
+        private Keccak256 pegoutCreationRskTxHash;
+
+        /**
+         * Compares entries using the lexicographical order of the btc tx's serialized bytes.
+         */
         public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<Entry>() {
             private Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
 
@@ -167,17 +176,15 @@ public class PegoutsWaitingForConfirmations {
             }
         };
 
-        private BtcTransaction btcTransaction;
-        private Long pegoutCreationRskBlockNumber;
-        private Keccak256 pegoutCreationRskTxHash;
-
         public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber, Keccak256 pegoutCreationRskTxHash) {
             this.btcTransaction = btcTransaction;
             this.pegoutCreationRskBlockNumber = pegoutCreationRskBlockNumber;
             this.pegoutCreationRskTxHash = pegoutCreationRskTxHash;
         }
 
-        public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber) { this(btcTransaction, pegoutCreationRskBlockNumber, null); }
+        public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber) {
+            this(btcTransaction, pegoutCreationRskBlockNumber, null);
+        }
 
         public BtcTransaction getBtcTransaction() {
             return btcTransaction;
@@ -187,7 +194,9 @@ public class PegoutsWaitingForConfirmations {
             return pegoutCreationRskBlockNumber;
         }
 
-        public Keccak256 getPegoutCreationRskTxHash() { return pegoutCreationRskTxHash; }
+        public Keccak256 getPegoutCreationRskTxHash() {
+            return pegoutCreationRskTxHash;
+        }
 
         @Override
         public boolean equals(Object o) {

@@ -137,7 +137,7 @@ public class BridgeState {
         byte[] releaseRequestQueueBytes = rlpList.get(3).getRLPData();
         ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(BridgeSerializationUtils.deserializeReleaseRequestQueue(releaseRequestQueueBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations)));
         byte[] pegoutsWaitingForConfirmationsBytes = rlpList.get(4).getRLPData();
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(pegoutsWaitingForConfirmationsBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations), activations);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(pegoutsWaitingForConfirmationsBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations));
         byte[] nextPegoutCreationBlockNumberBytes = rlpList.get(5).getRLPData();
         long nextPegoutCreationBlockNumber = BridgeSerializationUtils.deserializeOptionalLong(nextPegoutCreationBlockNumberBytes).orElse(0L);
 

@@ -156,12 +156,5 @@ public class ActivationConfig {
         public boolean isActivating(ConsensusRule consensusRule) {
             return ActivationConfig.this.isActivating(consensusRule, blockNumber);
         }
-
-        /**
-         * Returning nested block agnostic configuration.
-         */
-        public ActivationConfig getActivationConfig() {
-            return ActivationConfig.this;
-        }
     }
 }

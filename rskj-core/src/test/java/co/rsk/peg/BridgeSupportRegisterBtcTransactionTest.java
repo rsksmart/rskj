@@ -498,9 +498,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(federationStorageProvider.getNewFederationBtcUTXOs(any(NetworkParameters.class), any(ActivationConfig.ForBlock.class)))
             .thenReturn(activeFederationUtxos);
 
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-        pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), pegoutsActivation);
+        pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         when(federationStorageProvider.getNewFederation(any(FederationConstants.class), any(ActivationConfig.ForBlock.class)))
@@ -3366,7 +3364,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         when(federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestsParams, activations)).thenReturn(activeFederationUtxos);
 
-        pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), activations.getActivationConfig());
+        pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         Federation oldFederation = createFederation(bridgeRegTestConstants, regtestOldFederationPrivateKeys);

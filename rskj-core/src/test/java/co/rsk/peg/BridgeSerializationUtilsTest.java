@@ -82,18 +82,6 @@ class BridgeSerializationUtilsTest {
         );
     }
 
-    private static ActivationConfig getPegoutsActivation() {
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-        return pegoutsActivation;
-    }
-
-    private static ActivationConfig.ForBlock getPegoutsActivationBlock() {
-        ActivationConfig.ForBlock activation = mock(ActivationConfig.ForBlock.class);
-        when(activation.getActivationConfig()).thenReturn(getPegoutsActivation());
-        return activation;
-    }
-
     @ParameterizedTest
     @MethodSource("validRskAddressesProvider")
     void serializeAndDeserializeRskAddress_validAddress_ok(RskAddress address) {
@@ -1228,7 +1216,7 @@ class BridgeSerializationUtilsTest {
             new PegoutsWaitingForConfirmations.Entry(mockBtcTransactionSerialize("ba"), 30L),
             new PegoutsWaitingForConfirmations.Entry(mockBtcTransactionSerialize("aa"), 40L)
         ));
-        PegoutsWaitingForConfirmations sample = new PegoutsWaitingForConfirmations(sampleEntries, getPegoutsActivation());
+        PegoutsWaitingForConfirmations sample = new PegoutsWaitingForConfirmations(sampleEntries);
 
         byte[] result = BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(sample);
         String hexResult = ByteUtil.toHexString(result);
@@ -1247,8 +1235,8 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void deserializeTransactionSet_emptyOrNull() {
-        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(null, TESTNET_PARAMETERS, getPegoutsActivationBlock()).getEntries().size());
-        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(new byte[]{}, TESTNET_PARAMETERS, getPegoutsActivationBlock()).getEntries().size());
+        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(null, TESTNET_PARAMETERS).getEntries().size());
+        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(new byte[]{}, TESTNET_PARAMETERS).getEntries().size());
     }
 
     @Test
@@ -1278,15 +1266,15 @@ class BridgeSerializationUtilsTest {
             new PegoutsWaitingForConfirmations.Entry(t4, 20L)
         ));
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(expectedEntries, getPegoutsActivation());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(expectedEntries);
 
         byte[] data = BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations);
 
-        PegoutsWaitingForConfirmations result = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, params, getPegoutsActivationBlock());
+        PegoutsWaitingForConfirmations result = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, params);
 
         var entries = result.getEntries();
 
-        assertEquals(expectedEntries, entries);
+        assertEquals(expectedEntries, new HashSet<>(entries));
     }
 
     @Test
@@ -1304,10 +1292,10 @@ class BridgeSerializationUtilsTest {
             new Entry(t1, 32L, PegTestUtils.createHash3(0))
         ));
 
-        PegoutsWaitingForConfirmations rtc = new PegoutsWaitingForConfirmations(expectedEntries, getPegoutsActivation());
+        PegoutsWaitingForConfirmations rtc = new PegoutsWaitingForConfirmations(expectedEntries);
         byte[] serializedEntries = BridgeSerializationUtils.serializePegoutsWaitingForConfirmationsWithTxHash(rtc);
 
-        assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(serializedEntries, params, getPegoutsActivationBlock()));
+        assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(serializedEntries, params));
     }
 
     @Test
@@ -1325,10 +1313,10 @@ class BridgeSerializationUtilsTest {
             new Entry(t1, 32L)
         ));
 
-        PegoutsWaitingForConfirmations rtc = new PegoutsWaitingForConfirmations(expectedEntries, getPegoutsActivation());
+        PegoutsWaitingForConfirmations rtc = new PegoutsWaitingForConfirmations(expectedEntries);
         byte[] serializedEntries = BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(rtc);
 
-        assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(serializedEntries, params, true, getPegoutsActivationBlock()));
+        assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(serializedEntries, params, true));
     }
 
     @Test
@@ -1337,7 +1325,7 @@ class BridgeSerializationUtilsTest {
         byte[] data = RLP.encodeList(firstItem);
 
         try {
-            BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, TESTNET_PARAMETERS, getPegoutsActivationBlock());
+            BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, TESTNET_PARAMETERS);
         } catch (RuntimeException e) {
             return;
         }

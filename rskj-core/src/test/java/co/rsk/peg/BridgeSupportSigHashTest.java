@@ -51,7 +51,7 @@ class BridgeSupportSigHashTest {
             .thenReturn(new TreeMap<>());
 
         when(provider.getPegoutsWaitingForConfirmations())
-            .thenReturn(new PegoutsWaitingForConfirmations(new HashSet<>(), ActivationConfigsForTest.all()));
+            .thenReturn(new PegoutsWaitingForConfirmations(new HashSet<>()));
     }
 
     private static Stream<Arguments> pegoutTxIndexArgsProvider() {

@@ -54,9 +54,6 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
     @BeforeEach
     void init() throws IOException {
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         List<UTXO> fedUTXOs = UTXOBuilder.builder()
             .withScriptPubKey(ERP_FEDERATION.getP2SHScript())
             .buildMany(NUMBER_OF_UTXOS, i -> createHash(i + 1));
@@ -66,7 +63,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
         provider = mock(BridgeStorageProvider.class);
         when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(new HashSet<>(), pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(new HashSet<>()));
 
         FeePerKbStorageProvider feePerKbStorageProvider = mock(FeePerKbStorageProvider.class);
         when(feePerKbStorageProvider.getFeePerKb()).thenReturn(Optional.of(Coin.MILLICOIN));

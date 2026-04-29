@@ -146,8 +146,8 @@ public class BridgeSupport {
         UnionBridgeSupport unionBridgeSupport,
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
         ActivationConfig.ForBlock activations,
-        SignatureCache signatureCache) {
-
+        SignatureCache signatureCache
+    ) {
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = executionBlock;
@@ -1589,7 +1589,8 @@ public class BridgeSupport {
         Optional<PegoutsWaitingForConfirmations.Entry> nextPegoutWithEnoughConfirmations = pegoutsWaitingForConfirmations
             .getNextPegoutWithEnoughConfirmations(
                 rskExecutionBlock.getNumber(),
-                bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations()
+                bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(),
+                activations
             );
 
         if (nextPegoutWithEnoughConfirmations.isEmpty()) {

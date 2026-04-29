@@ -2523,10 +2523,6 @@ class BridgeSupportTest {
 
     @Test
     void callProcessFundsMigration_is_migrating_before_rskip_146_activation() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
@@ -2548,7 +2544,7 @@ class BridgeSupportTest {
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForConfirmations())
-            .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet(), pegoutsActivation));
+            .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(federationStorageProviderMock.getOldFederation(any(), any()))
             .thenReturn(oldFederation);
         when(federationStorageProviderMock.getNewFederation(any(), any()))
@@ -2594,10 +2590,6 @@ class BridgeSupportTest {
 
     @Test
     void callProcessFundsMigration_is_migrating_after_rskip_146_activation() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -2618,7 +2610,7 @@ class BridgeSupportTest {
 
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet(), pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(federationStorageProviderMock.getOldFederation(any(), any())).thenReturn(oldFederation);
         when(federationStorageProviderMock.getNewFederation(any(), any())).thenReturn(newFederation);
 
@@ -2666,13 +2658,8 @@ class BridgeSupportTest {
 
     @Test
     void callProcessFundsMigration_is_migrated_before_rskip_146_activation() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
-
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
@@ -2693,7 +2680,7 @@ class BridgeSupportTest {
 
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet(), pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(federationStorageProviderMock.getOldFederation(any(), any())).thenReturn(oldFederation);
         when(federationStorageProviderMock.getNewFederation(any(), any())).thenReturn(newFederation);
 
@@ -2737,10 +2724,6 @@ class BridgeSupportTest {
 
     @Test
     void callProcessFundsMigration_is_migrated_after_rskip_146_activation() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -2761,7 +2744,7 @@ class BridgeSupportTest {
 
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet(), pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(federationStorageProviderMock.getOldFederation(any(), any())).thenReturn(oldFederation);
         when(federationStorageProviderMock.getNewFederation(any(), any())).thenReturn(newFederation);
 
@@ -2810,10 +2793,6 @@ class BridgeSupportTest {
 
     @Test
     void updateFederationCreationBlockHeights_before_rskip_186_activation() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
 
@@ -2835,7 +2814,7 @@ class BridgeSupportTest {
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForConfirmations())
-            .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet(), pegoutsActivation));
+            .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         FederationStorageProvider federationStorageProviderMock = mock(FederationStorageProvider.class);
         when(federationStorageProviderMock.getOldFederation(any(), any()))
@@ -2883,10 +2862,6 @@ class BridgeSupportTest {
 
     @Test
     void updateFederationCreationBlockHeights_after_rskip_186_activation() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
 
@@ -2905,7 +2880,7 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet(), pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         FederationStorageProvider federationStorageProviderMock = mock(FederationStorageProvider.class);
         when(federationStorageProviderMock.getOldFederation(any(), any())).thenReturn(oldFederation);
@@ -2960,10 +2935,6 @@ class BridgeSupportTest {
 
     @Test
     void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_before_rskip_146_activation() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
@@ -2974,7 +2945,7 @@ class BridgeSupportTest {
         BtcTransaction btcTx = mock(BtcTransaction.class);
         Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, 1L)); // no rsk tx hash
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
@@ -3002,10 +2973,6 @@ class BridgeSupportTest {
 
     @Test
     void rskTxWaitingForSignature_postRSKIP326_emitNewPegoutConfirmedEvent() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
 
@@ -3017,7 +2984,7 @@ class BridgeSupportTest {
         Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         long rskBlockNumber = 1L;
         pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, rskBlockNumber)); // no rsk tx hash
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
@@ -3048,10 +3015,6 @@ class BridgeSupportTest {
 
     @Test
     void rskTxWaitingForSignature_preRSKIP326_noPegoutConfirmedEventEmitted() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(false);
 
@@ -3063,7 +3026,7 @@ class BridgeSupportTest {
         Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         long rskBlockNumber = 1L;
         pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, rskBlockNumber)); // no rsk tx hash
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
@@ -3094,10 +3057,6 @@ class BridgeSupportTest {
 
     @Test
     void rskTxWaitingForSignature_postRSKIP326NoTxWithEnoughConfirmation_pegoutConfirmedEventNotEmitted() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
 
@@ -3106,7 +3065,7 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(new HashSet<>(), pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(new HashSet<>()));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
@@ -3136,10 +3095,6 @@ class BridgeSupportTest {
 
     @Test
     void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_after_rskip_146_activation_if_release_transaction_doesnt_have_rstTxHash() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -3150,7 +3105,7 @@ class BridgeSupportTest {
         BtcTransaction btcTx = mock(BtcTransaction.class);
         Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, 1L)); // no rsk tx hash
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
@@ -3178,10 +3133,6 @@ class BridgeSupportTest {
 
     @Test
     void rskTxWaitingForSignature_uses_release_transaction_rstTxHash_after_rskip_146_activation() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -3193,7 +3144,7 @@ class BridgeSupportTest {
         Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         Keccak256 rskTxHash = Keccak256.ZERO_HASH;
         pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, 1L, rskTxHash)); // HAS rsk tx hash
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
@@ -3221,10 +3172,6 @@ class BridgeSupportTest {
 
     @Test
     void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_after_rskip_176_activation() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -3237,7 +3184,7 @@ class BridgeSupportTest {
         Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         Keccak256 rskTxHash = Keccak256.ZERO_HASH;
         pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, 1L, rskTxHash)); // HAS rsk tx hash
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
@@ -3269,10 +3216,6 @@ class BridgeSupportTest {
 
     @Test
     void rskTxWaitingForSignature_fail_adding_an_already_existing_key_after_rskip_375() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         // Arrange
         BridgeConstants bridgeConstants = new BridgeRegTestConstants();
         ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
@@ -3294,7 +3237,7 @@ class BridgeSupportTest {
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(PegTestUtils.createReleaseRequestQueueEntries(3)));
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), pegoutsActivation);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         SortedMap<Keccak256, BtcTransaction> pegoutWaitingForSignatures = new TreeMap<>();
@@ -3448,10 +3391,6 @@ class BridgeSupportTest {
     @ParameterizedTest
     @MethodSource("provideBridgeConstants")
     void rskTxWaitingForSignature_uses_pegoutCreation_rskTxHash_after_rskip_375_activation(BridgeConstants bridgeConstants) throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -3462,7 +3401,7 @@ class BridgeSupportTest {
         Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         Keccak256 pegoutCreationRskTxHash = Keccak256.ZERO_HASH;
         pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, 1L, pegoutCreationRskTxHash));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
@@ -3492,10 +3431,6 @@ class BridgeSupportTest {
     @ParameterizedTest
     @MethodSource("provideBridgeConstants")
     void rskTxWaitingForSignature_override_entry_is_allowed_before_rskip_375_activation(BridgeConstants bridgeConstants) throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -3506,7 +3441,7 @@ class BridgeSupportTest {
         Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         Keccak256 pegoutCreationRskTxHash = Keccak256.ZERO_HASH;
         pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTxNewEntryValue, 1L, pegoutCreationRskTxHash));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
 
         Block executionBlock = mock(Block.class);
@@ -3544,10 +3479,6 @@ class BridgeSupportTest {
 
     @Test()
     void rskTxWaitingForSignature_override_entry_attempt_after_rskip_375_activation() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -3561,7 +3492,7 @@ class BridgeSupportTest {
         Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         Keccak256 pegoutCreationRskTxHash = Keccak256.ZERO_HASH;
         pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, 1L, pegoutCreationRskTxHash));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutsActivation));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
 
         TreeMap<Keccak256, BtcTransaction> txsWaitingForSignatures = new TreeMap<>();
@@ -7287,9 +7218,6 @@ class BridgeSupportTest {
 
     @Test
     void registerPegIn_errorParsingPeginInstructions_beforeRskip170_dontRefundSender() throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
 
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -7305,7 +7233,7 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), pegoutsActivation);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
@@ -7337,10 +7265,6 @@ class BridgeSupportTest {
 
     @Test
     void registerPegIn_errorParsingPeginInstructions_afterRskip170_refundSender() throws IOException, PeginInstructionsException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         // Arrange
         ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
         repository = createRepository();
@@ -7358,7 +7282,7 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), pegoutsActivation);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(
@@ -8006,9 +7930,6 @@ class BridgeSupportTest {
         boolean mockLockingCap,
         TxSenderAddressType lockSenderAddressType,
         @Nullable ConsensusRule consensusRule) throws IOException, RegisterBtcTransactionException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
 
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -8036,7 +7957,7 @@ class BridgeSupportTest {
         WhitelistStorageProvider whitelistProvider = mock(WhitelistStorageProvider.class);
         when(whitelistProvider.getLockWhitelist(activations, btcRegTestParams)).thenReturn(lockWhitelist);
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), pegoutsActivation);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         if (mockLockingCap) {
@@ -8494,10 +8415,6 @@ class BridgeSupportTest {
     }
 
     private void test_migrating_many_utxos(boolean isRskip294Active, int utxosToCreate, int expectedTransactions) throws IOException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP294)).thenReturn(isRskip294Active);
 
@@ -8541,7 +8458,7 @@ class BridgeSupportTest {
             utxosToMigrate.add(utxo);
         }
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(Collections.emptySet(), pegoutsActivation);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(Collections.emptySet());
 
         bridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
@@ -8784,9 +8701,6 @@ class BridgeSupportTest {
         Optional<Address> btcRefundAddress,
         List<ConsensusRule> consensusRules)
         throws IOException, RegisterBtcTransactionException, PeginInstructionsException {
-        // RSKIP559 sorting fix
-        ActivationConfig pegoutsActivation = mock(ActivationConfig.class);
-        when(pegoutsActivation.isActive(ConsensusRule.RSKIP559, anyLong())).thenReturn(false);
 
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
         Address federationAddress = genesisFederation.getAddress();
@@ -8813,7 +8727,7 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>(), pegoutsActivation);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
         LockingCapSupport lockingCapSupportMock = mock(LockingCapSupport.class);
         when(lockingCapSupportMock.getLockingCap()).thenReturn(Optional.of(Coin.COIN.multiply(1)));
