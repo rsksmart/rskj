@@ -95,9 +95,9 @@ public class PegoutsWaitingForConfirmations {
     public static class EntriesStore {
 
         // From java SDK
-        static final float DEFAULT_LOAD_FACTOR = 0.75f;
+        private static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
-        HashSet<Entry> entriesSet;
+        private HashSet<Entry> entriesSet;
 
         public EntriesStore() {
             // this must be equal to new HashSet() call in Java 17
