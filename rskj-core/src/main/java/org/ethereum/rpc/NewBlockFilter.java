@@ -45,4 +45,3 @@ public class NewBlockFilter extends Filter {
         add(new NewBlockFilterEvent(b));
     }
 }
-

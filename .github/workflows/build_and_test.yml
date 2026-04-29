@@ -46,7 +46,7 @@ jobs:
 
       - name: Build
         run: |
-          ./gradlew --no-daemon --stacktrace build -x test -x checkstyleMain -x checkstyleTest -x checkstyleJmh -x checkstyleIntegrationTest -x spotlessApply -x spotlessJavaCheck
+          ./gradlew --no-daemon --stacktrace build -x test
 
       - name: Archive build artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
@@ -70,6 +70,7 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
+      # TODO: Remove cache/restore + configure.sh fallback once gradle-wrapper.jar is committed
       - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 #v4.3.0
         name: Restore Gradle Wrapper
         id: cache-gradle-wrapper
@@ -197,6 +198,7 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
+      # TODO: Remove cache/restore + configure.sh fallback once gradle-wrapper.jar is committed
       - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 #v4.3.0
         name: Restore Gradle Wrapper
         id: cache-gradle-wrapper
@@ -255,6 +257,7 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
+      # TODO: Remove cache/restore + configure.sh fallback once gradle-wrapper.jar is committed
       - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 #v4.3.0
         name: Restore Gradle Wrapper
         id: cache-gradle-wrapper
@@ -308,6 +311,7 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
+      # TODO: Remove cache/restore + configure.sh fallback once gradle-wrapper.jar is committed
       - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 #v4.3.0
         name: Restore Gradle Wrapper
         id: cache-gradle-wrapper
