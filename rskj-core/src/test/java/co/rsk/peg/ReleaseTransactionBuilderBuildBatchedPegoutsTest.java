@@ -10,7 +10,6 @@ import static co.rsk.peg.ReleaseTransactionBuilderAssertions.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -143,7 +142,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -172,7 +171,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -202,7 +201,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 3;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -240,7 +239,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -269,9 +268,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(INSUFFICIENT_MONEY, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, INSUFFICIENT_MONEY);
         }
 
         @Test
@@ -302,7 +299,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -338,7 +335,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -374,7 +371,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -404,9 +401,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, COULD_NOT_ADJUST_DOWNWARDS);
         }
 
         /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; real pegouts must be at least
@@ -425,9 +420,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, DUSTY_SEND_REQUESTED);
         }
 
         @Test
@@ -449,9 +442,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, COULD_NOT_ADJUST_DOWNWARDS);
         }
 
         @ParameterizedTest
@@ -476,9 +467,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, EXCEED_MAX_TRANSACTION_SIZE);
         }
 
         @ParameterizedTest
@@ -512,7 +501,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             assertEquals(expectedNumberOfUtxos, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -572,7 +561,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -598,7 +587,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -636,7 +625,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -665,9 +654,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(INSUFFICIENT_MONEY, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, INSUFFICIENT_MONEY);
         }
 
         @Test
@@ -699,7 +686,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -735,7 +722,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -771,7 +758,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -801,9 +788,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, COULD_NOT_ADJUST_DOWNWARDS);
         }
 
         /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; real pegouts must be at least
@@ -822,9 +807,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, DUSTY_SEND_REQUESTED);
         }
 
         @Test
@@ -846,9 +829,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, COULD_NOT_ADJUST_DOWNWARDS);
         }
 
         @ParameterizedTest
@@ -873,9 +854,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, EXCEED_MAX_TRANSACTION_SIZE);
         }
 
         @ParameterizedTest
@@ -908,7 +887,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             assertEquals(expectedNumberOfUtxos, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -972,7 +951,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -1002,7 +981,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 3;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -1038,7 +1017,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -1068,9 +1047,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(INSUFFICIENT_MONEY, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, INSUFFICIENT_MONEY);
         }
 
         @Test
@@ -1100,7 +1077,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -1135,7 +1112,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -1170,7 +1147,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             int expectedNumberOfInputs = 1;
             assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
@@ -1200,9 +1177,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, COULD_NOT_ADJUST_DOWNWARDS);
         }
 
         /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; real pegouts must be at least
@@ -1221,9 +1196,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, DUSTY_SEND_REQUESTED);
         }
 
         @Test
@@ -1245,9 +1218,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, COULD_NOT_ADJUST_DOWNWARDS);
         }
 
         @ParameterizedTest
@@ -1273,9 +1244,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 pegoutRequests);
 
             // Assert
-            assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, batchedPegoutsResult);
-            assertNull(batchedPegoutsResult.btcTx());
-            assertNull(batchedPegoutsResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(batchedPegoutsResult, EXCEED_MAX_TRANSACTION_SIZE);
         }
 
         @ParameterizedTest
@@ -1309,7 +1278,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
             assertEquals(expectedNumberOfUtxos, batchedPegoutsTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs

@@ -8,7 +8,6 @@ import static co.rsk.peg.ReleaseTransactionBuilder.Response.SUCCESS;
 import static co.rsk.peg.ReleaseTransactionBuilderAssertions.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.rsk.bitcoinj.core.*;
@@ -96,9 +95,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, DUSTY_SEND_REQUESTED);
         }
 
         @Test
@@ -125,7 +122,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -158,7 +155,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -189,7 +186,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -220,9 +217,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, DUSTY_SEND_REQUESTED);
         }
 
         @Test
@@ -249,7 +244,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -277,9 +272,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, COULD_NOT_ADJUST_DOWNWARDS);
         }
 
         /**
@@ -311,7 +304,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -337,9 +330,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, COULD_NOT_ADJUST_DOWNWARDS);
         }
 
         @Test
@@ -358,9 +349,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, EXCEED_MAX_TRANSACTION_SIZE);
         }
 
         @Test
@@ -385,7 +374,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
+            assertInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -422,9 +411,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, DUSTY_SEND_REQUESTED);
         }
 
         @Test
@@ -451,7 +438,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -484,7 +471,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -515,7 +502,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -546,9 +533,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, DUSTY_SEND_REQUESTED);
         }
 
         @Test
@@ -575,7 +560,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -603,9 +588,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, COULD_NOT_ADJUST_DOWNWARDS);
         }
 
         /**
@@ -637,7 +620,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -663,9 +646,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, COULD_NOT_ADJUST_DOWNWARDS);
         }
 
         @Test
@@ -684,9 +665,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, EXCEED_MAX_TRANSACTION_SIZE);
         }
 
         @Test
@@ -711,7 +690,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -749,9 +728,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, DUSTY_SEND_REQUESTED);
         }
 
         @Test
@@ -778,7 +755,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -809,7 +786,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -840,9 +817,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(DUSTY_SEND_REQUESTED, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, DUSTY_SEND_REQUESTED);
         }
 
         @Test
@@ -869,7 +844,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -897,9 +872,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, COULD_NOT_ADJUST_DOWNWARDS);
         }
 
         /**
@@ -931,7 +904,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
@@ -957,9 +930,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, COULD_NOT_ADJUST_DOWNWARDS);
         }
 
         @Test
@@ -978,9 +949,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
                 migrationValue, newFederationAddress);
 
             // Assert
-            assertBuildResultResponseCode(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
-            assertNull(migrationTransactionResult.btcTx());
-            assertNull(migrationTransactionResult.selectedUTXOs());
+            assertBuildFailedWithResponseCode(migrationTransactionResult, EXCEED_MAX_TRANSACTION_SIZE);
         }
 
         @Test
@@ -1005,7 +974,7 @@ class ReleaseTransactionBuilderBuildMigrationTransactionTest {
 
             List<TransactionInput> migrationTransactionInputs = migrationTransaction.getInputs();
             assertEquals(retiringFederationUTXOs.size(), migrationTransactionInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
+            assertInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 migrationTransaction,
                 retiringFederationRedeemScript,
                 retiringFederationUTXOs
