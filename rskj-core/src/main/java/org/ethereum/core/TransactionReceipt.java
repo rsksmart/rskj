@@ -22,6 +22,7 @@ package org.ethereum.core;
     import co.rsk.core.types.bytes.Bytes;
     import co.rsk.core.types.bytes.BytesSlice;
     import org.bouncycastle.util.BigIntegers;
+    import org.ethereum.core.transaction.TransactionType;
     import org.ethereum.util.*;
     import org.ethereum.vm.LogInfo;
 

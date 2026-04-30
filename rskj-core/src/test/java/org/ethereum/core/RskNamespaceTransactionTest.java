@@ -19,6 +19,7 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.ethereum.core.transaction.TransactionType;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;

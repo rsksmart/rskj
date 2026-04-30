@@ -501,12 +501,12 @@ class TransactionTest {
     }
 
     @Test
-    void testTransactionCostForContractCreationWithNullDataAndRSKIP438Enabled() {
+    void testTransactionCostForContractCreationWithEmptyDataAndRSKIP438Enabled() {
         byte[] bytes = new byte[]{-8, 75, -128, 8, -126, -61, 80, -128, 7, -128, 102, -96, -63, -110, 91, -2, 42, -19, 18, 4, 67, -64, 48, -45, -85, -123, 41, 14, -48, -124, 118, 21, -63, -39, -45, 67, 116, -103, 93, 37, 4, 88, -61, 49, -96, 77, -30, -116, 59, -58, -82, -95, 76, 46, 124, 115, -32, -80, 125, 30, -42, -75, -111, -49, -41, 121, -73, -121, -68, -41, 72, -120, 94, 82, 42, 17, 61};
         Transaction txInBlock = new ImmutableTransaction(bytes);
 
-        // make sure that data is null and it's contract creation
-        assertNull(txInBlock.getData());
+
+        assertArrayEquals(new byte[0], txInBlock.getData());
         assertEquals(RskAddress.nullAddress(), txInBlock.getReceiveAddress());
 
         Constants constants = Mockito.mock(Constants.class);

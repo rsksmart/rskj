@@ -18,6 +18,7 @@
 package org.ethereum.core;
 
 import co.rsk.remasc.RemascTransaction;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;

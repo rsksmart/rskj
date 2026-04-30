@@ -22,6 +22,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 

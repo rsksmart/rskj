@@ -21,6 +21,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.*;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Test;

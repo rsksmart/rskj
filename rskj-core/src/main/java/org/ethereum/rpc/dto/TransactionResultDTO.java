@@ -20,7 +20,7 @@ package org.ethereum.rpc.dto;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionType;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;

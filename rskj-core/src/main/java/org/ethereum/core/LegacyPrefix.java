@@ -17,6 +17,8 @@
  */
 package org.ethereum.core;
 
+import org.ethereum.core.transaction.TransactionType;
+
 public record LegacyPrefix() implements TransactionTypePrefix {
     @Override public TransactionType type()     { return TransactionType.LEGACY; }
     @Override public boolean isLegacy()         { return true;  }

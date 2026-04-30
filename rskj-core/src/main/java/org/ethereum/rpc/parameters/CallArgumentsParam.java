@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+
 @JsonDeserialize(using = CallArgumentsParam.Deserializer.class)
 public class CallArgumentsParam {
 
