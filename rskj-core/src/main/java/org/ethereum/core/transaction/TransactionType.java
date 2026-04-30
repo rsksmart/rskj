@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.ethereum.core;
+package org.ethereum.core.transaction;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -33,6 +33,7 @@ public enum TransactionType {
     public static final byte RSK_NAMESPACE_PREFIX = 0x02;
     public static final byte MAX_TYPE_VALUE = 0x7f;
     public static final byte RESERVED_BYTE = (byte) 0xff;
+
 
     private static final Map<Byte, TransactionType> lookup = new HashMap<>();
 

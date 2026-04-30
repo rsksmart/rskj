@@ -26,6 +26,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.mockito.Mockito;
@@ -166,7 +167,7 @@ public class TransactionBuilder {
         }
 
         if (this.transactionType != null) {
-            org.ethereum.core.TransactionType txType = org.ethereum.core.TransactionType.fromByte(this.transactionType);
+            TransactionType txType = TransactionType.fromByte(this.transactionType);
             if (txType == null || txType.isLegacy()) {
                 throw new IllegalArgumentException(String.format(
                         "transaction type not supported: 0x%02x",

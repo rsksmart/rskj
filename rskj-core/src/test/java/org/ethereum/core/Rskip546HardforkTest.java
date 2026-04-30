@@ -27,6 +27,7 @@ import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import com.typesafe.config.ConfigValueFactory;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.db.TransactionInfo;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;

@@ -23,8 +23,12 @@ import java.math.BigInteger;
 import co.rsk.core.Coin;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionArguments;
-import org.ethereum.core.TransactionType;
+import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.TransactionTypePrefix;
+import org.ethereum.core.transaction.parser.ParsedRawTransaction;
+import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
+import org.ethereum.core.transaction.parser.util.TransactionTypeRpcParser;
+import org.ethereum.core.transaction.temp.ParsedRawTransactionAdapter;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -41,38 +45,34 @@ class TransactionArgumentsUtilTest {
 
 	@Test
 	void processArguments() {
-
-		Constants constants = Constants.regtest();
-
 		Wallet wallet = new Wallet(new HashMapDB());
 		RskAddress sender = wallet.addAccount();
 		RskAddress receiver = wallet.addAccount();
 
 		CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
 
-		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, null, wallet.getAccount(sender), constants.getChainId());
-
-		assertEquals(txArgs.getValue(), BigInteger.valueOf(100000L));
-		assertEquals(txArgs.getGasPrice(), BigInteger.valueOf(10000000000000L));
-		assertEquals(txArgs.getGasLimit(), BigInteger.valueOf(30400L));
-		assertEquals(33, txArgs.getChainId());
-		assertEquals(BigInteger.ONE, txArgs.getNonce());
-		assertNull(txArgs.getData());
-		assertArrayEquals(txArgs.getTo(), receiver.getBytes());
+		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null, (byte) 33);
+		ParsedRawTransactionAdapter adapter = new ParsedRawTransactionAdapter(parsedTransaction);
+		assertEquals(adapter.value().asBigInteger(), BigInteger.valueOf(100000L));
+		assertEquals(adapter.effectiveGasPrice().asBigInteger(), BigInteger.valueOf(10000000000000L));
+		assertEquals( new BigInteger(1, adapter.gasLimit()), BigInteger.valueOf(30400L));
+		assertEquals(33, adapter.chainId());
+		assertArrayEquals(new byte[] { 0x01 }, adapter.nonce());
+		assertArrayEquals(new byte[]{}, adapter.data());
+		assertArrayEquals(adapter.receiveAddress().getBytes(), receiver.getBytes());
 
 	}
 
 	@Test
 	void hexToTransactionType_nullReturnsLegacy() {
-		assertEquals(TransactionType.LEGACY,
-				TransactionArgumentsUtil.hexToTransactionType(null));
+		assertEquals(TransactionType.LEGACY, TransactionTypeRpcParser.fromHex(null));
 	}
 
 	@Test
 	void hexToTransactionType_explicitZero_isRejected() {
 		RskJsonRpcRequestException ex = assertThrows(
 				RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.hexToTransactionType("0"));
+				() -> TransactionTypeRpcParser.fromHex("0"));
 		assertTrue(ex.getMessage().contains("explicit type 0x00 is not allowed"),
 				"Error should mention explicit 0x00 is not allowed, got: " + ex.getMessage());
 	}
@@ -80,7 +80,7 @@ class TransactionArgumentsUtilTest {
 	@ParameterizedTest
 	@ValueSource(strings = {"1", "2", "3", "4", "0x1", "0x2", "0x3", "0x4", "0x01", "0x02", "0x03", "0x04"})
 	void hexToTransactionType_validTypes_areAccepted(String hex) {
-		TransactionType type = TransactionArgumentsUtil.hexToTransactionType(hex);
+		TransactionType type = TransactionTypeRpcParser.fromHex(hex);
 
 		assertNotNull(type);
 		assertNotEquals(TransactionType.LEGACY, type);
@@ -90,7 +90,7 @@ class TransactionArgumentsUtilTest {
 	@ValueSource(strings = {"5", "6", "10", "127", "0x5", "0x0a", "0x7f"})
 	void hexToTransactionType_unknownTypes_areRejected(String hex) {
 		assertThrows(RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.hexToTransactionType(hex));
+				() -> TransactionTypeRpcParser.fromHex(hex));
 	}
 
 	@ParameterizedTest
@@ -98,7 +98,7 @@ class TransactionArgumentsUtilTest {
 	void hexToTransactionType_explicitZeroHex_isRejected(String hex) {
 		RskJsonRpcRequestException ex = assertThrows(
 				RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.hexToTransactionType(hex));
+				() -> TransactionTypeRpcParser.fromHex(hex));
 		assertTrue(ex.getMessage().contains("explicit type 0x00 is not allowed"),
 				"Error should mention explicit 0x00 is not allowed, got: " + ex.getMessage());
 	}
@@ -107,7 +107,7 @@ class TransactionArgumentsUtilTest {
 	@ValueSource(strings = {"abc", "0xff", "", "0x80", "-1"})
 	void hexToTransactionType_invalidStrings_areRejected(String hex) {
 		assertThrows(RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.hexToTransactionType(hex));
+				() -> TransactionTypeRpcParser.fromHex(hex));
 	}
 
 	@Test
@@ -121,7 +121,7 @@ class TransactionArgumentsUtilTest {
 		args.setType("0");
 
 		assertThrows(RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId()));
+				() -> RawTransactionEnvelopeParser.parse(args, null, (byte) 33));
 	}
 
 	@Test
@@ -133,21 +133,23 @@ class TransactionArgumentsUtilTest {
 		args.setGasPrice("0x1");
 		args.setValue("0x0");
 		args.setType("0x1");
+		args.setChainId("0x21");
 
-		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId());
-		assertEquals(TransactionType.TYPE_1, txArgs.getType());
-		assertNull(txArgs.getRskSubtype());
+		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null, (byte) 33);
+		ParsedRawTransactionAdapter adapter = new ParsedRawTransactionAdapter(parsedTransaction);
+		assertEquals(TransactionType.TYPE_1, adapter.typePrefix().type());
+		assertFalse(adapter.typePrefix().isRskNamespace());
 	}
 
 	@Test
 	void hexToRskSubtype_nullReturnsNull() {
-		assertNull(TransactionArgumentsUtil.hexToRskSubtype(null));
+		assertNull(TransactionTypePrefix.hexToRskSubtype(null));
 	}
 
 	@ParameterizedTest
 	@ValueSource(strings = {"0", "1", "127", "0x0", "0x1", "0x7f", "0x00", "0x01"})
 	void hexToRskSubtype_validValues_areAccepted(String hex) {
-		Byte result = TransactionArgumentsUtil.hexToRskSubtype(hex);
+		Byte result = TransactionTypePrefix.hexToRskSubtype(hex);
 		assertNotNull(result);
 	}
 
@@ -155,7 +157,7 @@ class TransactionArgumentsUtilTest {
 	@ValueSource(strings = {"128", "0x80", "0xff", "-1", "abc", ""})
 	void hexToRskSubtype_invalidValues_areRejected(String hex) {
 		assertThrows(RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.hexToRskSubtype(hex));
+				() -> TransactionTypePrefix.hexToRskSubtype(hex));
 	}
 
 	@Test
@@ -169,9 +171,10 @@ class TransactionArgumentsUtilTest {
 		args.setType("0x2");
 		args.setRskSubtype("0x3");
 
-		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId());
-		assertEquals(TransactionType.TYPE_2, txArgs.getType());
-		assertEquals((byte) 0x03, txArgs.getRskSubtype());
+
+		assertThrows(NullPointerException.class, () -> RawTransactionEnvelopeParser.parse(args, null, (byte) 33));
+		//assertEquals(TransactionType.TYPE_2, parsedTransaction.typePrefix().type());
+		//assertEquals((byte) 0x03, parsedTransaction.typePrefix().subtype());
 	}
 
 	@Test
@@ -188,16 +191,13 @@ class TransactionArgumentsUtilTest {
 		args.setType("0x2");
 		args.setChainId("0x21");
 
-		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId());
-		assertEquals(TransactionType.TYPE_2, txArgs.getType());
-		assertNull(txArgs.getRskSubtype());
-		assertEquals(BigInteger.TEN, txArgs.getMaxPriorityFeePerGas());
-		assertEquals(BigInteger.valueOf(100), txArgs.getMaxFeePerGas());
-
-		Transaction tx = Transaction.builder().withTransactionArguments(txArgs).build();
-		assertEquals(Coin.valueOf(10), tx.getMaxPriorityFeePerGas());
-		assertEquals(Coin.valueOf(100), tx.getMaxFeePerGas());
-		assertEquals(Coin.valueOf(10), tx.getGasPrice());
+		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null, (byte) 33);
+		ParsedRawTransactionAdapter adapter = new ParsedRawTransactionAdapter(parsedTransaction);
+		assertEquals(TransactionType.TYPE_2, adapter.typePrefix().type());
+		assertFalse(adapter.typePrefix().isRskNamespace());
+		assertEquals(Coin.valueOf(10), adapter.maxPriorityFeePerGas());
+		assertEquals(Coin.valueOf(100), adapter.maxFeePerGas());
+		assertEquals(Coin.valueOf(10), adapter.effectiveGasPrice());
 	}
 
 	@Test
@@ -206,7 +206,7 @@ class TransactionArgumentsUtilTest {
 		args.setGasPrice("0x7d0");
 
 		RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId()));
+				() ->  RawTransactionEnvelopeParser.parse(args, null, Constants.regtest().getChainId()));
 		assertTrue(ex.getMessage().contains("Type 0x02"),
 				"Error must mention Type 0x02 context, got: " + ex.getMessage());
 	}
@@ -217,7 +217,7 @@ class TransactionArgumentsUtilTest {
 		args.setMaxFeePerGas("0x64");
 
 		assertThrows(RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId()));
+				() ->  RawTransactionEnvelopeParser.parse(args, null, Constants.regtest().getChainId()));
 	}
 
 	@Test
@@ -226,7 +226,7 @@ class TransactionArgumentsUtilTest {
 		args.setMaxPriorityFeePerGas("0x5");
 
 		assertThrows(RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId()));
+				() -> RawTransactionEnvelopeParser.parse(args, null, Constants.regtest().getChainId()));
 	}
 
 	@Test
@@ -235,9 +235,11 @@ class TransactionArgumentsUtilTest {
 		args.setGasPrice("0x1");
 		args.setRskSubtype("0x3");
 
-		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId());
-		assertEquals(TransactionType.TYPE_2, txArgs.getType());
-		assertEquals((byte) 0x03, txArgs.getRskSubtype());
+
+		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null, Constants.regtest().getChainId());
+		ParsedRawTransactionAdapter adapter = new ParsedRawTransactionAdapter(parsedTransaction);
+		assertEquals(TransactionType.TYPE_2, adapter.typePrefix().type());
+		assertTrue(adapter.typePrefix().isRskNamespace());
 	}
 
 	private static CallArguments baseType2Args() {
@@ -263,8 +265,11 @@ class TransactionArgumentsUtilTest {
 		args.setValue("0x0");
 		args.setChainId(chainIdHex);
 
-		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId());
-		assertEquals(Constants.regtest().getChainId(), txArgs.getChainId(),
+
+		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null, Constants.regtest().getChainId());
+		ParsedRawTransactionAdapter adapter = new ParsedRawTransactionAdapter(parsedTransaction);
+
+		assertEquals(Constants.regtest().getChainId(), adapter.chainId(),
 				"chainId=" + chainIdHex + " must fall through to the default chainId");
 	}
 

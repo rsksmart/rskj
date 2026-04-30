@@ -17,6 +17,8 @@
  */
 package org.ethereum.core;
 
+import org.ethereum.core.transaction.TransactionType;
+
 import java.math.BigInteger;
 
 import java.util.Arrays;
