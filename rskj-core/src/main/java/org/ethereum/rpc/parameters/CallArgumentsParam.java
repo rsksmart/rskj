@@ -28,6 +28,8 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.function.Function;
 
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+
 @JsonDeserialize(using = CallArgumentsParam.Deserializer.class)
 public class CallArgumentsParam {
 
@@ -158,7 +160,6 @@ public class CallArgumentsParam {
         }
         callArguments.setType(caType);
         callArguments.setRskSubtype(caRskSubtype);
-
         return callArguments;
     }
 

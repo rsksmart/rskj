@@ -17,6 +17,8 @@
  */
 package org.ethereum.core;
 
+import org.ethereum.core.transaction.TransactionType;
+
 /** RSK namespace transaction: {@code 0x02 || subtype || rlpPayload}. */
 public record RskNamespacePrefix(byte subtype) implements TransactionTypePrefix {
     public RskNamespacePrefix {

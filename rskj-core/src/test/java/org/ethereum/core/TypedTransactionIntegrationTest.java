@@ -26,6 +26,7 @@ import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import com.typesafe.config.ConfigValueFactory;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
