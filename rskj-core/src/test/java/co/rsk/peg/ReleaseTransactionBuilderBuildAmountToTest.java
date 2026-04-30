@@ -411,12 +411,6 @@ class ReleaseTransactionBuilderBuildAmountToTest {
         );
     }
 
-    private static void assertBuildFailedWithResponseCode(BuildResult amountToResult, Response expectedResponseCode) {
-        assertBuildResultResponseCode(expectedResponseCode, amountToResult);
-        assertNull(amountToResult.btcTx());
-        assertNull(amountToResult.selectedUTXOs());
-    }
-
     private void assertSuccesfullyBuiltPegoutTransactionVersionAndInputs(
         BuildResult amountToResult,
         int expectedPegoutTransactionVersion,

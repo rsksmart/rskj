@@ -12,8 +12,8 @@ import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OU
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithoutSignaturesHasProperFormat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public final class ReleaseTransactionBuilderAssertions {
 
@@ -158,6 +158,12 @@ public final class ReleaseTransactionBuilderAssertions {
                                                       List<TransactionOutput> releaseTransactionOutputs) {
         int actualNumberOfOutputs = releaseTransactionOutputs.size();
         assertEquals(expectedNumberOfOutputs, actualNumberOfOutputs);
+    }
+
+    public static void assertBuildFailedWithResponseCode(ReleaseTransactionBuilder.BuildResult amountToResult, ReleaseTransactionBuilder.Response expectedResponseCode) {
+        assertBuildResultResponseCode(expectedResponseCode, amountToResult);
+        assertNull(amountToResult.btcTx());
+        assertNull(amountToResult.selectedUTXOs());
     }
 
 }
