@@ -58,7 +58,9 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
     @Override
     public ParsedType0Transaction parse(TransactionTypePrefix typePrefix, CallArguments argsParam, byte defaultChainId) {
         BigInteger nonce = Optional.ofNullable(argsParam.getNonce()).map(HexUtils::strHexOrStrNumberToBigInteger).orElse(null);
-        BigInteger gasLimit = CommonParsingUtils.parseBigInteger(argsParam.getGas(), () -> DEFAULT_GAS_LIMIT);
+        BigInteger gasLimit = CommonParsingUtils.parseBigInteger(
+                argsParam.getGas(),
+                () -> CommonParsingUtils.parseBigInteger(argsParam.getGasLimit(), () -> DEFAULT_GAS_LIMIT));
         Coin gasPrice = CommonParsingUtils.defaultValue(CommonParsingUtils.parseCoin(argsParam.getGasPrice()));
         Coin value = CommonParsingUtils.defaultValue(CommonParsingUtils.parseCoin(argsParam.getValue()));
         RskAddress receiveAddress = CommonParsingUtils.parseAddress(argsParam.getTo());

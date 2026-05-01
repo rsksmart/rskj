@@ -171,10 +171,12 @@ class TransactionArgumentsUtilTest {
 		args.setType("0x2");
 		args.setRskSubtype("0x3");
 
-
-		assertThrows(NullPointerException.class, () -> RawTransactionEnvelopeParser.parse(args, null, (byte) 33));
-		//assertEquals(TransactionType.TYPE_2, parsedTransaction.typePrefix().type());
-		//assertEquals((byte) 0x03, parsedTransaction.typePrefix().subtype());
+		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null, (byte) 33);
+		ParsedRawTransactionAdapter adapter = new ParsedRawTransactionAdapter(parsedTransaction);
+		assertEquals(TransactionType.TYPE_2, adapter.typePrefix().type());
+		assertTrue(adapter.typePrefix().isRskNamespace(),
+				"Type 2 with an RSK subtype must be parsed as the RSK-namespace variant (0x02 || subtype || legacy)");
+		assertEquals((byte) 0x03, adapter.typePrefix().subtype());
 	}
 
 	@Test

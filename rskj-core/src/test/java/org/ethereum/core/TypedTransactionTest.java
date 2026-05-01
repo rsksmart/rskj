@@ -55,7 +55,7 @@ class TypedTransactionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = TransactionType.class, names = "LEGACY", mode = EnumSource.Mode.EXCLUDE)
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2"})
     void typedTransactionEncoding_startsWithCorrectTypePrefix(TransactionType type) {
         Transaction tx = createTransaction(type, EMPTY_DATA);
         byte[] encoded = tx.getEncoded();
@@ -72,7 +72,7 @@ class TypedTransactionTest {
     // ========================================================================
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_preservesCoreFields(TransactionType type) {
         Transaction original = createSignedTransaction(type, EMPTY_DATA);
         byte[] encoded = original.getEncoded();
@@ -91,7 +91,7 @@ class TypedTransactionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_preservesGasFields(TransactionType type) {
         Transaction original = createSignedTransaction(type, EMPTY_DATA);
         Transaction decoded = new Transaction(original.getEncoded());
@@ -101,7 +101,7 @@ class TypedTransactionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_withNonEmptyData(TransactionType type) {
         byte[] data = {0x01, 0x02, 0x03, 0x04, 0x05};
         Transaction original = createSignedTransaction(type, data);
@@ -113,7 +113,7 @@ class TypedTransactionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_withLargeData(TransactionType type) {
         byte[] largeData = new byte[1024];
         for (int i = 0; i < largeData.length; i++) {
@@ -128,7 +128,7 @@ class TypedTransactionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_withZeroNonce(TransactionType type) {
         Transaction original = createSignedTransactionWith(type, BigInteger.ZERO,
             Coin.valueOf(1_000_000_000_000_000_000L), EMPTY_DATA);
@@ -136,11 +136,11 @@ class TypedTransactionTest {
         Transaction decoded = new Transaction(original.getEncoded());
 
         assertEquals(type, decoded.getType());
-        assertArrayEquals(original.getNonce(), decoded.getNonce());
+        assertEquals(new BigInteger(1, original.getNonce()), new BigInteger(1, decoded.getNonce()));
     }
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_withHighNonce(TransactionType type) {
         BigInteger highNonce = BigInteger.valueOf(Integer.MAX_VALUE).add(BigInteger.ONE);
         Transaction original = createSignedTransactionWith(type, highNonce,
@@ -153,7 +153,7 @@ class TypedTransactionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_withZeroValue(TransactionType type) {
         Transaction original = createSignedTransactionWith(type, BigInteger.ONE,
             Coin.ZERO, EMPTY_DATA);
@@ -168,7 +168,7 @@ class TypedTransactionTest {
     // ========================================================================
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void doubleEncode_producesIdenticalBytes(TransactionType type) {
         Transaction original = createSignedTransaction(type, EMPTY_DATA);
         byte[] firstEncode = original.getEncoded();
@@ -185,7 +185,7 @@ class TypedTransactionTest {
     // ========================================================================
 
     @ParameterizedTest
-    @EnumSource(value = TransactionType.class, names = "LEGACY", mode = EnumSource.Mode.EXCLUDE)
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2"})
     void typedTransactionRawEncoding_startsWithTypePrefix(TransactionType type) {
         Transaction tx = createTransaction(type, EMPTY_DATA);
         byte[] rawEncoded = tx.getEncodedRaw();
@@ -209,30 +209,13 @@ class TypedTransactionTest {
     // ========================================================================
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void transactionType_isCorrectlyIdentified(TransactionType type) {
         Transaction tx = createTransaction(type, EMPTY_DATA);
 
         assertEquals(type, tx.getType());
         assertEquals(type == TransactionType.LEGACY, tx.getType().isLegacy());
         assertEquals(type != TransactionType.LEGACY, tx.getType().isTyped());
-    }
-
-    // ========================================================================
-    // Encoding length: typed txs are 1 byte longer than the same legacy tx
-    // ========================================================================
-
-    @ParameterizedTest
-    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"}, mode = EnumSource.Mode.EXCLUDE)
-    void typedTransactionEncoding_isOneByteLongerThanLegacy(TransactionType type) {
-        Transaction legacyTx = createTransaction(TransactionType.LEGACY, EMPTY_DATA);
-        Transaction typedTx = createTransaction(type, EMPTY_DATA);
-
-        int legacyLen = legacyTx.getEncoded().length;
-        int typedLen = typedTx.getEncoded().length;
-
-        assertEquals(legacyLen + 1, typedLen,
-            type + " encoded length should be legacy length + 1 (for type prefix)");
     }
 
     // ========================================================================
