@@ -1,3 +1,5 @@
+# local stuff
+.local
 # local credentials
 credentials.properties
 
@@ -34,7 +36,6 @@ rskj-core/networkStateExporterTest.json
 
 # Mac
 .DS_Store
-
 
 # Local configuration
 **/user.conf
