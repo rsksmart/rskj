@@ -46,7 +46,13 @@ class PegoutsWaitingForConfirmationsTest {
             new PegoutsWaitingForConfirmations.Entry(createTransaction(5, Coin.COIN), 100L),
             new PegoutsWaitingForConfirmations.Entry(createTransaction(4, Coin.FIFTY_COINS), 7L),
             new PegoutsWaitingForConfirmations.Entry(createTransaction(3, Coin.MILLICOIN), 10L),
-            new PegoutsWaitingForConfirmations.Entry(createTransaction(8, Coin.CENT.times(5)), 5L)
+            new PegoutsWaitingForConfirmations.Entry(createTransaction(8, Coin.CENT.times(5)), 5L),
+
+            // pegouts for same block
+            new PegoutsWaitingForConfirmations.Entry(createTransaction(11, Coin.MILLICOIN), 5L),
+            new PegoutsWaitingForConfirmations.Entry(createTransaction(12, Coin.MILLICOIN), 5L),
+            new PegoutsWaitingForConfirmations.Entry(createTransaction(13, Coin.MILLICOIN), 5L)
+
         ));
         set = new PegoutsWaitingForConfirmations(setEntries);
     }
@@ -161,13 +167,38 @@ class PegoutsWaitingForConfirmationsTest {
     }
 
     @Test
-    void getNextPegoutWithEnoughConfirmation_multipleMatch() {
+    void getNextPegoutWithEnoughConfirmation_multipleMatch_rskip559Off() {
         int size = set.getEntries().size();
         Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L));
         Assertions.assertTrue(result.isPresent());
-        Assertions.assertTrue(set.removeEntry(result.get()));
-        Assertions.assertFalse(set.removeEntry(result.get()));
+
+        var entry = result.get();
+        var hash = entry.getBtcTransaction().getHash().toString();
+
+        Assertions.assertEquals(
+            "53efc6f78eb9d159cfee76ec45bcffb08fd11f85c762e1eacf54e5c014da219d",
+            hash,
+            "Valid candidate for non deterministic pegouts sorting"
+        );
+
+        Assertions.assertTrue(set.removeEntry(entry));
+        Assertions.assertFalse(set.removeEntry(entry));
         Assertions.assertEquals(set.getEntries().size(), size-1);
+    }
+
+    @Test
+    void getNextPegoutWithEnoughConfirmations_rskip559() {
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.all().forBlock(1L));
+        Assertions.assertTrue(result.isPresent());
+
+        var entry = result.get();
+        var hash = entry.getBtcTransaction().getHash().toString();
+
+        Assertions.assertEquals(
+            "fdd781c46b5ad7993b3f133e3af94b2e3cbcc8d19e443dfc6b555a1b0bac1527",
+            hash,
+            "Valid candidate for non fixed pegouts sorting"
+        );
     }
 
     private BtcTransaction createTransaction(int toPk, Coin value) {

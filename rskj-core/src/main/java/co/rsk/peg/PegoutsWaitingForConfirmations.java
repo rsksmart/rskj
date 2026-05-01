@@ -82,9 +82,6 @@ public class PegoutsWaitingForConfirmations {
         this.entries.addEntry(entry);
     }
 
-    /**
-     * NOTE: test only method.
-     */
     public boolean removeEntry(Entry entry){
         return entries.removeEntry(entry);
     }
@@ -135,9 +132,6 @@ public class PegoutsWaitingForConfirmations {
         }
 
 
-        /**
-         * NOTE: should be used in tests only.
-         */
         public boolean removeEntry(Entry entry) {
             return this.entriesSet.remove(entry);
         }
