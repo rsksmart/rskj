@@ -26,6 +26,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.facade.Ethereum;
@@ -61,7 +62,8 @@ class PersonalModuleTest {
         Ethereum ethereum = mock(Ethereum.class);
         when(ethereum.submitTransaction(tx)).thenReturn(transactionPoolAddResult);
 
-        PersonalModuleWalletEnabled personalModuleWalletEnabled = new PersonalModuleWalletEnabled(props, ethereum, wallet, null);
+        TransactionPool transactionPool = mock(TransactionPool.class);
+        PersonalModuleWalletEnabled personalModuleWalletEnabled = new PersonalModuleWalletEnabled(props, ethereum, wallet, transactionPool);
 
         // Hash of the actual transaction builded inside the sendTransaction
         String txResult = personalModuleWalletEnabled.sendTransaction(argsParam, PASS_FRASE);
@@ -88,7 +90,8 @@ class PersonalModuleTest {
 
         Ethereum ethereum = mock(Ethereum.class);
 
-        PersonalModuleWalletEnabled personalModuleWalletEnabled = new PersonalModuleWalletEnabled(props, ethereum, wallet, null);
+        TransactionPool transactionPool = mock(TransactionPool.class);
+        PersonalModuleWalletEnabled personalModuleWalletEnabled = new PersonalModuleWalletEnabled(props, ethereum, wallet, transactionPool);
 
         Assertions.assertThrows(RskJsonRpcRequestException.class, () -> personalModuleWalletEnabled.sendTransaction(argsParam, PASS_FRASE));
     }

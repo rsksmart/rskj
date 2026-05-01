@@ -90,7 +90,9 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
                 .map(HexUtils::strHexOrStrNumberToBigInteger)
                 .orElse(BigInteger.ZERO);
 
-        BigInteger gasLimit = CommonParsingUtils.parseBigInteger(argsParam.getGasLimit(), () -> DEFAULT_GAS_LIMIT);
+        BigInteger gasLimit = CommonParsingUtils.parseBigInteger(
+                argsParam.getGasLimit(),
+                () -> CommonParsingUtils.parseBigInteger(argsParam.getGasLimit(), () -> DEFAULT_GAS_LIMIT));
         Coin value = CommonParsingUtils.defaultValue(CommonParsingUtils.parseCoin(argsParam.getValue()));
         RskAddress receiveAddress = CommonParsingUtils.parseAddress(argsParam.getTo());
         byte[] data = CommonParsingUtils.parseHexData(argsParam.getData());
