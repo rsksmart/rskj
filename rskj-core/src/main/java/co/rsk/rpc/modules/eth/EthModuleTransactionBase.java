@@ -105,9 +105,8 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
     @Nonnull
     private Supplier<String> getAccountNextNonce(Account senderAccount) {
-        return () -> transactionPool.getPendingState().getNonce(senderAccount.getAddress()).toString(16);
+        return () -> transactionPool.getPendingState().getNonce(senderAccount.getAddress()).toString();
     }
-
 
     @Override
     public String sendRawTransaction(HexDataParam rawData) {
@@ -133,7 +132,4 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
             }
         }
     }
-
-
-
 }

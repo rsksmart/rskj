@@ -209,8 +209,8 @@ class TransactionArgumentsUtilTest {
 
 		RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
 				() ->  RawTransactionEnvelopeParser.parse(args, null, Constants.regtest().getChainId()));
-		assertTrue(ex.getMessage().contains("Type 0x02"),
-				"Error must mention Type 0x02 context, got: " + ex.getMessage());
+		assertTrue(ex.getMessage().contains("Type 2"),
+				"Error must mention Type 2 context, got: " + ex.getMessage());
 	}
 
 	@Test

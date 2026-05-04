@@ -288,6 +288,155 @@ class TypedTransactionTest {
     }
 
     @Test
+    void type1FromRpcArgs_withoutAccessList_encodeDecodePreservesBytes() {
+        org.ethereum.rpc.CallArguments args = new org.ethereum.rpc.CallArguments();
+        args.setFrom("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        args.setTo("0x7986b3df570230288501eea3d890bd66948c9b79");
+        args.setGas("0x5208");
+        args.setGasPrice("0x3b9aca00");
+        args.setValue("0xde0b6b3a7640000");
+        args.setNonce("0x1");
+        args.setChainId("0x21");
+        args.setType("0x1");
+
+        Transaction tx = new Transaction(args, () -> "0", (byte) 33);
+        tx.sign(TEST_KEY.getPrivKeyBytes());
+
+        byte[] encoded = tx.getEncoded();
+        Transaction decoded = new Transaction(encoded);
+
+        assertEquals(TransactionType.TYPE_1, decoded.getType());
+        assertArrayEquals(encoded, decoded.getEncoded(),
+            "Type 1 RPC envelope without access list must stay identical through encode/decode");
+    }
+
+    @Test
+    void type2FromRpcArgs_withoutAccessList_encodeDecodePreservesBytes() {
+        org.ethereum.rpc.CallArguments args = new org.ethereum.rpc.CallArguments();
+        args.setFrom("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        args.setTo("0x7986b3df570230288501eea3d890bd66948c9b79");
+        args.setGas("0x5208");
+        args.setMaxPriorityFeePerGas("0x3b9aca00");
+        args.setMaxFeePerGas("0x77359400");
+        args.setValue("0x6f05b59d3b20000");
+        args.setNonce("0x1");
+        args.setChainId("0x21");
+        args.setType("0x2");
+
+        Transaction tx = new Transaction(args, () -> "0", (byte) 33);
+        tx.sign(TEST_KEY.getPrivKeyBytes());
+
+        byte[] encoded = tx.getEncoded();
+        Transaction decoded = new Transaction(encoded);
+
+        assertEquals(TransactionType.TYPE_2, decoded.getType());
+        assertArrayEquals(encoded, decoded.getEncoded(),
+            "Standard Type 2 RPC envelope without access list must stay identical through encode/decode");
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {0, 5, 10, 15, 16, 32, 255, 256})
+    void rpcNonceSupplier_preservesNonceValueThroughConstruction(long nonceValue) {
+        org.ethereum.rpc.CallArguments args = new org.ethereum.rpc.CallArguments();
+        args.setFrom("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        args.setTo("0x7986b3df570230288501eea3d890bd66948c9b79");
+        args.setGas("0x5208");
+        args.setGasPrice("0x3b9aca00");
+        args.setValue("0x0");
+        args.setChainId("0x21");
+        args.setType("0x1");
+        // Intentionally omit nonce; the supplier must produce it.
+        BigInteger nonce = BigInteger.valueOf(nonceValue);
+
+        Transaction tx = new Transaction(args, nonce::toString, (byte) 33);
+
+        assertEquals(nonce, new BigInteger(1, tx.getNonce()),
+            "Nonce supplied by the RPC nonce supplier must be parsed as the same numeric value");
+    }
+
+    @Test
+    void type1WithAccessList_intrinsicGasIncludesAccessListSurcharge() {
+        org.ethereum.rpc.CallArguments args = new org.ethereum.rpc.CallArguments();
+        args.setFrom("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        args.setTo("0x7986b3df570230288501eea3d890bd66948c9b79");
+        args.setGas("0x5208"); // 21000 - exactly the legacy base, no headroom for access list
+        args.setGasPrice("0x3b9aca00");
+        args.setValue("0x0");
+        args.setChainId("0x21");
+        args.setType("0x1");
+        org.ethereum.rpc.CallArguments.AccessListEntry entry = new org.ethereum.rpc.CallArguments.AccessListEntry();
+        entry.setAddress("0x7986b3df570230288501eea3d890bd66948c9b79");
+        entry.setStorageKeys(java.util.List.of(
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+            "0x0000000000000000000000000000000000000000000000000000000000000002"
+        ));
+        args.setAccessList(java.util.List.of(entry));
+
+        Transaction tx = new Transaction(args, () -> "0", (byte) 33);
+        tx.sign(TEST_KEY.getPrivKeyBytes());
+
+        Transaction reparsed = new Transaction(tx.getEncoded());
+
+        org.ethereum.config.Constants constants = org.ethereum.config.Constants.regtest();
+        org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock activations =
+            org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest.all().forBlock(0);
+        org.ethereum.core.SignatureCache signatureCache = new org.ethereum.core.ReceivedTxSignatureCache();
+
+        long cost = reparsed.transactionCost(constants, activations, signatureCache);
+        BigInteger gasLimit = reparsed.getGasLimitAsInteger();
+        byte[] accessListBytes = reparsed.getAccessListBytes();
+
+        assertEquals(BigInteger.valueOf(21_000), gasLimit,
+            "Type 1 RPC parser must honor the Ethereum-standard `gas` field (regression: it "
+                + "previously read only `gasLimit`, defaulting `gas` to 90000 and silently "
+                + "letting an under-funded ERR-9-style tx pass intrinsic-gas validation)");
+        assertNotNull(accessListBytes, "Type 1 must carry the access list after re-parsing");
+        assertTrue(accessListBytes.length > 1,
+            "Non-empty access list must be longer than the canonical empty-list encoding (1 byte)");
+        assertTrue(cost > gasLimit.longValue(),
+            "RSKIP-546 surcharge (80 gas/byte) on a 1-address-3-keys access list must push the "
+                + "intrinsic cost above gas=21000; got cost=" + cost + ", gasLimit=" + gasLimit);
+    }
+
+    @Test
+    void type2WithAccessList_intrinsicGasIncludesAccessListSurcharge() {
+        org.ethereum.rpc.CallArguments args = new org.ethereum.rpc.CallArguments();
+        args.setFrom("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        args.setTo("0x7986b3df570230288501eea3d890bd66948c9b79");
+        args.setGas("0x5208"); // 21000 - exactly the legacy base, no headroom for access list
+        args.setMaxPriorityFeePerGas("0x3b9aca00");
+        args.setMaxFeePerGas("0x77359400");
+        args.setValue("0x0");
+        args.setChainId("0x21");
+        args.setType("0x2");
+        org.ethereum.rpc.CallArguments.AccessListEntry entry = new org.ethereum.rpc.CallArguments.AccessListEntry();
+        entry.setAddress("0x7986b3df570230288501eea3d890bd66948c9b79");
+        entry.setStorageKeys(java.util.List.of(
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+            "0x0000000000000000000000000000000000000000000000000000000000000002",
+            "0x0000000000000000000000000000000000000000000000000000000000000003"
+        ));
+        args.setAccessList(java.util.List.of(entry));
+
+        Transaction tx = new Transaction(args, () -> "0", (byte) 33);
+        tx.sign(TEST_KEY.getPrivKeyBytes());
+
+        Transaction reparsed = new Transaction(tx.getEncoded());
+
+        org.ethereum.config.Constants constants = org.ethereum.config.Constants.regtest();
+        org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock activations =
+            org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest.all().forBlock(0);
+        org.ethereum.core.SignatureCache signatureCache = new org.ethereum.core.ReceivedTxSignatureCache();
+
+        long cost = reparsed.transactionCost(constants, activations, signatureCache);
+        BigInteger gasLimit = reparsed.getGasLimitAsInteger();
+
+        assertEquals(BigInteger.valueOf(21_000), gasLimit);
+        assertTrue(cost > gasLimit.longValue());
+    }
+
+    @Test
     void type2Standard_whenMaxPriorityExceedsMaxFee_buildShouldThrow() {
         assertThrows(IllegalArgumentException.class, () -> Transaction.builder()
                 .nonce(BigInteger.ONE.toByteArray())

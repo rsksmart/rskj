@@ -664,6 +664,79 @@ class EthModuleTest {
     }
 
     @Test
+    void sendTransaction_whenNoNonceProvided_usesNonceFromPendingState() {
+        Constants constants = Constants.regtest();
+
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        RskAddress receiver = wallet.addAccount();
+
+        // No nonce set — supplier must be invoked
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+        args.setNonce(null);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        BigInteger expectedNonce = BigInteger.TEN;
+
+        PendingState pendingState = mock(PendingState.class);
+        when(pendingState.getNonce(sender)).thenReturn(expectedNonce);
+
+        TransactionPool transactionPool = mock(TransactionPool.class);
+        when(transactionPool.getPendingState()).thenReturn(pendingState);
+
+        TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+        when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenReturn(transactionPoolAddResult);
+
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
+        ethModuleTransaction.sendTransaction(callArgumentsParam);
+
+        ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionGateway).receiveTransaction(captor.capture());
+        BigInteger actualNonce = new BigInteger(1, captor.getValue().getNonce());
+        assertEquals(expectedNonce, actualNonce);
+    }
+
+    @Test
+    void sendTransaction_whenNoNonceProvidedAndNonceIsAboveSingleHexDigit_nonceIsCorrect() {
+        // Nonce 16 in decimal is "10" in hex. Without a 0x prefix, strHexOrStrNumberToBigInteger
+        // treats the string as decimal, so toString(16) would silently produce nonce 10 instead of 16.
+        Constants constants = Constants.regtest();
+
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        RskAddress receiver = wallet.addAccount();
+
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+        args.setNonce(null);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        BigInteger expectedNonce = BigInteger.valueOf(16);
+
+        PendingState pendingState = mock(PendingState.class);
+        when(pendingState.getNonce(sender)).thenReturn(expectedNonce);
+
+        TransactionPool transactionPool = mock(TransactionPool.class);
+        when(transactionPool.getPendingState()).thenReturn(pendingState);
+
+        TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+        when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenReturn(transactionPoolAddResult);
+
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
+        ethModuleTransaction.sendTransaction(callArgumentsParam);
+
+        ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionGateway).receiveTransaction(captor.capture());
+        BigInteger actualNonce = new BigInteger(1, captor.getValue().getNonce());
+        assertEquals(expectedNonce, actualNonce);
+    }
+
+    @Test
     void sendRawTransactionThrowsErrorOnChainIdValidationTest() {
 
         Constants constants = Constants.regtest();

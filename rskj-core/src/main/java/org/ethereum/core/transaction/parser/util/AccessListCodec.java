@@ -12,16 +12,20 @@ public final class AccessListCodec {
 
     private AccessListCodec() {}
 
+    /** Canonical RLP encoding of an empty list (RSKIP-546 access list field when absent). */
+    private static final byte[] EMPTY_ACCESS_LIST_RLP = new byte[]{(byte) 0xc0};
 
     /**
-     * Validates that the access list field contains well-formed RLP.
-     * Rootstock does not interpret access list contents, but an unparseable blob would be stored
-     * on-chain and could cause issues in downstream tooling. A null or empty-list (0xc0) value
-     * is always valid.
+     * Validates that the access list field contains well-formed RLP and normalizes a missing
+     * value to the canonical empty-list encoding.
+     *
+     * <p>Per RSKIP-546, Type 1 and standard Type 2 transactions reserve an access-list slot in
+     * their RLP layout. That slot must always be a (possibly empty) RLP list — the canonical
+     * encoding of which is the single byte {@code 0xc0}.
      */
     public static byte[] defaultAccessListBytes(byte[] accessListBytes) {
         if (accessListBytes == null || accessListBytes.length == 0) {
-            return new byte[0];
+            return EMPTY_ACCESS_LIST_RLP.clone();
         }
         try {
             RLP.decode2(accessListBytes);
@@ -30,8 +34,6 @@ public final class AccessListCodec {
         }
         return accessListBytes;
     }
-
-
 
     /**
      * Encodes an access list (from JSON-RPC call arguments) to RLP bytes.
@@ -70,6 +72,4 @@ public final class AccessListCodec {
         }
         return RLP.encodeList(encodedEntries);
     }
-
-
 }
