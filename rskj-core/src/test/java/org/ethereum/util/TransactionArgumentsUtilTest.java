@@ -211,9 +211,9 @@ class TransactionArgumentsUtilTest {
 		args.setGasPrice("0x7d0");
 
 		RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId()));
-		assertTrue(ex.getMessage().contains("Type 0x02"),
-				"Error must mention Type 0x02 context, got: " + ex.getMessage());
+				() ->  RawTransactionEnvelopeParser.parse(args, null, Constants.regtest().getChainId()));
+		assertTrue(ex.getMessage().contains("Type 2"),
+				"Error must mention Type 2 context, got: " + ex.getMessage());
 	}
 
 	@Test

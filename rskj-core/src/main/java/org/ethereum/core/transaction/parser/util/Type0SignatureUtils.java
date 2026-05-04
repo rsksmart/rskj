@@ -56,4 +56,3 @@ public final class Type0SignatureUtils {
     }
 
 }
-

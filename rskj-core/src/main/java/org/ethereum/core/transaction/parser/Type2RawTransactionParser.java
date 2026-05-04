@@ -91,7 +91,7 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
                 .orElse(BigInteger.ZERO);
 
         BigInteger gasLimit = CommonParsingUtils.parseBigInteger(
-                argsParam.getGasLimit(),
+                argsParam.getGas(),
                 () -> CommonParsingUtils.parseBigInteger(argsParam.getGasLimit(), () -> DEFAULT_GAS_LIMIT));
         Coin value = CommonParsingUtils.defaultValue(CommonParsingUtils.parseCoin(argsParam.getValue()));
         RskAddress receiveAddress = CommonParsingUtils.parseAddress(argsParam.getTo());
