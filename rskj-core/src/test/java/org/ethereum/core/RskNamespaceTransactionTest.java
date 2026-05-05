@@ -59,7 +59,10 @@ class RskNamespaceTransactionTest {
             TEST_CHAIN_ID,
             false,
             TransactionType.TYPE_2,
-            rskSubtype
+            rskSubtype,
+            null,
+        null,
+            null
         );
     }
 
