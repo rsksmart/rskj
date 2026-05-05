@@ -58,6 +58,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP445;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP446;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP90;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP91;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP555;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.OpCode.CALL;
 
@@ -671,7 +672,7 @@ public class VM {
 
     protected void doBALANCE() {
         if (computeGas) {
-            gasCost = GasCost.BALANCE;
+            gasCost = GasCost.getBalance(program.getActivations());
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -832,7 +833,7 @@ public class VM {
 
     protected void doEXTCODEHASH() {
         if (computeGas) {
-            gasCost = GasCost.EXT_CODE_HASH;
+            gasCost = GasCost.getExtCodeHash(program.getActivations());
             spendOpCodeGas();
         }
 
@@ -1297,7 +1298,7 @@ public class VM {
 
     protected void doSLOAD() {
         if (computeGas) {
-            gasCost = GasCost.SLOAD;
+            gasCost = GasCost.getSload(program.getActivations());
             spendOpCodeGas();
         }
         // EXECUTION PHASE
