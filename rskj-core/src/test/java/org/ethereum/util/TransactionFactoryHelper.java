@@ -112,7 +112,7 @@ public class TransactionFactoryHelper {
                 .nonce(HexUtils.stringHexToByteArray(args.getNonce()))
                 .gasPrice(HexUtils.strHexOrStrNumberToBigInteger(args.getGasPrice()))
                 .gasLimit(HexUtils.strHexOrStrNumberToBigInteger(args.getGasLimit()))
-                .destination(HexUtils.strHexOrStrNumberToByteArray(args.getTo()))
+                .receiveAddress(HexUtils.strHexOrStrNumberToByteArray(args.getTo()))
                 .chainId(chainId)
                 .value(HexUtils.strHexOrStrNumberToBigInteger(args.getValue()))
                 .build();

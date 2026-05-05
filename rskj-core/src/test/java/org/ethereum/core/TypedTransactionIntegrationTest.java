@@ -172,7 +172,7 @@ class TypedTransactionIntegrationTest {
                 .gasLimit(BigInteger.valueOf(21_000))
                 .maxPriorityFeePerGas(Coin.valueOf(5_000_000_000L))
                 .maxFeePerGas(Coin.valueOf(10_000_000_000L))
-                .destination(receiver.getAddress().getBytes())
+                .receiveAddress(receiver.getAddress().getBytes())
                 .value(Coin.ZERO)
                 .build();
         original.sign(sender.getEcKey().getPrivKeyBytes());
@@ -547,7 +547,7 @@ class TypedTransactionIntegrationTest {
                 .nonce(BigInteger.valueOf(nonce))
                 .gasPrice(GAS_PRICE)
                 .gasLimit(BigInteger.valueOf(21_000))
-                .destination(receiver.getAddress().getBytes())
+                .receiveAddress(receiver.getAddress().getBytes())
                 .value(Coin.valueOf(1))
                 .chainId(CHAIN_ID)
                 .build();
@@ -562,7 +562,7 @@ class TypedTransactionIntegrationTest {
                 .nonce(BigInteger.valueOf(nonce))
                 .gasPrice(GAS_PRICE)
                 .gasLimit(BigInteger.valueOf(21_000))
-                .destination(receiver.getAddress().getBytes())
+                .receiveAddress(receiver.getAddress().getBytes())
                 .value(Coin.valueOf(1))
                 .build();
         tx.sign(sender.getEcKey().getPrivKeyBytes());
@@ -582,7 +582,7 @@ class TypedTransactionIntegrationTest {
                 .gasLimit(BigInteger.valueOf(gasLimit))
                 .maxPriorityFeePerGas(maxPriorityFeePerGas)
                 .maxFeePerGas(maxFeePerGas)
-                .destination(receiver.getAddress().getBytes())
+                .receiveAddress(receiver.getAddress().getBytes())
                 .value(Coin.valueOf(value))
                 .build();
         tx.sign(sender.getEcKey().getPrivKeyBytes());
@@ -591,14 +591,13 @@ class TypedTransactionIntegrationTest {
 
     private Transaction buildRskNamespace(int nonce, byte subtype) {
         Transaction tx = Transaction.builder()
-                .type(TransactionType.TYPE_2)
+                .type(TransactionType.TYPE_2, subtype)
                 .chainId(CHAIN_ID)
                 .nonce(BigInteger.valueOf(nonce))
                 .gasPrice(GAS_PRICE)
                 .gasLimit(BigInteger.valueOf(21_000))
-                .destination(receiver.getAddress().getBytes())
+                .receiveAddress(receiver.getAddress().getBytes())
                 .value(Coin.valueOf(1))
-                .rskSubtype(subtype)
                 .build();
         tx.sign(sender.getEcKey().getPrivKeyBytes());
         return tx;

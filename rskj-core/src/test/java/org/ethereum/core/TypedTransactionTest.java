@@ -275,7 +275,7 @@ class TypedTransactionTest {
                 .maxPriorityFeePerGas(Coin.valueOf(10))
                 .maxFeePerGas(Coin.valueOf(100))
                 .gasLimit(BigInteger.valueOf(21_000))
-                .destination(TEST_ADDRESS)
+                .receiveAddress(TEST_ADDRESS)
                 .value(Coin.ZERO)
                 .data(EMPTY_DATA)
                 .chainId((byte) 33)
@@ -299,7 +299,8 @@ class TypedTransactionTest {
         args.setChainId("0x21");
         args.setType("0x1");
 
-        Transaction tx = new Transaction(args, () -> "0", (byte) 33);
+
+        Transaction tx = Transaction.fromCallArguments(args, () -> "0", (byte) 33);
         tx.sign(TEST_KEY.getPrivKeyBytes());
 
         byte[] encoded = tx.getEncoded();
@@ -323,7 +324,7 @@ class TypedTransactionTest {
         args.setChainId("0x21");
         args.setType("0x2");
 
-        Transaction tx = new Transaction(args, () -> "0", (byte) 33);
+        Transaction tx = Transaction.fromCallArguments(args, () -> "0", (byte) 33);
         tx.sign(TEST_KEY.getPrivKeyBytes());
 
         byte[] encoded = tx.getEncoded();
@@ -348,8 +349,7 @@ class TypedTransactionTest {
         // Intentionally omit nonce; the supplier must produce it.
         BigInteger nonce = BigInteger.valueOf(nonceValue);
 
-        Transaction tx = new Transaction(args, nonce::toString, (byte) 33);
-
+        Transaction tx = Transaction.fromCallArguments(args, nonce::toString, (byte) 33);
         assertEquals(nonce, new BigInteger(1, tx.getNonce()),
             "Nonce supplied by the RPC nonce supplier must be parsed as the same numeric value");
     }
@@ -373,7 +373,7 @@ class TypedTransactionTest {
         ));
         args.setAccessList(java.util.List.of(entry));
 
-        Transaction tx = new Transaction(args, () -> "0", (byte) 33);
+        Transaction tx = Transaction.fromCallArguments(args, () -> "0", (byte) 33);
         tx.sign(TEST_KEY.getPrivKeyBytes());
 
         Transaction reparsed = new Transaction(tx.getEncoded());
@@ -419,7 +419,7 @@ class TypedTransactionTest {
         ));
         args.setAccessList(java.util.List.of(entry));
 
-        Transaction tx = new Transaction(args, () -> "0", (byte) 33);
+        Transaction tx = Transaction.fromCallArguments(args, () -> "0", (byte) 33);
         tx.sign(TEST_KEY.getPrivKeyBytes());
 
         Transaction reparsed = new Transaction(tx.getEncoded());
@@ -443,7 +443,7 @@ class TypedTransactionTest {
                 .maxPriorityFeePerGas(Coin.valueOf(50))
                 .maxFeePerGas(Coin.valueOf(20))
                 .gasLimit(BigInteger.valueOf(21_000))
-                .destination(TEST_ADDRESS)
+                .receiveAddress(TEST_ADDRESS)
                 .value(Coin.ZERO)
                 .data(EMPTY_DATA)
                 .chainId((byte) 33)
@@ -478,7 +478,7 @@ class TypedTransactionTest {
                     .nonce(nonce)
                     .gasPrice(Coin.valueOf(1_000_000_000))
                     .gasLimit(BigInteger.valueOf(21_000))
-                    .destination(TEST_ADDRESS)
+                    .receiveAddress(TEST_ADDRESS)
                     .value(Coin.valueOf(1_000_000_000_000_000_000L))
                     .data(data)
                     .build();
@@ -491,14 +491,15 @@ class TypedTransactionTest {
                     .maxPriorityFeePerGas(Coin.valueOf(1_000_000_000))
                     .maxFeePerGas(Coin.valueOf(1_000_000_000))
                     .gasLimit(BigInteger.valueOf(21_000))
-                    .destination(TEST_ADDRESS)
+                    .receiveAddress(TEST_ADDRESS)
                     .value(Coin.valueOf(1_000_000_000_000_000_000L))
                     .data(data)
                     .build();
         }
 
         byte[] gasPrice = Coin.valueOf(1_000_000_000).getBytes();
-        return new Transaction(nonce, gasPrice, gasLimit, receiveAddress, value, data, type);
+
+        return Transaction.builder().nonce(nonce).gasPrice(gasPrice).gasLimit(gasLimit).receiveAddress(receiveAddress).value(value).data(data).type(type).build();
     }
 
     private Transaction createSignedTransaction(TransactionType type, byte[] data) {
@@ -516,7 +517,7 @@ class TypedTransactionTest {
                     .nonce(nonce.toByteArray())
                     .gasPrice(Coin.valueOf(1_000_000_000))
                     .gasLimit(BigInteger.valueOf(21_000))
-                    .destination(TEST_ADDRESS)
+                    .receiveAddress(TEST_ADDRESS)
                     .value(value)
                     .data(data)
                     .build();
@@ -531,7 +532,7 @@ class TypedTransactionTest {
                     .maxPriorityFeePerGas(Coin.valueOf(1_000_000_000))
                     .maxFeePerGas(Coin.valueOf(1_000_000_000))
                     .gasLimit(BigInteger.valueOf(21_000))
-                    .destination(TEST_ADDRESS)
+                    .receiveAddress(TEST_ADDRESS)
                     .value(value)
                     .data(data)
                     .build();
@@ -545,8 +546,8 @@ class TypedTransactionTest {
         byte[] receiveAddress = TEST_ADDRESS.getBytes();
         byte[] valueBytes = value.getBytes();
 
-        Transaction tx = new Transaction(nonceBytes, gasPrice, gasLimit, receiveAddress,
-            valueBytes, data, type);
+
+        Transaction tx = Transaction.builder().nonce(nonceBytes).gasPrice(gasPrice).gasLimit(gasLimit).receiveAddress(receiveAddress).value(valueBytes).data(data).type(type).build();
         tx.sign(TEST_KEY.getPrivKeyBytes());
         return tx;
     }

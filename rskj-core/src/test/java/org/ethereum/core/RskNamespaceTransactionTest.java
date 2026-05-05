@@ -49,21 +49,16 @@ class RskNamespaceTransactionTest {
     }
 
     private Transaction createRskTransaction(byte rskSubtype) {
-        return new Transaction(
-            TEST_NONCE,
-            TEST_GAS_PRICE,
-            TEST_GAS_LIMIT,
-            TEST_ADDRESS,
-            TEST_VALUE,
-            TEST_DATA,
-            TEST_CHAIN_ID,
-            false,
-            TransactionType.TYPE_2,
-            rskSubtype,
-            null,
-        null,
-            null
-        );
+        return  Transaction.builder().nonce(TEST_NONCE)
+                .gasPrice(TEST_GAS_PRICE)
+                .gasLimit(TEST_GAS_LIMIT)
+                .receiveAddress(TEST_ADDRESS)
+                .value(TEST_VALUE)
+                .data(TEST_DATA)
+                .chainId(TEST_CHAIN_ID)
+                .type(TransactionType.TYPE_2, rskSubtype)
+                .isLocalCall(false)
+                .build();
     }
 
     private Transaction createSignedRskTransaction(byte rskSubtype) {
@@ -151,34 +146,32 @@ class RskNamespaceTransactionTest {
         assertDoesNotThrow(() -> createRskTransaction((byte) 0x00));
         assertDoesNotThrow(() -> createRskTransaction((byte) 0x7f));
 
-        assertThrows(IllegalArgumentException.class, () -> new Transaction(
-            TEST_NONCE,
-            TEST_GAS_PRICE,
-            TEST_GAS_LIMIT,
-            TEST_ADDRESS,
-            TEST_VALUE,
-            TEST_DATA,
-            TEST_CHAIN_ID,
-            false,
-            TransactionType.TYPE_2,
-            (byte) 0x80
-        ));
+        assertThrows(IllegalArgumentException.class, () ->
+                Transaction.builder().nonce(TEST_NONCE)
+                        .gasPrice(TEST_GAS_PRICE)
+                        .gasLimit(TEST_GAS_LIMIT)
+                        .receiveAddress(TEST_ADDRESS)
+                        .value(TEST_VALUE)
+                        .data(TEST_DATA)
+                        .chainId(TEST_CHAIN_ID)
+                        .type(TransactionType.TYPE_2,  (byte) 0x80)
+                        .isLocalCall(false)
+                        .build());
     }
 
     @Test
     void rskSubtypeOnlyWithType2() {
-        assertThrows(IllegalArgumentException.class, () -> new Transaction(
-            TEST_NONCE,
-            TEST_GAS_PRICE,
-            TEST_GAS_LIMIT,
-            TEST_ADDRESS,
-            TEST_VALUE,
-            TEST_DATA,
-            TEST_CHAIN_ID,
-            false,
-            TransactionType.TYPE_1,
-            (byte) 0x03
-        ));
+        assertThrows(IllegalArgumentException.class, () ->
+                        Transaction.builder().nonce(TEST_NONCE)
+                                .gasPrice(TEST_GAS_PRICE)
+                                .gasLimit(TEST_GAS_LIMIT)
+                                .receiveAddress(TEST_ADDRESS)
+                                .value(TEST_VALUE)
+                                .data(TEST_DATA)
+                                .chainId(TEST_CHAIN_ID)
+                                .type(TransactionType.TYPE_1, (byte) 0x03)
+                                .isLocalCall(false)
+                                .build());
     }
 
     @Test
@@ -189,57 +182,60 @@ class RskNamespaceTransactionTest {
         rskTx = createRskTransaction((byte) 0x0a);
         assertEquals("0x020a", rskTx.getFullTypeString());
 
-        Transaction type1Tx = new Transaction(
-            TEST_NONCE,
-            TEST_GAS_PRICE,
-            TEST_GAS_LIMIT,
-            TEST_ADDRESS,
-            TEST_VALUE,
-            TEST_DATA,
-            TEST_CHAIN_ID,
-            false,
-            TransactionType.TYPE_1,
-            null
-        );
+        Transaction type1Tx = Transaction.builder().nonce(TEST_NONCE)
+                .gasPrice(TEST_GAS_PRICE)
+                .gasLimit(TEST_GAS_LIMIT)
+                .receiveAddress(TEST_ADDRESS)
+                .value(TEST_VALUE)
+                .data(TEST_DATA)
+                .chainId(TEST_CHAIN_ID)
+                .type(TransactionType.TYPE_1)
+                .isLocalCall(false)
+                .build();
+
         assertEquals("0x01", type1Tx.getFullTypeString());
 
-        Transaction legacyTx = new Transaction(
-            TEST_NONCE,
-            TEST_GAS_PRICE.getBytes(),
-            TEST_GAS_LIMIT,
-            TEST_ADDRESS.getBytes(),
-            TEST_VALUE.getBytes(),
-            TEST_DATA
-        );
+        Transaction legacyTx = Transaction.builder().nonce(TEST_NONCE)
+                .gasPrice(TEST_GAS_PRICE)
+                .gasLimit(TEST_GAS_LIMIT)
+                .receiveAddress(TEST_ADDRESS)
+                .value(TEST_VALUE)
+                .data(TEST_DATA)
+                .chainId((byte) 0)
+                .type(TransactionType.LEGACY)
+                .isLocalCall(false)
+                .build();
+
         assertEquals("0x00", legacyTx.getFullTypeString());
     }
 
     @Test
     void getRskSubtypeThrowsForNonRskTransaction() {
-        Transaction legacyTx = new Transaction(
-            TEST_NONCE,
-            TEST_GAS_PRICE.getBytes(),
-            TEST_GAS_LIMIT,
-            TEST_ADDRESS.getBytes(),
-            TEST_VALUE.getBytes(),
-            TEST_DATA
-        );
+        Transaction legacyTx = Transaction.builder().nonce(TEST_NONCE)
+                .gasPrice(TEST_GAS_PRICE)
+                .gasLimit(TEST_GAS_LIMIT)
+                .chainId( (byte) 0 )
+                .receiveAddress(TEST_ADDRESS)
+                .value(TEST_VALUE)
+                .data(TEST_DATA)
+                .chainId(TEST_CHAIN_ID)
+                .type(TransactionType.LEGACY)
+                .isLocalCall(false)
+                .build();
+
 
         assertFalse(legacyTx.isRskNamespaceTransaction());
         assertThrows(UnsupportedOperationException.class, legacyTx::getRskSubtype);
-
-        Transaction type1Tx = new Transaction(
-            TEST_NONCE,
-            TEST_GAS_PRICE,
-            TEST_GAS_LIMIT,
-            TEST_ADDRESS,
-            TEST_VALUE,
-            TEST_DATA,
-            TEST_CHAIN_ID,
-            false,
-            TransactionType.TYPE_1,
-            null
-        );
+        Transaction type1Tx = Transaction.builder().nonce(TEST_NONCE)
+                .gasPrice(TEST_GAS_PRICE)
+                .gasLimit(TEST_GAS_LIMIT)
+                .receiveAddress(TEST_ADDRESS)
+                .value(TEST_VALUE)
+                .data(TEST_DATA)
+                .chainId(TEST_CHAIN_ID)
+                .type(TransactionType.TYPE_1)
+                .isLocalCall(false)
+                .build();
 
         assertFalse(type1Tx.isRskNamespaceTransaction());
         assertThrows(UnsupportedOperationException.class, type1Tx::getRskSubtype);
@@ -302,14 +298,16 @@ class RskNamespaceTransactionTest {
 
     @Test
     void backwardCompatibilityLegacy() {
-        Transaction legacy = new Transaction(
-            TEST_NONCE,
-            TEST_GAS_PRICE.getBytes(),
-            TEST_GAS_LIMIT,
-            TEST_ADDRESS.getBytes(),
-            TEST_VALUE.getBytes(),
-            TEST_DATA
-        );
+        Transaction legacy = Transaction.builder().nonce(TEST_NONCE)
+                .gasPrice(TEST_GAS_PRICE)
+                .gasLimit(TEST_GAS_LIMIT)
+                .receiveAddress(TEST_ADDRESS)
+                .value(TEST_VALUE)
+                .data(TEST_DATA)
+                .chainId((byte) 0)
+                .type(TransactionType.LEGACY)
+                .isLocalCall(false)
+                .build();
 
         assertFalse(legacy.isRskNamespaceTransaction());
         assertEquals(TransactionType.LEGACY, legacy.getType());
@@ -322,19 +320,16 @@ class RskNamespaceTransactionTest {
 
     @Test
     void backwardCompatibilityStandardTyped() {
-        Transaction type1 = new Transaction(
-            TEST_NONCE,
-            TEST_GAS_PRICE,
-            TEST_GAS_LIMIT,
-            TEST_ADDRESS,
-            TEST_VALUE,
-            TEST_DATA,
-            TEST_CHAIN_ID,
-            false,
-            TransactionType.TYPE_1,
-            null
-        );
-
+        Transaction type1 = Transaction.builder().nonce(TEST_NONCE)
+                .gasPrice(TEST_GAS_PRICE)
+                .gasLimit(TEST_GAS_LIMIT)
+                .receiveAddress(TEST_ADDRESS)
+                .value(TEST_VALUE)
+                .data(TEST_DATA)
+                .chainId(TEST_CHAIN_ID)
+                .type(TransactionType.TYPE_1)
+                .isLocalCall(false)
+                .build();
         assertFalse(type1.isRskNamespaceTransaction());
         assertEquals(TransactionType.TYPE_1, type1.getType());
 

@@ -207,7 +207,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         String txHash = null;
 
         synchronized (transactionPool) {
-            Transaction tx = new Transaction(args, getAccountNextNonce(senderAccount),  constants.getChainId());
+            Transaction tx = Transaction.fromCallArguments(args, getAccountNextNonce(senderAccount),  constants.getChainId());
             tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
             tx.checkInvalidChain(constants, ""+tx.getChainId());
 

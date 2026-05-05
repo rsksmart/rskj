@@ -46,7 +46,7 @@ public final class RawTransactionEnvelopeParser {
             case LEGACY -> type0Parser;
             case TYPE_1 -> type1Parser;
             case TYPE_2 -> typePrefix.isRskNamespace() ? type0Parser : type2Parser;
-            case TYPE_3, TYPE_4 -> null;
+            case TYPE_3, TYPE_4 -> throw new IllegalArgumentException("Unsupported transaction type: " + typePrefix);
         };
     }
 }

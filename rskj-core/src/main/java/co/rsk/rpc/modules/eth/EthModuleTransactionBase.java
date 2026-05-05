@@ -85,10 +85,10 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
         try {
             synchronized (transactionPool) {
-                Transaction tx = new Transaction(args, getAccountNextNonce(senderAccount),  constants.getChainId());
+                Transaction tx = Transaction.fromCallArguments(args, getAccountNextNonce(senderAccount),  constants.getChainId());
                 tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
                 tx.checkInvalidChain(constants, ""+tx.getChainId());
-                TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx.toImmutableTransaction());
+                TransactionPoolAddResult result = transactionGateway.receiveTransaction(new ImmutableTransaction(tx.getEncoded()));
                 if (!result.transactionsWereAdded()) {
                     throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
                 }
@@ -112,7 +112,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
     public String sendRawTransaction(HexDataParam rawData) {
         String s = null;
         try {
-            Transaction tx = new ImmutableTransaction(rawData.getRawDataBytes());
+            Transaction tx =  new ImmutableTransaction(rawData.getRawDataBytes());
             tx.checkInvalidChain(constants, ""+tx.getChainId());
 
             TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx);

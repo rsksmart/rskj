@@ -470,7 +470,7 @@ class Rskip546HardforkTest {
                     .nonce(BigInteger.ZERO)
                     .gasPrice(Coin.valueOf(1_000_000_000L))
                     .gasLimit(BigInteger.valueOf(21_000))
-                    .destination(receiver.getAddress())
+                    .receiveAddress(receiver.getAddress())
                     .value(Coin.valueOf(1))
                     .build();
             typedTx.sign(sender.getEcKey().getPrivKeyBytes());
@@ -513,7 +513,7 @@ class Rskip546HardforkTest {
                     .nonce(BigInteger.ZERO)
                     .gasPrice(Coin.valueOf(1_000_000_000L))
                     .gasLimit(BigInteger.valueOf(21_000))
-                    .destination(new co.rsk.core.RskAddress(new byte[20]))
+                    .receiveAddress(new co.rsk.core.RskAddress(new byte[20]))
                     .value(Coin.valueOf(1))
                     .build();
 
@@ -552,7 +552,7 @@ class Rskip546HardforkTest {
                     .nonce(BigInteger.ZERO)
                     .gasPrice(Coin.valueOf(1_000_000_000L))
                     .gasLimit(BigInteger.valueOf(21_000))
-                    .destination(receiver.getAddress())
+                    .receiveAddress(receiver.getAddress())
                     .value(Coin.valueOf(1))
                     .build();
             typedTx.sign(sender.getEcKey().getPrivKeyBytes());
@@ -593,7 +593,7 @@ class Rskip546HardforkTest {
                     .nonce(BigInteger.ZERO)
                     .gasPrice(Coin.valueOf(1_000_000_000L))
                     .gasLimit(BigInteger.valueOf(21_000))
-                    .destination(receiverOff.getAddress())
+                    .receiveAddress(receiverOff.getAddress())
                     .value(Coin.valueOf(1))
                     .build();
             legacyOff.sign(senderOff.getEcKey().getPrivKeyBytes());
@@ -624,7 +624,7 @@ class Rskip546HardforkTest {
                     .nonce(BigInteger.ZERO)
                     .gasPrice(Coin.valueOf(1_000_000_000L))
                     .gasLimit(BigInteger.valueOf(21_000))
-                    .destination(receiverOn.getAddress())
+                    .receiveAddress(receiverOn.getAddress())
                     .value(Coin.valueOf(1))
                     .build();
             legacyOn.sign(senderOn.getEcKey().getPrivKeyBytes());

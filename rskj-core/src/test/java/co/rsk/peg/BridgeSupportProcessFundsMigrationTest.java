@@ -242,7 +242,7 @@ class BridgeSupportProcessFundsMigrationTest {
             .nonce(nonce)
             .gasPrice(gasPrice)
             .gasLimit(gasLimit)
-            .destination(Hex.decode(TO_ADDRESS))
+            .receiveAddress(Hex.decode(TO_ADDRESS))
             .data(Hex.decode(DATA))
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(dustAmount)

@@ -97,7 +97,7 @@ class TypedTransactionSecurityTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(GAS_PRICE)
                 .gasLimit(BigInteger.valueOf(21_000))
-                .destination(TEST_ADDRESS)
+                .receiveAddress(TEST_ADDRESS)
                 .value(Coin.ZERO)
                 .build();
         built.sign(TEST_KEY.getPrivKeyBytes());
@@ -199,7 +199,7 @@ class TypedTransactionSecurityTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(GAS_PRICE)
                 .gasLimit(BigInteger.valueOf(21_000))
-                .destination(TEST_ADDRESS)
+                .receiveAddress(TEST_ADDRESS)
                 .value(Coin.ZERO)
                 .accessList(accessListRlp)
                 .build();
@@ -297,7 +297,7 @@ class TypedTransactionSecurityTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(GAS_PRICE)
                 .gasLimit(BigInteger.valueOf(21_000))
-                .destination(TEST_ADDRESS)
+                .receiveAddress(TEST_ADDRESS)
                 .value(Coin.ZERO)
                 .build();
         tx.sign(TEST_KEY.getPrivKeyBytes());
@@ -312,7 +312,7 @@ class TypedTransactionSecurityTest {
                 .gasLimit(BigInteger.valueOf(21_000))
                 .maxPriorityFeePerGas(GAS_PRICE)
                 .maxFeePerGas(GAS_PRICE)
-                .destination(TEST_ADDRESS)
+                .receiveAddress(TEST_ADDRESS)
                 .value(Coin.ZERO)
                 .build();
         tx.sign(TEST_KEY.getPrivKeyBytes());

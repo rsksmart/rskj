@@ -90,7 +90,7 @@ class BlockBodyCodecTest {
                 .nonce(BigInteger.ONE.toByteArray())
                 .gasPrice(Coin.valueOf(1_000_000_000))
                 .gasLimit(BigInteger.valueOf(21_000))
-                .destination(TEST_ADDRESS)
+                .receiveAddress(TEST_ADDRESS)
                 .value(Coin.valueOf(1))
                 .build();
         tx.sign(TEST_KEY.getPrivKeyBytes());

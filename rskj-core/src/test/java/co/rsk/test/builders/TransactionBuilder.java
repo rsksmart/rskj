@@ -151,7 +151,7 @@ public class TransactionBuilder {
 
     private Transaction createSignedTransaction(String to, BigInteger nonce, BigInteger gasLimit, BigInteger gasPrice, byte chainId, byte[] data, BigInteger value, byte[] privKeyBytes, boolean immutable) {
         org.ethereum.core.TransactionBuilder txBuilder = org.ethereum.core.Transaction.builder()
-                .destination(to)
+                .receiveAddress(to)
                 .nonce(nonce)
                 .gasLimit(gasLimit)
                 .gasPrice(gasPrice)
@@ -177,7 +177,7 @@ public class TransactionBuilder {
         }
         
         if (this.rskSubtype != null) {
-            txBuilder.rskSubtype(this.rskSubtype);
+            txBuilder.type(TransactionType.TYPE_2, this.rskSubtype);
         }
         
         Transaction tx = txBuilder.build();
