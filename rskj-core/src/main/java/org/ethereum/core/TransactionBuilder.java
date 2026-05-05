@@ -178,30 +178,4 @@ public final class TransactionBuilder {
 	public TransactionBuilder data(String data) {
 		return this.data(data == null ? null : Hex.decode(data));
 	}
-
-	public TransactionBuilder withTransactionArguments(TransactionArguments args) {
-
-		nonce(args.getNonce());
-		gasPrice(args.getGasPrice());
-		if (args.getMaxPriorityFeePerGas() != null) {
-			maxPriorityFeePerGas(new Coin(args.getMaxPriorityFeePerGas()));
-		}
-		if (args.getMaxFeePerGas() != null) {
-			maxFeePerGas(new Coin(args.getMaxFeePerGas()));
-		}
-		gasLimit(args.getGasLimit());
-		destination(args.getTo());
-		data(args.getData());
-		chainId(args.getChainId());
-		value(BigIntegers.asUnsignedByteArray(args.getValue()));
-        type(args.getType());
-        rskSubtype(args.getRskSubtype());
-		if (args.getAccessListBytes() != null) {
-			accessList(args.getAccessListBytes());
-		}
-
-		return this;
-
-	}
-
 }
