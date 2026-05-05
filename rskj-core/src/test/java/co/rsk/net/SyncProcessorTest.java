@@ -1222,7 +1222,7 @@ class SyncProcessorTest {
                 .nonce(nonce)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(Hex.decode(toAddress))
+                .receiveAddress(Hex.decode(toAddress))
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(value)
                 .build();

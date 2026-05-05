@@ -34,13 +34,9 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.exception.TransactionException;
 import org.ethereum.core.transaction.encoder.TransactionEncoderFactory;
-import org.ethereum.core.transaction.encoder.Type0TransactionEncoder;
-import org.ethereum.core.transaction.encoder.Type1TransactionEncoder;
-import org.ethereum.core.transaction.encoder.Type2TransactionEncoder;
 import org.ethereum.core.transaction.parser.ParsedRawTransaction;
 import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
 import org.ethereum.core.transaction.TransactionType;
-import org.ethereum.core.transaction.temp.ParsedRawTransactionAdapter;
 import org.ethereum.cost.InitcodeCostCalculator;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
@@ -64,8 +60,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 import static co.rsk.util.ListArrayUtil.getLength;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 
 /**
  * A transaction (formally, T) is a single cryptographically
@@ -87,12 +82,6 @@ public class Transaction {
      */
     public static final byte CHAIN_ID_INC = 35;
     public static final byte LOWER_REAL_V = 27;
-
-
-
-    /** Empty RLP list (0xc0) for default access list */
-    private static final byte[] EMPTY_ACCESS_LIST_RLP = new byte[]{(byte) 0xc0};
-
     private final TransactionTypePrefix typePrefix;
 
     protected RskAddress sender;
@@ -133,129 +122,82 @@ public class Transaction {
     private final Coin maxPriorityFeePerGas;
     private final Coin maxFeePerGas;
 
+    public static TransactionBuilder builder() {
+        return new TransactionBuilder();
+    }
+
+    public static Transaction fromRaw(byte[] rawData) {
+        return fromParsed(RawTransactionEnvelopeParser.parse(rawData), false);
+    }
+
+    public static Transaction fromCallArguments(CallArguments args, Supplier<String> nonceSupplier, byte defaultChainId) {
+        return fromParsed(RawTransactionEnvelopeParser.parse(args, nonceSupplier, defaultChainId), false);
+    }
+
     protected Transaction(byte[] rawData) {
-        this(RawTransactionEnvelopeParser.parse(rawData), false);
+        this(fromParsed(RawTransactionEnvelopeParser.parse(rawData), false));
     }
 
-    public Transaction(CallArguments argsParam, Supplier<String> nonceSupplier){ //temp
-        this(RawTransactionEnvelopeParser.parse(argsParam, nonceSupplier), false);
-    }
-
-    //TEMPORAL
-    private Transaction(ParsedRawTransaction args, boolean isLocalCall) {
-        this(new ParsedRawTransactionAdapter(args), isLocalCall);
-    }
-    //TEMPORAL
-    private Transaction(ParsedRawTransactionAdapter args, boolean isLocalCall) {
-        this(
-                args.nonce(),
-                args.effectiveGasPrice(),
-                args.gasLimit(),
-                args.receiveAddress(),
-                args.value(),
-                args.data(),
-                args.chainId(),
-                isLocalCall,
-                args.typePrefix(),
-                args.accessListBytes(),
-                args.maxPriorityFeePerGas(),
-                args.maxFeePerGas()
-        );
-        if (null == this.getGasLimit() || null == this.getGasPrice() || null == this.getValue()) {
-            throw invalidParamError("Missing parameter, gasPrice, gas or value");
-        }
-
-        this.signature = args.signature();
-    }
-
-    /* creation contract tx
-     * [ nonce, gasPrice, gasLimit, "", endowment, init, signature(v, r, s) ]
-     * or simple send tx
-     * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
-     */
-    protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, TransactionType.LEGACY);
-    }
-
-    protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, TransactionType type) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, type);
-    }
-
-    protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
-                          byte chainId, TransactionType type) {
-        this(
-                nonce,
+    //TYPE-0 Constructor.
+    protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data) {
+        this(   nonce,
                 RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw)),
                 gasLimit,
                 RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress)),
                 RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw)),
                 data,
-                chainId,
+                (byte) 0,
                 false,
-                TransactionTypePrefix.typed(type)
+                TransactionTypePrefix.typed(TransactionType.LEGACY),
+                null,
+                null,
+                null
         );
+
     }
 
-    /** Constructor with optional RSK namespace subtype. */
-    protected Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
-                          byte chainId, final boolean localCall, TransactionType type, Byte rskSubtype) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId, localCall,
-                TransactionTypePrefix.of(type, rskSubtype));
+    private Transaction(Transaction tx) {
+        this(
+                tx.nonce,
+                tx.gasPrice,
+                tx.gasLimit,
+                tx.receiveAddress,
+                tx.value,
+                tx.data,
+                tx.chainId,
+                tx.isLocalCall,
+                tx.typePrefix,
+                tx.accessListBytes,
+                tx.maxPriorityFeePerGas,
+                tx.maxFeePerGas
+        );
+
+        this.signature = tx.signature;
+    }
+    private static Transaction fromParsed(ParsedRawTransaction parsed, boolean isLocalCall) {
+        Transaction tx = TransactionBuilder.fromParsed(parsed)
+                .isLocalCall(isLocalCall)
+                .build();
+        tx.signature = parsed.signature();
+        return tx;
     }
 
-    protected Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
-                          byte chainId, final boolean localCall, TransactionType type, Byte rskSubtype, byte[] accessListBytes,
-                          @Nullable Coin maxPriorityFeePerGas, @Nullable Coin maxFeePerGas) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId, localCall,
-                TransactionTypePrefix.of(type, rskSubtype), accessListBytes, maxPriorityFeePerGas, maxFeePerGas);
-    }
-
-
-    /** Canonical constructor used by all overloads. */
-    public Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
-                       byte chainId, final boolean localCall, TransactionTypePrefix typePrefix) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId, localCall, typePrefix,
-                typePrefix.type() == TransactionType.TYPE_1
-                        || (typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace())
-                        ? EMPTY_ACCESS_LIST_RLP : null,
-                typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace() ? gasPriceRaw : null,
-                typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace() ? gasPriceRaw : null);
-    }
-
-    /** Canonical constructor with optional access list for Type 1 and Type 2 (max fee fields null). */
-    public Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
-                       byte chainId, final boolean localCall, TransactionTypePrefix typePrefix, byte[] accessListBytes) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId, localCall, typePrefix,
-                accessListBytes, null, null);
-    }
-
-    /**
-     * Full canonical constructor: access list RLP and optional Type 2 max fees (RSK namespace uses null max fees).
-     */
     public Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
                           byte chainId, final boolean localCall, TransactionTypePrefix typePrefix, byte[] accessListBytes,
                           @Nullable Coin maxPriorityFeePerGas, @Nullable Coin maxFeePerGas) {
+
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = gasPriceRaw;
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
         this.receiveAddress = receiveAddress;
         this.value = valueRaw;
-       // this.data = ByteUtil.cloneBytes(data);
-        this.data = data;
+        this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = localCall;
         this.typePrefix = typePrefix;
         this.accessListBytes = accessListBytes == null ? null : accessListBytes.clone();
         this.maxPriorityFeePerGas = maxPriorityFeePerGas;
         this.maxFeePerGas = maxFeePerGas;
-    }
-
-    public static TransactionBuilder builder() {
-        return new TransactionBuilder();
-    }
-
-    public Transaction toImmutableTransaction() {
-        return new ImmutableTransaction(this.getEncoded());
     }
 
     // There was a method called NEW_getTransactionCost that implemented this alternative solution:
@@ -563,7 +505,7 @@ public class Transaction {
     public TransactionType getType() {
         return typePrefix.type();
     }
-    
+
     public boolean isRskNamespaceTransaction() {
         return typePrefix.isRskNamespace();
     }

@@ -41,4 +41,5 @@ public sealed interface ParsedRawTransaction
         SignatureState state = signatureState();
         return state instanceof SignedSignature signed ? signed.signature() : null;
     }
+
 }

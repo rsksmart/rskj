@@ -21,13 +21,14 @@ package org.ethereum.util;
 import java.math.BigInteger;
 
 import co.rsk.core.Coin;
+import org.ethereum.config.Constants;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionBuilder;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.parser.ParsedRawTransaction;
 import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
 import org.ethereum.core.transaction.parser.util.TransactionTypeRpcParser;
-import org.ethereum.core.transaction.temp.ParsedRawTransactionAdapter;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -50,15 +51,16 @@ class TransactionArgumentsUtilTest {
 
 		CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
 
-		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null);
-		ParsedRawTransactionAdapter adapter = new ParsedRawTransactionAdapter(parsedTransaction);
-		assertEquals(adapter.value().asBigInteger(), BigInteger.valueOf(100000L));
-		assertEquals(adapter.effectiveGasPrice().asBigInteger(), BigInteger.valueOf(10000000000000L));
-		assertEquals( new BigInteger(1, adapter.gasLimit()), BigInteger.valueOf(30400L));
-		assertEquals(33, adapter.chainId());
-		assertArrayEquals(new byte[] { 0x01 }, adapter.nonce());
-		assertArrayEquals(new byte[]{}, adapter.data());
-		assertArrayEquals(adapter.receiveAddress().getBytes(), receiver.getBytes());
+		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null, (byte) 33);
+		Transaction tx = TransactionBuilder.fromParsed(parsedTransaction).build();
+
+		assertEquals(tx.getValue().asBigInteger(), BigInteger.valueOf(100000L));
+		assertEquals(tx.getGasPrice().asBigInteger(), BigInteger.valueOf(10000000000000L));
+		assertEquals( new BigInteger(1, tx.getGasLimit()), BigInteger.valueOf(30400L));
+		assertEquals(33, tx.getChainId());
+		assertArrayEquals(new byte[] { 0x01 }, tx.getNonce());
+		assertArrayEquals(new byte[]{}, tx.getData());
+		assertArrayEquals(tx.getReceiveAddress().getBytes(), receiver.getBytes());
 
 	}
 
@@ -120,7 +122,7 @@ class TransactionArgumentsUtilTest {
 		args.setType("0");
 
 		assertThrows(RskJsonRpcRequestException.class,
-				() -> RawTransactionEnvelopeParser.parse(args, null));
+				() -> RawTransactionEnvelopeParser.parse(args, null, (byte) 33));
 	}
 
 	@Test
@@ -134,10 +136,10 @@ class TransactionArgumentsUtilTest {
 		args.setType("0x1");
 		args.setChainId("0x21");
 
-		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null);
-		ParsedRawTransactionAdapter adapter = new ParsedRawTransactionAdapter(parsedTransaction);
-		assertEquals(TransactionType.TYPE_1, adapter.typePrefix().type());
-		assertFalse(adapter.typePrefix().isRskNamespace());
+		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null, (byte) 33);
+		Transaction tx = TransactionBuilder.fromParsed(parsedTransaction).build();
+		assertEquals(TransactionType.TYPE_1, tx.getTypePrefix().type());
+		assertFalse(tx.getTypePrefix().isRskNamespace());
 	}
 
 	@Test
@@ -169,13 +171,14 @@ class TransactionArgumentsUtilTest {
 		args.setValue("0x0");
 		args.setType("0x2");
 		args.setRskSubtype("0x3");
+		args.setNonce("0x1");
 
 		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null, (byte) 33);
-		ParsedRawTransactionAdapter adapter = new ParsedRawTransactionAdapter(parsedTransaction);
-		assertEquals(TransactionType.TYPE_2, adapter.typePrefix().type());
-		assertTrue(adapter.typePrefix().isRskNamespace(),
+		Transaction tx = TransactionBuilder.fromParsed(parsedTransaction).build();
+		assertEquals(TransactionType.TYPE_2, tx.getTypePrefix().type());
+		assertTrue(tx.getTypePrefix().isRskNamespace(),
 				"Type 2 with an RSK subtype must be parsed as the RSK-namespace variant (0x02 || subtype || legacy)");
-		assertEquals((byte) 0x03, adapter.typePrefix().subtype());
+		assertEquals((byte) 0x03, tx.getTypePrefix().subtype());
 	}
 
 	@Test
@@ -192,14 +195,11 @@ class TransactionArgumentsUtilTest {
 		args.setType("0x2");
 		args.setChainId("0x21");
 
-		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null);
-		ParsedRawTransactionAdapter adapter = new ParsedRawTransactionAdapter(parsedTransaction);
-		assertEquals(TransactionType.TYPE_2, adapter.typePrefix().type());
-		assertFalse(adapter.typePrefix().isRskNamespace());
-		assertEquals(Coin.valueOf(10), adapter.maxPriorityFeePerGas());
-		assertEquals(Coin.valueOf(100), adapter.maxFeePerGas());
+		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null, (byte) 33);
+		Transaction tx = TransactionBuilder.fromParsed(parsedTransaction).build();
 
-		Transaction tx = new Transaction(args, null);
+		assertEquals(TransactionType.TYPE_2, tx.getTypePrefix().type());
+		assertFalse(tx.getTypePrefix().isRskNamespace());
 		assertEquals(Coin.valueOf(10), tx.getMaxPriorityFeePerGas());
 		assertEquals(Coin.valueOf(100), tx.getMaxFeePerGas());
 		assertEquals(Coin.valueOf(10), tx.getGasPrice());
@@ -222,7 +222,7 @@ class TransactionArgumentsUtilTest {
 		args.setMaxFeePerGas("0x64");
 
 		assertThrows(RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId()));
+				() ->  RawTransactionEnvelopeParser.parse(args, null, Constants.regtest().getChainId()));
 	}
 
 	@Test
@@ -231,7 +231,7 @@ class TransactionArgumentsUtilTest {
 		args.setMaxPriorityFeePerGas("0x5");
 
 		assertThrows(RskJsonRpcRequestException.class,
-				() -> TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId()));
+				() -> RawTransactionEnvelopeParser.parse(args, null, Constants.regtest().getChainId()));
 	}
 
 	@Test
@@ -240,9 +240,11 @@ class TransactionArgumentsUtilTest {
 		args.setGasPrice("0x1");
 		args.setRskSubtype("0x3");
 
-		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId());
-		assertEquals(TransactionType.TYPE_2, txArgs.getType());
-		assertEquals((byte) 0x03, txArgs.getRskSubtype());
+
+		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null, Constants.regtest().getChainId());
+		Transaction tx = TransactionBuilder.fromParsed(parsedTransaction).build();
+		assertEquals(TransactionType.TYPE_2, tx.getTypePrefix().type());
+		assertTrue(tx.getTypePrefix().isRskNamespace());
 	}
 
 	private static CallArguments baseType2Args() {
@@ -261,6 +263,7 @@ class TransactionArgumentsUtilTest {
 	@ValueSource(strings = {"0x0", "0x00", "0"})
 	void processArguments_chainIdZero_fallsThroughToDefault(String chainIdHex) {
 		CallArguments args = new CallArguments();
+		args.setNonce("0x1");
 		args.setFrom("0x0000000000000000000000000000000000000001");
 		args.setTo("0x0000000000000000000000000000000000000002");
 		args.setGas("0x5208");
@@ -268,9 +271,10 @@ class TransactionArgumentsUtilTest {
 		args.setValue("0x0");
 		args.setChainId(chainIdHex);
 
-		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, Constants.regtest().getChainId());
-		assertEquals(Constants.regtest().getChainId(), txArgs.getChainId(),
-				"chainId=" + chainIdHex + " must fall through to the default chainId");
+
+		ParsedRawTransaction parsedTransaction = RawTransactionEnvelopeParser.parse(args, null, Constants.regtest().getChainId());
+		Transaction tx = TransactionBuilder.fromParsed(parsedTransaction).build();
+		assertEquals(Constants.regtest().getChainId(), tx.getChainId(), "chainId=" + chainIdHex + " must fall through to the default chainId");
 	}
 
 }

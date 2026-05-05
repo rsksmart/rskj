@@ -29,7 +29,7 @@ public final class RawTransactionEnvelopeParser {
         return resolveParser(typePrefix).parse(typePrefix, txFields);
     }
 
-    public static ParsedRawTransaction parse(CallArguments argsParam, Supplier<String> nonceSupplier) {
+    public static ParsedRawTransaction parse(CallArguments argsParam, Supplier<String> nonceSupplier, byte defaultChainId) {
         if (argsParam == null ) {
             throw new IllegalArgumentException("Transaction argsParam cannot be null or empty");
         }
@@ -37,7 +37,7 @@ public final class RawTransactionEnvelopeParser {
             argsParam.setNonce(nonceSupplier.get());
         }
         TransactionTypePrefix typePrefix = TransactionTypePrefix.fromHex(argsParam.getType(), argsParam.getRskSubtype());
-        return resolveParser(typePrefix).parse(typePrefix, argsParam);
+        return resolveParser(typePrefix).parse(typePrefix, argsParam, defaultChainId);
     }
 
     private static RawTransactionTypeParser<? extends ParsedRawTransaction> resolveParser(TransactionTypePrefix typePrefix) {
@@ -45,8 +45,8 @@ public final class RawTransactionEnvelopeParser {
         return switch (type) {
             case LEGACY -> type0Parser;
             case TYPE_1 -> type1Parser;
-            case TYPE_2 -> typePrefix.isRskNamespace() ? null : type2Parser;
-            case TYPE_3, TYPE_4 -> null;
+            case TYPE_2 -> typePrefix.isRskNamespace() ? type0Parser : type2Parser;
+            case TYPE_3, TYPE_4 -> throw new IllegalArgumentException("Unsupported transaction type: " + typePrefix);
         };
     }
 }

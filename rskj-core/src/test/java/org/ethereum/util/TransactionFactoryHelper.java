@@ -112,7 +112,7 @@ public class TransactionFactoryHelper {
                 .nonce(HexUtils.stringHexToByteArray(args.getNonce()))
                 .gasPrice(HexUtils.strHexOrStrNumberToBigInteger(args.getGasPrice()))
                 .gasLimit(HexUtils.strHexOrStrNumberToBigInteger(args.getGasLimit()))
-                .destination(HexUtils.strHexOrStrNumberToByteArray(args.getTo()))
+                .receiveAddress(HexUtils.strHexOrStrNumberToByteArray(args.getTo()))
                 .chainId(chainId)
                 .value(HexUtils.strHexOrStrNumberToBigInteger(args.getValue()))
                 .build();
@@ -136,7 +136,8 @@ public class TransactionFactoryHelper {
                 Optional.ofNullable(args.getData()).filter(p -> !p.isEmpty()).map(HexDataParam::new).orElse(null),
                 Optional.ofNullable(args.getInput()).filter(p -> !p.isEmpty()).map(HexDataParam::new).orElse(null),
                 Optional.ofNullable(args.getType()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
-                Optional.ofNullable(args.getRskSubtype()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null)
+                Optional.ofNullable(args.getRskSubtype()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
+                args.getAccessList()
         );
     }
 

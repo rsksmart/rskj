@@ -159,7 +159,7 @@ public class BlockExecutorTest {
                 .nonce(nonce)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(gasLimitData)
-                .destination(to)
+                .receiveAddress(to)
                 .value(valueData)
                 .build(); // no data
         tx.sign(privateKeyBytes);
@@ -444,7 +444,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -455,7 +455,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account3.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -531,7 +531,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -542,7 +542,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account3.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -848,7 +848,7 @@ public class BlockExecutorTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(sequentialSublistGasLimit + 1))
-                .destination(receiver.getAddress())
+                .receiveAddress(receiver.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -1139,7 +1139,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -1186,7 +1186,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -1219,7 +1219,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account.getAddress()).add(BigInteger.ONE))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -1229,7 +1229,7 @@ public class BlockExecutorTest {
                 .nonce(repository.getNonce(account.getAddress()))
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(account2.getAddress())
+                .receiveAddress(account2.getAddress())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
@@ -1263,7 +1263,7 @@ public class BlockExecutorTest {
                     .nonce(BigInteger.ZERO)
                     .gasPrice(BigInteger.ONE)
                     .gasLimit(BigInteger.valueOf(21000))
-                    .destination(accounts.get((i + 1) % 2).getAddress())
+                    .receiveAddress(accounts.get((i + 1) % 2).getAddress())
                     .chainId(config.getNetworkConstants().getChainId())
                     .value(BigInteger.TEN)
                     .build();
@@ -1307,7 +1307,7 @@ public class BlockExecutorTest {
                     .nonce(BigInteger.ZERO)
                     .gasPrice(BigInteger.ONE)
                     .gasLimit(BigInteger.valueOf(21000))
-                    .destination(accounts.get(i + nTxs).getAddress())
+                    .receiveAddress(accounts.get(i + nTxs).getAddress())
                     .chainId(config.getNetworkConstants().getChainId())
                     .value(BigInteger.TEN)
                     .build();
@@ -1414,7 +1414,7 @@ public class BlockExecutorTest {
                     .nonce(BigInteger.ZERO)
                     .gasPrice(BigInteger.ONE)
                     .gasLimit(txGasLimit)
-                    .destination(accounts.get(i + numberOfTxs).getAddress())
+                    .receiveAddress(accounts.get(i + numberOfTxs).getAddress())
                     .chainId(config.getNetworkConstants().getChainId())
                     .value(BigInteger.TEN)
                     .build();

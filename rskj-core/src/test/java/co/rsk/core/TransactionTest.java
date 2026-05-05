@@ -77,7 +77,7 @@ class TransactionTest {
         Transaction tx = Transaction.builder()
                 .gasPrice(gasPrice)
                 .gasLimit(gas)
-                .destination(ecKey.getAddress())
+                .receiveAddress(ecKey.getAddress())
                 .value(value)
                 .build();
 
@@ -120,7 +120,7 @@ class TransactionTest {
         Transaction tx = Transaction.builder()
                 .gasPrice(gasPrice)
                 .gasLimit(gas)
-                .destination(ecKey.getAddress())
+                .receiveAddress(ecKey.getAddress())
                 .value(value)
                 .build();
 
@@ -302,7 +302,7 @@ class TransactionTest {
                 .nonce(BigInteger.valueOf(9))
                 .gasPrice(BigInteger.valueOf(20000000000L))
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(Hex.decode("3535353535353535353535353535353535353535"))
+                .receiveAddress(Hex.decode("3535353535353535353535353535353535353535"))
                 .chainId((byte) 1)
                 .value(BigInteger.valueOf(1000000000000000000L))
                 .build();
@@ -323,7 +323,7 @@ class TransactionTest {
                 .nonce(BigInteger.valueOf(9L))
                 .gasPrice(BigInteger.valueOf(20000000000L))
                 .gasLimit(BigInteger.valueOf(21000L))
-                .destination(Hex.decode("3535353535353535353535353535353535353535"))
+                .receiveAddress(Hex.decode("3535353535353535353535353535353535353535"))
                 .chainId((byte) 1)
                 .value(BigInteger.valueOf(1000000000000000000L))
                 .build();
@@ -341,7 +341,11 @@ class TransactionTest {
     void isContractCreationWhenReceiveAddressIsNull() {
         Transaction tx = Transaction
                 .builder()
-                .destination(RskAddress.nullAddress())
+                .receiveAddress(RskAddress.nullAddress())
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000L))
+                .chainId(chainId)
+                .value(BigInteger.ONE)
                 .build();
         assertTrue(tx.isContractCreation());
     }
@@ -353,7 +357,7 @@ class TransactionTest {
                 .nonce(BigInteger.TEN)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000L))
-                .destination(Hex.decode(""))
+                .receiveAddress(Hex.decode(""))
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
@@ -372,7 +376,7 @@ class TransactionTest {
 
         byte[] zeroAddress = Hex.decode("00");
 
-        assertThrows(RuntimeException.class, () -> builder.destination(zeroAddress));
+        assertThrows(RuntimeException.class, () -> builder.receiveAddress(zeroAddress));
     }
 
     @Test
@@ -382,7 +386,7 @@ class TransactionTest {
                 .nonce(BigInteger.TEN)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000L))
-                .destination(Hex.decode("0000000000000000000000000000000000000000"))
+                .receiveAddress(Hex.decode("0000000000000000000000000000000000000000"))
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
@@ -396,7 +400,7 @@ class TransactionTest {
                 .nonce(BigInteger.TEN)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000L))
-                .destination(Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826"))
+                .receiveAddress(Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826"))
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
@@ -410,7 +414,7 @@ class TransactionTest {
                 .nonce(BigInteger.TEN)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000L))
-                .destination(Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .receiveAddress(Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
@@ -523,7 +527,7 @@ class TransactionTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21_000))
-                .destination(new RskAddress("0000000000000000000000000000000000000002").getBytes())
+                .receiveAddress(new RskAddress("0000000000000000000000000000000000000002").getBytes())
                 .value(BigInteger.ZERO)
                 .chainId(chainId)
                 .build();
@@ -540,7 +544,7 @@ class TransactionTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21_000))
-                .destination(new RskAddress("0000000000000000000000000000000000000002").getBytes())
+                .receiveAddress(new RskAddress("0000000000000000000000000000000000000002").getBytes())
                 .value(BigInteger.ZERO)
                 .chainId(chainId)
                 .build();

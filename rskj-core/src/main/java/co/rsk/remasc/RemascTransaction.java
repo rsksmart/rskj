@@ -83,9 +83,7 @@ public class RemascTransaction extends Transaction {
                 ZERO_BYTE_ARRAY,
                 PrecompiledContracts.REMASC_ADDR.getBytes(),
                 ZERO_BYTE_ARRAY,
-                null,
-                (byte) 0,
-                TransactionType.LEGACY);
+                null);
     }
 
     @Override

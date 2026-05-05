@@ -548,7 +548,7 @@ class Rskip546DslTest {
                 .nonce(BigInteger.valueOf(99))
                 .gasPrice(Coin.valueOf(1_000_000_000L))
                 .gasLimit(BigInteger.valueOf(100_000))
-                .destination(receiver)
+                .receiveAddress(receiver)
                 .value(Coin.valueOf(1))
                 .accessList(accessListRlp)
                 .build();

@@ -23,49 +23,56 @@ import co.rsk.core.RskAddress;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.parser.ParsedRawTransaction;
+import org.ethereum.core.transaction.parser.ParsedType0Transaction;
+import org.ethereum.core.transaction.parser.ParsedType1Transaction;
+import org.ethereum.core.transaction.parser.ParsedType2RSKTransaction;
+import org.ethereum.core.transaction.parser.ParsedType2Transaction;
+import org.ethereum.core.transaction.parser.SignedSignature;
+import org.ethereum.core.transaction.parser.UnsignedSignature;
+
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 
 import java.math.BigInteger;
 
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+
 public final class TransactionBuilder {
 
-    private TransactionType type;
-	private Byte rskSubtype = null;
-	private boolean isLocalCall = false;
-	private byte[] nonce = ByteUtil.cloneBytes(null);
+	private TransactionTypePrefix typePrefix = TransactionTypePrefix.typed(TransactionType.LEGACY);
+	private static final byte[] EMPTY_ACCESS_LIST_RLP = new byte[]{(byte) 0xc0};
+
+	private boolean isLocalCall;
+	private byte[] nonce;
 	private Coin value = Coin.ZERO;
 	private RskAddress receiveAddress = RskAddress.nullAddress();
 	private Coin gasPrice = Coin.ZERO;
-	/** RSKIP-546 standard Type 2; optional if {@link #gasPrice} alone is used */
-	private Coin maxPriorityFeePerGas = null;
-	private Coin maxFeePerGas = null;
-	private byte[] gasLimit = ByteUtil.cloneBytes(null);
-	private byte[] data = ByteUtil.cloneBytes(null);
-	private byte[] accessListBytes = null;
-	private byte chainId = 0;
+	private byte[] gasLimit;
+	private byte[] data;
+	private byte chainId;
 
-	TransactionBuilder() {
+	private byte[] accessListBytes;
+	private Coin maxPriorityFeePerGas;
+	private Coin maxFeePerGas;
+
+	TransactionBuilder() {}
+
+	public TransactionBuilder type(TransactionType type) {
+		this.typePrefix = TransactionTypePrefix.typed(type);
+		return this;
+	}
+	public TransactionBuilder type(TransactionType type, Byte rskSubtype) {
+		this.typePrefix = TransactionTypePrefix.of(type, rskSubtype);
+		return this;
+	}
+	public TransactionBuilder typePrefix(TransactionTypePrefix typePrefix) {
+		this.typePrefix = typePrefix;
+		return this;
 	}
 
-	public TransactionBuilder value(BigInteger value) {
-		return this.value(BigIntegers.asUnsignedByteArray(value));
-	}
-
-	public TransactionBuilder gasLimit(BigInteger limit) {
-		return this.gasLimit(BigIntegers.asUnsignedByteArray(limit));
-	}
-
-	public TransactionBuilder gasPrice(BigInteger price) {
-		return this.gasPrice(price.toByteArray());
-	}
-
-	public TransactionBuilder nonce(BigInteger nonce) {
-		return this.nonce(BigIntegers.asUnsignedByteArray(nonce));
-	}
-
-	public TransactionBuilder isLocalCall(boolean isLocalCall) {
-		this.isLocalCall = isLocalCall;
+	public TransactionBuilder isLocalCall(boolean localCall) {
+		this.isLocalCall = localCall;
 		return this;
 	}
 
@@ -74,27 +81,83 @@ public final class TransactionBuilder {
 		return this;
 	}
 
+	public TransactionBuilder nonce(BigInteger nonce) {
+		return nonce(BigIntegers.asUnsignedByteArray(nonce));
+	}
+
+	public TransactionBuilder nonce(Coin nonce) {
+		return this.nonce(nonce.getBytes());
+	}
+
 	public TransactionBuilder value(Coin value) {
 		this.value = value;
 		return this;
 	}
 
 	public TransactionBuilder value(byte[] value) {
-		this.value(RLP.parseCoinNullZero(ByteUtil.cloneBytes(value)));
-		return this;
+		return value(RLP.parseCoinNullZero(ByteUtil.cloneBytes(value)));
 	}
 
-	public TransactionBuilder destination(RskAddress receiveAddress) {
+	public TransactionBuilder value(BigInteger value) {
+		return value(BigIntegers.asUnsignedByteArray(value));
+	}
+
+	public TransactionBuilder receiveAddress(RskAddress receiveAddress) {
 		this.receiveAddress = receiveAddress;
 		return this;
 	}
 
-	public TransactionBuilder destination(byte[] receiveAddress) {
-		return this.destination(RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress)));
+	public TransactionBuilder receiveAddress(byte[] receiveAddress) {
+		return receiveAddress(RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress)));
 	}
+
+	public TransactionBuilder receiveAddress(String receiveAddress) {
+		return receiveAddress(receiveAddress == null ? null : Hex.decode(receiveAddress));
+	}
+
 
 	public TransactionBuilder gasPrice(Coin gasPrice) {
 		this.gasPrice = gasPrice;
+		return this;
+	}
+
+	public TransactionBuilder gasPrice(byte[] gasPrice) {
+		return gasPrice(RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPrice)));
+	}
+
+	public TransactionBuilder gasPrice(BigInteger gasPrice) {
+		return gasPrice(gasPrice.toByteArray());
+	}
+
+	public TransactionBuilder gasLimit(byte[] gasLimit) {
+		this.gasLimit = ByteUtil.cloneBytes(gasLimit);
+		return this;
+	}
+
+	public TransactionBuilder gasLimit(BigInteger gasLimit) {
+		return gasLimit(BigIntegers.asUnsignedByteArray(gasLimit));
+	}
+
+	public TransactionBuilder gasLimit(Coin gasLimit) {
+		return this.gasLimit(gasLimit.getBytes());
+	}
+
+	public TransactionBuilder data(byte[] data) {
+		this.data = ByteUtil.cloneBytes(data);
+		return this;
+	}
+
+	public TransactionBuilder data(String data) {
+		return data(data == null ? null : Hex.decode(data));
+	}
+
+	public TransactionBuilder chainId(byte chainId) {
+		this.chainId = chainId;
+		return this;
+	}
+
+	public TransactionBuilder accessList(byte[] accessListBytes) {
+		this.accessListBytes = ByteUtil.cloneBytes(accessListBytes);
 		return this;
 	}
 
@@ -108,74 +171,113 @@ public final class TransactionBuilder {
 		return this;
 	}
 
-	public TransactionBuilder gasPrice(byte[] gasPrice) {
-		this.gasPrice(RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPrice)));
-		return this;
-	}
-
-	public TransactionBuilder gasLimit(byte[] gasLimit) {
-		this.gasLimit = ByteUtil.cloneBytes(gasLimit);
-		return this;
-	}
-
-	public TransactionBuilder data(byte[] data) {
-		this.data = ByteUtil.cloneBytes(data);
-		return this;
-	}
-
-	public TransactionBuilder accessList(byte[] accessListRlp) {
-		this.accessListBytes = ByteUtil.cloneBytes(accessListRlp);
-		return this;
-	}
-
-	public TransactionBuilder chainId(byte chainId) {
-		this.chainId = chainId;
-		return this;
-	}
-
-    public TransactionBuilder type(TransactionType type) {
-        this.type = type;
-        return this;
-    }
-
-    public TransactionBuilder rskSubtype(Byte rskSubtype) {
-        this.rskSubtype = rskSubtype;
-        return this;
-    }
-
-	public TransactionBuilder destination(String to) {
-		return this.destination(to == null ? null : Hex.decode(to));
-	}
-
-	public TransactionBuilder gasLimit(Coin value) {
-		return this.gasLimit(value.getBytes());
-	}
-
-	public TransactionBuilder nonce(Coin value) {
-		return this.nonce(value.getBytes());
-	}
-
 	public Transaction build() {
-		TransactionType effectiveType = this.type != null ? this.type : TransactionType.LEGACY;
-		TransactionTypePrefix prefix = TransactionTypePrefix.of(effectiveType, this.rskSubtype);
-		if (effectiveType == TransactionType.TYPE_2 && this.rskSubtype == null) {
-			Coin maxP = this.maxPriorityFeePerGas != null ? this.maxPriorityFeePerGas : this.gasPrice;
-			Coin maxF = this.maxFeePerGas != null ? this.maxFeePerGas : this.gasPrice;
+		normalizeTypedFields();
+
+		if (gasLimit == null || gasPrice == null || value == null) {
+			throw invalidParamError("Missing parameter, gasPrice, gasLimit or value");
+		}
+
+		return new Transaction(
+				nonce,
+				gasPrice,
+				gasLimit,
+				receiveAddress,
+				value,
+				data,
+				chainId,
+				isLocalCall,
+				typePrefix,
+				accessListBytes,
+				maxPriorityFeePerGas,
+				maxFeePerGas
+		);
+	}
+
+	private void normalizeTypedFields() {
+		TransactionType type = typePrefix.type();
+
+		if (type == TransactionType.TYPE_1 && accessListBytes == null) {
+			accessListBytes = EMPTY_ACCESS_LIST_RLP;
+		}
+
+		if (type == TransactionType.TYPE_2 && !typePrefix.isRskNamespace()) {
+			if (accessListBytes == null) {
+				accessListBytes = EMPTY_ACCESS_LIST_RLP;
+			}
+			Coin maxP = maxPriorityFeePerGas != null ? maxPriorityFeePerGas : gasPrice;
+			Coin maxF = maxFeePerGas != null ? maxFeePerGas : gasPrice;
+
 			if (maxP.compareTo(maxF) > 0) {
 				throw new IllegalArgumentException(
-						"Type 2 transaction maxPriorityFeePerGas (" + maxP
-								+ ") must not exceed maxFeePerGas (" + maxF + ")");
+						"Type 2 transaction maxPriorityFeePerGas (" + maxP +
+								") must not exceed maxFeePerGas (" + maxF + ")"
+				);
 			}
-			return new Transaction(this.nonce, maxP, this.gasLimit, this.receiveAddress, this.value,
-					this.data, this.chainId, this.isLocalCall, prefix, this.accessListBytes, maxP, maxF);
+
+			maxPriorityFeePerGas = maxP;
+			maxFeePerGas = maxF;
+			gasPrice = maxP;
 		}
-		if (this.accessListBytes != null) {
-			return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall, prefix, this.accessListBytes);
-		}
-		return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall, prefix);
 	}
 
-	public TransactionBuilder data(String data) {
-		return this.data(data == null ? null : Hex.decode(data));
+	//TEMP
+	public static TransactionBuilder fromParsed(ParsedRawTransaction parsed) {
+		byte chainId = 0;
+		byte[] accessListBytes = new byte[0];
+		Coin maxPriorityFeePerGas = null;
+		Coin maxFeePerGas = null;
+		Coin effectiveGasPrice = null;
+
+		if (parsed.signatureState() instanceof SignedSignature signed) {
+			chainId = signed.chainId();
+		}
+		if (parsed.signatureState() instanceof UnsignedSignature unsigned) {
+			chainId= unsigned.chainId() == null ? 0 : unsigned.chainId();
+		}
+		if (parsed instanceof ParsedType1Transaction type1Tx) {
+			accessListBytes = type1Tx.accessListBytes();
+		}
+		if (parsed instanceof ParsedType2Transaction type2Tx) {
+			accessListBytes =  type2Tx.accessListBytes();
+		}
+
+		if (parsed instanceof ParsedType2Transaction type2Tx) {
+			maxPriorityFeePerGas = type2Tx.maxPriorityFeePerGas();
+		}
+
+		if (parsed instanceof ParsedType2Transaction type2Tx) {
+			maxFeePerGas = type2Tx.maxFeePerGas();
+		}
+		if (parsed instanceof ParsedType2Transaction type2Tx) {
+			effectiveGasPrice = type2Tx.maxPriorityFeePerGas().compareTo(type2Tx.maxFeePerGas()) <= 0
+					? type2Tx.maxPriorityFeePerGas()
+					: type2Tx.maxFeePerGas();
+		}
+
+		if (parsed instanceof ParsedType1Transaction type1Tx) {
+			effectiveGasPrice =  type1Tx.gasPrice();
+		}
+
+		if (parsed instanceof ParsedType0Transaction type0Tx) {
+			effectiveGasPrice =  type0Tx.gasPrice();
+		}
+
+		if (parsed instanceof ParsedType2RSKTransaction type2RskTx) {
+			effectiveGasPrice =  type2RskTx.gasPrice();
+		}
+
+		return new TransactionBuilder()
+				.nonce(parsed.nonce())
+				.gasPrice(effectiveGasPrice)
+				.gasLimit(parsed.gasLimit())
+				.receiveAddress(parsed.receiveAddress())
+				.value(parsed.value())
+				.data(parsed.data())
+				.chainId(chainId)
+				.typePrefix(parsed.typePrefix())
+				.accessList(accessListBytes)
+				.maxPriorityFeePerGas(maxPriorityFeePerGas)
+				.maxFeePerGas(maxFeePerGas);
 	}
 }

@@ -235,7 +235,7 @@ class TypedTransactionReceiptTest {
             .nonce(new byte[]{1})
             .gasPrice(Coin.valueOf(1000))
             .gasLimit(new byte[]{(byte) 0x52, 0x08})
-            .destination(RskAddress.nullAddress().getBytes())
+            .receiveAddress(RskAddress.nullAddress().getBytes())
             .value(Coin.ZERO)
             .data(EMPTY_BYTE_ARRAY)
             .chainId((byte) 33)
