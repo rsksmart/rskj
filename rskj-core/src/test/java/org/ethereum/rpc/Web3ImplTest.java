@@ -2884,7 +2884,7 @@ class Web3ImplTest {
         BlockStore blockStore = world.getBlockStore();
         TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, null);
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore,
-                blockFactory, null, transactionExecutorFactory, null, 10, 100, Mockito.mock(TxQuotaCheckerImpl.class), Mockito.mock(GasPriceTracker.class));
+                blockFactory, null, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaCheckerImpl.class), Mockito.mock(GasPriceTracker.class));
         return createWeb3CallNoReturn(eth, world, transactionPool, receiptStore);
     }
 
