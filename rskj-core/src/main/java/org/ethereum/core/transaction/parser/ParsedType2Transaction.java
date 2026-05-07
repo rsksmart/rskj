@@ -102,4 +102,24 @@ public record ParsedType2Transaction(
 
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "ParsedType2Transaction{" +
+                "typePrefix=" + typePrefix +
+                ", nonce=" + toHex(nonce) +
+                ", gasLimit=" + toHex(gasLimit) +
+                ", receiveAddress=" + receiveAddress +
+                ", value=" + value +
+                ", data=" + toHex(data) +
+                ", signatureState=" + signatureState +
+                ", accessListBytes=" + toHex(accessListBytes) +
+                ", maxPriorityFeePerGas=" + maxPriorityFeePerGas +
+                ", maxFeePerGas=" + maxFeePerGas +
+                '}';
+    }
+
+    private static String toHex(byte[] bytes) {
+        return bytes == null ? "null" : org.bouncycastle.util.encoders.Hex.toHexString(bytes);
+    }
 }
