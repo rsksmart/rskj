@@ -56,10 +56,10 @@ public final class ReleaseTransactionBuilderAssertions {
         Predicate<UTXO> isUTXOAndReleaseInputFromTheSameOutpoint = utxo ->
             utxo.getHash().equals(input.getOutpoint().getHash())
                 && utxo.getIndex() == input.getOutpoint().getIndex();
-        List<UTXO> foundUtxo = federationUtxos.stream()
+        List<UTXO> matchingUtxos = federationUtxos.stream()
             .filter(isUTXOAndReleaseInputFromTheSameOutpoint).toList();
         int expectedNumberOfUtxos = 1;
-        assertEquals(expectedNumberOfUtxos, foundUtxo.size());
+        assertEquals(expectedNumberOfUtxos, matchingUtxos.size());
     }
 
     public static void assertSelectedUtxosBelongToTheInputs(List<UTXO> selectedUtxos,
@@ -104,9 +104,9 @@ public final class ReleaseTransactionBuilderAssertions {
         assertTrue(isDust(originalChangeAmount));
 
         Coin amountToGetNonDustValue = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(originalChangeAmount);
-        requestedAmount = requestedAmount.subtract(amountToGetNonDustValue);
+        Coin amountToSend = requestedAmount.subtract(amountToGetNonDustValue);
 
-        assertUserAndChangeOutputsValues(releaseTransaction, releaseTransactionChangeOutputs, requestedAmount, MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
+        assertUserAndChangeOutputsValues(releaseTransaction, releaseTransactionChangeOutputs, amountToSend, MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
     }
 
     public static void assertUserAndChangeOutputsValuesWhenOriginalChangeIsNonDust(BtcTransaction releaseTransaction,
@@ -119,20 +119,20 @@ public final class ReleaseTransactionBuilderAssertions {
 
     private static void assertUserAndChangeOutputsValues(BtcTransaction releaseTransaction,
                                                          List<TransactionOutput> releaseTransactionChangeOutputs,
-                                                         Coin requestedAmount,
+                                                         Coin amountToSend,
                                                          Coin expectedChangeAmount) {
-        Coin changeOutputsAmount = getChangeOutputsAmount(releaseTransactionChangeOutputs);
+        Coin changeOutputsAmount = getOutputsAmount(releaseTransactionChangeOutputs);
         assertEquals(expectedChangeAmount, changeOutputsAmount);
 
         Coin userOutputsAmount = releaseTransaction.getOutputSum().subtract(changeOutputsAmount);
         Coin releaseTransactionFees = releaseTransaction.getFee();
         Coin userOutputsAndFeesAmount = releaseTransactionFees.add(userOutputsAmount);
-        assertEquals(requestedAmount, userOutputsAndFeesAmount);
+        assertEquals(amountToSend, userOutputsAndFeesAmount);
         Coin inputTotalAmount = releaseTransaction.getInputSum();
         assertEquals(inputTotalAmount, userOutputsAndFeesAmount.add(changeOutputsAmount));
     }
 
-    private static Coin getChangeOutputsAmount(List<TransactionOutput> outputs) {
+    private static Coin getOutputsAmount(List<TransactionOutput> outputs) {
         return outputs.stream()
             .map(TransactionOutput::getValue)
             .reduce(Coin::add)
