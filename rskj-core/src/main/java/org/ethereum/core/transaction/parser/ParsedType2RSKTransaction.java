@@ -9,6 +9,7 @@ import org.ethereum.crypto.signature.ECDSASignature;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
+//Temporal implementation of ParsedType0Transaction, to be used until we have the full implementation of Transaction aligned with AA
 public record ParsedType2RSKTransaction(
         TransactionTypePrefix typePrefix,
         byte[] nonce,
@@ -18,7 +19,7 @@ public record ParsedType2RSKTransaction(
         Coin value,
         byte[] data,
         byte chainId,
-        @Nullable ECDSASignature signature
+        SignatureState signatureState
 ) implements ParsedRawTransaction {
 
     public ParsedType2RSKTransaction {
@@ -55,7 +56,36 @@ public record ParsedType2RSKTransaction(
     }
 
     @Override
-    public SignatureState signatureState() {
-        return null;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ParsedType2RSKTransaction that)) return false;
+
+        return chainId == that.chainId
+                && Objects.equals(typePrefix, that.typePrefix)
+                && Objects.equals(gasPrice, that.gasPrice)
+                && Objects.equals(receiveAddress, that.receiveAddress)
+                && Objects.equals(value, that.value)
+                && Objects.equals(signatureState, that.signatureState)
+                && java.util.Arrays.equals(nonce, that.nonce)
+                && java.util.Arrays.equals(gasLimit, that.gasLimit)
+                && java.util.Arrays.equals(data, that.data);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(
+                typePrefix,
+                gasPrice,
+                receiveAddress,
+                value,
+                chainId,
+                signatureState
+        );
+
+        result = 31 * result + java.util.Arrays.hashCode(nonce);
+        result = 31 * result + java.util.Arrays.hashCode(gasLimit);
+        result = 31 * result + java.util.Arrays.hashCode(data);
+
+        return result;
     }
 }

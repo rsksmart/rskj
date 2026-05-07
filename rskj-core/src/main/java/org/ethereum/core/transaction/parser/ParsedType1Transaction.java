@@ -3,11 +3,10 @@ package org.ethereum.core.transaction.parser;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.TransactionTypePrefix;
-import org.ethereum.crypto.signature.ECDSASignature;
 
-import javax.annotation.Nullable;
 import java.util.Objects;
 
+//Temporal implementation of ParsedType0Transaction, to be used until we have the full implementation of Transaction aligned with AA
 public record ParsedType1Transaction(
         TransactionTypePrefix typePrefix,
         byte[] nonce,
@@ -31,6 +30,11 @@ public record ParsedType1Transaction(
         Objects.requireNonNull(data, "data");
         Objects.requireNonNull(signatureState, "signatureState cannot be null");
         Objects.requireNonNull(accessListBytes, "accessListBytes");
+
+        nonce = nonce.clone();
+        gasLimit = gasLimit.clone();
+        data = data.clone();
+        accessListBytes = accessListBytes.clone();
     }
 
     @Override
@@ -50,6 +54,40 @@ public record ParsedType1Transaction(
 
     public byte[] accessListBytes() {
         return accessListBytes.clone();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ParsedType1Transaction that)) return false;
+
+        return Objects.equals(typePrefix, that.typePrefix)
+                && Objects.equals(gasPrice, that.gasPrice)
+                && Objects.equals(receiveAddress, that.receiveAddress)
+                && Objects.equals(value, that.value)
+                && Objects.equals(signatureState, that.signatureState)
+                && java.util.Arrays.equals(nonce, that.nonce)
+                && java.util.Arrays.equals(gasLimit, that.gasLimit)
+                && java.util.Arrays.equals(data, that.data)
+                && java.util.Arrays.equals(accessListBytes, that.accessListBytes);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(
+                typePrefix,
+                gasPrice,
+                receiveAddress,
+                value,
+                signatureState
+        );
+
+        result = 31 * result + java.util.Arrays.hashCode(nonce);
+        result = 31 * result + java.util.Arrays.hashCode(gasLimit);
+        result = 31 * result + java.util.Arrays.hashCode(data);
+        result = 31 * result + java.util.Arrays.hashCode(accessListBytes);
+
+        return result;
     }
 
 }
