@@ -17,6 +17,8 @@ public final class RawTransactionEnvelopeParser {
 
     public static final String ERR_INVALID_RSK_SUBTYPE = "Invalid RSK subtype: ";
 
+    private RawTransactionEnvelopeParser() {}
+
     public static ParsedRawTransaction parse(byte[] rawData) {
         if (rawData == null || rawData.length == 0) {
             throw new IllegalArgumentException("Transaction raw data cannot be null or empty");

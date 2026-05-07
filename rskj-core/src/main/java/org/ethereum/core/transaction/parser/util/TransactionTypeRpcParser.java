@@ -8,7 +8,7 @@ import java.math.BigInteger;
 
 public final class TransactionTypeRpcParser {
 
-    static final String ERR_INVALID_TX_TYPE = "Invalid transaction type: ";
+    private static final String ERR_INVALID_TX_TYPE = "Invalid transaction type: ";
 
     private TransactionTypeRpcParser() {}
 
