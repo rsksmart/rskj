@@ -64,8 +64,9 @@ class TransactionPoolImplTest {
     private Repository repository;
     private ReceivedTxSignatureCache signatureCache;
     private TxQuotaCheckerImpl quotaChecker;
+    private int outdatedThreshold;
 
-    @BeforeEach
+   @BeforeEach
     void setUp() {
         rskTestContext = new RskTestContext(tempDir, "--regtest") {
             @Override
@@ -86,7 +87,7 @@ class TransactionPoolImplTest {
 
         RskSystemProperties rskSystemProperties = spy(rskTestContext.getRskSystemProperties());
         when(rskSystemProperties.isAccountTxRateLimitEnabled()).thenReturn(true);
-
+        outdatedThreshold= 10;
         transactionPool = new TransactionPoolImpl(
                 rskSystemProperties,
                 repositoryLocator,
@@ -95,7 +96,7 @@ class TransactionPoolImplTest {
                 rskTestContext.getCompositeEthereumListener(),
                 rskTestContext.getTransactionExecutorFactory(),
                 signatureCache,
-                10,
+                outdatedThreshold,
                 100,
                 Mockito.mock(TxQuotaCheckerImpl.class),
                 Mockito.mock(GasPriceTracker.class));
@@ -268,7 +269,7 @@ class TransactionPoolImplTest {
         transactionPool.addTransaction(tx1);
         transactionPool.addTransaction(tx2);
 
-        Assertions.assertEquals(10, transactionPool.getOutdatedThreshold());
+        Assertions.assertEquals(10, outdatedThreshold);
 
         List<Transaction> list = transactionPool.getPendingTransactions();
 
@@ -284,7 +285,7 @@ class TransactionPoolImplTest {
         Assertions.assertFalse(list.isEmpty());
         Assertions.assertEquals(2, list.size());
 
-        transactionPool.removeObsoleteTransactions(20, transactionPool.getOutdatedThreshold(), 100);
+        transactionPool.removeObsoleteTransactions(20, outdatedThreshold, 100);
 
         list = transactionPool.getPendingTransactions();
 
@@ -302,7 +303,7 @@ class TransactionPoolImplTest {
         transactionPool.addTransaction(tx1);
         transactionPool.addTransaction(tx2);
 
-        Assertions.assertEquals(10, transactionPool.getOutdatedThreshold());
+        Assertions.assertEquals(10, outdatedThreshold);
 
         List<Transaction> list = transactionPool.getQueuedTransactions();
 
@@ -318,7 +319,7 @@ class TransactionPoolImplTest {
         Assertions.assertFalse(list.isEmpty());
         Assertions.assertEquals(2, list.size());
 
-        transactionPool.removeObsoleteTransactions(20, transactionPool.getOutdatedThreshold(), 100);
+        transactionPool.removeObsoleteTransactions(20, outdatedThreshold, 100);
 
         list = transactionPool.getQueuedTransactions();
 
@@ -337,7 +338,7 @@ class TransactionPoolImplTest {
         transactionPool.addTransaction(tx1);
         transactionPool.addTransaction(tx2);
 
-        Assertions.assertEquals(10, transactionPool.getOutdatedThreshold());
+        Assertions.assertEquals(10, outdatedThreshold);
 
         List<Transaction> list = transactionPool.getPendingTransactions();
 
@@ -366,7 +367,7 @@ class TransactionPoolImplTest {
         transactionPool.addTransaction(tx1);
         transactionPool.addTransaction(tx2);
 
-        Assertions.assertEquals(10, transactionPool.getOutdatedThreshold());
+        Assertions.assertEquals(10, outdatedThreshold);
 
         List<Transaction> list = transactionPool.getQueuedTransactions();
 
@@ -949,5 +950,109 @@ class TransactionPoolImplTest {
         Assertions.assertEquals(tx2, transactionPool.getPendingTransactions().get(1));
         Assertions.assertNotNull(signatureCache.getSender(tx1));
         Assertions.assertNotNull(signatureCache.getSender(tx2));
+    }
+
+    @Test
+    void addTransaction_withNonceGap_addsTransactionToQueuedSet() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(1, balance);
+
+        Transaction tx = createSampleTransaction(1, 2, 1000, 1);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assertions.assertTrue(result.transactionsWereAdded());
+        Assertions.assertTrue(result.queuedTransactionsWereAdded());
+        Assertions.assertFalse(result.pendingTransactionsWereAdded());
+
+        Assertions.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+        Assertions.assertEquals(1, transactionPool.getQueuedTransactions().size());
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().contains(tx));
+    }
+
+    @Test
+    void addTransaction_withNonceGap_tracksQueuedTransactionForBlockCleanup() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(1, balance);
+
+        Transaction tx = createSampleTransaction(1, 2, 1000, 1);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assertions.assertTrue(result.queuedTransactionsWereAdded());
+        Assertions.assertEquals(1, transactionPool.getQueuedTransactions().size());
+
+        transactionPool.removeObsoleteTransactions(20, outdatedThreshold, 100);
+
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void addTransaction_withNonceGap_storesSenderInSignatureCache() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(1, balance);
+
+        Account sender = createAccount(1);
+        Transaction tx = createSampleTransaction(1, 2, 1000, 1);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assertions.assertTrue(result.queuedTransactionsWereAdded());
+        Assertions.assertNotNull(signatureCache.getSender(tx));
+        Assertions.assertArrayEquals(
+                sender.getAddress().getBytes(),
+                signatureCache.getSender(tx).getBytes()
+        );
+
+        verify(signatureCache).storeSender(tx);
+    }
+
+    @Test
+    void addTransaction_withoutNonceGap_tracksPendingTransactionForBlockCleanup() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(1, balance);
+
+        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assertions.assertTrue(result.pendingTransactionsWereAdded());
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+
+        transactionPool.removeObsoleteTransactions(20, outdatedThreshold, 100);
+
+        Assertions.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+    }
+
+    @Test
+    void getPendingTransactions_returnsUnmodifiableList() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(1, balance);
+
+        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
+        transactionPool.addTransaction(tx);
+
+        List<Transaction> pendingTransactions = transactionPool.getPendingTransactions();
+
+        Assertions.assertThrows(
+                UnsupportedOperationException.class,
+                () -> pendingTransactions.add(createSampleTransaction(1, 2, 1000, 1))
+        );
+    }
+
+    @Test
+    void getQueuedTransactions_returnsUnmodifiableList() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(1, balance);
+
+        Transaction tx = createSampleTransaction(1, 2, 1000, 1);
+        transactionPool.addTransaction(tx);
+
+        List<Transaction> queuedTransactions = transactionPool.getQueuedTransactions();
+
+        Assertions.assertThrows(
+                UnsupportedOperationException.class,
+                queuedTransactions::clear
+        );
     }
 }

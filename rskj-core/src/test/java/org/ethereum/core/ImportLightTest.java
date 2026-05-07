@@ -76,7 +76,7 @@ class ImportLightTest {
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, receivedTxSignatureCache, 10, 100, Mockito.mock(TxQuotaCheckerImpl.class), Mockito.mock(GasPriceTracker.class));
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, listener, transactionExecutorFactory, receivedTxSignatureCache, 10, 100, Mockito.mock(TxQuotaCheckerImpl.class), Mockito.mock(GasPriceTracker.class));
 
         BlockChainImpl blockchain = new BlockChainImpl(
                 blockStore,

@@ -35,20 +35,33 @@ import org.ethereum.listener.NoOpEthereumListener;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.ethereum.util.BIUtil.toBI;
-
 /**
- * Created by ajlopez on 08/08/2016.
+ * In-memory transaction pool responsible for managing pending and queued transactions.
+ *
+ * Coordinates transaction admission, promotion from queued to pending, cleanup of obsolete
+ * transactions, fork handling, and listener notifications.
+ *
+ * Domain validation rules are delegated to TransactionPoolValidator and related policies.
+ *
+ * - pendingTransactions: transactions ready for execution (no nonce gaps, fully validated)
+ * - queuedTransactions: transactions waiting for missing prior nonces before becoming executable. (Nonce is too high or earlier transactions from the same sender are missing)
+ * - transactionBlocks: tracks the block number when each transaction was added, used for cleanup by block depth. “How many blocks ago was this added?”
+ * - transactionTimes: tracks the time when each transaction was added, used for cleanup by age. “How long has this been sitting here?”
+ * - signatureCache: caches transaction signature recovery results to avoid repeated expensive computations
+ *
+ * Originally created by ajlopez on 08/08/2016.
  */
 public class TransactionPoolImpl implements TransactionPool {
     private static final Logger logger = LoggerFactory.getLogger("txpool");
+    private static final String ERROR_MESSAGE_ACCOUNT_EXCEEDS_QUOTA = "account exceeds quota";
+    private static final String ERROR_MESSAGE_INSUFFICIENT_FUNDS_TO_PAY_FOR_PENDING_AND_NEW_TRANSACTIONS = "insufficient funds to pay for pending and new transactions";
+    private static final String ERROR_MESSAGE_INSUFFICIENT_GAS_PRICE_BUMP = "gas price not enough to bump transaction";
 
     private final TransactionSet pendingTransactions;
     private final TransactionSet queuedTransactions;
@@ -57,7 +70,6 @@ public class TransactionPoolImpl implements TransactionPool {
     private final SignatureCache signatureCache;
     private Block bestBlock;
     private final TransactionPoolValidator transactionPoolValidator;
-
 
     private final RskSystemProperties config;
     private final BlockStore blockStore;
@@ -73,8 +85,6 @@ public class TransactionPoolImpl implements TransactionPool {
     private final ScheduledExecutorService accountTxRateLimitCleanerTimer;
     private final TxQuotaChecker quotaChecker;
     private final GasPriceTracker gasPriceTracker;
-
-
 
     @java.lang.SuppressWarnings("squid:S107")
     public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaCheckerImpl txQuotaChecker, GasPriceTracker gasPriceTracker) {
@@ -136,21 +146,17 @@ public class TransactionPoolImpl implements TransactionPool {
     @Override
     public synchronized List<Transaction> getQueuedTransactions() {
         this.removeObsoleteTransactions(this.getBestBlockNumber(),this.outdatedThreshold, this.outdatedTimeout);
-        return new ArrayList<>(queuedTransactions.getTransactions());
-    }
-
-    private boolean isAccountTxRateLimitCleanerEnabled() {
-        return config.isAccountTxRateLimitEnabled() && config.accountTxRateLimitCleanerPeriod() > 0;
+        return Collections.unmodifiableList(queuedTransactions.getTransactions());
     }
 
     /**
      * Handles chain reorganization (fork) by updating the transaction pool and stays consistent with the current best chain.
-     * <p>
+     *
      * Example: Old chain: A → B → C → D  || New chain: A → B → X → Y
      * If a fork occurs, transactions from blocks that were removed [C, D] from the main chain are reintroduced into the pool.
      * Transactions included in newly added blocks are removed [X, Y] from the pool, as they are now considered confirmed.
      * After applying fork changes, obsolete transactions are pruned based on the current
-     * <p>
+     *
      * Note: The best block is updated before processing the fork to ensure that
      * any transaction validation operates on the latest best block state.
      *
@@ -185,9 +191,18 @@ public class TransactionPoolImpl implements TransactionPool {
         return pendingTransactionsAdded;
     }
 
+    /**
+     * Adds a transaction to the pool after validation.
+     * If the transaction is accepted, it may be added to either the pending or queued set.
+     * Additionally, this may unlock and promote queued transactions with subsequent nonces
+     * from the same sender into the pending set.
+     *
+     * @param tx the transaction to add
+     * @return the result of the operation, including any transactions added to pending or queued
+     */
     @Override
     public synchronized TransactionPoolAddResult addTransaction(final Transaction tx) {
-        TransactionPoolAddResult result = processAndAddTransactionToPool(tx);
+        TransactionPoolAddResult result = addTransactionToPoolIfValid(tx);
 
         if (!result.transactionsWereAdded()) {
             return result;
@@ -208,13 +223,13 @@ public class TransactionPoolImpl implements TransactionPool {
         txs.forEach(tx->removeTransactionByHash(tx.getHash()));
     }
 
-    public void cleanUp() {
+    public synchronized void cleanUp() {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
         this.removeObsoleteByTime(timestampSeconds - this.outdatedTimeout);
     }
 
     @Override
-    public void setBestBlock(Block bestBlock) {
+    public synchronized void setBestBlock(Block bestBlock) {
         this.bestBlock = bestBlock;
     }
 
@@ -223,9 +238,13 @@ public class TransactionPoolImpl implements TransactionPool {
         return getPendingState(getRepositoryAtBestBlock());
     }
 
-    private PendingState getPendingState(RepositorySnapshot currentRepository) {
-        this.removeObsoleteTransactions(this.getBestBlockNumber(),this.outdatedThreshold, this.outdatedTimeout);
+    private synchronized PendingState getPendingState(RepositorySnapshot currentRepository) {
+        this.removeObsoleteTransactions(getBestBlockNumber(), outdatedThreshold, outdatedTimeout);
         return new PendingState(currentRepository, new TransactionSet(pendingTransactions, signatureCache), (repository, tx) -> transactionExecutorFactory.newInstance(tx, 0, bestBlock.getCoinbase(), repository, createFakePendingBlock(bestBlock), 0), signatureCache);
+    }
+
+    private boolean isAccountTxRateLimitCleanerEnabled() {
+        return config.isAccountTxRateLimitEnabled() && config.accountTxRateLimitCleanerPeriod() > 0;
     }
 
     private RepositorySnapshot getRepositoryAtBestBlock() {
@@ -240,7 +259,7 @@ public class TransactionPoolImpl implements TransactionPool {
             Transaction nextTx = nextTxOpt.get();
             queuedTransactions.removeTransactionByHash(nextTx.getHash());
 
-            TransactionPoolAddResult result = processAndAddTransactionToPool(nextTx);
+            TransactionPoolAddResult result = addTransactionToPoolIfValid(nextTx);
 
             if (!result.hasPendingTransactions()) {
                 break;
@@ -280,51 +299,118 @@ public class TransactionPoolImpl implements TransactionPool {
                 .findFirst();
     }
 
-    private TransactionPoolAddResult processAndAddTransactionToPool(final Transaction tx) {
-        var repository= getRepositoryAtBestBlock();
-        var ctx = new TransactionPoolAddingContext(tx, repository, getPendingState(repository), bestBlock, signatureCache);
+    /**
+     * Validates and admits a transaction into the pool.
+     * Applies admission rules such as duplicate checks, consensus validation,
+     * gas price bump requirements, quota limits, and balance checks.
+     * If valid:
+     * - Transactions with nonce gaps are added to the queued set
+     * - Otherwise, they are added to the pending set
+     *
+     * @param tx the transaction to process
+     * @return the result of the admission attempt
+     */
+    private TransactionPoolAddResult addTransactionToPoolIfValid(final Transaction tx) {
+        var repository = getRepositoryAtBestBlock();
+        var sender = tx.getSender(signatureCache);
+        var pendingState = getPendingState(repository);
 
-        Optional<TransactionPoolAddResult> duplicateResult = transactionPoolValidator.rejectIfTransactionAlreadyKnown(ctx.tx(), pendingTransactions, queuedTransactions);
+        Optional<TransactionPoolAddResult> rejection =  validateTransactionBeforeAddingToPool(tx, sender, repository, pendingState);
+        if (rejection.isPresent()) {
+            return rejection.get();
+        }
+        if (hasNonceGap(tx, sender, pendingState)) {
+            return addQueuedTransaction(tx);
+        }
+        return addPendingTransaction(tx);
+    }
+
+    private boolean hasNonceGap(Transaction tx, RskAddress sender, PendingState pendingState) {
+        BigInteger expectedNonce = pendingState.getNonce(sender);
+        return tx.getNonceAsInteger().compareTo(expectedNonce) > 0;
+    }
+
+    /**
+     * Adds a transaction to the queued set.
+     * Used when the transaction nonce is higher than expected (nonce gap).
+     * The transaction will be promoted later when preceding nonces are filled.
+     *
+     * @return result indicating the transaction was queued
+     */
+    private TransactionPoolAddResult addQueuedTransaction(Transaction tx) {
+        queuedTransactions.addTransaction(tx);
+        trackTransaction(tx);
+        signatureCache.storeSender(tx);
+        return TransactionPoolAddResult.okQueuedTransaction(tx);
+    }
+
+    /**
+     * Adds a transaction to the pending set.
+     * Pending transactions are ready for execution and inclusion in future blocks.
+     *
+     * @return result indicating the transaction was added to pending
+     */
+    private TransactionPoolAddResult addPendingTransaction(Transaction tx) {
+        pendingTransactions.addTransaction(tx);
+        trackTransaction(tx);
+        signatureCache.storeSender(tx);
+        return TransactionPoolAddResult.okPendingTransaction(tx);
+    }
+
+    /**
+     * Applies validation rules before admitting a transaction into the pool.
+     * Includes checks for:
+     * - duplicate transactions
+     * - consensus validation
+     * - sufficient gas price bump for replacement
+     * - account quota limits
+     * - sufficient balance to cover pending and new transactions
+     *
+     * @return an error result if validation fails, otherwise empty
+     */
+    private Optional<TransactionPoolAddResult> validateTransactionBeforeAddingToPool(
+            Transaction tx,
+            RskAddress sender,
+            RepositorySnapshot repository,
+            PendingState pendingState
+    ) {
+        Optional<TransactionPoolAddResult> duplicateResult = transactionPoolValidator.rejectIfTransactionAlreadyKnown(tx, pendingTransactions, queuedTransactions);
 
         if (duplicateResult.isPresent()) {
-            return duplicateResult.get();
+            return duplicateResult;
         }
 
-        AccountState senderState = ctx.repository().getAccountState(ctx.sender());
-        Optional<TransactionPoolAddResult> validationResult = transactionPoolValidator.validateTransaction(ctx.tx(), ctx.bestBlock(), senderState);
+        AccountState senderState = repository.getAccountState(sender);
+        Optional<TransactionPoolAddResult> validationResult = transactionPoolValidator.validateTransaction(tx, bestBlock, senderState);
+
         if (validationResult.isPresent()) {
-            return validationResult.get();
+            return validationResult;
         }
 
-        logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+        Optional<Transaction> existingTx =
+                pendingTransactions.getTransactionsWithSameNonce(sender, tx.getNonceAsInteger())
+                        .stream()
+                        .findFirst();
 
-        Optional<Transaction> existingTx = pendingTransactions.getTransactionsWithSameNonce(ctx.sender(), ctx.nonce()).stream().findFirst();
-        if (transactionPoolValidator.hasInsufficientGasPriceBump(ctx.tx(), existingTx)) {
-            return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
+        if (transactionPoolValidator.hasInsufficientGasPriceBump(tx, existingTx)) {
+            return Optional.of(TransactionPoolAddResult.withError(ERROR_MESSAGE_INSUFFICIENT_GAS_PRICE_BUMP));
         }
 
-        trackTransaction(tx);
-
-        if (queueIfNonceTooHigh(tx, ctx.sender(), ctx.repository())) {
-            signatureCache.storeSender(tx);
-            return TransactionPoolAddResult.okQueuedTransaction(tx);
-        }
-
-        if (isAccountQuotaExceeded(tx, existingTx, ctx.repository(), ctx.pendingState())) {
-            return TransactionPoolAddResult.withError("account exceeds quota");
+        if (isAccountQuotaExceeded(tx, existingTx, repository, pendingState)) {
+            return Optional.of(TransactionPoolAddResult.withError(ERROR_MESSAGE_ACCOUNT_EXCEEDS_QUOTA));
         }
 
         if (!transactionPoolValidator.canSenderAffordPendingTransactionsIncludingNew(
-                ctx.tx(),
-                pendingTransactions.getTransactionsWithSender(ctx.sender()), ctx.repository(), ctx.bestBlock()
+                tx,
+                pendingTransactions.getTransactionsWithSender(sender),
+                repository,
+                bestBlock
         )) {
-            return TransactionPoolAddResult.withError("insufficient funds to pay for pending and new transactions");
+            return Optional.of(TransactionPoolAddResult.withError(
+                    ERROR_MESSAGE_INSUFFICIENT_FUNDS_TO_PAY_FOR_PENDING_AND_NEW_TRANSACTIONS
+            ));
         }
-
-        pendingTransactions.addTransaction(tx);
-        signatureCache.storeSender(tx);
-
-        return TransactionPoolAddResult.okPendingTransaction(tx);
+        return Optional.empty();
     }
 
     private void trackTransaction(Transaction tx) {
@@ -334,7 +420,6 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private boolean isAccountQuotaExceeded(Transaction tx, Optional<Transaction> existingTx, RepositorySnapshot repository, PendingState pendingState) {
-
         if (!config.isAccountTxRateLimitEnabled()) {
             return false;
         }
@@ -350,30 +435,19 @@ public class TransactionPoolImpl implements TransactionPool {
 
     }
 
-    private boolean queueIfNonceTooHigh(Transaction tx,  RskAddress rskAddress, RepositorySnapshot repository) {
-        BigInteger expectedNonce = this.getPendingState(repository).getNonce(rskAddress);
-        BigInteger txNonce = tx.getNonceAsInteger();
-        if (txNonce.compareTo(expectedNonce) > 0) {
-            this.queuedTransactions.addTransaction(tx);
-            return true;
-        }
-        return false;
-    }
-
     private BlockFork calculateFork(Block newBestBlock) {
         return this.bestBlock == null ? null : new BlockchainBranchComparator(blockStore).calculateFork(this.bestBlock, newBestBlock);
     }
 
     @VisibleForTesting
-    public void reintroduceBlockTransactions(Block block) {
+     void reintroduceBlockTransactions(Block block) {
         List<Transaction> txs = block.getTransactionsList();
         logger.trace("Retracting block {} {} with {} txs", block.getNumber(), block.getPrintableHash(), txs.size());
         this.addTransactions(txs);
     }
 
-
     @VisibleForTesting
-    public synchronized void removeObsoleteTransactions(long currentBlock, int depth, int timeout) {
+     synchronized void removeObsoleteTransactions(long currentBlock, int depth, int timeout) {
         removeObsoleteByBlock(currentBlock, depth);
         if (timeout > 0) {
             long cutoffTime = getCurrentTimeInSeconds() - timeout;
@@ -422,9 +496,6 @@ public class TransactionPoolImpl implements TransactionPool {
         return bestBlock == null ? -1 :bestBlock.getNumber();
     }
 
-
-
-
     private Block createFakePendingBlock(Block best) {
         // creating fake lightweight calculated block with no hashes calculations
         return blockFactory.newBlock(blockFactory.getBlockHeaderBuilder()
@@ -436,10 +507,4 @@ public class TransactionPoolImpl implements TransactionPool {
                                         .build(),
                 Collections.emptyList(), Collections.emptyList());
     }
-
-    //FOR TESTING
-
-    public int getOutdatedThreshold() { return outdatedThreshold; }
-    public int getOutdatedTimeout() { return outdatedTimeout; }
-
 }

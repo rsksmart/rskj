@@ -19,6 +19,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Validates transactions before they are added to the transaction pool.
+ *
+ * Performs checks such as:
+ * - Detecting duplicate transactions in pending or queued sets
+ * - Validating transactions against consensus rules
+ * - Ensuring sufficient gas price bump for transaction replacement
+ * - Verifying sender balance can cover pending transactions and a new one
+ *
+ * Helps maintain mempool consistency, prevent spam, and enforce
+ * basic economic and validation constraints.
+ */
 public class TransactionPoolValidator {
 
     private final RskSystemProperties config;
@@ -94,6 +106,11 @@ public class TransactionPoolValidator {
         return totalCost.compareTo(senderBalance) <= 0;
     }
 
+    /**
+     * Checks if {@code newTx} increases gas price enough to replace {@code oldTx}.
+     * Requires: newPrice > oldPrice and  newPrice >= oldPrice * (100 + gasPriceBump) / 100.
+     * Prevents frequent small replacements (mempool spam).
+     */
     private boolean isGasPriceBumpSufficient(Transaction newTx, Transaction oldTx) {
         //oldGasPrice * (100 + priceBump) / 100
         Coin oldGasPrice = oldTx.getGasPrice();
@@ -112,7 +129,7 @@ public class TransactionPoolValidator {
         return gasCost;
     }
 
-    private long getTransactionCost(Transaction tx, long number) {
-        return tx.transactionCost(config.getNetworkConstants(), config.getActivationConfig().forBlock(number), signatureCache);
+    private long getTransactionCost(Transaction tx, long bestBlock) {
+        return tx.transactionCost(config.getNetworkConstants(), config.getActivationConfig().forBlock(bestBlock), signatureCache);
     }
 }
