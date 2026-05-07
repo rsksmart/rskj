@@ -30,6 +30,7 @@ public record ParsedType2RSKTransaction(
         Objects.requireNonNull(receiveAddress, "receiveAddress");
         Objects.requireNonNull(value, "value");
         Objects.requireNonNull(data, "data");
+        Objects.requireNonNull(signatureState, "signatureState");
 
         if (!typePrefix.isRskNamespace()) {
             throw new IllegalArgumentException("Expected RSK namespace type prefix");
@@ -87,5 +88,25 @@ public record ParsedType2RSKTransaction(
         result = 31 * result + java.util.Arrays.hashCode(data);
 
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ParsedType2RSKTransaction{" +
+                "typePrefix=" + typePrefix +
+                ", nonce=" + toHex(nonce) +
+                ", gasPrice=" + gasPrice +
+                ", gasLimit=" + toHex(gasLimit) +
+                ", receiveAddress=" + receiveAddress +
+                ", value=" + value +
+                ", data=" + toHex(data) +
+                ", chainId=" + chainId +
+                ", signatureState=" + signatureState +
+                '}';
+    }
+
+    private static String toHex(byte[] bytes) {
+        return bytes == null ? "null"
+                : org.bouncycastle.util.encoders.Hex.toHexString(bytes);
     }
 }
