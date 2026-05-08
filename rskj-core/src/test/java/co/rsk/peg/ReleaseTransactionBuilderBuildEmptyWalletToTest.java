@@ -41,7 +41,6 @@ import org.junit.jupiter.api.Test;
 class ReleaseTransactionBuilderBuildEmptyWalletToTest {
 
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0);
-    private static final ActivationConfig.ForBlock PAPYRUS_ACTIVATIONS = ActivationConfigsForTest.papyrus200().forBlock(0);
 
     private static final BridgeConstants BRIDGE_MAINNET_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters BTC_MAINNET_PARAMS = BRIDGE_MAINNET_CONSTANTS.getBtcParams();
@@ -110,7 +109,7 @@ class ReleaseTransactionBuilderBuildEmptyWalletToTest {
         @Test
         void buildEmptyWalletTo_whenRSKIP201IsNotActive_shouldCreateRefundTxWithBtcVersion1() {
             // Arrange
-            setUpActivations(PAPYRUS_ACTIVATIONS);
+            setUpActivations(ActivationConfigsForTest.papyrus200().forBlock(0));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             // Act
@@ -638,7 +637,7 @@ class ReleaseTransactionBuilderBuildEmptyWalletToTest {
         int expectedNumberOfChangeOutputs = 0;
         assertEquals(expectedNumberOfChangeOutputs, changeOutputs.size());
 
-        assertReleaseTxWithNoChangeHasPegoutsAmountWithFeesProperly(refundTransaction, refundTransaction.getInputSum());
+        assertReleaseTxWithOnlyUserOutputsAmounts(refundTransaction, refundTransaction.getInputSum());
     }
 
     private boolean isFederationOutput(TransactionOutput output) {
