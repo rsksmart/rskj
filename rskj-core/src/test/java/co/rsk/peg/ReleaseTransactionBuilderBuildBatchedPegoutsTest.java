@@ -61,7 +61,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     private static final BridgeConstants BRIDGE_MAINNET_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters BTC_MAINNET_PARAMS = BRIDGE_MAINNET_CONSTANTS.getBtcParams();
-    private static final Context BTC_CONTEXT = new Context(BTC_MAINNET_PARAMS);
 
     private static final Coin MINIMUM_PEGOUT_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPegoutTxValue();
     private static final Coin MINIMUM_PEGIN_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(
@@ -69,9 +68,8 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     private static final List<ReleaseRequestQueue.Entry> NO_PEGOUT_REQUESTS = Collections.emptyList();
 
-    private static final Coin DUSTY_AMOUNT_SEND_REQUESTED = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
+    private static final Coin DUST_VALUE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
     private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
-    private static final int RECIPIENT_ADDRESS_KEY_OFFSET = 1100;
     public static final Coin THOUSAND_SATOSHIS = Coin.valueOf(1000);
 
     protected Federation federation;
@@ -95,7 +93,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     class StandardMultiSigFederationTests {
 
         @BeforeEach
-        void setup() {
+        void setUp() {
             federation = StandardMultiSigFederationBuilder.builder().build();
             federationFormatVersion = federation.getFormatVersion();
             federationAddress = federation.getAddress();
@@ -123,6 +121,12 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         void buildBatchedPegouts_whenRSKIP201IsNotActive_shouldCreateBatchedPegoutsTxWithBtcVersion1() {
             // Arrange
             setUpActivations(PAPYRUS_ACTIVATIONS);
+            Coin minimumPeginTxValue = BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(PAPYRUS_ACTIVATIONS);
+            int numberOfUtxos = 10;
+            federationUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(federationOutputScript)
+                .withValue(minimumPeginTxValue)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
                 MINIMUM_PEGOUT_TX_VALUE);
@@ -137,14 +141,14 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs1(batchedPegoutsTransaction);
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsTransactionInputs.size());
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
@@ -166,14 +170,14 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsTransactionInputs.size());
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
@@ -194,15 +198,18 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
+
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            int expectedNumberOfInputs = 3;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
 
         @Test
@@ -229,9 +236,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsInputs.size());
+
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
@@ -239,7 +247,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             );
             assertBatchedPegoutsTxHasOnlyPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
 
         @Test
@@ -267,9 +275,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenChangeIsDust_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
+        void buildBatchedPegouts_whenOriginalChangeIsMaxDustValue_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
             // Arrange
-            Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
+            Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUST_VALUE);
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -290,21 +298,22 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsInputs.size());
+
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
 
         @Test
-        void buildBatchedPegouts_whenChangeIsNonDustForOneSatoshi_shouldCreateBatchedPegoutsTxWithNoModificationInTheValues() {
+        void buildBatchedPegouts_whenChangeIsMinNonDustValue_shouldCreateBatchedPegoutsTxWithNoModificationInTheValues() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
@@ -325,21 +334,22 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
+
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsTransactionInputs.size());
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
 
         @Test
-        void buildBatchedPegouts_whenChangeIsOneSatoshi_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
+        void buildBatchedPegouts_whenOriginalChangeIsOneSatoshi_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
@@ -360,15 +370,16 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
+
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsTransactionInputs.size());
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
@@ -407,7 +418,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                DUSTY_AMOUNT_SEND_REQUESTED);
+                DUST_VALUE);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
@@ -420,7 +431,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
+        void buildBatchedPegouts_whenEstimatedFeeIsTooHighAndUtxosAreNotEnough_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 3;
@@ -486,7 +497,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             Coin utxosTotalAmount = Coin.COIN.multiply(expectedNumberOfUtxos);
-            Coin pegoutRequestAmount = utxosTotalAmount.divide(numberOfPegoutRequests).subtract(THOUSAND_SATOSHIS);
+            Coin pegoutRequestAmount = utxosTotalAmount.divide(numberOfPegoutRequests).subtract(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
 
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(numberOfPegoutRequests, pegoutRequestAmount);
 
@@ -499,16 +510,16 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
 
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            assertEquals(expectedNumberOfUtxos, batchedPegoutsInputs.size());
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            assertEquals(expectedNumberOfUtxos, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
     }
 
@@ -542,36 +553,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenRSKIP201IsNotActive_shouldCreateBatchedPegoutsTxWithBtcVersion1() {
-            // Arrange
-            setUpActivations(PAPYRUS_ACTIVATIONS);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                MINIMUM_PEGOUT_TX_VALUE);
-
-            // Act
-            BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
-                pegoutRequests);
-
-            // Assert
-            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
-
-            BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
-            assertBtcTxVersionIs1(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
-                batchedPegoutsTransaction,
-                federationRedeemScript,
-                federationUTXOs
-            );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
-            List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
-        }
-
-        @Test
         void buildBatchedPegouts_whenSinglePegoutRequest_shouldCreateBatchedPegoutsTx() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
@@ -587,17 +568,18 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsInputs.size());
+
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
 
         @Test
@@ -621,10 +603,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
 
         @Test
@@ -650,9 +632,10 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsInputs.size());
+
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
@@ -660,7 +643,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             );
             assertBatchedPegoutsTxHasOnlyPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
 
         @Test
@@ -688,9 +671,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenChangeIsDust_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
+        void buildBatchedPegouts_whenOriginalChangeIsMaxDustValue_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
             // Arrange
-            Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
+            Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUST_VALUE);
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -712,21 +695,22 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsInputs.size());
+
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
 
         @Test
-        void buildBatchedPegouts_whenChangeIsNonDustForOneSatoshi_shouldCreateBatchedPegoutsTxWithNoModificationInTheValues() {
+        void buildBatchedPegouts_whenChangeIsMinNonDustValue_shouldCreateBatchedPegoutsTxWithNoModificationInTheValues() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
@@ -747,21 +731,22 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
+
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsTransactionInputs.size());
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
 
         @Test
-        void buildBatchedPegouts_whenChangeIsOneSatoshi_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
+        void buildBatchedPegouts_whenOriginalChangeIsOneSatoshi_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
@@ -782,15 +767,16 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
+
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsTransactionInputs.size());
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
@@ -829,7 +815,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                DUSTY_AMOUNT_SEND_REQUESTED);
+                DUST_VALUE);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
@@ -842,7 +828,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
+        void buildBatchedPegouts_whenEstimatedFeeIsTooHighAndUtxosAreNotEnough_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 3;
@@ -907,7 +893,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             Coin utxosTotalAmount = Coin.COIN.multiply(expectedNumberOfUtxos);
-            Coin pegoutRequestAmount = utxosTotalAmount.divide(numberOfPegoutRequests).subtract(THOUSAND_SATOSHIS);
+            Coin pegoutRequestAmount = utxosTotalAmount.divide(numberOfPegoutRequests).subtract(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
 
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(numberOfPegoutRequests, pegoutRequestAmount);
 
@@ -920,16 +906,16 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
 
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            assertEquals(expectedNumberOfUtxos, batchedPegoutsInputs.size());
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            assertEquals(expectedNumberOfUtxos, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
     }
 
@@ -967,36 +953,6 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenRSKIP201IsNotActive_shouldCreateBatchedPegoutsTxWithBtcVersion1() {
-            // Arrange
-            setUpActivations(PAPYRUS_ACTIVATIONS);
-            ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
-            List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                MINIMUM_PEGOUT_TX_VALUE);
-
-            // Act
-            BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
-                pegoutRequests);
-
-            // Assert
-            assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
-
-            BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
-            assertBtcTxVersionIs1(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsInputs.size());
-            assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
-                batchedPegoutsTransaction,
-                federationRedeemScript,
-                federationUTXOs
-            );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
-            List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
-        }
-
-        @Test
         void buildBatchedPegouts_whenSinglePegoutRequest_shouldCreateBatchedPegoutsTx() {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
@@ -1012,17 +968,18 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsInputs.size());
+
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
 
         @Test
@@ -1041,15 +998,18 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
+
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            int expectedNumberOfInputs = 3;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
 
         @Test
@@ -1075,9 +1035,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsInputs.size());
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
@@ -1085,7 +1045,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             );
             assertBatchedPegoutsTxHasOnlyPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
 
         @Test
@@ -1114,10 +1074,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenChangeIsDust_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
+        void buildBatchedPegouts_whenOriginalChangeIsMaxDust_shouldCreateBatchedPegoutsTxDecrementingFirstOutputAndSettingNonDustChange() {
             // Arrange
-
-            Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUSTY_AMOUNT_SEND_REQUESTED);
+            Coin utxoAmount = MINIMUM_PEGOUT_TX_VALUE.add(DUST_VALUE);
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -1138,21 +1097,21 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsInputs.size());
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
 
         @Test
-        void buildBatchedPegouts_whenChangeIsNonDustForOneSatoshi_shouldCreateBatchedPegoutsTxWithNoModificationInTheValues() {
+        void buildBatchedPegouts_whenChangeIsMinNonDustValue_shouldCreateBatchedPegoutsTxWithNoModificationInTheValues() {
             // Arrange
             federationUTXOs = List.of(
                 UTXOBuilder.builder()
@@ -1174,14 +1133,14 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsTransactionInputs.size());
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
@@ -1209,14 +1168,14 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
             List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
-            int expectedNumberOfUTXOs = 1;
-            assertEquals(expectedNumberOfUTXOs, batchedPegoutsTransactionInputs.size());
+            int expectedNumberOfInputs = 1;
+            assertEquals(expectedNumberOfInputs, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
             assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
@@ -1255,7 +1214,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(1,
-                DUSTY_AMOUNT_SEND_REQUESTED);
+                DUST_VALUE);
 
             // Act
             BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
@@ -1268,7 +1227,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
 
         @Test
-        void buildBatchedPegouts_whenEstimatedFeeIsTooHigh_shouldReturnCouldNotAdjustDownwards() {
+        void buildBatchedPegouts_whenEstimatedFeeIsTooHighAndUtxosAreNotEnough_shouldReturnCouldNotAdjustDownwards() {
             // Arrange
             setUpFeePerKb(HIGH_FEE_PER_KB);
             int numberOfUtxos = 3;
@@ -1335,7 +1294,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
             Coin utxosTotalAmount = Coin.COIN.multiply(expectedNumberOfUtxos);
-            Coin pegoutRequestAmount = utxosTotalAmount.divide(numberOfPegoutRequests).subtract(THOUSAND_SATOSHIS);
+            Coin pegoutRequestAmount = utxosTotalAmount.divide(numberOfPegoutRequests).subtract(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
 
             List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(numberOfPegoutRequests, pegoutRequestAmount);
 
@@ -1348,16 +1307,16 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
 
             assertBtcTxVersionIs2(batchedPegoutsTransaction);
-            List<TransactionInput> batchedPegoutsInputs = batchedPegoutsTransaction.getInputs();
-            assertEquals(expectedNumberOfUtxos, batchedPegoutsInputs.size());
+            List<TransactionInput> batchedPegoutsTransactionInputs = batchedPegoutsTransaction.getInputs();
+            assertEquals(expectedNumberOfUtxos, batchedPegoutsTransactionInputs.size());
             assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
                 batchedPegoutsTransaction,
                 federationRedeemScript,
                 federationUTXOs
             );
-            assertBatchedPegoutsTxHasChangeAndPegoutOutputs(batchedPegoutsTransaction, pegoutRequests);
+            assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(batchedPegoutsTransaction, pegoutRequests);
             List<UTXO> batchedPegoutsTransactionUTXOs = batchedPegoutsResult.selectedUTXOs();
-            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsInputs);
+            assertSelectedUtxosBelongToTheInputs(batchedPegoutsTransactionUTXOs, batchedPegoutsTransactionInputs);
         }
     }
 
@@ -1377,8 +1336,9 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
             activations
         );
 
+        Context btcContext = new Context(BTC_MAINNET_PARAMS);
         wallet = BridgeUtils.getFederationSpendWallet(
-            BTC_CONTEXT,
+            btcContext,
             federation,
             utxos,
             true,
@@ -1406,7 +1366,7 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
     private List<Entry> createPegoutRequests(int count, Coin amount) {
         List<ReleaseRequestQueue.Entry> pegoutRequests = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            BigInteger seed = BigInteger.valueOf(i + RECIPIENT_ADDRESS_KEY_OFFSET);
+            BigInteger seed = BigInteger.valueOf(i + 1100);
             Address recipientAddress = BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
             Entry pegoutEntry = new Entry(
                 recipientAddress,
@@ -1425,16 +1385,18 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     private void assertPegoutRequestsAreIncludedInBatchedPegoutsTx(BtcTransaction batchedPegoutsTransaction,
                                                                    List<Entry> pegoutRequests) {
-        List<TransactionOutput> pegoutOutputs = batchedPegoutsTransaction.getOutputs().stream()
-            .filter(this::isPegoutOutput)
-            .toList();
-
-        assertEquals(pegoutRequests.size(), pegoutOutputs.size());
-        assertPegoutRequestsAreIncludedAsOutputs(pegoutRequests, pegoutOutputs);
+        List<TransactionOutput> userOutputs = getUserOutputs(batchedPegoutsTransaction);
+        assertPegoutRequestsAreIncludedAsUserOutputs(pegoutRequests, userOutputs);
     }
 
-    private boolean isPegoutOutput(TransactionOutput pegoutOutput) {
-        return !isFederationOutput(pegoutOutput);
+    private List<TransactionOutput> getUserOutputs(BtcTransaction batchedPegoutsTransaction) {
+        return batchedPegoutsTransaction.getOutputs().stream()
+            .filter(this::isUserOutput)
+            .toList();
+    }
+
+    private boolean isUserOutput(TransactionOutput output) {
+        return !isFederationOutput(output);
     }
 
     private boolean isFederationOutput(TransactionOutput output) {
@@ -1442,12 +1404,12 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         return recipientAddress.equals(federationAddress);
     }
 
-    private Address getDestinationAddress(TransactionOutput transactionOutput) {
-        return transactionOutput.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
+    private Address getDestinationAddress(TransactionOutput output) {
+        return output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
     }
 
-    private void assertPegoutRequestsAreIncludedAsOutputs(List<Entry> pegoutRequests,
-                                                          List<TransactionOutput> outputs) {
+    private void assertPegoutRequestsAreIncludedAsUserOutputs(List<Entry> pegoutRequests,
+                                                              List<TransactionOutput> outputs) {
         Map<Address, ArrayDeque<Entry>> byDestination = new HashMap<>();
         for (Entry request : pegoutRequests) {
             byDestination
@@ -1473,56 +1435,61 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
         }
     }
 
-    private void assertBatchedPegoutsTxHasChangeAndPegoutOutputs(BtcTransaction batchedPegoutsTransaction,
-                                                                 List<Entry> pegoutRequests) {
-        int expectedNumberOfOutputs = pegoutRequests.size() + EXPECTED_NUMBER_OF_CHANGE_OUTPUTS;
-        List<TransactionOutput> batchedPegoutsTransactionOutputs = batchedPegoutsTransaction.getOutputs();
-        assertBatchedPegoutsTransactionNumberOfOutputs(expectedNumberOfOutputs, batchedPegoutsTransactionOutputs);
+    private void assertBatchedPegoutsTxOutputAndChangeOutputsNumbers(BtcTransaction pegoutTransaction,
+                                                                     int expectedNumberOfUserOutputs,
+                                                                     int expectedNumberOfChangeOutputs) {
+        List<TransactionOutput> userOutputs = getUserOutputs(pegoutTransaction);
+        assertReleaseTxNumberOfOutputs(expectedNumberOfUserOutputs, userOutputs);
+
+        List<TransactionOutput> pegoutTransactionChangeOutputs = getChangeOutputs(pegoutTransaction);
+        assertReleaseTxNumberOfOutputs(expectedNumberOfChangeOutputs, pegoutTransactionChangeOutputs);
+
+        int expectedNumberOfOutputs = expectedNumberOfUserOutputs + expectedNumberOfChangeOutputs;
+        assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, pegoutTransaction.getOutputs());
+    }
+
+    private void assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsNonDust(BtcTransaction batchedPegoutsTransaction,
+                                                                                            List<Entry> pegoutRequests) {
+        int pegoutRequestsNumber = pegoutRequests.size();
+        assertBatchedPegoutsTxOutputAndChangeOutputsNumbers(
+            batchedPegoutsTransaction,
+            pegoutRequestsNumber,
+            EXPECTED_NUMBER_OF_CHANGE_OUTPUTS
+        );
+
         assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
-        assertBatchedPegoutsTxHasChangeAndPegoutsAmountWithFeesProperly(batchedPegoutsTransaction, pegoutRequests);
+
+        List<TransactionOutput> batchedPegoutsTransactionChangeOutputs = getChangeOutputs(batchedPegoutsTransaction);
+        assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
+
+        Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
+        assertUserAndChangeOutputsValuesWhenOriginalChangeIsNonDust(
+            batchedPegoutsTransaction,
+            batchedPegoutsTransactionChangeOutputs,
+            totalPegoutRequestsAmount
+        );
     }
 
-    private void assertBatchedPegoutsTxHasChangeAndPegoutsAmountWithFeesProperly(BtcTransaction batchedPegoutsTransaction,
-                                                                                 List<Entry> pegoutRequests) {
-        Coin inputTotalAmount = batchedPegoutsTransaction.getInputSum();
-        Coin expectedSentPegoutAmount = getTotalPegoutRequestsAmount(pegoutRequests);
-        Coin expectedChangeAmount = inputTotalAmount.subtract(expectedSentPegoutAmount);
+    private void assertBatchedPegoutsTxHasPegoutAndChangeOutputsWhenOriginalChangeIsDust(BtcTransaction batchedPegoutsTransaction,
+                                                                                         List<Entry> pegoutRequests) {
+        int pegoutRequestsNumber = pegoutRequests.size();
+        assertBatchedPegoutsTxOutputAndChangeOutputsNumbers(
+            batchedPegoutsTransaction,
+            pegoutRequestsNumber,
+            EXPECTED_NUMBER_OF_CHANGE_OUTPUTS
+        );
 
-        if (isDust(expectedChangeAmount)) {
-            Coin amountToGetNonDustValue = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(expectedChangeAmount);
-            expectedSentPegoutAmount = expectedSentPegoutAmount.subtract(amountToGetNonDustValue);
-            expectedChangeAmount = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
-        }
+        assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
 
-        List<TransactionOutput> changeOutputs = getChangeOutputs(batchedPegoutsTransaction);
-        assertEquals(EXPECTED_NUMBER_OF_CHANGE_OUTPUTS, changeOutputs.size());
-        Coin changeOutputsAmount = changeOutputs.stream()
-            .map(TransactionOutput::getValue)
-            .reduce(Coin::add)
-            .orElse(Coin.ZERO);
-        assertEquals(expectedChangeAmount, changeOutputsAmount);
+        List<TransactionOutput> batchedPegoutsTransactionChangeOutputs = getChangeOutputs(batchedPegoutsTransaction);
+        assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
 
-        Coin pegoutOutputsAmount = batchedPegoutsTransaction.getOutputSum().subtract(changeOutputsAmount);
-        Coin batchedPegoutsTransactionFees = batchedPegoutsTransaction.getFee();
-        Coin pegoutsAndFeesAmount = batchedPegoutsTransactionFees.add(pegoutOutputsAmount);
-        assertEquals(expectedSentPegoutAmount, pegoutsAndFeesAmount);
-        assertEquals(inputTotalAmount, pegoutsAndFeesAmount.add(changeOutputsAmount));
-    }
-
-    private void assertBatchedPegoutsTxHasPegoutsAmountWithFeesProperly(BtcTransaction batchedPegoutsTransaction,
-                                                                                 List<Entry> pegoutRequests) {
-        Coin inputTotalAmount = batchedPegoutsTransaction.getInputSum();
-        Coin expectedSentPegoutAmount = getTotalPegoutRequestsAmount(pegoutRequests);
-
-        Coin pegoutOutputsAmount = batchedPegoutsTransaction.getOutputSum();
-        Coin batchedPegoutsTransactionFees = batchedPegoutsTransaction.getFee();
-        Coin pegoutsAndFeesAmount = batchedPegoutsTransactionFees.add(pegoutOutputsAmount);
-        assertEquals(expectedSentPegoutAmount, pegoutsAndFeesAmount);
-        assertEquals(inputTotalAmount, pegoutsAndFeesAmount);
-    }
-
-    private static boolean isDust(Coin expectedChange) {
-        return expectedChange.compareTo(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT) < 0;
+        Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
+        assertUserAndChangeOutputsValuesWhenOriginalChangeIsDust(
+            batchedPegoutsTransaction,
+            batchedPegoutsTransactionChangeOutputs,
+            totalPegoutRequestsAmount
+        );
     }
 
     private static Coin getTotalPegoutRequestsAmount(List<Entry> pegoutRequests) {
@@ -1532,16 +1499,16 @@ class ReleaseTransactionBuilderBuildBatchedPegoutsTest {
 
     private void assertBatchedPegoutsTxHasOnlyPegoutOutputs(BtcTransaction batchedPegoutsTransaction,
                                                             List<Entry> pegoutRequests) {
+        int expectedNumberOfChangeOutputs = 0;
         int expectedNumberOfOutputs = pegoutRequests.size();
-        List<TransactionOutput> batchedPegoutsTransactionOutputs = batchedPegoutsTransaction.getOutputs();
-        assertBatchedPegoutsTransactionNumberOfOutputs(expectedNumberOfOutputs, batchedPegoutsTransactionOutputs);
-        assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
-        assertBatchedPegoutsTxHasPegoutsAmountWithFeesProperly(batchedPegoutsTransaction, pegoutRequests);
-    }
+        assertBatchedPegoutsTxOutputAndChangeOutputsNumbers(
+            batchedPegoutsTransaction,
+            expectedNumberOfOutputs,
+            expectedNumberOfChangeOutputs
+        );
 
-    private void assertBatchedPegoutsTransactionNumberOfOutputs(int expectedNumberOfOutputs,
-                                                                List<TransactionOutput> batchedPegoutsTransactionOutputs) {
-        int actualNumberOfOutputs = batchedPegoutsTransactionOutputs.size();
-        assertEquals(expectedNumberOfOutputs, actualNumberOfOutputs);
+        assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
+        Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
+        assertReleaseTxWithOnlyUserOutputsAmounts(batchedPegoutsTransaction, totalPegoutRequestsAmount);
     }
 }
