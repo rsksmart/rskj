@@ -126,29 +126,15 @@ public class PegoutsWaitingForConfirmations {
             return entries.filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations)).findFirst();
         }
 
-
         public void addEntry(Entry entry) {
             this.entriesSet.add(entry);
         }
 
-
         public boolean removeEntry(Entry entry) {
             return this.entriesSet.remove(entry);
         }
-
-        /**
-         * Added entry only if BTC TX is unique.
-         * NOTE: should be used in tests only.
-         */
-        public void addEntryUniqueBtcTx(Entry entry) {
-            for (var e : entriesSet) {
-                if (e.getBtcTransaction().equals(entry.getBtcTransaction())) {
-                    return;
-                }
-            }
-            this.entriesSet.add(entry);
-        }
     }
+
 
     public static class Entry {
 
