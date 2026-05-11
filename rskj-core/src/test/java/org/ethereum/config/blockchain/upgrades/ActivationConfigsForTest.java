@@ -217,6 +217,12 @@ public class ActivationConfigsForTest {
         ));
     }
 
+    private static List<ConsensusRule> getNextReleaseRskips() {
+        return new ArrayList<>(List.of(
+            ConsensusRule.RSKIP559
+        ));
+    }
+
     public static ActivationConfig genesis() {
         return only();
     }
@@ -462,6 +468,10 @@ public class ActivationConfigsForTest {
     }
 
     public static ActivationConfig vetiver900(List<ConsensusRule> except) {
+        return enableTheseDisableThose(vetiver900AllRskips(), except);
+    }
+
+    public static List<ConsensusRule> vetiver900AllRskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(getPaidBridgeTxsRskip());
         rskips.addAll(getOrchidRskips());
@@ -480,8 +490,21 @@ public class ActivationConfigsForTest {
         rskips.addAll(getReed800Rskips());
         rskips.addAll(getReed810Rskips());
         rskips.addAll(getVetiverRskips());
+        return rskips;
+    }
 
-        return enableTheseDisableThose(rskips, except);
+    public static List<ConsensusRule> nextReleaseAllRskips() {
+        var rskips = vetiver900AllRskips();
+        rskips.addAll(getNextReleaseRskips());
+        return rskips;
+    }
+
+    public static ActivationConfig nextRelease() {
+        return nextRelease(Collections.emptyList());
+    }
+
+    public static ActivationConfig nextRelease(List<ConsensusRule> except) {
+        return enableTheseDisableThose(nextReleaseAllRskips(), except);
     }
 
     public static ActivationConfig regtest() {
