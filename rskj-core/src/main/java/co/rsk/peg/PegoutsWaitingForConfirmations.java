@@ -41,7 +41,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
  */
 public class PegoutsWaitingForConfirmations {
 
-    private EntriesStore entries;
+    private final EntriesStore entries;
 
     public PegoutsWaitingForConfirmations(Set<Entry> entries) {
         this.entries = new EntriesStore(entries);
@@ -94,7 +94,7 @@ public class PegoutsWaitingForConfirmations {
         // From java SDK
         private static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
-        private HashSet<Entry> entriesSet;
+        private final HashSet<Entry> entriesSet;
 
         public EntriesStore() {
             // this must be equal to new HashSet() call in Java 17
@@ -127,7 +127,9 @@ public class PegoutsWaitingForConfirmations {
         }
 
         public void addEntry(Entry entry) {
-            this.entriesSet.add(entry);
+            if (this.entriesSet.stream().noneMatch(e -> e.getBtcTransaction().equals(entry.getBtcTransaction()))) {
+                this.entriesSet.add(entry);
+            }
         }
 
         public boolean removeEntry(Entry entry) {

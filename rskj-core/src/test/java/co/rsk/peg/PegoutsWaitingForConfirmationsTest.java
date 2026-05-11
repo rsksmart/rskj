@@ -141,15 +141,39 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void add_existing() {
-        Assertions.assertTrue(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(createTransaction(2, Coin.valueOf(150)), 32L)));
+        var tx = createTransaction(2, Coin.valueOf(150));
+        Assertions.assertTrue(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(tx, 32L)));
         Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getBtcTransaction().equals(createTransaction(2, Coin.valueOf(150)))).count());
-        set.add(new PegoutsWaitingForConfirmations.Entry(createTransaction(2, Coin.valueOf(150)), 23L));
-        Assertions.assertTrue(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(createTransaction(2, Coin.valueOf(150)), 32L)));
+
+        set.add(new PegoutsWaitingForConfirmations.Entry(tx, 23L));
+        Assertions.assertTrue(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(tx, 32L)));
+
         int size = set.getEntries().size();
-        set.add(new PegoutsWaitingForConfirmations.Entry(createTransaction(2, Coin.valueOf(150)), 23L));
+        set.add(new PegoutsWaitingForConfirmations.Entry(tx, 23L));
         Assertions.assertEquals(set.getEntries().size(), size);
-        Assertions.assertFalse(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(createUniqueTransaction(2, Coin.valueOf(150)), 23L)));
-        Assertions.assertEquals(2, set.getEntries().stream().filter(e -> e.getBtcTransaction().equals(createTransaction(2, Coin.valueOf(150)))).count());
+        Assertions.assertFalse(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(tx, 23L)));
+        Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getBtcTransaction().equals(tx)).count());
+    }
+
+    @Test
+    void verifyDeduplication() {
+        // Just another version of more simple deduplication test
+        var pegouts = new PegoutsWaitingForConfirmations(Collections.emptySet());
+
+        var eTx = createTransaction(42, Coin.valueOf(42));
+        var e10 = new PegoutsWaitingForConfirmations.Entry(eTx, 42L);
+        var e11 = new PegoutsWaitingForConfirmations.Entry(eTx, 55L);
+        var e12 = new PegoutsWaitingForConfirmations.Entry(eTx, 66L);
+        var e13 = new PegoutsWaitingForConfirmations.Entry(eTx, 77L);
+        var e20 = new PegoutsWaitingForConfirmations.Entry(createTransaction(64, Coin.CENT), 77L);
+
+        pegouts.add(e10);
+        pegouts.add(e11);
+        pegouts.add(e12);
+        pegouts.add(e13);
+        pegouts.add(e20);
+
+        Assertions.assertEquals(2, pegouts.getEntries().size(), "Must not add multiple pegouts for same TX");
     }
 
     @Test
