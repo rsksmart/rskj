@@ -29,6 +29,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.listener.ProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
+import org.jspecify.annotations.NonNull;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -158,6 +159,13 @@ public class Storage implements Repository, ProgramListenerAware {
 
     private boolean canListenTrace(RskAddress addr) {
         return this.addr.equals(addr) && traceListener != null;
+    }
+
+    @Override
+    public @NonNull SlotState getSlotState(RskAddress addr, DataWord key) {
+        // TODO: Think about this behaviour
+        // check how this class is used and will this method be called ?
+        throw new UnknownError("Not implemented. Shold be called only from mutable repository");
     }
 
     @Override
