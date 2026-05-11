@@ -87,7 +87,7 @@ public class PegoutsWaitingForConfirmations {
     }
 
     /**
-     * Encapsulate entries while preservin sorting order before fork.
+     * Encapsulate entries while preserving sorting order before fork.
      */
     public static class EntriesStore {
 
