@@ -573,7 +573,9 @@ public final class DataWord implements Comparable<DataWord> {
         }
 
         if (length > BYTES) {
-            throw new IllegalArgumentException(String.format("A DataWord must be %d bytes long", BYTES));
+            throw new IllegalArgumentException(
+                String.format("A DataWord must not be more than %d bytes long! Input bytes length is %d.", BYTES, length)
+            );
         }
 
         // if there is not enough data

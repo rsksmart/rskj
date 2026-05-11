@@ -35,8 +35,8 @@ public class RepositoryTrackingTest {
     }
 
     void assertRepositoryHasSize(int readRepoSize, int writtenRepoSize) {
-        Assertions.assertEquals(readRepoSize, tracker.getThisThreadReadKeys().size());
-        Assertions.assertEquals(writtenRepoSize, tracker.getThisThreadWrittenKeys().size());
+        Assertions.assertEquals(readRepoSize, tracker.getThisThreadReadKeys().size(), "Read repo size does not match");
+        Assertions.assertEquals(writtenRepoSize, tracker.getThisThreadWrittenKeys().size(), "Written repo size does not match");
     }
 
     @Test
@@ -120,13 +120,16 @@ public class RepositoryTrackingTest {
         repository.createAccount(COW);
         tracker.clear();
 
-        byte[] cowValue = Hex.decode("A4A5A6");
         byte[] cowKey = Hex.decode("A1A2A3");
+        var cowKeyDw = DataWord.valueOf(cowKey);
+        byte[] cowValue = Hex.decode("A4A5A6");
+
         byte[] cowKey2 = "key-c-2".getBytes();
+        var cowKey2Dw = DataWord.valueOf(cowKey2);
         byte[] cowValue2 = "val-c-2".getBytes();
 
-        repository.addStorageBytes(COW, DataWord.valueOf(cowKey), cowValue);
-        repository.addStorageBytes(COW, DataWord.valueOf(cowKey2), cowValue2);
+        repository.addStorageBytes(COW, cowKeyDw, cowValue);
+        repository.addStorageBytes(COW, cowKey2Dw, cowValue2);
 
         assertRepositoryHasSize(1, 2);
     }

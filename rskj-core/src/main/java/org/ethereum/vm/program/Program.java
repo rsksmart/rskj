@@ -40,6 +40,7 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Repository;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.Repository.SlotState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
@@ -943,8 +944,17 @@ public class Program {
                 msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
-        Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode,
-                programInvoke, internalTx, deletedAccountsInBlock, signatureCache);
+        Program program = new Program(
+                this.config,
+                this.precompiledContracts,
+                this.blockFactory,
+                this.activations,
+                programCode,
+                programInvoke,
+                internalTx,
+                this.deletedAccountsInBlock,
+                this.signatureCache
+        );
 
         vm.play(program);
         childResult = program.getResult();
@@ -1178,6 +1188,10 @@ public class Program {
 
     public byte[] getDataCopy(DataWord offset, DataWord length) {
         return invoke.getDataCopy(offset, length);
+    }
+
+    public SlotState getSlotState(DataWord key) {
+        return getStorage().getSlotState(getOwnerRskAddress(), key);
     }
 
     public DataWord storageLoad(DataWord key) {

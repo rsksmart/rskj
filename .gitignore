@@ -1,3 +1,6 @@
+# local stuff
+.local
+.codesearch.*
 # local credentials
 credentials.properties
 
