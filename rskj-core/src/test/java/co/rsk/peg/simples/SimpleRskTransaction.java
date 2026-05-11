@@ -23,7 +23,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Transaction;
-import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 

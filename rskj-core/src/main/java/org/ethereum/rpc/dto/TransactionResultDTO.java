@@ -17,6 +17,10 @@
  */
 package org.ethereum.rpc.dto;
 
+import co.rsk.core.Coin;
+import co.rsk.remasc.RemascTransaction;
+import co.rsk.util.HexUtils;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -27,11 +31,6 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import co.rsk.core.Coin;
-import co.rsk.remasc.RemascTransaction;
-import co.rsk.util.HexUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;

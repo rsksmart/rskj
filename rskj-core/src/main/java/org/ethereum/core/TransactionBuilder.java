@@ -30,7 +30,6 @@ import org.ethereum.core.transaction.parser.ParsedType2RSKTransaction;
 import org.ethereum.core.transaction.parser.ParsedType2Transaction;
 import org.ethereum.core.transaction.parser.SignedSignature;
 import org.ethereum.core.transaction.parser.UnsignedSignature;
-
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 
@@ -235,34 +234,21 @@ public final class TransactionBuilder {
 		if (parsed.signatureState() instanceof UnsignedSignature unsigned) {
 			chainId= unsigned.chainId() == null ? 0 : unsigned.chainId();
 		}
+		if (parsed instanceof ParsedType0Transaction type0Tx) {
+			effectiveGasPrice =  type0Tx.gasPrice();
+		}
 		if (parsed instanceof ParsedType1Transaction type1Tx) {
 			accessListBytes = type1Tx.accessListBytes();
+			effectiveGasPrice =  type1Tx.gasPrice();
 		}
 		if (parsed instanceof ParsedType2Transaction type2Tx) {
 			accessListBytes =  type2Tx.accessListBytes();
-		}
-
-		if (parsed instanceof ParsedType2Transaction type2Tx) {
 			maxPriorityFeePerGas = type2Tx.maxPriorityFeePerGas();
-		}
-
-		if (parsed instanceof ParsedType2Transaction type2Tx) {
 			maxFeePerGas = type2Tx.maxFeePerGas();
-		}
-		if (parsed instanceof ParsedType2Transaction type2Tx) {
 			effectiveGasPrice = type2Tx.maxPriorityFeePerGas().compareTo(type2Tx.maxFeePerGas()) <= 0
 					? type2Tx.maxPriorityFeePerGas()
 					: type2Tx.maxFeePerGas();
 		}
-
-		if (parsed instanceof ParsedType1Transaction type1Tx) {
-			effectiveGasPrice =  type1Tx.gasPrice();
-		}
-
-		if (parsed instanceof ParsedType0Transaction type0Tx) {
-			effectiveGasPrice =  type0Tx.gasPrice();
-		}
-
 		if (parsed instanceof ParsedType2RSKTransaction type2RskTx) {
 			effectiveGasPrice =  type2RskTx.gasPrice();
 		}

@@ -23,8 +23,11 @@ import co.rsk.core.Wallet;
 import co.rsk.net.TransactionGateway;
 import co.rsk.util.RLPException;
 import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
@@ -33,9 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
@@ -48,25 +48,12 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
     private final TransactionPool transactionPool;
     private final Constants constants;
     private final TransactionGateway transactionGateway;
-    @Nullable
-    private final ActivationConfig activationConfig;
-    @Nullable
-    private final Blockchain blockchain;
 
     public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool, TransactionGateway transactionGateway) {
-        this(constants, wallet, transactionPool, transactionGateway, null, null);
-    }
-
-    public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool,
-                                     TransactionGateway transactionGateway,
-                                     @Nullable ActivationConfig activationConfig,
-                                     @Nullable Blockchain blockchain) {
         this.wallet = wallet;
         this.transactionPool = transactionPool;
         this.constants = constants;
         this.transactionGateway = transactionGateway;
-        this.activationConfig = activationConfig;
-        this.blockchain = blockchain;
     }
 
     @Override
@@ -121,7 +108,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
             }
 
-            return  tx.getHash().toJsonString();
+            return tx.getHash().toJsonString();
         } catch (RLPException e) {
             throw invalidParamError("Invalid input: " + e.getMessage(), e);
         } catch (IllegalArgumentException e) {

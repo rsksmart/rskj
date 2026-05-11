@@ -1,3 +1,20 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2026 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.Coin;
@@ -26,7 +43,6 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
 
     private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
     private static final int FIELD_COUNT = 12;
-
     private static final int CHAIN_ID_INDEX = 0;
     private static final int NONCE_INDEX = 1;
     private static final int MAX_PRIORITY_FEE_PER_GAS_INDEX = 2;
@@ -39,8 +55,6 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
     private static final int Y_PARITY_INDEX = 9;
     private static final int R_INDEX = 10;
     private static final int S_INDEX = 11;
-
-
 
     @Override
     public ParsedType2Transaction parse(TransactionTypePrefix typePrefix, RLPList txFields) {
@@ -77,7 +91,7 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
     public void validate(long bestBlock, ActivationConfig activationConfig, Constants constants) {
         ActivationConfig.ForBlock activations = activationConfig.forBlock(bestBlock);
         if (!activations.isActive(ConsensusRule.RSKIP543)) {
-            throw invalidParamError("Typed transactions (type " + TransactionType.TYPE_1 + ") is not supported before RSKIP-543 activation");
+            throw invalidParamError("Typed transactions (type " + TransactionType.TYPE_2 + ") is not supported before RSKIP-543 activation");
         }
         if (!activations.isActive(ConsensusRule.RSKIP546)) {
             throw invalidParamError("Type 1 / Type 2 transactions are not supported before RSKIP-546 activation");
