@@ -27,7 +27,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -48,15 +47,15 @@ public class PegoutsWaitingForConfirmations {
     }
 
     public Collection<Entry> getEntriesWithoutHash() {
-        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() == null).collect(Collectors.toUnmodifiableList());
+        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() == null).toList();
     }
 
     public Collection<Entry> getEntriesWithHash() {
-        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() != null).collect(Collectors.toUnmodifiableList());
+        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() != null).toList();
     }
 
     public Collection<Entry> getEntries() {
-        return entries.entriesSet.stream().collect(Collectors.toUnmodifiableList());
+        return entries.entriesSet.stream().toList();
     }
 
     /**
