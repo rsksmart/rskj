@@ -29,6 +29,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.listener.ProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
+import org.jspecify.annotations.NonNull;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -161,6 +162,11 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public @NonNull SlotState getSlotState(RskAddress addr, DataWord key) {
+        return this.repository.getSlotState(addr, key);
+    }
+
+    @Override
     public DataWord getStorageValue(RskAddress addr, DataWord key) {
         return repository.getStorageValue(addr, key);
     }
@@ -213,6 +219,11 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public void rollback() {
         repository.rollback();
+    }
+
+    @Override
+    public void rootTxCompleted() {
+        repository.rootTxCompleted();
     }
 
     @Override

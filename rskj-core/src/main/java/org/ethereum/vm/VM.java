@@ -25,6 +25,7 @@ import co.rsk.core.types.bytes.Bytes;
 import co.rsk.core.types.bytes.BytesSlice;
 import co.rsk.crypto.Keccak256;
 import co.rsk.rpc.netty.ExecTimeoutContext;
+
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
@@ -34,6 +35,7 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.program.Program;
+import org.ethereum.vm.program.Program.ExceptionHelper;
 import org.ethereum.vm.program.Stack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1324,40 +1326,96 @@ public class VM {
             throw Program.ExceptionHelper.modificationException(program);
         }
 
-        if (computeGas) {
-            DataWord newValue = stack.get(stack.size() - 2);
-            DataWord oldValue = program.storageLoad(stack.peek());
+        DataWord addr = program.stackPop();
+        DataWord newValue = program.stackPop();
+    
+        this.doSstoreGas(addr, newValue);
 
-            // From null to non-zero
-            if (oldValue == null && !newValue.isZero()) {
-                gasCost = GasCost.SET_SSTORE;
+        if (isLogEnabled) {
+            hint = "[" + program.getOwnerAddress() + "] key: " + addr + " value: " + newValue;
+        }
+
+        program.storageSave(addr, newValue);
+        program.step();
+    }
+
+    protected void doSstoreGas(DataWord addr, DataWord newValue) {
+        if (!computeGas) {
+            return;
+        }
+
+        if (program.getActivations().isActive(RSKIP555)) {
+            // See: https://eips.ethereum.org/EIPS/eip-2200#specification
+            var remainingGas = program.getRemainingGas();
+            if (remainingGas <= GasCost.STIPEND_CALL) {
+                throw ExceptionHelper.gasOverflow(program, remainingGas, BigInteger.valueOf(GasCost.STIPEND_CALL)); 
             }
 
+            // This is the only one place where we are initiating
+            // original value caching
+            var slotState = program.getSlotState(addr);
+
+            if (slotState.current().equals(newValue)) {
+                gasCost = GasCost.SLOAD_RSKIP555;
+            } else {
+                if (slotState.originalEqualsCurrent()) {
+                    if (slotState.original().isZero()) {
+                        gasCost = GasCost.SSTORE_SET_GAS;
+                    } else {
+                        gasCost = GasCost.SSTORE_RESET_GAS;
+                        if (newValue.isZero()) { 
+                            program.futureRefundGas(GasCost.SSTORE_CLEARS_SCHEDULE);
+                        }
+                    }
+                } else {
+                    // Storage slot is dirty
+                    gasCost = GasCost.SLOAD_RSKIP555;
+                    
+                    var toRefund = 0L;
+                    if (!slotState.original().isZero()) {
+                        if (slotState.current().isZero()) {
+                            // This trick means that inside this TX 
+                            // we already refunded GAS for setting original value to zero
+                            // but newValue is not zero so refund should be reverted
+                            toRefund -= GasCost.SSTORE_CLEARS_SCHEDULE;
+                        }
+
+                        if (newValue.isZero()) {
+                            // means only newValue is zero while original != current != new
+                            toRefund += GasCost.SSTORE_CLEARS_SCHEDULE;
+                        }
+                    }
+                    if (slotState.original().equals(newValue)) {
+                        // We returning slot to original state before TX
+                        if (slotState.original().isZero()) {
+                            toRefund += GasCost.SSTORE_SET_GAS - GasCost.SLOAD_RSKIP555;
+                        } else {
+                            toRefund += GasCost.SSTORE_RESET_GAS - GasCost.SLOAD_RSKIP555;
+                        }
+                    }
+                    program.futureRefundGas(toRefund);
+                }
+            }
+        } else {
+            DataWord currentValue = program.storageLoad(addr);
+            // From null to non-zero
+            if (currentValue == null && !newValue.isZero()) {
+                gasCost = GasCost.SSTORE_SET_GAS;
+            }
+            else if (currentValue != null && newValue.isZero()) {
                 // from non-zero to zero
-            else if (oldValue != null && newValue.isZero()) {
                 // todo: GASREFUND counter policyn
 
                 // refund step cost policy.
-                program.futureRefundGas(GasCost.REFUND_SSTORE);
+                program.futureRefundGas(GasCost.SSTORE_CLEARS_SCHEDULE);
                 gasCost = GasCost.CLEAR_SSTORE;
-            } else
+            } else {
                 // from zero to zero, or from non-zero to non-zero
-            {
-                gasCost = GasCost.RESET_SSTORE;
+                gasCost = GasCost.SSTORE_RESET_GAS;
             }
-
-            spendOpCodeGas();
-        }
-        // EXECUTION PHASE
-        DataWord addr = program.stackPop();
-        DataWord value = program.stackPop();
-
-        if (isLogEnabled) {
-            hint = "[" + program.getOwnerAddress() + "] key: " + addr + " value: " + value;
         }
 
-        program.storageSave(addr, value);
-        program.step();
+        spendOpCodeGas();
     }
 
     protected void doTLOAD(){
