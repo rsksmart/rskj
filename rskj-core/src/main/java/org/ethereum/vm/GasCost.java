@@ -62,14 +62,14 @@ public class GasCost {
     private static final long BALANCE_RSKIP555 = 700;
     public static final long SHA3 = 30;
     public static final long SHA3_WORD = 6;
-    private static final long SLOAD = 200;
-    private static final long SLOAD_RSKIP555 = 800;
+    private static final long SLOAD = 200; // SLOAD_GAS
+    public static final long SLOAD_RSKIP555 = 800; // SLOAD_GAS
     public static final long STOP = 0;
     public static final long SUICIDE = 5000;
     public static final long CLEAR_SSTORE = 5000;
-    public static final long SET_SSTORE = 20000;
-    public static final long RESET_SSTORE = 5000;
-    public static final long REFUND_SSTORE = 15000;
+    public static final long SSTORE_SET_GAS = 20000; // Renamed from: SET_SSTORE
+    public static final long SSTORE_RESET_GAS = 5000; // Renamed from: RESET_SSTORE
+    public static final long SSTORE_CLEARS_SCHEDULE = 15000; // Renamed from: REFUND_SSTORE
     public static final long CREATE = 32000;
 
     public static final long TLOAD = 100;

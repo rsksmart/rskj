@@ -1254,7 +1254,7 @@ class BridgeIT {
 
     private void setUp() {
         constants = Constants.mainnet();
-        activationConfig = ActivationConfigsForTest.all();
+        activationConfig = ActivationConfigsForTest.vetiver900();
 
         Repository repository = createRepository();
         track = repository.startTracking();

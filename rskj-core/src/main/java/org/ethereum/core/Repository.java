@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.trie.Trie;
 import org.ethereum.vm.DataWord;
+import org.jspecify.annotations.NonNull;
 
 import java.math.BigInteger;
 
@@ -112,7 +113,25 @@ public interface Repository extends RepositorySnapshot, TransientRepository {
      */
     void addStorageRow(RskAddress addr, DataWord key, DataWord value);
 
+    /**
+     * Put raw value in storage by an account/key.
+     *
+     * Notice that you basically can put any byte[] length even greater than 32.
+     * So this method used not just for storing data for regular smart contracts.
+     *
+     * @param addr account address
+     * @param key of the data to store
+     * @param value of any shape
+     */
     void addStorageBytes(RskAddress addr, DataWord key, byte[] value);
+
+    /**
+     * Return slot state for the current TX context and cache original slot value.
+     *
+     * Should be called in dynamic gas calculation according to EIP-2200 etc.
+     */
+    @NonNull
+    SlotState getSlotState(RskAddress addr, DataWord key);
 
     /**
      * Add value to the balance of an account
@@ -135,6 +154,15 @@ public interface Repository extends RepositorySnapshot, TransientRepository {
      */
     void rollback();
 
+    /**
+     * Complete repository bookkeeping for TX scope.
+     *
+     * RSKIP555 requires to have TX scoped cache for dynamic gas calculations.
+     * This cache persists across all nested calls and must be cleaned
+     * only when the root transaction has been committed or rolled back.
+     */
+    void txFinalized();
+
     void save();
 
     void updateAccountState(RskAddress addr, AccountState accountState);
@@ -142,5 +170,17 @@ public interface Repository extends RepositorySnapshot, TransientRepository {
     default void transfer(RskAddress fromAddr, RskAddress toAddr, Coin value) {
         addBalance(fromAddr, value.negate());
         addBalance(toAddr, value);
+    }
+
+    /**
+     * Represents current and original slot value in the context of TX.
+     */
+    public static record SlotState(
+            @NonNull DataWord original,
+            @NonNull DataWord current
+    ) {
+        public boolean originalEqualsCurrent() {
+            return this.original.equals(this.current);
+        }
     }
 }
