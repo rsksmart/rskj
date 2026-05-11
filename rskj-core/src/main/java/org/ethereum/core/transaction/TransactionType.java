@@ -25,16 +25,14 @@ import java.util.Map;
 public enum TransactionType {
 
     LEGACY((byte) 0, "Legacy"),
-    TYPE_1((byte) 1, "RSKIP546 (EIP-2930 Access List)"),
-    TYPE_2((byte) 2, "RSKIP546 (EIP-1559 Dynamic Fee)"),
-    TYPE_3((byte) 3, "RSKIP000 (Blob)"),
-    TYPE_4((byte) 4, "RSKIP545 (EIP-7702 Set Code)");
+    TYPE_1((byte) 1, "RSKIP546 (EIP-2930)"),
+    TYPE_2((byte) 2, "RSKIP546 (EIP-1559)"),
+    TYPE_3((byte) 3, "RSKIP558 (EIP-4844)"),
+    TYPE_4((byte) 4, "RSKIP545 (EIP-7702)");
 
     public static final byte RSK_NAMESPACE_PREFIX = 0x02;
     public static final byte MAX_TYPE_VALUE = 0x7f;
     public static final byte RESERVED_BYTE = (byte) 0xff;
-
-
     private static final Map<Byte, TransactionType> lookup = new HashMap<>();
 
     static {

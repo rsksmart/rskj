@@ -20,7 +20,6 @@ package org.ethereum.vm.program;
 
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
-import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;

@@ -1,3 +1,20 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2026 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.types.bytes.BytesSlice;
@@ -14,8 +31,6 @@ public final class RawTransactionEnvelopeParser {
     private static final Type0RawTransactionParser type0Parser = new Type0RawTransactionParser();
     private static final Type1RawTransactionParser type1Parser = new Type1RawTransactionParser();
     private static final Type2RawTransactionParser type2Parser = new Type2RawTransactionParser();
-
-    public static final String ERR_INVALID_RSK_SUBTYPE = "Invalid RSK subtype: ";
 
     private RawTransactionEnvelopeParser() {}
 

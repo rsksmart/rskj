@@ -20,7 +20,6 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-
 import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
@@ -33,10 +32,10 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.exception.TransactionException;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.encoder.TransactionEncoderFactory;
 import org.ethereum.core.transaction.parser.ParsedRawTransaction;
 import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
-import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.cost.InitcodeCostCalculator;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
@@ -55,7 +54,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SignatureException;
-
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -82,6 +80,7 @@ public class Transaction {
      */
     public static final byte CHAIN_ID_INC = 35;
     public static final byte LOWER_REAL_V = 27;
+    private static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
     private final TransactionTypePrefix typePrefix;
 
     protected RskAddress sender;
@@ -153,7 +152,6 @@ public class Transaction {
                 null,
                 null
         );
-
     }
 
     private Transaction(Transaction tx) {
@@ -174,6 +172,7 @@ public class Transaction {
 
         this.signature = tx.signature;
     }
+
     private static Transaction fromParsed(ParsedRawTransaction parsed, boolean isLocalCall) {
         Transaction tx = TransactionBuilder.fromParsed(parsed)
                 .isLocalCall(isLocalCall)
@@ -229,7 +228,6 @@ public class Transaction {
 
         return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost + accessListGas;
     }
-
 
     public boolean isTypedTransactionNotAllowed(ActivationConfig.ForBlock activations) {
         if (!this.typePrefix.isTyped()) {
@@ -535,8 +533,6 @@ public class Transaction {
                 : (byte) (this.signature.getV() - LOWER_REAL_V + CHAIN_ID_INC + this.chainId * 2);
     }
 
-    public static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
-
     public  void checkInvalidChain(Constants constants, String chainId) {
         if (!acceptTransactionSignature(constants.getChainId())) {
             throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + chainId);
@@ -602,7 +598,6 @@ public class Transaction {
 
         return Objects.equals(this.getHash(), tx.getHash());
     }
-
 
     private static byte[] nullToZeroArray(byte[] data) {
         return data == null ? ZERO_BYTE_ARRAY.clone() : data;

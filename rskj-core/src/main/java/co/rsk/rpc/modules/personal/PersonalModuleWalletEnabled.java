@@ -25,7 +25,10 @@ import co.rsk.core.Wallet;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -53,7 +56,6 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     private final TransactionPool transactionPool;
     private final RskSystemProperties config;
     private final Constants constants;
-    public static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
 
     public PersonalModuleWalletEnabled(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool) {
         this.config = config;
@@ -204,7 +206,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         if (senderAccount == null) {
             throw new Exception("From address private key could not be found in this node");
         }
-        String txHash = null;
+        String txHash;
 
         synchronized (transactionPool) {
             Transaction tx = Transaction.fromCallArguments(args, getAccountNextNonce(senderAccount),  constants.getChainId());

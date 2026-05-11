@@ -127,7 +127,6 @@ public class HexUtils {
         try {
             return new BigInteger(strHexOrStrNumber);
         } catch (Exception e) {
-
             throw invalidParamError(NUMBER_VALUE_ERROR);
         }
     }
