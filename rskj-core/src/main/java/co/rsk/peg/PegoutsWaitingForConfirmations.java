@@ -25,6 +25,7 @@ import com.google.common.primitives.UnsignedBytes;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -101,7 +102,7 @@ public class PegoutsWaitingForConfirmations {
         }
 
         public EntriesStore(Collection<Entry> entries) {
-            // This is a standart code for `new HashSet<>(entries);` in Java 17
+            // This is a standard code for `new HashSet<>(entries);` in Java 17
             // Coefficients were changed in Java 21
             // Need to hardcode Java 17 init params here to preserve old behaviour in Java 21+
             this.entriesSet = new HashSet<>(Math.max((int) (entries.size()/DEFAULT_LOAD_FACTOR) + 1, 16));
@@ -116,13 +117,11 @@ public class PegoutsWaitingForConfirmations {
          * @param withTxComparator turns on deterministic order for entries before filtering.
          */
         public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations, boolean withTxComparator) {
-            var entries = entriesSet.stream();
-
+            var entries = entriesSet.stream().filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations));
             if (withTxComparator) {
                 entries = entries.sorted(Entry.BTC_TX_COMPARATOR);
             }
-
-            return entries.filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations)).findFirst();
+            return entries.findFirst();
         }
 
         public void addEntry(Entry entry) {
@@ -135,15 +134,13 @@ public class PegoutsWaitingForConfirmations {
             return this.entriesSet.remove(entry);
         }
     }
-
-
     public static class Entry {
 
-        private BtcTransaction btcTransaction;
+        private final BtcTransaction btcTransaction;
 
-        private Long pegoutCreationRskBlockNumber;
+        private final Long pegoutCreationRskBlockNumber;
 
-        private Keccak256 pegoutCreationRskTxHash;
+        private final Keccak256 pegoutCreationRskTxHash;
 
         /**
          * Compares entries using the lexicographical order of the btc tx's serialized bytes.
@@ -194,7 +191,7 @@ public class PegoutsWaitingForConfirmations {
 
         @Override
         public int hashCode() {
-            return java.util.Objects.hash(getBtcTransaction(), getPegoutCreationRskBlockNumber());
+            return Objects.hash(getBtcTransaction(), getPegoutCreationRskBlockNumber());
         }
     }
 }
