@@ -18,11 +18,20 @@
 
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_1;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
+import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
+import static co.rsk.peg.ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE;
+import static co.rsk.peg.ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY;
+import static co.rsk.peg.ReleaseTransactionBuilder.Response.SUCCESS;
+import static co.rsk.peg.ReleaseTransactionBuilderAssertions.*;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -43,25 +52,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import co.rsk.peg.ReleaseTransactionBuilder.BuildResult;
 import co.rsk.peg.federation.*;
 import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
-import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
-import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
-import static co.rsk.peg.ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE;
-import static co.rsk.peg.ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY;
-import static co.rsk.peg.ReleaseTransactionBuilder.Response.SUCCESS;
-import static co.rsk.peg.ReleaseTransactionBuilderAssertions.*;
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
-import co.rsk.peg.ReleaseTransactionBuilder.BuildResult;
 import org.ethereum.core.Repository;
 
 /**
@@ -630,8 +630,8 @@ class ReleaseTransactionBuilderTest {
 
         @Test
         void getters() {
-            Assertions.assertSame(wallet, builder.getWallet());
-            Assertions.assertSame(changeAddress, builder.getChangeAddress());
+            assertSame(wallet, builder.getWallet());
+            assertSame(changeAddress, builder.getChangeAddress());
             assertEquals(Coin.MILLICOIN.multiply(2), builder.getFeePerKb());
         }
 
@@ -676,8 +676,8 @@ class ReleaseTransactionBuilderTest {
             UTXOProvider utxoProvider = mock(UTXOProvider.class);
             when(wallet.getUTXOProvider()).thenReturn(utxoProvider);
             when(wallet.getWatchedAddresses()).thenReturn(Collections.singletonList(changeAddress));
-            when(utxoProvider.getOpenTransactionOutputs(any(List.class))).then((InvocationOnMock m) -> {
-                List<Address> addresses = m.<List>getArgument(0);
+            when(utxoProvider.getOpenTransactionOutputs(anyList())).then((InvocationOnMock m) -> {
+                List<Address> addresses = m.getArgument(0);
                 assertEquals(Collections.singletonList(changeAddress), addresses);
                 return availableUTXOs;
             });
@@ -695,7 +695,7 @@ class ReleaseTransactionBuilderTest {
 
                 assertEquals(1, tx.getOutputs().size());
                 assertEquals(amount, tx.getOutput(0).getValue());
-                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
 
                 tx.addInput(mockUTXOHash("two"), 2, mock(Script.class));
                 tx.addInput(mockUTXOHash("three"), 0, mock(Script.class));
@@ -712,7 +712,7 @@ class ReleaseTransactionBuilderTest {
 
             assertEquals(1, tx.getOutputs().size());
             assertEquals(amount, tx.getOutput(0).getValue());
-            assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+            assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
 
             assertEquals(2, tx.getInputs().size());
             assertEquals(mockUTXOHash("two"), tx.getInput(0).getOutpoint().getHash());
@@ -777,8 +777,8 @@ class ReleaseTransactionBuilderTest {
             UTXOProvider utxoProvider = mock(UTXOProvider.class);
             when(wallet.getUTXOProvider()).thenReturn(utxoProvider);
             when(wallet.getWatchedAddresses()).thenReturn(Collections.singletonList(changeAddress));
-            when(utxoProvider.getOpenTransactionOutputs(any(List.class))).then((InvocationOnMock m) -> {
-                List<Address> addresses = m.<List>getArgument(0);
+            when(utxoProvider.getOpenTransactionOutputs(anyList())).then((InvocationOnMock m) -> {
+                List<Address> addresses = m.getArgument(0);
                 assertEquals(Collections.singletonList(changeAddress), addresses);
                 throw new UTXOProviderException();
             });
@@ -796,7 +796,7 @@ class ReleaseTransactionBuilderTest {
 
                 assertEquals(1, tx.getOutputs().size());
                 assertEquals(amount, tx.getOutput(0).getValue());
-                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
 
                 tx.addInput(mockUTXOHash("two"), 2, mock(Script.class));
                 tx.addInput(mockUTXOHash("three"), 0, mock(Script.class));
@@ -889,8 +889,8 @@ class ReleaseTransactionBuilderTest {
             UTXOProvider utxoProvider = mock(UTXOProvider.class);
             when(wallet.getUTXOProvider()).thenReturn(utxoProvider);
             when(wallet.getWatchedAddresses()).thenReturn(Collections.singletonList(to));
-            when(utxoProvider.getOpenTransactionOutputs(any(List.class))).then((InvocationOnMock m) -> {
-                List<Address> addresses = m.<List>getArgument(0);
+            when(utxoProvider.getOpenTransactionOutputs(anyList())).then((InvocationOnMock m) -> {
+                List<Address> addresses = m.getArgument(0);
                 assertEquals(Collections.singletonList(to), addresses);
                 throw new UTXOProviderException();
             });
@@ -909,7 +909,7 @@ class ReleaseTransactionBuilderTest {
 
                 assertEquals(1, tx.getOutputs().size());
                 assertEquals(Coin.ZERO, tx.getOutput(0).getValue());
-                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
 
                 tx.addInput(mockUTXOHash("two"), 2, mock(Script.class));
                 tx.addInput(mockUTXOHash("three"), 0, mock(Script.class));
@@ -1252,8 +1252,8 @@ class ReleaseTransactionBuilderTest {
             UTXOProvider utxoProvider = mock(UTXOProvider.class);
             when(wallet.getUTXOProvider()).thenReturn(utxoProvider);
             when(wallet.getWatchedAddresses()).thenReturn(Collections.singletonList(changeAddress));
-            when(utxoProvider.getOpenTransactionOutputs(any(List.class))).then((InvocationOnMock m) -> {
-                List<Address> addresses = m.<List>getArgument(0);
+            when(utxoProvider.getOpenTransactionOutputs(anyList())).then((InvocationOnMock m) -> {
+                List<Address> addresses = m.getArgument(0);
                 assertEquals(Collections.singletonList(changeAddress), addresses);
                 throw new UTXOProviderException();
             });
@@ -1432,8 +1432,8 @@ class ReleaseTransactionBuilderTest {
             UTXOProvider utxoProvider = mock(UTXOProvider.class);
             when(wallet.getUTXOProvider()).thenReturn(utxoProvider);
             when(wallet.getWatchedAddresses()).thenReturn(Collections.singletonList(to));
-            when(utxoProvider.getOpenTransactionOutputs(any(List.class))).then((InvocationOnMock m) -> {
-                List<Address> addresses = m.<List>getArgument(0);
+            when(utxoProvider.getOpenTransactionOutputs(anyList())).then((InvocationOnMock m) -> {
+                List<Address> addresses = m.getArgument(0);
                 assertEquals(Collections.singletonList(to), addresses);
                 return availableUTXOs;
             });
@@ -1539,7 +1539,7 @@ class ReleaseTransactionBuilderTest {
         }
 
         private Address mockAddress(int pk) {
-            return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(regtestParameters);
         }
 
         private Sha256Hash mockUTXOHash(String generator) {
@@ -1578,15 +1578,22 @@ class ReleaseTransactionBuilderTest {
 
         private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
         private static final Coin DUST_VALUE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
+        /**
+         * UTXO count that pushes {@link ReleaseTransactionBuilder#buildAmountTo} past max standard tx size
+         * for this federation script type (see sibling {@link #UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE}).
+         */
+        private static final int UTXO_COUNT_EXCEEDING_MAX_STANDARD_TX_SIZE = 277;
+        /** Largest input count that still fits under the max standard tx size bound for the same fixture. */
+        private static final int UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = 276;
         private static final Address RECIPIENT_ADDRESS = createRecipientAddress();
 
-        protected Federation federation;
-        protected int federationFormatVersion;
-        protected Address federationAddress;
-        protected List<UTXO> federationUTXOs;
-        protected Script federationOutputScript;
-        protected Script federationRedeemScript;
-        protected Wallet wallet;
+        private Federation federation;
+        private int federationFormatVersion;
+        private Address federationAddress;
+        private List<UTXO> federationUTXOs;
+        private Script federationOutputScript;
+        private Script federationRedeemScript;
+        private Wallet wallet;
 
         private ActivationConfig.ForBlock activations;
         private Coin feePerKb;
@@ -1902,7 +1909,7 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildAmountTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
             // Arrange
-            int numberOfUtxos = 277;
+            int numberOfUtxos = UTXO_COUNT_EXCEEDING_MAX_STANDARD_TX_SIZE;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
                 .withValue(Coin.COIN)
@@ -1922,7 +1929,7 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildAmountTo_whenTxIsAlmostExceedingMaxTxSize_shouldCreatePegoutTx() {
             // Arrange
-            int numberOfUtxos = 276;
+            int numberOfUtxos = UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
                 .withValue(Coin.COIN)
@@ -2125,14 +2132,21 @@ class ReleaseTransactionBuilderTest {
         private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
         private static final int RECIPIENT_ADDRESS_KEY_OFFSET = 3100;
         private static final Address RECIPIENT_ADDRESS = createRecipientAddress();
+        /**
+         * UTXO counts chosen so {@link ReleaseTransactionBuilder#buildEmptyWalletTo} exceeds max standard tx size
+         * for each federation script layout (witness-heavy P2WSH needs far more inputs than bare P2SH).
+         */
+        private static final int STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX = 277;
+        private static final int P2SH_ERP_UTXO_COUNT_OVER_MAX_TX = 196;
+        private static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX = 2438;
 
-        protected Federation federation;
-        protected int federationFormatVersion;
-        protected Address federationAddress;
-        protected List<UTXO> federationUTXOs;
-        protected Script federationOutputScript;
-        protected Script federationRedeemScript;
-        protected Wallet wallet;
+        private Federation federation;
+        private int federationFormatVersion;
+        private Address federationAddress;
+        private List<UTXO> federationUTXOs;
+        private Script federationOutputScript;
+        private Script federationRedeemScript;
+        private Wallet wallet;
 
         private ActivationConfig.ForBlock activations;
         private Coin feePerKb;
@@ -2221,19 +2235,10 @@ class ReleaseTransactionBuilderTest {
                 BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, emptyWalletResult);
-                BtcTransaction refundTransaction = emptyWalletResult.btcTx();
-                assertBtcTxVersionIs2(refundTransaction);
-
-                List<TransactionInput> refundTransactionInputs = refundTransaction.getInputs();
-                assertEquals(federationUTXOs.size(), refundTransactionInputs.size());
-                assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-                    refundTransaction,
-                    federationRedeemScript,
-                    federationUTXOs
+                assertSuccessfulEmptyWalletRefundWithBtcVersion2(
+                    emptyWalletResult,
+                    (tx, rs, ut) -> assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(tx, rs, ut)
                 );
-                assertRefundTxHasOnlyPegoutOutput(refundTransaction);
-                assertSelectedUtxosBelongToTheInputs(emptyWalletResult.selectedUTXOs(), refundTransactionInputs);
             }
 
             @Test
@@ -2245,25 +2250,16 @@ class ReleaseTransactionBuilderTest {
                 BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, emptyWalletResult);
-                BtcTransaction refundTransaction = emptyWalletResult.btcTx();
-                assertBtcTxVersionIs2(refundTransaction);
-
-                List<TransactionInput> refundTransactionInputs = refundTransaction.getInputs();
-                assertEquals(federationUTXOs.size(), refundTransactionInputs.size());
-                assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-                    refundTransaction,
-                    federationRedeemScript,
-                    federationUTXOs
+                assertSuccessfulEmptyWalletRefundWithBtcVersion2(
+                    emptyWalletResult,
+                    (tx, rs, ut) -> assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(tx, rs, ut)
                 );
-                assertRefundTxHasOnlyPegoutOutput(refundTransaction);
-                assertSelectedUtxosBelongToTheInputs(emptyWalletResult.selectedUTXOs(), refundTransactionInputs);
             }
 
             @Test
             void buildEmptyWalletTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
-                int numberOfUtxos = 277;
+                int numberOfUtxos = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
                     .withValue(Coin.COIN)
@@ -2294,18 +2290,10 @@ class ReleaseTransactionBuilderTest {
                 BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, emptyWalletResult);
-                BtcTransaction refundTransaction = emptyWalletResult.btcTx();
-                assertBtcTxVersionIs2(refundTransaction);
-                List<TransactionInput> refundTransactionInputs = refundTransaction.getInputs();
-                assertEquals(federationUTXOs.size(), refundTransactionInputs.size());
-                assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-                    refundTransaction,
-                    federationRedeemScript,
-                    federationUTXOs
+                assertSuccessfulEmptyWalletRefundWithBtcVersion2(
+                    emptyWalletResult,
+                    (tx, rs, ut) -> assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(tx, rs, ut)
                 );
-                assertRefundTxHasOnlyPegoutOutput(refundTransaction);
-                assertSelectedUtxosBelongToTheInputs(emptyWalletResult.selectedUTXOs(), refundTransactionInputs);
             }
 
             @Test
@@ -2382,19 +2370,10 @@ class ReleaseTransactionBuilderTest {
                 BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, emptyWalletResult);
-                BtcTransaction refundTransaction = emptyWalletResult.btcTx();
-                assertBtcTxVersionIs2(refundTransaction);
-
-                List<TransactionInput> refundTransactionInputs = refundTransaction.getInputs();
-                assertEquals(federationUTXOs.size(), refundTransactionInputs.size());
-                assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
-                    refundTransaction,
-                    federationRedeemScript,
-                    federationUTXOs
+                assertSuccessfulEmptyWalletRefundWithBtcVersion2(
+                    emptyWalletResult,
+                    (tx, rs, ut) -> assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(tx, rs, ut)
                 );
-                assertRefundTxHasOnlyPegoutOutput(refundTransaction);
-                assertSelectedUtxosBelongToTheInputs(emptyWalletResult.selectedUTXOs(), refundTransactionInputs);
             }
 
             @Test
@@ -2406,25 +2385,16 @@ class ReleaseTransactionBuilderTest {
                 BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, emptyWalletResult);
-                BtcTransaction refundTransaction = emptyWalletResult.btcTx();
-                assertBtcTxVersionIs2(refundTransaction);
-
-                List<TransactionInput> refundTransactionInputs = refundTransaction.getInputs();
-                assertEquals(federationUTXOs.size(), refundTransactionInputs.size());
-                assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
-                    refundTransaction,
-                    federationRedeemScript,
-                    federationUTXOs
+                assertSuccessfulEmptyWalletRefundWithBtcVersion2(
+                    emptyWalletResult,
+                    (tx, rs, ut) -> assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(tx, rs, ut)
                 );
-                assertRefundTxHasOnlyPegoutOutput(refundTransaction);
-                assertSelectedUtxosBelongToTheInputs(emptyWalletResult.selectedUTXOs(), refundTransactionInputs);
             }
 
             @Test
             void buildEmptyWalletTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
-                int numberOfUtxos = 196;
+                int numberOfUtxos = P2SH_ERP_UTXO_COUNT_OVER_MAX_TX;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
                     .withValue(Coin.COIN)
@@ -2455,18 +2425,10 @@ class ReleaseTransactionBuilderTest {
                 BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, emptyWalletResult);
-                BtcTransaction refundTransaction = emptyWalletResult.btcTx();
-                assertBtcTxVersionIs2(refundTransaction);
-                List<TransactionInput> refundTransactionInputs = refundTransaction.getInputs();
-                assertEquals(federationUTXOs.size(), refundTransactionInputs.size());
-                assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
-                    refundTransaction,
-                    federationRedeemScript,
-                    federationUTXOs
+                assertSuccessfulEmptyWalletRefundWithBtcVersion2(
+                    emptyWalletResult,
+                    (tx, rs, ut) -> assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(tx, rs, ut)
                 );
-                assertRefundTxHasOnlyPegoutOutput(refundTransaction);
-                assertSelectedUtxosBelongToTheInputs(emptyWalletResult.selectedUTXOs(), refundTransactionInputs);
             }
 
             @Test
@@ -2543,19 +2505,10 @@ class ReleaseTransactionBuilderTest {
                 BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, emptyWalletResult);
-                BtcTransaction refundTransaction = emptyWalletResult.btcTx();
-                assertBtcTxVersionIs2(refundTransaction);
-
-                List<TransactionInput> refundTransactionInputs = refundTransaction.getInputs();
-                assertEquals(federationUTXOs.size(), refundTransactionInputs.size());
-                assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
-                    refundTransaction,
-                    federationRedeemScript,
-                    federationUTXOs
+                assertSuccessfulEmptyWalletRefundWithBtcVersion2(
+                    emptyWalletResult,
+                    (tx, rs, ut) -> assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(tx, rs, ut)
                 );
-                assertRefundTxHasOnlyPegoutOutput(refundTransaction);
-                assertSelectedUtxosBelongToTheInputs(emptyWalletResult.selectedUTXOs(), refundTransactionInputs);
             }
 
             @Test
@@ -2567,25 +2520,16 @@ class ReleaseTransactionBuilderTest {
                 BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, emptyWalletResult);
-                BtcTransaction refundTransaction = emptyWalletResult.btcTx();
-                assertBtcTxVersionIs2(refundTransaction);
-
-                List<TransactionInput> refundTransactionInputs = refundTransaction.getInputs();
-                assertEquals(federationUTXOs.size(), refundTransactionInputs.size());
-                assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
-                    refundTransaction,
-                    federationRedeemScript,
-                    federationUTXOs
+                assertSuccessfulEmptyWalletRefundWithBtcVersion2(
+                    emptyWalletResult,
+                    (tx, rs, ut) -> assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(tx, rs, ut)
                 );
-                assertRefundTxHasOnlyPegoutOutput(refundTransaction);
-                assertSelectedUtxosBelongToTheInputs(emptyWalletResult.selectedUTXOs(), refundTransactionInputs);
             }
 
             @Test
             void buildEmptyWalletTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
-                int numberOfUtxos = 2438;
+                int numberOfUtxos = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
                     .withValue(Coin.COIN)
@@ -2616,18 +2560,10 @@ class ReleaseTransactionBuilderTest {
                 BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, emptyWalletResult);
-                BtcTransaction refundTransaction = emptyWalletResult.btcTx();
-                assertBtcTxVersionIs2(refundTransaction);
-                List<TransactionInput> refundTransactionInputs = refundTransaction.getInputs();
-                assertEquals(federationUTXOs.size(), refundTransactionInputs.size());
-                assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
-                    refundTransaction,
-                    federationRedeemScript,
-                    federationUTXOs
+                assertSuccessfulEmptyWalletRefundWithBtcVersion2(
+                    emptyWalletResult,
+                    (tx, rs, ut) -> assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(tx, rs, ut)
                 );
-                assertRefundTxHasOnlyPegoutOutput(refundTransaction);
-                assertSelectedUtxosBelongToTheInputs(emptyWalletResult.selectedUTXOs(), refundTransactionInputs);
             }
 
             @Test
@@ -2649,6 +2585,25 @@ class ReleaseTransactionBuilderTest {
                 assertNull(emptyWalletResult.btcTx());
                 assertNull(emptyWalletResult.selectedUTXOs());
             }
+        }
+
+        @FunctionalInterface
+        private interface RefundTxInputAssertion {
+            void assertInputsMatchFederation(BtcTransaction refundTx, Script redeemScript, List<UTXO> utxos);
+        }
+
+        private void assertSuccessfulEmptyWalletRefundWithBtcVersion2(
+            BuildResult emptyWalletResult,
+            RefundTxInputAssertion assertInputsMatchFederation
+        ) {
+            assertBuildResultResponseCode(SUCCESS, emptyWalletResult);
+            BtcTransaction refundTransaction = emptyWalletResult.btcTx();
+            assertBtcTxVersionIs2(refundTransaction);
+            List<TransactionInput> refundTransactionInputs = refundTransaction.getInputs();
+            assertEquals(federationUTXOs.size(), refundTransactionInputs.size());
+            assertInputsMatchFederation.assertInputsMatchFederation(refundTransaction, federationRedeemScript, federationUTXOs);
+            assertRefundTxHasOnlyPegoutOutput(refundTransaction);
+            assertSelectedUtxosBelongToTheInputs(emptyWalletResult.selectedUTXOs(), refundTransactionInputs);
         }
 
         private void setUpActivations(ActivationConfig.ForBlock activations) {
@@ -2686,7 +2641,7 @@ class ReleaseTransactionBuilderTest {
             return createReleaseTransactionBuilder();
         }
 
-        protected ReleaseTransactionBuilder createReleaseTransactionBuilder() {
+        private ReleaseTransactionBuilder createReleaseTransactionBuilder() {
             return new ReleaseTransactionBuilder(
                 BTC_MAINNET_PARAMS,
                 wallet,
