@@ -101,7 +101,7 @@ public class PegoutsWaitingForConfirmations {
         }
 
         public EntriesStore(Collection<Entry> entries) {
-            // This is a standart code for `new HashSet<>(entries);` in Java 17
+            // This is a standard code for `new HashSet<>(entries);` in Java 17
             // Coefficients were changed in Java 21
             // Need to hardcode Java 17 init params here to preserve old behaviour in Java 21+
             this.entriesSet = new HashSet<>(Math.max((int) (entries.size()/DEFAULT_LOAD_FACTOR) + 1, 16));
@@ -135,8 +135,6 @@ public class PegoutsWaitingForConfirmations {
             return this.entriesSet.remove(entry);
         }
     }
-
-
     public static class Entry {
 
         private BtcTransaction btcTransaction;
