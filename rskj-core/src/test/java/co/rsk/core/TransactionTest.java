@@ -29,6 +29,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.Secp256k1;
@@ -77,7 +78,7 @@ class TransactionTest {
         Transaction tx = Transaction.builder()
                 .gasPrice(gasPrice)
                 .gasLimit(gas)
-                .destination(ecKey.getAddress())
+                .receiveAddress(ecKey.getAddress())
                 .value(value)
                 .build();
 
@@ -120,7 +121,7 @@ class TransactionTest {
         Transaction tx = Transaction.builder()
                 .gasPrice(gasPrice)
                 .gasLimit(gas)
-                .destination(ecKey.getAddress())
+                .receiveAddress(ecKey.getAddress())
                 .value(value)
                 .build();
 
@@ -302,7 +303,7 @@ class TransactionTest {
                 .nonce(BigInteger.valueOf(9))
                 .gasPrice(BigInteger.valueOf(20000000000L))
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(Hex.decode("3535353535353535353535353535353535353535"))
+                .receiveAddress(Hex.decode("3535353535353535353535353535353535353535"))
                 .chainId((byte) 1)
                 .value(BigInteger.valueOf(1000000000000000000L))
                 .build();
@@ -323,7 +324,7 @@ class TransactionTest {
                 .nonce(BigInteger.valueOf(9L))
                 .gasPrice(BigInteger.valueOf(20000000000L))
                 .gasLimit(BigInteger.valueOf(21000L))
-                .destination(Hex.decode("3535353535353535353535353535353535353535"))
+                .receiveAddress(Hex.decode("3535353535353535353535353535353535353535"))
                 .chainId((byte) 1)
                 .value(BigInteger.valueOf(1000000000000000000L))
                 .build();
@@ -341,7 +342,11 @@ class TransactionTest {
     void isContractCreationWhenReceiveAddressIsNull() {
         Transaction tx = Transaction
                 .builder()
-                .destination(RskAddress.nullAddress())
+                .receiveAddress(RskAddress.nullAddress())
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000L))
+                .chainId(chainId)
+                .value(BigInteger.ONE)
                 .build();
         assertTrue(tx.isContractCreation());
     }
@@ -353,7 +358,7 @@ class TransactionTest {
                 .nonce(BigInteger.TEN)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000L))
-                .destination(Hex.decode(""))
+                .receiveAddress(Hex.decode(""))
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
@@ -372,7 +377,7 @@ class TransactionTest {
 
         byte[] zeroAddress = Hex.decode("00");
 
-        assertThrows(RuntimeException.class, () -> builder.destination(zeroAddress));
+        assertThrows(RuntimeException.class, () -> builder.receiveAddress(zeroAddress));
     }
 
     @Test
@@ -382,7 +387,7 @@ class TransactionTest {
                 .nonce(BigInteger.TEN)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000L))
-                .destination(Hex.decode("0000000000000000000000000000000000000000"))
+                .receiveAddress(Hex.decode("0000000000000000000000000000000000000000"))
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
@@ -396,7 +401,7 @@ class TransactionTest {
                 .nonce(BigInteger.TEN)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000L))
-                .destination(Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826"))
+                .receiveAddress(Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826"))
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
@@ -410,7 +415,7 @@ class TransactionTest {
                 .nonce(BigInteger.TEN)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000L))
-                .destination(Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .receiveAddress(Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
@@ -501,12 +506,12 @@ class TransactionTest {
     }
 
     @Test
-    void testTransactionCostForContractCreationWithNullDataAndRSKIP438Enabled() {
+    void testTransactionCostForContractCreationWithEmptyDataAndRSKIP438Enabled() {
         byte[] bytes = new byte[]{-8, 75, -128, 8, -126, -61, 80, -128, 7, -128, 102, -96, -63, -110, 91, -2, 42, -19, 18, 4, 67, -64, 48, -45, -85, -123, 41, 14, -48, -124, 118, 21, -63, -39, -45, 67, 116, -103, 93, 37, 4, 88, -61, 49, -96, 77, -30, -116, 59, -58, -82, -95, 76, 46, 124, 115, -32, -80, 125, 30, -42, -75, -111, -49, -41, 121, -73, -121, -68, -41, 72, -120, 94, 82, 42, 17, 61};
         Transaction txInBlock = new ImmutableTransaction(bytes);
 
-        // make sure that data is null and it's contract creation
-        assertNull(txInBlock.getData());
+
+        assertArrayEquals(new byte[0], txInBlock.getData());
         assertEquals(RskAddress.nullAddress(), txInBlock.getReceiveAddress());
 
         Constants constants = Mockito.mock(Constants.class);
@@ -516,5 +521,36 @@ class TransactionTest {
 
         assertEquals(53000, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
     }
-}
 
+    @Test
+    void getEncodedV_onUnsignedLegacyTx_returnsZeroWithoutNpe() {
+        Transaction unsigned = Transaction.builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21_000))
+                .receiveAddress(new RskAddress("0000000000000000000000000000000000000002").getBytes())
+                .value(BigInteger.ZERO)
+                .chainId(chainId)
+                .build();
+
+        assertNull(unsigned.getSignature(), "precondition: transaction must not be signed");
+        assertEquals((byte) 0, unsigned.getEncodedV(),
+                "getEncodedV on an unsigned tx must return 0 instead of throwing NPE");
+    }
+
+    @Test
+    void getEncodedV_onUnsignedType1Tx_returnsZeroWithoutNpe() {
+        Transaction unsigned = Transaction.builder()
+                .type(TransactionType.TYPE_1)
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21_000))
+                .receiveAddress(new RskAddress("0000000000000000000000000000000000000002").getBytes())
+                .value(BigInteger.ZERO)
+                .chainId(chainId)
+                .build();
+
+        assertNull(unsigned.getSignature());
+        assertEquals((byte) 0, unsigned.getEncodedV());
+    }
+}

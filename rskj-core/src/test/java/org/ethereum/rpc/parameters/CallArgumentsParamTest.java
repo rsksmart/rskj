@@ -41,7 +41,7 @@ public class CallArgumentsParamTest {
     private static final String NULL = "null";
 
     @Test
-    public void testValidCallArgumentsParam() throws JsonProcessingException {
+    void testValidCallArgumentsParam() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"from\": \"" + FROM + "\"," +
                 "            \"to\" : \"" + TO + "\"," +
@@ -68,7 +68,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidFromInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidFromInCallArgumentsParam() throws JsonProcessingException {
         String from = "0x7986b3df570230288501eea3d890bd66948c9b7s";
 
         String callArgumentsInput = "{\n" +
@@ -80,7 +80,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidToInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidToInCallArgumentsParam() throws JsonProcessingException {
         String to = "0xe7b8e91401bf4d1669f54dc5f98109d7efbc4esw";
 
         String callArgumentsInput = "{\n" +
@@ -92,7 +92,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidGasInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidGasInCallArgumentsParam() throws JsonProcessingException {
         String gas = "0x76cz";
 
         String callArgumentsInput = "{\n" +
@@ -104,7 +104,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidGasPriceInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidGasPriceInCallArgumentsParam() throws JsonProcessingException {
         String gasPrice = "0x9184e72a0zq";
 
         String callArgumentsInput = "{\n" +
@@ -116,7 +116,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidValueInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidValueInCallArgumentsParam() throws JsonProcessingException {
         String value = "0x9184e7tq";
 
         String callArgumentsInput = "{\n" +
@@ -128,7 +128,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidDataInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidDataInCallArgumentsParam() throws JsonProcessingException {
         String data = "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f0724456pl";
 
         String callArgumentsInput = "{\n" +
@@ -140,7 +140,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidNonceInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidNonceInCallArgumentsParam() throws JsonProcessingException {
         String nonce = "0xj";
 
         String callArgumentsInput = "{\n" +
@@ -152,7 +152,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testInvalidChainIdInCallArgumentsParam() throws JsonProcessingException {
+    void testInvalidChainIdInCallArgumentsParam() throws JsonProcessingException {
         String chainId = "0xb2r";
 
         String callArgumentsInput = "{\n" +
@@ -164,16 +164,54 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testToCallArgumentsWithData() {
+    void testToCallArgumentsWithData() {
         CallArgumentsParam callArgumentsParam = new CallArgumentsParam(
                 new HexAddressParam(FROM),
                 new HexAddressParam(TO),
                 new HexNumberParam(GAS),
                 new HexNumberParam(GAS_PRICE),
                 null,
+                null,
+                null,
                 new HexNumberParam(NONCE),
                 new HexNumberParam(CHAIN_ID),
                 new HexNumberParam(VALUE),
+                new HexDataParam(DATA),
+                null,
+                null,
+                null,
+                null
+        );
+
+        CallArguments callArguments = callArgumentsParam.toCallArguments();
+
+        assertEquals(FROM, callArguments.getFrom());
+        assertEquals(TO, callArguments.getTo());
+        assertEquals(GAS, callArguments.getGas());
+        assertEquals(GAS_PRICE, callArguments.getGasPrice());
+        assertNull(callArguments.getMaxPriorityFeePerGas());
+        assertNull(callArguments.getMaxFeePerGas());
+        assertEquals(NONCE, callArguments.getNonce());
+        assertEquals(CHAIN_ID, callArguments.getChainId());
+        assertEquals(VALUE, callArguments.getValue());
+        assertEquals(DATA, callArguments.getData());
+        assertEquals(DATA, callArguments.getInput());
+    }
+
+    @Test
+    void testToCallArgumentsWithInput() {
+        CallArgumentsParam callArgumentsParam = new CallArgumentsParam(
+                new HexAddressParam(FROM),
+                new HexAddressParam(TO),
+                new HexNumberParam(GAS),
+                new HexNumberParam(GAS_PRICE),
+                null,
+                null,
+                null,
+                new HexNumberParam(NONCE),
+                new HexNumberParam(CHAIN_ID),
+                new HexNumberParam(VALUE),
+                null,
                 new HexDataParam(DATA),
                 null,
                 null,
@@ -186,6 +224,8 @@ public class CallArgumentsParamTest {
         assertEquals(TO, callArguments.getTo());
         assertEquals(GAS, callArguments.getGas());
         assertEquals(GAS_PRICE, callArguments.getGasPrice());
+        assertNull(callArguments.getMaxPriorityFeePerGas());
+        assertNull(callArguments.getMaxFeePerGas());
         assertEquals(NONCE, callArguments.getNonce());
         assertEquals(CHAIN_ID, callArguments.getChainId());
         assertEquals(VALUE, callArguments.getValue());
@@ -194,37 +234,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testToCallArgumentsWithInput() {
-        CallArgumentsParam callArgumentsParam = new CallArgumentsParam(
-                new HexAddressParam(FROM),
-                new HexAddressParam(TO),
-                new HexNumberParam(GAS),
-                new HexNumberParam(GAS_PRICE),
-                null,
-                new HexNumberParam(NONCE),
-                new HexNumberParam(CHAIN_ID),
-                new HexNumberParam(VALUE),
-                null,
-                new HexDataParam(DATA),
-                null,
-                null
-        );
-
-        CallArguments callArguments = callArgumentsParam.toCallArguments();
-
-        assertEquals(FROM, callArguments.getFrom());
-        assertEquals(TO, callArguments.getTo());
-        assertEquals(GAS, callArguments.getGas());
-        assertEquals(GAS_PRICE, callArguments.getGasPrice());
-        assertEquals(NONCE, callArguments.getNonce());
-        assertEquals(CHAIN_ID, callArguments.getChainId());
-        assertEquals(VALUE, callArguments.getValue());
-        assertEquals(DATA, callArguments.getData());
-        assertEquals(DATA, callArguments.getInput());
-    }
-
-    @Test
-    public void testNullCallArgumentsParams() throws JsonProcessingException {
+    void testNullCallArgumentsParams() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"from\": " + NULL + ", " +
                 "            \"to\" : " + NULL + ", " +
@@ -246,6 +256,8 @@ public class CallArgumentsParamTest {
         assertNull(callArgumentsParam.getTo());
         assertNull(callArgumentsParam.getGas());
         assertNull(callArgumentsParam.getGasPrice());
+        assertNull(callArgumentsParam.getMaxPriorityFeePerGas());
+        assertNull(callArgumentsParam.getMaxFeePerGas());
         assertNull(callArgumentsParam.getValue());
         assertNull(callArgumentsParam.getData());
         assertNull(callArgumentsParam.getNonce());
@@ -255,7 +267,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testNoCallArgumentsParams() throws JsonProcessingException {
+    void testNoCallArgumentsParams() throws JsonProcessingException {
         String callArgumentsInput = "{ }";
 
         JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
@@ -267,6 +279,8 @@ public class CallArgumentsParamTest {
         assertNull(callArgumentsParam.getTo());
         assertNull(callArgumentsParam.getGas());
         assertNull(callArgumentsParam.getGasPrice());
+        assertNull(callArgumentsParam.getMaxPriorityFeePerGas());
+        assertNull(callArgumentsParam.getMaxFeePerGas());
         assertNull(callArgumentsParam.getValue());
         assertNull(callArgumentsParam.getData());
         assertNull(callArgumentsParam.getNonce());
@@ -276,7 +290,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testToStringWithNoArgsParams() throws JsonProcessingException {
+    void testToStringWithNoArgsParams() throws JsonProcessingException {
         String callArgumentsInput = "{ }";
 
         JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
@@ -284,12 +298,12 @@ public class CallArgumentsParamTest {
 
         String result = callArgumentsParam.toString();
 
-        String expected = "CallArguments{from='null', to='null', gas='null', gasLimit='null', gasPrice='null', value='null', data='null', nonce='null', chainId='null', type='null', rskSubtype='null'}";
+        String expected = "CallArguments{from='null', to='null', gas='null', gasLimit='null', gasPrice='null', maxPriorityFeePerGas='null', maxFeePerGas='null', value='null', data='null', nonce='null', chainId='null', type='null', rskSubtype='null'}";
         assertEquals(expected, result);
     }
 
     @Test
-    public void testToStringIncludesFields() throws JsonProcessingException {
+    void testToStringIncludesFields() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"from\": \"" + FROM + "\"," +
                 "            \"to\" : \"" + TO + "\"," +
@@ -303,12 +317,33 @@ public class CallArgumentsParamTest {
 
         String result = callArgumentsParam.toString();
 
-        String expected = "CallArguments{from='7986b3df570230288501eea3d890bd66948c9b79', to='e7b8e91401bf4d1669f54dc5f98109d7efbc4eea', gas='0x76c0', gasLimit='null', gasPrice='0x9184e72a000', value='null', data='null', nonce='0x1', chainId='0x539', type='null', rskSubtype='null'}";
+        String expected = "CallArguments{from='7986b3df570230288501eea3d890bd66948c9b79', to='e7b8e91401bf4d1669f54dc5f98109d7efbc4eea', gas='0x76c0', gasLimit='null', gasPrice='0x9184e72a000', maxPriorityFeePerGas='null', maxFeePerGas='null', value='null', data='null', nonce='0x1', chainId='0x539', type='null', rskSubtype='null'}";
         assertEquals(expected, result);
     }
 
     @Test
-    public void testTypeIsDeserialized() throws JsonProcessingException {
+    void testMaxPriorityFeePerGasAndMaxFeePerGasAreDeserialized() throws JsonProcessingException {
+        String callArgumentsInput = "{\n" +
+                "            \"from\": \"" + FROM + "\"," +
+                "            \"to\" : \"" + TO + "\"," +
+                "            \"maxPriorityFeePerGas\": \"0xa\"," +
+                "            \"maxFeePerGas\": \"0x64\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+        CallArgumentsParam callArgumentsParam = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
+
+        assertNotNull(callArgumentsParam.getMaxPriorityFeePerGas());
+        assertEquals("0xa", callArgumentsParam.getMaxPriorityFeePerGas().getHexNumber());
+        assertNotNull(callArgumentsParam.getMaxFeePerGas());
+        assertEquals("0x64", callArgumentsParam.getMaxFeePerGas().getHexNumber());
+
+        CallArguments callArguments = callArgumentsParam.toCallArguments();
+        assertEquals("0xa", callArguments.getMaxPriorityFeePerGas());
+        assertEquals("0x64", callArguments.getMaxFeePerGas());
+    }
+
+    @Test
+    void testTypeIsDeserialized() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"from\": \"" + FROM + "\"," +
                 "            \"to\" : \"" + TO + "\"," +
@@ -325,7 +360,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testRskSubtypeIsDeserialized() throws JsonProcessingException {
+    void testRskSubtypeIsDeserialized() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"from\": \"" + FROM + "\"," +
                 "            \"to\" : \"" + TO + "\"," +
@@ -346,7 +381,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testTypeAndRskSubtypeAreNullWhenOmitted() throws JsonProcessingException {
+    void testTypeAndRskSubtypeAreNullWhenOmitted() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"from\": \"" + FROM + "\"}";
 
@@ -362,7 +397,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testNullTypeAndRskSubtypeAreHandled() throws JsonProcessingException {
+    void testNullTypeAndRskSubtypeAreHandled() throws JsonProcessingException {
         String callArgumentsInput = "{\n" +
                 "            \"type\": " + NULL + "," +
                 "            \"rskSubtype\": " + NULL + "}";

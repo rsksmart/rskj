@@ -17,6 +17,7 @@
  */
 package org.ethereum.core;
 
+import org.ethereum.core.transaction.TransactionType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -100,10 +101,10 @@ class TransactionTypeTest {
     private static Stream<Arguments> typeNameProvider() {
         return Stream.of(
             Arguments.of(TransactionType.LEGACY, "Legacy"),
-            Arguments.of(TransactionType.TYPE_1, "RSKIP546 (EIP-2930 Access List)"),
-            Arguments.of(TransactionType.TYPE_2, "RSKIP546 (EIP-1559 Dynamic Fee)"),
-            Arguments.of(TransactionType.TYPE_3, "RSKIP000 (Blob)"),
-            Arguments.of(TransactionType.TYPE_4, "RSKIP545 (EIP-7702 Set Code)")
+            Arguments.of(TransactionType.TYPE_1, "RSKIP546 (EIP-2930)"),
+            Arguments.of(TransactionType.TYPE_2, "RSKIP546 (EIP-1559)"),
+            Arguments.of(TransactionType.TYPE_3, "RSKIP558 (EIP-4844)"),
+            Arguments.of(TransactionType.TYPE_4, "RSKIP545 (EIP-7702)")
         );
     }
 

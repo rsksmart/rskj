@@ -166,8 +166,8 @@ public class TransactionExecutor {
         }
 
         if (tx.isTypedTransactionNotAllowed(activations)) {
-            logger.warn("Typed transactions are not supported before RSKIP543 activation, tx {}", tx.getHash());
-            execError("typed transactions are not supported before RSKIP543 activation");
+            logger.warn("Transaction type {} is not supported before its activation, tx {}", tx.getTypePrefix(), tx.getHash());
+            execError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
             return false;
         }
 
@@ -214,11 +214,7 @@ public class TransactionExecutor {
             return false;
         }
 
-        if (!transactionAddressesAreValid()) {
-            return false;
-        }
-
-        return true;
+        return transactionAddressesAreValid();
     }
 
 

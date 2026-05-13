@@ -95,13 +95,15 @@ class Web3RskImplTest {
         callArguments.setGas("21000");
         callArguments.setGasLimit("21000");
         callArguments.setGasPrice("100");
+        callArguments.setMaxPriorityFeePerGas("200");
+        callArguments.setMaxFeePerGas("300");
         callArguments.setValue("1");
         callArguments.setData("data");
         callArguments.setNonce("0");
         callArguments.setChainId("0x00");
         callArguments.setType("0x00");
 
-        assertEquals("CallArguments{from='0x1', to='0x2', gas='21000', gasLimit='21000', gasPrice='100', value='1', data='data', nonce='0', chainId='0x00', type='0x00', rskSubtype='null'}", callArguments.toString());
+        assertEquals("CallArguments{from='0x1', to='0x2', gas='21000', gasLimit='21000', gasPrice='100', maxPriorityFeePerGas='200', maxFeePerGas='300', value='1', data='data', nonce='0', chainId='0x00', type='0x00', rskSubtype='null', accessList=null}", callArguments.toString());
     }
 
     @Test

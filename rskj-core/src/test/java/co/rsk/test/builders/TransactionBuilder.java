@@ -26,6 +26,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.mockito.Mockito;
@@ -53,6 +54,8 @@ public class TransactionBuilder {
     private boolean immutable;
     private Byte transactionType = null;
     private Byte rskSubtype = null;
+    private BigInteger maxFeePerGas = null;
+    private BigInteger maxPriorityFeePerGas = null;
 
     public TransactionBuilder sender(Account sender) {
         this.sender = sender;
@@ -119,6 +122,16 @@ public class TransactionBuilder {
         return this;
     }
 
+    public TransactionBuilder maxFeePerGas(BigInteger maxFeePerGas) {
+        this.maxFeePerGas = maxFeePerGas;
+        return this;
+    }
+
+    public TransactionBuilder maxPriorityFeePerGas(BigInteger maxPriorityFeePerGas) {
+        this.maxPriorityFeePerGas = maxPriorityFeePerGas;
+        return this;
+    }
+
     public Transaction build() {
         byte chainId = Optional.ofNullable(this.chainId).orElse(Constants.REGTEST_CHAIN_ID);
 
@@ -138,16 +151,23 @@ public class TransactionBuilder {
 
     private Transaction createSignedTransaction(String to, BigInteger nonce, BigInteger gasLimit, BigInteger gasPrice, byte chainId, byte[] data, BigInteger value, byte[] privKeyBytes, boolean immutable) {
         org.ethereum.core.TransactionBuilder txBuilder = org.ethereum.core.Transaction.builder()
-                .destination(to)
+                .receiveAddress(to)
                 .nonce(nonce)
                 .gasLimit(gasLimit)
                 .gasPrice(gasPrice)
                 .chainId(chainId)
                 .data(data)
                 .value(value);
-        
+
+        if (this.maxFeePerGas != null) {
+            txBuilder.maxFeePerGas(new co.rsk.core.Coin(this.maxFeePerGas));
+        }
+        if (this.maxPriorityFeePerGas != null) {
+            txBuilder.maxPriorityFeePerGas(new co.rsk.core.Coin(this.maxPriorityFeePerGas));
+        }
+
         if (this.transactionType != null) {
-            org.ethereum.core.TransactionType txType = org.ethereum.core.TransactionType.fromByte(this.transactionType);
+            TransactionType txType = TransactionType.fromByte(this.transactionType);
             if (txType == null || txType.isLegacy()) {
                 throw new IllegalArgumentException(String.format(
                         "transaction type not supported: 0x%02x",
@@ -157,7 +177,7 @@ public class TransactionBuilder {
         }
         
         if (this.rskSubtype != null) {
-            txBuilder.rskSubtype(this.rskSubtype);
+            txBuilder.type(TransactionType.TYPE_2, this.rskSubtype);
         }
         
         Transaction tx = txBuilder.build();

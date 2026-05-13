@@ -48,6 +48,19 @@ public class TransactionReceiptDTO {
     private String effectiveGasPrice;    // The actual value per gas deducted on the transaction.
 
     public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache, int longIndexOffset) {
+        this(block, txInfo, signatureCache, longIndexOffset, null);
+    }
+
+    /**
+     * @param overrideGasUsed if non-null, use this value for {@code gasUsed} instead of the one
+     *        carried by the receipt. Required for RSKIP-546 Type 1 / Type 2 receipts whose on-disk
+     *        encoding does not include the per-tx gasUsed (only the cumulative total). Callers
+     *        derive it as {@code cumulativeGas(currentTx) - cumulativeGas(previousTx)} and pass it
+     *        here — this keeps the derivation in the view layer and avoids mutating persistent
+     *        receipt state.
+     */
+    public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache,
+                                 int longIndexOffset, Long overrideGasUsed) {
         TransactionReceipt receipt = txInfo.getReceipt();
 
         status = HexUtils.toQuantityJsonHex(txInfo.getReceipt().getStatus());
@@ -61,7 +74,9 @@ public class TransactionReceiptDTO {
 
         cumulativeGasUsed = HexUtils.toQuantityJsonHex(receipt.getCumulativeGas());
         from = receipt.getTransaction().getSender(signatureCache).toJsonString();
-        gasUsed = HexUtils.toQuantityJsonHex(receipt.getGasUsed());
+        gasUsed = overrideGasUsed != null
+                ? HexUtils.toQuantityJsonHex(overrideGasUsed)
+                : HexUtils.toQuantityJsonHex(receipt.getGasUsed());
 
         logs = new LogFilterElement[receipt.getLogInfoList().size()];
         for (int i = 0; i < logs.length; i++) {
@@ -78,7 +93,7 @@ public class TransactionReceiptDTO {
         effectiveGasPrice = HexUtils.toQuantityJsonHex(txInfo.getReceipt().getTransaction().getGasPrice().getBytes());
     }
     public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache) {
-        this(block, txInfo, signatureCache, 0);
+        this(block, txInfo, signatureCache, 0, null);
     }
 
     public String getTransactionHash() {

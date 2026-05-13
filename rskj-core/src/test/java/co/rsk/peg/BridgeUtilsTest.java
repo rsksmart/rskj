@@ -103,7 +103,7 @@ class BridgeUtilsTest {
             .nonce(NONCE)
             .gasPrice(GAS_PRICE)
             .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
+            .receiveAddress(Hex.decode(TO_ADDRESS))
             .data(Hex.decode(DATA))
             .chainId(constants.getChainId())
             .value(AMOUNT)
@@ -124,7 +124,7 @@ class BridgeUtilsTest {
             .nonce(NONCE)
             .gasPrice(GAS_PRICE)
             .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
-            .destination(Hex.decode(TO_ADDRESS))
+            .receiveAddress(Hex.decode(TO_ADDRESS))
             .data(Hex.decode(DATA))
             .chainId(constants.getChainId())
             .value(AMOUNT)
@@ -365,7 +365,11 @@ class BridgeUtilsTest {
     void testIsContractTx() {
         Assertions.assertFalse(
             BridgeUtils.isContractTx(
-                Transaction.builder().build()
+                Transaction.builder()
+                     .gasPrice(co.rsk.core.Coin.valueOf(1))
+                     .gasLimit(co.rsk.core.Coin.valueOf(1))
+                     .value(co.rsk.core.Coin.valueOf(1))
+                     .build()
             )
         );
         Assertions.assertTrue(

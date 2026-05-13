@@ -26,6 +26,8 @@ import org.ethereum.rpc.CallArguments;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 @JsonDeserialize(using = CallArgumentsParam.Deserializer.class)
@@ -35,6 +37,8 @@ public class CallArgumentsParam {
     private final HexAddressParam to;
     private final HexNumberParam gas;
     private final HexNumberParam gasPrice;
+    private final HexNumberParam maxPriorityFeePerGas;
+    private final HexNumberParam maxFeePerGas;
     private final HexNumberParam gasLimit;
     private final HexNumberParam nonce;
     private final HexNumberParam chainId;
@@ -43,15 +47,20 @@ public class CallArgumentsParam {
     private final HexDataParam input;
     private final HexNumberParam type;
     private final HexNumberParam rskSubtype;
+    private final List<CallArguments.AccessListEntry> accessList;
 
     public CallArgumentsParam(HexAddressParam from, HexAddressParam to, HexNumberParam gas,
-                              HexNumberParam gasPrice, HexNumberParam gasLimit, HexNumberParam nonce,
+                              HexNumberParam gasPrice, HexNumberParam maxPriorityFeePerGas, HexNumberParam maxFeePerGas,
+                              HexNumberParam gasLimit, HexNumberParam nonce,
                               HexNumberParam chainId, HexNumberParam value, HexDataParam data, HexDataParam input,
-                              HexNumberParam type, HexNumberParam rskSubtype) {
+                              HexNumberParam type, HexNumberParam rskSubtype,
+                              List<CallArguments.AccessListEntry> accessList) {
         this.from = from;
         this.to = to;
         this.gas = gas;
         this.gasPrice = gasPrice;
+        this.maxPriorityFeePerGas = maxPriorityFeePerGas;
+        this.maxFeePerGas = maxFeePerGas;
         this.gasLimit = gasLimit;
         this.nonce = nonce;
         this.chainId = chainId;
@@ -60,6 +69,7 @@ public class CallArgumentsParam {
         this.input = input;
         this.type = type;
         this.rskSubtype = rskSubtype;
+        this.accessList = accessList;
     }
 
     public HexAddressParam getFrom() {
@@ -76,6 +86,14 @@ public class CallArgumentsParam {
 
     public HexNumberParam getGasPrice() {
         return gasPrice;
+    }
+
+    public HexNumberParam getMaxPriorityFeePerGas() {
+        return maxPriorityFeePerGas;
+    }
+
+    public HexNumberParam getMaxFeePerGas() {
+        return maxFeePerGas;
     }
 
     public HexNumberParam getGasLimit() {
@@ -110,11 +128,17 @@ public class CallArgumentsParam {
         return rskSubtype;
     }
 
+    public List<CallArguments.AccessListEntry> getAccessList() {
+        return accessList;
+    }
+
     public CallArguments toCallArguments() {
         String caFrom = this.from == null ? null : this.from.getAddress().toJsonString();
         String caTo = this.to == null ? null : this.to.getAddress().toJsonString();
         String caGas = this.gas == null ? null : this.gas.getHexNumber();
         String caGasPrice = this.gasPrice == null ? null : this.gasPrice.getHexNumber();
+        String caMaxPriorityFeePerGas = this.maxPriorityFeePerGas == null ? null : this.maxPriorityFeePerGas.getHexNumber();
+        String caMaxFeePerGas = this.maxFeePerGas == null ? null : this.maxFeePerGas.getHexNumber();
         String caGasLimit = this.gasLimit == null ? null : this.gasLimit.getHexNumber();
         String caNonce = this.nonce == null ? null : this.nonce.getHexNumber();
         String caChainId = this.chainId == null ? null : this.chainId.getHexNumber();
@@ -129,6 +153,8 @@ public class CallArgumentsParam {
         callArguments.setTo(caTo);
         callArguments.setGas(caGas);
         callArguments.setGasPrice(caGasPrice);
+        callArguments.setMaxPriorityFeePerGas(caMaxPriorityFeePerGas);
+        callArguments.setMaxFeePerGas(caMaxFeePerGas);
         callArguments.setGasLimit(caGasLimit);
         callArguments.setNonce(caNonce);
         callArguments.setChainId(caChainId);
@@ -141,6 +167,7 @@ public class CallArgumentsParam {
         }
         callArguments.setType(caType);
         callArguments.setRskSubtype(caRskSubtype);
+        callArguments.setAccessList(this.accessList);
 
         return callArguments;
     }
@@ -153,6 +180,8 @@ public class CallArgumentsParam {
                 ", gas='" + gas + '\'' +
                 ", gasLimit='" + gasLimit + '\'' +
                 ", gasPrice='" + gasPrice + '\'' +
+                ", maxPriorityFeePerGas='" + maxPriorityFeePerGas + '\'' +
+                ", maxFeePerGas='" + maxFeePerGas + '\'' +
                 ", value='" + value + '\'' +
                 ", data='" + (data != null ? data.getAsHexString() : null) + '\'' +
                 ", nonce='" + nonce + '\'' +
@@ -177,6 +206,8 @@ public class CallArgumentsParam {
             HexAddressParam to = paramOrNull(node, "to", HexAddressParam::new);
             HexNumberParam gas = paramOrNull(node, "gas", HexNumberParam::new);
             HexNumberParam gasPrice = paramOrNull(node, "gasPrice", HexNumberParam::new);
+            HexNumberParam maxPriorityFeePerGas = paramOrNull(node, "maxPriorityFeePerGas", HexNumberParam::new);
+            HexNumberParam maxFeePerGas = paramOrNull(node, "maxFeePerGas", HexNumberParam::new);
             HexNumberParam gasLimit = paramOrNull(node, "gasLimit", HexNumberParam::new);
             HexNumberParam nonce = paramOrNull(node, "nonce", HexNumberParam::new);
             HexNumberParam chainId = paramOrNull(node, "chainId", HexNumberParam::new);
@@ -185,8 +216,34 @@ public class CallArgumentsParam {
             HexDataParam input = paramOrNull(node, "input", HexDataParam::new);
             HexNumberParam type = paramOrNull(node, "type", HexNumberParam::new);
             HexNumberParam rskSubtype = paramOrNull(node, "rskSubtype", HexNumberParam::new);
+            List<CallArguments.AccessListEntry> accessList = parseAccessList(node.get("accessList"));
 
-            return new CallArgumentsParam(from, to, gas, gasPrice, gasLimit, nonce, chainId, value, data, input, type, rskSubtype);
+            return new CallArgumentsParam(from, to, gas, gasPrice, maxPriorityFeePerGas, maxFeePerGas, gasLimit, nonce, chainId, value, data, input, type, rskSubtype, accessList);
+        }
+
+        @Nullable
+        private static List<CallArguments.AccessListEntry> parseAccessList(@Nullable JsonNode arrayNode) {
+            if (arrayNode == null || arrayNode.isNull() || !arrayNode.isArray()) {
+                return null;
+            }
+            List<CallArguments.AccessListEntry> entries = new ArrayList<>();
+            for (JsonNode entryNode : arrayNode) {
+                CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+                JsonNode addressNode = entryNode.get("address");
+                if (addressNode != null && !addressNode.isNull()) {
+                    entry.setAddress(addressNode.asText());
+                }
+                JsonNode keysNode = entryNode.get("storageKeys");
+                if (keysNode != null && keysNode.isArray()) {
+                    List<String> keys = new ArrayList<>();
+                    for (JsonNode keyNode : keysNode) {
+                        keys.add(keyNode.asText());
+                    }
+                    entry.setStorageKeys(keys);
+                }
+                entries.add(entry);
+            }
+            return entries;
         }
 
         @Nullable

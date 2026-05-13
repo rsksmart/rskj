@@ -117,7 +117,11 @@ class ReceiptStoreImplFallbackTest {
 
         // TODO calculate cumulative gas
         TransactionReceipt receipt = new TransactionReceipt(stateRoot, gasUsed, gasUsed, bloom, logs, new byte[]{0x01});
-        receipt.setTransaction(Transaction.builder().build());
+        receipt.setTransaction(Transaction.builder()
+                .gasPrice(co.rsk.core.Coin.valueOf(1))
+                .gasLimit(co.rsk.core.Coin.valueOf(1))
+                .value(co.rsk.core.Coin.valueOf(1))
+                .build());
         return receipt;
     }
 }

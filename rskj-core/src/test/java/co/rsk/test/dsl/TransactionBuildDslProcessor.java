@@ -72,6 +72,10 @@ public class TransactionBuildDslProcessor {
             this.builder.transactionType(Byte.parseByte(cmd.getArgument(0), 16));
         else if (cmd.isCommand("rskSubtype"))
             this.builder.rskSubtype(Byte.parseByte(cmd.getArgument(0), 16));
+        else if (cmd.isCommand("maxFeePerGas"))
+            this.builder.maxFeePerGas(new BigInteger(cmd.getArgument(0)));
+        else if (cmd.isCommand("maxPriorityFeePerGas"))
+            this.builder.maxPriorityFeePerGas(new BigInteger(cmd.getArgument(0)));
         else if (cmd.isCommand("build"))
             this.world.saveTransaction(this.name, this.builder.build());
         else
