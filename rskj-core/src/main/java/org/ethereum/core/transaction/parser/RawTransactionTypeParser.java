@@ -27,7 +27,7 @@ public interface RawTransactionTypeParser<T extends ParsedRawTransaction> {
 
     T parse(TransactionTypePrefix typePrefix, RLPList txFields);
 
-    T parse(TransactionTypePrefix typePrefix, CallArguments argsPara);
+    T parse(TransactionTypePrefix typePrefix, CallArguments argsPara, byte defaultChainId);
 
     void validate(long bestBlock, ActivationConfig activationConfig, Constants constants);
 

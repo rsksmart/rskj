@@ -73,7 +73,7 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
     }
 
     @Override
-    public ParsedType0Transaction parse(TransactionTypePrefix typePrefix, CallArguments argsParam) {
+    public ParsedType0Transaction parse(TransactionTypePrefix typePrefix, CallArguments argsParam, byte defaultChainId) {
         BigInteger nonce = Optional.ofNullable(argsParam.getNonce()).map(HexUtils::strHexOrStrNumberToBigInteger).orElse(null);
         BigInteger gasLimit = CommonParsingUtils.parseBigInteger(
                 argsParam.getGas(),
@@ -83,7 +83,7 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
         RskAddress receiveAddress = CommonParsingUtils.parseAddress(argsParam.getTo());
 
         byte[] data = CommonParsingUtils.parseHexData(argsParam.getData());
-        Byte chainId = hexToChainId(argsParam.getChainId());
+        Byte chainId = hexToChainId(argsParam.getChainId(), defaultChainId);
 
         return new ParsedType0Transaction(
                 typePrefix,
@@ -98,12 +98,9 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
     }
 
 
-
-
-
-    private  byte hexToChainId(String hex) {
+    private byte hexToChainId(String hex, byte defaultChainId) {
         if (hex == null) {
-            return 33; //checked with RSKJ-2023, if chainId is not provided, it should default to 33 (mainnet chainId)
+            return defaultChainId;
         }
         try {
             byte[] bytes = HexUtils.strHexOrStrNumberToByteArray(hex);
@@ -111,7 +108,7 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
                 throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex);
             }
 
-            return bytes[0] == 0 ? 33 : bytes[0];
+            return bytes[0] == 0 ? defaultChainId : bytes[0];
         } catch (Exception e) {
             throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex, e);
         }

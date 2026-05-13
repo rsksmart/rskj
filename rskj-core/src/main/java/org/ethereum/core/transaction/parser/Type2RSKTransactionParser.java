@@ -31,7 +31,7 @@ public class Type2RSKTransactionParser implements RawTransactionTypeParser<Parse
     }
 
     @Override
-    public ParsedType2RSKTransaction parse(TransactionTypePrefix typePrefix, CallArguments argsPara) {
+    public ParsedType2RSKTransaction parse(TransactionTypePrefix typePrefix, CallArguments argsPara, byte defaultChainId) {
         return null;
     }
 

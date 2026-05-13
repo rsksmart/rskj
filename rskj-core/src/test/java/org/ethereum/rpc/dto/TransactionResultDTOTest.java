@@ -18,14 +18,22 @@
 package org.ethereum.rpc.dto;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.TestUtils;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.transaction.TransactionType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.math.BigInteger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -130,6 +138,76 @@ class TransactionResultDTOTest {
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         Assertions.assertEquals("0x0", dto.getType());
+    }
+
+    @Test
+    void type1Transaction_populatesChainIdAccessListAndYParity_omitsMaxFeeFields() throws Exception {
+        Transaction tx = Transaction.builder()
+                .type(TransactionType.TYPE_1)
+                .chainId((byte) 33)
+                .nonce(BigInteger.ONE.toByteArray())
+                .gasPrice(Coin.valueOf(1_000_000_000L))
+                .gasLimit(BigInteger.valueOf(21_000L))
+                .receiveAddress(new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"))
+                .value(Coin.ZERO)
+                .data(new byte[0])
+                .build();
+        tx.sign(new byte[]{});
+
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 0, tx, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertEquals("0x1", dto.getType());
+        Assertions.assertNotNull(dto.getChainId(), "chainId must be present for Type 1");
+        Assertions.assertNotNull(dto.getAccessList(), "accessList must be present (empty list) for Type 1");
+        Assertions.assertNotNull(dto.getYParity(), "yParity must be present for Type 1");
+        Assertions.assertNull(dto.getMaxFeePerGas(), "maxFeePerGas must be absent for Type 1");
+        Assertions.assertNull(dto.getMaxPriorityFeePerGas(), "maxPriorityFeePerGas must be absent for Type 1");
+
+        JsonNode json = new ObjectMapper().valueToTree(dto);
+        Assertions.assertTrue(json.has("chainId"), "chainId must appear in JSON for Type 1");
+        Assertions.assertTrue(json.has("accessList"), "accessList must appear in JSON for Type 1");
+        Assertions.assertFalse(json.has("maxFeePerGas"), "maxFeePerGas must be omitted from JSON for Type 1");
+        Assertions.assertFalse(json.has("maxPriorityFeePerGas"),
+                "maxPriorityFeePerGas must be omitted from JSON for Type 1");
+    }
+
+    @Test
+    void type2StandardTransaction_populatesAllTypedFieldsIncludingMaxFees() throws Exception {
+        Coin maxPriority = Coin.valueOf(10L);
+        Coin maxFee = Coin.valueOf(100L);
+        Transaction tx = Transaction.builder()
+                .type(TransactionType.TYPE_2)
+                .chainId((byte) 33)
+                .nonce(BigInteger.ONE.toByteArray())
+                .maxPriorityFeePerGas(maxPriority)
+                .maxFeePerGas(maxFee)
+                .gasLimit(BigInteger.valueOf(21_000L))
+                .receiveAddress(new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"))
+                .value(Coin.ZERO)
+                .data(new byte[0])
+                .build();
+        tx.sign(new byte[]{});
+
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 0, tx, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertEquals("0x2", dto.getType());
+        Assertions.assertNotNull(dto.getChainId(), "chainId must be present for Type 2 tx");
+        Assertions.assertNotNull(dto.getAccessList(), "accessList must be present for Type 2 tx");
+        Assertions.assertNotNull(dto.getYParity(), "yParity must be present for Type 2 tx");
+        Assertions.assertNotNull(dto.getMaxFeePerGas(), "maxFeePerGas must be present for Type 2 tx");
+        Assertions.assertNotNull(dto.getMaxPriorityFeePerGas(),
+                "maxPriorityFeePerGas must be present for Type 2 tx");
+
+        // gasPrice in the DTO reflects the effective gas price = min(maxPriority, maxFee) = 10
+        Assertions.assertEquals("0xa", dto.getGasPrice(),
+                "gasPrice for Type 2 tx must equal min(maxPriorityFeePerGas, maxFeePerGas)");
+
+        JsonNode json = new ObjectMapper().valueToTree(dto);
+        Assertions.assertTrue(json.has("maxFeePerGas"), "maxFeePerGas must appear in JSON for Type 2");
+        Assertions.assertTrue(json.has("maxPriorityFeePerGas"),
+                "maxPriorityFeePerGas must appear in JSON for Type 2 tx");
     }
 
     @Test

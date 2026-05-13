@@ -22,6 +22,9 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.HexUtils;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.SignatureCache;
@@ -68,8 +71,10 @@ public class BlockResultDTO {
     private final String cumulativeDifficulty;
     private final short[] rskPteEdges;
     private final String baseEvent;
-    // RSKIP546/EIP-1559: RSK has no dynamic base fee; always zero to signal EIP-1559 awareness to tooling
-    private static final String BASE_FEE_PER_GAS = "0x0";
+    // RSKIP-546/EIP-1559: RSK has no dynamic base fee.
+    private static final String BASE_FEE_PER_GAS_AFTER_RSKIP546 = "0x0";
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final String baseFeePerGas;
 
     private BlockResultDTO(
             Long number,
@@ -99,7 +104,8 @@ public class BlockResultDTO {
             byte[] hashForMergedMining,
             Coin paidFees,
             short[] rskPteEdges,
-            byte[] baseEvent) {
+            byte[] baseEvent,
+            boolean isRskip546Active) {
         this.number = number != null ? HexUtils.toQuantityJsonHex(number) : null;
         this.hash = hash != null ? hash.toJsonString() : null;
         this.parentHash = parentHash.toJsonString();
@@ -134,9 +140,14 @@ public class BlockResultDTO {
 
         this.rskPteEdges = copyOfArrayOrNull(rskPteEdges);
         this.baseEvent = baseEvent != null && baseEvent.length > 0 ? HexUtils.toUnformattedJsonHex(baseEvent) : null;
+        this.baseFeePerGas = isRskip546Active ? BASE_FEE_PER_GAS_AFTER_RSKIP546 : null;
     }
 
     public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore, boolean skipRemasc, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
+        return fromBlock(b, fullTx, blockStore, skipRemasc, zeroSignatureIfRemasc, signatureCache, null);
+    }
+
+    public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore, boolean skipRemasc, boolean zeroSignatureIfRemasc, SignatureCache signatureCache, @Nullable ActivationConfig activationConfig) {
         if (b == null) {
             return null;
         }
@@ -194,7 +205,8 @@ public class BlockResultDTO {
                 b.getHashForMergedMining(),
                 b.getFeesPaidToMiner(),
                 b.getHeader().getTxExecutionSublistsEdges(),
-                b.getHeader().getBaseEvent()
+                b.getHeader().getBaseEvent(),
+                activationConfig != null && activationConfig.isActive(ConsensusRule.RSKIP546, b.getNumber())
         );
     }
 
@@ -334,6 +346,6 @@ public class BlockResultDTO {
     }
 
     public String getBaseFeePerGas() {
-        return BASE_FEE_PER_GAS;
+        return baseFeePerGas;
     }
 }

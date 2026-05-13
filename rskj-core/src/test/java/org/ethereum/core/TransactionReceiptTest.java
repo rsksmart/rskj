@@ -19,18 +19,21 @@
 
 package org.ethereum.core;
 
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.util.Arrays;
-
+import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import co.rsk.util.HexUtils;
+import java.util.Arrays;
+
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 /**
@@ -40,6 +43,98 @@ import co.rsk.util.HexUtils;
 class TransactionReceiptTest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
+
+    @Test
+    void nullBytes_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> new TransactionReceipt((byte[]) null));
+    }
+
+    @Test
+    void emptyBytes_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> new TransactionReceipt(new byte[0]));
+    }
+
+    @Test
+    void type1Receipt_decode_fourFieldBody_gasUsedIsEmpty_andStatusIsSet() {
+        byte[] status = new byte[]{0x01};
+        byte[] cumulativeGas = new byte[]{0x52, 0x08}; // 21000
+        byte[] body = RLP.encodeList(
+                RLP.encodeElement(status),
+                RLP.encodeElement(cumulativeGas),
+                RLP.encodeElement(new byte[256]),
+                RLP.encodeList()
+        );
+        byte[] encoded = ByteUtil.merge(new byte[]{0x01}, body);
+
+        TransactionReceipt receipt = new TransactionReceipt(encoded);
+
+        assertArrayEquals(status, receipt.getStatus(),
+                "Type 1 receipt must decode the status from the 4-field body");
+        assertArrayEquals(cumulativeGas, receipt.getCumulativeGas(),
+                "Type 1 receipt must decode cumulativeGas from the 4-field body");
+        assertArrayEquals(EMPTY_BYTE_ARRAY, receipt.getGasUsed(),
+                "Type 1 receipt must leave gasUsed empty (derived from cumulative delta in Web3Impl)");
+        assertEquals(0, receipt.getLogInfoList().size(),
+                "Type 1 receipt with empty logs list must have no log entries");
+    }
+
+    @Test
+    void type2Receipt_decode_fourFieldBody_gasUsedIsEmpty_andStatusIsSet() {
+        byte[] status = new byte[]{0x01};
+        byte[] cumulativeGas = new byte[]{(byte) 0x01, (byte) 0x86, (byte) 0xA0}; // 100000
+        byte[] body = RLP.encodeList(
+                RLP.encodeElement(status),
+                RLP.encodeElement(cumulativeGas),
+                RLP.encodeElement(new byte[256]),
+                RLP.encodeList()
+        );
+        byte[] encoded = ByteUtil.merge(new byte[]{0x02}, body);
+
+        TransactionReceipt receipt = new TransactionReceipt(encoded);
+
+        assertArrayEquals(status, receipt.getStatus(),
+                "Type 2 receipt must decode the status from the 4-field body");
+        assertArrayEquals(cumulativeGas, receipt.getCumulativeGas(),
+                "Type 2 receipt must decode cumulativeGas from the 4-field body");
+        assertArrayEquals(EMPTY_BYTE_ARRAY, receipt.getGasUsed(),
+                "Type 2 receipt must leave gasUsed empty (derived from cumulative delta in Web3Impl)");
+    }
+
+    @Test
+    void type1Receipt_failedStatus_decode_statusIsEmpty() {
+        byte[] failedStatus = EMPTY_BYTE_ARRAY;
+        byte[] cumulativeGas = new byte[]{0x52, 0x08};
+        byte[] body = RLP.encodeList(
+                RLP.encodeElement(failedStatus),
+                RLP.encodeElement(cumulativeGas),
+                RLP.encodeElement(new byte[256]),
+                RLP.encodeList()
+        );
+        byte[] encoded = ByteUtil.merge(new byte[]{0x01}, body);
+
+        TransactionReceipt receipt = new TransactionReceipt(encoded);
+
+        assertArrayEquals(EMPTY_BYTE_ARRAY, receipt.getStatus(),
+                "Type 1 receipt with 0x-status must decode as failed (empty byte array)");
+        assertFalse(receipt.isSuccessful());
+    }
+
+    @Test
+    void type1Receipt_encodeDecoded_preservesFields() {
+        byte[] status = new byte[]{0x01};
+        byte[] cumulativeGas = new byte[]{0x52, 0x08};
+        byte[] body = RLP.encodeList(
+                RLP.encodeElement(status),
+                RLP.encodeElement(cumulativeGas),
+                RLP.encodeElement(new byte[256]),
+                RLP.encodeList()
+        );
+        byte[] originalEncoded = ByteUtil.merge(new byte[]{0x01}, body);
+
+        TransactionReceipt receipt = new TransactionReceipt(originalEncoded);
+        assertArrayEquals(originalEncoded, receipt.getEncoded(),
+                "Cached getEncoded() must return the original bytes without re-encoding");
+    }
 
     @Test
     void test_2() {

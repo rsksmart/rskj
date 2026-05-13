@@ -93,7 +93,7 @@ public class Type1RawTransactionParser implements RawTransactionTypeParser<Parse
     }
 
     @Override
-    public ParsedType1Transaction parse(TransactionTypePrefix typePrefix, CallArguments argsParam) {
+    public ParsedType1Transaction parse(TransactionTypePrefix typePrefix, CallArguments argsParam, byte defaultChainId) {
         BigInteger nonce = Optional.ofNullable(argsParam.getNonce())
                 .map(HexUtils::strHexOrStrNumberToBigInteger)
                 .orElse(BigInteger.ZERO);

@@ -41,12 +41,22 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
-import co.rsk.scoring.*;
+import co.rsk.scoring.InvalidInetAddressException;
+import co.rsk.scoring.PeerScoringInformation;
+import co.rsk.scoring.PeerScoringManager;
+import co.rsk.scoring.PeerScoringReporterUtil;
+import co.rsk.scoring.PeerScoringReputationSummary;
 import co.rsk.util.HexUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.core.genesis.BlockTag;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
@@ -62,7 +72,19 @@ import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.rpc.parameters.*;
+import org.ethereum.rpc.parameters.AccountOverrideParam;
+import org.ethereum.rpc.parameters.BlockHashParam;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.BlockRefParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.FilterRequestParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataParam;
+import org.ethereum.rpc.parameters.HexDurationParam;
+import org.ethereum.rpc.parameters.HexIndexParam;
+import org.ethereum.rpc.parameters.HexKeyParam;
+import org.ethereum.rpc.parameters.HexNumberParam;
+import org.ethereum.rpc.parameters.TxHashParam;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.Utils;
 import org.ethereum.vm.DataWord;
@@ -75,13 +97,24 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
-import static co.rsk.util.HexUtils.*;
+import static co.rsk.util.HexUtils.jsonHexToLong;
+import static co.rsk.util.HexUtils.stringHexToByteArray;
+import static co.rsk.util.HexUtils.toQuantityJsonHex;
+import static co.rsk.util.HexUtils.toUnformattedJsonHex;
 import static java.lang.Math.max;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
 
 @SuppressWarnings("java:S100")
 public class Web3Impl implements Web3 {
@@ -694,7 +727,7 @@ public class Web3Impl implements Web3 {
     }
 
     public BlockResultDTO getBlockResult(Block b, boolean fullTx) {
-        return BlockResultDTO.fromBlock(b, fullTx, this.blockStore, config.skipRemasc(), config.rpcZeroSignatureIfRemasc(), signatureCache);
+        return BlockResultDTO.fromBlock(b, fullTx, this.blockStore, config.skipRemasc(), config.rpcZeroSignatureIfRemasc(), signatureCache, config.getActivationConfig());
     }
 
     public BlockInformationResult[] eth_getBlocksByNumber(String number) {
@@ -885,10 +918,17 @@ public class Web3Impl implements Web3 {
         // (only the cumulative total). Derive the per-tx value from the cumulative gas difference
         // and pass it to the DTO — we intentionally do NOT mutate the receipt instance here,
         // because receipts are shared read-only domain objects and mutating them would leak a
-        // view-layer concern into storage.
+        // view-layer concern into storage. Gating on the receipt's transaction type (rather than
+        // on `gasUsed.length == 0`) avoids accidentally rewriting the gasUsed of any malformed/
+        // synthetic legacy receipt whose gasUsed was encoded as the empty byte array.
         TransactionReceipt receipt = txInfo.getReceipt();
         Long overrideGasUsed = null;
-        if (receipt.getGasUsed().length == 0) {
+        Transaction receiptTx = receipt.getTransaction();
+        boolean isStandardTyped12 = receiptTx != null
+                && (receiptTx.getType() == TransactionType.TYPE_1
+                        || (receiptTx.getType() == TransactionType.TYPE_2
+                                && !receiptTx.getTypePrefix().isRskNamespace()));
+        if (isStandardTyped12 && receipt.getGasUsed().length == 0) {
             overrideGasUsed = receipt.getCumulativeGasLong() - prevCumulativeGas;
         }
 

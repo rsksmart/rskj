@@ -24,7 +24,13 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test suite for RSKIP543 RSK Namespace Transactions (0x02 || rsk-tx-type || payload)
@@ -68,7 +74,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void rskNamespaceTransactionCreation() {
+    void rskNamespace_creation_setsTypeSubtypeAndFlag() {
         byte rskSubtype = 0x03;
         Transaction tx = createRskTransaction(rskSubtype);
 
@@ -78,7 +84,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void rskNamespaceEncoding() {
+    void rskNamespace_encoding_startsWithTypeByteThenSubtype() {
         byte rskSubtype = 0x03;
         Transaction tx = createSignedRskTransaction(rskSubtype);
         byte[] encoded = tx.getEncoded();
@@ -90,7 +96,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void rskNamespaceDecoding() {
+    void rskNamespace_decoding_preservesSubtype() {
         byte rskSubtype = 0x05;
         Transaction original = createSignedRskTransaction(rskSubtype);
 
@@ -103,7 +109,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void rskNamespaceEncodeDecode() {
+    void rskNamespace_encodeDecode_roundTripPreservesCoreFields() {
         byte rskSubtype = 0x07;
         Transaction original = createSignedRskTransaction(rskSubtype);
 
@@ -119,7 +125,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void allRskSubtypes() {
+    void rskSubtypes_allValidRange_areAccepted() {
         for (int i = 0x00; i <= 0x7f; i++) {
             byte subtype = (byte) i;
             Transaction tx = createRskTransaction(subtype);
@@ -131,7 +137,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void rskVsEip1559Detection() {
+    void rskNamespace_decodedTx_isDistinguishableFromStandardType2() {
         Transaction rskTx = createSignedRskTransaction((byte) 0x03);
 
         byte[] encoded = rskTx.getEncoded();
@@ -142,7 +148,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void rskSubtypeValidation() {
+    void rskSubtype_outOfRange_throws() {
         assertDoesNotThrow(() -> createRskTransaction((byte) 0x00));
         assertDoesNotThrow(() -> createRskTransaction((byte) 0x7f));
 
@@ -160,7 +166,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void rskSubtypeOnlyWithType2() {
+    void rskSubtype_withNonType2_throws() {
         assertThrows(IllegalArgumentException.class, () ->
                         Transaction.builder().nonce(TEST_NONCE)
                                 .gasPrice(TEST_GAS_PRICE)
@@ -175,7 +181,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void getFullTypeString() {
+    void getFullTypeString_rskNamespaceAndOtherTypes_returnsExpectedHex() {
         Transaction rskTx = createRskTransaction((byte) 0x03);
         assertEquals("0x0203", rskTx.getFullTypeString());
 
@@ -210,7 +216,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void getRskSubtypeThrowsForNonRskTransaction() {
+    void getRskSubtype_onNonRskNamespaceTransaction_throws() {
         Transaction legacyTx = Transaction.builder().nonce(TEST_NONCE)
                 .gasPrice(TEST_GAS_PRICE)
                 .gasLimit(TEST_GAS_LIMIT)
@@ -242,7 +248,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void rskNamespaceReceiptEncoding() {
+    void rskNamespace_receiptEncoding_startsWithTypeByteThenSubtype() {
         byte rskSubtype = 0x03;
         Transaction tx = createSignedRskTransaction(rskSubtype);
 
@@ -258,7 +264,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void rskNamespaceReceiptDecoding() {
+    void rskNamespace_receiptDecoding_encodedBytesRoundTrip() {
         byte rskSubtype = 0x05;
         Transaction tx = createSignedRskTransaction(rskSubtype);
 
@@ -275,7 +281,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void rskNamespaceReceiptEncodeDecode() {
+    void rskNamespace_receiptEncodeDecode_allSubtypesPreservePrefixBytes() {
         byte[] subtypes = {0x00, 0x03, 0x0f};
 
         for (byte subtype : subtypes) {
@@ -297,7 +303,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void backwardCompatibilityLegacy() {
+    void backwardCompatibility_legacyTransaction_encodingStartsWithRlpListMarker() {
         Transaction legacy = Transaction.builder().nonce(TEST_NONCE)
                 .gasPrice(TEST_GAS_PRICE)
                 .gasLimit(TEST_GAS_LIMIT)
@@ -319,7 +325,7 @@ class RskNamespaceTransactionTest {
     }
 
     @Test
-    void backwardCompatibilityStandardTyped() {
+    void backwardCompatibility_type1Transaction_encodingStartsWithTypeByte() {
         Transaction type1 = Transaction.builder().nonce(TEST_NONCE)
                 .gasPrice(TEST_GAS_PRICE)
                 .gasLimit(TEST_GAS_LIMIT)
