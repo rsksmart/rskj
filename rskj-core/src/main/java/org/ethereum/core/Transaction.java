@@ -197,6 +197,16 @@ public class Transaction {
         this.accessListBytes = accessListBytes == null ? null : accessListBytes.clone();
         this.maxPriorityFeePerGas = maxPriorityFeePerGas;
         this.maxFeePerGas = maxFeePerGas;
+
+        // RSKIP-546 invariant: a *standard* Type 2 transaction must always carry both fee fields.
+        // Fail loud at construction so the requirement is enforced uniformly across every ingress
+        // path (JSON-RPC, P2P decoder, internal builders, tests) instead of being scattered across
+        // ad-hoc checks in encoding and validation.
+        boolean isStandardType2 = typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace();
+        if (isStandardType2 && (this.maxPriorityFeePerGas == null || this.maxFeePerGas == null)) {
+            throw new IllegalArgumentException(
+                    "Standard Type 2 (EIP-1559) transaction requires both maxPriorityFeePerGas and maxFeePerGas");
+        }
     }
 
     // There was a method called NEW_getTransactionCost that implemented this alternative solution:

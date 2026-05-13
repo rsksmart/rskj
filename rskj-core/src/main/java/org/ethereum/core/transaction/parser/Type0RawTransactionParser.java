@@ -98,10 +98,7 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
     }
 
 
-
-
-
-    private  byte hexToChainId(String hex, byte defaultChainId) {
+    private byte hexToChainId(String hex, byte defaultChainId) {
         if (hex == null) {
             return defaultChainId;
         }

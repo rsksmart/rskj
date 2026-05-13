@@ -108,8 +108,7 @@ public class TransactionResultDTO {
         if (!isRemasc) {
             ECDSASignature signature = tx.getSignature();
 
-            v = HexUtils.toQuantityJsonHex(tx.getEncodedV());
-
+            v = HexUtils.toQuantityJsonHex(tx.getEncodedV() & 0xFF);
             r = HexUtils.toQuantityJsonHex(signature.getR());
             s = HexUtils.toQuantityJsonHex(signature.getS());
         } else if (zeroSignatureIfRemasc) {
