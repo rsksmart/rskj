@@ -76,8 +76,9 @@ import org.ethereum.core.Repository;
 
 /**
  * Tests for {@link ReleaseTransactionBuilder}. Each {@code @Nested} class targets one builder API;
- * shared bridge/network constants live at the top of this outer class; private static assertion
- * helpers follow the nested tests at the bottom (same pattern as {@link BridgeSupportGetEstimatedFeesTest}).
+ * shared bridge/network constants live at the top of this outer class; one direct {@code @Test} covers
+ * constructor wiring (getters); private static assertion helpers follow the nested tests at the bottom
+ * (same pattern as {@link BridgeSupportGetEstimatedFeesTest}).
  * Composite helpers such as {@code assertReleaseTxInputsStandardMultisig} group input-count, script-shape,
  * and selected-UTXO checks so successful-path tests read as: response, BTC version, inputs, then output economics.
  */
@@ -89,88 +90,47 @@ class ReleaseTransactionBuilderTest {
     private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
     private static final Coin DUST_VALUE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
 
+    @Test
+    void releaseTransactionBuilder_shouldExposeWalletChangeAddressAndFeePerKbFromConstruction() {
+        ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+        NetworkParameters regtestParameters = new BridgeRegTestConstants().getBtcParams();
+        Address changeAddress = BitcoinTestUtils.createP2PKHAddress(regtestParameters, "changeAddress");
+        Coin mockFeePerKb = Coin.MILLICOIN.multiply(2);
+        Wallet mockWallet = mock(Wallet.class);
+        BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(
+            bridgeRegTestConstants.getFederationConstants());
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            regtestParameters,
+            mockWallet,
+            genesisFederation.getFormatVersion(),
+            changeAddress,
+            mockFeePerKb,
+            allActivations
+        );
+        new Context(regtestParameters);
+
+        assertSame(mockWallet, releaseTransactionBuilder.getWallet());
+        assertSame(changeAddress, releaseTransactionBuilder.getChangeAddress());
+        assertEquals(Coin.MILLICOIN.multiply(2), releaseTransactionBuilder.getFeePerKb());
+    }
+
     /**
-     * Regtest {@link Wallet} mocks, {@link ReleaseTransactionBuilder#getters}, SVP fund flows, and
-     * mock-only exception paths not covered by mainnet integration nested suites.
+     * Mainnet {@link Wallet} + {@link ReleaseTransactionBuilder#buildSvpFundTransaction} success and
+     * failure paths (UTXO selection, dust, invalid flyover prefix, null args).
      */
     @Nested
-    class MockWalletReleaseBuilderTest {
+    class BuildSvpFundTransactionTest {
         private final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
-        private final NetworkParameters regtestParameters =  new BridgeRegTestConstants().getBtcParams();
-        private final Address changeAddress = BitcoinTestUtils.createP2PKHAddress(regtestParameters, "changeAddress");
         private final Coin feePerKb = Coin.MILLICOIN.multiply(2);
         private final Federation activeP2shErpFederation = P2shErpFederationBuilder.builder().build();
         private final Address activeP2shErpFederationAddress = activeP2shErpFederation.getAddress();
         private final Federation p2shP2wshErpProposedFederation = P2shP2wshErpFederationBuilder.builder().build();
-        private Wallet wallet;
-        private ReleaseTransactionBuilder builder;
-        private Federation federation;
         private BridgeStorageProvider bridgeStorageProviderMock;
-
 
         @BeforeEach
         void setup() {
-            wallet = mock(Wallet.class);
             bridgeStorageProviderMock = mock(BridgeStorageProvider.class);
-            BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
-            federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
-            builder = new ReleaseTransactionBuilder(
-                regtestParameters,
-                wallet,
-                federation.getFormatVersion(),
-                changeAddress,
-                feePerKb,
-                activations
-            );
-            new Context(regtestParameters);
-        }
-
-        @Test
-        void first_output_pay_fees() {
-            Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
-                .build();
-
-            int numberOfUtxos = 2;
-            List<UTXO> utxos = UTXOBuilder.builder()
-                .withScriptPubKey(activeFederation.getP2SHScript())
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
-
-            Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-                new Context(BTC_MAINNET_PARAMS),
-                activeFederation,
-                utxos,
-                false,
-                bridgeStorageProviderMock
-            );
-
-            Address activeFederationAddress = activeFederation.getAddress();
-            ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
-                BTC_MAINNET_PARAMS,
-                thisWallet,
-                federation.getFormatVersion(),
-                activeFederationAddress,
-                Coin.SATOSHI.multiply(1000),
-                activations
-            );
-
-            Address pegoutRecipient = BitcoinTestUtils.createP2PKHAddress(BTC_MAINNET_PARAMS, "destinationAddress");
-            Coin pegoutAmount = Coin.COIN.add(Coin.SATOSHI);
-
-            ReleaseTransactionBuilder.BuildResult result = rtb.buildAmountTo(
-                pegoutRecipient,
-                pegoutAmount
-            );
-            assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
-
-            Coin inputsValue = result.selectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
-
-            TransactionOutput changeOutput = result.btcTx().getOutput(1);
-
-            // Second output should be the change output to the Federation
-            assertEquals(activeFederationAddress, changeOutput.getAddressFromP2SH(BTC_MAINNET_PARAMS));
-            // And if its value is the spent UTXOs summatory minus the requested pegout amount
-            // we can ensure the Federation is not paying fees for pegouts
-            assertEquals(inputsValue.minus(pegoutAmount), changeOutput.getValue());
         }
 
         @Test
@@ -291,25 +251,6 @@ class ReleaseTransactionBuilderTest {
             ));
         }
 
-        private ReleaseTransactionBuilder getReleaseTransactionBuilderForMainnet(List<UTXO> utxos) {
-            Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-                new Context(BTC_MAINNET_PARAMS),
-                activeP2shErpFederation,
-                utxos,
-                false,
-                bridgeStorageProviderMock
-            );
-
-            return new ReleaseTransactionBuilder(
-                BTC_MAINNET_PARAMS,
-                thisWallet,
-                activeP2shErpFederation.getFormatVersion(),
-                activeP2shErpFederationAddress,
-                feePerKb,
-                activations
-            );
-        }
-
         @Test
         void buildSvpFundTransaction_withInvalidProposedFlyoverPrefix_shouldThrowRedeemScriptCreationException() {
             // Arrange
@@ -366,166 +307,23 @@ class ReleaseTransactionBuilderTest {
             ));
         }
 
-        @Test
-        void build_pegout_tx_from_non_standard_erp_federation() {
-            // Use mainnet constants to test a real situation
-            List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
-                Arrays.asList(
-                    new BtcECKey(),
-                    new BtcECKey(),
-                    new BtcECKey()
-                )
-            );
-            FederationArgs federationArgs = new FederationArgs(members, Instant.now(), 0, BTC_MAINNET_PARAMS);
-
-            ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
-                federationArgs,
-                BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getErpFedPubKeysList(),
-                BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getErpFedActivationDelay(),
-                activations
-            );
-
-            int numberOfUtxos = 2;
-            List<UTXO> utxos = UTXOBuilder.builder()
-                .withScriptPubKey(nonStandardErpFederation.getP2SHScript())
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
-
+        private ReleaseTransactionBuilder getReleaseTransactionBuilderForMainnet(List<UTXO> utxos) {
             Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
                 new Context(BTC_MAINNET_PARAMS),
-                nonStandardErpFederation,
+                activeP2shErpFederation,
                 utxos,
                 false,
-                mock(BridgeStorageProvider.class)
+                bridgeStorageProviderMock
             );
 
-            Address nonStandardErpFederationAddress = nonStandardErpFederation.getAddress();
-            ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            return new ReleaseTransactionBuilder(
                 BTC_MAINNET_PARAMS,
                 thisWallet,
-                nonStandardErpFederation.getFormatVersion(),
-                nonStandardErpFederationAddress,
-                Coin.SATOSHI.multiply(1000),
+                activeP2shErpFederation.getFormatVersion(),
+                activeP2shErpFederationAddress,
+                feePerKb,
                 activations
             );
-
-            Address pegoutRecipient = BitcoinTestUtils.createP2PKHAddress(BTC_MAINNET_PARAMS, "destinationAddress");
-            Coin pegoutAmount = Coin.COIN.add(Coin.SATOSHI);
-
-            ReleaseTransactionBuilder.BuildResult result = releaseTransactionBuilder.buildAmountTo(
-                pegoutRecipient,
-                pegoutAmount
-            );
-            assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
-        }
-
-        @Test
-        void getters() {
-            assertSame(wallet, builder.getWallet());
-            assertSame(changeAddress, builder.getChangeAddress());
-            assertEquals(Coin.MILLICOIN.multiply(2), builder.getFeePerKb());
-        }
-
-        @Test
-        void buildAmountTo_utxoProviderException() throws InsufficientMoneyException, UTXOProviderException {
-            Address to = mockAddress(123);
-            Coin amount = Coin.CENT.multiply(3);
-
-            UTXOProvider utxoProvider = mock(UTXOProvider.class);
-            when(wallet.getUTXOProvider()).thenReturn(utxoProvider);
-            when(wallet.getWatchedAddresses()).thenReturn(Collections.singletonList(changeAddress));
-            when(utxoProvider.getOpenTransactionOutputs(anyList())).then((InvocationOnMock m) -> {
-                List<Address> addresses = m.getArgument(0);
-                assertEquals(Collections.singletonList(changeAddress), addresses);
-                throw new UTXOProviderException();
-            });
-
-            Mockito.doAnswer((InvocationOnMock m) -> {
-                SendRequest sr = m.getArgument(0);
-
-                assertEquals(Coin.MILLICOIN.multiply(2), sr.feePerKb);
-                assertEquals(Wallet.MissingSigsMode.USE_OP_ZERO, sr.missingSigsMode);
-                assertEquals(changeAddress, sr.changeAddress);
-                assertFalse(sr.shuffleOutputs);
-                assertTrue(sr.recipientsPayFees);
-
-                BtcTransaction tx = sr.tx;
-
-                assertEquals(1, tx.getOutputs().size());
-                assertEquals(amount, tx.getOutput(0).getValue());
-                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
-
-                tx.addInput(mockUTXOHash("two"), 2, mock(Script.class));
-                tx.addInput(mockUTXOHash("three"), 0, mock(Script.class));
-
-                return null;
-            }).when(wallet).completeTx(any(SendRequest.class));
-
-            ReleaseTransactionBuilder.BuildResult result = builder.buildAmountTo(to, amount);
-            verify(wallet, times(1)).completeTx(any(SendRequest.class));
-
-            assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.responseCode());
-        }
-
-        @Test
-        void buildAmountTo_illegalStateException() throws InsufficientMoneyException {
-            Address to = mockAddress(123);
-            Coin amount = Coin.CENT.multiply(3);
-
-            doThrow(new IllegalStateException()).when(wallet).completeTx(any(SendRequest.class));
-
-            assertThrows(IllegalStateException.class, () -> builder.buildAmountTo(to, amount));
-
-            verify(wallet, times(1)).completeTx(any(SendRequest.class));
-        }
-
-        @Test
-        void buildEmptyWalletTo_utxoProviderException() throws InsufficientMoneyException, UTXOProviderException {
-            Address to = mockAddress(123);
-
-            UTXOProvider utxoProvider = mock(UTXOProvider.class);
-            when(wallet.getUTXOProvider()).thenReturn(utxoProvider);
-            when(wallet.getWatchedAddresses()).thenReturn(Collections.singletonList(to));
-            when(utxoProvider.getOpenTransactionOutputs(anyList())).then((InvocationOnMock m) -> {
-                List<Address> addresses = m.getArgument(0);
-                assertEquals(Collections.singletonList(to), addresses);
-                throw new UTXOProviderException();
-            });
-
-            Mockito.doAnswer((InvocationOnMock m) -> {
-                SendRequest sr = m.getArgument(0);
-
-                assertEquals(Coin.MILLICOIN.multiply(2), sr.feePerKb);
-                assertEquals(Wallet.MissingSigsMode.USE_OP_ZERO, sr.missingSigsMode);
-                assertEquals(to, sr.changeAddress);
-                assertFalse(sr.shuffleOutputs);
-                assertTrue(sr.recipientsPayFees);
-                assertTrue(sr.emptyWallet);
-
-                BtcTransaction tx = sr.tx;
-
-                assertEquals(1, tx.getOutputs().size());
-                assertEquals(Coin.ZERO, tx.getOutput(0).getValue());
-                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
-
-                tx.addInput(mockUTXOHash("two"), 2, mock(Script.class));
-                tx.addInput(mockUTXOHash("three"), 0, mock(Script.class));
-                tx.getOutput(0).setValue(Coin.FIFTY_COINS);
-
-                return null;
-            }).when(wallet).completeTx(any(SendRequest.class));
-
-            ReleaseTransactionBuilder.BuildResult result = builder.buildEmptyWalletTo(to);
-            verify(wallet, times(1)).completeTx(any(SendRequest.class));
-
-            assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.responseCode());
-        }
-
-        private Address mockAddress(int pk) {
-            return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(regtestParameters);
-        }
-
-        private Sha256Hash mockUTXOHash(String generator) {
-            return Sha256Hash.of(generator.getBytes(StandardCharsets.UTF_8));
         }
     }
 
@@ -911,6 +709,197 @@ class ReleaseTransactionBuilderTest {
             );
         }
 
+        @Test
+        void buildAmountTo_whenRecipientsPayFeesWithP2shP2wshErp_shouldLeaveFederationChangeAsInputsMinusPegout() {
+            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+            BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(
+                bridgeRegTestConstants.getFederationConstants());
+            BridgeStorageProvider bridgeStorageProviderMock = mock(BridgeStorageProvider.class);
+
+            Federation activeFederation = P2shP2wshErpFederationBuilder.builder().build();
+            int numberOfUtxos = 2;
+            List<UTXO> utxos = UTXOBuilder.builder()
+                .withScriptPubKey(activeFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+            Wallet spendWallet = BridgeUtils.getFederationSpendWallet(
+                new Context(BTC_MAINNET_PARAMS),
+                activeFederation,
+                utxos,
+                false,
+                bridgeStorageProviderMock
+            );
+
+            Address activeFederationAddress = activeFederation.getAddress();
+            ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+                BTC_MAINNET_PARAMS,
+                spendWallet,
+                genesisFederation.getFormatVersion(),
+                activeFederationAddress,
+                Coin.SATOSHI.multiply(1000),
+                allActivations
+            );
+
+            Address pegoutRecipient = BitcoinTestUtils.createP2PKHAddress(BTC_MAINNET_PARAMS, "destinationAddress");
+            Coin pegoutAmount = Coin.COIN.add(Coin.SATOSHI);
+
+            ReleaseTransactionBuilder.BuildResult result = releaseTransactionBuilder.buildAmountTo(
+                pegoutRecipient,
+                pegoutAmount
+            );
+            assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
+
+            Coin inputsValue = result.selectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+
+            TransactionOutput changeOutput = result.btcTx().getOutput(1);
+
+            assertEquals(activeFederationAddress, changeOutput.getAddressFromP2SH(BTC_MAINNET_PARAMS));
+            assertEquals(inputsValue.minus(pegoutAmount), changeOutput.getValue());
+        }
+
+        @Test
+        void buildAmountTo_whenNonStandardErpFederation_shouldSucceed() {
+            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+            List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
+                Arrays.asList(
+                    new BtcECKey(),
+                    new BtcECKey(),
+                    new BtcECKey()
+                )
+            );
+            FederationArgs federationArgs = new FederationArgs(members, Instant.now(), 0, BTC_MAINNET_PARAMS);
+
+            ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
+                federationArgs,
+                BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getErpFedPubKeysList(),
+                BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getErpFedActivationDelay(),
+                allActivations
+            );
+
+            int numberOfUtxos = 2;
+            List<UTXO> utxos = UTXOBuilder.builder()
+                .withScriptPubKey(nonStandardErpFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+            Wallet spendWallet = BridgeUtils.getFederationSpendWallet(
+                new Context(BTC_MAINNET_PARAMS),
+                nonStandardErpFederation,
+                utxos,
+                false,
+                mock(BridgeStorageProvider.class)
+            );
+
+            Address nonStandardErpFederationAddress = nonStandardErpFederation.getAddress();
+            ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+                BTC_MAINNET_PARAMS,
+                spendWallet,
+                nonStandardErpFederation.getFormatVersion(),
+                nonStandardErpFederationAddress,
+                Coin.SATOSHI.multiply(1000),
+                allActivations
+            );
+
+            Address pegoutRecipient = BitcoinTestUtils.createP2PKHAddress(BTC_MAINNET_PARAMS, "destinationAddress");
+            Coin pegoutAmount = Coin.COIN.add(Coin.SATOSHI);
+
+            ReleaseTransactionBuilder.BuildResult result = releaseTransactionBuilder.buildAmountTo(
+                pegoutRecipient,
+                pegoutAmount
+            );
+            assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
+        }
+
+        @Test
+        void buildAmountTo_whenUtxoProviderFails_shouldReturnUtxoProviderException()
+            throws InsufficientMoneyException, UTXOProviderException {
+            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+            NetworkParameters regtestParameters = new BridgeRegTestConstants().getBtcParams();
+            Address changeAddress = BitcoinTestUtils.createP2PKHAddress(regtestParameters, "changeAddress");
+            Coin mockFeePerKb = Coin.MILLICOIN.multiply(2);
+            Wallet mockWallet = mock(Wallet.class);
+            BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(
+                bridgeRegTestConstants.getFederationConstants());
+            ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+                regtestParameters,
+                mockWallet,
+                genesisFederation.getFormatVersion(),
+                changeAddress,
+                mockFeePerKb,
+                allActivations
+            );
+            new Context(regtestParameters);
+
+            Address to = mockRegtestAddressFromPrivateKey(123);
+            Coin amount = Coin.CENT.multiply(3);
+
+            UTXOProvider utxoProvider = mock(UTXOProvider.class);
+            when(mockWallet.getUTXOProvider()).thenReturn(utxoProvider);
+            when(mockWallet.getWatchedAddresses()).thenReturn(Collections.singletonList(changeAddress));
+            when(utxoProvider.getOpenTransactionOutputs(anyList())).then((InvocationOnMock m) -> {
+                List<Address> addresses = m.getArgument(0);
+                assertEquals(Collections.singletonList(changeAddress), addresses);
+                throw new UTXOProviderException();
+            });
+
+            Mockito.doAnswer((InvocationOnMock m) -> {
+                SendRequest sr = m.getArgument(0);
+
+                assertEquals(Coin.MILLICOIN.multiply(2), sr.feePerKb);
+                assertEquals(Wallet.MissingSigsMode.USE_OP_ZERO, sr.missingSigsMode);
+                assertEquals(changeAddress, sr.changeAddress);
+                assertFalse(sr.shuffleOutputs);
+                assertTrue(sr.recipientsPayFees);
+
+                BtcTransaction tx = sr.tx;
+
+                assertEquals(1, tx.getOutputs().size());
+                assertEquals(amount, tx.getOutput(0).getValue());
+                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
+
+                tx.addInput(mockSha256HashFromString("two"), 2, mock(Script.class));
+                tx.addInput(mockSha256HashFromString("three"), 0, mock(Script.class));
+
+                return null;
+            }).when(mockWallet).completeTx(any(SendRequest.class));
+
+            ReleaseTransactionBuilder.BuildResult result = releaseTransactionBuilder.buildAmountTo(to, amount);
+            verify(mockWallet, times(1)).completeTx(any(SendRequest.class));
+
+            assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.responseCode());
+        }
+
+        @Test
+        void buildAmountTo_whenCompleteTxFailsWithIllegalState_shouldPropagate() throws InsufficientMoneyException {
+            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+            NetworkParameters regtestParameters = new BridgeRegTestConstants().getBtcParams();
+            Address changeAddress = BitcoinTestUtils.createP2PKHAddress(regtestParameters, "changeAddress");
+            Coin mockFeePerKb = Coin.MILLICOIN.multiply(2);
+            Wallet mockWallet = mock(Wallet.class);
+            BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(
+                bridgeRegTestConstants.getFederationConstants());
+            ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+                regtestParameters,
+                mockWallet,
+                genesisFederation.getFormatVersion(),
+                changeAddress,
+                mockFeePerKb,
+                allActivations
+            );
+            new Context(regtestParameters);
+
+            Address to = mockRegtestAddressFromPrivateKey(123);
+            Coin amount = Coin.CENT.multiply(3);
+
+            doThrow(new IllegalStateException()).when(mockWallet).completeTx(any(SendRequest.class));
+
+            assertThrows(IllegalStateException.class, () -> releaseTransactionBuilder.buildAmountTo(to, amount));
+
+            verify(mockWallet, times(1)).completeTx(any(SendRequest.class));
+        }
+
         private void setUpActivations(ActivationConfig.ForBlock activations) {
             this.activations = activations;
         }
@@ -1076,6 +1065,15 @@ class ReleaseTransactionBuilderTest {
             Address destination = output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
             return destination.equals(federationAddress);
         }
+
+        private Address mockRegtestAddressFromPrivateKey(int pk) {
+            NetworkParameters regtestParameters = new BridgeRegTestConstants().getBtcParams();
+            return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(regtestParameters);
+        }
+
+        private Sha256Hash mockSha256HashFromString(String generator) {
+            return Sha256Hash.of(generator.getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     @Nested
@@ -1111,6 +1109,67 @@ class ReleaseTransactionBuilderTest {
         void setUp() {
             setUpActivations(ALL_ACTIVATIONS);
             setUpFeePerKb(BtcTransaction.DEFAULT_TX_FEE);
+        }
+
+        @Test
+        void buildEmptyWalletTo_whenUtxoProviderFails_shouldReturnUtxoProviderException()
+            throws InsufficientMoneyException, UTXOProviderException {
+            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+            NetworkParameters regtestParameters = new BridgeRegTestConstants().getBtcParams();
+            Address changeAddress = BitcoinTestUtils.createP2PKHAddress(regtestParameters, "changeAddress");
+            Coin mockFeePerKb = Coin.MILLICOIN.multiply(2);
+            Wallet mockWallet = mock(Wallet.class);
+            BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(
+                bridgeRegTestConstants.getFederationConstants());
+            ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+                regtestParameters,
+                mockWallet,
+                genesisFederation.getFormatVersion(),
+                changeAddress,
+                mockFeePerKb,
+                allActivations
+            );
+            new Context(regtestParameters);
+
+            Address to = mockRegtestAddressFromPrivateKey(123);
+
+            UTXOProvider utxoProvider = mock(UTXOProvider.class);
+            when(mockWallet.getUTXOProvider()).thenReturn(utxoProvider);
+            when(mockWallet.getWatchedAddresses()).thenReturn(Collections.singletonList(to));
+            when(utxoProvider.getOpenTransactionOutputs(anyList())).then((InvocationOnMock m) -> {
+                List<Address> addresses = m.getArgument(0);
+                assertEquals(Collections.singletonList(to), addresses);
+                throw new UTXOProviderException();
+            });
+
+            Mockito.doAnswer((InvocationOnMock m) -> {
+                SendRequest sr = m.getArgument(0);
+
+                assertEquals(Coin.MILLICOIN.multiply(2), sr.feePerKb);
+                assertEquals(Wallet.MissingSigsMode.USE_OP_ZERO, sr.missingSigsMode);
+                assertEquals(to, sr.changeAddress);
+                assertFalse(sr.shuffleOutputs);
+                assertTrue(sr.recipientsPayFees);
+                assertTrue(sr.emptyWallet);
+
+                BtcTransaction tx = sr.tx;
+
+                assertEquals(1, tx.getOutputs().size());
+                assertEquals(Coin.ZERO, tx.getOutput(0).getValue());
+                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
+
+                tx.addInput(mockSha256HashFromString("two"), 2, mock(Script.class));
+                tx.addInput(mockSha256HashFromString("three"), 0, mock(Script.class));
+                tx.getOutput(0).setValue(Coin.FIFTY_COINS);
+
+                return null;
+            }).when(mockWallet).completeTx(any(SendRequest.class));
+
+            ReleaseTransactionBuilder.BuildResult result = releaseTransactionBuilder.buildEmptyWalletTo(to);
+            verify(mockWallet, times(1)).completeTx(any(SendRequest.class));
+
+            assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.responseCode());
         }
 
         @Nested
@@ -1633,6 +1692,15 @@ class ReleaseTransactionBuilderTest {
         private boolean isFederationOutput(TransactionOutput output) {
             Address destinationAddress = output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
             return destinationAddress.equals(federationAddress);
+        }
+
+        private Address mockRegtestAddressFromPrivateKey(int pk) {
+            NetworkParameters regtestParameters = new BridgeRegTestConstants().getBtcParams();
+            return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(regtestParameters);
+        }
+
+        private Sha256Hash mockSha256HashFromString(String generator) {
+            return Sha256Hash.of(generator.getBytes(StandardCharsets.UTF_8));
         }
     }
 
