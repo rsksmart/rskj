@@ -74,45 +74,99 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.ethereum.core.Repository;
 
-/**
- * Tests for {@link ReleaseTransactionBuilder}. Each {@code @Nested} class targets one builder API;
- * shared bridge/network constants live at the top of this outer class; one direct {@code @Test} covers
- * constructor wiring (getters); private static assertion helpers follow the nested tests at the bottom
- * (same pattern as {@link BridgeSupportGetEstimatedFeesTest}).
- * Composite helpers such as {@code assertReleaseTxInputsStandardMultisig} group input-count, script-shape,
- * and selected-UTXO checks so successful-path tests read as: response, BTC version, inputs, then output economics.
- */
 class ReleaseTransactionBuilderTest {
 
     private static final BridgeConstants BRIDGE_MAINNET_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters BTC_MAINNET_PARAMS = BRIDGE_MAINNET_CONSTANTS.getBtcParams();
-    /** Shared high fee rate used by several mainnet integration nested suites. */
-    private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
+    private static final NetworkParameters REGTEST_BTC_PARAMS = new BridgeRegTestConstants().getBtcParams();
+
+    private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0);
+    private static final ActivationConfig.ForBlock FINGERROOT_ACTIVATIONS =
+        ActivationConfigsForTest.fingerroot500().forBlock(0);
+    private static final ActivationConfig.ForBlock IRIS_ACTIVATIONS = ActivationConfigsForTest.iris300().forBlock(0);
+    private static final ActivationConfig.ForBlock PAPYRUS_ACTIVATIONS =
+        ActivationConfigsForTest.papyrus200().forBlock(0);
+
     private static final Coin DUST_VALUE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.minus(Coin.SATOSHI);
+    private static final Coin FEE_PER_KB_1000_SATOSHIS = Coin.SATOSHI.multiply(1000);
+    private static final Coin HIGH_FEE_PER_KB = Coin.valueOf(1_000_000);
+    private static final Coin MINIMUM_PEGIN_TX_VALUE_IRIS =
+        BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(IRIS_ACTIVATIONS);
+    private static final Coin MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS =
+        BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(ALL_ACTIVATIONS);
+    private static final Coin MINIMUM_PEGOUT_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPegoutTxValue();
+    private static final Coin MOCK_FEE_PER_KB = Coin.MILLICOIN.multiply(2);
+    private static final Coin THOUSAND_SATOSHIS = Coin.valueOf(1000);
+
+    private static final int EXPECTED_NUMBER_OF_CHANGE_OUTPUTS = 1;
+    private static final int STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE = 277;
+    private static final int UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = 276;
+
+    private ActivationConfig.ForBlock activations;
+    private Coin feePerKb;
+
+    private void setUpActivations(ActivationConfig.ForBlock activations) {
+        this.activations = activations;
+    }
+
+    private void setUpFeePerKb(Coin feePerKb) {
+        this.feePerKb = feePerKb;
+    }
+
+    private Address mockRegtestAddressFromPrivateKey(int pk) {
+        return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(REGTEST_BTC_PARAMS);
+    }
+
+    private Sha256Hash mockSha256HashFromString(String generator) {
+        return Sha256Hash.of(generator.getBytes(StandardCharsets.UTF_8));
+    }
 
     @Test
     void releaseTransactionBuilder_shouldExposeWalletChangeAddressAndFeePerKbFromConstruction() {
-        ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
-        NetworkParameters regtestParameters = new BridgeRegTestConstants().getBtcParams();
-        Address changeAddress = BitcoinTestUtils.createP2PKHAddress(regtestParameters, "changeAddress");
-        Coin mockFeePerKb = Coin.MILLICOIN.multiply(2);
+        Address changeAddress = BitcoinTestUtils.createP2PKHAddress(REGTEST_BTC_PARAMS, "changeAddress");
         Wallet mockWallet = mock(Wallet.class);
         BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(
             bridgeRegTestConstants.getFederationConstants());
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
-            regtestParameters,
+            REGTEST_BTC_PARAMS,
             mockWallet,
             genesisFederation.getFormatVersion(),
             changeAddress,
-            mockFeePerKb,
-            allActivations
+            MOCK_FEE_PER_KB,
+            ALL_ACTIVATIONS
         );
-        new Context(regtestParameters);
+        new Context(REGTEST_BTC_PARAMS);
 
         assertSame(mockWallet, releaseTransactionBuilder.getWallet());
         assertSame(changeAddress, releaseTransactionBuilder.getChangeAddress());
-        assertEquals(Coin.MILLICOIN.multiply(2), releaseTransactionBuilder.getFeePerKb());
+        assertEquals(MOCK_FEE_PER_KB, releaseTransactionBuilder.getFeePerKb());
+    }
+
+    private static Address recipientAddressFromPrivateKeyOffset(int keyOffset) {
+        BigInteger seed = BigInteger.valueOf(keyOffset);
+        return BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
+    }
+
+    private static Wallet createMainnetFederationSpendWallet(
+        Federation federation,
+        List<UTXO> utxos,
+        ActivationConfig.ForBlock activationsForBridgeStorage,
+        Context btcContext
+    ) {
+        Repository repository = createRepository();
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+            repository,
+            BTC_MAINNET_PARAMS,
+            activationsForBridgeStorage
+        );
+        return BridgeUtils.getFederationSpendWallet(
+            btcContext,
+            federation,
+            utxos,
+            true,
+            bridgeStorageProvider
+        );
     }
 
     /**
@@ -121,8 +175,6 @@ class ReleaseTransactionBuilderTest {
      */
     @Nested
     class BuildSvpFundTransactionTest {
-        private final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
-        private final Coin feePerKb = Coin.MILLICOIN.multiply(2);
         private final Federation activeP2shErpFederation = P2shErpFederationBuilder.builder().build();
         private final Address activeP2shErpFederationAddress = activeP2shErpFederation.getAddress();
         private final Federation p2shP2wshErpProposedFederation = P2shP2wshErpFederationBuilder.builder().build();
@@ -321,8 +373,8 @@ class ReleaseTransactionBuilderTest {
                 thisWallet,
                 activeP2shErpFederation.getFormatVersion(),
                 activeP2shErpFederationAddress,
-                feePerKb,
-                activations
+                MOCK_FEE_PER_KB,
+                ALL_ACTIVATIONS
             );
         }
     }
@@ -330,21 +382,7 @@ class ReleaseTransactionBuilderTest {
     @Nested
     class BuildAmountToTest {
 
-        private static final int EXPECTED_NUMBER_OF_CHANGE_OUTPUTS = 1;
-        private static final ActivationConfig.ForBlock IRIS_ACTIVATIONS = ActivationConfigsForTest.iris300().forBlock(0);
-        private static final ActivationConfig.ForBlock PAPYRUS_ACTIVATIONS = ActivationConfigsForTest.papyrus200().forBlock(0);
-
-        private static final Coin MINIMUM_PEGOUT_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPegoutTxValue();
-        private static final Coin MINIMUM_PEGIN_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(IRIS_ACTIVATIONS);
-
-        /**
-         * UTXO count that pushes {@link ReleaseTransactionBuilder#buildAmountTo} past max standard tx size
-         * for this federation script type (see sibling {@link #UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE}).
-         */
-        private static final int UTXO_COUNT_EXCEEDING_MAX_STANDARD_TX_SIZE = 277;
-        /** Largest input count that still fits under the max standard tx size bound for the same fixture. */
-        private static final int UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = 276;
-        private static final Address RECIPIENT_ADDRESS = createRecipientAddress();
+        private static final Address RECIPIENT_ADDRESS = ReleaseTransactionBuilderTest.recipientAddressFromPrivateKeyOffset(2100);
 
         private Federation federation;
         private int federationFormatVersion;
@@ -353,9 +391,6 @@ class ReleaseTransactionBuilderTest {
         private Script federationOutputScript;
         private Script federationRedeemScript;
         private Wallet wallet;
-
-        private ActivationConfig.ForBlock activations;
-        private Coin feePerKb;
 
         @BeforeEach
         void setup() {
@@ -414,7 +449,7 @@ class ReleaseTransactionBuilderTest {
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
-                .withValue(MINIMUM_PEGIN_TX_VALUE)
+                .withValue(MINIMUM_PEGIN_TX_VALUE_IRIS)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder();
 
@@ -440,7 +475,7 @@ class ReleaseTransactionBuilderTest {
                 .withValue(MINIMUM_PEGOUT_TX_VALUE)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder();
-            Coin amountToSend = MINIMUM_PEGOUT_TX_VALUE.add(Coin.valueOf(1000));
+            Coin amountToSend = MINIMUM_PEGOUT_TX_VALUE.add(THOUSAND_SATOSHIS);
 
             // Act
             BuildResult buildResult = releaseTransactionBuilder.buildAmountTo(RECIPIENT_ADDRESS, amountToSend);
@@ -604,7 +639,7 @@ class ReleaseTransactionBuilderTest {
             int numberOfUtxos = 10;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
-                .withValue(MINIMUM_PEGIN_TX_VALUE)
+                .withValue(MINIMUM_PEGIN_TX_VALUE_IRIS)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder();
 
@@ -624,7 +659,7 @@ class ReleaseTransactionBuilderTest {
             int numberOfUtxos = 3;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
-                .withValue(MINIMUM_PEGIN_TX_VALUE)
+                .withValue(MINIMUM_PEGIN_TX_VALUE_IRIS)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder();
 
@@ -668,7 +703,7 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildAmountTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
             // Arrange
-            int numberOfUtxos = UTXO_COUNT_EXCEEDING_MAX_STANDARD_TX_SIZE;
+            int numberOfUtxos = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
                 .withValue(Coin.COIN)
@@ -711,7 +746,6 @@ class ReleaseTransactionBuilderTest {
 
         @Test
         void buildAmountTo_whenRecipientsPayFeesWithP2shP2wshErp_shouldLeaveFederationChangeAsInputsMinusPegout() {
-            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
             BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
             Federation genesisFederation = FederationTestUtils.getGenesisFederation(
                 bridgeRegTestConstants.getFederationConstants());
@@ -737,8 +771,8 @@ class ReleaseTransactionBuilderTest {
                 spendWallet,
                 genesisFederation.getFormatVersion(),
                 activeFederationAddress,
-                Coin.SATOSHI.multiply(1000),
-                allActivations
+                FEE_PER_KB_1000_SATOSHIS,
+                ALL_ACTIVATIONS
             );
 
             Address pegoutRecipient = BitcoinTestUtils.createP2PKHAddress(BTC_MAINNET_PARAMS, "destinationAddress");
@@ -760,7 +794,6 @@ class ReleaseTransactionBuilderTest {
 
         @Test
         void buildAmountTo_whenNonStandardErpFederation_shouldSucceed() {
-            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
             List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
                 Arrays.asList(
                     new BtcECKey(),
@@ -774,7 +807,7 @@ class ReleaseTransactionBuilderTest {
                 federationArgs,
                 BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getErpFedPubKeysList(),
                 BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getErpFedActivationDelay(),
-                allActivations
+                ALL_ACTIVATIONS
             );
 
             int numberOfUtxos = 2;
@@ -796,8 +829,8 @@ class ReleaseTransactionBuilderTest {
                 spendWallet,
                 nonStandardErpFederation.getFormatVersion(),
                 nonStandardErpFederationAddress,
-                Coin.SATOSHI.multiply(1000),
-                allActivations
+                FEE_PER_KB_1000_SATOSHIS,
+                ALL_ACTIVATIONS
             );
 
             Address pegoutRecipient = BitcoinTestUtils.createP2PKHAddress(BTC_MAINNET_PARAMS, "destinationAddress");
@@ -813,23 +846,20 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildAmountTo_whenUtxoProviderFails_shouldReturnUtxoProviderException()
             throws InsufficientMoneyException, UTXOProviderException {
-            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
-            NetworkParameters regtestParameters = new BridgeRegTestConstants().getBtcParams();
-            Address changeAddress = BitcoinTestUtils.createP2PKHAddress(regtestParameters, "changeAddress");
-            Coin mockFeePerKb = Coin.MILLICOIN.multiply(2);
+            Address changeAddress = BitcoinTestUtils.createP2PKHAddress(REGTEST_BTC_PARAMS, "changeAddress");
             Wallet mockWallet = mock(Wallet.class);
             BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
             Federation genesisFederation = FederationTestUtils.getGenesisFederation(
                 bridgeRegTestConstants.getFederationConstants());
             ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
-                regtestParameters,
+                REGTEST_BTC_PARAMS,
                 mockWallet,
                 genesisFederation.getFormatVersion(),
                 changeAddress,
-                mockFeePerKb,
-                allActivations
+                MOCK_FEE_PER_KB,
+                ALL_ACTIVATIONS
             );
-            new Context(regtestParameters);
+            new Context(REGTEST_BTC_PARAMS);
 
             Address to = mockRegtestAddressFromPrivateKey(123);
             Coin amount = Coin.CENT.multiply(3);
@@ -846,7 +876,7 @@ class ReleaseTransactionBuilderTest {
             Mockito.doAnswer((InvocationOnMock m) -> {
                 SendRequest sr = m.getArgument(0);
 
-                assertEquals(Coin.MILLICOIN.multiply(2), sr.feePerKb);
+                assertEquals(MOCK_FEE_PER_KB, sr.feePerKb);
                 assertEquals(Wallet.MissingSigsMode.USE_OP_ZERO, sr.missingSigsMode);
                 assertEquals(changeAddress, sr.changeAddress);
                 assertFalse(sr.shuffleOutputs);
@@ -856,7 +886,7 @@ class ReleaseTransactionBuilderTest {
 
                 assertEquals(1, tx.getOutputs().size());
                 assertEquals(amount, tx.getOutput(0).getValue());
-                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
+                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(REGTEST_BTC_PARAMS));
 
                 tx.addInput(mockSha256HashFromString("two"), 2, mock(Script.class));
                 tx.addInput(mockSha256HashFromString("three"), 0, mock(Script.class));
@@ -872,23 +902,20 @@ class ReleaseTransactionBuilderTest {
 
         @Test
         void buildAmountTo_whenCompleteTxFailsWithIllegalState_shouldPropagate() throws InsufficientMoneyException {
-            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
-            NetworkParameters regtestParameters = new BridgeRegTestConstants().getBtcParams();
-            Address changeAddress = BitcoinTestUtils.createP2PKHAddress(regtestParameters, "changeAddress");
-            Coin mockFeePerKb = Coin.MILLICOIN.multiply(2);
+            Address changeAddress = BitcoinTestUtils.createP2PKHAddress(REGTEST_BTC_PARAMS, "changeAddress");
             Wallet mockWallet = mock(Wallet.class);
             BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
             Federation genesisFederation = FederationTestUtils.getGenesisFederation(
                 bridgeRegTestConstants.getFederationConstants());
             ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
-                regtestParameters,
+                REGTEST_BTC_PARAMS,
                 mockWallet,
                 genesisFederation.getFormatVersion(),
                 changeAddress,
-                mockFeePerKb,
-                allActivations
+                MOCK_FEE_PER_KB,
+                ALL_ACTIVATIONS
             );
-            new Context(regtestParameters);
+            new Context(REGTEST_BTC_PARAMS);
 
             Address to = mockRegtestAddressFromPrivateKey(123);
             Coin amount = Coin.CENT.multiply(3);
@@ -900,35 +927,12 @@ class ReleaseTransactionBuilderTest {
             verify(mockWallet, times(1)).completeTx(any(SendRequest.class));
         }
 
-        private void setUpActivations(ActivationConfig.ForBlock activations) {
-            this.activations = activations;
-        }
-
-        private void setUpFeePerKb(Coin feePerKb) {
-            this.feePerKb = feePerKb;
-        }
-
-        private static Address createRecipientAddress() {
-            int keyOffset = 2100;
-            BigInteger seed = BigInteger.valueOf(keyOffset);
-            return BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
-        }
-
         private void setUpWallet() {
-            Repository repository = createRepository();
-            BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                repository,
-                BTC_MAINNET_PARAMS,
-                activations
-            );
-
-            Context btcContext = new Context(BTC_MAINNET_PARAMS);
-            wallet = BridgeUtils.getFederationSpendWallet(
-                btcContext,
+            wallet = ReleaseTransactionBuilderTest.createMainnetFederationSpendWallet(
                 federation,
                 federationUTXOs,
-                true,
-                bridgeStorageProvider
+                activations,
+                new Context(BTC_MAINNET_PARAMS)
             );
         }
 
@@ -1065,32 +1069,20 @@ class ReleaseTransactionBuilderTest {
             Address destination = output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
             return destination.equals(federationAddress);
         }
-
-        private Address mockRegtestAddressFromPrivateKey(int pk) {
-            NetworkParameters regtestParameters = new BridgeRegTestConstants().getBtcParams();
-            return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(regtestParameters);
-        }
-
-        private Sha256Hash mockSha256HashFromString(String generator) {
-            return Sha256Hash.of(generator.getBytes(StandardCharsets.UTF_8));
-        }
     }
 
     @Nested
     class BuildEmptyWalletToTest {
 
-        private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0);
-
         private static final Context BTC_CONTEXT = new Context(BTC_MAINNET_PARAMS);
 
-        private static final Coin MINIMUM_PEGIN_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(ALL_ACTIVATIONS);
         private static final int RECIPIENT_ADDRESS_KEY_OFFSET = 3100;
-        private static final Address RECIPIENT_ADDRESS = createRecipientAddress();
+        private static final Address RECIPIENT_ADDRESS = ReleaseTransactionBuilderTest.recipientAddressFromPrivateKeyOffset(
+            RECIPIENT_ADDRESS_KEY_OFFSET);
         /**
          * UTXO counts chosen so {@link ReleaseTransactionBuilder#buildEmptyWalletTo} exceeds max standard tx size
          * for each federation script layout (witness-heavy P2WSH needs far more inputs than bare P2SH).
          */
-        private static final int STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX = 277;
         private static final int P2SH_ERP_UTXO_COUNT_OVER_MAX_TX = 196;
         private static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX = 2438;
 
@@ -1102,9 +1094,6 @@ class ReleaseTransactionBuilderTest {
         private Script federationRedeemScript;
         private Wallet wallet;
 
-        private ActivationConfig.ForBlock activations;
-        private Coin feePerKb;
-
         @BeforeEach
         void setUp() {
             setUpActivations(ALL_ACTIVATIONS);
@@ -1114,23 +1103,20 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildEmptyWalletTo_whenUtxoProviderFails_shouldReturnUtxoProviderException()
             throws InsufficientMoneyException, UTXOProviderException {
-            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
-            NetworkParameters regtestParameters = new BridgeRegTestConstants().getBtcParams();
-            Address changeAddress = BitcoinTestUtils.createP2PKHAddress(regtestParameters, "changeAddress");
-            Coin mockFeePerKb = Coin.MILLICOIN.multiply(2);
+            Address changeAddress = BitcoinTestUtils.createP2PKHAddress(REGTEST_BTC_PARAMS, "changeAddress");
             Wallet mockWallet = mock(Wallet.class);
             BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
             Federation genesisFederation = FederationTestUtils.getGenesisFederation(
                 bridgeRegTestConstants.getFederationConstants());
             ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
-                regtestParameters,
+                REGTEST_BTC_PARAMS,
                 mockWallet,
                 genesisFederation.getFormatVersion(),
                 changeAddress,
-                mockFeePerKb,
-                allActivations
+                MOCK_FEE_PER_KB,
+                ALL_ACTIVATIONS
             );
-            new Context(regtestParameters);
+            new Context(REGTEST_BTC_PARAMS);
 
             Address to = mockRegtestAddressFromPrivateKey(123);
 
@@ -1146,7 +1132,7 @@ class ReleaseTransactionBuilderTest {
             Mockito.doAnswer((InvocationOnMock m) -> {
                 SendRequest sr = m.getArgument(0);
 
-                assertEquals(Coin.MILLICOIN.multiply(2), sr.feePerKb);
+                assertEquals(MOCK_FEE_PER_KB, sr.feePerKb);
                 assertEquals(Wallet.MissingSigsMode.USE_OP_ZERO, sr.missingSigsMode);
                 assertEquals(to, sr.changeAddress);
                 assertFalse(sr.shuffleOutputs);
@@ -1157,7 +1143,7 @@ class ReleaseTransactionBuilderTest {
 
                 assertEquals(1, tx.getOutputs().size());
                 assertEquals(Coin.ZERO, tx.getOutput(0).getValue());
-                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
+                assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(REGTEST_BTC_PARAMS));
 
                 tx.addInput(mockSha256HashFromString("two"), 2, mock(Script.class));
                 tx.addInput(mockSha256HashFromString("three"), 0, mock(Script.class));
@@ -1185,7 +1171,7 @@ class ReleaseTransactionBuilderTest {
                 int numberOfUtxos = 10;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
-                    .withValue(MINIMUM_PEGIN_TX_VALUE)
+                    .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
                 setUpWallet(federationUTXOs);
             }
@@ -1213,7 +1199,7 @@ class ReleaseTransactionBuilderTest {
             @Test
             void buildEmptyWalletTo_whenRSKIP201IsNotActive_shouldCreateRefundTxWithBtcVersion1() {
                 // Arrange
-                setUpActivations(ActivationConfigsForTest.papyrus200().forBlock(0));
+                setUpActivations(PAPYRUS_ACTIVATIONS);
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
                 // Act
@@ -1239,7 +1225,7 @@ class ReleaseTransactionBuilderTest {
                 federationUTXOs = List.of(
                     UTXOBuilder.builder()
                         .withScriptPubKey(federationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .build()
                 );
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -1274,7 +1260,7 @@ class ReleaseTransactionBuilderTest {
             @Test
             void buildEmptyWalletTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
-                int numberOfUtxos = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX;
+                int numberOfUtxos = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
                     .withValue(Coin.COIN)
@@ -1319,7 +1305,7 @@ class ReleaseTransactionBuilderTest {
                 int numberOfUtxos = 3;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
-                    .withValue(MINIMUM_PEGIN_TX_VALUE)
+                    .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
@@ -1346,7 +1332,7 @@ class ReleaseTransactionBuilderTest {
                 int numberOfUtxos = 10;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
-                    .withValue(MINIMUM_PEGIN_TX_VALUE)
+                    .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
                 setUpWallet(federationUTXOs);
             }
@@ -1377,7 +1363,7 @@ class ReleaseTransactionBuilderTest {
                 federationUTXOs = List.of(
                     UTXOBuilder.builder()
                         .withScriptPubKey(federationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .build()
                 );
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -1457,7 +1443,7 @@ class ReleaseTransactionBuilderTest {
                 int numberOfUtxos = 3;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
-                    .withValue(MINIMUM_PEGIN_TX_VALUE)
+                    .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
@@ -1484,7 +1470,7 @@ class ReleaseTransactionBuilderTest {
                 int numberOfUtxos = 10;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
-                    .withValue(MINIMUM_PEGIN_TX_VALUE)
+                    .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
                 setUpWallet(federationUTXOs);
             }
@@ -1515,7 +1501,7 @@ class ReleaseTransactionBuilderTest {
                 federationUTXOs = List.of(
                     UTXOBuilder.builder()
                         .withScriptPubKey(federationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .build()
                 );
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
@@ -1595,7 +1581,7 @@ class ReleaseTransactionBuilderTest {
                 int numberOfUtxos = 3;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
-                    .withValue(MINIMUM_PEGIN_TX_VALUE)
+                    .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
@@ -1625,33 +1611,12 @@ class ReleaseTransactionBuilderTest {
             assertRefundTxHasOnlyPegoutOutput(refundTransaction);
         }
 
-        private void setUpActivations(ActivationConfig.ForBlock activations) {
-            this.activations = activations;
-        }
-
-        private void setUpFeePerKb(Coin feePerKb) {
-            this.feePerKb = feePerKb;
-        }
-
-        private static Address createRecipientAddress() {
-            BigInteger seed = BigInteger.valueOf(RECIPIENT_ADDRESS_KEY_OFFSET);
-            return BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
-        }
-
         private void setUpWallet(List<UTXO> utxos) {
-            Repository repository = createRepository();
-            BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                repository,
-                BTC_MAINNET_PARAMS,
-                activations
-            );
-
-            wallet = BridgeUtils.getFederationSpendWallet(
-                BTC_CONTEXT,
+            wallet = ReleaseTransactionBuilderTest.createMainnetFederationSpendWallet(
                 federation,
                 utxos,
-                true,
-                bridgeStorageProvider
+                activations,
+                BTC_CONTEXT
             );
         }
 
@@ -1693,15 +1658,6 @@ class ReleaseTransactionBuilderTest {
             Address destinationAddress = output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
             return destinationAddress.equals(federationAddress);
         }
-
-        private Address mockRegtestAddressFromPrivateKey(int pk) {
-            NetworkParameters regtestParameters = new BridgeRegTestConstants().getBtcParams();
-            return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(regtestParameters);
-        }
-
-        private Sha256Hash mockSha256HashFromString(String generator) {
-            return Sha256Hash.of(generator.getBytes(StandardCharsets.UTF_8));
-        }
     }
 
     /**
@@ -1709,14 +1665,6 @@ class ReleaseTransactionBuilderTest {
      */
     @Nested
     class BuildMigrationTransactionTest {
-
-            private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all()
-                .forBlock(0);
-            private static final ActivationConfig.ForBlock FINGERROOT_ACTIVATIONS = ActivationConfigsForTest.fingerroot500()
-                .forBlock(0);
-
-            private static final Coin MINIMUM_PEGIN_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(
-                ALL_ACTIVATIONS);
 
             protected Federation retiringFederation;
             protected int retiringFederationFormatVersion;
@@ -1776,7 +1724,7 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 10;
                     retiringFederationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(retiringFederationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                         retiringFederationUTXOs);
@@ -1805,7 +1753,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationUTXOs = List.of(
                         UTXOBuilder.builder()
                         .withScriptPubKey(retiringFederationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .build()
                     );
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -1835,7 +1783,7 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 10;
                     retiringFederationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(retiringFederationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
                     Coin migrationValue = wallet.getBalance();
@@ -1921,7 +1869,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationUTXOs = List.of(
                         UTXOBuilder.builder()
                             .withScriptPubKey(retiringFederationOutputScript)
-                            .withValue(MINIMUM_PEGIN_TX_VALUE)
+                            .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                             .build()
                     );
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -1950,11 +1898,11 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 10;
                     retiringFederationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(retiringFederationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                         retiringFederationUTXOs);
-                    Coin migrationValue = MINIMUM_PEGIN_TX_VALUE.subtract(Coin.valueOf(1000L)).multiply(numberOfUtxos);
+                    Coin migrationValue = MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS.subtract(THOUSAND_SATOSHIS).multiply(numberOfUtxos);
 
                     // Act
                     BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
@@ -1998,7 +1946,7 @@ class ReleaseTransactionBuilderTest {
                 @Test
                 void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize() {
                     // Arrange
-                    int numberOfUtxos = 277;
+                    int numberOfUtxos = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE;
                     retiringFederationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(retiringFederationOutputScript)
                         .withValue(Coin.COIN)
@@ -2084,7 +2032,7 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 10;
                     retiringFederationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(retiringFederationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                         retiringFederationUTXOs);
@@ -2113,7 +2061,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationUTXOs = List.of(
                         UTXOBuilder.builder()
                         .withScriptPubKey(retiringFederationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .build()
                     );
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -2143,7 +2091,7 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 10;
                     retiringFederationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(retiringFederationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
                     Coin migrationValue = wallet.getBalance();
@@ -2229,7 +2177,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationUTXOs = List.of(
                         UTXOBuilder.builder()
                             .withScriptPubKey(retiringFederationOutputScript)
-                            .withValue(MINIMUM_PEGIN_TX_VALUE)
+                            .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                             .build()
                     );
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -2258,11 +2206,11 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 10;
                     retiringFederationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(retiringFederationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                         retiringFederationUTXOs);
-                    Coin migrationValue = MINIMUM_PEGIN_TX_VALUE.subtract(Coin.valueOf(1000L)).multiply(numberOfUtxos);
+                    Coin migrationValue = MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS.subtract(THOUSAND_SATOSHIS).multiply(numberOfUtxos);
 
                     // Act
                     BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
@@ -2392,7 +2340,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationUTXOs = List.of(
                         UTXOBuilder.builder()
                         .withScriptPubKey(retiringFederationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .build()
                     );
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -2422,7 +2370,7 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 10;
                     retiringFederationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(retiringFederationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
                     Coin migrationValue = wallet.getBalance();
@@ -2508,7 +2456,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationUTXOs = List.of(
                         UTXOBuilder.builder()
                             .withScriptPubKey(retiringFederationOutputScript)
-                            .withValue(MINIMUM_PEGIN_TX_VALUE)
+                            .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                             .build()
                     );
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
@@ -2537,11 +2485,11 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 10;
                     retiringFederationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(retiringFederationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                         retiringFederationUTXOs);
-                    Coin migrationValue = MINIMUM_PEGIN_TX_VALUE.subtract(Coin.valueOf(1000L)).multiply(numberOfUtxos);
+                    Coin migrationValue = MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS.subtract(THOUSAND_SATOSHIS).multiply(numberOfUtxos);
 
                     // Act
                     BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
@@ -2693,20 +2641,11 @@ class ReleaseTransactionBuilderTest {
             }
 
             private void setUpWallet(List<UTXO> utxos) {
-                Repository repository = createRepository();
-                BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                    repository,
-                    BTC_MAINNET_PARAMS,
-                    activationConfig
-                );
-
-                Context btcContext = new Context(BTC_MAINNET_PARAMS);
-                wallet = BridgeUtils.getFederationSpendWallet(
-                    btcContext,
+                wallet = ReleaseTransactionBuilderTest.createMainnetFederationSpendWallet(
                     retiringFederation,
                     utxos,
-                    true,
-                    bridgeStorageProvider
+                    activationConfig,
+                    new Context(BTC_MAINNET_PARAMS)
                 );
             }
 
@@ -2734,19 +2673,7 @@ class ReleaseTransactionBuilderTest {
     @Nested
     class BuildBatchedPegoutsTest {
 
-            private static final int EXPECTED_NUMBER_OF_CHANGE_OUTPUTS = 1;
-            private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all()
-                .forBlock(0);
-            private static final ActivationConfig.ForBlock PAPYRUS_ACTIVATIONS = ActivationConfigsForTest.papyrus200()
-                .forBlock(0);
-
-            private static final Coin MINIMUM_PEGOUT_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPegoutTxValue();
-            private static final Coin MINIMUM_PEGIN_TX_VALUE = BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(
-                ALL_ACTIVATIONS);
-
             private static final List<ReleaseRequestQueue.Entry> NO_PEGOUT_REQUESTS = Collections.emptyList();
-
-            public static final Coin THOUSAND_SATOSHIS = Coin.valueOf(1000);
 
             protected Federation federation;
             protected int federationFormatVersion;
@@ -2755,8 +2682,6 @@ class ReleaseTransactionBuilderTest {
             protected Script federationOutputScript;
             protected Wallet wallet;
 
-            private ActivationConfig.ForBlock activations;
-            private Coin feePerKb;
             private Script federationRedeemScript;
 
             @BeforeEach
@@ -2778,7 +2703,7 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 10;
                     federationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(federationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     setUpWallet(federationUTXOs);
                 }
@@ -3085,7 +3010,7 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 3;
                     federationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(federationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                         federationUTXOs);
@@ -3181,7 +3106,7 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 10;
                     federationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(federationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     setUpWallet(federationUTXOs);
                 }
@@ -3457,7 +3382,7 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 3;
                     federationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(federationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                         federationUTXOs);
@@ -3552,7 +3477,7 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 10;
                     federationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(federationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     setUpWallet(federationUTXOs);
                 }
@@ -3829,7 +3754,7 @@ class ReleaseTransactionBuilderTest {
                     int numberOfUtxos = 3;
                     federationUTXOs = UTXOBuilder.builder()
                         .withScriptPubKey(federationOutputScript)
-                        .withValue(MINIMUM_PEGIN_TX_VALUE)
+                        .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                         .buildMany(numberOfUtxos, i -> createHash(i + 1));
                     ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                         federationUTXOs);
@@ -3913,29 +3838,12 @@ class ReleaseTransactionBuilderTest {
                 }
             }
 
-            private void setUpActivations(ActivationConfig.ForBlock activations) {
-                this.activations = activations;
-            }
-
-            private void setUpFeePerKb(Coin feePerKb) {
-                this.feePerKb = feePerKb;
-            }
-
             private void setUpWallet(List<UTXO> utxos) {
-                Repository repository = createRepository();
-                BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                    repository,
-                    BTC_MAINNET_PARAMS,
-                    activations
-                );
-
-                Context btcContext = new Context(BTC_MAINNET_PARAMS);
-                wallet = BridgeUtils.getFederationSpendWallet(
-                    btcContext,
+                wallet = ReleaseTransactionBuilderTest.createMainnetFederationSpendWallet(
                     federation,
                     utxos,
-                    true,
-                    bridgeStorageProvider
+                    activations,
+                    new Context(BTC_MAINNET_PARAMS)
                 );
             }
 
