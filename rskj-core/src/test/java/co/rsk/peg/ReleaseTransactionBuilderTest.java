@@ -232,9 +232,8 @@ class ReleaseTransactionBuilderTest {
             );
 
             // Assert
-            ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.SUCCESS;
             ReleaseTransactionBuilder.Response actualResponseCode = svpFundTransactionUnsignedBuildResult.responseCode();
-            assertEquals(expectedResponseCode, actualResponseCode);
+            assertEquals(SUCCESS, actualResponseCode);
 
             BtcTransaction svpFundTransactionUnsigned = svpFundTransactionUnsignedBuildResult.btcTx();
             int numberOfOutputs = 3; // 1 for the federation, 1 for the flyover federation, and 1 for the change
@@ -1032,10 +1031,10 @@ class ReleaseTransactionBuilderTest {
             assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfUserOutputs, EXPECTED_NUMBER_OF_CHANGE_OUTPUTS);
 
             List<TransactionOutput> userOutputs = getUserOutputs(pegoutTransaction);
-            assertDestinationAddress(userOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
+            assertDestinationAddress(userOutputs, RECIPIENT_ADDRESS);
 
             List<TransactionOutput> changeOutputs = getChangeOutputs(pegoutTransaction);
-            assertDestinationAddress(changeOutputs, federationAddress, BTC_MAINNET_PARAMS);
+            assertDestinationAddress(changeOutputs, federationAddress);
         }
 
         private void assertOutputsWithNoChange(
@@ -1047,7 +1046,7 @@ class ReleaseTransactionBuilderTest {
             assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfUserOutputs, expectedNumberOfChangeOutputs);
 
             List<TransactionOutput> pegoutTransactionOutputs = pegoutTransaction.getOutputs();
-            assertDestinationAddress(pegoutTransactionOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
+            assertDestinationAddress(pegoutTransactionOutputs, RECIPIENT_ADDRESS);
 
             ReleaseTransactionBuilderTest.assertOutputsWithNoChange(pegoutTransaction, requestedAmount);
         }
@@ -1073,7 +1072,6 @@ class ReleaseTransactionBuilderTest {
 
     @Nested
     class BuildEmptyWalletToTest {
-
         private static final Context BTC_CONTEXT = new Context(BTC_MAINNET_PARAMS);
 
         private static final int RECIPIENT_ADDRESS_KEY_OFFSET = 3100;
@@ -1624,7 +1622,7 @@ class ReleaseTransactionBuilderTest {
             assertEquals(expectedNumberOfOutputs, refundTransaction.getOutputs().size());
 
             TransactionOutput onlyOutput = outputs.get(0);
-            assertDestinationAddress(outputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
+            assertDestinationAddress(outputs, RECIPIENT_ADDRESS);
             assertTrue(onlyOutput.getValue().isPositive());
 
             List<TransactionOutput> changeOutputs = outputs.stream()
@@ -1655,8 +1653,8 @@ class ReleaseTransactionBuilderTest {
         private Script retiringFederationRedeemScript;
         protected Wallet wallet;
 
-        private ActivationConfig.ForBlock activationConfig;
-        private Coin transactionFeePerKb;
+        private ActivationConfig.ForBlock activations;
+        private Coin feePerKb;
         private Address newFederationAddress;
 
         @BeforeEach
@@ -2543,7 +2541,7 @@ class ReleaseTransactionBuilderTest {
             int expectedNumberOfOutputs = 2;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
             assertMigrationTransactionIsMigratingMoreThanRequestedValue(migratedValue, migrationTransaction);
         }
 
@@ -2556,7 +2554,7 @@ class ReleaseTransactionBuilderTest {
             int expectedNumberOfOutputs = expectedNumberOfMigrationOutputs + expectedNumberOfChangeOutputs;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
 
             List<TransactionOutput> migrationTransactionChangeOutputs = getChangeOutputs(migrationTransaction);
             assertEquals(expectedNumberOfChangeOutputs, migrationTransactionChangeOutputs.size());
@@ -2575,11 +2573,11 @@ class ReleaseTransactionBuilderTest {
         }
 
         private void setUpActivationConfig(ActivationConfig.ForBlock activationConfig) {
-            this.activationConfig = activationConfig;
+            this.activations = activationConfig;
         }
 
         private void setUpFeePerKb(Coin transactionFeePerKb) {
-            this.transactionFeePerKb = transactionFeePerKb;
+            this.feePerKb = transactionFeePerKb;
         }
 
         private static void assertMigrationTransactionIsMigratingMoreThanRequestedValue(Coin migrationValueRequested, BtcTransaction migrationTransaction) {
@@ -2597,7 +2595,7 @@ class ReleaseTransactionBuilderTest {
             wallet = ReleaseTransactionBuilderTest.createMainnetFederationSpendWallet(
                 retiringFederation,
                 utxos,
-                activationConfig,
+                activations,
                 new Context(BTC_MAINNET_PARAMS)
             );
         }
@@ -2614,8 +2612,8 @@ class ReleaseTransactionBuilderTest {
                 wallet,
                 retiringFederationFormatVersion,
                 retiringFederationAddress,
-                transactionFeePerKb,
-                activationConfig
+                feePerKb,
+                activations
             );
         }
     }
@@ -3884,7 +3882,7 @@ class ReleaseTransactionBuilderTest {
             assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
 
             List<TransactionOutput> batchedPegoutsTransactionChangeOutputs = getChangeOutputs(batchedPegoutsTransaction);
-            assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
+            assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress);
 
             Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
             ReleaseTransactionBuilderTest.assertOutputsWithNonDustChange(
@@ -3906,7 +3904,7 @@ class ReleaseTransactionBuilderTest {
             assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
 
             List<TransactionOutput> batchedPegoutsTransactionChangeOutputs = getChangeOutputs(batchedPegoutsTransaction);
-            assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
+            assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress);
 
             Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
             ReleaseTransactionBuilderTest.assertOutputsWithDustChange(
@@ -4090,11 +4088,11 @@ class ReleaseTransactionBuilderTest {
         assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
     }
 
-    private static void assertDestinationAddress(List<TransactionOutput> releaseTransactionOutputs,
-        Address expectedDestinationAddress,
-        NetworkParameters networkParameters) {
+    private static void assertDestinationAddress(
+        List<TransactionOutput> releaseTransactionOutputs,
+        Address expectedDestinationAddress) {
         for (TransactionOutput output : releaseTransactionOutputs) {
-            Address destinationAddress = output.getScriptPubKey().getToAddress(networkParameters);
+            Address destinationAddress = output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
             assertEquals(expectedDestinationAddress, destinationAddress);
         }
     }
