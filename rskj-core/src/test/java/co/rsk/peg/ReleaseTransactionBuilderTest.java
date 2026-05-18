@@ -203,9 +203,18 @@ class ReleaseTransactionBuilderTest {
      */
     @Nested
     class BuildSvpFundTransactionTest {
+        private static final int DEFAULT_UTXO_COUNT = 2;
+        private static final int MULTI_UTXO_COUNT = 4;
+
         private final Federation activeP2shErpFederation = P2shErpFederationBuilder.builder().build();
         private final Address activeP2shErpFederationAddress = activeP2shErpFederation.getAddress();
+        private final Federation activeP2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder().build();
+        private final Address activeP2shP2wshErpFederationAddress = activeP2shP2wshErpFederation.getAddress();
         private final Federation p2shP2wshErpProposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+        private final Keccak256 proposedFlyoverPrefix = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
+        private final Coin svpFundTxOutputsValue = BRIDGE_MAINNET_CONSTANTS.getSvpFundTxOutputsValue();
+        private final Coin totalSvpFundPaymentOutputsValue = svpFundTxOutputsValue.multiply(2);
+
         private BridgeStorageProvider bridgeStorageProviderMock;
 
         @BeforeEach
@@ -216,69 +225,37 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildSvpFundTransaction_withAFederationWithEnoughUTXOsForTheSvpFundTransaction_shouldReturnACorrectSvpFundTx() {
             // Arrange
-            int numberOfUtxos = 2;
-            List<UTXO> utxos = UTXOBuilder.builder()
-                .withScriptPubKey(activeP2shErpFederation.getP2SHScript())
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
-            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(utxos);
-            Keccak256 proposedFlyoverPrefix = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
+            List<UTXO> utxos = buildUtxos(activeP2shErpFederation, DEFAULT_UTXO_COUNT);
 
             // Act
-            Coin svpFundTxOutputsValue = BRIDGE_MAINNET_CONSTANTS.getSvpFundTxOutputsValue();
-            ReleaseTransactionBuilder.BuildResult svpFundTransactionUnsignedBuildResult = releaseTransactionBuilder.buildSvpFundTransaction(
-                p2shP2wshErpProposedFederation,
-                proposedFlyoverPrefix,
-                svpFundTxOutputsValue
-            );
+            ReleaseTransactionBuilder.BuildResult buildResult = buildSvpFundTransaction(activeP2shErpFederation, utxos);
 
             // Assert
-            assertEquals(
-                SUCCESS,
-                svpFundTransactionUnsignedBuildResult.responseCode(),
+            assertBuildSvpFundTransactionSucceeded(
+                buildResult,
                 "SVP fund transaction build should succeed when active federation has enough UTXOs"
             );
-
             assertSuccessfulSvpFundTransaction(
-                svpFundTransactionUnsignedBuildResult.btcTx(),
-                svpFundTxOutputsValue,
-                p2shP2wshErpProposedFederation,
-                proposedFlyoverPrefix,
+                buildResult.btcTx(),
                 activeP2shErpFederationAddress,
                 List.of(utxos.get(0)),
-                svpFundTransactionUnsignedBuildResult.selectedUTXOs()
+                buildResult.selectedUTXOs()
             );
         }
 
         @Test
         void buildSvpFundTransaction_whenActiveFederationIsP2shP2wshErp_shouldSpendUtxosWithExpectedWitnessFormat() {
             // Arrange
-            Federation activeP2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder().build();
-            Address activeP2shP2wshErpFederationAddress = activeP2shP2wshErpFederation.getAddress();
-            int numberOfUtxos = 2;
-            List<UTXO> utxos = UTXOBuilder.builder()
-                .withScriptPubKey(activeP2shP2wshErpFederation.getP2SHScript())
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
-            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
-                activeP2shP2wshErpFederation,
-                utxos
-            );
-            Keccak256 proposedFlyoverPrefix = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
+            List<UTXO> utxos = buildUtxos(activeP2shP2wshErpFederation, DEFAULT_UTXO_COUNT);
 
             // Act
-            Coin svpFundTxOutputsValue = BRIDGE_MAINNET_CONSTANTS.getSvpFundTxOutputsValue();
-            ReleaseTransactionBuilder.BuildResult buildResult = releaseTransactionBuilder.buildSvpFundTransaction(
-                p2shP2wshErpProposedFederation,
-                proposedFlyoverPrefix,
-                svpFundTxOutputsValue
-            );
+            ReleaseTransactionBuilder.BuildResult buildResult = buildSvpFundTransaction(activeP2shP2wshErpFederation, utxos);
 
             // Assert
-            assertEquals(
-                SUCCESS,
-                buildResult.responseCode(),
+            assertBuildSvpFundTransactionSucceeded(
+                buildResult,
                 "SVP fund transaction build should succeed when active federation is P2shP2wshErp"
             );
-
             BtcTransaction svpFundTransaction = buildResult.btcTx();
             assertEquals(
                 BTC_TX_VERSION_2,
@@ -299,9 +276,6 @@ class ReleaseTransactionBuilderTest {
             );
             assertSuccessfulSvpFundTransaction(
                 svpFundTransaction,
-                svpFundTxOutputsValue,
-                p2shP2wshErpProposedFederation,
-                proposedFlyoverPrefix,
                 activeP2shP2wshErpFederationAddress,
                 List.of(utxos.get(0)),
                 buildResult.selectedUTXOs()
@@ -311,41 +285,20 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildSvpFundTransaction_whenNoSingleUtxoCoversTotalSpend_shouldCreateSvpFundTxSelectingMultipleInputs() {
             // Arrange
-            Federation activeP2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder().build();
-            Address activeP2shP2wshErpFederationAddress = activeP2shP2wshErpFederation.getAddress();
-            Coin svpFundTxOutputsValue = BRIDGE_MAINNET_CONSTANTS.getSvpFundTxOutputsValue();
-            Coin totalSvpFundPaymentOutputsValue = svpFundTxOutputsValue.multiply(2);
-            int numberOfUtxos = 4;
-            List<UTXO> utxos = UTXOBuilder.builder()
-                .withScriptPubKey(activeP2shP2wshErpFederation.getP2SHScript())
-                .withValue(svpFundTxOutputsValue)
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
-
+            List<UTXO> utxos = buildUtxos(activeP2shP2wshErpFederation, MULTI_UTXO_COUNT, svpFundTxOutputsValue);
             utxos.forEach(utxo -> assertTrue(
                 utxo.getValue().compareTo(totalSvpFundPaymentOutputsValue) < 0,
                 "Each UTXO should be insufficient on its own to fund both SVP payment outputs"
             ));
 
-            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
-                activeP2shP2wshErpFederation,
-                utxos
-            );
-            Keccak256 proposedFlyoverPrefix = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
-
             // Act
-            ReleaseTransactionBuilder.BuildResult buildResult = releaseTransactionBuilder.buildSvpFundTransaction(
-                p2shP2wshErpProposedFederation,
-                proposedFlyoverPrefix,
-                svpFundTxOutputsValue
-            );
+            ReleaseTransactionBuilder.BuildResult buildResult = buildSvpFundTransaction(activeP2shP2wshErpFederation, utxos);
 
             // Assert
-            assertEquals(
-                SUCCESS,
-                buildResult.responseCode(),
+            assertBuildSvpFundTransactionSucceeded(
+                buildResult,
                 "SVP fund transaction build should succeed when multiple UTXOs are required"
             );
-
             BtcTransaction svpFundTransaction = buildResult.btcTx();
             List<UTXO> selectedUtxos = buildResult.selectedUTXOs();
             assertTrue(
@@ -361,9 +314,6 @@ class ReleaseTransactionBuilderTest {
             );
             assertSuccessfulSvpFundTransaction(
                 svpFundTransaction,
-                svpFundTxOutputsValue,
-                p2shP2wshErpProposedFederation,
-                proposedFlyoverPrefix,
                 activeP2shP2wshErpFederationAddress,
                 selectedUtxos,
                 selectedUtxos
@@ -372,48 +322,33 @@ class ReleaseTransactionBuilderTest {
 
         @Test
         void buildSvpFundTransaction_withAFederationWithoutUTXOs_shouldThrowInsufficientMoneyResponseCode() {
-            // Arrange
-            List<UTXO> emptyUtxos = Collections.emptyList();
-            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(emptyUtxos);
-            Coin svpFundTxOutputsValue = BRIDGE_MAINNET_CONSTANTS.getSvpFundTxOutputsValue();
-            Keccak256 proposedFlyoverPrefix = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
-
             // Act
-            ReleaseTransactionBuilder.BuildResult svpFundTransactionUnsignedBuildResult = releaseTransactionBuilder.buildSvpFundTransaction(
-                p2shP2wshErpProposedFederation,
-                proposedFlyoverPrefix,
-                svpFundTxOutputsValue
+            ReleaseTransactionBuilder.BuildResult buildResult = buildSvpFundTransaction(
+                activeP2shP2wshErpFederation,
+                Collections.emptyList()
             );
 
             // Assert
-            assertFailedBuildResult(INSUFFICIENT_MONEY, svpFundTransactionUnsignedBuildResult);
+            assertFailedBuildResult(INSUFFICIENT_MONEY, buildResult);
         }
 
         @Test
         void buildSvpFundTransaction_withAFederationWith1DustUTXO_shouldThrowInsufficientMoneyResponseCode() {
             // Arrange
-            Federation activeP2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder().build();
             Coin dustUtxoValue = MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS.subtract(Coin.SATOSHI);
-
+            assertTrue(
+                dustUtxoValue.compareTo(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS) < 0,
+                "UTXO value should be below the minimum pegin threshold"
+            );
             List<UTXO> utxos = List.of(
                 UTXOBuilder.builder()
                     .withScriptPubKey(activeP2shP2wshErpFederation.getP2SHScript())
                     .withValue(dustUtxoValue)
                     .build()
             );
-            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
-                activeP2shP2wshErpFederation,
-                utxos
-            );
-            Coin svpFundTxOutputsValue = BRIDGE_MAINNET_CONSTANTS.getSvpFundTxOutputsValue();
-            Keccak256 proposedFlyoverPrefix = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
 
             // Act
-            ReleaseTransactionBuilder.BuildResult buildResult = releaseTransactionBuilder.buildSvpFundTransaction(
-                p2shP2wshErpProposedFederation,
-                proposedFlyoverPrefix,
-                svpFundTxOutputsValue
-            );
+            ReleaseTransactionBuilder.BuildResult buildResult = buildSvpFundTransaction(activeP2shP2wshErpFederation, utxos);
 
             // Assert
             assertFailedBuildResult(INSUFFICIENT_MONEY, buildResult);
@@ -422,91 +357,74 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildSvpFundTransaction_withDustValueAsSvpFundTxOutputsValue_shouldReturnDustySendRequestResponseCode() {
             // Arrange
-            int numberOfUtxos = 2;
-            List<UTXO> utxos = UTXOBuilder.builder()
-                .withScriptPubKey(activeP2shErpFederation.getP2SHScript())
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
-
-            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(utxos);
-            Keccak256 proposedFlyoverPrefix = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
-            Coin svpFundTxOutputsValue = Coin.SATOSHI;
+            List<UTXO> utxos = buildUtxos(activeP2shP2wshErpFederation, DEFAULT_UTXO_COUNT);
 
             // Act
-            ReleaseTransactionBuilder.BuildResult svpFundTransactionUnsignedBuildResult = releaseTransactionBuilder.buildSvpFundTransaction(
-                p2shP2wshErpProposedFederation,
-                proposedFlyoverPrefix,
-                svpFundTxOutputsValue
+            ReleaseTransactionBuilder.BuildResult buildResult = buildSvpFundTransaction(
+                activeP2shP2wshErpFederation,
+                utxos,
+                Coin.SATOSHI
             );
 
             // Assert
-            assertFailedBuildResult(DUSTY_SEND_REQUESTED, svpFundTransactionUnsignedBuildResult);
+            assertFailedBuildResult(DUSTY_SEND_REQUESTED, buildResult);
         }
 
         @Test
         void buildSvpFundTransaction_withNullProposedFlyoverPrefix_shouldThrowRedeemScriptCreationException() {
             // Arrange
-            int numberOfUtxos = 2;
-            List<UTXO> utxos = UTXOBuilder.builder()
-                .withScriptPubKey(activeP2shErpFederation.getP2SHScript())
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
-            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(utxos);
-            Coin svpFundTxOutputsValue = Coin.SATOSHI;
+            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
+                activeP2shP2wshErpFederation,
+                buildUtxos(activeP2shP2wshErpFederation, DEFAULT_UTXO_COUNT)
+            );
 
             // Act & Assert
             assertThrows(RedeemScriptCreationException.class, () -> releaseTransactionBuilder.buildSvpFundTransaction(
                 p2shP2wshErpProposedFederation,
                 null,
-                svpFundTxOutputsValue
+                Coin.SATOSHI
             ));
         }
 
         @Test
         void buildSvpFundTransaction_withInvalidProposedFlyoverPrefix_shouldThrowRedeemScriptCreationException() {
             // Arrange
-            int numberOfUtxos = 2;
-            List<UTXO> utxos = UTXOBuilder.builder()
-                .withScriptPubKey(activeP2shErpFederation.getP2SHScript())
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
-            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(utxos);
-            Keccak256 proposedFlyoverPrefix = Keccak256.ZERO_HASH;
-            Coin svpFundTxOutputsValue = Coin.SATOSHI;
+            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
+                activeP2shP2wshErpFederation,
+                buildUtxos(activeP2shP2wshErpFederation, DEFAULT_UTXO_COUNT)
+            );
 
             // Act & Assert
             assertThrows(RedeemScriptCreationException.class, () -> releaseTransactionBuilder.buildSvpFundTransaction(
                 p2shP2wshErpProposedFederation,
-                proposedFlyoverPrefix,
-                svpFundTxOutputsValue
+                Keccak256.ZERO_HASH,
+                Coin.SATOSHI
             ));
         }
 
         @Test
         void buildSvpFundTransaction_withNullProposedFederation_shouldThrowNullPointerException() {
             // Arrange
-            int numberOfUtxos = 2;
-            List<UTXO> utxos = UTXOBuilder.builder()
-                .withScriptPubKey(activeP2shErpFederation.getP2SHScript())
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
-            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(utxos);
-            Keccak256 proposedFlyoverPrefix = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
-            Coin svpFundTxOutputsValue = Coin.SATOSHI;
+            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
+                activeP2shP2wshErpFederation,
+                buildUtxos(activeP2shP2wshErpFederation, DEFAULT_UTXO_COUNT)
+            );
 
             // Act & Assert
             assertThrows(NullPointerException.class, () -> releaseTransactionBuilder.buildSvpFundTransaction(
                 null,
                 proposedFlyoverPrefix,
-                svpFundTxOutputsValue
+                Coin.SATOSHI
             ));
         }
 
         @Test
         void buildSvpFundTransaction_withNullAsValueTransferred_shouldThrowNullPointerException() {
             // Arrange
-            int numberOfUtxos = 2;
-            List<UTXO> utxos = UTXOBuilder.builder()
-                .withScriptPubKey(activeP2shErpFederation.getP2SHScript())
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
-            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(utxos);
-            Keccak256 proposedFlyoverPrefix = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
+            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
+                activeP2shP2wshErpFederation,
+                buildUtxos(activeP2shP2wshErpFederation, DEFAULT_UTXO_COUNT)
+            );
 
             // Act & Assert
             assertThrows(NullPointerException.class, () -> releaseTransactionBuilder.buildSvpFundTransaction(
@@ -516,22 +434,41 @@ class ReleaseTransactionBuilderTest {
             ));
         }
 
-        private void assertSuccessfulSvpFundTransaction(
-            BtcTransaction svpFundTransaction,
-            Coin svpFundTxOutputsValue,
-            Federation proposedFederation,
-            Keccak256 proposedFlyoverPrefix,
-            Address activeFederationAddress,
-            List<UTXO> expectedSelectedUtxos,
-            List<UTXO> selectedUtxos
-        ) {
-            int numberOfOutputs = 3; // 1 for the federation, 1 for the flyover federation, and 1 for the change
-            assertEquals(
-                numberOfOutputs,
-                svpFundTransaction.getOutputs().size(),
-                "SVP fund transaction should have two payment outputs and one change output"
-            );
+        private List<UTXO> buildUtxos(Federation activeFederation, int numberOfUtxos) {
+            return buildUtxos(activeFederation, numberOfUtxos, Coin.COIN);
+        }
 
+        private List<UTXO> buildUtxos(Federation activeFederation, int numberOfUtxos, Coin value) {
+            return UTXOBuilder.builder()
+                .withScriptPubKey(activeFederation.getP2SHScript())
+                .withValue(value)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+        }
+
+        private ReleaseTransactionBuilder.BuildResult buildSvpFundTransaction(
+            Federation activeFederation,
+            List<UTXO> utxos
+        ) {
+            return buildSvpFundTransaction(activeFederation, utxos, svpFundTxOutputsValue);
+        }
+
+        private ReleaseTransactionBuilder.BuildResult buildSvpFundTransaction(
+            Federation activeFederation,
+            List<UTXO> utxos,
+            Coin outputsValue
+        ) {
+            return getReleaseTransactionBuilderForMainnet(activeFederation, utxos)
+                .buildSvpFundTransaction(p2shP2wshErpProposedFederation, proposedFlyoverPrefix, outputsValue);
+        }
+
+        private void assertBuildSvpFundTransactionSucceeded(
+            ReleaseTransactionBuilder.BuildResult buildResult,
+            String message
+        ) {
+            assertEquals(SUCCESS, buildResult.responseCode(), message);
+        }
+
+        private void assertSvpFundTransactionPaymentOutputs(BtcTransaction svpFundTransaction) {
             TransactionOutput outputToProposedFederation = svpFundTransaction.getOutput(0);
             assertEquals(
                 svpFundTxOutputsValue,
@@ -539,7 +476,7 @@ class ReleaseTransactionBuilderTest {
                 "SVP fund output to proposed federation should match configured value"
             );
             assertEquals(
-                proposedFederation.getAddress(),
+                p2shP2wshErpProposedFederation.getAddress(),
                 outputToProposedFederation.getAddressFromP2SH(BTC_MAINNET_PARAMS),
                 "SVP fund first output should be sent to the proposed federation address"
             );
@@ -553,27 +490,24 @@ class ReleaseTransactionBuilderTest {
             Address flyoverFederationAddress = PegUtils.getFlyoverFederationAddress(
                 BTC_MAINNET_PARAMS,
                 proposedFlyoverPrefix,
-                proposedFederation
+                p2shP2wshErpProposedFederation
             );
             assertEquals(
                 flyoverFederationAddress,
                 outputToFlyoverProposedFederation.getAddressFromP2SH(BTC_MAINNET_PARAMS),
                 "SVP fund second output should be sent to the flyover proposed federation address"
             );
-
-            assertEquals(
-                expectedSelectedUtxos,
-                selectedUtxos,
-                "SVP fund transaction should select the minimum sufficient UTXO set"
-            );
-
-            Coin totalSvpFundPaymentOutputsValue = svpFundTxOutputsValue.multiply(2);
             assertEquals(
                 totalSvpFundPaymentOutputsValue,
                 outputToProposedFederation.getValue().add(outputToFlyoverProposedFederation.getValue()),
                 "SVP fund payment outputs should keep their full value when recipientsPayFees is false"
             );
+        }
 
+        private void assertSvpFundTransactionChangeOutput(
+            BtcTransaction svpFundTransaction,
+            Address activeFederationAddress
+        ) {
             Coin inputTotal = svpFundTransaction.getInputSum();
             TransactionOutput changeOutput = svpFundTransaction.getOutput(2);
             assertEquals(
@@ -596,8 +530,24 @@ class ReleaseTransactionBuilderTest {
             );
         }
 
-        private ReleaseTransactionBuilder getReleaseTransactionBuilderForMainnet(List<UTXO> utxos) {
-            return getReleaseTransactionBuilderForMainnet(activeP2shErpFederation, utxos);
+        private void assertSuccessfulSvpFundTransaction(
+            BtcTransaction svpFundTransaction,
+            Address activeFederationAddress,
+            List<UTXO> expectedSelectedUtxos,
+            List<UTXO> selectedUtxos
+        ) {
+            assertEquals(
+                3,
+                svpFundTransaction.getOutputs().size(),
+                "SVP fund transaction should have two payment outputs and one change output"
+            );
+            assertSvpFundTransactionPaymentOutputs(svpFundTransaction);
+            assertEquals(
+                expectedSelectedUtxos,
+                selectedUtxos,
+                "SVP fund transaction should select the minimum sufficient UTXO set"
+            );
+            assertSvpFundTransactionChangeOutput(svpFundTransaction, activeFederationAddress);
         }
 
         private ReleaseTransactionBuilder getReleaseTransactionBuilderForMainnet(
