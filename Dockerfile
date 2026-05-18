@@ -17,7 +17,10 @@ RUN gpg --keyserver https://secchannel.rsk.co/SUPPORT.asc --recv-keys 1DC9157991
     file=rskj-core/src/main/resources/version.properties && \
     version_number=$(sed -n 's/^versionNumber=//p' "$file" | tr -d "\"'") && \
     modifier=$(sed -n 's/^modifier=//p' "$file" | tr -d "\"'") && \
-    cp "rskj-core/build/libs/rskj-core-$version_number-$modifier-all.jar" rsk.jar
+    cp "rskj-core/build/libs/rskj-core-$version_number-$modifier-all.jar" rsk.jar && \
+    mkdir -p artifacts && \
+    cp rskj-core/build/libs/rskj-core-*.jar artifacts/ && \
+    cp rskj-core/build/rskj-core-*.pom artifacts/
 
 FROM eclipse-temurin:17-jre@sha256:38e0afc86a10bf4cadbf1586fb617b3a9a4d09c9a0be882e29ada4ed0895fc84
 LABEL org.opencontainers.image.authors="ops@rootstocklabs.com"
@@ -27,6 +30,7 @@ USER rsk
 
 WORKDIR /var/lib/rsk
 COPY --from=build --chown=rsk:rsk /home/rsk/rsk.jar ./
+COPY --from=build --chown=rsk:rsk /home/rsk/artifacts/ ./
 
 ENV DEFAULT_JVM_OPTS="-Xms4G"
 ENV RSKJ_SYS_PROPS="-Drpc.providers.web.http.bind_address=0.0.0.0 -Drpc.providers.web.http.hosts.0=localhost -Drpc.providers.web.http.hosts.1=127.0.0.1 -Drpc.providers.web.http.hosts.2=::1"

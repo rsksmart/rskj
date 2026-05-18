@@ -10,6 +10,7 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationMember;
+import co.rsk.test.builders.UTXOBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -353,7 +354,10 @@ class BridgeUtilsLegacyTest {
     void getUTXOsSentToAddress_one_utxo_sent_to_given_address() {
         Function<BtcTransaction, List<UTXO>> expectedResult = btcTx -> {
             List<UTXO> expectedUTXOs = new ArrayList<>();
-            expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 0, Coin.COIN));
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(btcTx.getHash())
+                .build();
+            expectedUTXOs.add(utxo);
             return expectedUTXOs;
         };
 
@@ -402,9 +406,15 @@ class BridgeUtilsLegacyTest {
     void getUTXOsSentToAddress_multiple_utxos_sent_to_given_address() {
         Function<BtcTransaction, List<UTXO>> expectedResult = btcTx -> {
             List<UTXO> expectedUTXOs = new ArrayList<>();
-            expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 6, Coin.COIN));
-            expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 7, Coin.COIN));
-            expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 8, Coin.COIN));
+            Sha256Hash transactionHash = btcTx.getHash();
+            for (int outpointIndex = 6; outpointIndex < 9; outpointIndex++) {
+                UTXO utxo = UTXOBuilder.builder()
+                    .withTransactionHash(transactionHash)
+                    .withOutpointIndex(outpointIndex)
+                    .build();
+                expectedUTXOs.add(utxo);
+            }
+
             return expectedUTXOs;
         };
 

@@ -60,7 +60,7 @@ class UnionBridgeConstantsTest {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), ZERO_ADDRESS),
             Arguments.of(UnionBridgeTestNetConstants.getInstance(), new RskAddress("1a8109af0f019ED3045Fbcdf45E5e90d6b6AAfaF")),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), new RskAddress("8f8185858643e08b07df4701d8546406b7bf22e4"))
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), new RskAddress("377e67e16c13994A4d44791Daf0a4d4Cac445783"))
         );
     }
 
@@ -81,7 +81,7 @@ class UnionBridgeConstantsTest {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), ZERO_ADDRESS),
             Arguments.of(UnionBridgeTestNetConstants.getInstance(), new RskAddress("8db1F83E8119E4Dce5bC708ec2f4390FFd910B19")),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), new RskAddress("af0fd16c15d0286fd78db5fe89412c00d3de3cf4"))
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), new RskAddress("377e67e16c13994A4d44791Daf0a4d4Cac445783"))
         );
     }
 

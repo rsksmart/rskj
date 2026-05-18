@@ -1,5 +1,6 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,7 +14,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
@@ -23,6 +23,7 @@ import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.test.builders.FederationSupportBuilder;
+import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -462,7 +463,11 @@ class VoteFederationChangeTest {
     void voteCommitFederation_postRSKIP419_whenPendingFederationIsSet_shouldPerformCommitFederationActions() {
         // arrange
         Federation activeFederation = federationSupport.getActiveFederation();
-        List<UTXO> activeFederationUTXOs = BitcoinTestUtils.createUTXOs(10, activeFederation.getAddress());
+        int numberOfUtxos = 10;
+        List<UTXO> activeFederationUTXOs = UTXOBuilder.builder()
+            .withScriptPubKey(activeFederation.getP2SHScript())
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
         voteAndAssertCreateEmptyPendingFederation();
@@ -492,8 +497,10 @@ class VoteFederationChangeTest {
     void commitProposedFederation_shouldPerformCommitProposedFederationActions() {
         // arrange
         storageProvider.setNewFederation(activeFederation);
-
-        List<UTXO> activeFederationUTXOs = BitcoinTestUtils.createUTXOs(10, activeFederation.getAddress());
+        int numberOfUtxos = 10;
+        List<UTXO> activeFederationUTXOs = UTXOBuilder.builder()
+            .withScriptPubKey(activeFederation.getP2SHScript())
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();

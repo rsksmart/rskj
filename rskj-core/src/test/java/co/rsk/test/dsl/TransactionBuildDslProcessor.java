@@ -68,10 +68,11 @@ public class TransactionBuildDslProcessor {
             this.builder.gasPrice(new BigInteger(cmd.getArgument(0)));
         else if (cmd.isCommand("data"))
             this.builder.data(cmd.getArgument(0));
+        else if (cmd.isCommand("immutable"))
+            this.builder.immutable();
         else if (cmd.isCommand("build"))
             this.world.saveTransaction(this.name, this.builder.build());
         else
             throw new DslProcessorException(String.format("Unknown command '%s'", cmd.getVerb()));
     }
 }
-

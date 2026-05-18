@@ -2,6 +2,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeSupportTestUtil.createValidPmtForTransactions;
 import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
+import static co.rsk.peg.BridgeSupportTestUtil.shouldMarkRejectedPeginAsProcessed;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static co.rsk.peg.pegin.RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD;
 import static co.rsk.peg.utils.NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
@@ -46,11 +47,6 @@ class BridgeSupportRejectedPeginTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final FederationConstants federationMainnetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
-    private static final ActivationConfig.ForBlock arrowHeadActivations = ActivationConfigsForTest.arrowhead600()
-        .forBlock(0);
-    private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all()
-        .forBlock(0);
-
     private static final Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(
         ActivationConfigsForTest.all().forBlock(0));
     private static final Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
@@ -82,9 +78,20 @@ class BridgeSupportRejectedPeginTest {
     private co.rsk.bitcoinj.core.BtcBlock registerHeader;
 
     public static Stream<Arguments> activationsProvider() {
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest
+            .arrowhead600()
+            .forBlock(0);
+        ActivationConfig.ForBlock reedActivations = ActivationConfigsForTest
+            .reed800()
+            .forBlock(0);
+        ActivationConfig.ForBlock allActivations = ActivationConfigsForTest
+            .all()
+            .forBlock(0);
+
         return Stream.of(
             Arguments.of(allActivations),
-            Arguments.of(arrowHeadActivations)
+            Arguments.of(reedActivations),
+            Arguments.of(arrowheadActivations)
         );
     }
 
@@ -278,11 +285,7 @@ class BridgeSupportRejectedPeginTest {
         );
 
         // assert
-
-        // tx should be marked as processed since RSKIP459 is active
-        var shouldMarkTxAsProcessed = activations == allActivations ? times(1) : never();
-        verify(provider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(),
-            anyLong());
+        assertInvalidPeginMarkedAsProcessed(activations);
 
         verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
         verify(bridgeEventLogger, times(1)).logNonRefundablePegin(btcTransaction,
@@ -351,10 +354,7 @@ class BridgeSupportRejectedPeginTest {
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
 
-        // tx should be marked as processed since RSKIP459 is active
-        var shouldMarkTxAsProcessed = activations == allActivations ? times(1) : never();
-        verify(provider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(),
-            anyLong());
+        assertInvalidPeginMarkedAsProcessed(activations);
 
         Assertions.assertTrue(activeFederationUtxos.isEmpty());
         Assertions.assertTrue(retiringFederationUtxos.isEmpty());
@@ -410,11 +410,7 @@ class BridgeSupportRejectedPeginTest {
         );
 
         // assert
-
-        // tx should be marked as processed since RSKIP459 is active
-        var shouldMarkTxAsProcessed = activations == allActivations ? times(1) : never();
-        verify(provider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(),
-            anyLong());
+        assertInvalidPeginMarkedAsProcessed(activations);
 
         verify(bridgeEventLogger, times(1)).logRejectedPegin(
             btcTransaction, PEGIN_V1_INVALID_PAYLOAD
@@ -476,9 +472,7 @@ class BridgeSupportRejectedPeginTest {
         );
 
         // assert
-        var shouldMarkTxAsProcessed = activations == allActivations ? times(1) : never();
-        verify(provider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(),
-            anyLong());
+        assertInvalidPeginMarkedAsProcessed(activations);
 
         verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction,
             RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
@@ -603,5 +597,15 @@ class BridgeSupportRejectedPeginTest {
 
         // assert
         assertUnknownTxIsIgnored();
+    }
+
+    private void assertInvalidPeginMarkedAsProcessed(ActivationConfig.ForBlock activations) throws IOException {
+        // tx should be marked as processed if RSKIP459 is active and RSKIP551 is not active
+        var shouldMarkTxAsProcessed = shouldMarkRejectedPeginAsProcessed(activations);
+        if (shouldMarkTxAsProcessed) {
+            verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+        } else {
+            verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+        }
     }
 }

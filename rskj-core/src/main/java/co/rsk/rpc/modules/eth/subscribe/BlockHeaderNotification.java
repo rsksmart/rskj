@@ -40,6 +40,7 @@ public class BlockHeaderNotification implements EthSubscriptionNotificationDTO {
     private final String timestamp;
     private final String transactionsRoot;
     private final String hash;
+    private final String baseEvent;
 
     public BlockHeaderNotification(Block block) {
         difficulty = HexUtils.toQuantityJsonHex(block.getDifficulty().getBytes());
@@ -56,6 +57,7 @@ public class BlockHeaderNotification implements EthSubscriptionNotificationDTO {
         timestamp = HexUtils.toQuantityJsonHex(block.getTimestamp());
         transactionsRoot = HexUtils.toJsonHex(block.getTxTrieRoot());
         hash = block.getHashJsonString();
+        baseEvent = HexUtils.toJsonHex(block.getHeader().getBaseEvent());
     }
 
     public String getDifficulty() {
@@ -112,5 +114,9 @@ public class BlockHeaderNotification implements EthSubscriptionNotificationDTO {
 
     public String getHash() {
         return hash;
+    }
+
+    public String getBaseEvent() {
+        return baseEvent;
     }
 }

@@ -46,23 +46,6 @@ class AccountOverrideTest {
     }
 
     @Test
-    void fromAccountOverrideParam_setMovePrecompileToAddress_throwsExceptionAsExpected() {
-        // Given
-        AccountOverride accountOverride = new AccountOverride(TestUtils.generateAddress("address"));
-        HexAddressParam hexAddressParam = new HexAddressParam(TestUtils.generateAddress("aPrecompiledAddress").toString());
-        AccountOverrideParam accountOverrideParam = new AccountOverrideParam(null, null, null, null, null, hexAddressParam);
-
-        // When
-        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
-            accountOverride.fromAccountOverrideParam(accountOverrideParam);
-        });
-
-        // Then
-        assertEquals(-32201, exception.getCode());
-        assertEquals("Move precompile to address is not supported yet", exception.getMessage());
-    }
-
-    @Test
     void fromAccountOverrideParam_nullParameters_executesAsExpected() {
         // Given
         RskAddress address = TestUtils.generateAddress("address");
@@ -79,6 +62,7 @@ class AccountOverrideTest {
         assertNull(accountOverride.getCode());
         assertNull(accountOverride.getState());
         assertNull(accountOverride.getStateDiff());
+        assertNull(accountOverride.getMovePrecompileToAddress());
     }
 
     @Test
@@ -90,8 +74,9 @@ class AccountOverrideTest {
         HexNumberParam balance = new HexNumberParam("0x01");
         HexNumberParam nonce = new HexNumberParam("0x02");
         HexDataParam code = new HexDataParam("0x03");
+        HexAddressParam movePrecompileTo = new HexAddressParam("0x0000000000000000000000000000000000000001");
 
-        AccountOverrideParam accountOverrideParam = new AccountOverrideParam(balance, nonce, code, null, null, null);
+        AccountOverrideParam accountOverrideParam = new AccountOverrideParam(balance, nonce, code, null, null, movePrecompileTo);
 
         // When
         accountOverride = accountOverride.fromAccountOverrideParam(accountOverrideParam);
@@ -102,6 +87,7 @@ class AccountOverrideTest {
         assertEquals(HexUtils.jsonHexToLong(nonce.getHexNumber()), accountOverride.getNonce());
         assertEquals(code.getRawDataBytes(), accountOverride.getCode());
         assertNull(accountOverride.getStateDiff());
+        assertEquals(new RskAddress(movePrecompileTo.toString()), accountOverride.getMovePrecompileToAddress());
     }
 
     @Test
@@ -151,6 +137,7 @@ class AccountOverrideTest {
         accountOverride.setCode(new byte[]{1});
         accountOverride.setState(Map.of(DataWord.valueOf(1), DataWord.valueOf(2)));
         accountOverride.setStateDiff(Map.of(DataWord.valueOf(3), DataWord.valueOf(4)));
+        accountOverride.setMovePrecompileToAddress(new RskAddress("0x0000000000000000000000000000000000000001"));
 
         AccountOverride otherAccountOverride = new AccountOverride(address);
         otherAccountOverride.setBalance(BigInteger.TEN);
@@ -158,6 +145,7 @@ class AccountOverrideTest {
         otherAccountOverride.setCode(new byte[]{1});
         otherAccountOverride.setState(Map.of(DataWord.valueOf(1), DataWord.valueOf(2)));
         otherAccountOverride.setStateDiff(Map.of(DataWord.valueOf(3), DataWord.valueOf(4)));
+        otherAccountOverride.setMovePrecompileToAddress(new RskAddress("0x0000000000000000000000000000000000000001"));
 
         // Then
         assertEquals(accountOverride, otherAccountOverride);

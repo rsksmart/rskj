@@ -163,12 +163,24 @@ public class PrecompiledContracts {
     private final RemascConfig remascConfig;
 
     public PrecompiledContracts(RskSystemProperties config,
-            BridgeSupportFactory bridgeSupportFactory,
-            SignatureCache signatureCache) {
+                                BridgeSupportFactory bridgeSupportFactory,
+                                SignatureCache signatureCache) {
         this.config = config;
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.signatureCache = signatureCache;
         this.remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
+    }
+
+    protected RskSystemProperties getConfig() {
+        return config;
+    }
+
+    protected BridgeSupportFactory getBridgeSupportFactory() {
+        return bridgeSupportFactory;
+    }
+
+    protected SignatureCache getSignatureCache() {
+        return signatureCache;
     }
 
     public boolean precompiledContactExists(RskAddress address) {
@@ -229,7 +241,7 @@ public class PrecompiledContracts {
         }
 
         if (activations.isActive(ConsensusRule.RSKIP153) && address.equals(BLAKE2F_ADDR_DW)) {
-            return new Blake2F();
+            return new Blake2F(activations);
         }
 
         if (activations.isActive(ConsensusRule.RSKIP203) && address.equals(ENVIRONMENT_ADDR_DW)) {
@@ -269,7 +281,7 @@ public class PrecompiledContracts {
          */
         @Deprecated
         public final void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore,
-                ReceiptStore receiptStore, List<LogInfo> logs) {
+                               ReceiptStore receiptStore, List<LogInfo> logs) {
             PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
                     .transaction(tx)
                     .executionBlock(executionBlock)
@@ -563,11 +575,24 @@ public class PrecompiledContracts {
         public static final String BLAKE2F_ERROR_INPUT_LENGHT = "input length for BLAKE2 F precompile should be exactly 213 bytes";
         public static final String BLAKE2F_ERROR_FINAL_BLOCK_BYTES = "incorrect final block indicator flag";
 
+        private final ActivationConfig.ForBlock activations;
+
+        public Blake2F() {
+            this(null);
+        }
+
+        public Blake2F(ActivationConfig.ForBlock activations) {
+            this.activations = activations;
+        }
+
         @Override
         public long getGasForData(byte[] data) {
+            // Input is malformed, we can't read the number of rounds.
+            // Precompile can't be executed so we set its price to 0.
+            if (activations.isActive(ConsensusRule.RSKIP552) && data == null) {
+                return 0;
+            }
             if (data.length != BLAKE2F_INPUT_LEN) {
-                // Input is malformed, we can't read the number of rounds.
-                // Precompile can't be executed so we set its price to 0.
                 return 0;
             }
 
@@ -578,6 +603,9 @@ public class PrecompiledContracts {
 
         @Override
         public byte[] execute(byte[] data) throws VMException {
+            if (activations.isActive(ConsensusRule.RSKIP552) && data == null) {
+                throw new VMException(BLAKE2F_ERROR_INPUT_LENGHT);
+            }
             if (data.length != BLAKE2F_INPUT_LEN) {
                 throw new VMException(BLAKE2F_ERROR_INPUT_LENGHT);
             }

@@ -1,0 +1,100 @@
+comment
+
+Simple Datacopy caller contract
+
+checkOriginalDatacopyWorksAsExpected calls datacopy (The Identity Precompiled Contract) on its original address
+- Returns true if data copy was executed correctly
+- Returns false otherwise (THIS SHOULD NEVER HAPPEN)
+
+checkOverriddenDatacopyWorksAsExpected calls datacopy on the address 0x01 (where ecrecover is originally located)
+if movePrecompiledTo was executed previously for the identity contract on 0x01
+- Return true if data copy was executed correctly
+- Return false otherwise (THIS SHOULD NEVER HAPPEN EITHER, as movePrecompiledTo should work correctly)
+
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.0;
+
+contract DatacopyCaller {
+    constructor(){}
+
+    // Check datacopy (Identity precompiled contract) in its original address (0x04).
+    function checkOriginalDatacopyWorksAsExpected() external returns (bool ok) {
+        bytes memory data = "input";
+        bytes memory result = new bytes(data.length); // Allocate memory for the result
+
+        assembly {
+            // Get the length of the input data
+            let len := mload(data)
+
+            // Call the precompiled contract at address 0x04
+            // Arguments:
+            // 1. gas: gas available for the call
+            // 2. 0x04: address of the Data Copy precompile
+            // 3. 0: value (ether) to send (none for Data Copy)
+            // 4. add(data, 0x20): memory address of the input data (offset by 0x20 for length field)
+            // 5. len: length of the input data
+            // 6. add(result, 0x20): memory address to store the output (offset by 0x20 for length field)
+            // 7. len: expected length of the output data
+            if iszero(call(gas(), 0x04, 0, add(data, 0x20), len, add(result, 0x20), len)) {
+                // Revert if the call fails
+                invalid()
+            }
+        }
+
+        // Using keccak256 to be able to compare "bytes memory" variables
+        return keccak256(result) == keccak256(data);
+    }
+
+    // Check datacopy (Identity precompiled contract) in the overridden address (0x01).
+    // This function returns true only after the Identity contract was copied to 0x01
+    // Will return false otherwise.
+    function checkOverriddenDatacopyWorksAsExpected() external returns (bool ok) {
+        bytes memory data = "input";
+        bytes memory result = new bytes(data.length); // Allocate memory for the result
+
+        assembly {
+            // Get the length of the input data
+            let len := mload(data)
+
+            // Call the precompiled contract at address 0x04
+            // Arguments:
+            // 1. gas: gas available for the call
+            // 2. 0x01: address of the Data Copy precompile (overridden)
+            // 3. 0: value (ether) to send (none for Data Copy)
+            // 4. add(data, 0x20): memory address of the input data (offset by 0x20 for length field)
+            // 5. len: length of the input data
+            // 6. add(result, 0x20): memory address to store the output (offset by 0x20 for length field)
+            // 7. len: expected length of the output data
+            if iszero(call(gas(), 0x01, 0, add(data, 0x20), len, add(result, 0x20), len)) {
+                // Revert if the call fails
+                invalid()
+            }
+        }
+
+        return keccak256(result) == keccak256(data);
+    }
+
+}
+
+end
+
+account_new acc1 20000000
+
+transaction_build tx01
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 6080604052348015600e575f5ffd5b506102808061001c5f395ff3fe608060405234801561000f575f5ffd5b5060043610610034575f3560e01c80631cf61a8b14610038578063b7deb48b14610056575b5f5ffd5b610040610074565b60405161004d9190610204565b60405180910390f35b61005e61012f565b60405161006b9190610204565b60405180910390f35b5f5f6040518060400160405280600581526020017f696e70757400000000000000000000000000000000000000000000000000000081525090505f815167ffffffffffffffff8111156100ca576100c961021d565b5b6040519080825280601f01601f1916602001820160405280156100fc5781602001600182028036833780820191505090505b5090508151806020830182602086015f60015af161011657fe5b5081805190602001208180519060200120149250505090565b5f5f6040518060400160405280600581526020017f696e70757400000000000000000000000000000000000000000000000000000081525090505f815167ffffffffffffffff8111156101855761018461021d565b5b6040519080825280601f01601f1916602001820160405280156101b75781602001600182028036833780820191505090505b5090508151806020830182602086015f60045af16101d157fe5b5081805190602001208180519060200120149250505090565b5f8115159050919050565b6101fe816101ea565b82525050565b5f6020820190506102175f8301846101f5565b92915050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52604160045260245ffdfea26469706673582212202ece15a537aa6a01c75693f02004e83bd4f90505ed9146202bc64e3a11fed46164736f6c634300081c0033
+    gas 750000
+    build
+
+block_build b01
+    parent g00
+    transactions tx01
+    gasLimit 7500000
+    build
+
+block_connect b01
+
+# Assert best block
+assert_best b01

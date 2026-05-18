@@ -110,7 +110,12 @@ public enum ConsensusRule {
     RSKIP502("rskip502"), // PowPeg and Union Bridge integration
     RSKIP516("rskip516"), // Addition of precompiled contracts for add and mul operations on the secp256k1 curve
     RSKIP529("rskip529"), // New storage cells in Bridge native contract for base and super events info
+    RSKIP535("rskip535"), // BaseEvent for the union bridge
     RSKIP536("rskip536"), // Additional methods for BlockHeader precompiled contract
+    RSKIP540("rskip540"), // Min pegout value as the extra pegout in getEstimatedFeesForNextPegOutEvent, and enables getEstimatedFeesForPegOutAmount
+    RSKIP544("rskip544"), // From EIP-3541 Reject new contract code starting with the 0xEF byte
+    RSKIP551("rskip551"), // Disable RSKIP459
+    RSKIP552("rskip552"), // Blake2F improvements in data handling
     ;
 
     private final String configKey;

@@ -72,16 +72,13 @@ public final class FederationMember {
         }
 
         public static KeyType byValue(String value) {
-            switch (value) {
-                case "rsk":
-                    return KeyType.RSK;
-                case "mst":
-                    return KeyType.MST;
-                case "btc":
-                    return KeyType.BTC;
-                default:
+            return switch (value) {
+                case "rsk" -> KeyType.RSK;
+                case "mst" -> KeyType.MST;
+                case "btc" -> KeyType.BTC;
+                default ->
                     throw new IllegalArgumentException(String.format("Invalid value for FederationMember.KeyType: %s", StringUtils.trim(value)));
-            }
+            };
         }
     }
 

@@ -15,9 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.core;
-
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockHashesHelper;
@@ -25,7 +23,13 @@ import co.rsk.peg.PegTestUtils;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.exception.SealedBlockException;
+import org.ethereum.core.exception.SealedBlockHeaderException;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -74,13 +78,13 @@ class BlockTest {
                 .setEmptyUnclesHash()
                 .setCoinbase(TestUtils.generateAddress("newHeaderAddress"))
                 .setEmptyStateRoot()
-                .setTxTrieRoot( BlockHashesHelper.getTxTrieRoot(txs, true))
+                .setTxTrieRoot(BlockHashesHelper.getTxTrieRoot(txs, true))
                 .setEmptyLogsBloom()
                 .setEmptyReceiptTrieRoot()
                 .setDifficultyFromBytes(BigInteger.ONE.toByteArray())
                 .setNumber(1)
                 .setGasLimit(BigInteger.valueOf(4000000).toByteArray())
-                .setGasUsed( 3000000L)
+                .setGasUsed(3000000L)
                 .setTimestamp(100)
                 .setEmptyExtraData()
                 .setEmptyMergedMiningForkDetectionData()
@@ -119,8 +123,7 @@ class BlockTest {
         try {
             block.setStateRoot(new byte[32]);
             Assertions.fail();
-        }
-        catch (SealedBlockException ex) {
+        } catch (SealedBlockException ex) {
             Assertions.assertEquals("Sealed block: trying to alter state root", ex.getMessage());
         }
     }

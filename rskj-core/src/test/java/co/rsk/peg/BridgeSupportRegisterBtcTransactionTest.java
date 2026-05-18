@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
@@ -142,8 +143,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, times(1)).logNonRefundablePegin(btcTransaction, NonRefundablePeginReason.INVALID_AMOUNT);
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
 
-        var shouldMarkTxAsProcessed = activations == allActivations ? times(1) : never();
-        verify(bridgeStorageProvider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+        assertInvalidPeginMarkedAsProcessed(activations);
         assertTrue(activeFederationUtxos.isEmpty());
         assertTrue(retiringFederationUtxos.isEmpty());
     }
@@ -228,9 +228,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     private void assertLegacyUndeterminedSenderPeginIsRejected(BtcTransaction btcTransaction,
         ForBlock activations) throws IOException {
 
-        // tx should be marked as processed since RSKIP459 is active
-        var shouldMarkTxAsProcessed = activations == allActivations ? times(1) : never();
-        verify(bridgeStorageProvider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+        assertInvalidPeginMarkedAsProcessed(activations);
 
         verify(bridgeEventLogger, times(1)).logRejectedPegin(
             btcTransaction, RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER
@@ -251,8 +249,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     private void assertInvalidPeginV1UndeterminedSenderIsRejected(BtcTransaction btcTransaction,
         ForBlock activations) throws IOException {
 
-        var shouldMarkTxAsProcessed = activations == allActivations ? times(1) : never();
-        verify(bridgeStorageProvider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+        assertInvalidPeginMarkedAsProcessed(activations);
 
         verify(bridgeEventLogger, times(1)).logRejectedPegin(
             btcTransaction, PEGIN_V1_INVALID_PAYLOAD
@@ -269,6 +266,16 @@ class BridgeSupportRegisterBtcTransactionTest {
         assertTrue(activeFederationUtxos.isEmpty());
         assertTrue(retiringFederationUtxos.isEmpty());
         assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
+    }
+
+    private void assertInvalidPeginMarkedAsProcessed(ActivationConfig.ForBlock activations) throws IOException {
+        // tx should be marked as processed if RSKIP459 is active and RSKIP551 is not active
+        var shouldMarkTxAsProcessed = shouldMarkRejectedPeginAsProcessed(activations);
+        if (shouldMarkTxAsProcessed) {
+            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+        } else {
+            verify(bridgeStorageProvider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+        }
     }
 
     private static Stream<Arguments> common_args() {
@@ -307,6 +314,18 @@ class BridgeSupportRegisterBtcTransactionTest {
                 arrowhead600Activations,
                 true,
                 true
+            ),
+
+            // after RSKIP551 activation should not mark invalid peg-ins as processed
+            Arguments.of(
+                allActivations,
+                true,
+                false
+            ),
+            Arguments.of(
+                allActivations,
+                true,
+                true
             )
         );
     }
@@ -328,6 +347,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 arrowhead600Activations,
                 true
             ),
+            // after RSKIP551 activation should not mark invalid peg-ins as processed
             Arguments.of(
                 allActivations,
                 true
@@ -783,7 +803,6 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     // Pegin tests
-
     @ParameterizedTest
     @MethodSource("common_args")
     void pegin_legacy_to_active_fed(
@@ -1436,7 +1455,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         // act
-        BridgeSupport bridgeSupport = buildBridgeSupport(activations);
+        bridgeSupport = buildBridgeSupport(activations);
         bridgeSupport.registerBtcTransaction(
             rskTx,
             btcTransaction.bitcoinSerialize(),
@@ -1738,7 +1757,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         networkParameters = bridgeConstants.getBtcParams();
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
 
-        bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeContractAddress, networkParameters, activations);
+        bridgeStorageProvider = new BridgeStorageProvider(repository, networkParameters, activations);
         logs = new ArrayList<>();
         bridgeEventLogger = new BridgeEventLoggerImpl(
             bridgeConstants,

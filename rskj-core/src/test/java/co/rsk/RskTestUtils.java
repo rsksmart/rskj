@@ -12,10 +12,14 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
+
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 
 public class RskTestUtils {
@@ -67,6 +71,11 @@ public class RskTestUtils {
     }
 
     public static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        HashMapDB store = new HashMapDB();
+        TrieStore trieStore = new TrieStoreImpl(store);
+        Trie trie = new Trie(trieStore);
+        MutableTrieImpl mutableTrie = new MutableTrieImpl(trieStore, trie);
+        MutableTrieCache mutableTrieCache = new MutableTrieCache(mutableTrie);
+        return new MutableRepository(mutableTrieCache);
     }
 }

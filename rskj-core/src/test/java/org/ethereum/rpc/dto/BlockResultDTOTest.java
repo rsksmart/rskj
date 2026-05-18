@@ -23,7 +23,12 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskTestFactory;
@@ -43,21 +48,19 @@ import java.util.stream.Collectors;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 class BlockResultDTOTest {
 
-    private Block block;
-    private BlockStore blockStore;
-
-    @TempDir
-    public Path tempDir;
-
     // todo(fedejinich) currently RemascTx(blockNumber) has a bug, thats why I initialize this way
     public static final RemascTransaction REMASC_TRANSACTION = new RemascTransaction(new RemascTransaction(1).getEncoded());
     public static final Transaction TRANSACTION = new TransactionBuilder().buildRandomTransaction();
-
     private static final String HEX_ZERO = "0x0";
+    @TempDir
+    public Path tempDir;
+    private Block block;
+    private BlockStore blockStore;
 
     @BeforeEach
     void setup() {
@@ -90,7 +93,7 @@ class BlockResultDTOTest {
 
     @Test
     void getBlockResultDTOWithoutRemasc_emptyTransactions() {
-        Block block = buildBlockWithTransactions(Arrays.asList(REMASC_TRANSACTION));
+        Block block = buildBlockWithTransactions(List.of(REMASC_TRANSACTION));
         BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         Assertions.assertEquals(HexUtils.toUnformattedJsonHex(EMPTY_TRIE_HASH), blockResultDTO.getTransactionsRoot());
@@ -109,6 +112,19 @@ class BlockResultDTOTest {
     }
 
     @Test
+    void getBlockResultDTO_getBaseEvent() {
+        byte[] baseEvent = new byte[]{0x1, 0x2, 0x3};
+        Block spyBlock = spy(block);
+        BlockHeader mockHeader = mock(BlockHeader.class);
+        when(spyBlock.getHeader()).thenReturn(mockHeader);
+        when(mockHeader.getBaseEvent()).thenReturn(baseEvent);
+
+        BlockResultDTO result = BlockResultDTO.fromBlock(spyBlock, false, blockStore, false, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        Assertions.assertEquals(HexUtils.toUnformattedJsonHex(baseEvent), result.getBaseEvent());
+    }
+
+    @Test
     void getBlockResultDTOWithNullSignatureRemascAndFullTransactions() {
         BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, false, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         Assertions.assertNotNull(blockResultDTO);
@@ -123,7 +139,6 @@ class BlockResultDTOTest {
         Assertions.assertNull(remascTransaction.getR());
         Assertions.assertNull(remascTransaction.getS());
     }
-
 
     @Test
     void getBlockResultDTOWithWithZeroSignatureRemascAndFullTransactions() {

@@ -68,12 +68,12 @@ public final class CommandLineFixture {
         String procOutput;
 
         try {
-            proc.waitFor(timeout, timeUnit);
+            boolean finished = proc.waitFor(timeout, timeUnit);
 
             procOutput = CommandLineFixture.readProcStream(proc.getInputStream());
             String procError = CommandLineFixture.readProcStream(proc.getErrorStream());
 
-            if (assertProcExitCode && !proc.isAlive()) {
+            if (assertProcExitCode && finished) {
                 System.out.println("procOutput: " + procOutput);
                 System.out.println("procError:" + procError);
                 Assertions.assertEquals(0, proc.exitValue(), "Proc exited with value: " + proc.exitValue());
@@ -82,8 +82,18 @@ public final class CommandLineFixture {
             if (beforeDestroyFn != null) {
                 beforeDestroyFn.accept(proc);
             }
+
+            if (proc.isAlive()) {
+                proc.destroy();
+                if (!proc.waitFor(5, TimeUnit.SECONDS)) {
+                    proc.destroyForcibly();
+                    proc.waitFor(5, TimeUnit.SECONDS);
+                }
+            }
         } finally {
-            proc.destroy();
+            if (proc.isAlive()) {
+                proc.destroyForcibly();
+            }
         }
 
         return new CustomProcess(procOutput);

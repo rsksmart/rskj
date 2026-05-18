@@ -20,16 +20,26 @@ package co.rsk.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.squareup.okhttp.*;
+import com.squareup.okhttp.MediaType;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.net.ssl.*;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public class OkHttpClientTestFixture {
 
@@ -48,44 +58,79 @@ public class OkHttpClientTestFixture {
             "0xec4ddeb4380ad69b3e509baad9f158cdf4e4681d"
     );
 
-    public static final String GET_BLOCK_CONTENT = "[{\n" +
-            "    \"method\": \"eth_getBlockByNumber\",\n" +
-            "    \"params\": [\n" +
-            "        \"<BLOCK_NUM_OR_TAG>\",\n" +
-            "        true\n" +
-            "    ],\n" +
-            "    \"id\": 1,\n" +
-            "    \"jsonrpc\": \"2.0\"\n" +
-            "}]";
+    public static final String GET_BLOCK_CONTENT = """
+            [{
+                "method": "eth_getBlockByNumber",
+                "params": [
+                    "<BLOCK_NUM_OR_TAG>",
+                    true
+                ],
+                "id": 1,
+                "jsonrpc": "2.0"
+            }]
+            """;
 
-    public static final String ETH_GET_BLOCK_BY_NUMBER =
-            "{\n" +
-            "    \"method\": \"eth_getBlockByNumber\",\n" +
-            "    \"params\": [\n" +
-            "        \"<BLOCK_NUM_OR_TAG>\",\n" +
-            "        true\n" +
-            "    ],\n" +
-            "    \"id\": 1,\n" +
-            "    \"jsonrpc\": \"2.0\"\n" +
-            "}";
+    public static final String ETH_GET_BLOCK_BY_NUMBER = """
+            {
+                "method": "eth_getBlockByNumber",
+                "params": [
+                    "<BLOCK_NUM_OR_TAG>",
+                    true
+                ],
+                "id": 1,
+                "jsonrpc": "2.0"
+            }
+            """;
 
-    public static final String ETH_SEND_TRANSACTION =
-            "{\n" +
-            "    \"jsonrpc\": \"2.0\",\n" +
-            "    \"method\": \"eth_sendTransaction\",\n" +
-            "    \"id\": 1,\n" +
-            "    \"params\": [{\n" +
-            "        \"from\": \"<ADDRESS_FROM>\",\n" +
-            "        \"to\": \"<ADDRESS_TO>\",\n" +
-            "        \"gas\": \"<GAS>\",\n" +
-            "        \"gasPrice\": \"<GAS_PRICE>\",\n" +
-            "        \"value\": \"<VALUE>\"\n" +
-            "    }]\n" +
-            "}";
+    public static final String ETH_BLOCK_NUMBER = """
+            {
+                "method": "eth_blockNumber",
+                "params": [],
+                "id": 1,
+                "jsonrpc": "2.0"
+            }
+            """;
+
+    public static final String ETH_CALL = """
+            {
+                "method": "eth_call",
+                "params": [{
+                    "from": "<FROM>",
+                    "to": null,
+                    "data": "<DATA>",
+                    "gas": "<GAS>"
+                }, "latest"],
+                "id": <ID>,
+                "jsonrpc": "2.0"
+            }
+            """;
+
+    public static final String ETH_SEND_TRANSACTION = """
+            {
+                "jsonrpc": "2.0",
+                "method": "eth_sendTransaction",
+                "id": 1,
+                "params": [{
+                    "from": "<ADDRESS_FROM>",
+                    "to": "<ADDRESS_TO>",
+                    "gas": "<GAS>",
+                    "gasPrice": "<GAS_PRICE>",
+                    "value": "<VALUE>"
+                }]
+            }
+            """;
+
+    public static final String ETH_GET_TRANSACTION_RECEIPT = """
+        {
+            "jsonrpc": "2.0",
+            "method": "eth_getTransactionReceipt",
+            "id": 1,
+            "params": ["<TX_HASH>"]
+        }
+        """;
 
     private OkHttpClientTestFixture() {
     }
-
 
     public static OkHttpClient getUnsafeOkHttpClient() {
         try {
@@ -95,11 +140,13 @@ public class OkHttpClientTestFixture {
                         @Override
                         public void checkClientTrusted(X509Certificate[] chain,
                                                        String authType) throws CertificateException {
+                            // We don't want to verify client certificates in test
                         }
 
                         @Override
                         public void checkServerTrusted(X509Certificate[] chain,
                                                        String authType) throws CertificateException {
+                            // We don't want to check server trusted in test
                         }
 
                         @Override
@@ -126,6 +173,15 @@ public class OkHttpClientTestFixture {
         }
     }
 
+    /**
+     * Sends a JSON-RPC POST request to the local node.
+     *
+     * <p><b>IMPORTANT:</b> The caller MUST close the returned {@link Response}
+     * (specifically {@code response.body().close()}) to avoid leaking the
+     * underlying HTTP connection.
+     *
+     * @throws IOException if the request fails at the transport level
+     */
     public static Response sendJsonRpcMessage(String content, int port) throws IOException {
         RequestBody requestBody = RequestBody.create(MediaType.parse("application/json-rpc"), content);
         URL url = new URL("http", "localhost", port, "/");
@@ -136,6 +192,31 @@ public class OkHttpClientTestFixture {
         return getUnsafeOkHttpClient().newCall(request).execute();
     }
 
+    public static Response sendJsonRpcMessage(String content, int port, long readTimeoutMs) throws IOException {
+        RequestBody requestBody = RequestBody.create(MediaType.parse("application/json-rpc"), content);
+        URL url = new URL("http", "localhost", port, "/");
+        Request request = new Request.Builder().url(url)
+                .addHeader("Host", "localhost")
+                .addHeader("Accept-Encoding", "identity")
+                .post(requestBody).build();
+        OkHttpClient client = getUnsafeOkHttpClient();
+        client.setReadTimeout(readTimeoutMs, TimeUnit.MILLISECONDS);
+        client.setConnectTimeout(readTimeoutMs, TimeUnit.MILLISECONDS);
+        return client.newCall(request).execute();
+    }
+
+    public static String buildEthCallPayload(String dataHex, String gasHex, int id) {
+        return ETH_CALL
+                .replace("<FROM>", PRE_FUNDED_ACCOUNTS.get(0))
+                .replace("<DATA>", dataHex)
+                .replace("<GAS>", gasHex)
+                .replace("<ID>", String.valueOf(id));
+    }
+
+    public static Response sendHealthProbe(int port, long timeoutMs) throws IOException {
+        return sendJsonRpcMessage(ETH_BLOCK_NUMBER, port, timeoutMs);
+    }
+
     public static Response sendJsonRpcGetBestBlockMessage(int port) throws IOException {
         return sendJsonRpcGetBlockMessage(port, "latest");
     }
@@ -144,9 +225,31 @@ public class OkHttpClientTestFixture {
         return sendJsonRpcMessage(GET_BLOCK_CONTENT.replace("<BLOCK_NUM_OR_TAG>", blockNumOrTag), port);
     }
 
+    public static Response sendJsonRpcGetTransactionReceiptMessage(int port, String txHash) throws IOException {
+        return sendJsonRpcMessage(ETH_GET_TRANSACTION_RECEIPT.replace("<TX_HASH>", txHash), port);
+    }
+
+    public static JsonNode getJsonResponseForGetTransactionReceipt(int port, String txHash) throws IOException {
+        Response response = sendJsonRpcGetTransactionReceiptMessage(port, txHash);
+        try {
+            return new ObjectMapper().readTree(response.body().string());
+        } finally {
+            if (response.body() != null) {
+                response.body().close();
+            }
+        }
+    }
+
+
     public static JsonNode getJsonResponseForGetBestBlockMessage(int port, String blockNumOrTag) throws IOException {
         Response response = sendJsonRpcGetBlockMessage(port, blockNumOrTag);
-        return new ObjectMapper().readTree(response.body().string());
+        try {
+            return new ObjectMapper().readTree(response.body().string());
+        } finally {
+            if (response.body() != null) {
+                response.body().close();
+            }
+        }
     }
 
     public static String getEnvelopedMethodCalls(String... methodCall) {

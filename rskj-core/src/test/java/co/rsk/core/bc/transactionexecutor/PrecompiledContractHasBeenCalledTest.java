@@ -5,20 +5,14 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
-import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStore;
-import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStoreDummy;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -29,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 import java.util.*;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.core.bc.BlockExecutorTest.createAccount;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
@@ -397,9 +392,8 @@ NEGATIVE CASES, IF A REGULAR CONTRACT IS CALLED, FLAG SHOULD BE FALSE, SAME FOR 
     }
 
     private static Repository getRepository() {
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository aRepository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
-        return aRepository.startTracking();
+        Repository repository = createRepository();
+        return repository.startTracking();
     }
 }
 

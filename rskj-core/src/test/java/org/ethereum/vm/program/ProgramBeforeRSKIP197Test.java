@@ -41,9 +41,20 @@ class ProgramBeforeRSKIP197Test extends ProgramTest {
 
     @Override
     @Test
-    void testCallToPrecompiledAddress_throwPrecompiledConstractException() throws VMException {
+    void testCallToPrecompiledAddress_throwPrecompiledContractException() throws VMException {
         try {
-            super.testCallToPrecompiledAddress_throwPrecompiledConstractException();
+            super.testCallToPrecompiledAddress_throwPrecompiledContractException();
+            fail();
+        } catch (RuntimeException e) {
+            assertTrue(program.getStack().empty());
+        }
+    }
+
+    @Override
+    @Test
+    void testCallToPrecompiledAddress_throwNullPointerException() throws VMException {
+        try {
+            super.testCallToPrecompiledAddress_throwNullPointerException();
             fail();
         } catch (RuntimeException e) {
             assertTrue(program.getStack().empty());

@@ -27,6 +27,8 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -48,7 +50,6 @@ import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -138,7 +139,7 @@ class ProgramTest {
 
     @Test
     void testCallToPrecompiledAddress_success() throws VMException {
-        when(precompiledContract.execute(any())).thenReturn(new byte[] { 1 });
+        doReturn(new byte[] { 1 }).when(precompiledContract).execute(any());
 
         program.callToPrecompiledAddress(msg, precompiledContract);
 
@@ -150,14 +151,27 @@ class ProgramTest {
 
     @Test
     void testCallToPrecompiledAddress_throwRuntimeException() throws VMException {
-        when(precompiledContract.execute(any())).thenThrow(new RuntimeException());
-        Assertions.assertThrows(RuntimeException.class,
-                () -> program.callToPrecompiledAddress(msg, precompiledContract));
+        doThrow(new RuntimeException()).when(precompiledContract).execute(any());
+
+        program.callToPrecompiledAddress(msg, precompiledContract);
+
+        assertStack(STACK_STATE_ERROR);
+        assertEquals(gasCost, program.getResult().getGasUsed());
     }
 
     @Test
-    void testCallToPrecompiledAddress_throwPrecompiledConstractException() throws VMException {
-        when(precompiledContract.execute(any())).thenThrow(new VMException("Revert exception"));
+    void testCallToPrecompiledAddress_throwPrecompiledContractException() throws VMException {
+        doThrow(new VMException("Revert exception")).when(precompiledContract).execute(any());
+
+        program.callToPrecompiledAddress(msg, precompiledContract);
+
+        assertStack(STACK_STATE_ERROR);
+        assertEquals(gasCost, program.getResult().getGasUsed());
+    }
+
+    @Test
+    void testCallToPrecompiledAddress_throwNullPointerException() throws VMException {
+        doThrow(new NullPointerException()).when(precompiledContract).execute(any());
 
         program.callToPrecompiledAddress(msg, precompiledContract);
 

@@ -466,6 +466,6 @@ class BridgeStorageProviderPegoutTxIndexTests {
     }
     
     private BridgeStorageProvider createBridgeStorageProvider(Repository repository, ActivationConfig.ForBlock activations) {
-        return new BridgeStorageProvider(repository, bridgeAddress, mainnetBtcParams, activations);
+        return new BridgeStorageProvider(repository, mainnetBtcParams, activations);
     }
 }

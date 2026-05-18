@@ -18,11 +18,14 @@
  */
 package co.rsk.pte;
 
+import co.rsk.util.HexUtils;
+import co.rsk.util.IntegrationTestUtils;
 import co.rsk.util.OkHttpClientTestFixture;
 import co.rsk.util.cli.CommandLineFixture;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.Response;
+import org.ethereum.config.Constants;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,10 +35,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static co.rsk.util.OkHttpClientTestFixture.ETH_GET_BLOCK_BY_NUMBER;
@@ -49,8 +59,10 @@ class PteIntegrationTest {
         test ('./gradlew clean' and './gradlew assemble' should be sufficient for most cases).
      */
 
-    private static final int RPC_PORT = 9999;
     private static final int MAX_BLOCKS_TO_GET = 20;
+    private static final int BULK_TRANSACTION_BATCHES = 5;
+    private static final int MIN_EXPECTED_TX_COUNT = 20;
+    private static final long MIN_TX_GAS = 21_000L;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -58,6 +70,7 @@ class PteIntegrationTest {
     private String jarName;
     private String strBaseArgs;
     private String baseJavaCmd;
+    private int rpcPort;
 
     @TempDir
     private Path tempDir;
@@ -69,6 +82,7 @@ class PteIntegrationTest {
         String integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
         String logbackXmlFile = String.format("%s/logback.xml", integrationTestResourcesPath);
         String rskConfFile = String.format("%s/pte-integration-test-rskj.conf", integrationTestResourcesPath);
+        rpcPort = IntegrationTestUtils.findFreePort();
         Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath));
         jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
                 .map(p -> p.getFileName().toString())
@@ -81,7 +95,7 @@ class PteIntegrationTest {
         String[] baseArgs = new String[]{
                 String.format("-Xdatabase.dir=%s", databaseDir),
                 "--regtest",
-                String.format("-Xrpc.providers.web.http.port=%s", RPC_PORT)
+                String.format("-Xrpc.providers.web.http.port=%s", rpcPort)
         };
         strBaseArgs = String.join(" ", baseArgs);
         baseJavaCmd = String.format("java %s %s", String.format("-Dlogback.configurationFile=%s", logbackXmlFile), String.format("-Drsk.conf.file=%s", rskConfFile));
@@ -91,7 +105,7 @@ class PteIntegrationTest {
     void whenParallelizableTransactionsAreSent_someAreExecutedInParallel() throws Exception {
         // Given
 
-        Map<String, Response> txResponseMap = new HashMap<>();
+        List<Response> txResponses = new ArrayList<>();
         Map<String, Map<Integer, String>> blocksResponseMap =  new HashMap<>();
 
         String cmd = String.format(
@@ -113,14 +127,18 @@ class PteIntegrationTest {
                         // Send bulk transactions
 
                         List<String> accounts = OkHttpClientTestFixture.PRE_FUNDED_ACCOUNTS;
-                        Response txResponse = OkHttpClientTestFixture.sendBulkTransactions(
-                                RPC_PORT,
+                        OkHttpClientTestFixture.FromToAddressPair[] pairs = new OkHttpClientTestFixture.FromToAddressPair[]{
                                 of(accounts.get(0), accounts.get(1)),
-                                of(accounts.get(2), accounts.get(3)),
+                                of(accounts.get(0), accounts.get(2)),
+                                of(accounts.get(3), accounts.get(4)),
                                 of(accounts.get(4), accounts.get(5)),
-                                of(accounts.get(6), accounts.get(7)));
+                                of(accounts.get(6), accounts.get(7)),
+                                of(accounts.get(8), accounts.get(9))
+                        };
 
-                        txResponseMap.put("bulkTransactionsResponse", txResponse);
+                        for (int i = 0; i < BULK_TRANSACTION_BATCHES; i++) {
+                            txResponses.add(OkHttpClientTestFixture.sendBulkTransactions(rpcPort, pairs));
+                        }
 
                         // Await for n blocks to be mined and return them
 
@@ -142,7 +160,9 @@ class PteIntegrationTest {
 
         // Then
 
-        Assertions.assertEquals(200, txResponseMap.get("bulkTransactionsResponse").code());
+        for (Response response : txResponses) {
+            Assertions.assertEquals(200, response.code());
+        }
 
         Map<Integer, String> blocksResult = blocksResponseMap.get("asyncBlocksResult");
         Assertions.assertEquals(MAX_BLOCKS_TO_GET, blocksResult.size());
@@ -155,14 +175,57 @@ class PteIntegrationTest {
             JsonNode blockResponse = objectMapper.readTree(blocksResult.get(i));
             JsonNode result = blockResponse.get(0).get("result");
 
-            if (!result.isNull()) {
-                JsonNode pteEdges = result.get("rskPteEdges");
-                if (pteEdges.isArray() && pteEdges.size() > 0) {
-                    Assertions.assertTrue(result.get("transactions").isArray());
-                    Assertions.assertTrue(result.get("transactions").size() > 1);
-                    pteFound = true;
-                }
+            if (result.isNull()) {
+                continue;
             }
+
+            JsonNode pteEdges = result.get("rskPteEdges");
+            if (!pteEdges.isArray() || pteEdges.isEmpty()) {
+                // Skip blocks without PTE metadata; we only validate blocks with edges.
+                continue;
+            }
+
+            JsonNode transactions = result.get("transactions");
+            // Ensure we have full transaction objects, not just hashes.
+            Assertions.assertTrue(transactions.isArray());
+            int txCount = transactions.size();
+            // Require enough transactions to make PTE validation meaningful.
+            Assertions.assertTrue(txCount >= MIN_EXPECTED_TX_COUNT);
+
+            int parallelSublistCount = pteEdges.size();
+            // Each edge corresponds to a parallel sublist; size should match thread count.
+            Assertions.assertEquals(Constants.getTransactionExecutionThreads(), parallelSublistCount);
+
+            int previousEdge = 0;
+            for (JsonNode edgeNode : pteEdges) {
+                int edge = edgeNode.asInt();
+                // Edges are cumulative end indices, so they must be strictly increasing
+                Assertions.assertTrue(edge > previousEdge);
+                // Edges must not exceed the total transaction count
+                Assertions.assertTrue(edge <= txCount);
+                previousEdge = edge;
+            }
+
+            int parallelTxCount = previousEdge;
+            int sequentialTxCount = txCount - parallelTxCount;
+            // Verify both parallel and sequential sublists processed transactions.
+            Assertions.assertTrue(parallelTxCount > 0);
+            Assertions.assertTrue(sequentialTxCount > 0);
+
+            long gasUsed = parseQuantity(result.get("gasUsed"));
+            long gasLimit = parseQuantity(result.get("gasLimit"));
+            // Gas used should be non-zero and within the block limit
+            Assertions.assertTrue(gasUsed > 0);
+            Assertions.assertTrue(gasUsed <= gasLimit);
+            int minTxCountForGas = Math.min(txCount, MIN_EXPECTED_TX_COUNT / 2);
+            long minExpectedGas = MIN_TX_GAS * minTxCountForGas;
+            Assertions.assertTrue(
+                    // Expect a sensible minimum gas consumption for the tx executed.
+                    gasUsed >= minExpectedGas,
+                    String.format("gasUsed=%d below expected minimum=%d for txCount=%d", gasUsed, minExpectedGas, txCount)
+            );
+
+            pteFound = true;
         }
 
         Assertions.assertTrue(pteFound);
@@ -176,26 +239,51 @@ class PteIntegrationTest {
                         number)
         );
 
-        return OkHttpClientTestFixture.sendJsonRpcMessage(content, RPC_PORT);
+        return OkHttpClientTestFixture.sendJsonRpcMessage(content, rpcPort);
     }
 
     private Future<Map<Integer, String>> getBlocksAsync() {
         CompletableFuture<Map<Integer, String>> completableFuture = new CompletableFuture<>();
+        ScheduledExecutorService scheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
+        Map<Integer, String> results = new ConcurrentHashMap<>();
+        AtomicInteger index = new AtomicInteger(0);
 
-        Executors.newCachedThreadPool().submit(() -> {
-            Map<Integer, String> results = new HashMap<>();
-
-            for (int i = 0; i < MAX_BLOCKS_TO_GET; i++) {
-                String response = getBlockByNumber("0x" + String.format("%02x", i)).body().string();
-
-                results.put(i, response);
-                Thread.sleep(500);
+        scheduler.scheduleWithFixedDelay(() -> {
+            if (completableFuture.isDone()) {
+                scheduler.shutdown();
+                return;
             }
 
-            completableFuture.complete(results);
-            return null;
-        });
+            int i = index.getAndIncrement();
+            if (i >= MAX_BLOCKS_TO_GET) {
+                completableFuture.complete(results);
+                scheduler.shutdown();
+                return;
+            }
+
+            Response response = null;
+            try {
+                response = getBlockByNumber("0x" + String.format("%02x", i));
+                results.put(i, response.body().string());
+            } catch (Exception e) {
+                completableFuture.completeExceptionally(e);
+                scheduler.shutdown();
+            } finally {
+                if (response != null && response.body() != null) {
+                    try {
+                        response.body().close();
+                    } catch (IOException e) {
+                        completableFuture.completeExceptionally(e);
+                        scheduler.shutdown();
+                    }
+                }
+            }
+        }, 0, 500, TimeUnit.MILLISECONDS);
 
         return completableFuture;
+    }
+
+    private long parseQuantity(JsonNode node) {
+        return HexUtils.jsonHexToLong(node.asText());
     }
 }

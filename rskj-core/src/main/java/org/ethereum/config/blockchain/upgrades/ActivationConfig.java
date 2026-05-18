@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.config.blockchain.upgrades;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -23,7 +22,12 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException.WrongType;
 import com.typesafe.config.ConfigValue;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ActivationConfig {
@@ -43,44 +47,13 @@ public class ActivationConfig {
             List<ConsensusRule> missing = new ArrayList<>(Arrays.asList(ConsensusRule.values()));
             missing.removeAll(activationHeights.keySet());
             throw new IllegalArgumentException(String.format(
-                "The configuration must contain all consensus rule values but is missing [%s]",
-                missing.stream().map(ConsensusRule::getConfigKey).collect(Collectors.joining(", "))
+                    "The configuration must contain all consensus rule values but is missing [%s]",
+                    missing.stream().map(ConsensusRule::getConfigKey).collect(Collectors.joining(", "))
             ));
         }
 
         this.activationHeights = activationHeights;
         this.networkUpgrades = networkUpgrades;
-    }
-
-    public byte getHeaderVersion(long blockNumber) {
-        if (this.isActive(ConsensusRule.RSKIP351, blockNumber)) {
-            return 0x1;
-        }
-
-        return 0x0;
-    }
-
-    public boolean isActive(ConsensusRule consensusRule, long blockNumber) {
-        long activationHeight = activationHeights.get(consensusRule);
-        return 0 <= activationHeight && activationHeight <= blockNumber;
-    }
-
-    public boolean containsNetworkUpgrade(NetworkUpgrade networkUpgrade) {
-        return networkUpgrades.containsKey(networkUpgrade);
-    }
-
-    public boolean isActive(NetworkUpgrade networkUpgrade, long blockNumber) {
-        long activationHeight = networkUpgrades.get(networkUpgrade);
-        return 0 <= activationHeight && activationHeight <= blockNumber;
-    }
-
-    private boolean isActivating(ConsensusRule consensusRule, long blockNumber) {
-        long activationHeight = activationHeights.get(consensusRule);
-        return activationHeight == blockNumber;
-    }
-
-    public ForBlock forBlock(long blockNumber) {
-        return new ForBlock(blockNumber);
     }
 
     public static ActivationConfig read(Config config) {
@@ -119,6 +92,54 @@ public class ActivationConfig {
 
             return networkUpgrades.get(networkUpgrade);
         }
+    }
+
+    public byte getHeaderVersion(long blockNumber) {
+        if (this.isActive(ConsensusRule.RSKIP351, blockNumber)) {
+            return (byte) (this.isActive(ConsensusRule.RSKIP535, blockNumber) ? 0x2 : 0x1);
+        }
+
+        return 0x0;
+    }
+
+    public boolean isActive(ConsensusRule consensusRule, long blockNumber) {
+        long activationHeight = activationHeights.get(consensusRule);
+        return 0 <= activationHeight && activationHeight <= blockNumber;
+    }
+
+    /**
+     * Returns {@code true} if all given {@link ConsensusRule} instances
+     * are active at the specified block number.
+     * <p>If no rules are provided, this method returns {@code false}.
+     *
+     * @param number the block number to evaluate
+     * @param consensusRules the rules to check, in evaluation order
+     * @return {@code true} if all rules are active and at least one rule
+     *         is provided; {@code false} otherwise
+     */
+    public boolean areActive(long number, ConsensusRule... consensusRules) {
+        return consensusRules.length > 0 &&
+                Arrays.stream(consensusRules)
+                        .allMatch(rule -> isActive(rule, number));
+    }
+
+    public boolean containsNetworkUpgrade(NetworkUpgrade networkUpgrade) {
+        return networkUpgrades.containsKey(networkUpgrade);
+    }
+
+    public boolean isActive(NetworkUpgrade networkUpgrade, long blockNumber) {
+        long activationHeight = networkUpgrades.get(networkUpgrade);
+        return 0 <= activationHeight && activationHeight <= blockNumber;
+    }
+
+
+    private boolean isActivating(ConsensusRule consensusRule, long blockNumber) {
+        long activationHeight = activationHeights.get(consensusRule);
+        return activationHeight == blockNumber;
+    }
+
+    public ForBlock forBlock(long blockNumber) {
+        return new ForBlock(blockNumber);
     }
 
     public class ForBlock {

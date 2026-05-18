@@ -90,6 +90,7 @@ public class PegoutTransactionBuilder {
         addInputsToTransaction(pegoutTransaction);
         addOutputsToTransaction(pegoutTransaction);
         addChangeOutput(pegoutTransaction);
+        signInputs(pegoutTransaction);
 
         return pegoutTransaction;
     }
@@ -110,10 +111,6 @@ public class PegoutTransactionBuilder {
                 activeFederation.getRedeemScript(),
                 activeFederation.getFormatVersion()
             );
-
-            if (signTransaction) {
-                signInput(transaction, inputIndex);
-            }
 
             inputIndex++;
         }
@@ -145,6 +142,16 @@ public class PegoutTransactionBuilder {
             );
         } else {
             BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, inputIndex, signingKeys);
+        }
+    }
+
+    private void signInputs(BtcTransaction transaction) {
+        if (!signTransaction) {
+            return;
+        }
+
+        for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
+            signInput(transaction, inputIndex);
         }
     }
 

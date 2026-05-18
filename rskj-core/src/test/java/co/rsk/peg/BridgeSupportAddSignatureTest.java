@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeStorageIndexKey.PEGOUTS_WAITING_FOR_SIGNATURES;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
@@ -205,7 +206,7 @@ class BridgeSupportAddSignatureTest {
         Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(activeFedArgs);
 
         when(mockFederationSupport.getActiveFederation()).thenReturn(activeFederation);
-        when(mockFederationSupport.getRetiringFederation()).thenReturn(retiringFederation);
+        when(mockFederationSupport.getRetiringFederation()).thenReturn(Optional.of(retiringFederation));
         when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
         bridgeSupport.addSignature(
@@ -255,7 +256,8 @@ class BridgeSupportAddSignatureTest {
             creationBlockNumber,
             btcRegTestParams
         );
-        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(retiringFedArgs);
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(retiringFedArgs);
+        Optional<Federation> retiringFederation = Optional.of(federation);
 
         // Creates active federation
         List<BtcECKey> activeFederationKeys = Arrays.asList(
@@ -314,7 +316,6 @@ class BridgeSupportAddSignatureTest {
 
         BridgeStorageProvider providerForSupport = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             btcRegTestParams,
             activationsBeforeForks
         );
@@ -337,7 +338,6 @@ class BridgeSupportAddSignatureTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            bridgeAddress,
             btcRegTestParams,
             activationsBeforeForks
         );
@@ -349,7 +349,7 @@ class BridgeSupportAddSignatureTest {
     void addSignatureFromInvalidFederator() throws Exception {
 
         Repository repository = createRepository();
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeAddress, btcRegTestParams, activationsBeforeForks);
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(repository, btcRegTestParams, activationsBeforeForks);
         FederationSupport federationSupport = createDefaultFederationSupport(bridgeRegTestConstants.getFederationConstants());
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -366,7 +366,7 @@ class BridgeSupportAddSignatureTest {
         );
         bridgeSupport.save();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeAddress,
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository,
             btcRegTestParams, activationsBeforeForks);
 
         assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
@@ -401,7 +401,7 @@ class BridgeSupportAddSignatureTest {
         // Setup
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
         Repository track = createRepository().startTracking();
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, bridgeAddress, btcRegTestParams, activationsBeforeForks);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, btcRegTestParams, activationsBeforeForks);
 
         // Build prev btc tx
         BtcTransaction prevTx = new BtcTransaction(btcRegTestParams);
@@ -529,7 +529,7 @@ class BridgeSupportAddSignatureTest {
 
         final Keccak256 keccak256 = createHash3(1);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeAddress,
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository,
             btcRegTestParams, activationsBeforeForks);
 
         BtcTransaction prevTx1 = new BtcTransaction(btcRegTestParams);
@@ -612,7 +612,7 @@ class BridgeSupportAddSignatureTest {
         bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeyOfSecondFed), derEncodedSigsSecondFed, keccak256);
         bridgeSupport.save();
 
-        provider = new BridgeStorageProvider(repository, bridgeAddress, btcRegTestParams, activationsBeforeForks);
+        provider = new BridgeStorageProvider(repository, btcRegTestParams, activationsBeforeForks);
 
         assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         assertThat(logs, is(not(empty())));
@@ -785,7 +785,7 @@ class BridgeSupportAddSignatureTest {
                 .build();
 
             repository = createRepository();
-            bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeAddress, btcMainnetParams, activationsAfterForks);
+            bridgeStorageProvider = new BridgeStorageProvider(repository, btcMainnetParams, activationsAfterForks);
             logs = new ArrayList<>();
             BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainnetConstants,
@@ -1025,7 +1025,7 @@ class BridgeSupportAddSignatureTest {
             StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
             FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
             repository = createRepository();
-            bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeAddress, btcMainnetParams, activationsAfterForks);
+            bridgeStorageProvider = new BridgeStorageProvider(repository, btcMainnetParams, activationsAfterForks);
             logs = new ArrayList<>();
             BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainnetConstants,
@@ -1235,7 +1235,7 @@ class BridgeSupportAddSignatureTest {
         final Keccak256 keccak256 = RskTestUtils.createHash(1);
 
         Repository track = repository.startTracking();
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, bridgeAddress, btcRegTestParams, activationsBeforeForks);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, btcRegTestParams, activationsBeforeForks);
 
         BtcTransaction prevTx = new BtcTransaction(btcRegTestParams);
         TransactionOutput prevOut = new TransactionOutput(btcRegTestParams, prevTx, Coin.FIFTY_COINS, genesisFederation.getAddress());
@@ -1255,7 +1255,6 @@ class BridgeSupportAddSignatureTest {
         BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(bridgeRegTestConstants, activations, logs);
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
             track,
-            bridgeAddress,
             btcRegTestParams,
             activationsAfterForks
         );
@@ -1315,7 +1314,7 @@ class BridgeSupportAddSignatureTest {
         bridgeSupport.save();
         track.commit();
 
-        provider = new BridgeStorageProvider(repository, bridgeAddress, btcRegTestParams, activationsBeforeForks);
+        provider = new BridgeStorageProvider(repository, btcRegTestParams, activationsBeforeForks);
 
         if ("FullySigned".equals(expectedResult)) {
             assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());

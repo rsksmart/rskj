@@ -876,7 +876,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(null).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.empty()).when(bridgeSupportMock).getRetiringFederation();
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         RskAddress txSender = new RskAddress(key.getAddress());
@@ -911,7 +911,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(retiringFederation).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.of(retiringFederation)).when(bridgeSupportMock).getRetiringFederation();
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         RskAddress txSender = new RskAddress(key.getAddress());
@@ -946,7 +946,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(null).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.empty()).when(bridgeSupportMock).getRetiringFederation();
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         RskAddress txSender = new RskAddress(key.getAddress());
@@ -990,7 +990,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(retiringFederation).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.of(retiringFederation)).when(bridgeSupportMock).getRetiringFederation();
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         RskAddress txSender = new RskAddress(key.getAddress());
@@ -1125,6 +1125,75 @@ class BridgeTest {
         // Also test the method itself
         long resultFromTheBridge = bridge.getEstimatedFeesForNextPegOutEvent(new Object[]{});
         assertEquals(estimatedFeesForNextPegout.getValue(), resultFromTheBridge);
+    }
+
+    @Test
+    void getEstimatedFeesForPegOutAmount_preRSKIP540__shouldThrowVMException() {
+        // Arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.reed800();
+
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.GET_ESTIMATED_FEES_FOR_PEGOUT_AMOUNT.getFunction();
+        byte[] data = function.encode(BigInteger.ONE);
+
+        // Act & Assert
+        assertThrows(VMException.class, () -> bridge.execute(data));
+    }
+
+    @Test
+    void getEstimatedFeesForPegOutAmount_afterRSKIP540_shouldExecute() throws VMException, IOException, BridgeIllegalArgumentException {
+        // Arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+
+        BigInteger pegOutAmountInWeis = BigInteger.valueOf(1234L);
+        Coin estimatedFeesForPegout = Coin.SATOSHI;
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getEstimatedFeesForPegOutAmount(new co.rsk.core.Coin(pegOutAmountInWeis))).thenReturn(estimatedFeesForPegout);
+
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.GET_ESTIMATED_FEES_FOR_PEGOUT_AMOUNT.getFunction();
+        byte[] data = function.encode(pegOutAmountInWeis);
+
+        // Act
+        byte[] result = bridge.execute(data);
+
+        // Assert
+        BigInteger decodedResult = (BigInteger) function.decodeResult(result)[0];
+        assertEquals(estimatedFeesForPegout.getValue(), decodedResult.longValue());
+
+        long estimatedFees = bridge.getEstimatedFeesForPegOutAmount(new Object[]{pegOutAmountInWeis});
+        assertEquals(estimatedFeesForPegout.getValue(), estimatedFees);
+    }
+
+    @Test
+    void getEstimatedFeesForPegOutAmount_withAmountBelowMinimum_shouldThrowBridgeIllegalArgumentException() throws IOException, BridgeIllegalArgumentException {
+        // Arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+
+        BigInteger pegOutAmount = BigInteger.ONE;
+        co.rsk.core.Coin pegoutAmountInWeis = new co.rsk.core.Coin(pegOutAmount);
+        doThrow(new BridgeIllegalArgumentException())
+            .when(bridgeSupportMock)
+            .getEstimatedFeesForPegOutAmount(pegoutAmountInWeis);
+
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.GET_ESTIMATED_FEES_FOR_PEGOUT_AMOUNT.getFunction();
+        byte[] data = function.encode(pegOutAmount);
+
+        // Act & Assert
+        assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @ParameterizedTest()
@@ -2040,7 +2109,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Address retiringFederationAddress = Address.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
-        when(bridgeSupportMock.getRetiringFederationAddress()).thenReturn(retiringFederationAddress);
+        when(bridgeSupportMock.getRetiringFederationAddress()).thenReturn(Optional.of(retiringFederationAddress));
 
         Bridge bridge = bridgeBuilder
             .transaction(rskTxMock)
@@ -2142,7 +2211,7 @@ class BridgeTest {
         // arrange
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Instant creationTime = Instant.ofEpochMilli(5000);
-        when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(creationTime);
+        when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(Optional.of(creationTime));
 
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)

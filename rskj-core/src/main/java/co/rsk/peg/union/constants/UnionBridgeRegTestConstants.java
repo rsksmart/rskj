@@ -27,14 +27,14 @@ public class UnionBridgeRegTestConstants extends UnionBridgeConstants {
             new RskAddress("6c9dfd950bf748bb26f893f7e5f693c7f60a8f85")
         );
 
-        // seed: changeLockingCapAuthorizer
+        // contract deployer seed: UnionBridgeAuthorizerDeployer
         changeLockingCapAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("8f8185858643e08b07df4701d8546406b7bf22e4")
+            new RskAddress("377e67e16c13994A4d44791Daf0a4d4Cac445783")
         );
 
-        // seed: changeTransferPermissionsAuthorizer
+        // contract deployer seed: UnionBridgeAuthorizerDeployer
         changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("af0fd16c15d0286fd78db5fe89412c00d3de3cf4")
+            new RskAddress("377e67e16c13994A4d44791Daf0a4d4Cac445783")
         );
     }
 

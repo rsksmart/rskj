@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2024 RSK Labs Ltd.
+ * Copyright (C) 2025 RSK Labs Ltd.
  * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,24 +16,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.util;
+package org.ethereum.core.exception;
 
-import java.util.concurrent.CountDownLatch;
+/**
+ * Created by ajlopez on 14/08/2017.
+ */
 
-public class ThreadTimerHelper {
-
-    public static void waitForSeconds(int amountOfSeconds) throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-
-        new Thread(() -> {
-            try {
-                Thread.sleep(amountOfSeconds * 1000);
-                latch.countDown();
-            } catch (InterruptedException e) {
-                System.out.println("Some error happened: " + e.getLocalizedMessage());
-            }
-        }).start();
-
-        latch.await();
+public class SealedBlockHeaderException extends RuntimeException {
+    public SealedBlockHeaderException(String message) {
+        super("Sealed block header: " + message);
     }
 }

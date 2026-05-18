@@ -50,7 +50,7 @@ import java.util.List;
 /**
  * Checks proof value against its boundary for the block header.
  */
-public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidationRule {
+public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidationRule, BtcHeaderSizeRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
@@ -145,8 +145,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        if (header.getBitcoinMergedMiningHeader() == null) {
-            logger.warn("Bitcoin merged mining header does not exist. Header {}", header.getPrintableHash());
+        if(!bitcoinMergedMiningHeaderIsValid(header)) {
             return false;
         }
 
@@ -279,5 +278,22 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         ECKey pub = Secp256k1.getInstance().recoverFromSignature(signature.getV() - 27, signature, header.getHashForMergedMining(), false);
 
         return pub.getPubKeyPoint().equals(fallbackMiningPubKey.getPubKeyPoint());
+    }
+
+    private boolean bitcoinMergedMiningHeaderIsValid(BlockHeader header) {
+
+        if (header.getBitcoinMergedMiningHeader() == null) {
+            logger.warn("Bitcoin merged mining header does not exist. Header {}", header.getPrintableHash());
+            return false;
+        }
+
+        boolean isRskip98Active = activationConfig.isActive(ConsensusRule.RSKIP98, header.getNumber());
+        if (!isValidBtcMergedMiningHeaderSize(header.getBitcoinMergedMiningHeader(), header.getNumber(), isRskip98Active)) {
+            logger.warn("Bitcoin merged mining header must be {} bytes but was {}. Header {}",
+                RskMiningConstants.BTC_HEADER_SIZE, header.getBitcoinMergedMiningHeader().length, header.getPrintableHash());
+            return false;
+        }
+
+        return true;
     }
 }

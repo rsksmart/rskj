@@ -27,6 +27,7 @@ import org.ethereum.core.TransactionReceipt;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by ajlopez on 01/08/2016.
@@ -52,6 +53,28 @@ public class BlockResult {
     private final Trie finalState;
     private final short[] txEdges;
 
+    // Transactions that threw an unexpected exception during mining and must be evicted from the mempool.
+    private final List<Transaction> invalidTransactions;
+
+    public BlockResult(
+            Block block,
+            List<Transaction> executedTransactions,
+            List<TransactionReceipt> transactionReceipts,
+            short[] txEdges,
+            long gasUsed,
+            Coin paidFees,
+            Trie finalState,
+            List<Transaction> invalidTransactions) {
+        this.block = block;
+        this.executedTransactions = executedTransactions;
+        this.transactionReceipts = transactionReceipts;
+        this.gasUsed = gasUsed;
+        this.paidFees = paidFees;
+        this.finalState = finalState;
+        this.txEdges = txEdges != null ? Arrays.copyOf(txEdges, txEdges.length) : null;
+        this.invalidTransactions = Objects.requireNonNullElse(invalidTransactions, Collections.emptyList());
+    }
+
     public BlockResult(
             Block block,
             List<Transaction> executedTransactions,
@@ -60,13 +83,7 @@ public class BlockResult {
             long gasUsed,
             Coin paidFees,
             Trie finalState) {
-        this.block = block;
-        this.executedTransactions = executedTransactions;
-        this.transactionReceipts = transactionReceipts;
-        this.gasUsed = gasUsed;
-        this.paidFees = paidFees;
-        this.finalState = finalState;
-        this.txEdges = txEdges != null? Arrays.copyOf(txEdges, txEdges.length) : null;
+        this(block, executedTransactions, transactionReceipts, txEdges, gasUsed, paidFees, finalState, Collections.emptyList());
     }
     public Block getBlock() {
         return block;
@@ -90,5 +107,9 @@ public class BlockResult {
 
     public Trie getFinalState() {
         return this.finalState;
+    }
+
+    public List<Transaction> getInvalidTransactions() {
+        return invalidTransactions;
     }
 }

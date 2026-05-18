@@ -31,11 +31,11 @@ class HttpGetStableMinGasSystemConfigTest {
 
     @BeforeEach
     void setUp() {
-        Config testConfig = ConfigFactory.parseString(
-                "url=\"http://test.url\"\n" +
-                        "jsonPath=testPath\n" +
-                        "timeout=1000 milliseconds\n"
-        );
+        Config testConfig = ConfigFactory.parseString("""
+                url="http://test.url"
+                jsonPath=testPath
+                timeout=1000 milliseconds
+                """);
         config = new HttpGetStableMinGasSystemConfig(testConfig);
     }
 

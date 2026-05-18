@@ -141,7 +141,15 @@ public class BlockToMineBuilder {
         final Block newBlock = createBlock(mainchainHeaders, uncles, txs, minimumGasPrice, extraData);
 
         removePendingTransactions(txsToRemove);
-        return executor.executeAndFill(newBlock, newBlockParentHeader);
+        BlockResult result = executor.executeAndFill(newBlock, newBlockParentHeader);
+
+        List<Transaction> invalidTxs = result.getInvalidTransactions();
+        if (!invalidTxs.isEmpty()) {
+            logger.warn("Evicting {} invalid transaction(s) from pool after exception during block execution", invalidTxs.size());
+            removePendingTransactions(invalidTxs);
+        }
+
+        return result;
     }
 
     private List<BlockHeader> getUnclesHeaders(BlockHeader newBlockParentHeader) {
@@ -249,7 +257,7 @@ public class BlockToMineBuilder {
                 .setMinimumGasPrice(minimumGasPrice)
                 .setUncleCount(uncles.size())
                 .setUmmRoot(ummRoot)
-                .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
+                .setCreateParallelCompliantHeader(activationConfig.areActive(blockNumber, ConsensusRule.RSKIP351, ConsensusRule.RSKIP144))
                 .build();
 
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));

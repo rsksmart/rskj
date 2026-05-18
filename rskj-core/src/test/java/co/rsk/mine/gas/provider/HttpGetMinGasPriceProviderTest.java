@@ -21,6 +21,7 @@ import co.rsk.config.mining.HttpGetStableMinGasSystemConfig;
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
 import co.rsk.net.http.HttpException;
 import co.rsk.net.http.SimpleHttpClient;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -28,21 +29,37 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class HttpGetMinGasPriceProviderTest {
 
+    private final MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
+    private final SimpleHttpClient httpClient = mock(SimpleHttpClient.class);
+    private StableMinGasPriceSystemConfig config;
+
+    @BeforeEach
+    void setUp() {
+        reset(fallbackProvider, httpClient);
+        config = createStableMinGasPriceSystemConfig();
+    }
+
     @Test
     void returnsMappedPriceFromWebClient() throws HttpException {
-        MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
+        // given
         when(fallbackProvider.getType()).thenReturn(MinGasPriceProviderType.FIXED);
-
-        SimpleHttpClient httpClient = mock(SimpleHttpClient.class);
         when(httpClient.doGet(anyString())).thenReturn("{\"bitcoin\":{\"usd\":10000}}");
-        StableMinGasPriceSystemConfig config = createStableMinGasPriceSystemConfig();
+
+        // when
         HttpGetMinGasPriceProvider provider = new HttpGetMinGasPriceProvider(config, fallbackProvider, httpClient);
 
+        // then
         Optional<Long> result = provider.getBtcExchangeRate();
         verify(fallbackProvider, times(0)).getMinGasPrice();
         assertTrue(result.isPresent());
@@ -51,69 +68,66 @@ class HttpGetMinGasPriceProviderTest {
 
     @Test
     void whenRequestingTheValueTwiceCachedValueIsUsed() throws HttpException {
-        MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
+        // given
         when(fallbackProvider.getType()).thenReturn(MinGasPriceProviderType.FIXED);
-
-        SimpleHttpClient httpClient = mock(SimpleHttpClient.class);
         when(httpClient.doGet(anyString())).thenReturn("{\"bitcoin\":{\"usd\":10000}}");
-
-        StableMinGasPriceSystemConfig config = createStableMinGasPriceSystemConfig();
         HttpGetMinGasPriceProvider provider = spy(new HttpGetMinGasPriceProvider(config, fallbackProvider, httpClient));
 
+        // when
         // First call should fetch and cache the value
-        provider.getMinGasPrice();
-        // Second call should use the cached value
         provider.getMinGasPrice(true);
+        // Second call should use the cached value
+        provider.getMinGasPrice();
 
+        // then
         verify(httpClient, times(1)).doGet(anyString());
         verify(provider, times(2)).getMinGasPrice(anyBoolean());
     }
 
     @Test
     void whenEmptyResponseReturnsFallbackProvider() throws HttpException {
-        MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
+        // given
         when(fallbackProvider.getMinGasPrice()).thenReturn(10L);
         when(fallbackProvider.getType()).thenReturn(MinGasPriceProviderType.FIXED);
-
-        SimpleHttpClient httpClient = mock(SimpleHttpClient.class);
         when(httpClient.doGet(anyString())).thenReturn("");
-        StableMinGasPriceSystemConfig config = createStableMinGasPriceSystemConfig();
-        HttpGetMinGasPriceProvider provider = new HttpGetMinGasPriceProvider(config, fallbackProvider, httpClient);
 
+        // when
+        HttpGetMinGasPriceProvider provider = new HttpGetMinGasPriceProvider(config, fallbackProvider, httpClient);
         Long result = provider.getMinGasPrice(true);
+
+        // then
         verify(fallbackProvider, times(1)).getMinGasPrice();
         assertEquals(10L, result);
     }
 
     @Test
     void whenErrorReturnsFallbackProvider() throws HttpException {
-        MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
+        // given
         when(fallbackProvider.getMinGasPrice()).thenReturn(10L);
         when(fallbackProvider.getType()).thenReturn(MinGasPriceProviderType.FIXED);
-
-        SimpleHttpClient httpClient = mock(SimpleHttpClient.class);
         when(httpClient.doGet(anyString())).thenThrow(new HttpException("Error"));
-        StableMinGasPriceSystemConfig config = createStableMinGasPriceSystemConfig();
-        HttpGetMinGasPriceProvider provider = new HttpGetMinGasPriceProvider(config, fallbackProvider, httpClient);
 
+        // when
+        HttpGetMinGasPriceProvider provider = new HttpGetMinGasPriceProvider(config, fallbackProvider, httpClient);
         Long result = provider.getMinGasPrice(true);
+
+        // then
         verify(fallbackProvider, times(1)).getMinGasPrice();
         assertEquals(10L, result);
     }
 
     @Test
     void whenPathIsWrongReturnsFallBack() throws HttpException {
-        MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
+        // given
         when(fallbackProvider.getMinGasPrice()).thenReturn(10L);
         when(fallbackProvider.getType()).thenReturn(MinGasPriceProviderType.FIXED);
-
-        SimpleHttpClient httpClient = mock(SimpleHttpClient.class);
         when(httpClient.doGet(anyString())).thenReturn("{\"btc\":{\"usd\":10000}}");
-        StableMinGasPriceSystemConfig config = createStableMinGasPriceSystemConfig();
-        HttpGetMinGasPriceProvider provider = new HttpGetMinGasPriceProvider(config, fallbackProvider, httpClient);
 
+        // when
+        HttpGetMinGasPriceProvider provider = new HttpGetMinGasPriceProvider(config, fallbackProvider, httpClient);
         Long result = provider.getMinGasPrice(true);
 
+        // then
         verify(fallbackProvider, times(1)).getMinGasPrice();
         assertEquals(10L, result);
     }
@@ -124,6 +138,8 @@ class HttpGetMinGasPriceProviderTest {
         when(config.getHttpGetConfig()).thenReturn(webConfig);
         when(config.getMinStableGasPrice()).thenReturn(4265280000000L);
         when(config.getRefreshRate()).thenReturn(Duration.ofSeconds(30));
+        when(config.getMinValidPrice()).thenReturn(1000L);
+        when(config.getMaxValidPrice()).thenReturn(100000L);
         return config;
     }
 

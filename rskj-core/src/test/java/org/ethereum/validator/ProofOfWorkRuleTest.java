@@ -26,6 +26,7 @@ import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
+import co.rsk.mine.MinerServerImpl;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.ProofOfWorkRule;
@@ -33,10 +34,12 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -228,6 +231,124 @@ public abstract class ProofOfWorkRuleTest {
         Block block = new BlockMiner(config).mineBlock(newBlock, coinbaseTransaction);
         ProofOfWorkRule rule = new ProofOfWorkRule(props);
         Assertions.assertFalse(rule.isValid(block));
+    }
+
+    @Test
+    void test_fullBtcBlockAsHeader_rejectedByRskj() {
+        // We assume that RSKIP98 will be active, if not, we skip this test with this assumption
+        Assumptions.assumeTrue(activationConfig.isActive(ConsensusRule.RSKIP98, 1));
+        // given
+        BlockGenerator blockGenerator = new BlockGenerator(networkConstants, activationConfig);
+        Block block = blockGenerator.getBlock(1);
+
+        // Build a valid merge-mined BTC block (header + coinbase transaction)
+        byte[] mergedMiningLink = org.bouncycastle.util.Arrays.concatenate(
+                RskMiningConstants.RSK_TAG, block.getHashForMergedMining());
+        co.rsk.bitcoinj.core.NetworkParameters params = co.rsk.bitcoinj.params.RegTestParams.get();
+        co.rsk.bitcoinj.core.BtcTransaction coinbaseTx =
+                MinerUtils.getBitcoinCoinbaseTransaction(params, mergedMiningLink);
+        co.rsk.bitcoinj.core.BtcBlock btcBlock =
+                MinerUtils.getBitcoinMergedMiningBlock(params, coinbaseTx);
+
+        BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
+        new BlockMiner(activationConfig).findNonce(btcBlock, targetBI);
+
+        // BtcBlock.parse() always hashes only the first 80 bytes (cursor - offset after reading
+        // version + prevHash + merkleRoot + time + bits + nonce = 4+32+32+4+4+4 = 80).
+        byte[] headerOnly = btcBlock.cloneAsHeader().bitcoinSerialize();
+        byte[] fullBlock = btcBlock.bitcoinSerialize();
+
+        Assertions.assertEquals(80, headerOnly.length);
+        Assertions.assertTrue(fullBlock.length > 80,
+                "Full BTC block should be larger than 80 bytes, was: " + fullBlock.length);
+
+        co.rsk.bitcoinj.core.BtcBlock parsedFromHeader = params.getDefaultSerializer().makeBlock(headerOnly);
+        co.rsk.bitcoinj.core.BtcBlock parsedFromFull = params.getDefaultSerializer().makeBlock(fullBlock);
+
+        // bitcoinj hashes only the first 80 bytes, so PoW hash is identical regardless of payload size
+        Assertions.assertEquals(parsedFromHeader.getHash(), parsedFromFull.getHash(),
+                "PoW hash must be identical regardless of whether transactions are included");
+        Assertions.assertEquals(parsedFromHeader.getMerkleRoot(), parsedFromFull.getMerkleRoot(),
+                "Merkle root must be identical");
+
+        // hashForMergedMining uses getEncoded(false, false, true) which EXCLUDES merged mining fields.
+        byte[] hashForMergedMiningBefore = block.getHashForMergedMining();
+
+        // Normal mining uses cloneAsHeader().bitcoinSerialize() (80 bytes).
+        // Here we skip cloneAsHeader() and set the full BTC block (header + txs).
+        Block newBlock = blockFactory.cloneBlockForModification(block);
+        newBlock.setBitcoinMergedMiningHeader(fullBlock); // full BTC block, not header-only
+
+        byte[] merkleProof = MinerUtils.buildMerkleProof(
+                activationConfig,
+                pb -> pb.buildFromBlock(btcBlock),
+                newBlock.getNumber());
+        newBlock.setBitcoinMergedMiningMerkleProof(merkleProof);
+
+        coinbaseTx = btcBlock.getTransactions().get(0);
+        newBlock.setBitcoinMergedMiningCoinbaseTransaction(
+                MinerServerImpl.compressCoinbase(coinbaseTx.bitcoinSerialize()));
+
+        Assertions.assertArrayEquals(hashForMergedMiningBefore, newBlock.getHashForMergedMining(),
+                "hashForMergedMining must NOT change when BTC header is replaced with full block — " +
+                "it excludes merged mining fields (getEncoded(false, false, true))");
+
+        // ProofOfWorkRule enforces bitcoinMergedMiningHeader.length == 80
+        Assertions.assertFalse(rule.isValid(newBlock),
+                "RSKj must reject a full BTC block as the merged mining header");
+
+        // BlockFactory.decodeBlock() also rejects oversized BTC headers during deserialization,
+        // preventing malformed blocks from propagating through the P2P network.
+        byte[] encoded = newBlock.getEncoded();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> blockFactory.decodeBlock(encoded),
+                "BlockFactory must reject an oversized BTC header during deserialization");
+    }
+
+    @Test
+    void test_tamperedTxsIntoBtcHeaderAreRejected() {
+        // We assume that RSKIP98 will be active, if not, we skip this test with this assumption
+        Assumptions.assumeTrue(activationConfig.isActive(ConsensusRule.RSKIP98, 1));
+        // === Step 1: Honest miner produces a valid block ===
+        Block honestBlock = new BlockMiner(activationConfig)
+                .mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
+        assertTrue(rule.isValid(honestBlock), "Honest block must be valid");
+
+        // === Step 2: Honest block is RLP-encoded and sent over P2P ===
+        byte[] honestBlockRlp = honestBlock.getEncoded();
+
+        // === Step 3: Receives the RLP and decodes it ===
+        Block changedDecodedBlock = blockFactory.decodeBlock(honestBlockRlp);
+        byte[] originalBtcHeader = changedDecodedBlock.getBitcoinMergedMiningHeader();
+        Assertions.assertEquals(80, originalBtcHeader.length,
+                "Original block has the expected 80-byte BTC header");
+
+        // === Step 4: Attempt to appends BTC transaction data to the header ===
+        byte[] tamperedBtcHeader = org.bouncycastle.util.Arrays.concatenate(
+                originalBtcHeader, new byte[]{0x00});
+
+        // === Step 5: Attempt to constructs the tampered block ===
+        Block tamperedBlock = blockFactory.cloneBlockForModification(changedDecodedBlock);
+        tamperedBlock.setBitcoinMergedMiningHeader(tamperedBtcHeader);
+        tamperedBlock.setBitcoinMergedMiningCoinbaseTransaction(
+                changedDecodedBlock.getBitcoinMergedMiningCoinbaseTransaction());
+        tamperedBlock.setBitcoinMergedMiningMerkleProof(
+                changedDecodedBlock.getBitcoinMergedMiningMerkleProof());
+
+        // hashForMergedMining is unchanged — the PoW proof is still technically valid,
+        // but the size check now catches the tampered header before PoW is evaluated.
+        Assertions.assertArrayEquals(
+                honestBlock.getHeader().getHashForMergedMining(),
+                tamperedBlock.getHeader().getHashForMergedMining(),
+                "hashForMergedMining is identical — but size check catches the tamper before PoW evaluation");
+
+        // === Step 6: ProofOfWorkRule rejects the tampered block ===
+        Assertions.assertFalse(rule.isValid(tamperedBlock),
+                "ProofOfWorkRule must reject the tampered block with oversized BTC header");
+
+        // === Step 7: BlockFactory also rejects during deserialization ===
+        byte[] tamperedBlockRlp = tamperedBlock.getEncoded();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> blockFactory.decodeBlock(tamperedBlockRlp),
+                "BlockFactory must reject the tampered block during deserialization");
     }
 
     private Block mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(Block block, byte[] compressed) {
