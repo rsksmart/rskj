@@ -309,6 +309,68 @@ class ReleaseTransactionBuilderTest {
         }
 
         @Test
+        void buildSvpFundTransaction_whenNoSingleUtxoCoversTotalSpend_shouldCreateSvpFundTxSelectingMultipleInputs() {
+            // Arrange
+            Federation activeP2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder().build();
+            Address activeP2shP2wshErpFederationAddress = activeP2shP2wshErpFederation.getAddress();
+            Coin svpFundTxOutputsValue = BRIDGE_MAINNET_CONSTANTS.getSvpFundTxOutputsValue();
+            Coin totalSvpFundPaymentOutputsValue = svpFundTxOutputsValue.multiply(2);
+            int numberOfUtxos = 4;
+            List<UTXO> utxos = UTXOBuilder.builder()
+                .withScriptPubKey(activeP2shP2wshErpFederation.getP2SHScript())
+                .withValue(svpFundTxOutputsValue)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+            utxos.forEach(utxo -> assertTrue(
+                utxo.getValue().compareTo(totalSvpFundPaymentOutputsValue) < 0,
+                "Each UTXO should be insufficient on its own to fund both SVP payment outputs"
+            ));
+
+            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
+                activeP2shP2wshErpFederation,
+                utxos
+            );
+            Keccak256 proposedFlyoverPrefix = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
+
+            // Act
+            ReleaseTransactionBuilder.BuildResult buildResult = releaseTransactionBuilder.buildSvpFundTransaction(
+                p2shP2wshErpProposedFederation,
+                proposedFlyoverPrefix,
+                svpFundTxOutputsValue
+            );
+
+            // Assert
+            assertEquals(
+                SUCCESS,
+                buildResult.responseCode(),
+                "SVP fund transaction build should succeed when multiple UTXOs are required"
+            );
+
+            BtcTransaction svpFundTransaction = buildResult.btcTx();
+            List<UTXO> selectedUtxos = buildResult.selectedUTXOs();
+            assertTrue(
+                selectedUtxos.size() >= 2,
+                "SVP fund transaction should select multiple UTXOs when no single UTXO covers the total spend"
+            );
+            assertReleaseTxInputsP2shP2wshErp(
+                svpFundTransaction,
+                selectedUtxos.size(),
+                activeP2shP2wshErpFederation.getRedeemScript(),
+                utxos,
+                selectedUtxos
+            );
+            assertSuccessfulSvpFundTransaction(
+                svpFundTransaction,
+                svpFundTxOutputsValue,
+                p2shP2wshErpProposedFederation,
+                proposedFlyoverPrefix,
+                activeP2shP2wshErpFederationAddress,
+                selectedUtxos,
+                selectedUtxos
+            );
+        }
+
+        @Test
         void buildSvpFundTransaction_withAFederationWithoutUTXOs_shouldThrowInsufficientMoneyResponseCode() {
             // Arrange
             List<UTXO> emptyUtxos = Collections.emptyList();
