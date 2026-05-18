@@ -232,53 +232,79 @@ class ReleaseTransactionBuilderTest {
             );
 
             // Assert
-            ReleaseTransactionBuilder.Response actualResponseCode = svpFundTransactionUnsignedBuildResult.responseCode();
-            assertEquals(SUCCESS, actualResponseCode);
-
-            BtcTransaction svpFundTransactionUnsigned = svpFundTransactionUnsignedBuildResult.btcTx();
-            int numberOfOutputs = 3; // 1 for the federation, 1 for the flyover federation, and 1 for the change
-            assertEquals(numberOfOutputs, svpFundTransactionUnsigned.getOutputs().size());
-            TransactionOutput actualFirstOutput = svpFundTransactionUnsigned.getOutput(0);
-            assertEquals(svpFundTxOutputsValue, actualFirstOutput.getValue());
-            Address proposedFederationAddress = p2shP2wshErpProposedFederation.getAddress();
-            assertEquals(proposedFederationAddress, actualFirstOutput.getAddressFromP2SH(BTC_MAINNET_PARAMS));
-
-            TransactionOutput actualSecondOutput = svpFundTransactionUnsigned.getOutput(1);
-            assertEquals(svpFundTxOutputsValue, actualSecondOutput.getValue());
-
-            Address flyoverFederationAddress = PegUtils.getFlyoverFederationAddress(BTC_MAINNET_PARAMS, proposedFlyoverPrefix, p2shP2wshErpProposedFederation);
-            assertEquals(flyoverFederationAddress, actualSecondOutput.getAddressFromP2SH(BTC_MAINNET_PARAMS));
-
-            List<UTXO> selectedUTXOs = svpFundTransactionUnsignedBuildResult.selectedUTXOs();
-            List<UTXO> expectedSelectedUTXOs = List.of(utxos.get(0)); // First UTXO is enough to cover the svpFundTxOutputsValue
-            assertEquals(expectedSelectedUTXOs, selectedUTXOs);
-
-            Coin totalSvpFundPaymentOutputsValue = svpFundTxOutputsValue.multiply(2);
             assertEquals(
-                totalSvpFundPaymentOutputsValue,
-                actualFirstOutput.getValue().add(actualSecondOutput.getValue()),
-                "SVP fund payment outputs should keep their full value when recipientsPayFees is false"
+                SUCCESS,
+                svpFundTransactionUnsignedBuildResult.responseCode(),
+                "SVP fund transaction build should succeed when active federation has enough UTXOs"
             );
 
-            Coin inputTotal = svpFundTransactionUnsigned.getInputSum();
-            TransactionOutput changeOutput = svpFundTransactionUnsigned.getOutput(2);
-            assertEquals(
+            assertSuccessfulSvpFundTransaction(
+                svpFundTransactionUnsignedBuildResult.btcTx(),
+                svpFundTxOutputsValue,
+                p2shP2wshErpProposedFederation,
+                proposedFlyoverPrefix,
                 activeP2shErpFederationAddress,
-                changeOutput.getAddressFromP2SH(BTC_MAINNET_PARAMS),
-                "SVP fund change output should be sent back to the active federation address"
+                List.of(utxos.get(0)),
+                svpFundTransactionUnsignedBuildResult.selectedUTXOs()
+            );
+        }
+
+        @Test
+        void buildSvpFundTransaction_whenActiveFederationIsP2shP2wshErp_shouldSpendUtxosWithExpectedWitnessFormat() {
+            // Arrange
+            Federation activeP2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder().build();
+            Address activeP2shP2wshErpFederationAddress = activeP2shP2wshErpFederation.getAddress();
+            int numberOfUtxos = 2;
+            List<UTXO> utxos = UTXOBuilder.builder()
+                .withScriptPubKey(activeP2shP2wshErpFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
+                activeP2shP2wshErpFederation,
+                utxos
+            );
+            Keccak256 proposedFlyoverPrefix = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
+
+            // Act
+            Coin svpFundTxOutputsValue = BRIDGE_MAINNET_CONSTANTS.getSvpFundTxOutputsValue();
+            ReleaseTransactionBuilder.BuildResult buildResult = releaseTransactionBuilder.buildSvpFundTransaction(
+                p2shP2wshErpProposedFederation,
+                proposedFlyoverPrefix,
+                svpFundTxOutputsValue
             );
 
-            Coin fee = svpFundTransactionUnsigned.getFee();
-            Coin expectedChangeValue = inputTotal.subtract(totalSvpFundPaymentOutputsValue).subtract(fee);
+            // Assert
             assertEquals(
-                expectedChangeValue,
-                changeOutput.getValue(),
-                "SVP fund change output value should equal inputs minus payment outputs minus fee"
+                SUCCESS,
+                buildResult.responseCode(),
+                "SVP fund transaction build should succeed when active federation is P2shP2wshErp"
+            );
+
+            BtcTransaction svpFundTransaction = buildResult.btcTx();
+            assertEquals(
+                BTC_TX_VERSION_2,
+                svpFundTransaction.getVersion(),
+                "SVP fund transaction should use BTC version 2"
             );
             assertEquals(
-                inputTotal,
-                totalSvpFundPaymentOutputsValue.add(changeOutput.getValue()).add(fee),
-                "SVP fund transaction inputs should equal payment outputs plus change plus fee"
+                1,
+                svpFundTransaction.getInputs().size(),
+                "SVP fund transaction should select a single UTXO when one is sufficient"
+            );
+            assertReleaseTxInputsP2shP2wshErp(
+                svpFundTransaction,
+                1,
+                activeP2shP2wshErpFederation.getRedeemScript(),
+                utxos,
+                buildResult.selectedUTXOs()
+            );
+            assertSuccessfulSvpFundTransaction(
+                svpFundTransaction,
+                svpFundTxOutputsValue,
+                p2shP2wshErpProposedFederation,
+                proposedFlyoverPrefix,
+                activeP2shP2wshErpFederationAddress,
+                List.of(utxos.get(0)),
+                buildResult.selectedUTXOs()
             );
         }
 
@@ -398,10 +424,97 @@ class ReleaseTransactionBuilderTest {
             ));
         }
 
+        private void assertSuccessfulSvpFundTransaction(
+            BtcTransaction svpFundTransaction,
+            Coin svpFundTxOutputsValue,
+            Federation proposedFederation,
+            Keccak256 proposedFlyoverPrefix,
+            Address activeFederationAddress,
+            List<UTXO> expectedSelectedUtxos,
+            List<UTXO> selectedUtxos
+        ) {
+            int numberOfOutputs = 3; // 1 for the federation, 1 for the flyover federation, and 1 for the change
+            assertEquals(
+                numberOfOutputs,
+                svpFundTransaction.getOutputs().size(),
+                "SVP fund transaction should have two payment outputs and one change output"
+            );
+
+            TransactionOutput outputToProposedFederation = svpFundTransaction.getOutput(0);
+            assertEquals(
+                svpFundTxOutputsValue,
+                outputToProposedFederation.getValue(),
+                "SVP fund output to proposed federation should match configured value"
+            );
+            assertEquals(
+                proposedFederation.getAddress(),
+                outputToProposedFederation.getAddressFromP2SH(BTC_MAINNET_PARAMS),
+                "SVP fund first output should be sent to the proposed federation address"
+            );
+
+            TransactionOutput outputToFlyoverProposedFederation = svpFundTransaction.getOutput(1);
+            assertEquals(
+                svpFundTxOutputsValue,
+                outputToFlyoverProposedFederation.getValue(),
+                "SVP fund output to flyover proposed federation should match configured value"
+            );
+            Address flyoverFederationAddress = PegUtils.getFlyoverFederationAddress(
+                BTC_MAINNET_PARAMS,
+                proposedFlyoverPrefix,
+                proposedFederation
+            );
+            assertEquals(
+                flyoverFederationAddress,
+                outputToFlyoverProposedFederation.getAddressFromP2SH(BTC_MAINNET_PARAMS),
+                "SVP fund second output should be sent to the flyover proposed federation address"
+            );
+
+            assertEquals(
+                expectedSelectedUtxos,
+                selectedUtxos,
+                "SVP fund transaction should select the minimum sufficient UTXO set"
+            );
+
+            Coin totalSvpFundPaymentOutputsValue = svpFundTxOutputsValue.multiply(2);
+            assertEquals(
+                totalSvpFundPaymentOutputsValue,
+                outputToProposedFederation.getValue().add(outputToFlyoverProposedFederation.getValue()),
+                "SVP fund payment outputs should keep their full value when recipientsPayFees is false"
+            );
+
+            Coin inputTotal = svpFundTransaction.getInputSum();
+            TransactionOutput changeOutput = svpFundTransaction.getOutput(2);
+            assertEquals(
+                activeFederationAddress,
+                changeOutput.getAddressFromP2SH(BTC_MAINNET_PARAMS),
+                "SVP fund change output should be sent back to the active federation address"
+            );
+
+            Coin fee = svpFundTransaction.getFee();
+            Coin expectedChangeValue = inputTotal.subtract(totalSvpFundPaymentOutputsValue).subtract(fee);
+            assertEquals(
+                expectedChangeValue,
+                changeOutput.getValue(),
+                "SVP fund change output value should equal inputs minus payment outputs minus fee"
+            );
+            assertEquals(
+                inputTotal,
+                totalSvpFundPaymentOutputsValue.add(changeOutput.getValue()).add(fee),
+                "SVP fund transaction inputs should equal payment outputs plus change plus fee"
+            );
+        }
+
         private ReleaseTransactionBuilder getReleaseTransactionBuilderForMainnet(List<UTXO> utxos) {
+            return getReleaseTransactionBuilderForMainnet(activeP2shErpFederation, utxos);
+        }
+
+        private ReleaseTransactionBuilder getReleaseTransactionBuilderForMainnet(
+            Federation activeFederation,
+            List<UTXO> utxos
+        ) {
             Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
                 new Context(BTC_MAINNET_PARAMS),
-                activeP2shErpFederation,
+                activeFederation,
                 utxos,
                 false,
                 bridgeStorageProviderMock
@@ -410,8 +523,8 @@ class ReleaseTransactionBuilderTest {
             return new ReleaseTransactionBuilder(
                 BTC_MAINNET_PARAMS,
                 thisWallet,
-                activeP2shErpFederation.getFormatVersion(),
-                activeP2shErpFederationAddress,
+                activeFederation.getFormatVersion(),
+                activeFederation.getAddress(),
                 MOCK_FEE_PER_KB,
                 ALL_ACTIVATIONS
             );
