@@ -390,6 +390,36 @@ class ReleaseTransactionBuilderTest {
         }
 
         @Test
+        void buildSvpFundTransaction_withAFederationWith1DustUTXO_shouldThrowInsufficientMoneyResponseCode() {
+            // Arrange
+            Federation activeP2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder().build();
+            Coin dustUtxoValue = MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS.subtract(Coin.SATOSHI);
+
+            List<UTXO> utxos = List.of(
+                UTXOBuilder.builder()
+                    .withScriptPubKey(activeP2shP2wshErpFederation.getP2SHScript())
+                    .withValue(dustUtxoValue)
+                    .build()
+            );
+            ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
+                activeP2shP2wshErpFederation,
+                utxos
+            );
+            Coin svpFundTxOutputsValue = BRIDGE_MAINNET_CONSTANTS.getSvpFundTxOutputsValue();
+            Keccak256 proposedFlyoverPrefix = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
+
+            // Act
+            ReleaseTransactionBuilder.BuildResult buildResult = releaseTransactionBuilder.buildSvpFundTransaction(
+                p2shP2wshErpProposedFederation,
+                proposedFlyoverPrefix,
+                svpFundTxOutputsValue
+            );
+
+            // Assert
+            assertFailedBuildResult(INSUFFICIENT_MONEY, buildResult);
+        }
+
+        @Test
         void buildSvpFundTransaction_withDustValueAsSvpFundTxOutputsValue_shouldReturnDustySendRequestResponseCode() {
             // Arrange
             int numberOfUtxos = 2;
