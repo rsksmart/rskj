@@ -252,6 +252,34 @@ class ReleaseTransactionBuilderTest {
             List<UTXO> selectedUTXOs = svpFundTransactionUnsignedBuildResult.selectedUTXOs();
             List<UTXO> expectedSelectedUTXOs = List.of(utxos.get(0)); // First UTXO is enough to cover the svpFundTxOutputsValue
             assertEquals(expectedSelectedUTXOs, selectedUTXOs);
+
+            Coin totalSvpFundPaymentOutputsValue = svpFundTxOutputsValue.multiply(2);
+            assertEquals(
+                totalSvpFundPaymentOutputsValue,
+                actualFirstOutput.getValue().add(actualSecondOutput.getValue()),
+                "SVP fund payment outputs should keep their full value when recipientsPayFees is false"
+            );
+
+            Coin inputTotal = svpFundTransactionUnsigned.getInputSum();
+            TransactionOutput changeOutput = svpFundTransactionUnsigned.getOutput(2);
+            assertEquals(
+                activeP2shErpFederationAddress,
+                changeOutput.getAddressFromP2SH(BTC_MAINNET_PARAMS),
+                "SVP fund change output should be sent back to the active federation address"
+            );
+
+            Coin fee = svpFundTransactionUnsigned.getFee();
+            Coin expectedChangeValue = inputTotal.subtract(totalSvpFundPaymentOutputsValue).subtract(fee);
+            assertEquals(
+                expectedChangeValue,
+                changeOutput.getValue(),
+                "SVP fund change output value should equal inputs minus payment outputs minus fee"
+            );
+            assertEquals(
+                inputTotal,
+                totalSvpFundPaymentOutputsValue.add(changeOutput.getValue()).add(fee),
+                "SVP fund transaction inputs should equal payment outputs plus change plus fee"
+            );
         }
 
         @Test
