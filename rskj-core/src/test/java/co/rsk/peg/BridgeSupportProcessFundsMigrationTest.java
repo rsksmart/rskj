@@ -38,7 +38,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static co.rsk.peg.PegTestUtils.BTC_TX_LEGACY_VERSION;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
