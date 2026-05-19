@@ -531,12 +531,12 @@ class BridgeUtilsTest {
         }, true); // we need the priv keys
 
         BtcTransaction prevTx = new BtcTransaction(bridgeConstantsMainnet.getBtcParams());
-        prevTx.setVersion(ReleaseTransactionBuilder.BTC_TX_VERSION_2);
+        prevTx.setVersion(BTC_TX_VERSION_2);
         Coin prevValue = Coin.COIN;
         prevTx.addOutput(prevValue, federation.getAddress());
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
-        tx.setVersion(ReleaseTransactionBuilder.BTC_TX_VERSION_2);
+        tx.setVersion(BTC_TX_VERSION_2);
         tx.addInput(prevTx.getOutput(0));
 
         int inputIndex = 0;
