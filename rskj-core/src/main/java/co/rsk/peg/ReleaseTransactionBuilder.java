@@ -19,6 +19,8 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_1;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -35,7 +37,6 @@ import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationFormatVersion;
 import java.util.List;
@@ -143,7 +144,7 @@ public class ReleaseTransactionBuilder {
     public BuildResult buildMigrationTransaction(Coin migrationValue, Address destinationAddress) {
         return buildWithConfiguration((SendRequest sr) -> {
             if (!activations.isActive(ConsensusRule.RSKIP376)){
-                sr.tx.setVersion(BitcoinUtils.BTC_TX_VERSION_1);
+                sr.tx.setVersion(BTC_TX_VERSION_1);
             }
             sr.tx.addOutput(migrationValue, destinationAddress);
             sr.changeAddress = destinationAddress;
@@ -207,7 +208,7 @@ public class ReleaseTransactionBuilder {
         // Build a tx and send request and configure it
         BtcTransaction btcTx = new BtcTransaction(params);
         if (activations.isActive(ConsensusRule.RSKIP201)) {
-            btcTx.setVersion(BitcoinUtils.BTC_TX_VERSION_2);
+            btcTx.setVersion(BTC_TX_VERSION_2);
         }
 
         return btcTx;
