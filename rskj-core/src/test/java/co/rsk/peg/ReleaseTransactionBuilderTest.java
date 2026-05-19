@@ -215,13 +215,6 @@ class ReleaseTransactionBuilderTest {
         private final Coin svpFundTxOutputsValue = BRIDGE_MAINNET_CONSTANTS.getSvpFundTxOutputsValue();
         private final Coin totalSvpFundPaymentOutputsValue = svpFundTxOutputsValue.multiply(2);
 
-        private BridgeStorageProvider bridgeStorageProviderMock;
-
-        @BeforeEach
-        void setup() {
-            bridgeStorageProviderMock = mock(BridgeStorageProvider.class);
-        }
-
         @Test
         void buildSvpFundTransaction_withAFederationWithEnoughUTXOsForTheSvpFundTransaction_shouldReturnACorrectSvpFundTx() {
             // Arrange
@@ -231,15 +224,10 @@ class ReleaseTransactionBuilderTest {
             ReleaseTransactionBuilder.BuildResult buildResult = buildSvpFundTransaction(activeP2shErpFederation, utxos);
 
             // Assert
-            assertBuildSvpFundTransactionSucceeded(
-                buildResult,
-                "SVP fund transaction build should succeed when active federation has enough UTXOs"
-            );
             assertSuccessfulSvpFundTransaction(
-                buildResult.btcTx(),
+                buildResult,
                 activeP2shErpFederationAddress,
-                List.of(utxos.get(0)),
-                buildResult.selectedUTXOs()
+                List.of(utxos.get(0))
             );
         }
 
@@ -252,32 +240,19 @@ class ReleaseTransactionBuilderTest {
             ReleaseTransactionBuilder.BuildResult buildResult = buildSvpFundTransaction(activeP2shP2wshErpFederation, utxos);
 
             // Assert
-            assertBuildSvpFundTransactionSucceeded(
+            assertSuccessfulSvpFundTransaction(
                 buildResult,
-                "SVP fund transaction build should succeed when active federation is P2shP2wshErp"
+                activeP2shP2wshErpFederationAddress,
+                List.of(utxos.get(0))
             );
+
             BtcTransaction svpFundTransaction = buildResult.btcTx();
-            assertEquals(
-                BTC_TX_VERSION_2,
-                svpFundTransaction.getVersion(),
-                "SVP fund transaction should use BTC version 2"
-            );
-            assertEquals(
-                1,
-                svpFundTransaction.getInputs().size(),
-                "SVP fund transaction should select a single UTXO when one is sufficient"
-            );
+
             assertReleaseTxInputsP2shP2wshErp(
                 svpFundTransaction,
                 1,
                 activeP2shP2wshErpFederation.getRedeemScript(),
                 utxos,
-                buildResult.selectedUTXOs()
-            );
-            assertSuccessfulSvpFundTransaction(
-                svpFundTransaction,
-                activeP2shP2wshErpFederationAddress,
-                List.of(utxos.get(0)),
                 buildResult.selectedUTXOs()
             );
         }
@@ -295,27 +270,22 @@ class ReleaseTransactionBuilderTest {
             ReleaseTransactionBuilder.BuildResult buildResult = buildSvpFundTransaction(activeP2shP2wshErpFederation, utxos);
 
             // Assert
-            assertBuildSvpFundTransactionSucceeded(
+            List<UTXO> expectedSelectedUtxos = utxos.subList(0, 3);
+
+            assertSuccessfulSvpFundTransaction(
                 buildResult,
-                "SVP fund transaction build should succeed when multiple UTXOs are required"
+                activeP2shP2wshErpFederationAddress,
+                expectedSelectedUtxos
             );
-            BtcTransaction svpFundTransaction = buildResult.btcTx();
+
             List<UTXO> selectedUtxos = buildResult.selectedUTXOs();
-            assertTrue(
-                selectedUtxos.size() >= 2,
-                "SVP fund transaction should select multiple UTXOs when no single UTXO covers the total spend"
-            );
+
+            BtcTransaction svpFundTransaction = buildResult.btcTx();
             assertReleaseTxInputsP2shP2wshErp(
                 svpFundTransaction,
-                selectedUtxos.size(),
+                expectedSelectedUtxos.size(),
                 activeP2shP2wshErpFederation.getRedeemScript(),
                 utxos,
-                selectedUtxos
-            );
-            assertSuccessfulSvpFundTransaction(
-                svpFundTransaction,
-                activeP2shP2wshErpFederationAddress,
-                selectedUtxos,
                 selectedUtxos
             );
         }
@@ -461,13 +431,6 @@ class ReleaseTransactionBuilderTest {
                 .buildSvpFundTransaction(p2shP2wshErpProposedFederation, proposedFlyoverPrefix, outputsValue);
         }
 
-        private void assertBuildSvpFundTransactionSucceeded(
-            ReleaseTransactionBuilder.BuildResult buildResult,
-            String message
-        ) {
-            assertEquals(SUCCESS, buildResult.responseCode(), message);
-        }
-
         private void assertSvpFundTransactionPaymentOutputs(BtcTransaction svpFundTransaction) {
             TransactionOutput outputToProposedFederation = svpFundTransaction.getOutput(0);
             assertEquals(
@@ -531,17 +494,22 @@ class ReleaseTransactionBuilderTest {
         }
 
         private void assertSuccessfulSvpFundTransaction(
-            BtcTransaction svpFundTransaction,
+            BuildResult buildResult,
             Address activeFederationAddress,
-            List<UTXO> expectedSelectedUtxos,
-            List<UTXO> selectedUtxos
+            List<UTXO> expectedSelectedUtxos
         ) {
+            assertEquals(SUCCESS, buildResult.responseCode());
+
+            BtcTransaction svpFundTransaction = buildResult.btcTx();
+            assertBtcTxVersionIs2(svpFundTransaction);
             assertEquals(
                 3,
                 svpFundTransaction.getOutputs().size(),
                 "SVP fund transaction should have two payment outputs and one change output"
             );
             assertSvpFundTransactionPaymentOutputs(svpFundTransaction);
+
+            List<UTXO> selectedUtxos = buildResult.selectedUTXOs();
             assertEquals(
                 expectedSelectedUtxos,
                 selectedUtxos,
@@ -559,7 +527,7 @@ class ReleaseTransactionBuilderTest {
                 activeFederation,
                 utxos,
                 false,
-                bridgeStorageProviderMock
+                mock(BridgeStorageProvider.class)
             );
 
             return new ReleaseTransactionBuilder(
