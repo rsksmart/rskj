@@ -70,6 +70,13 @@ public class ReleaseTransactionBuilder {
     private final Coin feePerKb;
     private final ActivationConfig.ForBlock activations;
 
+    private final SendRequestConfigurator defaultSettingsConfigurator = (SendRequest sr) -> {
+        sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
+        sr.feePerKb = getFeePerKb();
+        sr.shuffleOutputs = false;
+        sr.recipientsPayFees = true;
+    };
+
     /**
      * Creates a release transaction builder.
      *
@@ -241,13 +248,6 @@ public class ReleaseTransactionBuilder {
             addSpendingFederationBaseScript(tx, i, redeemScript, federationFormatVersion);
         }
     }
-
-    private final SendRequestConfigurator defaultSettingsConfigurator = (SendRequest sr) -> {
-        sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
-        sr.feePerKb = getFeePerKb();
-        sr.shuffleOutputs = false;
-        sr.recipientsPayFees = true;
-    };
 
     public enum Response {
         SUCCESS,
