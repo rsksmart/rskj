@@ -20,7 +20,7 @@ package co.rsk.peg;
 import static co.rsk.peg.BridgeUtils.calculatePegoutTxSize;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.PegUtils.*;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static java.util.Objects.isNull;

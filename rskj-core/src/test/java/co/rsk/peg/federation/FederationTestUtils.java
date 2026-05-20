@@ -19,7 +19,7 @@
 package co.rsk.peg.federation;
 
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
