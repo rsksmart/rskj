@@ -210,8 +210,14 @@ public class BridgeStorageProvider {
             return pegoutsWaitingForConfirmations;
         }
 
-        Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>(getFromRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS,
-                data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters).getEntries()));
+        var fromRepo = getFromRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS,
+                data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters).getEntries());
+
+        // This is a standart code for `new HashSet<>(entries);` in Java 17
+        // Coefficients were changed in Java 21
+        // Need to hardcode Java 17 init params here to preserve old behaviour in Java 21+
+        var entries = new HashSet<PegoutsWaitingForConfirmations.Entry>(Math.max((int) (fromRepo.size()/.75f) + 1, 16));
+        entries.addAll(fromRepo);
 
         if (!activations.isActive(RSKIP146)) {
             pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
