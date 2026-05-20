@@ -186,7 +186,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
         Entry pegoutWaitingForConfirmationEntry = pegoutsWaitingForConfirmations.getEntries().stream().findFirst().get();
-        BtcTransaction refundPegout = pegoutWaitingForConfirmationEntry.getBtcTransaction();
+        BtcTransaction refundPegout = pegoutWaitingForConfirmationEntry.btcTransaction();
         Sha256Hash refundPegoutHash = refundPegout.getHash();
         List<Coin> refundPegoutOutpointValues = extractOutpointValues(refundPegout);
 

@@ -2149,7 +2149,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::btcTransaction)
             .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
             .toList();
 
@@ -2336,7 +2336,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::btcTransaction)
             .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
             .toList();
 
@@ -2651,7 +2651,7 @@ class BridgeSupportTest {
         // Should have been logged with the migrated UTXO
         verify(bridgeEventLogger).logReleaseBtcRequested(
             tx.getHash().getBytes(),
-            entry.getBtcTransaction(),
+            entry.btcTransaction(),
             Coin.COIN
         );
     }
@@ -2786,7 +2786,7 @@ class BridgeSupportTest {
         // Should have been logged with the migrated UTXO
         verify(bridgeEventLogger).logReleaseBtcRequested(
             tx.getHash().getBytes(),
-            entry.getBtcTransaction(),
+            entry.btcTransaction(),
             Coin.COIN
         );
     }
@@ -3300,8 +3300,8 @@ class BridgeSupportTest {
 
         // If all outputs are sent to the active fed then it's the migration tx; if not, it's the peg-out batch
         for (PegoutsWaitingForConfirmations.Entry entry : pegoutsWaitingForConfirmations.getEntries()) {
-            List<TransactionOutput> walletOutputs = entry.getBtcTransaction().getWalletOutputs(newFedWallet);
-            if (walletOutputs.size() == entry.getBtcTransaction().getOutputs().size()) {
+            List<TransactionOutput> walletOutputs = entry.btcTransaction().getWalletOutputs(newFedWallet);
+            if (walletOutputs.size() == entry.btcTransaction().getOutputs().size()) {
                 migrationTx = entry;
             } else {
                 pegoutBatchTx = entry;
@@ -3309,7 +3309,7 @@ class BridgeSupportTest {
         }
 
         // Assert the two added pegouts have the same pegoutCreationRskTxHash
-        assertEquals(migrationTx.getPegoutCreationRskTxHash(), pegoutBatchTx.getPegoutCreationRskTxHash());
+        assertEquals(migrationTx.pegoutCreationRskTxHash(), pegoutBatchTx.pegoutCreationRskTxHash());
 
         // Assert no pegouts were moved to pegoutsWaitingForSignatures
         assertEquals(0, pegoutWaitingForSignatures.size());
@@ -3385,7 +3385,7 @@ class BridgeSupportTest {
 
         assertEquals(0, pegoutsWaitingForConfirmations.getEntries().size());
         assertEquals(1, pegoutWaitingForSignatures.size());
-        assertEquals(unconfirmedEntry.getBtcTransaction(), pegoutWaitingForSignatures.get(pegoutWaitingForSignatures.firstKey()));
+        assertEquals(unconfirmedEntry.btcTransaction(), pegoutWaitingForSignatures.get(pegoutWaitingForSignatures.firstKey()));
     }
 
     @ParameterizedTest
@@ -3904,7 +3904,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::btcTransaction)
             .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
             .toList();
 
@@ -4304,7 +4304,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::btcTransaction)
             .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
             .toList();
 
@@ -4496,7 +4496,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::btcTransaction)
             .toList();
 
         // First release tx should correspond to the 5 BTC lock tx
@@ -4696,7 +4696,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::btcTransaction)
             .toList();
 
         // First release tx should correspond to the 5 BTC lock tx
@@ -5635,7 +5635,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::btcTransaction)
             .toList();
 
         // First release tx should correspond to the 5 BTC lock tx
@@ -7323,7 +7323,7 @@ class BridgeSupportTest {
         // Check rejection tx input was created from btc tx and sent to the btc refund address indicated by the user
         boolean successfulRejection = false;
         for (PegoutsWaitingForConfirmations.Entry e : pegoutsWaitingForConfirmations.getEntries()) {
-            BtcTransaction refundTx = e.getBtcTransaction();
+            BtcTransaction refundTx = e.btcTransaction();
             if (refundTx.getInput(0).getOutpoint().getHash() == btcTx.getHash() &&
                 refundTx.getOutput(0).getScriptPubKey().getToAddress(btcRegTestParams).equals(btcSenderAddress)) {
                 successfulRejection = true;
@@ -7997,7 +7997,7 @@ class BridgeSupportTest {
         // Check rejection tx input was created from btc tx
         boolean successfulRejection = false;
         for (PegoutsWaitingForConfirmations.Entry e : pegoutsWaitingForConfirmations.getEntries()) {
-            if (e.getBtcTransaction().getInput(0).getOutpoint().getHash() == btcTx.getHash()) {
+            if (e.btcTransaction().getInput(0).getOutpoint().getHash() == btcTx.getHash()) {
                 successfulRejection = true;
                 break;
             }
@@ -8515,7 +8515,7 @@ class BridgeSupportTest {
         }
 
         pegoutsWaitingForConfirmations.getEntries().forEach(e -> {
-            Integer inputsSize = e.getBtcTransaction().getInputs().size();
+            Integer inputsSize = e.btcTransaction().getInputs().size();
             expectedInputSizes.remove(inputsSize);
         });
 
@@ -8776,7 +8776,7 @@ class BridgeSupportTest {
             // Check rejection tx input was created from btc tx and sent to the btc refund address indicated by the user
             boolean successfulRejection = false;
             for (PegoutsWaitingForConfirmations.Entry e : pegoutsWaitingForConfirmations.getEntries()) {
-                BtcTransaction refundTx = e.getBtcTransaction();
+                BtcTransaction refundTx = e.btcTransaction();
                 if (refundTx.getInput(0).getOutpoint().getHash() == btcTx.getHash() &&
                     refundTx.getOutput(0).getScriptPubKey().getToAddress(btcRegTestParams).equals(btcRefundAddress.get())) {
                     successfulRejection = true;
@@ -8992,7 +8992,7 @@ class BridgeSupportTest {
 
         if (!shouldLock) {
             // Release tx should have been created directly to the signatures stack
-            BtcTransaction pegoutBtcTx = provider.getPegoutsWaitingForConfirmations().getEntries().iterator().next().getBtcTransaction();
+            BtcTransaction pegoutBtcTx = provider.getPegoutsWaitingForConfirmations().getEntries().iterator().next().btcTransaction();
             assertNotNull(pegoutBtcTx);
             // returns the funds to the sender
             assertEquals(1, pegoutBtcTx.getOutputs().size());

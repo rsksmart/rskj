@@ -393,7 +393,7 @@ class FederationChangeIT {
         var pegoutsTxs =
             bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().stream().toList();
         assertEquals(1, pegoutsTxs.size());
-        var svpFundTx = new BtcTransaction(NETWORK_PARAMS, pegoutsTxs.get(0).getBtcTransaction().bitcoinSerialize());
+        var svpFundTx = new BtcTransaction(NETWORK_PARAMS, pegoutsTxs.get(0).btcTransaction().bitcoinSerialize());
 
         int neededSignatures = federationSupport.getActiveFederationThreshold();
         signInputs(svpFundTx, ORIGINAL_FEDERATION_MEMBERS_KEYS.subList(0, neededSignatures));
@@ -934,7 +934,7 @@ class FederationChangeIT {
     private void assertPegoutTransactionCreatedEventWasEmitted() throws Exception {
         var pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
             .getEntries().stream()
-            .map(Entry::getBtcTransaction)
+            .map(Entry::btcTransaction)
             .toList();
 
         assertEquals(1, pegoutsTxs.size());
@@ -963,8 +963,8 @@ class FederationChangeIT {
         
         assertEquals(1, pegoutsTxs.size());
 
-        var releaseCreationTxHash = pegoutsTxs.get(0).getPegoutCreationRskTxHash();
-        var btcTx = pegoutsTxs.get(0).getBtcTransaction();
+        var releaseCreationTxHash = pegoutsTxs.get(0).pegoutCreationRskTxHash();
+        var btcTx = pegoutsTxs.get(0).btcTransaction();
         var amount = btcTx.getFee().add(btcTx.getOutputSum());
         assertLogReleaseRequested(releaseCreationTxHash, btcTx.getHash(), amount);
     }
@@ -1012,7 +1012,7 @@ class FederationChangeIT {
             FEDERATION_CONSTANTS, ACTIVATIONS);
 
         for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries()) {
-            var pegoutBtcTransaction = pegoutEntry.getBtcTransaction();
+            var pegoutBtcTransaction = pegoutEntry.btcTransaction();
 
             List<TransactionInput> inputs = pegoutBtcTransaction.getInputs();
             for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
@@ -1059,7 +1059,7 @@ class FederationChangeIT {
     private void assertPegoutTxSigHashesAreSaved() throws IOException {
         var pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
             .getEntries().stream()
-            .map(Entry::getBtcTransaction)
+            .map(Entry::btcTransaction)
             .toList();
 
         for (var pegoutTx : pegoutsTxs) {

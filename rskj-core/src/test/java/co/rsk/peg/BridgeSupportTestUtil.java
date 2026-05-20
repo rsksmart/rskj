@@ -145,7 +145,7 @@ public final class BridgeSupportTestUtil {
         Iterator<PegoutsWaitingForConfirmations.Entry> iterator = pegoutsWFCEntries.iterator();
         PegoutsWaitingForConfirmations.Entry pegoutEntry = iterator.next();
 
-        return pegoutEntry.getBtcTransaction();
+        return pegoutEntry.btcTransaction();
     }
 
     public static boolean shouldMarkRejectedPeginAsProcessed(ActivationConfig.ForBlock activations) {
@@ -240,9 +240,9 @@ public final class BridgeSupportTestUtil {
     public static void assertPegoutWasAddedToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, Sha256Hash pegoutTransactionHash, Keccak256 releaseCreationTxHash, long executionBlock) {
         var pegoutEntries = pegoutsWaitingForConfirmations.getEntries();
         Optional<PegoutsWaitingForConfirmations.Entry> pegoutEntry = pegoutEntries.stream()
-            .filter(entry -> entry.getBtcTransaction().getHash().equals(pegoutTransactionHash) &&
-                entry.getPegoutCreationRskBlockNumber().equals(executionBlock) &&
-                entry.getPegoutCreationRskTxHash().equals(releaseCreationTxHash))
+            .filter(entry -> entry.btcTransaction().getHash().equals(pegoutTransactionHash) &&
+                entry.pegoutCreationRskBlockNumber().equals(executionBlock) &&
+                entry.pegoutCreationRskTxHash().equals(releaseCreationTxHash))
             .findFirst();
         assertTrue(pegoutEntry.isPresent());
     }

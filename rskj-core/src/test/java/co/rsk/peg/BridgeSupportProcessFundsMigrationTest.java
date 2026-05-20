@@ -211,14 +211,14 @@ class BridgeSupportProcessFundsMigrationTest {
                 .toArray()[0];
             verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
                 updateCollectionsTx.getHash().getBytes(),
-                entry.getBtcTransaction(),
+                entry.btcTransaction(),
                 Coin.COIN
             );
 
             if (activations.isActive(ConsensusRule.RSKIP376)){
-                assertEquals(BTC_TX_VERSION_2, entry.getBtcTransaction().getVersion());
+                assertEquals(BTC_TX_VERSION_2, entry.btcTransaction().getVersion());
             } else {
-                assertEquals(BTC_TX_LEGACY_VERSION, entry.getBtcTransaction().getVersion());
+                assertEquals(BTC_TX_LEGACY_VERSION, entry.btcTransaction().getVersion());
             }
         } else {
             verify(bridgeEventLogger, never()).logReleaseBtcRequested(

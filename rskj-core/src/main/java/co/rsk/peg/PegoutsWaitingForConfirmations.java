@@ -25,6 +25,7 @@ import com.google.common.primitives.UnsignedBytes;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -47,15 +48,15 @@ public class PegoutsWaitingForConfirmations {
         this.entries = new EntriesStore(entries);
     }
 
-    public Collection<Entry> getEntriesWithoutHash() {
-        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() == null).toList();
+    public List<Entry> getEntriesWithoutHash() {
+        return entries.entriesSet.stream().filter(e -> e.pegoutCreationRskTxHash() == null).toList();
     }
 
-    public Collection<Entry> getEntriesWithHash() {
-        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() != null).toList();
+    public List<Entry> getEntriesWithHash() {
+        return entries.entriesSet.stream().filter(e -> e.pegoutCreationRskTxHash() != null).toList();
     }
 
-    public Collection<Entry> getEntries() {
+    public List<Entry> getEntries() {
         return entries.entriesSet.stream().toList();
     }
 
@@ -89,17 +90,12 @@ public class PegoutsWaitingForConfirmations {
     /**
      * Encapsulate entries while preserving sorting order before fork.
      */
-    public static class EntriesStore {
+    private static class EntriesStore {
 
         // From java SDK
         private static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
         private final HashSet<Entry> entriesSet;
-
-        public EntriesStore() {
-            // this must be equal to new HashSet() call in Java 17
-            this.entriesSet = new HashSet<>(0, DEFAULT_LOAD_FACTOR);
-        }
 
         public EntriesStore(Collection<Entry> entries) {
             // This is a standard code for `new HashSet<>(entries);` in Java 17
@@ -110,7 +106,7 @@ public class PegoutsWaitingForConfirmations {
         }
 
         private boolean hasEnoughConfirmations(Entry entry, Long currentBlockNumber, Integer minimumConfirmations) {
-            return (currentBlockNumber - entry.getPegoutCreationRskBlockNumber()) >= minimumConfirmations;
+            return (currentBlockNumber - entry.pegoutCreationRskBlockNumber()) >= minimumConfirmations;
         }
 
         /**
@@ -125,7 +121,7 @@ public class PegoutsWaitingForConfirmations {
         }
 
         public void addEntry(Entry entry) {
-            if (this.entriesSet.stream().noneMatch(e -> e.getBtcTransaction().equals(entry.getBtcTransaction()))) {
+            if (this.entriesSet.stream().noneMatch(e -> e.btcTransaction().equals(entry.btcTransaction()))) {
                 this.entriesSet.add(entry);
             }
         }
@@ -134,46 +130,27 @@ public class PegoutsWaitingForConfirmations {
             return this.entriesSet.remove(entry);
         }
     }
-    public static class Entry {
 
-        private final BtcTransaction btcTransaction;
-
-        private final Long pegoutCreationRskBlockNumber;
-
-        private final Keccak256 pegoutCreationRskTxHash;
-
+    public record Entry(
+        BtcTransaction btcTransaction,
+        Long pegoutCreationRskBlockNumber,
+        Keccak256 pegoutCreationRskTxHash
+    ) {
         /**
          * Compares entries using the lexicographical order of the btc tx's serialized bytes.
          */
-        public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<Entry>() {
-            private Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
+        public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<>() {
+            private final Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
 
             @Override
             public int compare(Entry e1, Entry e2) {
-                return comparator.compare(e1.getBtcTransaction().bitcoinSerialize(), e2.getBtcTransaction().bitcoinSerialize());
+                return comparator.compare(e1.btcTransaction().bitcoinSerialize(),
+                    e2.btcTransaction().bitcoinSerialize());
             }
         };
 
-        public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber, Keccak256 pegoutCreationRskTxHash) {
-            this.btcTransaction = btcTransaction;
-            this.pegoutCreationRskBlockNumber = pegoutCreationRskBlockNumber;
-            this.pegoutCreationRskTxHash = pegoutCreationRskTxHash;
-        }
-
         public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber) {
             this(btcTransaction, pegoutCreationRskBlockNumber, null);
-        }
-
-        public BtcTransaction getBtcTransaction() {
-            return btcTransaction;
-        }
-
-        public Long getPegoutCreationRskBlockNumber() {
-            return pegoutCreationRskBlockNumber;
-        }
-
-        public Keccak256 getPegoutCreationRskTxHash() {
-            return pegoutCreationRskTxHash;
         }
 
         @Override
@@ -183,15 +160,17 @@ public class PegoutsWaitingForConfirmations {
             }
 
             Entry otherEntry = (Entry) o;
-            return otherEntry.getBtcTransaction().equals(getBtcTransaction()) &&
-                otherEntry.getPegoutCreationRskBlockNumber().equals(getPegoutCreationRskBlockNumber()) &&
-                (otherEntry.getPegoutCreationRskTxHash() == null && getPegoutCreationRskTxHash() == null ||
-                 otherEntry.getPegoutCreationRskTxHash() != null && otherEntry.getPegoutCreationRskTxHash().equals(getPegoutCreationRskTxHash()));
+            return otherEntry.btcTransaction().equals(btcTransaction()) &&
+                otherEntry.pegoutCreationRskBlockNumber().equals(pegoutCreationRskBlockNumber()) &&
+                (otherEntry.pegoutCreationRskTxHash() == null && pegoutCreationRskTxHash() == null
+                    ||
+                    otherEntry.pegoutCreationRskTxHash() != null
+                        && otherEntry.pegoutCreationRskTxHash().equals(pegoutCreationRskTxHash()));
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(getBtcTransaction(), getPegoutCreationRskBlockNumber());
+            return Objects.hash(btcTransaction(), pegoutCreationRskBlockNumber());
         }
     }
 }

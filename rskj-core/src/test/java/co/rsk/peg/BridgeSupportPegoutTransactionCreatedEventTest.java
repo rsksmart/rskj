@@ -124,7 +124,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
 
         PegoutsWaitingForConfirmations.Entry pegoutEntry = pegoutsWaitingForConfirmations.getEntries().stream().findFirst().get();
-        BtcTransaction pegoutBatchTransaction = pegoutEntry.getBtcTransaction();
+        BtcTransaction pegoutBatchTransaction = pegoutEntry.btcTransaction();
         Sha256Hash pegoutTxHash = pegoutBatchTransaction.getHash();
         List<Coin> outpointValues = extractOutpointValues(pegoutBatchTransaction);
         List<Keccak256> pegoutRequestRskTxHashes = pegoutRequests.stream().map(Entry::getRskTxHash).collect(Collectors.toList());
@@ -207,7 +207,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
             findFirst().
             get();
 
-        BtcTransaction migrationTransaction = pegoutEntry.getBtcTransaction();
+        BtcTransaction migrationTransaction = pegoutEntry.btcTransaction();
         Sha256Hash btcTxHash = migrationTransaction.getHash();
 
         List<Coin> outpointValues = extractOutpointValues(migrationTransaction);
@@ -305,8 +305,8 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
         // If all outputs are sent to the active fed then it's the migration tx; if not, it's the peg-out batch
         for (PegoutsWaitingForConfirmations.Entry entry : pegoutsWaitingForConfirmations.getEntries()) {
-            List<TransactionOutput> walletOutputs = entry.getBtcTransaction().getWalletOutputs(fedWallet);
-            if (walletOutputs.size() == entry.getBtcTransaction().getOutputs().size()){
+            List<TransactionOutput> walletOutputs = entry.btcTransaction().getWalletOutputs(fedWallet);
+            if (walletOutputs.size() == entry.btcTransaction().getOutputs().size()){
                 migrationEntry = Optional.of(entry);
             } else {
                 pegoutEntry = Optional.of(entry);
@@ -315,8 +315,8 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         assertTrue(migrationEntry.isPresent());
         assertTrue(pegoutEntry.isPresent());
 
-        BtcTransaction pegoutBatchTx = pegoutEntry.get().getBtcTransaction();
-        Keccak256 pegoutBatchCreationRskTxHash = pegoutEntry.get().getPegoutCreationRskTxHash();
+        BtcTransaction pegoutBatchTx = pegoutEntry.get().btcTransaction();
+        Keccak256 pegoutBatchCreationRskTxHash = pegoutEntry.get().pegoutCreationRskTxHash();
         Sha256Hash pegoutBatchBtcTxHash = pegoutBatchTx.getHash();
 
         Coin pegoutBatchTotalAmount = pegoutRequests.stream().map(Entry::getAmount).reduce(Coin.ZERO, Coin::add);
@@ -327,8 +327,8 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         verify(eventLogger, times(1)).logBatchPegoutCreated(pegoutBatchBtcTxHash, pegoutRequestRskTxHashes);
         verify(eventLogger, times(1)).logReleaseBtcRequested(pegoutBatchCreationRskTxHash.getBytes(), pegoutBatchTx, pegoutBatchTotalAmount);
 
-        Keccak256 migrationCreationRskTxHash = migrationEntry.get().getPegoutCreationRskTxHash();
-        BtcTransaction migrationTx = migrationEntry.get().getBtcTransaction();
+        Keccak256 migrationCreationRskTxHash = migrationEntry.get().pegoutCreationRskTxHash();
+        BtcTransaction migrationTx = migrationEntry.get().btcTransaction();
         Sha256Hash migrationTxHash = migrationTx.getHash();
 
         List<Coin> migrationTxOutpointValues = extractOutpointValues(migrationTx);

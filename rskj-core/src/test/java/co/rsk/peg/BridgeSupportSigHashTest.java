@@ -106,7 +106,7 @@ class BridgeSupportSigHashTest {
 
         if (activations.isActive(ConsensusRule.RSKIP379)){
             PegoutsWaitingForConfirmations.Entry pegoutBatchTx = pegoutsWaitingForConfirmations.getEntries().stream().findFirst().get();
-            Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(pegoutBatchTx.getBtcTransaction());
+            Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(pegoutBatchTx.btcTransaction());
             assertTrue(firstInputSigHash.isPresent());
             verify(provider, times(1)).setPegoutTxSigHash(firstInputSigHash.get());
         } else {
@@ -188,7 +188,7 @@ class BridgeSupportSigHashTest {
                 stream().
                 findFirst().
                 get();
-            Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(migrationTx.getBtcTransaction());
+            Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(migrationTx.btcTransaction());
             assertTrue(firstInputSigHash.isPresent());
             verify(provider, times(1)).setPegoutTxSigHash(firstInputSigHash.get());
         } else {
@@ -285,8 +285,8 @@ class BridgeSupportSigHashTest {
 
             // If all outputs are sent to the active fed then it's the migration tx; if not, it's the peg-out batch
             for (PegoutsWaitingForConfirmations.Entry entry : pegoutsWaitingForConfirmations.getEntries()) {
-                List<TransactionOutput> walletOutputs = entry.getBtcTransaction().getWalletOutputs(newFedWallet);
-                if (walletOutputs.size() == entry.getBtcTransaction().getOutputs().size()){
+                List<TransactionOutput> walletOutputs = entry.btcTransaction().getWalletOutputs(newFedWallet);
+                if (walletOutputs.size() == entry.btcTransaction().getOutputs().size()){
                     migrationTx = Optional.of(entry);
                 } else {
                     pegoutBatchTx = Optional.of(entry);
@@ -295,11 +295,11 @@ class BridgeSupportSigHashTest {
             assertTrue(migrationTx.isPresent());
             assertTrue(pegoutBatchTx.isPresent());
 
-            Optional<Sha256Hash> migrationTxSigHash = BitcoinUtils.getSigHashForPegoutIndex(migrationTx.get().getBtcTransaction());
+            Optional<Sha256Hash> migrationTxSigHash = BitcoinUtils.getSigHashForPegoutIndex(migrationTx.get().btcTransaction());
             assertTrue(migrationTxSigHash.isPresent());
             verify(provider, times(1)).setPegoutTxSigHash(migrationTxSigHash.get());
 
-            Optional<Sha256Hash> pegoutBatchTxSigHash = BitcoinUtils.getSigHashForPegoutIndex(pegoutBatchTx.get().getBtcTransaction());
+            Optional<Sha256Hash> pegoutBatchTxSigHash = BitcoinUtils.getSigHashForPegoutIndex(pegoutBatchTx.get().btcTransaction());
             assertTrue(pegoutBatchTxSigHash.isPresent());
             verify(provider, times(1)).setPegoutTxSigHash(pegoutBatchTxSigHash.get());
         } else {

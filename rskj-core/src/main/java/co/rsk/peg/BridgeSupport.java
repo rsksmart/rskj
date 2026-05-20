@@ -1613,23 +1613,23 @@ public class BridgeSupport {
             checkIfEntryExistsInPegoutsWaitingForSignatures(txWaitingForSignatureKey, pegoutsWaitingForSignatures);
         }
 
-        pegoutsWaitingForSignatures.put(txWaitingForSignatureKey, confirmedPegout.getBtcTransaction());
+        pegoutsWaitingForSignatures.put(txWaitingForSignatureKey, confirmedPegout.btcTransaction());
         pegoutsWaitingForConfirmations.removeEntry(confirmedPegout);
 
         if(activations.isActive(ConsensusRule.RSKIP326)) {
-            eventLogger.logPegoutConfirmed(confirmedPegout.getBtcTransaction().getHash(), confirmedPegout.getPegoutCreationRskBlockNumber());
+            eventLogger.logPegoutConfirmed(confirmedPegout.btcTransaction().getHash(), confirmedPegout.pegoutCreationRskBlockNumber());
         }
     }
 
     private Keccak256 getPegoutWaitingForSignatureKey(Transaction rskTx, PegoutsWaitingForConfirmations.Entry confirmedPegout) {
         if (activations.isActive(ConsensusRule.RSKIP375)){
-            return confirmedPegout.getPegoutCreationRskTxHash();
+            return confirmedPegout.pegoutCreationRskTxHash();
         }
         // Since RSKIP176 we are moving back to using the updateCollections related txHash as the set key
         if (activations.isActive(ConsensusRule.RSKIP146) && !activations.isActive(ConsensusRule.RSKIP176)) {
             // The pegout waiting for confirmations may have been created prior to the Consensus Rule activation
             // therefore it won't have a rskTxHash value, fallback to this transaction's hash
-            return confirmedPegout.getPegoutCreationRskTxHash() == null ? rskTx.getHash() : confirmedPegout.getPegoutCreationRskTxHash();
+            return confirmedPegout.pegoutCreationRskTxHash() == null ? rskTx.getHash() : confirmedPegout.pegoutCreationRskTxHash();
         }
         return rskTx.getHash();
     }

@@ -674,7 +674,7 @@ public class BridgeSupportIT {
         assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
         assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
         // Check value sent to user is 10 BTC minus fee
-        assertEquals(Coin.valueOf(999962800L), provider.getPegoutsWaitingForConfirmations().getEntries().iterator().next().getBtcTransaction().getOutput(0).getValue());
+        assertEquals(Coin.valueOf(999962800L), provider.getPegoutsWaitingForConfirmations().getEntries().iterator().next().btcTransaction().getOutput(0).getValue());
         // Check the wallet has been emptied
         assertTrue(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).isEmpty());
     }

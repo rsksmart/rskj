@@ -85,8 +85,8 @@ class PegoutsWaitingForConfirmationsTest {
     void entryGetters() {
         PegoutsWaitingForConfirmations.Entry entry = new PegoutsWaitingForConfirmations.Entry(createTransaction(5, Coin.valueOf(100)), 7L);
 
-        Assertions.assertEquals(createTransaction(5, Coin.valueOf(100)), entry.getBtcTransaction());
-        Assertions.assertEquals(7L, entry.getPegoutCreationRskBlockNumber().longValue());
+        Assertions.assertEquals(createTransaction(5, Coin.valueOf(100)), entry.btcTransaction());
+        Assertions.assertEquals(7L, entry.pegoutCreationRskBlockNumber().longValue());
     }
 
     @Test
@@ -143,7 +143,7 @@ class PegoutsWaitingForConfirmationsTest {
     void add_existing() {
         var tx = createTransaction(2, Coin.valueOf(150));
         Assertions.assertTrue(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(tx, 32L)));
-        Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getBtcTransaction().equals(createTransaction(2, Coin.valueOf(150)))).count());
+        Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.btcTransaction().equals(createTransaction(2, Coin.valueOf(150)))).count());
 
         set.add(new PegoutsWaitingForConfirmations.Entry(tx, 23L));
         Assertions.assertTrue(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(tx, 32L)));
@@ -152,7 +152,7 @@ class PegoutsWaitingForConfirmationsTest {
         set.add(new PegoutsWaitingForConfirmations.Entry(tx, 23L));
         Assertions.assertEquals(set.getEntries().size(), size);
         Assertions.assertFalse(set.getEntries().contains(new PegoutsWaitingForConfirmations.Entry(tx, 23L)));
-        Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getBtcTransaction().equals(tx)).count());
+        Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.btcTransaction().equals(tx)).count());
     }
 
     @Test
@@ -197,7 +197,7 @@ class PegoutsWaitingForConfirmationsTest {
         Assertions.assertTrue(result.isPresent());
 
         var entry = result.get();
-        var hash = entry.getBtcTransaction().getHash().toString();
+        var hash = entry.btcTransaction().getHash().toString();
 
         Assertions.assertEquals(
             "53efc6f78eb9d159cfee76ec45bcffb08fd11f85c762e1eacf54e5c014da219d",
@@ -216,7 +216,7 @@ class PegoutsWaitingForConfirmationsTest {
         Assertions.assertTrue(result.isPresent());
 
         var entry = result.get();
-        var hash = entry.getBtcTransaction().getHash().toString();
+        var hash = entry.btcTransaction().getHash().toString();
 
         Assertions.assertEquals(
             "fdd781c46b5ad7993b3f133e3af94b2e3cbcc8d19e443dfc6b555a1b0bac1527",
