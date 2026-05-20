@@ -16,7 +16,6 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.peg.BridgeUtils;
-import co.rsk.peg.ReleaseTransactionBuilder;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
@@ -582,12 +581,12 @@ class BitcoinUtilsTest {
 
         private void setUp(Federation federation) {
             BtcTransaction prevTx = new BtcTransaction(btcMainnetParams);
-            prevTx.setVersion(ReleaseTransactionBuilder.BTC_TX_VERSION_2);
+            prevTx.setVersion(BTC_TX_VERSION_2);
             Coin prevValue = Coin.COIN;
             prevTx.addOutput(prevValue, federation.getAddress());
 
             tx = new BtcTransaction(btcMainnetParams);
-            tx.setVersion(ReleaseTransactionBuilder.BTC_TX_VERSION_2);
+            tx.setVersion(BTC_TX_VERSION_2);
             tx.addInput(prevTx.getOutput(0));
 
             addSpendingFederationBaseScript(tx, inputIndex, federation.getRedeemScript(), federation.getFormatVersion());

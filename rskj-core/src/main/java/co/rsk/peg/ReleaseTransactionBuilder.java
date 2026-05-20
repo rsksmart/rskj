@@ -18,7 +18,20 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_1;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.InsufficientMoneyException;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.UTXOProviderException;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.SendRequest;
@@ -26,30 +39,22 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationFormatVersion;
+import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-
-import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
-import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Given a set of UTXOs, a ReleaseTransactionBuilder
  * knows how to build a release transaction
- * of a certain amount to a certain address,
+ * of a certain amount to a certain address
  * and how to signal the used UTXOs so they
  * can be invalidated.
  *
  * @author Ariel Mendelzon
  */
 public class ReleaseTransactionBuilder {
-
-    public static final int BTC_TX_VERSION_1 = 1;
-    public static final int BTC_TX_VERSION_2 = 2;
 
     public record BuildResult(BtcTransaction btcTx, List<UTXO> selectedUTXOs, Response responseCode) {}
 
@@ -65,6 +70,13 @@ public class ReleaseTransactionBuilder {
     private final Address changeAddress;
     private final Coin feePerKb;
     private final ActivationConfig.ForBlock activations;
+
+    private final SendRequestConfigurator defaultSettingsConfigurator = (SendRequest sr) -> {
+        sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
+        sr.feePerKb = getFeePerKb();
+        sr.shuffleOutputs = false;
+        sr.recipientsPayFees = true;
+    };
 
     /**
      * Creates a release transaction builder.
@@ -237,13 +249,6 @@ public class ReleaseTransactionBuilder {
             addSpendingFederationBaseScript(tx, i, redeemScript, federationFormatVersion);
         }
     }
-
-    private final SendRequestConfigurator defaultSettingsConfigurator = (SendRequest sr) -> {
-        sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
-        sr.feePerKb = getFeePerKb();
-        sr.shuffleOutputs = false;
-        sr.recipientsPayFees = true;
-    };
 
     public enum Response {
         SUCCESS,
