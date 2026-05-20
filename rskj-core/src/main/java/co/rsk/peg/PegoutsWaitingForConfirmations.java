@@ -24,7 +24,8 @@ import com.google.common.primitives.UnsignedBytes;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * Representation of a queue of BTC release
  * transactions waiting for confirmations
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public class PegoutsWaitingForConfirmations {
+private static final Logger logger = LoggerFactory.getLogger(PegoutsWaitingForConfirmations.class);
     public static class Entry {
         // Compares entries using the lexicographical order of the btc tx's serialized bytes
         public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<Entry>() {
@@ -91,8 +93,9 @@ public class PegoutsWaitingForConfirmations {
         // This is a standart code for `new HashSet<>(entries);` in Java 17
         // Coefficients were changed in Java 21
         // Need to hardcode Java 17 init params here to preserve old behaviour in Java 21+
-        this.entries = new HashSet<>(Math.max((int) (entries.size()/.75f) + 1, 16));
-        this.entries.addAll(entries);
+        // this.entries = new HashSet<>(Math.max((int) (entries.size()/.75f) + 1, 16));
+        // this.entries.addAll(entries);
+        this.entries = new HashSet<>(entries);
     }
 
     public Set<Entry> getEntriesWithoutHash() {
@@ -129,6 +132,7 @@ public class PegoutsWaitingForConfirmations {
      * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
      */
     public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations) {
+        logger.warn("PEGOUT block: {} from entities count: {}", currentBlockNumber, entries.size()); 
         return entries.stream().filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations)).findFirst();
     }
 
