@@ -43,6 +43,9 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
         RLPList rlpExtension = RLP.decodeList(encoded);
         byte[] logsBloom = rlpExtension.get(0).getRLPData();
         byte[] baseEvent = rlpExtension.get(1).getRLPData();
+        if (baseEvent == null) {
+            baseEvent = EMPTY_BYTE_ARRAY;
+        }
 
         return new BlockHeaderExtensionV2(
                 logsBloom,

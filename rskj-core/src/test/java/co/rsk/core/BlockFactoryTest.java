@@ -879,6 +879,106 @@ class BlockFactoryTest {
         assertArrayEquals(baseEvent, decodedHeader.getBaseEvent());
     }
 
+    @Test
+    void blockWithEmptyBaseEventSurvivesBackwardSyncStoreAndReload() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP92, RSKIPUMM, RSKIP351, RSKIP535, RSKIP144);
+        when(activationConfig.areActive(number, RSKIP351, RSKIP144)).thenReturn(true);
+        when(activationConfig.getHeaderVersion(anyLong())).thenCallRealMethod();
+
+        byte[] baseEvent = new byte[0];
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withBaseEvent(baseEvent)
+                .withEdges(edges)
+                .withUmmRoot(ummRoot)
+                .withMergedMining()
+                .build();
+
+        // Simulate the backward body sync path: decode the extension separately
+        // (as DownloadingBackwardsBodiesSyncState does when setting extension from body response)
+        byte[] extensionEncoded = header.getExtension().getEncoded();
+        header.setExtension(org.ethereum.core.BlockHeaderExtensionV2.fromEncoded(extensionEncoded));
+
+        // Re-encode the block (as IndexedBlockStore.saveBlock does via block.getEncoded())
+        byte[] storedBytes = header.getFullEncoded();
+
+        // Verify the stored header can be decoded back (as IndexedBlockStore.getBlock does)
+        BlockHeader reloadedHeader = factory.decodeHeader(storedBytes, false);
+
+        assertThat(header.getHash(), is(reloadedHeader.getHash()));
+        assertThat(reloadedHeader.getVersion(), is((byte) 0x2));
+        assertArrayEquals(edges, reloadedHeader.getTxExecutionSublistsEdges());
+        assertArrayEquals(ummRoot, reloadedHeader.getUmmRoot());
+    }
+
+    @Test
+    void blockWithEmptyBaseEventSurvivesBackwardSyncStoreAndReloadNoMining() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP92, RSKIPUMM, RSKIP351, RSKIP535, RSKIP144);
+        when(activationConfig.areActive(number, RSKIP351, RSKIP144)).thenReturn(true);
+        when(activationConfig.getHeaderVersion(anyLong())).thenCallRealMethod();
+
+        byte[] baseEvent = new byte[0];
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withBaseEvent(baseEvent)
+                .withEdges(edges)
+                .withUmmRoot(ummRoot)
+                .build();
+
+        // Simulate the backward body sync path
+        byte[] extensionEncoded = header.getExtension().getEncoded();
+        header.setExtension(org.ethereum.core.BlockHeaderExtensionV2.fromEncoded(extensionEncoded));
+
+        byte[] storedBytes = header.getEncoded();
+
+        BlockHeader reloadedHeader = factory.decodeHeader(storedBytes, false);
+
+        assertThat(header.getHash(), is(reloadedHeader.getHash()));
+        assertThat(reloadedHeader.getVersion(), is((byte) 0x2));
+        assertArrayEquals(edges, reloadedHeader.getTxExecutionSublistsEdges());
+        assertArrayEquals(ummRoot, reloadedHeader.getUmmRoot());
+    }
+
+    @Test
+    void blockStoredWithMissingBaseEventCanBeDecoded() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP92, RSKIPUMM, RSKIP351, RSKIP535, RSKIP144);
+        when(activationConfig.areActive(number, RSKIP351, RSKIP144)).thenReturn(true);
+        when(activationConfig.getHeaderVersion(anyLong())).thenCallRealMethod();
+
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+
+        // Build a header with baseEvent set, then null it on the extension to
+        // simulate the encoding bug where baseEvent was lost during storage
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withBaseEvent(new byte[]{0x01, 0x02})
+                .withEdges(edges)
+                .withUmmRoot(ummRoot)
+                .withMergedMining()
+                .build();
+
+        // Nullify baseEvent directly on the extension to simulate the bug
+        ((org.ethereum.core.BlockHeaderExtensionV2) header.getExtension()).setBaseEvent(null);
+
+        // Encoding now produces 22 elements (missing baseEvent)
+        byte[] storedBytes = header.getFullEncoded();
+        RLPList storedRLP = RLP.decodeList(storedBytes);
+        assertThat(storedRLP.size(), is(22));
+
+        // Verify decoding succeeds with backward compatibility
+        BlockHeader decodedHeader = factory.decodeHeader(storedBytes, false);
+        assertThat(decodedHeader.getVersion(), is((byte) 0x2));
+        assertArrayEquals(edges, decodedHeader.getTxExecutionSublistsEdges());
+        assertArrayEquals(ummRoot, decodedHeader.getUmmRoot());
+    }
+
     @ParameterizedTest(name = "btcHeaderSize={0}, shouldSucceed={1} — {2}")
     @MethodSource("btcHeaderSizeValidationArgs")
     void decodeHeaderValidatesBtcHeaderSize(int btcHeaderSize, boolean shouldSucceed, String description) {
