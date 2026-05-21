@@ -74,6 +74,8 @@ class BridgeSerializationUtilsTest {
     private static final Address ADDRESS = BitcoinTestUtils.createP2PKHAddress(MAINNET_PARAMETERS, "first");
     private static final Address OTHER_ADDRESS = BitcoinTestUtils.createP2PKHAddress(MAINNET_PARAMETERS, "second");
 
+    private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
+
     private static Stream<Arguments> validRskAddressesProvider() {
         return Stream.of(
             Arguments.of(TestUtils.generateAddress("address1")),
@@ -1235,8 +1237,8 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void deserializeTransactionSet_emptyOrNull() {
-        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(null, TESTNET_PARAMETERS).getEntries().size());
-        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(new byte[]{}, TESTNET_PARAMETERS).getEntries().size());
+        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(null, TESTNET_PARAMETERS).getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(new byte[]{}, TESTNET_PARAMETERS).getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -1272,7 +1274,7 @@ class BridgeSerializationUtilsTest {
 
         PegoutsWaitingForConfirmations result = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, params);
 
-        var entries = result.getEntries();
+        var entries = result.getEntries(ACTIVATIONS_ALL);
 
         assertEquals(expectedEntries, new HashSet<>(entries));
     }

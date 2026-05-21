@@ -27,6 +27,7 @@ import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -37,6 +38,8 @@ import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 
 public final class BridgeSupportTestUtil {
+    private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
+
     public static PartialMerkleTree createValidPmtForTransactions(List<BtcTransaction> btcTransactions, NetworkParameters networkParameters) {
         List<Sha256Hash> hashesToAdd = new ArrayList<>();
         for (BtcTransaction transaction : btcTransactions) {
@@ -141,7 +144,7 @@ public final class BridgeSupportTestUtil {
     public static BtcTransaction getReleaseFromPegoutsWFC(BridgeStorageProvider bridgeStorageProvider) throws IOException {
         // we assume that the only present release is the expected one
         PegoutsWaitingForConfirmations pegoutsWFC = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
-        var pegoutsWFCEntries = pegoutsWFC.getEntries();
+        var pegoutsWFCEntries = pegoutsWFC.getEntries(ACTIVATIONS_ALL);
         Iterator<PegoutsWaitingForConfirmations.Entry> iterator = pegoutsWFCEntries.iterator();
         PegoutsWaitingForConfirmations.Entry pegoutEntry = iterator.next();
 
@@ -238,7 +241,7 @@ public final class BridgeSupportTestUtil {
     }
 
     public static void assertPegoutWasAddedToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, Sha256Hash pegoutTransactionHash, Keccak256 releaseCreationTxHash, long executionBlock) {
-        var pegoutEntries = pegoutsWaitingForConfirmations.getEntries();
+        var pegoutEntries = pegoutsWaitingForConfirmations.getEntries(ACTIVATIONS_ALL);
         Optional<PegoutsWaitingForConfirmations.Entry> pegoutEntry = pegoutEntries.stream()
             .filter(entry -> entry.getBtcTransaction().getHash().equals(pegoutTransactionHash) &&
                 entry.getPegoutCreationRskBlockNumber().equals(executionBlock) &&

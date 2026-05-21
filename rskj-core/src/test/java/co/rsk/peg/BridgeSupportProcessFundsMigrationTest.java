@@ -194,8 +194,8 @@ class BridgeSupportProcessFundsMigrationTest {
         updateCollectionsTx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(updateCollectionsTx);
 
-        assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 0 : 1, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());
-        assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 1 : 0, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
+        assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 0 : 1, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHashOrdered().size());
+        assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 1 : 0, provider.getPegoutsWaitingForConfirmations().getEntriesWithHashOrdered().size());
 
         assertTrue(sufficientUTXOsForMigration.isEmpty());
         if (inMigrationAge){
@@ -207,7 +207,7 @@ class BridgeSupportProcessFundsMigrationTest {
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             // Should have been logged with the migrated UTXO
             PegoutsWaitingForConfirmations.Entry entry = (PegoutsWaitingForConfirmations.Entry) provider.getPegoutsWaitingForConfirmations()
-                .getEntriesWithHash()
+                .getEntriesWithHashOrdered()
                 .toArray()[0];
             verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
                 updateCollectionsTx.getHash().getBytes(),

@@ -391,7 +391,7 @@ class FederationChangeIT {
 
     private void registerSignedSvpFundTx() throws Exception {
         var pegoutsTxs =
-            bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().stream().toList();
+            bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS).stream().toList();
         assertEquals(1, pegoutsTxs.size());
         var svpFundTx = new BtcTransaction(NETWORK_PARAMS, pegoutsTxs.get(0).getBtcTransaction().bitcoinSerialize());
 
@@ -898,13 +898,13 @@ class FederationChangeIT {
         assertTrue(currentBlock.getNumber() <= blockNumber);
 
         // Pegouts waiting for confirmations should be empty
-        assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().isEmpty());
+        assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS).isEmpty());
     }
      
     private void assertMigrationHasStarted() throws Exception {
         // Pegouts waiting for confirmations should not be empty
         // Expecting only one element since the retiring federation had less than 50 UTXOs
-        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS).size());
     }
 
     private void assertOnlyActiveFedIsLive(Federation newFederation) {
@@ -933,7 +933,7 @@ class FederationChangeIT {
 
     private void assertPegoutTransactionCreatedEventWasEmitted() throws Exception {
         var pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
-            .getEntries().stream()
+            .getEntries(ACTIVATIONS).stream()
             .map(Entry::getBtcTransaction)
             .toList();
 
@@ -958,7 +958,7 @@ class FederationChangeIT {
 
     private void assertReleaseBtcRequestedEventEventWasEmitted() throws Exception {
         var pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
-            .getEntries().stream()
+            .getEntries(ACTIVATIONS).stream()
             .toList();
         
         assertEquals(1, pegoutsTxs.size());
@@ -1011,7 +1011,7 @@ class FederationChangeIT {
         var retiringFederation = federationStorageProvider.getOldFederation(
             FEDERATION_CONSTANTS, ACTIVATIONS);
 
-        for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries()) {
+        for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS)) {
             var pegoutBtcTransaction = pegoutEntry.getBtcTransaction();
 
             List<TransactionInput> inputs = pegoutBtcTransaction.getInputs();
@@ -1058,7 +1058,7 @@ class FederationChangeIT {
 
     private void assertPegoutTxSigHashesAreSaved() throws IOException {
         var pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
-            .getEntries().stream()
+            .getEntries(ACTIVATIONS).stream()
             .map(Entry::getBtcTransaction)
             .toList();
 

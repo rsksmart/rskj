@@ -289,7 +289,7 @@ class BridgeIT {
         //Reusing same storage configuration as the height doesn't affect storage configurations for releases.
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, regtestParameters, activationConfigAll);
 
-        assertEquals(3, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(3, provider.getPegoutsWaitingForConfirmations().getEntries(activationConfigAll).size());
         assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
     }
 
@@ -348,7 +348,7 @@ class BridgeIT {
         // reusing same storage configuration as the height doesn't affect storage configurations for releases.
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, regtestParameters, activationConfigAll);
 
-        assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries(activationConfigAll).size());
         assertEquals(1, provider.getPegoutsWaitingForSignatures().size());
     }
 

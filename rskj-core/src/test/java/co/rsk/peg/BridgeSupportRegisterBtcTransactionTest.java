@@ -184,8 +184,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         assertTrue(activeFederationUtxos.isEmpty());
         assertTrue(retiringFederationUtxos.isEmpty());
 
-        assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
-        Entry pegoutWaitingForConfirmationEntry = pegoutsWaitingForConfirmations.getEntries().stream().findFirst().get();
+        assertEquals(1, pegoutsWaitingForConfirmations.getEntries(activations).size());
+        Entry pegoutWaitingForConfirmationEntry = pegoutsWaitingForConfirmations.getEntries(activations).stream().findFirst().get();
         BtcTransaction refundPegout = pegoutWaitingForConfirmationEntry.getBtcTransaction();
         Sha256Hash refundPegoutHash = refundPegout.getHash();
         List<Coin> refundPegoutOutpointValues = extractOutpointValues(refundPegout);
@@ -221,7 +221,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         assertTrue(activeFederationUtxos.isEmpty());
         assertTrue(retiringFederationUtxos.isEmpty());
-        assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
+        assertTrue(pegoutsWaitingForConfirmations.getEntries(allActivations).isEmpty());
     }
 
     // After arrowhead600Activations is activated
@@ -243,7 +243,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         Assertions.assertTrue(activeFederationUtxos.isEmpty());
         Assertions.assertTrue(retiringFederationUtxos.isEmpty());
-        Assertions.assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
+        Assertions.assertTrue(pegoutsWaitingForConfirmations.getEntries(activations).isEmpty());
     }
 
     private void assertInvalidPeginV1UndeterminedSenderIsRejected(BtcTransaction btcTransaction,
@@ -265,7 +265,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         assertTrue(activeFederationUtxos.isEmpty());
         assertTrue(retiringFederationUtxos.isEmpty());
-        assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
+        assertTrue(pegoutsWaitingForConfirmations.getEntries(activations).isEmpty());
     }
 
     private void assertInvalidPeginMarkedAsProcessed(ActivationConfig.ForBlock activations) throws IOException {
@@ -1836,7 +1836,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     private void assertRefundWasCreated() throws IOException {
-        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(allActivations).size());
     }
 
     private void assertPeginWasNotProcessed(Sha256Hash peginTxHash) throws IOException {
@@ -1846,7 +1846,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     private void assertRefundWasNotCreated() throws IOException {
-        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(allActivations).size());
     }
 
     private void assertTransactionWasNotProcessed(Sha256Hash transactionHash) throws IOException {
@@ -2210,7 +2210,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         private void assertRejectedPeginWasNotRefunded(BtcTransaction rejectedPegin) throws IOException {
-            assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
+            assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(allActivations).size());
 
             assertLogRejectedPegin(logs, rejectedPegin, LEGACY_PEGIN_MULTISIG_SENDER);
             assertLogNonRefundablePegin(logs, rejectedPegin, OUTPUTS_SENT_TO_DIFFERENT_TYPES_OF_FEDS);
@@ -3497,7 +3497,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 any(BtcTransaction.class),
                 eq(Coin.COIN)
             );
-            assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
+            assertEquals(1, pegoutsWaitingForConfirmations.getEntries(activations).size());
             assertTrue(activeFederationUtxos.isEmpty());
         } else {
             verify(bridgeEventLogger, never()).logRejectedPegin(

@@ -25,6 +25,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.PegoutsWaitingForConfirmations.EntriesStore;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import java.io.IOException;
@@ -210,8 +211,9 @@ public class BridgeStorageProvider {
             return pegoutsWaitingForConfirmations;
         }
 
-        Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>(getFromRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS,
-                data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters).getEntries()));
+        var entriesDeser = getFromRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS,
+                data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters).getEntries(activations));
+        var entries = EntriesStore.setOfEntries(entriesDeser);
 
         if (!activations.isActive(RSKIP146)) {
             pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
@@ -220,7 +222,7 @@ public class BridgeStorageProvider {
 
         entries.addAll(getFromRepository(
             PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY,
-            data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, true).getEntries()));
+            data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, true).getEntries(activations)));
 
         pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
 

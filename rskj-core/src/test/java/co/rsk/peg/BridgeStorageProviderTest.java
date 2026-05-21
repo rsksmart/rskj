@@ -92,7 +92,7 @@ class BridgeStorageProviderTest {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
 
         Assertions.assertNotNull(pegoutsWaitingForConfirmations);
-        Assertions.assertEquals(0, pegoutsWaitingForConfirmations.getEntries().size());
+        Assertions.assertEquals(0, pegoutsWaitingForConfirmations.getEntries(activationsAllForks).size());
 
         SortedMap<Keccak256, BtcTransaction> signatures = bridgeStorageProvider.getPegoutsWaitingForSignatures();
 
@@ -1768,8 +1768,8 @@ class BridgeStorageProviderTest {
 
         verify(repositoryMock, never()).getStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY.getKey()));
 
-        Assertions.assertEquals(1, result.getEntries().size());
-        Assertions.assertTrue(result.getEntries().containsAll(oldEntriesSet));
+        Assertions.assertEquals(1, result.getEntries(activationsAllForks).size());
+        Assertions.assertTrue(result.getEntries(activationsAllForks).containsAll(oldEntriesSet));
     }
 
     @Test
@@ -1804,7 +1804,7 @@ class BridgeStorageProviderTest {
 
         PegoutsWaitingForConfirmations result = storageProvider.getPegoutsWaitingForConfirmations();
 
-        assertEquals(2, result.getEntries().size());
+        assertEquals(2, result.getEntries(activations).size());
     }
 
     @Test
@@ -1822,7 +1822,7 @@ class BridgeStorageProviderTest {
         pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(testnetBtcParams), 1L));
 
         doAnswer(i -> {
-            var entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams).getEntries();
+            var entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams).getEntries(activationsAllForks);
             Assertions.assertEquals(oldEntriesSet, new HashSet<>(entries));
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()), any(byte[].class));
@@ -1867,13 +1867,13 @@ class BridgeStorageProviderTest {
         );
 
         doAnswer(i -> {
-            var entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams).getEntries();
+            var entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams).getEntries(activations);
             Assertions.assertEquals(oldEntriesSet, new HashSet<>(entries));
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()), any(byte[].class));
 
         doAnswer(i -> {
-            var entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams, true).getEntries();
+            var entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams, true).getEntries(activations);
             Assertions.assertEquals(newEntriesSet, new HashSet<>(entries));
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY.getKey()), any(byte[].class));
@@ -1882,7 +1882,7 @@ class BridgeStorageProviderTest {
 
         verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()), any(byte[].class));
         verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY.getKey()), any(byte[].class));
-        Assertions.assertEquals(2, storageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertEquals(2, storageProvider.getPegoutsWaitingForConfirmations().getEntries(activations).size());
     }
 
     @Test
@@ -1918,7 +1918,7 @@ class BridgeStorageProviderTest {
             activations
         );
 
-        Assertions.assertEquals(3, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertEquals(3, provider.getPegoutsWaitingForConfirmations().getEntries(activations).size());
         Assertions.assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
     }
 
