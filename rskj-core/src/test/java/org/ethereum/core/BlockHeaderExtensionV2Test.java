@@ -154,6 +154,11 @@ class BlockHeaderExtensionV2Test {
 
         assertArrayEquals(logsBloom, decoded.getLogsBloom());
         assertArrayEquals(edges, decoded.getTxExecutionSublistsEdges());
+        // FIXME(baseEvent encoding bug): this pins the CURRENT (buggy) behavior. An empty
+        // baseEvent is encoded as the RLP byte 0x80, but fromEncoded() reads it with
+        // RLPItem.getRLPData(), which returns null for a zero-length element. A follow-up
+        // commit fixes fromEncoded() to use getRLPRawData() and must flip this assertion to:
+        //   assertArrayEquals(new byte[0], decoded.getBaseEvent());
         assertNull(decoded.getBaseEvent());
     }
 
