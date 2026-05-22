@@ -92,7 +92,21 @@ public class VerifyNonceEncoding extends PicoCliToolRskContextAware {
         long bestBlockNumber = blockStore.getBestBlock().getNumber();
         long endBlock = toBlockNumber < 0 ? bestBlockNumber : Math.min(toBlockNumber, bestBlockNumber);
 
-        System.out.printf("Scanning blocks %d to %d (%,d blocks)%n", fromBlockNumber, endBlock, endBlock - fromBlockNumber + 1);
+        if (fromBlockNumber < 0) {
+            System.err.printf("Error: --fromBlock must be >= 0 (got %d)%n", fromBlockNumber);
+            return 2;
+        }
+        if (fromBlockNumber > bestBlockNumber) {
+            System.err.printf("Error: --fromBlock (%d) exceeds best block (%d)%n", fromBlockNumber, bestBlockNumber);
+            return 2;
+        }
+        if (fromBlockNumber > endBlock) {
+            System.err.printf("Error: --fromBlock (%d) is greater than --toBlock (%d)%n", fromBlockNumber, endBlock);
+            return 2;
+        }
+
+        long totalBlocks = endBlock - fromBlockNumber + 1;
+        System.out.printf("Scanning blocks %d to %d (%,d blocks)%n", fromBlockNumber, endBlock, totalBlocks);
         System.out.printf("Output: %s%n%n", outputPath);
 
         long totalTxs = 0;
@@ -140,7 +154,7 @@ public class VerifyNonceEncoding extends PicoCliToolRskContextAware {
                     long elapsed = System.currentTimeMillis() - startTime;
                     long blocksScanned = n - fromBlockNumber + 1;
                     double rate = elapsed > 0 ? blocksScanned * 1000.0 / elapsed : 0;
-                    double pct = (double) blocksScanned / (endBlock - fromBlockNumber + 1) * 100;
+                    double pct = (double) blocksScanned / totalBlocks * 100;
                     System.out.printf("  [%5.1f%%] block %,d | %,d txs | %d findings | %.0f blk/s%n",
                             pct, n, totalTxs, findingsCount, rate);
                 }
@@ -149,7 +163,7 @@ public class VerifyNonceEncoding extends PicoCliToolRskContextAware {
 
         long elapsed = (System.currentTimeMillis() - startTime) / 1000;
         System.out.printf("%nDone in %ds%n", elapsed);
-        System.out.printf("  Blocks scanned:    %,d%n", endBlock - fromBlockNumber + 1);
+        System.out.printf("  Blocks scanned:    %,d%n", totalBlocks);
         System.out.printf("  Transactions:      %,d%n", totalTxs);
         System.out.printf("  Non-canonical:     %d%n", findingsCount);
         System.out.printf("  Output:            %s%n", outputPath);

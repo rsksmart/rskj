@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
+import org.ethereum.config.Constants;
 import co.rsk.core.Coin;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.RepositoryLocator;
@@ -970,12 +971,23 @@ class TransactionPoolImplTest {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
 
-        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
-        TestUtils.setInternalState(tx, "nonce", new byte[9]);
+        Account sender = createAccount(1);
+        Account receiver = createAccount(2);
+
+        Transaction tx = Transaction.builder()
+                .nonce(new byte[9])
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(receiver.getAddress())
+                .value(BigInteger.valueOf(1000))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .build();
+        tx.sign(sender.getEcKey().getPrivKeyBytes());
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 
         Assertions.assertFalse(result.transactionsWereAdded());
+        Assertions.assertTrue(result.getErrorMessage().contains("nonce"));
 
         List<Transaction> pending = transactionPool.getPendingTransactions();
         Assertions.assertTrue(pending.isEmpty());
