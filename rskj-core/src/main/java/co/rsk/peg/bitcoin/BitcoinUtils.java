@@ -163,7 +163,11 @@ public class BitcoinUtils {
         BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the original tx
         removeSignaturesFromMultiSigTransaction(transactionCopy);
 
-        logger.trace("[getMultiSigTransactionWithoutSignatures] Btc tx hash without signatures {}", transactionCopy.getHash());
+        logger.trace(
+            "[getMultiSigTransactionWithoutSignatures] Original btc tx hash: {}. Hash without signatures: {}",
+            transaction.getHash(),
+            transactionCopy.getHash()
+        );
         return transactionCopy;
     }
 
