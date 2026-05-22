@@ -27,6 +27,8 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderBuilder;
+import org.ethereum.core.BlockHeaderExtension;
+import org.ethereum.core.BlockHeaderExtensionV2;
 import org.ethereum.core.BlockHeaderV1;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
@@ -926,6 +928,138 @@ class BlockFactoryTest {
         assertArrayEquals(logsBloom, decodedHeader.getLogsBloom());
         assertArrayEquals(edges, decodedHeader.getTxExecutionSublistsEdges());
         assertArrayEquals(baseEvent, decodedHeader.getBaseEvent());
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // baseEvent encoding — regression tests
+    //
+    // These tests cover how an empty baseEvent field is handled across the backward
+    // body-sync store-and-reload path, and how the decoder reads a header that does not
+    // carry a baseEvent element.
+    //
+    // BlockHeaderExtensionV2.fromEncoded() reads baseEvent with getRLPData(), which returns
+    // null for an empty (0x80) RLP element. A null baseEvent is then skipped by
+    // BlockHeader.addBaseEvent() when the block is re-encoded for storage, so the header is
+    // stored one RLP element shorter than its full layout.
+    //
+    // The tests pin the current decoding behavior with assertThrows so this commit stays
+    // green; the following commit refines the decoder and flips each assertThrows to a
+    // successful decode (see FIXMEs).
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * Covers the backward body-sync store-and-reload path for a block with merged-mining
+     * fields, where an empty baseEvent travels the wire round-trip.
+     */
+    @Test
+    void blockWithEmptyBaseEventSurvivesBackwardSyncStoreAndReloadWithMining() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIPUMM, RSKIP144);
+
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+
+        // A block with no Union Bridge event -> empty baseEvent (BlockHeaderBuilder fills byte[0]).
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withMergedMining()
+                .withUmmRoot(ummRoot)
+                .withEdges(edges)
+                .build();
+        assertArrayEquals(new byte[0], header.getBaseEvent());
+
+        // Backward body sync: the extension travels over the wire and is parsed via
+        // BlockHeaderExtension.fromEncoded (MessageType.BODY_RESPONSE_MESSAGE.createMessage),
+        // then attached to the header (DownloadingBackwardsBodiesSyncState.newBody -> setExtension).
+        // fromEncoded turns the empty baseEvent into null.
+        BlockHeaderExtension wireExtension = BlockHeaderExtension.fromEncoded(
+                BlockHeaderExtension.toEncoded(header.getExtension()));
+        header.setExtension(wireExtension);
+
+        // IndexedBlockStore.saveBlock stores block.getEncoded() -> header.getFullEncoded().
+        // addBaseEvent() skips the now-null baseEvent -> header stored with only 22 RLP elements.
+        byte[] stored = header.getFullEncoded();
+        assertThat(RLP.decodeList(stored).size(), is(22));
+
+        // IndexedBlockStore.getBlock reloads via blockFactory.decodeBlock -> decodeHeader.
+        // FIXME: the header was stored one RLP element shorter than its full layout. This
+        // assertThrows pins the current decoding behavior to keep the commit green; the
+        // following commit makes the decoder accept this layout -- when it lands, flip
+        // this to:
+        //   BlockHeader reloaded = factory.decodeHeader(stored, false);
+        //   assertArrayEquals(new byte[0], reloaded.getBaseEvent());
+        //   assertThat(reloaded.getHash(), is(header.getHash()));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> factory.decodeHeader(stored, false));
+        assertThat(ex.getMessage(), is("Invalid block header size: 22"));
+    }
+
+    /**
+     * Same backward body-sync store-and-reload path as above, but for a block without
+     * merged-mining fields (exercises the no-mining branch of the size validator).
+     */
+    @Test
+    void blockWithEmptyBaseEventSurvivesBackwardSyncStoreAndReloadNoMining() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIP144);
+
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withEdges(edges)
+                .build();
+        assertArrayEquals(new byte[0], header.getBaseEvent());
+
+        BlockHeaderExtension wireExtension = BlockHeaderExtension.fromEncoded(
+                BlockHeaderExtension.toEncoded(header.getExtension()));
+        header.setExtension(wireExtension);
+
+        // 18-element header: 16 base + version + edges, baseEvent dropped.
+        byte[] stored = header.getFullEncoded();
+
+        // FIXME: this assertThrows pins the current decoding behavior to keep the commit
+        // green; the following commit makes the decoder accept this layout -- when it
+        // lands, flip this to:
+        //   BlockHeader reloaded = factory.decodeHeader(stored, false);
+        //   assertArrayEquals(new byte[0], reloaded.getBaseEvent());
+        //   assertThat(reloaded.getHash(), is(header.getHash()));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> factory.decodeHeader(stored, false));
+        assertThat(ex.getMessage(), is("Invalid block header size: 18"));
+    }
+
+    /**
+     * Covers decoding a header that does not carry a baseEvent element, isolating the
+     * 22-element header layout from the BlockHeaderExtensionV2.fromEncoded path.
+     */
+    @Test
+    void blockStoredWithMissingBaseEventCanBeDecoded() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIPUMM, RSKIP144);
+
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withMergedMining()
+                .withUmmRoot(ummRoot)
+                .withEdges(edges)
+                .build();
+
+        // Attach a V2 extension whose baseEvent is null, then encode: addBaseEvent() omits
+        // the field, yielding a 22-element header layout without the baseEvent element.
+        header.setExtension(new BlockHeaderExtensionV2(
+                header.getLogsBloom(),
+                header.getTxExecutionSublistsEdges(),
+                null));
+        byte[] stored = header.getFullEncoded();
+        assertThat(RLP.decodeList(stored).size(), is(22));
+
+        // FIXME: this assertThrows pins the current decoding behavior to keep the commit
+        // green; the following commit makes the decoder accept a 22-element header layout
+        // -- when it lands, flip this to:
+        //   BlockHeader reloaded = factory.decodeHeader(stored, false);
+        //   assertArrayEquals(new byte[0], reloaded.getBaseEvent());
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> factory.decodeHeader(stored, false));
+        assertThat(ex.getMessage(), is("Invalid block header size: 22"));
     }
 
     @ParameterizedTest(name = "btcHeaderSize={0}, shouldSucceed={1} — {2}")
