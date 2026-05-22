@@ -96,7 +96,7 @@ class BlockToMineBuilderInvalidTxEvictionTest {
         Repository snapshot = mock(Repository.class);
         GasLimitConfig gasLimitConfig = new GasLimitConfig(0, 0, false);
 
-        when(minerUtils.getAllTransactions(any(), any())).thenReturn(new ArrayList<>());
+        when(minerUtils.getAllTransactions(any(), any(), any())).thenReturn(new ArrayList<>());
         when(minerUtils.filterTransactions(any(), any(), any(), any(), any(), anyBoolean(), any())).thenReturn(new ArrayList<>());
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
         when(minimumGasPriceCalculator.calculate(any())).thenReturn(mock(Coin.class));

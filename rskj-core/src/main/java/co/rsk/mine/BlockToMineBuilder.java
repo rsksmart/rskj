@@ -169,7 +169,7 @@ public class BlockToMineBuilder {
 
     private List<Transaction> getTransactions(List<Transaction> txsToRemove, BlockHeader parentHeader, Coin minGasPrice) {
         logger.debug("getting transactions from pending state");
-        List<Transaction> txs = minerUtils.getAllTransactions(transactionPool, signatureCache);
+        List<Transaction> txs = minerUtils.getAllTransactions(transactionPool, signatureCache, txsToRemove);
         logger.debug("{} transaction(s) collected from pending state", txs.size());
 
         final long blockNumber = parentHeader.getNumber() + 1;

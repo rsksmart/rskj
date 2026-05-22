@@ -665,7 +665,7 @@ class TransactionPoolImplTest {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx = createSampleTransaction(1, 2, 1000, 0, BigInteger.valueOf(3000001));
-        Account receiver = createAccount(2);
+        createAccount(2);
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 
@@ -963,5 +963,24 @@ class TransactionPoolImplTest {
         Assertions.assertEquals(tx2, transactionPool.getPendingTransactions().get(1));
         Assertions.assertNotNull(signatureCache.getSender(tx1));
         Assertions.assertNotNull(signatureCache.getSender(tx2));
+    }
+
+    @Test
+    void addTransaction_withNonCanonicalNonce_isRejected() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
+        TestUtils.setInternalState(tx, "nonce", new byte[9]);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assertions.assertFalse(result.transactionsWereAdded());
+
+        List<Transaction> pending = transactionPool.getPendingTransactions();
+        Assertions.assertTrue(pending.isEmpty());
+
+        List<Transaction> queued = transactionPool.getQueuedTransactions();
+        Assertions.assertTrue(queued.isEmpty());
     }
 }

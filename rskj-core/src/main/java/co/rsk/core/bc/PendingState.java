@@ -115,12 +115,35 @@ public class PendingState implements AccountInformationProvider {
     // Note that this sort doesn't return the best solution, it is an approximation algorithm to find approximate
     // solution. (No trivial solution)
     public static List<Transaction> sortByPriceTakingIntoAccountSenderAndNonce(List<Transaction> transactions, SignatureCache signatureCache) {
+        return sortByPriceTakingIntoAccountSenderAndNonce(transactions, signatureCache, null);
+    }
+
+    public static List<Transaction> sortByPriceTakingIntoAccountSenderAndNonce(List<Transaction> transactions, SignatureCache signatureCache, List<Transaction> discardedTxs) {
+
+        // Pre-validate each transaction individually before sorting.
+        // Transactions with non-canonical field encodings are discarded so they
+        // cannot cause the sort comparator to fail.
+        List<Transaction> validTxs = new ArrayList<>();
+        for (Transaction tx : transactions) {
+            try {
+                tx.getSender(signatureCache);
+                ByteUtil.byteArrayToLong(tx.getNonce());
+                tx.getGasPrice();
+                tx.getHash();
+                validTxs.add(tx);
+            } catch (Exception e) {
+                LOGGER.warn("Discarding tx={} with non-canonical encoding from sort: {}", tx.getHash(), e.getMessage());
+                if (discardedTxs != null) {
+                    discardedTxs.add(tx);
+                }
+            }
+        }
 
         //Priority heap, and list of transactions are ordered by descending gas price.
         Comparator<Transaction> gasPriceComparator = reverseOrder(Comparator.comparing(Transaction::getGasPrice));
 
         //First create a map to separate txs by each sender.
-        Map<RskAddress, List<Transaction>> senderTxs = transactions.stream().collect(Collectors.groupingBy(transaction -> transaction.getSender(signatureCache)));
+        Map<RskAddress, List<Transaction>> senderTxs = validTxs.stream().collect(Collectors.groupingBy(transaction -> transaction.getSender(signatureCache)));
 
         //For each sender, order all txs by nonce and then by hash,
         //finally we order by price in cases where nonce are equal, and then by hash to disambiguate
@@ -142,7 +165,7 @@ public class PendingState implements AccountInformationProvider {
             candidateTxs.add(tx);
         });
 
-        long txsCount = transactions.size();
+        long txsCount = validTxs.size();
         List<Transaction> sortedTxs = new ArrayList<>();
         //In each iteration we get the tx with max price (head) from the heap.
         while (txsCount > 0) {
