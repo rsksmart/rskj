@@ -18,6 +18,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.Keccak256;
 import com.google.common.primitives.UnsignedBytes;
 
@@ -29,7 +30,11 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Transaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Representation of a queue of BTC release
@@ -39,6 +44,8 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
  * @author Ariel Mendelzon
  */
 public class PegoutsWaitingForConfirmations {
+
+    private static final Logger logger = LoggerFactory.getLogger(PegoutsWaitingForConfirmations.class);
 
     private final EntriesStore entries;
 
@@ -71,6 +78,8 @@ public class PegoutsWaitingForConfirmations {
         }
         return entries.entriesSet.stream().toList();
     }
+ 
+    // public static final Set<Long> WATCH_BLOCKS = Set.of(3345557L,3381087L,3381093L,3441427L,3441438L,3655284L,5002812L,7073815L,1120318L,1865157L,2589068L,2589071L,2589077L,2589086L,2589112L,2589115L,2589121L,2589135L,2589142L,2589148L,2589153L,2589163L,2589169L,2589174L,2589179L,2589190L,2589196L,2589202L,2589209L,2589308L,2589325L,2589332L,2589338L,2589375L,2589380L,2589390L,2589501L,2589515L,2589521L,2589527L,2589645L,3106055L,5788165L,6858657L);
 
     /**
      * Given a block number and a minimum number of confirmations,
@@ -79,6 +88,7 @@ public class PegoutsWaitingForConfirmations {
      *
      * Optionally supply a maximum slice size to limit the output size.
      * Sliced items are also removed from the set (thus the name, slice).
+     * @param rskTx 
      *
      * @param currentBlockNumber the current execution block number (height).
      * @param minimumConfirmations the minimum desired confirmations for the slice elements.
@@ -86,9 +96,48 @@ public class PegoutsWaitingForConfirmations {
      *
      * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
      */
-    public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations, ForBlock activations) {
+    public Optional<Entry> getNextPegoutWithEnoughConfirmations(Transaction rskTx, Long currentBlockNumber, Integer minimumConfirmations, ForBlock activations) {
         var rskip559 = activations.isActive(ConsensusRule.RSKIP559);
-        return this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, rskip559);
+
+        // Diff output logic
+        var preActivation = this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, false);
+        var postActivation = this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, true);
+
+        var manyPegouts = this.entries.getMatchedPegoutsCount(currentBlockNumber, minimumConfirmations);
+        if ( manyPegouts> 1 ) {
+            logger.error(
+                "PEGOUT HARDCODED block:{} minConf:{} -- REF:{}@{} -- RSK_TX:{}",
+                currentBlockNumber,
+                minimumConfirmations,
+                preActivation.map(e -> e.getBtcTransaction().getHash().toString()).orElse("0x0"),
+                preActivation.map(e -> e.getPegoutCreationRskBlockNumber()).orElse(-1L),
+                Objects.toString(rskTx)
+            );
+            if (! preActivation.equals(postActivation) ) {
+                logger.error(
+                    "PEGOUTS DIFF block:{} minConf:{} -- REF:{}@{}",
+                    currentBlockNumber,
+                    minimumConfirmations,
+                    postActivation.map(e -> e.getBtcTransaction().getHash().toString()).orElse("0x0"),
+                    postActivation.map(e -> e.getPegoutCreationRskBlockNumber()).orElse(-1L),
+                    Objects.toString(rskTx)
+                );
+            }
+        }
+
+        var pegout = this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, rskip559);
+
+        // if (WATCH_BLOCKS.contains(currentBlockNumber)) {
+        //     logger.error(
+        //         "PEGOUTS WATCH block:{} minConf:{} -- REF:{}@{}",
+        //         currentBlockNumber,
+        //         minimumConfirmations,
+        //         pegout.map(e -> e.getBtcTransaction().getHash().toString()).orElse("0x0"),
+        //         pegout.map(e -> e.getPegoutCreationRskBlockNumber()).orElse(-1L)
+        //     );
+        // }
+
+        return pegout;
     }
 
     public void add(Entry entry) {
@@ -146,6 +195,13 @@ public class PegoutsWaitingForConfirmations {
                 entries = entries.sorted(Entry.BTC_TX_COMPARATOR);
             }
             return entries.findFirst();
+        }
+ 
+        public long getMatchedPegoutsCount(Long currentBlockNumber, Integer minimumConfirmations) {
+            return entriesSet
+                .stream()
+                .filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations))
+                .count();
         }
 
         public void addEntry(Entry entry) {

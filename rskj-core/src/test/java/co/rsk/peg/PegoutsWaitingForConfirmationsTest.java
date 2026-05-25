@@ -181,13 +181,13 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void getNextPegoutWithEnoughConfirmations_no_matches() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(9L, 5, ActivationConfigsForTest.vetiver900().forBlock(9L));
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(null, 9L, 5, ActivationConfigsForTest.vetiver900().forBlock(9L));
         Assertions.assertFalse(result.isPresent());
     }
 
     @Test
     void getNextPegoutWithEnoughConfirmations_ok() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L));
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(null,10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L));
         Assertions.assertTrue(result.isPresent());
         Assertions.assertTrue(set.removeEntry(result.get()));
         Assertions.assertFalse(set.removeEntry(result.get()));
@@ -196,7 +196,7 @@ class PegoutsWaitingForConfirmationsTest {
     @Test
     void getNextPegoutWithEnoughConfirmation_multipleMatch_rskip559Off() {
         int size = set.getEntries(ACTIVATIONS_ALL).size();
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L));
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(null, 10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L));
         Assertions.assertTrue(result.isPresent());
 
         var entry = result.get();
@@ -215,7 +215,7 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void getNextPegoutWithEnoughConfirmations_rskip559() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.all().forBlock(1L));
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(null,10L, 5, ActivationConfigsForTest.all().forBlock(1L));
         Assertions.assertTrue(result.isPresent());
 
         var entry = result.get();

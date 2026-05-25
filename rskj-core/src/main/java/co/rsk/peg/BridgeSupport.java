@@ -1588,6 +1588,7 @@ public class BridgeSupport {
         // TODO: (at least at this stage).
         Optional<PegoutsWaitingForConfirmations.Entry> nextPegoutWithEnoughConfirmations = pegoutsWaitingForConfirmations
             .getNextPegoutWithEnoughConfirmations(
+                rskTx,
                 rskExecutionBlock.getNumber(),
                 bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(),
                 activations

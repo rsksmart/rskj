@@ -1,78 +1,98 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<!-- For assistance related to logback-translator or configuration  -->
-<!-- files in general, please contact the logback user mailing list -->
-<!-- at http://www.qos.ch/mailman/listinfo/logback-user             -->
-<!--                                                                -->
-<!-- For professional support please see                            -->
-<!--    http://www.qos.ch/shop/products/professionalSupport         -->
-<!--                                                                -->
 <configuration debug="false" scan="true" scanPeriod="3600 seconds">
-    <!-- Errors were reported during translation. -->
-    <!-- Could not find transformer for org.apache.log4j.rolling.RollingFileAppender -->
-    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
-        <Target>System.out</Target>
-        <encoder>
-            <Pattern>
-                %date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}] [%thread]%replace( [%mdc{}]){' \[\]', ''}  %m%n
-            </Pattern>
-        </encoder>
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>INFO</level>
-        </filter>
-    </appender>
+        <!-- Errors were reported during translation. -->
+        <!-- Could not find transformer for org.apache.log4j.rolling.RollingFileAppender -->
+        <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+                <Target>System.out</Target>
+                <encoder>
+                        <pattern>%date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}]  %m%n</pattern>
+                </encoder>
+                <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                        <level>OFF</level>
+                </filter>
+        </appender>
 
-    <logger name="execute" level="INFO"/>
-    <logger name="blockvalidator" level="INFO"/>
-    <logger name="blockexecutor" level="INFO"/>
-    <logger name="general" level="INFO"/>
-    <logger name="gaspricetracker" level="INFO"/>
-    <logger name="web3" level="INFO"/>
-    <logger name="repository" level="INFO"/>
-    <logger name="VM" level="ERROR"/>
-    <logger name="blockqueue" level="INFO"/>
-    <logger name="io.netty" level="INFO"/>
-    <logger name="block" level="INFO"/>
-    <logger name="minerserver" level="INFO"/>
-    <logger name="txbuilderex" level="INFO"/>
-    <logger name="pendingstate" level="INFO"/>
-    <logger name="hsqldb.db" level="INFO"/>
-    <logger name="TCK-Test" level="INFO"/>
-    <logger name="db" level="INFO"/>
-    <logger name="net" level="INFO"/>
-    <logger name="start" level="INFO"/>
-    <logger name="cli" level="INFO"/>
-    <logger name="txs" level="INFO"/>
-    <logger name="gas" level="ERROR"/>
-    <logger name="main" level="INFO"/>
-    <logger name="trie" level="INFO"/>
-    <logger name="peermonitor" level="INFO"/>
-    <logger name="bridge" level="INFO"/>
-    <logger name="rlp" level="INFO"/>
-    <logger name="messagehandler" level="INFO"/>
-    <logger name="sync" level="INFO"/>
-    <logger name="BtcToRskClient" level="INFO"/>
-    <logger name="ui" level="INFO"/>
-    <logger name="java.nio" level="INFO"/>
-    <logger name="org.eclipse.jetty" level="INFO"/>
-    <logger name="wire" level="INFO"/>
-    <logger name="BridgeSupport" level="INFO"/>
-    <logger name="jsonrpc" level="INFO"/>
-    <logger name="wallet" level="INFO"/>
-    <logger name="blockchain" level="INFO"/>
-    <logger name="blockprocessor" level="INFO"/>
-    <logger name="asyncblockprocessor" level="INFO"/>
-    <logger name="state" level="INFO"/>
-    <logger name="org.bitcoinj" level="INFO"/>
-    <logger name="metrics" level="INFO"/>
-    <logger name="messageProcess" level="INFO"/>
-    <logger name="co.rsk.db.migration.OrchidToUnitrieMigrator" level="INFO"/>
-    <logger name="co.rsk.db.migration.MissingOrchidStorageKeysProvider" level="INFO"/>
-    <logger name="co.rsk.core.bc.BlockChainFlusher" level="TRACE"/>
-    <logger name="blooms" level="INFO"/>
-    <logger name="triestore" level="TRACE" />
+        <appender name="FILE-AUDIT"
+                class="ch.qos.logback.core.rolling.RollingFileAppender">
+                <file>/var/log/rsk/rsk.log</file>
+                <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                        <Pattern>
+                                %date{yyyy-MM-dd-HH:mm:ss.SSS} %p [%c{1}]  %m%n
+                        </Pattern>
+                </encoder>
+                <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                        <fileNamePattern>/var/log/rsk/rsk-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                        <maxFileSize>100MB</maxFileSize>
+                        <maxHistory>7</maxHistory>
+                        <totalSizeCap>1GB</totalSizeCap>
+                </rollingPolicy>
+        </appender>
 
-    <root level="DEBUG">
-        <appender-ref ref="stdout"/>
-    </root>
+        <logger name="execute" level="INFO"/>
+        <logger name="blockvalidator" level="INFO"/>
+        <logger name="blocksyncservice" level="INFO"/>
+        <logger name="blockexecutor" level="INFO"/>
+        <logger name="general" level="INFO"/>
+        <logger name="gaspricetracker" level="WARN"/>
+        <logger name="web3" level="INFO"/>
+        <logger name="repository" level="WARN"/>
+        <logger name="VM" level="WARN"/>
+        <logger name="blockqueue" level="WARN"/>
+        <logger name="io.netty" level="WARN"/>
+        <logger name="block" level="WARN"/>
+        <logger name="minerserver" level="INFO"/>
+        <logger name="txbuilderex" level="WARN"/>
+        <logger name="pendingstate" level="INFO"/>
+        <logger name="hsqldb.db" level="WARN"/>
+        <logger name="TCK-Test" level="WARN"/>
+        <logger name="db" level="WARN"/>
+        <logger name="net" level="WARN"/>
+        <logger name="start" level="WARN"/>
+        <logger name="cli" level="WARN"/>
+        <logger name="txs" level="WARN"/>
+        <logger name="gas" level="WARN"/>
+        <logger name="main" level="WARN"/>
+        <logger name="trie" level="WARN"/>
+        <logger name="org.hibernate" level="WARN"/>
+        <logger name="peermonitor" level="WARN"/>
+        <logger name="bridge" level="WARN"/>
+        <logger name="org.springframework" level="WARN"/>
+        <logger name="rlp" level="WARN"/>
+        <logger name="messagehandler" level="WARN"/>
+        <logger name="syncprocessor" level="INFO"/>
+        <logger name="sync" level="WARN"/>
+        <logger name="BtcToRskClient" level="WARN"/>
+        <logger name="ui" level="WARN"/>
+        <logger name="java.nio" level="WARN"/>
+        <logger name="org.eclipse.jetty" level="WARN"/>
+        <logger name="wire" level="WARN"/>
+        <logger name="BridgeSupport" level="WARN"/>
+        <logger name="jsonrpc" level="WARN"/>
+        <logger name="wallet" level="WARN"/>
+        <logger name="blockchain" level="WARN"/>
+        <logger name="blockprocessor" level="WARN"/>
+        <logger name="state" level="INFO"/>
+        <logger name="co.rsk.net.discovery.PeerExplorer" level="WARN" />
+        <logger name="co.rsk.net.discovery.NodeChallengeManager" level="INFO" />
+
+        <root level="INFO">
+                <appender-ref ref="stdout"/>
+                <appender-ref ref="FILE-AUDIT"/>
+        </root>
+
+        <appender name="PEGOUTS" class="ch.qos.logback.core.FileAppender">
+                <file>/var/log/rsk/rsk-pegouts.log</file>
+                <append>true</append>
+                <immediateFlush>true</immediateFlush>
+
+                <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                        <pattern>%date{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%c{1}] %msg%n</pattern>
+                        <charset>UTF-8</charset>
+                </encoder>
+        </appender>
+
+        <!-- Only logs from this exact class go to the file -->
+        <logger level="DEBUG" name="co.rsk.peg.PegoutsWaitingForConfirmations" >
+                <appender-ref ref="PEGOUTS" />
+        </logger>
 </configuration>
