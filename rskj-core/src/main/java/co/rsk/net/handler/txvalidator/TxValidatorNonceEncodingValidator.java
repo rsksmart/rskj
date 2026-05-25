@@ -38,11 +38,24 @@ import java.math.BigInteger;
  */
 public class TxValidatorNonceEncodingValidator implements TxValidatorStep {
 
+    public static boolean hasCanonicalEncoding(byte[] nonce) {
+        if (nonce == null) {
+            return true;
+        }
+        if (nonce.length > Long.BYTES) {
+            return false;
+        }
+        if (nonce.length > 1 && nonce[0] == 0) {
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         byte[] nonce = tx.getNonce();
 
-        if (nonce == null) {
+        if (hasCanonicalEncoding(nonce)) {
             return TransactionValidationResult.ok();
         }
 
@@ -50,10 +63,6 @@ public class TxValidatorNonceEncodingValidator implements TxValidatorStep {
             return TransactionValidationResult.withError("transaction nonce byte length exceeds maximum");
         }
 
-        if (nonce.length > 1 && nonce[0] == 0) {
-            return TransactionValidationResult.withError("transaction nonce has non-canonical encoding");
-        }
-
-        return TransactionValidationResult.ok();
+        return TransactionValidationResult.withError("transaction nonce has non-canonical encoding");
     }
 }

@@ -21,6 +21,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
+import co.rsk.net.handler.txvalidator.TxValidatorNonceEncodingValidator;
 import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
@@ -120,19 +121,15 @@ public class PendingState implements AccountInformationProvider {
 
     public static List<Transaction> sortByPriceTakingIntoAccountSenderAndNonce(List<Transaction> transactions, SignatureCache signatureCache, List<Transaction> discardedTxs) {
 
-        // Pre-validate each transaction individually before sorting.
-        // Transactions with non-canonical field encodings are discarded so they
-        // cannot cause the sort comparator to fail.
+        // Pre-validate each transaction before sorting. Every field the sort
+        // comparator touches is exercised here so that a single malformed
+        // transaction cannot crash the entire sort (and therefore block production).
         List<Transaction> validTxs = new ArrayList<>();
         for (Transaction tx : transactions) {
-            try {
-                tx.getSender(signatureCache);
-                ByteUtil.byteArrayToLong(tx.getNonce());
-                tx.getGasPrice();
-                tx.getHash();
+            if (isSortSafe(tx, signatureCache)) {
                 validTxs.add(tx);
-            } catch (Exception e) {
-                LOGGER.warn("Discarding tx={} with non-canonical encoding from sort: {}", tx.getHash(), e.getMessage());
+            } else {
+                LOGGER.warn("Discarding tx from sort due to non-canonical or unreadable fields");
                 if (discardedTxs != null) {
                     discardedTxs.add(tx);
                 }
@@ -181,6 +178,20 @@ public class PendingState implements AccountInformationProvider {
         }
 
         return sortedTxs;
+    }
+
+    private static boolean isSortSafe(Transaction tx, SignatureCache signatureCache) {
+        if (!TxValidatorNonceEncodingValidator.hasCanonicalEncoding(tx.getNonce())) {
+            return false;
+        }
+        try {
+            tx.getSender(signatureCache);
+            tx.getGasPrice();
+            tx.getHash();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private <T> T postExecutionReturn(PostExecutionAction<T> action) {

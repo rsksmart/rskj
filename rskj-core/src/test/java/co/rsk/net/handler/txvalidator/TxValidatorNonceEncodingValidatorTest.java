@@ -19,10 +19,15 @@
 package co.rsk.net.handler.txvalidator;
 
 import org.ethereum.core.Transaction;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
+
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TxValidatorNonceEncodingValidatorTest {
 
@@ -33,77 +38,32 @@ class TxValidatorNonceEncodingValidatorTest {
         validator = new TxValidatorNonceEncodingValidator();
     }
 
-    @Test
-    void nullNonce_isValid() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("nonceEncodingCases")
+    void validateNonceEncoding(String description, byte[] nonce, boolean expectedValid) {
         Transaction tx = Mockito.mock(Transaction.class);
-        Mockito.when(tx.getNonce()).thenReturn(null);
-
-        Assertions.assertTrue(validator.validate(tx, null, null, null, Long.MAX_VALUE, false).transactionIsValid());
-    }
-
-    @Test
-    void singleByteZeroNonce_isValid() {
-        Transaction tx = Mockito.mock(Transaction.class);
-        Mockito.when(tx.getNonce()).thenReturn(new byte[]{0x00});
-
-        Assertions.assertTrue(validator.validate(tx, null, null, null, Long.MAX_VALUE, false).transactionIsValid());
-    }
-
-    @Test
-    void singleByteNonce_isValid() {
-        Transaction tx = Mockito.mock(Transaction.class);
-        Mockito.when(tx.getNonce()).thenReturn(new byte[]{0x01});
-
-        Assertions.assertTrue(validator.validate(tx, null, null, null, Long.MAX_VALUE, false).transactionIsValid());
-    }
-
-    @Test
-    void eightByteNonceNoLeadingZeros_isValid() {
-        Transaction tx = Mockito.mock(Transaction.class);
-        Mockito.when(tx.getNonce()).thenReturn(new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08});
-
-        Assertions.assertTrue(validator.validate(tx, null, null, null, Long.MAX_VALUE, false).transactionIsValid());
-    }
-
-    @Test
-    void twoByteNonceNoLeadingZeros_isValid() {
-        Transaction tx = Mockito.mock(Transaction.class);
-        Mockito.when(tx.getNonce()).thenReturn(new byte[]{0x01, 0x00});
-
-        Assertions.assertTrue(validator.validate(tx, null, null, null, Long.MAX_VALUE, false).transactionIsValid());
-    }
-
-    @Test
-    void nineByteNonce_isInvalid() {
-        Transaction tx = Mockito.mock(Transaction.class);
-        Mockito.when(tx.getNonce()).thenReturn(new byte[9]);
-
-        Assertions.assertFalse(validator.validate(tx, null, null, null, Long.MAX_VALUE, false).transactionIsValid());
-    }
-
-    @Test
-    void nineByteNonceWithNonZeroFirstByte_isInvalid() {
-        Transaction tx = Mockito.mock(Transaction.class);
-        byte[] nonce = new byte[9];
-        nonce[0] = 0x01;
         Mockito.when(tx.getNonce()).thenReturn(nonce);
 
-        Assertions.assertFalse(validator.validate(tx, null, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        assertEquals(expectedValid,
+                validator.validate(tx, null, null, null, Long.MAX_VALUE, false).transactionIsValid(),
+                description);
     }
 
-    @Test
-    void twoByteNonceWithLeadingZero_isInvalid() {
-        Transaction tx = Mockito.mock(Transaction.class);
-        Mockito.when(tx.getNonce()).thenReturn(new byte[]{0x00, 0x01});
+    private static Stream<Arguments> nonceEncodingCases() {
+        return Stream.of(
+                // Valid cases
+                Arguments.of("null nonce", null, true),
+                Arguments.of("empty nonce (byte[0])", new byte[0], true),
+                Arguments.of("single byte zero", new byte[]{0x00}, true),
+                Arguments.of("single byte non-zero", new byte[]{0x01}, true),
+                Arguments.of("two bytes, no leading zero", new byte[]{0x01, 0x00}, true),
+                Arguments.of("eight bytes, no leading zeros", new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}, true),
 
-        Assertions.assertFalse(validator.validate(tx, null, null, null, Long.MAX_VALUE, false).transactionIsValid());
-    }
-
-    @Test
-    void threeByteNonceWithLeadingZeros_isInvalid() {
-        Transaction tx = Mockito.mock(Transaction.class);
-        Mockito.when(tx.getNonce()).thenReturn(new byte[]{0x00, 0x00, 0x05});
-
-        Assertions.assertFalse(validator.validate(tx, null, null, null, Long.MAX_VALUE, false).transactionIsValid());
+                // Invalid cases
+                Arguments.of("nine bytes (all zeros)", new byte[9], false),
+                Arguments.of("nine bytes (non-zero first byte)", new byte[]{0x01, 0, 0, 0, 0, 0, 0, 0, 0}, false),
+                Arguments.of("two bytes with leading zero", new byte[]{0x00, 0x01}, false),
+                Arguments.of("three bytes with leading zeros", new byte[]{0x00, 0x00, 0x05}, false)
+        );
     }
 }
