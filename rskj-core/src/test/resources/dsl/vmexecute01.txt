@@ -1,0 +1,15 @@
+
+# Virtual Machine DSL test file
+
+# Set stack
+stack 0x01 0x02
+
+# Execute add
+execute ADD
+
+# Assert stack
+assert_stack 0x03
+
+# Assert assert gas used
+assert_gas_used 3
+
