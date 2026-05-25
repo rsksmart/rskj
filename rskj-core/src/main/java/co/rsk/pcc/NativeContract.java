@@ -60,11 +60,11 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
     public abstract Optional<NativeMethod> getDefaultMethod();
 
     public void before() {
-        // Can be overriden to provide logic that executes right before each method execution
+        // Can be overridden to provide logic that executes right before each method execution
     }
 
     public void after() {
-        // Can be overriden to provide logic that executes right after each method execution
+        // Can be overridden to provide logic that executes right after each method execution
     }
 
     @Override
