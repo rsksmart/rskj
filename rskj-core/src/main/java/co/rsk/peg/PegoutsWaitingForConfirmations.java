@@ -18,6 +18,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.Keccak256;
 import com.google.common.primitives.UnsignedBytes;
 
@@ -29,7 +30,11 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Representation of a queue of BTC release
@@ -39,6 +44,8 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
  * @author Ariel Mendelzon
  */
 public class PegoutsWaitingForConfirmations {
+
+    private static final Logger logger = LoggerFactory.getLogger(PegoutsWaitingForConfirmations.class);
 
     private final EntriesStore entries;
 
@@ -71,6 +78,8 @@ public class PegoutsWaitingForConfirmations {
         }
         return entries.entriesSet.stream().toList();
     }
+ 
+    public static final Set<Long> WATCH_BLOCKS = Set.of(3345557L,3381087L,3381093L,3441427L,3441438L,3655284L,5002812L,7073815L,1120318L,1865157L,2589068L,2589071L,2589077L,2589086L,2589112L,2589115L,2589121L,2589135L,2589142L,2589148L,2589153L,2589163L,2589169L,2589174L,2589179L,2589190L,2589196L,2589202L,2589209L,2589308L,2589325L,2589332L,2589338L,2589375L,2589380L,2589390L,2589501L,2589515L,2589521L,2589527L,2589645L,3106055L,5788165L,6858657L);
 
     /**
      * Given a block number and a minimum number of confirmations,
@@ -88,7 +97,39 @@ public class PegoutsWaitingForConfirmations {
      */
     public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations, ForBlock activations) {
         var rskip559 = activations.isActive(ConsensusRule.RSKIP559);
-        return this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, rskip559);
+
+        // Diff output logic
+        var preActivation = this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, false);
+        var postActivation = this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, true);
+
+        if (! preActivation.equals(postActivation) ) {
+            logger.error(
+                "PEGOUTS DIFF block:{} minConf:{} -- BLK:{} TX:{} HASH:{} -- POST_BLK:{} POST_TX:{} POST_HASH:{}",
+                currentBlockNumber,
+                minimumConfirmations,
+                preActivation.map(e -> e.getPegoutCreationRskBlockNumber()).orElse(-1L),
+                preActivation.map(e -> e.getBtcTransaction().getHash().toString()).orElse("0x0"),
+                preActivation.map(e -> e.getSha256().toString()).orElse("0x0"),
+                postActivation.map(e -> e.getPegoutCreationRskBlockNumber()).orElse(-1L),
+                postActivation.map(e -> e.getBtcTransaction().getHash().toString()).orElse("0x0"),
+                postActivation.map(e -> e.getSha256().toString()).orElse("0x0")
+            );
+        }
+
+        var pegout = this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, rskip559);
+
+        if (WATCH_BLOCKS.contains(currentBlockNumber)) {
+            logger.error(
+                "PEGOUTS WATCH block:{} minConf:{} -- BLK:{} TX:{} HASH:{}",
+                currentBlockNumber,
+                minimumConfirmations,
+                pegout.map(e -> e.getPegoutCreationRskBlockNumber()).orElse(-1L),
+                pegout.map(e -> e.getBtcTransaction().getHash().toString()).orElse("0x0"),
+                pegout.map(e -> e.getSha256().toString()).orElse("0x0")
+            );
+        }
+
+        return pegout;
     }
 
     public void add(Entry entry) {
@@ -198,6 +239,23 @@ public class PegoutsWaitingForConfirmations {
 
         public Keccak256 getPegoutCreationRskTxHash() {
             return pegoutCreationRskTxHash;
+        }
+
+        /**
+         * Returns Sha256 representation for this Entry.
+         */
+        Sha256Hash getSha256() {
+            var digest = Sha256Hash.newDigest();
+            digest.update(this.getBtcTransaction().getHash().getBytes());
+
+            var blockNumber = getPegoutCreationRskBlockNumber();
+            if (blockNumber != null) {
+                            digest.update(ByteUtil.longToBytes(blockNumber));
+            } else {
+                digest.update(new byte[0]);
+            }
+            
+            return Sha256Hash.wrap(digest.digest());
         }
 
         @Override
