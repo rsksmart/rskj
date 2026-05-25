@@ -18,6 +18,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.Keccak256;
 import com.google.common.primitives.UnsignedBytes;
 
@@ -29,7 +30,11 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Representation of a queue of BTC release
@@ -39,6 +44,8 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
  * @author Ariel Mendelzon
  */
 public class PegoutsWaitingForConfirmations {
+
+    private static final Logger logger = LoggerFactory.getLogger(PegoutsWaitingForConfirmations.class);
 
     private final EntriesStore entries;
 
@@ -88,6 +95,22 @@ public class PegoutsWaitingForConfirmations {
      */
     public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations, ForBlock activations) {
         var rskip559 = activations.isActive(ConsensusRule.RSKIP559);
+
+        // Diff output logic
+        var preActivation = this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, false);
+        var postActivation = this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, true);
+
+        if (! preActivation.equals(postActivation) ) {
+            
+            logger.error(
+                "PEGOUTS DIFF current:{} conf:{} PRE_HASH:{} POST_HASH:{}",
+                currentBlockNumber,
+                minimumConfirmations,
+                preActivation.map(e -> e.getSha256().toString()).orElse("NONE"),
+                postActivation.map(e -> e.getSha256().toString()).orElse("NONE")
+            );
+        }
+
         return this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, rskip559);
     }
 
@@ -198,6 +221,23 @@ public class PegoutsWaitingForConfirmations {
 
         public Keccak256 getPegoutCreationRskTxHash() {
             return pegoutCreationRskTxHash;
+        }
+
+        /**
+         * Returns Sha256 representation for this Entry.
+         */
+        Sha256Hash getSha256() {
+            var digest = Sha256Hash.newDigest();
+            digest.update(this.getBtcTransaction().getHash().getBytes());
+
+            var blockNumber = getPegoutCreationRskBlockNumber();
+            if (blockNumber != null) {
+                            digest.update(ByteUtil.longToBytes(blockNumber));
+            } else {
+                digest.update(new byte[0]);
+            }
+            
+            return Sha256Hash.wrap(digest.digest());
         }
 
         @Override
