@@ -120,6 +120,7 @@ public class BridgeSupportIT {
 
     private static final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private static final BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
+    private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
     private FederationConstants federationConstants;
     private NetworkParameters btcParams;
     private ActivationConfig.ForBlock activationsBeforeForks;
@@ -671,10 +672,10 @@ public class BridgeSupportIT {
         federationStorageProvider = createFederationStorageProvider(track);
 
         assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
         // Check value sent to user is 10 BTC minus fee
-        assertEquals(Coin.valueOf(999962800L), provider.getPegoutsWaitingForConfirmations().getEntries().iterator().next().getBtcTransaction().getOutput(0).getValue());
+        assertEquals(Coin.valueOf(999962800L), provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).iterator().next().getBtcTransaction().getOutput(0).getValue());
         // Check the wallet has been emptied
         assertTrue(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).isEmpty());
     }
@@ -764,7 +765,7 @@ public class BridgeSupportIT {
         federationStorageProvider = createFederationStorageProvider(track);
 
         assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
         // Check the wallet has not been emptied
         assertFalse(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).isEmpty());
@@ -854,7 +855,7 @@ public class BridgeSupportIT {
         federationStorageProvider = createFederationStorageProvider(track);
 
         assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
         // Check the wallet has not been emptied
         assertFalse(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).isEmpty());
@@ -1058,7 +1059,7 @@ public class BridgeSupportIT {
         federationStorageProvider = createFederationStorageProvider(track);
 
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
         assertEquals(LIMIT_MONETARY_BASE.subtract(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2600))), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2600)), repository.getBalance(BridgeSupport.BURN_ADDRESS));
@@ -1102,9 +1103,9 @@ public class BridgeSupportIT {
             tx3.addInput(txs.getOutput(0));
             tx3.getInput(0).disconnect();
             tx3.addOutput(Coin.COIN, new BtcECKey());
-            provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
-            provider0.getPegoutsWaitingForConfirmations().add(tx2, 1L);
-            provider0.getPegoutsWaitingForConfirmations().add(tx3, 1L);
+            provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx1, 1L));
+            provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx2, 1L));
+            provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx3, 1L));
 
             provider0.save();
 
@@ -1160,7 +1161,7 @@ public class BridgeSupportIT {
             BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, bridgeRegTestConstants.getBtcParams(), activationsBeforeForks);
 
             assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-            assertEquals(2, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+            assertEquals(2, provider2.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
             assertEquals(1, provider2.getPegoutsWaitingForSignatures().size());
         }
     }
@@ -1425,7 +1426,7 @@ public class BridgeSupportIT {
 
         assertTrue(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).isEmpty());
         assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
@@ -1464,7 +1465,7 @@ public class BridgeSupportIT {
 
         assertTrue(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).isEmpty());
         assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
@@ -1503,7 +1504,7 @@ public class BridgeSupportIT {
 
         assertTrue(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).isEmpty());
         assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
@@ -1542,7 +1543,7 @@ public class BridgeSupportIT {
 
         assertTrue(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).isEmpty());
         assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
@@ -1649,7 +1650,7 @@ public class BridgeSupportIT {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, bridgeRegTestConstants.getBtcParams(), activationsBeforeForks);
         assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
@@ -1755,7 +1756,7 @@ public class BridgeSupportIT {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, btcParams, activationsBeforeForks);
         assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
@@ -2161,7 +2162,7 @@ public class BridgeSupportIT {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, bridgeRegTestConstants.getBtcParams(), activationsBeforeForks);
         assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
         assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx2.getHash()).isPresent());

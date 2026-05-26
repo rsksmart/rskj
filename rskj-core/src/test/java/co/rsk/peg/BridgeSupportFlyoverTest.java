@@ -794,7 +794,7 @@ class BridgeSupportFlyoverTest {
         );
 
         if (result.longValue() == FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value() || result.longValue() == FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()){
-            List<BtcTransaction> pegoutsWaitingForConfirmationsEntries = provider.getPegoutsWaitingForConfirmations().getEntries()
+            List<BtcTransaction> pegoutsWaitingForConfirmationsEntries = provider.getPegoutsWaitingForConfirmations().getEntries(allActivations)
                 .stream()
                 .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
                 .toList();
