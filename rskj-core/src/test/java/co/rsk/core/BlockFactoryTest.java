@@ -27,6 +27,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderBuilder;
+import org.ethereum.core.BlockHeaderExtension;
 import org.ethereum.core.BlockHeaderV1;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
@@ -926,6 +927,79 @@ class BlockFactoryTest {
         assertArrayEquals(logsBloom, decodedHeader.getLogsBloom());
         assertArrayEquals(edges, decodedHeader.getTxExecutionSublistsEdges());
         assertArrayEquals(baseEvent, decodedHeader.getBaseEvent());
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // baseEvent encoding — regression tests
+    //
+    // These tests cover how an empty baseEvent field is handled across the backward
+    // body-sync store-and-reload path: an empty baseEvent is preserved through the wire
+    // round-trip and re-encoding.
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * Verifies the backward body-sync store-and-reload path for a block with merged-mining
+     * fields: an empty baseEvent must survive the wire round-trip and be persisted in full.
+     */
+    @Test
+    void blockWithEmptyBaseEventSurvivesBackwardSyncStoreAndReloadWithMining() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIPUMM, RSKIP144);
+
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+
+        // A block with no Union Bridge event -> empty baseEvent (BlockHeaderBuilder fills byte[0]).
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withMergedMining()
+                .withUmmRoot(ummRoot)
+                .withEdges(edges)
+                .build();
+        assertArrayEquals(new byte[0], header.getBaseEvent());
+
+        // Backward body sync: the extension travels over the wire and is parsed via
+        // BlockHeaderExtension.fromEncoded (MessageType.BODY_RESPONSE_MESSAGE.createMessage),
+        // then attached to the header (DownloadingBackwardsBodiesSyncState.newBody -> setExtension).
+        BlockHeaderExtension wireExtension = BlockHeaderExtension.fromEncoded(
+                BlockHeaderExtension.toEncoded(header.getExtension()));
+        header.setExtension(wireExtension);
+
+        // IndexedBlockStore.saveBlock stores block.getEncoded() -> header.getFullEncoded().
+        // The empty baseEvent is preserved, so the header keeps all 23 RLP elements.
+        byte[] stored = header.getFullEncoded();
+        assertThat(RLP.decodeList(stored).size(), is(23));
+
+        // IndexedBlockStore.getBlock reloads via blockFactory.decodeBlock -> decodeHeader.
+        BlockHeader reloaded = factory.decodeHeader(stored, false);
+
+        assertArrayEquals(new byte[0], reloaded.getBaseEvent());
+        assertThat(reloaded.getHash(), is(header.getHash()));
+    }
+
+    /**
+     * Same backward body-sync store-and-reload path as above, for a block without
+     * merged-mining fields.
+     */
+    @Test
+    void blockWithEmptyBaseEventSurvivesBackwardSyncStoreAndReloadNoMining() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIP144);
+
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withEdges(edges)
+                .build();
+        assertArrayEquals(new byte[0], header.getBaseEvent());
+
+        BlockHeaderExtension wireExtension = BlockHeaderExtension.fromEncoded(
+                BlockHeaderExtension.toEncoded(header.getExtension()));
+        header.setExtension(wireExtension);
+
+        byte[] stored = header.getFullEncoded();
+        BlockHeader reloaded = factory.decodeHeader(stored, false);
+
+        assertArrayEquals(new byte[0], reloaded.getBaseEvent());
+        assertThat(reloaded.getHash(), is(header.getHash()));
     }
 
     @ParameterizedTest(name = "btcHeaderSize={0}, shouldSucceed={1} — {2}")

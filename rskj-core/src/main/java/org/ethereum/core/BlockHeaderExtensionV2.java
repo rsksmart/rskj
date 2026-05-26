@@ -42,7 +42,9 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
     public static BlockHeaderExtensionV2 fromEncoded(byte[] encoded) {
         RLPList rlpExtension = RLP.decodeList(encoded);
         byte[] logsBloom = rlpExtension.get(0).getRLPData();
-        byte[] baseEvent = rlpExtension.get(1).getRLPData();
+        // getRLPRawData() (not getRLPData()) so an empty baseEvent decodes to byte[0]
+        // rather than null. This is consistent with how edges (below) and BlockFactory decode it.
+        byte[] baseEvent = rlpExtension.get(1).getRLPRawData();
 
         return new BlockHeaderExtensionV2(
                 logsBloom,

@@ -217,9 +217,9 @@ public final class BlockFactory implements BtcHeaderSizeRule {
             }
 
 
-        if (rlpHeader.size() > r && isBaseEventEnabled(blockNumber) && !compressed) {
-            baseEvent = rlpHeader.get(r++).getRLPRawData();
-        }
+        BaseEventDecodeResult baseEventResult = decodeBaseEvent(rlpHeader, r, blockNumber, compressed);
+        baseEvent = baseEventResult.baseEvent;
+        r = baseEventResult.nextIndex;
 
         byte[] bitcoinMergedMiningHeader = null;
         byte[] bitcoinMergedMiningMerkleProof = null;
@@ -242,6 +242,39 @@ public final class BlockFactory implements BtcHeaderSizeRule {
                 txExecutionSublistsEdges,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 useRskip92Encoding, includeForkDetectionData);
+    }
+
+    /**
+     * Decodes the optional baseEvent field (RSKIP-535) and reports the index past it.
+     *
+     * <p>A header may not carry a baseEvent element. An absent field is decoded as an empty
+     * event, so a reloaded header is equal to a freshly built one.
+     */
+    private BaseEventDecodeResult decodeBaseEvent(RLPList rlpHeader, int baseEventIndex, long blockNumber, boolean compressed) {
+        if (!isBaseEventEnabled(blockNumber) || compressed) {
+            return new BaseEventDecodeResult(null, baseEventIndex);
+        }
+
+        // baseEvent is followed only by the optional merged-mining fields, so the remaining
+        // element count is 0, 1, miningFieldCount, or 1 + miningFieldCount. A remaining count
+        // of 0 or miningFieldCount means the header does not carry a baseEvent element.
+        int remaining = rlpHeader.size() - baseEventIndex;
+        int miningFieldCount = MAX_RLP_HEADER_SIZE_WITH_MINING - MAX_RLP_HEADER_SIZE_WITHOUT_MINING;
+        if (remaining == 0 || remaining == miningFieldCount) {
+            return new BaseEventDecodeResult(ByteUtil.EMPTY_BYTE_ARRAY, baseEventIndex);
+        }
+
+        return new BaseEventDecodeResult(rlpHeader.get(baseEventIndex).getRLPRawData(), baseEventIndex + 1);
+    }
+
+    private static final class BaseEventDecodeResult {
+        private final byte[] baseEvent;
+        private final int nextIndex;
+
+        private BaseEventDecodeResult(byte[] baseEvent, int nextIndex) {
+            this.baseEvent = baseEvent;
+            this.nextIndex = nextIndex;
+        }
     }
 
     private void validateBitcoinMergedMiningHeader(byte[] bitcoinMergedMiningHeader, long blockNumber) {
