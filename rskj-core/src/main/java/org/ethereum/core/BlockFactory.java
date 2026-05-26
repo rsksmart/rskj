@@ -367,20 +367,9 @@ public final class BlockFactory implements BtcHeaderSizeRule {
     private boolean canBeDecoded(RLPList rlpHeader, long blockNumber, boolean compressed) {
         int expectedSizeWithoutMining = calculateExpectedHeaderSize(blockNumber, compressed, false);
         int expectedSizeWithMining = calculateExpectedHeaderSize(blockNumber, compressed, true);
-        int actualSize = rlpHeader.size();
 
-        if (actualSize == expectedSizeWithoutMining || actualSize == expectedSizeWithMining) {
-            return true;
-        }
-
-        // Backward compatibility: a header that does not carry a baseEvent element has
-        // exactly one RLP element fewer than its full layout.
-        if (isBaseEventEnabled(blockNumber) && !compressed) {
-            return actualSize == expectedSizeWithoutMining - 1 ||
-                    actualSize == expectedSizeWithMining - 1;
-        }
-
-        return false;
+        return rlpHeader.size() == expectedSizeWithoutMining ||
+                rlpHeader.size() == expectedSizeWithMining;
     }
 
     /**

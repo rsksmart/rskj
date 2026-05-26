@@ -28,7 +28,6 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderBuilder;
 import org.ethereum.core.BlockHeaderExtension;
-import org.ethereum.core.BlockHeaderExtensionV2;
 import org.ethereum.core.BlockHeaderV1;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
@@ -935,8 +934,7 @@ class BlockFactoryTest {
     //
     // These tests cover how an empty baseEvent field is handled across the backward
     // body-sync store-and-reload path: an empty baseEvent is preserved through the wire
-    // round-trip and re-encoding, and a header that does not carry a baseEvent element
-    // remains decodable (backward compatibility).
+    // round-trip and re-encoding.
     // ---------------------------------------------------------------------------------------
 
     /**
@@ -1002,67 +1000,6 @@ class BlockFactoryTest {
 
         assertArrayEquals(new byte[0], reloaded.getBaseEvent());
         assertThat(reloaded.getHash(), is(header.getHash()));
-    }
-
-    /**
-     * Backward compatibility: a header that does not carry a baseEvent element, with
-     * merged-mining fields, must still decode. Exercises the decoder's
-     * "remaining == miningFieldCount" disambiguation branch.
-     */
-    @Test
-    void blockStoredWithMissingBaseEventCanBeDecoded() {
-        long number = 500L;
-        setupRskip535Test(number, RSKIPUMM, RSKIP144);
-
-        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
-        short[] edges = TestUtils.randomShortArray("edges", 4);
-        BlockHeader header = new TestBlockHeaderBuilder(number)
-                .withMergedMining()
-                .withUmmRoot(ummRoot)
-                .withEdges(edges)
-                .build();
-
-        // Attach a V2 extension whose baseEvent is null, then encode: addBaseEvent() omits
-        // the field, yielding a 22-element header layout without the baseEvent element.
-        header.setExtension(new BlockHeaderExtensionV2(
-                header.getLogsBloom(),
-                header.getTxExecutionSublistsEdges(),
-                null));
-        byte[] stored = header.getFullEncoded();
-        assertThat(RLP.decodeList(stored).size(), is(22));
-
-        // The tolerant decoder reads the short header and treats the absent field as empty.
-        BlockHeader reloaded = factory.decodeHeader(stored, false);
-
-        assertArrayEquals(new byte[0], reloaded.getBaseEvent());
-        assertArrayEquals(edges, reloaded.getTxExecutionSublistsEdges());
-    }
-
-    /**
-     * Backward compatibility for a header that does not carry a baseEvent element, without
-     * merged-mining fields. Exercises the decoder's "remaining == 0" disambiguation branch.
-     */
-    @Test
-    void blockStoredWithMissingBaseEventCanBeDecodedNoMining() {
-        long number = 500L;
-        setupRskip535Test(number, RSKIP144);
-
-        short[] edges = TestUtils.randomShortArray("edges", 4);
-        BlockHeader header = new TestBlockHeaderBuilder(number)
-                .withEdges(edges)
-                .build();
-
-        // A V2 extension with a null baseEvent encodes without the baseEvent element.
-        header.setExtension(new BlockHeaderExtensionV2(
-                header.getLogsBloom(),
-                header.getTxExecutionSublistsEdges(),
-                null));
-        byte[] stored = header.getFullEncoded();
-
-        BlockHeader reloaded = factory.decodeHeader(stored, false);
-
-        assertArrayEquals(new byte[0], reloaded.getBaseEvent());
-        assertArrayEquals(edges, reloaded.getTxExecutionSublistsEdges());
     }
 
     @ParameterizedTest(name = "btcHeaderSize={0}, shouldSucceed={1} — {2}")
