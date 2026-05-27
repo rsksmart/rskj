@@ -914,21 +914,17 @@ public class Web3Impl implements Web3 {
             }
         }
 
-        // For Type 1 / standard Type 2 receipts the 4-field RLP format does not store gasUsed
-        // (only the cumulative total). Derive the per-tx value from the cumulative gas difference
-        // and pass it to the DTO — we intentionally do NOT mutate the receipt instance here,
-        // because receipts are shared read-only domain objects and mutating them would leak a
-        // view-layer concern into storage. Gating on the receipt's transaction type (rather than
-        // on `gasUsed.length == 0`) avoids accidentally rewriting the gasUsed of any malformed/
-        // synthetic legacy receipt whose gasUsed was encoded as the empty byte array.
+        // For four-field typed receipts (Type 1, standard Type 2, Type 4) the RLP body does not
+        // store gasUsed (only the cumulative total). Derive the per-tx value from the cumulative
+        // gas difference and pass it to the DTO on `gasUsed.length == 0`) avoids accidentally 
+        // rewriting the gasUsed of any malformed/synthetic legacy receipt whose gasUsed was 
+        // encoded as the empty byte array.
         TransactionReceipt receipt = txInfo.getReceipt();
         Long overrideGasUsed = null;
         Transaction receiptTx = receipt.getTransaction();
-        boolean isStandardTyped12 = receiptTx != null
-                && (receiptTx.getType() == TransactionType.TYPE_1
-                        || (receiptTx.getType() == TransactionType.TYPE_2
-                                && !receiptTx.getTypePrefix().isRskNamespace()));
-        if (isStandardTyped12 && receipt.getGasUsed().length == 0) {
+        boolean usesFourFieldReceipt = receiptTx != null
+                && TransactionReceipt.usesFourFieldReceiptBody(receiptTx.getTypePrefix());
+        if (usesFourFieldReceipt && receipt.getGasUsed().length == 0) {
             overrideGasUsed = receipt.getCumulativeGasLong() - prevCumulativeGas;
         }
 

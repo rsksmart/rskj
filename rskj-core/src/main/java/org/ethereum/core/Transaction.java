@@ -32,10 +32,12 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.exception.TransactionException;
+import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.encoder.TransactionEncoderFactory;
 import org.ethereum.core.transaction.parser.ParsedRawTransaction;
 import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
+import org.ethereum.core.transaction.parser.util.Type4TransactionValidation;
 import org.ethereum.cost.InitcodeCostCalculator;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
@@ -54,6 +56,8 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SignatureException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -114,9 +118,12 @@ public class Transaction {
     /** RSKIP546: Access list bytes (RLP-encoded) for Type 1 and Type 2 */
     private final byte[] accessListBytes;
 
+    @Nullable
+    private final List<SetCodeAuthorization> authorizationList;
+
     /**
-     * RSKIP-546: EIP-1559 fee fields for <em>standard</em> Type 2 only ({@code null} for legacy, Type 1, Type 3/4,
-     * and RSK-namespace Type 2). Effective gas price is {@code min(maxPriorityFeePerGas, maxFeePerGas)}.
+     * RSKIP-546 / RSKIP-545: EIP-1559 fee fields for standard Type 2 and Type 4 ({@code null} for legacy, Type 1,
+     * Type 3, and RSK-namespace Type 2). Effective gas price is {@code min(maxPriorityFeePerGas, maxFeePerGas)}.
      */
     private final Coin maxPriorityFeePerGas;
     private final Coin maxFeePerGas;
@@ -150,6 +157,7 @@ public class Transaction {
                 TransactionTypePrefix.typed(TransactionType.LEGACY),
                 null,
                 null,
+                null,
                 null
         );
     }
@@ -167,7 +175,8 @@ public class Transaction {
                 tx.typePrefix,
                 tx.accessListBytes,
                 tx.maxPriorityFeePerGas,
-                tx.maxFeePerGas
+                tx.maxFeePerGas,
+                tx.authorizationList
         );
 
         this.signature = tx.signature;
@@ -183,7 +192,8 @@ public class Transaction {
 
     public Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
                           byte chainId, final boolean localCall, TransactionTypePrefix typePrefix, byte[] accessListBytes,
-                          @Nullable Coin maxPriorityFeePerGas, @Nullable Coin maxFeePerGas) {
+                          @Nullable Coin maxPriorityFeePerGas, @Nullable Coin maxFeePerGas,
+                          @Nullable List<SetCodeAuthorization> authorizationList) {
 
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = gasPriceRaw;
@@ -197,15 +207,24 @@ public class Transaction {
         this.accessListBytes = accessListBytes == null ? null : accessListBytes.clone();
         this.maxPriorityFeePerGas = maxPriorityFeePerGas;
         this.maxFeePerGas = maxFeePerGas;
+        this.authorizationList = authorizationList == null ? null : List.copyOf(authorizationList);
 
         // RSKIP-546 invariant: a *standard* Type 2 transaction must always carry both fee fields.
         // Fail loud at construction so the requirement is enforced uniformly across every ingress
         // path (JSON-RPC, P2P decoder, internal builders, tests) instead of being scattered across
         // ad-hoc checks in encoding and validation.
         boolean isStandardType2 = typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace();
-        if (isStandardType2 && (this.maxPriorityFeePerGas == null || this.maxFeePerGas == null)) {
+        boolean isType4 = typePrefix.type() == TransactionType.TYPE_4;
+        if ((isStandardType2 || isType4) && (this.maxPriorityFeePerGas == null || this.maxFeePerGas == null)) {
             throw new IllegalArgumentException(
-                    "Standard Type 2 (EIP-1559) transaction requires both maxPriorityFeePerGas and maxFeePerGas");
+                    "Type " + typePrefix.type().getTypeName()
+                            + " transaction requires both maxPriorityFeePerGas and maxFeePerGas");
+        }
+        if (isType4 && (this.authorizationList == null || this.authorizationList.isEmpty())) {
+            throw new IllegalArgumentException("Set-code transaction authorization_list must not be empty");
+        }
+        if (!isType4 && this.authorizationList != null && !this.authorizationList.isEmpty()) {
+            throw new IllegalArgumentException("authorization_list is only valid for Type 4 transactions");
         }
     }
 
@@ -246,10 +265,12 @@ public class Transaction {
         if (!activations.isActive(ConsensusRule.RSKIP543)) {
             return true;
         }
-        // RSKIP-546 gates Type 1 and Type 2 specifically
         TransactionType type = typePrefix.type();
-        return (type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2)
-                && !activations.isActive(ConsensusRule.RSKIP546);
+        if ((type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2)
+                && !activations.isActive(ConsensusRule.RSKIP546)) {
+            return true;
+        }
+        return type == TransactionType.TYPE_4 && !activations.isActive(ConsensusRule.RSKIP545);
     }
 
     public boolean isInitCodeSizeInvalidForTx(ActivationConfig.ForBlock activations) {
@@ -291,10 +312,17 @@ public class Transaction {
             if (BigIntegers.asUnsignedByteArray(signature.getS()).length > DATAWORD_LENGTH) {
                 throw new TransactionException("Signature S is not valid");
             }
+            if (isType4()) {
+                Type4TransactionValidation.validateOuterSignatureFormat(signature);
+                Type4TransactionValidation.validateOuterSignatureRecovery(this, signatureCache);
+            }
             RskAddress senderAddress = getSender(signatureCache);
             if (senderAddress.getBytes() != null && senderAddress.getBytes().length != Constants.getMaxAddressByteLength()) {
                 throw new TransactionException("Sender is not valid");
             }
+        }
+        if (isType4() && authorizationList != null) {
+            Type4TransactionValidation.validateAuthorizationChainIds(chainId, authorizationList);
         }
     }
 
@@ -332,7 +360,7 @@ public class Transaction {
     public Coin getGasPrice() {
         // some blocks have zero encoded as null, but if we altered the internal field then re-encoding the value would
         // give a different value than the original.
-        if (isStandardType2() && maxPriorityFeePerGas != null && maxFeePerGas != null) {
+        if (usesRskip546FeeFields() && maxPriorityFeePerGas != null && maxFeePerGas != null) {
             return maxPriorityFeePerGas.compareTo(maxFeePerGas) <= 0 ? maxPriorityFeePerGas : maxFeePerGas;
         }
         if (gasPrice == null) {
@@ -357,9 +385,18 @@ public class Transaction {
         return typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace();
     }
 
+    private boolean isType4() {
+        return typePrefix.type() == TransactionType.TYPE_4;
+    }
+
+    /** Type 2 (standard) and Type 4 carry RSKIP-546 fee caps in their payload. */
+    private boolean usesRskip546FeeFields() {
+        return isStandardType2() || isType4();
+    }
+
     /** Types that use RSKIP-546 access-list field and intrinsic gas for that field (excludes RSK-namespace Type 2). */
     private boolean isType1OrStandardType2() {
-        return typePrefix.type() == TransactionType.TYPE_1 || isStandardType2();
+        return typePrefix.type() == TransactionType.TYPE_1 || isStandardType2() || isType4();
     }
 
     public byte[] getGasLimit() {
@@ -379,8 +416,7 @@ public class Transaction {
             return false;
         }
 
-        if (typePrefix.type() == TransactionType.TYPE_1 || isStandardType2()) {
-            // EIP-2930 / EIP-1559 mandate chainId; chainId == 0 is not valid
+        if (typePrefix.type() == TransactionType.TYPE_1 || isStandardType2() || isType4()) {
             return this.chainId != 0 && this.chainId == currentChainId;
         }
 
@@ -506,6 +542,11 @@ public class Transaction {
         return accessListBytes == null ? null : accessListBytes.clone();
     }
 
+    @Nullable
+    public List<SetCodeAuthorization> getAuthorizationList() {
+        return authorizationList == null ? null : Collections.unmodifiableList(authorizationList);
+    }
+
     public TransactionTypePrefix getTypePrefix() {
         return typePrefix;
     }
@@ -560,6 +601,7 @@ public class Transaction {
                 ", value=" + value +
                 ", data=" + ByteUtil.toHexStringOrEmpty(data) +
                 (accessListBytes != null ? ", accessListLen=" + accessListBytes.length : "") +
+                (authorizationList != null ? ", authorizationListLen=" + authorizationList.size() : "") +
                 (maxPriorityFeePerGas != null ? ", maxPriorityFeePerGas=" + maxPriorityFeePerGas : "") +
                 (maxFeePerGas != null ? ", maxFeePerGas=" + maxFeePerGas : "") +
                 ", signatureV=" + (signature == null ? "" : signature.getV()) +

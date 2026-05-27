@@ -1,20 +1,19 @@
 package org.ethereum.util;
 
-import java.math.BigInteger;
-import java.util.Optional;
-
-import org.ethereum.core.Account;
-import org.ethereum.core.Transaction;
-import org.ethereum.rpc.CallArguments;
-
 import co.rsk.core.RskAddress;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
+import org.ethereum.core.Account;
+import org.ethereum.core.Transaction;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.rpc.parameters.HexNumberParam;
+
+import java.math.BigInteger;
+import java.util.Optional;
 
 /**
  * Created by ajlopez on 28/02/2018.
@@ -137,7 +136,8 @@ public class TransactionFactoryHelper {
                 Optional.ofNullable(args.getInput()).filter(p -> !p.isEmpty()).map(HexDataParam::new).orElse(null),
                 Optional.ofNullable(args.getType()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
                 Optional.ofNullable(args.getRskSubtype()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
-                args.getAccessList()
+                args.getAccessList(),
+                args.getAuthorizationList()
         );
     }
 

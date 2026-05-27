@@ -24,7 +24,10 @@ import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CallArgumentsParamTest {
 
@@ -180,6 +183,7 @@ public class CallArgumentsParamTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -213,6 +217,7 @@ public class CallArgumentsParamTest {
                 new HexNumberParam(VALUE),
                 null,
                 new HexDataParam(DATA),
+                null,
                 null,
                 null,
                 null
