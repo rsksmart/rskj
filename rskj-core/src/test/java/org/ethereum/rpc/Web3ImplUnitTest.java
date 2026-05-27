@@ -21,7 +21,12 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.HexUtils;
 import org.ethereum.TestUtils;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
@@ -29,7 +34,14 @@ import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.rpc.parameters.*;
+import org.ethereum.rpc.parameters.AccountOverrideParam;
+import org.ethereum.rpc.parameters.BlockHashParam;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.BlockRefParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataParam;
+import org.ethereum.rpc.parameters.HexNumberParam;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
@@ -38,12 +50,21 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class Web3ImplUnitTest {
 
@@ -445,7 +466,7 @@ class Web3ImplUnitTest {
         HexAddressParam from = new HexAddressParam("0x0011223344556677880011223344556677889900");
         HexAddressParam to = new HexAddressParam("0x0011223344556677880011223344556677889900");
         HexDataParam data = new HexDataParam("0x010203");
-        return new CallArgumentsParam(from, to, null, null, null, null, null, null, null, null, data, null, null, null, null);
+        return new CallArgumentsParam(from, to, null, null, null, null, null, null, null, null, data, null, null, null, null, null);
     }
 
 }

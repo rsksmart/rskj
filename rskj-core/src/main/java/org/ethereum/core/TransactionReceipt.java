@@ -75,12 +75,12 @@ public class TransactionReceipt {
         ArrayList<RLPElement> params = RLP.decode2(receiptData);
         RLPList receipt = (RLPList) params.get(0);
 
-        if (isType1Or2ReceiptPrefix(prefix)) {
+        if (usesFourFieldReceiptBody(prefix)) {
             if (receipt.size() != 4) {
                 throw new IllegalArgumentException(
-                        "Type 1 / standard Type 2 receipt body must have 4 RLP elements, got: " + receipt.size());
+                        "Four-field typed receipt body must have 4 RLP elements, got: " + receipt.size());
             }
-            decodeType1Or2ReceiptBody(receipt);
+            decodeFourFieldReceiptBody(receipt);
         } else {
             decodeLegacyReceiptBody(receipt);
         }
@@ -89,19 +89,21 @@ public class TransactionReceipt {
     }
 
     /**
-     * RSKIP-546: standard Type 1 and Type 2 receipts use
+     * RSKIP-546 / RSKIP-545: standard Type 1, standard Type 2, and Type 4 receipts use
      * {@code rlp([status, cumulativeGasUsed, logsBloom, logs])} after the single-byte type prefix.
-     * RSK-namespace Type 2 and Type 3/4 use the legacy six-field body.
+     * RSK-namespace Type 2 and Type 3 use the legacy six-field body.
      */
-    private static boolean isType1Or2ReceiptPrefix(TransactionTypePrefix prefix) {
+    public static boolean usesFourFieldReceiptBody(TransactionTypePrefix prefix) {
         if (prefix instanceof StandardTypedPrefix st) {
             TransactionType t = st.type();
-            return t == TransactionType.TYPE_1 || t == TransactionType.TYPE_2;
+            return t == TransactionType.TYPE_1
+                    || t == TransactionType.TYPE_2
+                    || t == TransactionType.TYPE_4;
         }
         return false;
     }
 
-    private void decodeType1Or2ReceiptBody(RLPList receipt) {
+    private void decodeFourFieldReceiptBody(RLPList receipt) {
         RLPItem statusRLP = (RLPItem) receipt.get(0);
         RLPItem cumulativeGasRLP = (RLPItem) receipt.get(1);
         RLPItem bloomRLP = (RLPItem) receipt.get(2);
@@ -184,7 +186,7 @@ public class TransactionReceipt {
     }
 
     /* Legacy: [postTxState, cumulativeGas, bloomFilter, logs, gasUsed, status].
-     * RSKIP-546 Type 1 / standard Type 2: [status, cumulativeGas, bloom, logs]. */
+     * Four-field typed (RSKIP-546 Type 1/2, RSKIP-545 Type 4): [status, cumulativeGas, bloom, logs]. */
     public byte[] getEncoded() {
 
         if (rlpEncoded != null) {
@@ -210,7 +212,7 @@ public class TransactionReceipt {
         byte[] statusRLP = RLP.encodeElement(this.status);
 
         byte[] receiptData;
-        if (isType1Or2ReceiptEncodingForTransaction()) {
+        if (usesFourFieldReceiptEncodingForTransaction()) {
             receiptData = RLP.encodeList(statusRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP);
         } else {
             byte[] postTxStateRLP = RLP.encodeElement(this.postTxState);
@@ -225,11 +227,11 @@ public class TransactionReceipt {
         return rlpEncoded;
     }
 
-    private boolean isType1Or2ReceiptEncodingForTransaction() {
+    private boolean usesFourFieldReceiptEncodingForTransaction() {
         if (transaction == null) {
             return false;
         }
-        return isType1Or2ReceiptPrefix(transaction.getTypePrefix());
+        return usesFourFieldReceiptBody(transaction.getTypePrefix());
     }
 
     private byte[] getReceiptTypePrefix() {

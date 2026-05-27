@@ -53,9 +53,9 @@ public class TransactionReceiptDTO {
 
     /**
      * @param overrideGasUsed if non-null, use this value for {@code gasUsed} instead of the one
-     *        carried by the receipt. Required for RSKIP-546 Type 1 / Type 2 receipts whose on-disk
-     *        encoding does not include the per-tx gasUsed (only the cumulative total). Callers
-     *        derive it as {@code cumulativeGas(currentTx) - cumulativeGas(previousTx)} and pass it
+     *        carried by the receipt. Required for four-field typed receipts (RSKIP-546 Type 1/2,
+     *        RSKIP-545 Type 4) whose on-disk encoding does not include per-tx gasUsed (only the
+     *        cumulative total). Callers derive it as {@code cumulativeGas(currentTx) - cumulativeGas(previousTx)} and pass it
      *        here — this keeps the derivation in the view layer and avoids mutating persistent
      *        receipt state.
      */

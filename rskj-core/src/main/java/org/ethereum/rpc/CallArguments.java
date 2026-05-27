@@ -44,6 +44,8 @@ public class CallArguments {
     private String rskSubtype;
     /** EIP-2930 / EIP-1559 access list; null or empty means no access list entries */
     private List<AccessListEntry> accessList;
+    /** RSKIP-545 / EIP-7702 authorization list */
+    private List<AuthorizationListEntry> authorizationList;
 
     /**
      * A single entry in an EIP-2930 / EIP-1559 access list.
@@ -68,6 +70,63 @@ public class CallArguments {
 
         public void setStorageKeys(List<String> storageKeys) {
             this.storageKeys = storageKeys;
+        }
+    }
+
+    public static class AuthorizationListEntry {
+        private String chainId;
+        private String address;
+        private String nonce;
+        private String yParity;
+        private String r;
+        private String s;
+
+        public String getChainId() {
+            return chainId;
+        }
+
+        public void setChainId(String chainId) {
+            this.chainId = chainId;
+        }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public void setAddress(String address) {
+            this.address = address;
+        }
+
+        public String getNonce() {
+            return nonce;
+        }
+
+        public void setNonce(String nonce) {
+            this.nonce = nonce;
+        }
+
+        public String getYParity() {
+            return yParity;
+        }
+
+        public void setYParity(String yParity) {
+            this.yParity = yParity;
+        }
+
+        public String getR() {
+            return r;
+        }
+
+        public void setR(String r) {
+            this.r = r;
+        }
+
+        public String getS() {
+            return s;
+        }
+
+        public void setS(String s) {
+            this.s = s;
         }
     }
 
@@ -183,6 +242,14 @@ public class CallArguments {
         this.accessList = accessList;
     }
 
+    public List<AuthorizationListEntry> getAuthorizationList() {
+        return authorizationList;
+    }
+
+    public void setAuthorizationList(List<AuthorizationListEntry> authorizationList) {
+        this.authorizationList = authorizationList;
+    }
+
     public String getInput() {
         return this.data;
     }
@@ -208,6 +275,7 @@ public class CallArguments {
                 ", type='" + type + '\'' +
                 ", rskSubtype='" + rskSubtype + '\'' +
                 ", accessList=" + accessList +
+                ", authorizationList=" + authorizationList +
                 '}';
     }
 }

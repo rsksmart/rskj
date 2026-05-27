@@ -48,13 +48,15 @@ public class CallArgumentsParam {
     private final HexNumberParam type;
     private final HexNumberParam rskSubtype;
     private final List<CallArguments.AccessListEntry> accessList;
+    private final List<CallArguments.AuthorizationListEntry> authorizationList;
 
     public CallArgumentsParam(HexAddressParam from, HexAddressParam to, HexNumberParam gas,
                               HexNumberParam gasPrice, HexNumberParam maxPriorityFeePerGas, HexNumberParam maxFeePerGas,
                               HexNumberParam gasLimit, HexNumberParam nonce,
                               HexNumberParam chainId, HexNumberParam value, HexDataParam data, HexDataParam input,
                               HexNumberParam type, HexNumberParam rskSubtype,
-                              List<CallArguments.AccessListEntry> accessList) {
+                              List<CallArguments.AccessListEntry> accessList,
+                              List<CallArguments.AuthorizationListEntry> authorizationList) {
         this.from = from;
         this.to = to;
         this.gas = gas;
@@ -70,6 +72,7 @@ public class CallArgumentsParam {
         this.type = type;
         this.rskSubtype = rskSubtype;
         this.accessList = accessList;
+        this.authorizationList = authorizationList;
     }
 
     public HexAddressParam getFrom() {
@@ -132,6 +135,10 @@ public class CallArgumentsParam {
         return accessList;
     }
 
+    public List<CallArguments.AuthorizationListEntry> getAuthorizationList() {
+        return authorizationList;
+    }
+
     public CallArguments toCallArguments() {
         String caFrom = this.from == null ? null : this.from.getAddress().toJsonString();
         String caTo = this.to == null ? null : this.to.getAddress().toJsonString();
@@ -168,6 +175,7 @@ public class CallArgumentsParam {
         callArguments.setType(caType);
         callArguments.setRskSubtype(caRskSubtype);
         callArguments.setAccessList(this.accessList);
+        callArguments.setAuthorizationList(this.authorizationList);
 
         return callArguments;
     }
@@ -217,8 +225,9 @@ public class CallArgumentsParam {
             HexNumberParam type = paramOrNull(node, "type", HexNumberParam::new);
             HexNumberParam rskSubtype = paramOrNull(node, "rskSubtype", HexNumberParam::new);
             List<CallArguments.AccessListEntry> accessList = parseAccessList(node.get("accessList"));
+            List<CallArguments.AuthorizationListEntry> authorizationList = parseAuthorizationList(node.get("authorizationList"));
 
-            return new CallArgumentsParam(from, to, gas, gasPrice, maxPriorityFeePerGas, maxFeePerGas, gasLimit, nonce, chainId, value, data, input, type, rskSubtype, accessList);
+            return new CallArgumentsParam(from, to, gas, gasPrice, maxPriorityFeePerGas, maxFeePerGas, gasLimit, nonce, chainId, value, data, input, type, rskSubtype, accessList, authorizationList);
         }
 
         @Nullable
@@ -240,6 +249,43 @@ public class CallArgumentsParam {
                         keys.add(keyNode.asText());
                     }
                     entry.setStorageKeys(keys);
+                }
+                entries.add(entry);
+            }
+            return entries;
+        }
+
+        @Nullable
+        private static List<CallArguments.AuthorizationListEntry> parseAuthorizationList(@Nullable JsonNode arrayNode) {
+            if (arrayNode == null || arrayNode.isNull() || !arrayNode.isArray()) {
+                return null;
+            }
+            List<CallArguments.AuthorizationListEntry> entries = new ArrayList<>();
+            for (JsonNode entryNode : arrayNode) {
+                CallArguments.AuthorizationListEntry entry = new CallArguments.AuthorizationListEntry();
+                JsonNode chainIdNode = entryNode.get("chainId");
+                if (chainIdNode != null && !chainIdNode.isNull()) {
+                    entry.setChainId(chainIdNode.asText());
+                }
+                JsonNode addressNode = entryNode.get("address");
+                if (addressNode != null && !addressNode.isNull()) {
+                    entry.setAddress(addressNode.asText());
+                }
+                JsonNode nonceNode = entryNode.get("nonce");
+                if (nonceNode != null && !nonceNode.isNull()) {
+                    entry.setNonce(nonceNode.asText());
+                }
+                JsonNode yParityNode = entryNode.get("yParity");
+                if (yParityNode != null && !yParityNode.isNull()) {
+                    entry.setYParity(yParityNode.asText());
+                }
+                JsonNode rNode = entryNode.get("r");
+                if (rNode != null && !rNode.isNull()) {
+                    entry.setR(rNode.asText());
+                }
+                JsonNode sNode = entryNode.get("s");
+                if (sNode != null && !sNode.isNull()) {
+                    entry.setS(sNode.asText());
                 }
                 entries.add(entry);
             }
