@@ -18,13 +18,20 @@
 package org.ethereum.core.transaction;
 
 import co.rsk.core.RskAddress;
+import org.ethereum.config.Constants;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.util.RLP;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Objects;
 
 public class SetCodeAuthorization {
+
+    private static final byte MAGIC = 0x05;
+    private static final BigInteger MAX_NONCE = new BigInteger("FFFFFFFFFFFFFFFF", 16);
+    private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
     private final BigInteger chainId;
     private final RskAddress address;
@@ -54,6 +61,36 @@ public class SetCodeAuthorization {
         return signature;
     }
 
+    public byte[] getSigningHash() {
+        byte[] rlpEncoded = RLP.encodeList(
+                RLP.encodeBigInteger(chainId),
+                RLP.encodeElement(address.getBytes()),
+                RLP.encodeElement(nonce)
+        );
+
+        byte[] payload = new byte[1 + rlpEncoded.length];
+        payload[0] = MAGIC;
+        System.arraycopy(rlpEncoded, 0, payload, 1, rlpEncoded.length);
+
+        return HashUtil.keccak256(payload);
+    }
+
+    public void verifyNonceRange() {
+        if (nonce.length == 0) {
+            throw new IllegalStateException("Nonce is empty");
+        }
+        BigInteger nonceValue = new BigInteger(1, nonce);
+        if (nonceValue.compareTo(MAX_NONCE) >= 0) {
+            throw new IllegalStateException("Nonce must be < 2^64 - 1");
+        }
+    }
+
+    public void verifyLowS() {
+        if (signature.getS().compareTo(SECP256K1N_HALF) > 0) {
+            throw new IllegalStateException("Signature s exceeds secp256k1n / 2");
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -73,4 +110,5 @@ public class SetCodeAuthorization {
     public int hashCode() {
         return Objects.hash(chainId, address, Arrays.hashCode(nonce), signature);
     }
+
 }

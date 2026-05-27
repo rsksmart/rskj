@@ -106,6 +106,8 @@ public class GasCost {
     public static final long INITCODE_WORD_COST = 2;
 
     public static final long MAX_GAS = Long.MAX_VALUE;
+    public static final long PER_EMPTY_ACCOUNT_COST = 25000L;
+    public static final long PER_AUTH_BASE_COST = 12500L;
 
     /**
      * An exception which is thrown be methods in GasCost when
