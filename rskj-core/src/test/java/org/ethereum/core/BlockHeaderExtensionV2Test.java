@@ -91,7 +91,9 @@ class BlockHeaderExtensionV2Test {
         byte[] encoded = ext.getEncoded();
         BlockHeaderExtensionV2 decoded = BlockHeaderExtensionV2.fromEncoded(encoded);
 
-        assertNull(decoded.getLogsBloom());
+        // Always-present fields (logsBloom, baseEvent) decode to byte[0] when empty; the
+        // optional edges slot remains null when absent from the encoded list.
+        assertArrayEquals(new byte[0], decoded.getLogsBloom());
         assertNull(decoded.getTxExecutionSublistsEdges());
         assertArrayEquals(new byte[0], decoded.getBaseEvent());
     }
