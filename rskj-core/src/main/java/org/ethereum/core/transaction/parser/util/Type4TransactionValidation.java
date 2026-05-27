@@ -62,7 +62,7 @@ public final class Type4TransactionValidation {
     public static void validateAuthorizationChainIds(byte txChainId, List<SetCodeAuthorization> authorizations) {
         BigInteger txChainIdValue = BigInteger.valueOf(txChainId & 0xFF);
         for (int i = 0; i < authorizations.size(); i++) {
-            BigInteger authChainId = authorizations.get(i).chainId();
+            BigInteger authChainId = authorizations.get(i).getChainId();
             if (authChainId.signum() != 0 && authChainId.compareTo(txChainIdValue) != 0) {
                 throw new IllegalArgumentException(
                         "Authorization chain_id at index " + i + " (" + authChainId

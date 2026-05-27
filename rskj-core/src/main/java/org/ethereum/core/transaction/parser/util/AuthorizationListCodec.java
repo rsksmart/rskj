@@ -94,14 +94,14 @@ public final class AuthorizationListCodec {
 
     public static byte[] encodeTuple(SetCodeAuthorization auth) {
         validateAuthorization(auth);
-        byte yParity = (byte) (auth.signature().getV() - Transaction.LOWER_REAL_V);
+        byte yParity = (byte) (auth.getSignature().getV() - Transaction.LOWER_REAL_V);
         return RLP.encodeList(
-                RLP.encodeBigInteger(auth.chainId()),
-                RLP.encodeRskAddress(auth.address()),
-                RLP.encodeElement(auth.nonce()),
+                RLP.encodeBigInteger(auth.getChainId()),
+                RLP.encodeRskAddress(auth.getAddress()),
+                RLP.encodeElement(auth.getNonce()),
                 RLP.encodeByte(yParity),
-                RLP.encodeElement(BigIntegers.asUnsignedByteArray(auth.signature().getR())),
-                RLP.encodeElement(BigIntegers.asUnsignedByteArray(auth.signature().getS()))
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(auth.getSignature().getR())),
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(auth.getSignature().getS()))
         );
     }
 
@@ -242,12 +242,12 @@ public final class AuthorizationListCodec {
     }
 
     private static void validateAuthorization(SetCodeAuthorization auth) {
-        if (auth.chainId().signum() < 0 || auth.chainId().compareTo(MAX_CHAIN_ID) >= 0) {
+        if (auth.getChainId().signum() < 0 || auth.getChainId().compareTo(MAX_CHAIN_ID) >= 0) {
             throw new IllegalArgumentException("Authorization chain_id must be non-negative and less than 2^256");
         }
-        validateNonceValue(decodeNonce(auth.nonce()));
+        validateNonceValue(decodeNonce(auth.getNonce()));
 
-        ECDSASignature signature = auth.signature();
+        ECDSASignature signature = auth.getSignature();
         BigInteger r = signature.getR();
         BigInteger s = signature.getS();
         if (!signature.validateComponentsWithoutV()) {

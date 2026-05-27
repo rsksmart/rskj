@@ -24,13 +24,34 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Objects;
 
-public record SetCodeAuthorization(BigInteger chainId, RskAddress address, byte[] nonce, ECDSASignature signature) {
+public class SetCodeAuthorization {
+
+    private final BigInteger chainId;
+    private final RskAddress address;
+    private final byte[] nonce;
+    private final ECDSASignature signature;
 
     public SetCodeAuthorization(BigInteger chainId, RskAddress address, byte[] nonce, ECDSASignature signature) {
         this.chainId = Objects.requireNonNull(chainId, "chainId");
         this.address = Objects.requireNonNull(address, "address");
-        this.nonce = Objects.requireNonNull(nonce, "nonce");
+        this.nonce = Objects.requireNonNull(nonce, "nonce").clone();
         this.signature = Objects.requireNonNull(signature, "signature");
+    }
+
+    public BigInteger getChainId() {
+        return chainId;
+    }
+
+    public RskAddress getAddress() {
+        return address;
+    }
+
+    public byte[] getNonce() {
+        return  nonce.clone();
+    }
+
+    public ECDSASignature getSignature() {
+        return signature;
     }
 
     @Override
