@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 
     private static final BigInteger NONCE_ONE_VALUE = ONE;
     private static final byte[] NONCE_ONE = NONCE_ONE_VALUE.toByteArray();
-    private static final byte[] EMPTY_CODE = new byte[0];
+    private static final byte[] EMPTY_CODE = HashUtil.keccak256(new byte[0]);
 
     private Repository repository;
     private SetCodeAuthorizationTransactionExecutor executor;

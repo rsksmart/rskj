@@ -4,6 +4,7 @@ import co.rsk.core.RskAddress;
 import org.ethereum.config.Constants;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.vm.GasCost;
 
@@ -108,14 +109,17 @@ public class SetCodeAuthorizationTransactionExecutor {
     //CHECK THIS ZERO ADDRESS
     private void writeDelegation(RskAddress authority, RskAddress delegatedAddress, Repository repository) {
         if (delegatedAddress.equals(RskAddress.nullAddress()) || delegatedAddress.equals(RskAddress.ZERO_ADDRESS)) {
-            repository.saveCode(authority, new byte[0]);
+            repository.saveCode(authority, HashUtil.keccak256(new byte[0]));
             return;
         }
         byte[] codeToSet = createDelegatedCode(delegatedAddress);
         repository.saveCode(authority, codeToSet);
     }
 
-    private static byte[]  createDelegatedCode(RskAddress delegatedAddress) {
+    public static byte[]  createDelegatedCode(RskAddress delegatedAddress) {
+        if (delegatedAddress.equals(RskAddress.nullAddress()) || delegatedAddress.equals(RskAddress.ZERO_ADDRESS)) {
+            throw new IllegalStateException("Delegated address can not be empty");
+        }
         byte[] delegatedAddressBytes = delegatedAddress.getBytes();
         byte[] codeToSet = new byte[DELEGATION_PREFIX_IN_BYTES.length + delegatedAddressBytes.length];
 

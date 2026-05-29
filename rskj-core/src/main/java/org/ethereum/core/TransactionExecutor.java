@@ -30,6 +30,7 @@ import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.*;
@@ -109,6 +110,8 @@ public class TransactionExecutor {
 
     private final boolean postponeFeePayment;
 
+    private long authorizationRefund = 0;
+
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
@@ -171,16 +174,23 @@ public class TransactionExecutor {
             execError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
             return false;
         }
+        if(tx.isType4()){
+            if(tx.isContractCreation()){
+                logger.warn("Transaction type {} can not execute a contract, tx {}", tx.getTypePrefix(), tx.getHash());
+                execError("transaction type " + tx.getTypePrefix() + " can not execute a contract");
+                return false;
+            }
+            if (!isSenderCodeValid()) {
+                return false;
+            }
 
-        if (tx.isInitCodeSizeInvalidForTx(activations)) {
-
-            String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
-
-            logger.warn(errorMessage);
-
-            execError(errorMessage);
-
-            return false;
+        }else{
+            if (tx.isInitCodeSizeInvalidForTx(activations)) {
+                String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
+                logger.warn(errorMessage);
+                execError(errorMessage);
+                return false;
+            }
         }
 
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
@@ -218,6 +228,11 @@ public class TransactionExecutor {
         return transactionAddressesAreValid();
     }
 
+    private boolean isSenderCodeValid() {
+        RskAddress sender = tx.getSender(signatureCache);
+        byte[] code = track.getCode(sender);
+        return isEmpty(code) || SetCodeAuthorizationTransactionExecutor.isDelegatedCode(code);
+    }
 
     private boolean transactionAddressesAreValid() {
         // Prevent transactions with excessive address size
@@ -302,11 +317,35 @@ public class TransactionExecutor {
             logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
         }
 
-        if (tx.isContractCreation()) {
-            create();
-        } else {
+        if(tx.isType4()){
+            authorizationRefund = processAuthorizationList(tx.getAuthorizationList(), track, tx);
             call();
+        }else{
+            if (tx.isContractCreation()) {
+                create();
+            } else {
+                call();
+            }
         }
+    }
+
+    private long processAuthorizationList(List<SetCodeAuthorization> authorizationList, Repository repository, Transaction tx) {
+        SetCodeAuthorizationTransactionExecutor authorizationTransactionExecutor = new SetCodeAuthorizationTransactionExecutor();
+        BigInteger outerTransactionChainId = BigInteger.valueOf(tx.getChainId());
+        long totalRefund = 0;
+
+        for (SetCodeAuthorization authorization : authorizationList) {
+            Repository authorizationTrack = repository.startTracking();
+            try {
+                long refund = authorizationTransactionExecutor.processAuthorizationTuple(authorizationTrack, outerTransactionChainId, authorization);
+                totalRefund = Math.addExact(totalRefund, refund);
+                authorizationTrack.commit();
+            } catch (Exception e) {
+                authorizationTrack.rollback();
+                logger.debug("Authorization processing failed. tx={}", tx.getHash(), e);
+            }
+        }
+        return totalRefund;
     }
 
     private boolean enoughGas(long txGasLimit, long requiredGas, long gasUsed) {
@@ -696,6 +735,7 @@ public class TransactionExecutor {
 
         // The actual gas subtracted is equal to half of the future refund
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
+        gasRefund = GasCost.add(gasRefund, authorizationRefund);
         result.addDeductedRefund(gasRefund);
         result.setGasUsedBeforeRefunds(result.getGasUsed());
 
