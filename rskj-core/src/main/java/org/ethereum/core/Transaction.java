@@ -255,7 +255,12 @@ public class Transaction {
             accessListGas = accessListBytes.length * GasCost.ACCESS_LIST_GAS_PER_BYTE;
         }
 
-        return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost + accessListGas;
+        long authorizationListGas = 0;
+        if (isType4()) {
+            authorizationListGas = Math.multiplyExact(GasCost.PER_EMPTY_ACCOUNT_COST, authorizationList.size());
+        }
+
+        return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost + authorizationListGas;
     }
 
     public boolean isTypedTransactionNotAllowed(ActivationConfig.ForBlock activations) {
@@ -385,7 +390,7 @@ public class Transaction {
         return typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace();
     }
 
-    private boolean isType4() {
+    public boolean isType4() {
         return typePrefix.type() == TransactionType.TYPE_4;
     }
 
