@@ -106,7 +106,6 @@ public class SetCodeAuthorizationTransactionExecutor {
         return isEmpty ? 0L : GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST;
     }
 
-    //CHECK THIS ZERO ADDRESS
     private void writeDelegation(RskAddress authority, RskAddress delegatedAddress, Repository repository) {
         if (delegatedAddress.equals(RskAddress.nullAddress()) || delegatedAddress.equals(RskAddress.ZERO_ADDRESS)) {
             repository.saveCode(authority, HashUtil.keccak256(new byte[0]));

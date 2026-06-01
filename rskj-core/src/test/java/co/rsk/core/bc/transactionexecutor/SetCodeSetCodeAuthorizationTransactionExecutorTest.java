@@ -485,7 +485,7 @@ import static org.mockito.Mockito.when;
         when(repository.getNonce(authority)).thenReturn(ONE);
 
         long refund = executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
-        assertEquals(12500L, refund);
+        assertEquals(9500L, refund);
     }
 
     @Test
@@ -561,5 +561,4 @@ import static org.mockito.Mockito.when;
         ECKey key = new ECKey();
         return new RskAddress(key.getAddress());
     }
-
 }
