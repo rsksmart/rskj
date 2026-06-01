@@ -158,7 +158,8 @@ class ActivationConfigTest {
         "    rskip551: vetiver900",
         "    rskip552: vetiver900",
         "    rskip559: NextRelease",
-        "}"
+        "},",
+        "rskip559diff = {}"
     ));
 
     @Test

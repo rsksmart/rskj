@@ -2524,6 +2524,7 @@ class BridgeSupportTest {
     @Test
     void callProcessFundsMigration_is_migrating_before_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
@@ -2591,6 +2592,7 @@ class BridgeSupportTest {
     @Test
     void callProcessFundsMigration_is_migrating_after_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
@@ -2659,6 +2661,7 @@ class BridgeSupportTest {
     @Test
     void callProcessFundsMigration_is_migrated_before_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
@@ -2725,6 +2728,7 @@ class BridgeSupportTest {
     @Test
     void callProcessFundsMigration_is_migrated_after_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
@@ -2794,6 +2798,7 @@ class BridgeSupportTest {
     @Test
     void updateFederationCreationBlockHeights_before_rskip_186_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
@@ -2863,6 +2868,7 @@ class BridgeSupportTest {
     @Test
     void updateFederationCreationBlockHeights_after_rskip_186_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
@@ -2936,6 +2942,7 @@ class BridgeSupportTest {
     @Test
     void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_before_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
         BridgeConstants spiedBridgeConstants = spy(new BridgeRegTestConstants());
@@ -2974,6 +2981,7 @@ class BridgeSupportTest {
     @Test
     void rskTxWaitingForSignature_postRSKIP326_emitNewPegoutConfirmedEvent() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
 
         BridgeConstants spiedBridgeConstants = spy(new BridgeRegTestConstants());
@@ -3016,6 +3024,7 @@ class BridgeSupportTest {
     @Test
     void rskTxWaitingForSignature_preRSKIP326_noPegoutConfirmedEventEmitted() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(false);
 
         BridgeConstants spiedBridgeConstants = spy(new BridgeRegTestConstants());
@@ -3058,6 +3067,7 @@ class BridgeSupportTest {
     @Test
     void rskTxWaitingForSignature_postRSKIP326NoTxWithEnoughConfirmation_pegoutConfirmedEventNotEmitted() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
 
         BridgeConstants spiedBridgeConstants = spy(new BridgeRegTestConstants());
@@ -3096,6 +3106,7 @@ class BridgeSupportTest {
     @Test
     void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_after_rskip_146_activation_if_release_transaction_doesnt_have_rstTxHash() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         BridgeConstants spiedBridgeConstants = spy(new BridgeRegTestConstants());
@@ -3134,6 +3145,7 @@ class BridgeSupportTest {
     @Test
     void rskTxWaitingForSignature_uses_release_transaction_rstTxHash_after_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         BridgeConstants spiedBridgeConstants = spy(new BridgeRegTestConstants());
@@ -3173,6 +3185,7 @@ class BridgeSupportTest {
     @Test
     void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_after_rskip_176_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
@@ -3392,6 +3405,7 @@ class BridgeSupportTest {
     @MethodSource("provideBridgeConstants")
     void rskTxWaitingForSignature_uses_pegoutCreation_rskTxHash_after_rskip_375_activation(BridgeConstants bridgeConstants) throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP375)).thenReturn(true);
@@ -3432,6 +3446,7 @@ class BridgeSupportTest {
     @MethodSource("provideBridgeConstants")
     void rskTxWaitingForSignature_override_entry_is_allowed_before_rskip_375_activation(BridgeConstants bridgeConstants) throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP375)).thenReturn(false);
@@ -3480,6 +3495,7 @@ class BridgeSupportTest {
     @Test()
     void rskTxWaitingForSignature_override_entry_attempt_after_rskip_375_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP375)).thenReturn(true);
@@ -8416,6 +8432,7 @@ class BridgeSupportTest {
 
     private void test_migrating_many_utxos(boolean isRskip294Active, int utxosToCreate, int expectedTransactions) throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         when(activations.isActive(ConsensusRule.RSKIP294)).thenReturn(isRskip294Active);
 
         List<FederationMember> oldFedMembers = new ArrayList<>();
