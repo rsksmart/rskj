@@ -130,7 +130,7 @@ class ProcessFundsMigrationTest {
             // Assert
             assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size());
             assertRetiringFederationStillPresent();
-            assertRetiringUtxosCount(0);
+            assertNoRemainingRetiringUtxos();
         }
 
         @Test
@@ -153,7 +153,7 @@ class ProcessFundsMigrationTest {
             // Assert
             assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size());
             assertRetiringFederationStillPresent();
-            assertRetiringUtxosCount(0);
+            assertNoRemainingRetiringUtxos();
         }
 
         @Test
@@ -177,7 +177,7 @@ class ProcessFundsMigrationTest {
             // Assert
             assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size());
             assertRetiringFederationStillPresent();
-            assertRetiringUtxosCount(0);
+            assertNoRemainingRetiringUtxos();
         }
 
         @Test
@@ -227,7 +227,7 @@ class ProcessFundsMigrationTest {
             // Assert
             assertMultipleMigrationTransactionsWereBuiltAsExpected(retiringFederation, retiringUtxos, 2);
             assertRetiringFederationStillPresent();
-            assertRetiringUtxosCount(0);
+            assertNoRemainingRetiringUtxos();
         }
 
         @Test
@@ -251,7 +251,7 @@ class ProcessFundsMigrationTest {
             // Assert
             assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size());
             assertRetiringFederationCleared();
-            assertRetiringUtxosCount(0);
+            assertNoRemainingRetiringUtxos();
         }
 
         @Test
@@ -274,7 +274,7 @@ class ProcessFundsMigrationTest {
             // Assert
             assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size());
             assertRetiringFederationCleared();
-            assertRetiringUtxosCount(0);
+            assertNoRemainingRetiringUtxos();
         }
 
         @Test
@@ -316,7 +316,7 @@ class ProcessFundsMigrationTest {
             // Assert
             assertNoMigrationTxCreated();
             assertRetiringFederationCleared();
-            assertRetiringUtxosCount(0);
+            assertNoRemainingRetiringUtxos();
         }
 
         @Test
@@ -627,6 +627,10 @@ class ProcessFundsMigrationTest {
 
     private void assertRetiringUtxosCount(int expectedCount) {
         assertEquals(expectedCount, federationStorageProvider.getOldFederationBtcUTXOs().size());
+    }
+
+    private void assertNoRemainingRetiringUtxos() {
+        assertEquals(0, federationStorageProvider.getOldFederationBtcUTXOs().size());
     }
 
     private Transaction buildUpdateCollectionsTransaction() {
