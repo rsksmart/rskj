@@ -214,7 +214,6 @@ class ProcessFundsMigrationTest {
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
-            Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
 
             long executionBlockNumber = duringMigrationBlockNumber(ALL_ACTIVATIONS);
             setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
@@ -222,6 +221,15 @@ class ProcessFundsMigrationTest {
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+            // Assert
+            assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, maxInputs);
+            assertRetiringFederationStillPresent();
+            int remainingUtxos = numberOfUtxos - maxInputs;
+            assertRetiringUtxosCount(remainingUtxos);
+
+            // Act
+            Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
             // Assert
