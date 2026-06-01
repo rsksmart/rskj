@@ -58,6 +58,7 @@ class ProcessFundsMigrationTest {
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0L);
     private static final Coin FEE_PER_KB = Coin.valueOf(8_000L);
     private static final long ACTIVE_FEDERATION_CREATION_BLOCK = 100L;
+    private static final int EXPECTED_MULTIPLE_MIGRATION_TX_COUNT = 2;
 
     private StorageAccessor bridgeStorageAccessor;
     private BridgeStorageProvider bridgeStorageProvider;
@@ -230,7 +231,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
             // Assert
-            assertMultipleMigrationTransactionsWereBuiltAsExpected(retiringFederation, retiringUtxos, 2);
+            assertMultipleMigrationTransactionsWereBuiltAsExpected(retiringFederation, retiringUtxos);
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
         }
@@ -464,8 +465,7 @@ class ProcessFundsMigrationTest {
 
     private void assertMultipleMigrationTransactionsWereBuiltAsExpected(
         Federation retiringFederation,
-        List<UTXO> retiringFederationUtxos,
-        int expectedTransactionCount
+        List<UTXO> retiringFederationUtxos
     ) throws IOException {
         List<BtcTransaction> migrationTransactions = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
             .getEntries()
@@ -473,7 +473,7 @@ class ProcessFundsMigrationTest {
             .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
             .sorted(Comparator.comparingInt(tx -> tx.getInputs().size()))
             .toList();
-        assertEquals(expectedTransactionCount, migrationTransactions.size());
+        assertEquals(EXPECTED_MULTIPLE_MIGRATION_TX_COUNT, migrationTransactions.size());
 
         List<UTXO> selectedUtxos = migrationTransactions.stream()
             .flatMap(tx -> getSelectedUtxos(tx, retiringFederationUtxos).stream())
