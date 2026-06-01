@@ -3,6 +3,7 @@ package co.rsk.peg;
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.TransactionInput;
@@ -73,6 +74,7 @@ class ProcessFundsMigrationTest {
         private final Federation retiringFederation = P2shP2wshErpFederationBuilder.builder().build();
         private final Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
             .withCreationBlockNumber(ACTIVE_FEDERATION_CREATION_BLOCK)
+            .withMembersBtcPublicKeys(getActiveMemberKeys())
             .build();
         private final Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
 
@@ -639,5 +641,13 @@ class ProcessFundsMigrationTest {
 
         tx.sign(RskTestUtils.getEcKeyFromSeed("sender").getPrivKeyBytes());
         return tx;
+    }
+
+    private List<BtcECKey> getActiveMemberKeys() {
+        String[] memberSeeds = new String[20];
+        for (int i = 0; i < 20; i++) {
+            memberSeeds[i] = String.format("newActiveMember-" + i + 1);
+        }
+        return getBtcEcKeysFromSeeds(memberSeeds, true);
     }
 }
