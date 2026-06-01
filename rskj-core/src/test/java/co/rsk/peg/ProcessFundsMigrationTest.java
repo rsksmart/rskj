@@ -646,7 +646,7 @@ class ProcessFundsMigrationTest {
     private List<BtcECKey> getActiveMemberKeys() {
         String[] memberSeeds = new String[20];
         for (int i = 0; i < 20; i++) {
-            memberSeeds[i] = "newActiveMember-" + i;
+            memberSeeds[i] = String.format("newActiveMember-%s", i);
         }
         return getBtcEcKeysFromSeeds(memberSeeds, true);
     }
