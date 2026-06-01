@@ -19,20 +19,26 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for typed transaction receipts (RSKIP543)
@@ -98,6 +104,11 @@ class TypedTransactionReceiptTest {
 
         assertEquals((byte) 0x04, encoded[0],
             "Type 4 receipt should start with 0x04 prefix");
+        assertTrue(encoded[1] >= (byte) 0xc0,
+            "Second byte should be RLP list marker");
+        ArrayList<RLPElement> inner = RLP.decode2(Arrays.copyOfRange(encoded, 1, encoded.length));
+        RLPList body = (RLPList) inner.get(0);
+        assertEquals(4, body.size(), "RSKIP-545 Type 4 receipt body should have 4 RLP elements");
     }
 
     @Test
@@ -137,9 +148,11 @@ class TypedTransactionReceiptTest {
                 "PostTxState mismatch for " + type.getTypeName());
             assertArrayEquals(originalReceipt.getCumulativeGas(), decodedReceipt.getCumulativeGas(),
                 "CumulativeGas mismatch for " + type.getTypeName());
-            if (type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2) {
+            if (type == TransactionType.TYPE_1
+                    || type == TransactionType.TYPE_2
+                    || type == TransactionType.TYPE_4) {
                 assertArrayEquals(EMPTY_BYTE_ARRAY, decodedReceipt.getGasUsed(),
-                    "RSKIP-546 omits gasUsed on the wire for " + type.getTypeName());
+                    "Four-field typed receipt omits gasUsed on the wire for " + type.getTypeName());
             } else {
                 assertArrayEquals(originalReceipt.getGasUsed(), decodedReceipt.getGasUsed(),
                     "GasUsed mismatch for " + type.getTypeName());
@@ -231,7 +244,7 @@ class TypedTransactionReceiptTest {
     }
 
     private Transaction createTransaction(TransactionType type) {
-        return Transaction.builder()
+        TransactionBuilder builder = Transaction.builder()
             .nonce(new byte[]{1})
             .gasPrice(Coin.valueOf(1000))
             .gasLimit(new byte[]{(byte) 0x52, 0x08})
@@ -239,8 +252,23 @@ class TypedTransactionReceiptTest {
             .value(Coin.ZERO)
             .data(EMPTY_BYTE_ARRAY)
             .chainId((byte) 33)
-            .type(type)
-            .build();
+            .type(type);
+
+        if (type == TransactionType.TYPE_4) {
+            builder.maxPriorityFeePerGas(Coin.valueOf(1000))
+                    .maxFeePerGas(Coin.valueOf(1000))
+                    .authorizationList(List.of(minimalSetCodeAuthorization()));
+        }
+
+        return builder.build();
+    }
+
+    private static SetCodeAuthorization minimalSetCodeAuthorization() {
+        return new SetCodeAuthorization(
+                BigInteger.valueOf(33),
+                new RskAddress(new byte[20]),
+                new byte[]{0},
+                ECDSASignature.fromComponents(new byte[]{1}, new byte[]{1}, (byte) 0));
     }
 
     private TransactionReceipt createReceipt(Transaction tx) {

@@ -542,16 +542,8 @@ class Rskip546DslTest {
         co.rsk.core.RskAddress receiver = new co.rsk.core.RskAddress(
                 world.getTransactionByName("txType1Basic").getReceiveAddress().getBytes());
 
-        Transaction tx = Transaction.builder()
-                .type(TransactionType.TYPE_1)
-                .chainId((byte) 33)
-                .nonce(BigInteger.valueOf(99))
-                .gasPrice(Coin.valueOf(1_000_000_000L))
-                .gasLimit(BigInteger.valueOf(100_000))
-                .receiveAddress(receiver)
-                .value(Coin.valueOf(1))
-                .accessList(accessListRlp)
-                .build();
+        Transaction tx = Rskip546TestSupport.unsignedType1(
+                (byte) 33, receiver, Coin.valueOf(1_000_000_000L), new byte[0], accessListRlp);
         // Sign so BridgeUtils.isFreeBridgeTx can resolve the sender
         tx.sign(org.ethereum.crypto.ECKey.fromPrivate(BigInteger.valueOf(12345)).getPrivKeyBytes());
 

@@ -209,23 +209,6 @@ public class Transaction {
         this.maxFeePerGas = maxFeePerGas;
         this.authorizationList = authorizationList == null ? null : List.copyOf(authorizationList);
 
-        // RSKIP-546 invariant: a *standard* Type 2 transaction must always carry both fee fields.
-        // Fail loud at construction so the requirement is enforced uniformly across every ingress
-        // path (JSON-RPC, P2P decoder, internal builders, tests) instead of being scattered across
-        // ad-hoc checks in encoding and validation.
-        boolean isStandardType2 = typePrefix.type() == TransactionType.TYPE_2 && !typePrefix.isRskNamespace();
-        boolean isType4 = typePrefix.type() == TransactionType.TYPE_4;
-        if ((isStandardType2 || isType4) && (this.maxPriorityFeePerGas == null || this.maxFeePerGas == null)) {
-            throw new IllegalArgumentException(
-                    "Type " + typePrefix.type().getTypeName()
-                            + " transaction requires both maxPriorityFeePerGas and maxFeePerGas");
-        }
-        if (isType4 && (this.authorizationList == null || this.authorizationList.isEmpty())) {
-            throw new IllegalArgumentException("Set-code transaction authorization_list must not be empty");
-        }
-        if (!isType4 && this.authorizationList != null && !this.authorizationList.isEmpty()) {
-            throw new IllegalArgumentException("authorization_list is only valid for Type 4 transactions");
-        }
     }
 
     // There was a method called NEW_getTransactionCost that implemented this alternative solution:
@@ -320,9 +303,6 @@ public class Transaction {
             if (senderAddress.getBytes() != null && senderAddress.getBytes().length != Constants.getMaxAddressByteLength()) {
                 throw new TransactionException("Sender is not valid");
             }
-        }
-        if (isType4() && authorizationList != null) {
-            Type4TransactionValidation.validateAuthorizationChainIds(chainId, authorizationList);
         }
     }
 

@@ -463,15 +463,13 @@ class Rskip546HardforkTest {
             Account sender = new AccountBuilder(w).name("sender").balance(Coin.valueOf(1_000_000_000_000L)).build();
             Account receiver = new AccountBuilder(w).name("receiver").build();
 
-            Transaction typedTx = Transaction.builder()
-                    .type(TransactionType.TYPE_1)
-                    .chainId((byte) 33)
-                    .nonce(BigInteger.ZERO)
-                    .gasPrice(Coin.valueOf(1_000_000_000L))
-                    .gasLimit(BigInteger.valueOf(21_000))
-                    .receiveAddress(receiver.getAddress())
-                    .value(Coin.valueOf(1))
-                    .build();
+            Transaction typedTx = Rskip546TestSupport.unsignedType1(
+                    (byte) 33,
+                    receiver.getAddress(),
+                    Coin.valueOf(1_000_000_000L),
+                    BigInteger.ZERO.toByteArray(),
+                    new byte[0],
+                    Rskip546TestSupport.EMPTY_ACCESS_LIST);
             typedTx.sign(sender.getEcKey().getPrivKeyBytes());
 
             // Block at height 1 (pre-activation at 5): executeAndFill drops the typed tx
@@ -506,15 +504,13 @@ class Rskip546HardforkTest {
                                     ConfigValueFactory.fromAnyRef(ACTIVATION))
             );
 
-            Transaction typedTx = Transaction.builder()
-                    .type(TransactionType.TYPE_1)
-                    .chainId((byte) 33)
-                    .nonce(BigInteger.ZERO)
-                    .gasPrice(Coin.valueOf(1_000_000_000L))
-                    .gasLimit(BigInteger.valueOf(21_000))
-                    .receiveAddress(new co.rsk.core.RskAddress(new byte[20]))
-                    .value(Coin.valueOf(1))
-                    .build();
+            Transaction typedTx = Rskip546TestSupport.unsignedType1(
+                    (byte) 33,
+                    new co.rsk.core.RskAddress(new byte[20]),
+                    Coin.valueOf(1_000_000_000L),
+                    BigInteger.ZERO.toByteArray(),
+                    new byte[0],
+                    Rskip546TestSupport.EMPTY_ACCESS_LIST);
 
             // Pre-activation: the transaction is not allowed
             boolean blockedPreActivation = typedTx.isTypedTransactionNotAllowed(
@@ -545,15 +541,13 @@ class Rskip546HardforkTest {
             Account sender = new AccountBuilder(w).name("sender").balance(Coin.valueOf(1_000_000_000_000L)).build();
             Account receiver = new AccountBuilder(w).name("receiver").build();
 
-            Transaction typedTx = Transaction.builder()
-                    .type(TransactionType.TYPE_1)
-                    .chainId((byte) 33)
-                    .nonce(BigInteger.ZERO)
-                    .gasPrice(Coin.valueOf(1_000_000_000L))
-                    .gasLimit(BigInteger.valueOf(21_000))
-                    .receiveAddress(receiver.getAddress())
-                    .value(Coin.valueOf(1))
-                    .build();
+            Transaction typedTx = Rskip546TestSupport.unsignedType1(
+                    (byte) 33,
+                    receiver.getAddress(),
+                    Coin.valueOf(1_000_000_000L),
+                    BigInteger.ZERO.toByteArray(),
+                    new byte[0],
+                    Rskip546TestSupport.EMPTY_ACCESS_LIST);
             typedTx.sign(sender.getEcKey().getPrivKeyBytes());
 
             Block genesis = w.getBlockChain().getBestBlock();

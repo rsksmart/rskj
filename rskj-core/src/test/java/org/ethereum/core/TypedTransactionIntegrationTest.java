@@ -165,16 +165,13 @@ class TypedTransactionIntegrationTest {
 
     @Test
     void type2Transaction_preservesMaxFeeFields_afterEncodeAndDecode() {
-        Transaction original = Transaction.builder()
-                .type(TransactionType.TYPE_2)
-                .chainId(CHAIN_ID)
-                .nonce(BigInteger.ZERO)
-                .gasLimit(BigInteger.valueOf(21_000))
-                .maxPriorityFeePerGas(Coin.valueOf(5_000_000_000L))
-                .maxFeePerGas(Coin.valueOf(10_000_000_000L))
-                .receiveAddress(receiver.getAddress().getBytes())
-                .value(Coin.ZERO)
-                .build();
+        Transaction original = Rskip546TestSupport.unsignedType2(
+                CHAIN_ID,
+                receiver.getAddress(),
+                Coin.valueOf(5_000_000_000L),
+                Coin.valueOf(10_000_000_000L),
+                new byte[0],
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
         original.sign(sender.getEcKey().getPrivKeyBytes());
 
         byte[] blockBodyEncoded = BlockTxCodec.encodeTransactions(List.of(original));
@@ -556,15 +553,13 @@ class TypedTransactionIntegrationTest {
     }
 
     private Transaction buildType1(int nonce) {
-        Transaction tx = Transaction.builder()
-                .type(TransactionType.TYPE_1)
-                .chainId(CHAIN_ID)
-                .nonce(BigInteger.valueOf(nonce))
-                .gasPrice(GAS_PRICE)
-                .gasLimit(BigInteger.valueOf(21_000))
-                .receiveAddress(receiver.getAddress().getBytes())
-                .value(Coin.valueOf(1))
-                .build();
+        Transaction tx = Rskip546TestSupport.unsignedType1(
+                CHAIN_ID,
+                receiver.getAddress(),
+                GAS_PRICE,
+                BigInteger.valueOf(nonce).toByteArray(),
+                new byte[0],
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
         tx.sign(sender.getEcKey().getPrivKeyBytes());
         return tx;
     }
@@ -575,16 +570,14 @@ class TypedTransactionIntegrationTest {
 
     private Transaction buildType2(int nonce, Coin maxPriorityFeePerGas, Coin maxFeePerGas,
                                     long gasLimit, long value) {
-        Transaction tx = Transaction.builder()
-                .type(TransactionType.TYPE_2)
-                .chainId(CHAIN_ID)
-                .nonce(BigInteger.valueOf(nonce))
-                .gasLimit(BigInteger.valueOf(gasLimit))
-                .maxPriorityFeePerGas(maxPriorityFeePerGas)
-                .maxFeePerGas(maxFeePerGas)
-                .receiveAddress(receiver.getAddress().getBytes())
-                .value(Coin.valueOf(value))
-                .build();
+        Transaction tx = Rskip546TestSupport.unsignedType2(
+                CHAIN_ID,
+                receiver.getAddress(),
+                maxPriorityFeePerGas,
+                maxFeePerGas,
+                BigInteger.valueOf(nonce).toByteArray(),
+                new byte[0],
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
         tx.sign(sender.getEcKey().getPrivKeyBytes());
         return tx;
     }

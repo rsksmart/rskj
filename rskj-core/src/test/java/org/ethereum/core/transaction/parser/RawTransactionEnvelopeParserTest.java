@@ -21,21 +21,32 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.ethereum.config.Constants;
+import org.ethereum.core.Rskip545TestSupport;
+import org.ethereum.core.Rskip546TestSupport;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionBuilder;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.encoder.Type4TransactionEncoder;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.ethereum.core.Rskip545TestSupport.DEFAULT_MAX_FEE;
+import static org.ethereum.core.Rskip545TestSupport.DEFAULT_MAX_PRIORITY;
+import static org.ethereum.core.Rskip545TestSupport.EMPTY_ACCESS_LIST;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -44,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Unit tests for {@link RawTransactionEnvelopeParser}.
  * Covers parsing of {@link CallArguments} into typed {@link ParsedRawTransaction} objects,
- * including legacy, Type 1, and Type 2 (EIP-1559 and RSK-namespace) transactions.
+ * including legacy, Type 1, Type 2 (EIP-1559 and RSK-namespace), and Type 4 (EIP-7702) transactions.
  */
 class RawTransactionEnvelopeParserTest {
 
@@ -326,6 +337,69 @@ class RawTransactionEnvelopeParserTest {
     }
 
     // -------------------------------------------------------------------------
+    // Type 4 (EIP-7702 / RSKIP-545)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void parse_type4_buildsType4Transaction() {
+        CallArguments args = baseType4Args();
+
+        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(args, null, REGTEST_CHAIN_ID);
+        Transaction tx = TransactionBuilder.fromParsed(parsed).build();
+
+        assertEquals(TransactionType.TYPE_4, tx.getTypePrefix().type());
+        assertEquals(1, tx.getAuthorizationList().size());
+        assertEquals(Coin.valueOf(10), tx.getMaxPriorityFeePerGas());
+        assertEquals(Coin.valueOf(100), tx.getMaxFeePerGas());
+    }
+
+    @Test
+    void parse_signedType4Encoded_buildsType4Transaction() {
+        Transaction original = buildSignedType4Tx();
+        byte[] encoded = original.getEncoded();
+
+        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(encoded);
+        Transaction rebuilt = TransactionBuilder.fromParsed(parsed).build();
+
+        assertEquals(TransactionType.TYPE_4, rebuilt.getType());
+        assertEquals(original.getMaxFeePerGas(), rebuilt.getMaxFeePerGas());
+        assertEquals(1, rebuilt.getAuthorizationList().size());
+    }
+
+    @Test
+    void parse_type3Unsupported_throws() {
+        byte[] raw = ByteUtil.merge(new byte[]{TransactionType.TYPE_3.getByteCode()}, RLP.encodeList(
+                RLP.encodeByte(REGTEST_CHAIN_ID),
+                RLP.encodeElement(new byte[0]),
+                RLP.encodeCoinNonNullZero(DEFAULT_MAX_PRIORITY),
+                RLP.encodeCoinNonNullZero(DEFAULT_MAX_FEE),
+                RLP.encodeElement(java.math.BigInteger.valueOf(21_000).toByteArray()),
+                RLP.encodeElement(Rskip545TestSupport.DEFAULT_RECEIVER.getBytes()),
+                RLP.encodeElement(new byte[0]),
+                RLP.encodeElement(new byte[0]),
+                EMPTY_ACCESS_LIST,
+                RLP.encodeList(),
+                RLP.encodeByte((byte) 0),
+                RLP.encodeElement(new byte[32]),
+                RLP.encodeElement(new byte[32])
+        ));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> RawTransactionEnvelopeParser.parse(raw));
+
+        assertTrue(ex.getMessage().contains("Unsupported transaction type"));
+    }
+
+    @Test
+    void parse_type4PlaceholderSignatureFields_parses() {
+        Transaction tx = buildSignedType4Tx();
+        byte[] raw = new Type4TransactionEncoder().encodeSigned(tx);
+
+        assertDoesNotThrow(() -> RawTransactionEnvelopeParser.parse(raw));
+        assertEquals(13, RLP.decodeList(java.util.Arrays.copyOfRange(raw, 1, raw.length)).size());
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
@@ -348,31 +422,25 @@ class RawTransactionEnvelopeParserTest {
     }
 
     private static Transaction buildSignedType1Tx() {
-        Transaction tx = Transaction.builder()
-                .nonce(new byte[]{0x01})
-                .gasPrice(Coin.valueOf(1000))
-                .gasLimit(BigInteger.valueOf(21000))
-                .receiveAddress(new RskAddress("0x0000000000000000000000000000000000000002").getBytes())
-                .value(BigInteger.ZERO)
-                .chainId(REGTEST_CHAIN_ID)
-                .type(TransactionType.TYPE_1)
-                .build();
+        Transaction tx = Rskip546TestSupport.unsignedType1(
+                REGTEST_CHAIN_ID,
+                new RskAddress("0x0000000000000000000000000000000000000002"),
+                Coin.valueOf(1000),
+                new byte[0],
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
         tx.sign(PRIVATE_KEY);
         return tx;
     }
 
     private static Transaction buildSignedType2Tx() {
         Coin fee = Coin.valueOf(500);
-        Transaction tx = Transaction.builder()
-                .nonce(new byte[]{0x01})
-                .gasLimit(BigInteger.valueOf(21000))
-                .receiveAddress(new RskAddress("0x0000000000000000000000000000000000000002").getBytes())
-                .value(BigInteger.ZERO)
-                .chainId(REGTEST_CHAIN_ID)
-                .type(TransactionType.TYPE_2)
-                .maxPriorityFeePerGas(fee)
-                .maxFeePerGas(fee)
-                .build();
+        Transaction tx = Rskip546TestSupport.unsignedType2(
+                REGTEST_CHAIN_ID,
+                new RskAddress("0x0000000000000000000000000000000000000002"),
+                fee,
+                fee,
+                new byte[0],
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
         tx.sign(PRIVATE_KEY);
         return tx;
     }
@@ -397,6 +465,35 @@ class RawTransactionEnvelopeParserTest {
         args.setNonce("0x1");
         args.setType("0x2");
         args.setChainId("0x21");
+        return args;
+    }
+
+    private static Transaction buildSignedType4Tx() {
+        Transaction tx = Rskip545TestSupport.unsignedType4();
+        tx.sign(PRIVATE_KEY);
+        return tx;
+    }
+
+    private static CallArguments baseType4Args() {
+        CallArguments args = new CallArguments();
+        args.setFrom("0x0000000000000000000000000000000000000001");
+        args.setTo("0x0000000000000000000000000000000000000002");
+        args.setGas("0x5208");
+        args.setValue("0x0");
+        args.setNonce("0x1");
+        args.setType("0x4");
+        args.setChainId("0x21");
+        args.setMaxPriorityFeePerGas("0xa");
+        args.setMaxFeePerGas("0x64");
+
+        CallArguments.AuthorizationListEntry entry = new CallArguments.AuthorizationListEntry();
+        entry.setChainId("0x21");
+        entry.setAddress("0x0000000000000000000000000000000000000003");
+        entry.setNonce("0x0");
+        entry.setYParity("0x0");
+        entry.setR("0x01");
+        entry.setS("0x01");
+        args.setAuthorizationList(List.of(entry));
         return args;
     }
 }

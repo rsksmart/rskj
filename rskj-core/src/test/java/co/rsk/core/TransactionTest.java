@@ -539,15 +539,13 @@ class TransactionTest {
 
     @Test
     void getEncodedV_onUnsignedType1Tx_returnsZeroWithoutNpe() {
-        Transaction unsigned = Transaction.builder()
-                .type(TransactionType.TYPE_1)
-                .nonce(BigInteger.ZERO)
-                .gasPrice(BigInteger.ONE)
-                .gasLimit(BigInteger.valueOf(21_000))
-                .receiveAddress(new RskAddress("0000000000000000000000000000000000000002").getBytes())
-                .value(BigInteger.ZERO)
-                .chainId(chainId)
-                .build();
+        Transaction unsigned = Rskip546TestSupport.unsignedType1(
+                chainId,
+                new RskAddress("0000000000000000000000000000000000000002"),
+                Coin.valueOf(1),
+                BigInteger.ZERO.toByteArray(),
+                new byte[0],
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
 
         assertNull(unsigned.getSignature());
         assertEquals((byte) 0, unsigned.getEncodedV());

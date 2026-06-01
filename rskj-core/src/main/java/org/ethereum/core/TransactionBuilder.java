@@ -43,7 +43,6 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
 public final class TransactionBuilder {
 
 	private TransactionTypePrefix typePrefix = TransactionTypePrefix.typed(TransactionType.LEGACY);
-	private static final byte[] EMPTY_ACCESS_LIST_RLP = new byte[]{(byte) 0xc0};
 
 	private boolean isLocalCall;
 	private byte[] nonce;
@@ -58,6 +57,9 @@ public final class TransactionBuilder {
 	private Coin maxPriorityFeePerGas;
 	private Coin maxFeePerGas;
 	private List<SetCodeAuthorization> authorizationList;
+
+	/** Set when fields were produced by {@link #fromParsed(ParsedRawTransaction)}. */
+	private boolean parsedIngress;
 
 	TransactionBuilder() {}
 
@@ -206,53 +208,26 @@ public final class TransactionBuilder {
 	private void normalizeTypedFields() {
 		TransactionType type = typePrefix.type();
 
-		if (type == TransactionType.TYPE_1 && accessListBytes == null) {
-			accessListBytes = EMPTY_ACCESS_LIST_RLP;
+		if (requiresParserIngress(type)) {
+			if (!parsedIngress) {
+				throw new IllegalStateException(
+						"Type " + type.getTypeName()
+								+ " transactions must be created via Transaction.fromRaw or Transaction.fromCallArguments");
+			}
+			return;
 		}
 
-		if (type == TransactionType.TYPE_2 && !typePrefix.isRskNamespace()) {
-			if (accessListBytes == null) {
-				accessListBytes = EMPTY_ACCESS_LIST_RLP;
-			}
-			Coin maxP = maxPriorityFeePerGas != null ? maxPriorityFeePerGas : gasPrice;
-			Coin maxF = maxFeePerGas != null ? maxFeePerGas : gasPrice;
-
-			if (maxP.compareTo(maxF) > 0) {
-				throw new IllegalArgumentException(
-						"Type 2 transaction maxPriorityFeePerGas (" + maxP +
-								") must not exceed maxFeePerGas (" + maxF + ")"
-				);
-			}
-
-			maxPriorityFeePerGas = maxP;
-			maxFeePerGas = maxF;
-			gasPrice = maxP;
-		}
-
-		if (type == TransactionType.TYPE_4) {
-			if (accessListBytes == null) {
-				accessListBytes = EMPTY_ACCESS_LIST_RLP;
-			}
-			if (authorizationList == null || authorizationList.isEmpty()) {
-				throw new IllegalArgumentException("Set-code transaction authorization_list must not be empty");
-			}
-			Coin maxP = maxPriorityFeePerGas != null ? maxPriorityFeePerGas : gasPrice;
-			Coin maxF = maxFeePerGas != null ? maxFeePerGas : gasPrice;
-
-			if (maxP.compareTo(maxF) > 0) {
-				throw new IllegalArgumentException(
-                        "Type 4 transaction maxPriorityFeePerGas (" + maxP +
-                                ") must not exceed maxFeePerGas (" + maxF + ")"
-                );
-			}
-
-			maxPriorityFeePerGas = maxP;
-			maxFeePerGas = maxF;
-			gasPrice = maxP;
+		if (authorizationList != null && !authorizationList.isEmpty()) {
+			throw new IllegalArgumentException("authorization_list is only valid for Type 4 transactions");
 		}
 	}
 
-	//TEMP
+	private boolean requiresParserIngress(TransactionType type) {
+		return type == TransactionType.TYPE_1
+				|| type == TransactionType.TYPE_4
+				|| (type == TransactionType.TYPE_2 && !typePrefix.isRskNamespace());
+	}
+
 	public static TransactionBuilder fromParsed(ParsedRawTransaction parsed) {
 		byte chainId = 0;
 		byte[] accessListBytes = new byte[0];
@@ -295,7 +270,7 @@ public final class TransactionBuilder {
 					: type4Tx.maxFeePerGas();
 		}
 
-		return new TransactionBuilder()
+		TransactionBuilder builder = new TransactionBuilder()
 				.nonce(parsed.nonce())
 				.gasPrice(effectiveGasPrice)
 				.gasLimit(parsed.gasLimit())
@@ -308,5 +283,7 @@ public final class TransactionBuilder {
 				.maxPriorityFeePerGas(maxPriorityFeePerGas)
 				.maxFeePerGas(maxFeePerGas)
 				.authorizationList(authorizationList);
+		builder.parsedIngress = true;
+		return builder;
 	}
 }

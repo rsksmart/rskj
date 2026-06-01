@@ -24,6 +24,8 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -117,6 +120,41 @@ class TransactionReceiptTest {
         assertArrayEquals(EMPTY_BYTE_ARRAY, receipt.getStatus(),
                 "Type 1 receipt with 0x-status must decode as failed (empty byte array)");
         assertFalse(receipt.isSuccessful());
+    }
+
+    @ParameterizedTest
+    @ValueSource(bytes = {0x01, 0x02, 0x04})
+    void typedReceipt_wrongFieldCount_throws(byte typePrefix) {
+        byte[] body = RLP.encodeList(
+                RLP.encodeElement(new byte[]{0x01}),
+                RLP.encodeElement(new byte[]{0x52, 0x08}),
+                RLP.encodeElement(new byte[256])
+        );
+        byte[] encoded = ByteUtil.merge(new byte[]{typePrefix}, body);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new TransactionReceipt(encoded));
+
+        assertTrue(ex.getMessage().contains("4 RLP elements"),
+                "Expected four-field receipt error, got: " + ex.getMessage());
+    }
+
+    @Test
+    void type4Receipt_decode_fourFieldBody_gasUsedIsEmpty() {
+        byte[] status = new byte[]{0x01};
+        byte[] cumulativeGas = new byte[]{0x52, 0x08};
+        byte[] body = RLP.encodeList(
+                RLP.encodeElement(status),
+                RLP.encodeElement(cumulativeGas),
+                RLP.encodeElement(new byte[256]),
+                RLP.encodeList()
+        );
+        byte[] encoded = ByteUtil.merge(new byte[]{0x04}, body);
+
+        TransactionReceipt receipt = new TransactionReceipt(encoded);
+
+        assertArrayEquals(status, receipt.getStatus());
+        assertArrayEquals(EMPTY_BYTE_ARRAY, receipt.getGasUsed());
     }
 
     @Test
