@@ -44,8 +44,8 @@ import java.util.List;
 
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithoutSignaturesHasProperFormat;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -89,7 +89,12 @@ class ProcessFundsMigrationTest {
         void updateCollections_withNewFederationAgeBeforeMigrationBegins_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
             Federation retiringFederation = buildP2shP2wshFederation();
-            List<UTXO> retiringUtxos = buildUtxos(retiringFederation, 1, Coin.COIN);
+            List<UTXO> retiringUtxos = List.of(
+                UTXOBuilder.builder()
+                .withValue(Coin.COIN)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .build()
+            );
             long executionBlockNumber = blockNumberBeforeMigrationBegins(ALL_ACTIVATIONS);
 
             setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
@@ -108,7 +113,12 @@ class ProcessFundsMigrationTest {
         void updateCollections_duringMigration_withOneSpendableRetiringUtxo_shouldCreateMigrationTx() throws IOException {
             // Arrange
             Federation retiringFederation = buildP2shP2wshFederation();
-            List<UTXO> retiringUtxos = buildUtxos(retiringFederation, 1, Coin.COIN);
+            List<UTXO> retiringUtxos = List.of(
+                UTXOBuilder.builder()
+                .withValue(Coin.COIN)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .build()
+            );
 
             long executionBlockNumber = duringMigrationBlockNumber(ALL_ACTIVATIONS);
             setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
@@ -127,7 +137,11 @@ class ProcessFundsMigrationTest {
         void updateCollections_duringMigration_withMultipleSpendableRetiringUtxos_shouldCreateMigrationTx() throws IOException {
             // Arrange
             Federation retiringFederation = buildP2shP2wshFederation();
-            List<UTXO> retiringUtxos = buildUtxos(retiringFederation, 3, Coin.COIN);
+            int numberOfUtxos = 3;
+            List<UTXO> retiringUtxos = UTXOBuilder.builder()
+                .withValue(Coin.COIN)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber(ALL_ACTIVATIONS);
             setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
@@ -147,7 +161,11 @@ class ProcessFundsMigrationTest {
             // Arrange
             Federation retiringFederation = buildP2shP2wshFederation();
             Coin lowSpendableValue = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.add(FEE_PER_KB);
-            List<UTXO> retiringUtxos = buildUtxos(retiringFederation, 5, lowSpendableValue);
+            int numberOfUtxos = 5;
+            List<UTXO> retiringUtxos = UTXOBuilder.builder()
+                .withValue(lowSpendableValue)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber(ALL_ACTIVATIONS);
             setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
@@ -166,7 +184,12 @@ class ProcessFundsMigrationTest {
         void updateCollections_duringMigration_withBalanceBelowThreshold_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
             Federation retiringFederation = buildP2shP2wshFederation();
-            List<UTXO> retiringUtxos = buildUtxos(retiringFederation, 1, FEE_PER_KB.divide(2));
+            List<UTXO> retiringUtxos = List.of(
+                UTXOBuilder.builder()
+                .withValue(FEE_PER_KB.divide(2))
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .build()
+            );
 
             long executionBlockNumber = duringMigrationBlockNumber(ALL_ACTIVATIONS);
             setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
@@ -186,7 +209,11 @@ class ProcessFundsMigrationTest {
             // Arrange
             Federation retiringFederation = buildP2shP2wshFederation();
             int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            List<UTXO> retiringUtxos = buildUtxos(retiringFederation, maxInputs + 2, Coin.COIN);
+            int numberOfUtxos = maxInputs + 2;
+            List<UTXO> retiringUtxos = UTXOBuilder.builder()
+                .withValue(Coin.COIN)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
             Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
 
             long executionBlockNumber = duringMigrationBlockNumber(ALL_ACTIVATIONS);
@@ -207,7 +234,12 @@ class ProcessFundsMigrationTest {
         void updateCollections_pastMigrationAge_withOneSpendableRetiringUtxo_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
             // Arrange
             Federation retiringFederation = buildP2shP2wshFederation();
-            List<UTXO> retiringUtxos = buildUtxos(retiringFederation, 1, Coin.COIN);
+            List<UTXO> retiringUtxos = List.of(
+                UTXOBuilder.builder()
+                .withValue(Coin.COIN)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .build()
+            );
 
             long executionBlockNumber = pastMigrationBlockNumber(ALL_ACTIVATIONS);
             setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
@@ -226,7 +258,11 @@ class ProcessFundsMigrationTest {
         void updateCollections_pastMigrationAge_withManySpendableRetiringUtxos_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
             // Arrange
             Federation retiringFederation = buildP2shP2wshFederation();
-            List<UTXO> retiringUtxos = buildUtxos(retiringFederation, 3, Coin.COIN);
+            int numberOfUtxos = 3;
+            List<UTXO> retiringUtxos = UTXOBuilder.builder()
+                .withValue(Coin.COIN)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = pastMigrationBlockNumber(ALL_ACTIVATIONS);
             setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
@@ -246,7 +282,11 @@ class ProcessFundsMigrationTest {
             // Arrange
             Federation retiringFederation = buildP2shP2wshFederation();
             int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            List<UTXO> retiringUtxos = buildUtxos(retiringFederation, maxInputs + 2, Coin.COIN);
+            int numberOfUtxos = maxInputs + 2;
+            List<UTXO> retiringUtxos = UTXOBuilder.builder()
+                .withValue(Coin.COIN)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = pastMigrationBlockNumber(ALL_ACTIVATIONS);
             setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
@@ -283,7 +323,12 @@ class ProcessFundsMigrationTest {
         void updateCollections_pastMigrationAge_withMinNonDustRetiringUtxo_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
             // Arrange
             Federation retiringFederation = buildP2shP2wshFederation();
-            List<UTXO> retiringUtxos = buildUtxos(retiringFederation, 1, MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
+            List<UTXO> retiringUtxos = List.of(
+                UTXOBuilder.builder()
+                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .build()
+            );
 
             long executionBlockNumber = pastMigrationBlockNumber(ALL_ACTIVATIONS);
             setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
@@ -303,7 +348,12 @@ class ProcessFundsMigrationTest {
             // Arrange
             Federation retiringFederation = buildP2shP2wshFederation();
             Coin highFeePerKb = Coin.COIN.multiply(2).subtract(Coin.SATOSHI);
-            List<UTXO> retiringUtxos = buildUtxos(retiringFederation, 1, Coin.COIN);
+            List<UTXO> retiringUtxos = List.of(
+                UTXOBuilder.builder()
+                .withValue(Coin.COIN)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .build()
+            );
 
             long executionBlockNumber = pastMigrationBlockNumber(ALL_ACTIVATIONS);
             setUpBridgeAndFederationSupport(highFeePerKb, executionBlockNumber);
@@ -378,13 +428,6 @@ class ProcessFundsMigrationTest {
             .withNetworkParameters(NETWORK_PARAMETERS)
             .withCreationBlockNumber(ACTIVE_FEDERATION_CREATION_BLOCK)
             .build();
-    }
-
-    private List<UTXO> buildUtxos(Federation federation, int count, Coin value) {
-        return UTXOBuilder.builder()
-            .withValue(value)
-            .withScriptPubKey(federation.getP2SHScript())
-            .buildMany(count, i -> createHash(i + 1));
     }
 
     private long blockNumberBeforeMigrationBegins(ActivationConfig.ForBlock activations) {
