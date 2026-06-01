@@ -30,6 +30,11 @@ import java.util.Set;
 
 import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.PegoutsOverwrites;
+import org.ethereum.config.blockchain.upgrades.PegoutsOverwrites.PegoutRef;
+import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Representation of a queue of BTC release
@@ -39,6 +44,8 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
  * @author Ariel Mendelzon
  */
 public class PegoutsWaitingForConfirmations {
+
+    private static final Logger logger = LoggerFactory.getLogger(PegoutsWaitingForConfirmations.class);
 
     private final EntriesStore entries;
 
@@ -50,19 +57,23 @@ public class PegoutsWaitingForConfirmations {
      * Return entries ordered accoring to {@link Entry.BTC_TX_COMPARATOR}.
      */
     public Collection<Entry> getEntriesWithoutHashOrdered() {
-        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() == null).sorted(Entry.BTC_TX_COMPARATOR).toList();
+        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() == null)
+                .sorted(Entry.BTC_TX_COMPARATOR).toList();
     }
 
     /**
      * Return entries ordered accoring to {@link Entry.BTC_TX_COMPARATOR}.
      */
     public Collection<Entry> getEntriesWithHashOrdered() {
-        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() != null).sorted(Entry.BTC_TX_COMPARATOR).toList();
+        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() != null)
+                .sorted(Entry.BTC_TX_COMPARATOR).toList();
     }
 
     public Collection<Entry> getEntries(ForBlock activations) {
-        // TODO: After fork we could try to remove this code and leave only sorted output.
-        // Because only after fork it will be possible to prove that it 100% does not break behaviour.
+        // TODO: After fork we could try to remove this code and leave only sorted
+        // output.
+        // Because only after fork it will be possible to prove that it 100% does not
+        // break behaviour.
         // And rename it to getEntriesOrdered
 
         var rskip559 = activations.isActive(ConsensusRule.RSKIP559);
@@ -80,34 +91,100 @@ public class PegoutsWaitingForConfirmations {
      * Optionally supply a maximum slice size to limit the output size.
      * Sliced items are also removed from the set (thus the name, slice).
      *
-     * @param currentBlockNumber the current execution block number (height).
-     * @param minimumConfirmations the minimum desired confirmations for the slice elements.
-     * @param activations activations for a current block that determine entries ordering/filtering.
+     * @param currentBlockNumber   the current execution block number (height).
+     * @param minimumConfirmations the minimum desired confirmations for the slice
+     *                             elements.
+     * @param activations          activations for a current block that determine
+     *                             entries ordering/filtering.
      *
-     * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
+     * @return an optional with an entry with enough confirmations if found. If not,
+     *         an empty optional.
      */
-    public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations, ForBlock activations) {
+    public Optional<Entry> getNextPegoutWithEnoughConfirmations(
+        Long currentBlockNumber,
+        Integer minimumConfirmations,
+        ForBlock activations
+    ) {
+        var diffPegout = this.findRskip559diff(currentBlockNumber, activations.getRskip559diff());
+
+        // TODO: after RSKIP559 no ForBlock activations will be needed.
+        // Only PegoutsOverwrites should be passed as an argument
         var rskip559 = activations.isActive(ConsensusRule.RSKIP559);
-        return this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, rskip559);
+        var pegout = this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, rskip559);
+
+        // TODO: this condition must be moved to the top of function after hardfork
+        // If diff exists we must return and exit function
+        if (diffPegout != null) {
+            logger.info(
+                    "PreRSKIP559 pegout applied! Current block:{} Pegout ref:{}@{}",
+                    currentBlockNumber,
+                    diffPegout.getBtcTransaction().getHash(),
+                    diffPegout.getPegoutCreationRskBlockNumber());
+
+            // TODO: not need for this log message after a hardfork
+            if (pegout.isPresent()) {
+                logger.info(
+                        "Replaced pegout is: current block:{} Pegout ref:{}@{}",
+                        currentBlockNumber,
+                        pegout.get().getBtcTransaction().getHash(),
+                        pegout.get().getPegoutCreationRskBlockNumber());
+            }
+            return Optional.of(diffPegout);
+        }
+
+        return pegout;
+    }
+
+    @Nullable
+    private Entry findRskip559diff(Long blk, PegoutsOverwrites overwrites) {
+        var diffPegoutRef = overwrites.getPegoutRef(blk);
+        if (diffPegoutRef.isEmpty()) {
+            return null;
+        }
+
+        var pegout = this.getPegoutByRef(diffPegoutRef.get());
+        if (pegout.isEmpty()) {
+            logger.debug("Pegout hardcode entry not found for hash {}", diffPegoutRef.get());
+            // This is ok if called after entry was removed
+            return null;
+        }
+
+        return pegout.get();
+    }
+
+    /**
+     * Search entries by pegout reference.
+     */
+    Optional<Entry> getPegoutByRef(PegoutRef pegoutRef) {
+        return this.entries.entriesSet.stream().filter(e -> {
+            return pegoutRef.btcTxHash().equals(e.getBtcTransaction().getHash())
+                    && Long.valueOf(pegoutRef.rskBlock()).equals(e.getPegoutCreationRskBlockNumber());
+        }).findFirst();
     }
 
     public void add(Entry entry) {
         this.entries.addEntry(entry);
     }
 
-    public boolean removeEntry(Entry entry){
+    public boolean removeEntry(Entry entry) {
         return entries.removeEntry(entry);
     }
 
     /**
      * Encapsulate entries while preserving sorting order before fork.
+     * 
+     * TODO: this class can be removed after RSKIP559.
+     * Initially it was planned to wrap different sorting logic before and after
+     * activation.
+     * But with pre-defined next pegouts for historical data it does not make any
+     * sence.
      */
     public static class EntriesStore {
 
         // From java SDK
         private static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
-        private final HashSet<Entry> entriesSet;
+        protected final HashSet<Entry> entriesSet;
 
         /**
          * Must be equal to new HashSet() call in Java 17.
@@ -120,11 +197,12 @@ public class PegoutsWaitingForConfirmations {
         /**
          * This is a standard code for `new HashSet<>(entries);` in Java 17.
          * Coefficients were changed in Java 21.
-         * Use it to prserve old behaviour in Java21+. 
+         * Use it to prserve old behaviour in Java21+.
          */
         public static HashSet<Entry> setOfEntries(Collection<Entry> entries) {
-            // Need to hardcode Java 17 init params here to preserve old behaviour in Java 21+
-            var ehs = new HashSet<Entry>(Math.max((int) (entries.size()/DEFAULT_LOAD_FACTOR) + 1, 16));
+            // Need to hardcode Java 17 init params here to preserve old behaviour in Java
+            // 21+
+            var ehs = new HashSet<Entry>(Math.max((int) (entries.size() / DEFAULT_LOAD_FACTOR) + 1, 16));
             ehs.addAll(entries);
             return ehs;
         }
@@ -138,10 +216,16 @@ public class PegoutsWaitingForConfirmations {
         }
 
         /**
-         * @param withTxComparator turns on deterministic order for entries before filtering.
+         * @param withTxComparator turns on deterministic order for entries before
+         *                         filtering.
          */
-        public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations, boolean withTxComparator) {
-            var entries = entriesSet.stream().filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations));
+        public Optional<Entry> getNextPegoutWithEnoughConfirmations(
+                Long currentBlockNumber,
+                Integer minimumConfirmations,
+                boolean withTxComparator // TODO remove after RSKIP559 activation
+        ) {
+            var entries = entriesSet.stream()
+                    .filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations));
             if (withTxComparator) {
                 entries = entries.sorted(Entry.BTC_TX_COMPARATOR);
             }
@@ -158,6 +242,7 @@ public class PegoutsWaitingForConfirmations {
             return this.entriesSet.remove(entry);
         }
     }
+
     public static class Entry {
 
         private final BtcTransaction btcTransaction;
@@ -167,18 +252,21 @@ public class PegoutsWaitingForConfirmations {
         private final Keccak256 pegoutCreationRskTxHash;
 
         /**
-         * Compares entries using the lexicographical order of the btc tx's serialized bytes.
+         * Compares entries using the lexicographical order of the btc tx's serialized
+         * bytes.
          */
         public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<Entry>() {
             private Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
 
             @Override
             public int compare(Entry e1, Entry e2) {
-                return comparator.compare(e1.getBtcTransaction().bitcoinSerialize(), e2.getBtcTransaction().bitcoinSerialize());
+                return comparator.compare(e1.getBtcTransaction().bitcoinSerialize(),
+                        e2.getBtcTransaction().bitcoinSerialize());
             }
         };
 
-        public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber, Keccak256 pegoutCreationRskTxHash) {
+        public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber,
+                Keccak256 pegoutCreationRskTxHash) {
             this.btcTransaction = btcTransaction;
             this.pegoutCreationRskBlockNumber = pegoutCreationRskBlockNumber;
             this.pegoutCreationRskTxHash = pegoutCreationRskTxHash;
@@ -208,9 +296,10 @@ public class PegoutsWaitingForConfirmations {
 
             Entry otherEntry = (Entry) o;
             return otherEntry.getBtcTransaction().equals(getBtcTransaction()) &&
-                otherEntry.getPegoutCreationRskBlockNumber().equals(getPegoutCreationRskBlockNumber()) &&
-                (otherEntry.getPegoutCreationRskTxHash() == null && getPegoutCreationRskTxHash() == null ||
-                 otherEntry.getPegoutCreationRskTxHash() != null && otherEntry.getPegoutCreationRskTxHash().equals(getPegoutCreationRskTxHash()));
+                    otherEntry.getPegoutCreationRskBlockNumber().equals(getPegoutCreationRskBlockNumber()) &&
+                    (otherEntry.getPegoutCreationRskTxHash() == null && getPegoutCreationRskTxHash() == null ||
+                            otherEntry.getPegoutCreationRskTxHash() != null
+                                    && otherEntry.getPegoutCreationRskTxHash().equals(getPegoutCreationRskTxHash()));
         }
 
         @Override
