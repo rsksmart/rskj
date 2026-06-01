@@ -91,15 +91,8 @@ class TypedTransactionSecurityTest {
     @ParameterizedTest(name = "Type1 accepts valid chainId={0}")
     @ValueSource(bytes = {1, 30, 31, 33, (byte) 127, (byte) 255})
     void type1_acceptsValidChainId(byte chainId) {
-        Transaction built = Transaction.builder()
-                .type(TransactionType.TYPE_1)
-                .chainId(chainId)
-                .nonce(BigInteger.ZERO)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(BigInteger.valueOf(21_000))
-                .receiveAddress(TEST_ADDRESS)
-                .value(Coin.ZERO)
-                .build();
+        Transaction built = Rskip546TestSupport.unsignedType1(
+                chainId, new RskAddress(TEST_ADDRESS), GAS_PRICE, new byte[0], EMPTY_ACCESS_LIST);
         built.sign(TEST_KEY.getPrivKeyBytes());
 
         // Encode then decode should not throw
@@ -193,16 +186,8 @@ class TypedTransactionSecurityTest {
                 )
         );
 
-        Transaction tx = Transaction.builder()
-                .type(TransactionType.TYPE_1)
-                .chainId(RSK_REGTEST_CHAIN_ID)
-                .nonce(BigInteger.ZERO)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(BigInteger.valueOf(21_000))
-                .receiveAddress(TEST_ADDRESS)
-                .value(Coin.ZERO)
-                .accessList(accessListRlp)
-                .build();
+        Transaction tx = Rskip546TestSupport.unsignedType1(
+                RSK_REGTEST_CHAIN_ID, new RskAddress(TEST_ADDRESS), GAS_PRICE, new byte[0], accessListRlp);
         tx.sign(TEST_KEY.getPrivKeyBytes());
 
         byte[] encoded = tx.getEncoded();
@@ -291,30 +276,15 @@ class TypedTransactionSecurityTest {
     // =========================================================================
 
     private Transaction buildSignedType1(byte chainId) {
-        Transaction tx = Transaction.builder()
-                .type(TransactionType.TYPE_1)
-                .chainId(chainId)
-                .nonce(BigInteger.ZERO)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(BigInteger.valueOf(21_000))
-                .receiveAddress(TEST_ADDRESS)
-                .value(Coin.ZERO)
-                .build();
+        Transaction tx = Rskip546TestSupport.unsignedType1(
+                chainId, new RskAddress(TEST_ADDRESS), GAS_PRICE, new byte[0], EMPTY_ACCESS_LIST);
         tx.sign(TEST_KEY.getPrivKeyBytes());
         return tx;
     }
 
     private Transaction buildSignedType2(byte chainId) {
-        Transaction tx = Transaction.builder()
-                .type(TransactionType.TYPE_2)
-                .chainId(chainId)
-                .nonce(BigInteger.ZERO)
-                .gasLimit(BigInteger.valueOf(21_000))
-                .maxPriorityFeePerGas(GAS_PRICE)
-                .maxFeePerGas(GAS_PRICE)
-                .receiveAddress(TEST_ADDRESS)
-                .value(Coin.ZERO)
-                .build();
+        Transaction tx = Rskip546TestSupport.unsignedType2(
+                chainId, new RskAddress(TEST_ADDRESS), GAS_PRICE, GAS_PRICE, new byte[0], EMPTY_ACCESS_LIST);
         tx.sign(TEST_KEY.getPrivKeyBytes());
         return tx;
     }

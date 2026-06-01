@@ -270,17 +270,14 @@ class TypedTransactionTest {
 
     @Test
     void type2Standard_effectiveGasPrice_isMinOfMaxPriorityAndMaxFee() {
-        Transaction tx = Transaction.builder()
-                .nonce(BigInteger.ONE.toByteArray())
-                .maxPriorityFeePerGas(Coin.valueOf(10))
-                .maxFeePerGas(Coin.valueOf(100))
-                .gasLimit(BigInteger.valueOf(21_000))
-                .receiveAddress(TEST_ADDRESS)
-                .value(Coin.ZERO)
-                .data(EMPTY_DATA)
-                .chainId((byte) 33)
-                .type(TransactionType.TYPE_2)
-                .build();
+        Transaction tx = Rskip546TestSupport.unsignedType2(
+                (byte) 33,
+                TEST_ADDRESS,
+                Coin.valueOf(10),
+                Coin.valueOf(100),
+                BigInteger.ONE.toByteArray(),
+                EMPTY_DATA,
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
 
         assertEquals(Coin.valueOf(10), tx.getGasPrice());
         assertEquals(Coin.valueOf(10), tx.getMaxPriorityFeePerGas());
@@ -437,19 +434,15 @@ class TypedTransactionTest {
     }
 
     @Test
-    void type2Standard_whenMaxPriorityExceedsMaxFee_buildShouldThrow() {
-        assertThrows(IllegalArgumentException.class, () -> Transaction.builder()
-                .nonce(BigInteger.ONE.toByteArray())
-                .maxPriorityFeePerGas(Coin.valueOf(50))
-                .maxFeePerGas(Coin.valueOf(20))
-                .gasLimit(BigInteger.valueOf(21_000))
-                .receiveAddress(TEST_ADDRESS)
-                .value(Coin.ZERO)
-                .data(EMPTY_DATA)
-                .chainId((byte) 33)
-                .type(TransactionType.TYPE_2)
-                .build(),
-                "Building Type 2 tx with maxPriorityFeePerGas > maxFeePerGas must throw per EIP-1559");
+    void type2Standard_whenMaxPriorityExceedsMaxFee_parseShouldThrow() {
+        assertThrows(IllegalArgumentException.class, () -> Rskip546TestSupport.unsignedType2(
+                (byte) 33,
+                TEST_ADDRESS,
+                Coin.valueOf(50),
+                Coin.valueOf(20),
+                EMPTY_DATA,
+                Rskip546TestSupport.EMPTY_ACCESS_LIST),
+                "Parsing Type 2 tx with maxPriorityFeePerGas > maxFeePerGas must throw per EIP-1559");
     }
 
     // ========================================================================
@@ -472,29 +465,13 @@ class TypedTransactionTest {
         byte[] value = Coin.valueOf(1_000_000_000_000_000_000L).getBytes();
 
         if (type == TransactionType.TYPE_1) {
-            return Transaction.builder()
-                    .type(TransactionType.TYPE_1)
-                    .chainId((byte) 33)
-                    .nonce(nonce)
-                    .gasPrice(Coin.valueOf(1_000_000_000))
-                    .gasLimit(BigInteger.valueOf(21_000))
-                    .receiveAddress(TEST_ADDRESS)
-                    .value(Coin.valueOf(1_000_000_000_000_000_000L))
-                    .data(data)
-                    .build();
+            return Rskip546TestSupport.unsignedType1(
+                    (byte) 33, TEST_ADDRESS, Coin.valueOf(1_000_000_000), data, Rskip546TestSupport.EMPTY_ACCESS_LIST);
         }
         if (type == TransactionType.TYPE_2) {
-            return Transaction.builder()
-                    .type(TransactionType.TYPE_2)
-                    .chainId((byte) 33)
-                    .nonce(nonce)
-                    .maxPriorityFeePerGas(Coin.valueOf(1_000_000_000))
-                    .maxFeePerGas(Coin.valueOf(1_000_000_000))
-                    .gasLimit(BigInteger.valueOf(21_000))
-                    .receiveAddress(TEST_ADDRESS)
-                    .value(Coin.valueOf(1_000_000_000_000_000_000L))
-                    .data(data)
-                    .build();
+            return Rskip546TestSupport.unsignedType2(
+                    (byte) 33, TEST_ADDRESS, Coin.valueOf(1_000_000_000), Coin.valueOf(1_000_000_000), data,
+                    Rskip546TestSupport.EMPTY_ACCESS_LIST);
         }
 
         byte[] gasPrice = Coin.valueOf(1_000_000_000).getBytes();
@@ -511,31 +488,15 @@ class TypedTransactionTest {
     private Transaction createSignedTransactionWith(TransactionType type, BigInteger nonce,
                                                     Coin value, byte[] data) {
         if (type == TransactionType.TYPE_1) {
-            Transaction tx = Transaction.builder()
-                    .type(TransactionType.TYPE_1)
-                    .chainId((byte) 33)
-                    .nonce(nonce.toByteArray())
-                    .gasPrice(Coin.valueOf(1_000_000_000))
-                    .gasLimit(BigInteger.valueOf(21_000))
-                    .receiveAddress(TEST_ADDRESS)
-                    .value(value)
-                    .data(data)
-                    .build();
+            Transaction tx = Rskip546TestSupport.unsignedType1(
+                    (byte) 33, TEST_ADDRESS, Coin.valueOf(1_000_000_000), data, Rskip546TestSupport.EMPTY_ACCESS_LIST);
             tx.sign(TEST_KEY.getPrivKeyBytes());
             return tx;
         }
         if (type == TransactionType.TYPE_2) {
-            Transaction tx = Transaction.builder()
-                    .type(TransactionType.TYPE_2)
-                    .chainId((byte) 33)
-                    .nonce(nonce.toByteArray())
-                    .maxPriorityFeePerGas(Coin.valueOf(1_000_000_000))
-                    .maxFeePerGas(Coin.valueOf(1_000_000_000))
-                    .gasLimit(BigInteger.valueOf(21_000))
-                    .receiveAddress(TEST_ADDRESS)
-                    .value(value)
-                    .data(data)
-                    .build();
+            Transaction tx = Rskip546TestSupport.unsignedType2(
+                    (byte) 33, TEST_ADDRESS, Coin.valueOf(1_000_000_000), Coin.valueOf(1_000_000_000), data,
+                    Rskip546TestSupport.EMPTY_ACCESS_LIST);
             tx.sign(TEST_KEY.getPrivKeyBytes());
             return tx;
         }

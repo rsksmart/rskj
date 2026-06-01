@@ -225,6 +225,38 @@ class TransactionReceiptDTOTest {
     }
 
     @Test
+    void testType4Transaction_typeIs0x4_andEffectiveGasPriceIsSet() {
+        RskAddress rskAddress = RskAddress.nullAddress();
+        Keccak256 hash = Keccak256.ZERO_HASH;
+        Bloom bloom = new Bloom();
+        Coin effectiveGasPrice = Coin.valueOf(10L);
+
+        Block block = mock(Block.class);
+        when(block.getHash()).thenReturn(hash);
+
+        Transaction transaction = mock(Transaction.class);
+        when(transaction.getHash()).thenReturn(hash);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
+        when(transaction.getReceiveAddress()).thenReturn(rskAddress);
+        when(transaction.getGasPrice()).thenReturn(effectiveGasPrice);
+        when(transaction.getType()).thenReturn(TransactionType.TYPE_4);
+        when(transaction.getTypeAsHex()).thenReturn("0x4");
+
+        TransactionReceipt txReceipt = mock(TransactionReceipt.class);
+        when(txReceipt.getTransaction()).thenReturn(transaction);
+        when(txReceipt.getLogInfoList()).thenReturn(Collections.emptyList());
+        when(txReceipt.getBloomFilter()).thenReturn(bloom);
+        when(txReceipt.getStatus()).thenReturn(new byte[]{0x01});
+
+        TransactionInfo txInfo = new TransactionInfo(txReceipt, hash.getBytes(), 0);
+        TransactionReceiptDTO dto = new TransactionReceiptDTO(block, txInfo,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        assertEquals("0x4", dto.getType());
+        assertEquals(HexUtils.toQuantityJsonHex(effectiveGasPrice.getBytes()), dto.getEffectiveGasPrice());
+    }
+
+    @Test
     void testType2Transaction_effectiveGasPriceIsMinOfMaxFees() {
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;

@@ -84,15 +84,13 @@ class BlockBodyCodecTest {
     }
 
     private static Transaction buildSignedType1() {
-        Transaction tx = Transaction.builder()
-                .type(TransactionType.TYPE_1)
-                .chainId((byte) 33)
-                .nonce(BigInteger.ONE.toByteArray())
-                .gasPrice(Coin.valueOf(1_000_000_000))
-                .gasLimit(BigInteger.valueOf(21_000))
-                .receiveAddress(TEST_ADDRESS)
-                .value(Coin.valueOf(1))
-                .build();
+        Transaction tx = Rskip546TestSupport.unsignedType1(
+                (byte) 33,
+                TEST_ADDRESS,
+                Coin.valueOf(1_000_000_000),
+                BigInteger.ONE.toByteArray(),
+                new byte[0],
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
         tx.sign(TEST_KEY.getPrivKeyBytes());
         return tx;
     }

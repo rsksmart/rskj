@@ -28,6 +28,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Rskip546TestSupport;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.transaction.TransactionType;
 import org.junit.jupiter.api.Assertions;
@@ -142,16 +143,13 @@ class TransactionResultDTOTest {
 
     @Test
     void type1Transaction_populatesChainIdAccessListAndYParity_omitsMaxFeeFields() throws Exception {
-        Transaction tx = Transaction.builder()
-                .type(TransactionType.TYPE_1)
-                .chainId((byte) 33)
-                .nonce(BigInteger.ONE.toByteArray())
-                .gasPrice(Coin.valueOf(1_000_000_000L))
-                .gasLimit(BigInteger.valueOf(21_000L))
-                .receiveAddress(new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"))
-                .value(Coin.ZERO)
-                .data(new byte[0])
-                .build();
+        Transaction tx = Rskip546TestSupport.unsignedType1(
+                (byte) 33,
+                new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"),
+                Coin.valueOf(1_000_000_000L),
+                BigInteger.ONE.toByteArray(),
+                new byte[0],
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
         tx.sign(new byte[]{});
 
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 0, tx, false,
@@ -176,17 +174,14 @@ class TransactionResultDTOTest {
     void type2StandardTransaction_populatesAllTypedFieldsIncludingMaxFees() throws Exception {
         Coin maxPriority = Coin.valueOf(10L);
         Coin maxFee = Coin.valueOf(100L);
-        Transaction tx = Transaction.builder()
-                .type(TransactionType.TYPE_2)
-                .chainId((byte) 33)
-                .nonce(BigInteger.ONE.toByteArray())
-                .maxPriorityFeePerGas(maxPriority)
-                .maxFeePerGas(maxFee)
-                .gasLimit(BigInteger.valueOf(21_000L))
-                .receiveAddress(new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"))
-                .value(Coin.ZERO)
-                .data(new byte[0])
-                .build();
+        Transaction tx = Rskip546TestSupport.unsignedType2(
+                (byte) 33,
+                new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"),
+                maxPriority,
+                maxFee,
+                BigInteger.ONE.toByteArray(),
+                new byte[0],
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
         tx.sign(new byte[]{});
 
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 0, tx, false,
