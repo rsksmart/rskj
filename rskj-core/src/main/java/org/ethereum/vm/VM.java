@@ -58,7 +58,6 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP445;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP446;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP90;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP91;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP555;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.OpCode.CALL;
 
