@@ -112,7 +112,9 @@ class ProcessFundsMigrationTest {
             // Assert
             assertNoMigrationTxCreated();
             assertRetiringFederationStillPresent();
-            assertRetiringUtxosCount(1);
+
+            int expectedRemainingUtxos = retiringUtxos.size();
+            assertRetiringUtxosCount(expectedRemainingUtxos);
         }
 
         @Test
@@ -178,7 +180,9 @@ class ProcessFundsMigrationTest {
                 () -> bridgeSupport.updateCollections(updateCollectionsTransaction));
             assertNoMigrationTxCreated();
             assertRetiringFederationStillPresent();
-            assertRetiringUtxosCount(numberOfUtxos);
+
+            int expectedRemainingUtxos = retiringUtxos.size();
+            assertRetiringUtxosCount(expectedRemainingUtxos);
         }
 
         @Test
@@ -201,7 +205,9 @@ class ProcessFundsMigrationTest {
             // Assert
             assertNoMigrationTxCreated();
             assertRetiringFederationStillPresent();
-            assertRetiringUtxosCount(1);
+
+            int expectedRemainingUtxos = retiringUtxos.size();
+            assertRetiringUtxosCount(expectedRemainingUtxos);
         }
 
         @Test
@@ -224,7 +230,8 @@ class ProcessFundsMigrationTest {
             // Assert
             assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, maxInputs);
             assertRetiringFederationStillPresent();
-            int remainingUtxos = numberOfUtxos - maxInputs;
+
+            int remainingUtxos = retiringUtxos.size() - maxInputs;
             assertRetiringUtxosCount(remainingUtxos);
 
             // Act
@@ -302,7 +309,9 @@ class ProcessFundsMigrationTest {
             // Assert
             assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, maxInputs);
             assertRetiringFederationCleared();
-            assertRetiringUtxosCount(2);
+
+            int expectedRemainingUtxos = retiringUtxos.size() - maxInputs;
+            assertRetiringUtxosCount(expectedRemainingUtxos);
         }
 
         @Test
@@ -341,13 +350,15 @@ class ProcessFundsMigrationTest {
             // Assert
             assertNoMigrationTxCreated();
             assertRetiringFederationCleared();
-            assertRetiringUtxosCount(1);
+
+            int expectedRemainingUtxos = retiringUtxos.size();
+            assertRetiringUtxosCount(expectedRemainingUtxos);
         }
 
         @Test
         void updateCollections_pastMigrationAge_withHighFees_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
             // Arrange
-            Coin highFeePerKb = Coin.COIN.multiply(2).subtract(Coin.SATOSHI);
+            Coin highFeePerKb = Coin.COIN.multiply(2);
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
                 .withValue(Coin.COIN)
@@ -365,7 +376,9 @@ class ProcessFundsMigrationTest {
             // Assert
             assertNoMigrationTxCreated();
             assertRetiringFederationCleared();
-            assertRetiringUtxosCount(1);
+
+            int expectedRemainingUtxos = retiringUtxos.size();
+            assertRetiringUtxosCount(expectedRemainingUtxos);
         }
     }
 
