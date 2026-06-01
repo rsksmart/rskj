@@ -358,7 +358,6 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_pastMigrationAge_withHighFees_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
             // Arrange
-            Coin highFeePerKb = Coin.COIN.multiply(2);
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
                 .withValue(Coin.COIN)
@@ -366,6 +365,7 @@ class ProcessFundsMigrationTest {
                 .build()
             );
 
+            Coin highFeePerKb = Coin.COIN.multiply(2);
             long executionBlockNumber = pastMigrationBlockNumber();
             setUpBridgeAndFederationSupport(highFeePerKb, executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
