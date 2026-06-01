@@ -18,6 +18,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.Keccak256;
 import com.google.common.primitives.UnsignedBytes;
 
@@ -30,6 +31,11 @@ import java.util.Set;
 
 import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.PegoutsOverwrites;
+import org.ethereum.util.ByteUtil;
+import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Representation of a queue of BTC release
@@ -39,6 +45,8 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
  * @author Ariel Mendelzon
  */
 public class PegoutsWaitingForConfirmations {
+
+    private static final Logger logger = LoggerFactory.getLogger(PegoutsWaitingForConfirmations.class);
 
     private final EntriesStore entries;
 
@@ -87,8 +95,59 @@ public class PegoutsWaitingForConfirmations {
      * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
      */
     public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations, ForBlock activations) {
+        var diffPegout = this.findRskip559diff(currentBlockNumber, activations.getRskip559diff());
+        
+        // TODO: after RSKIP559 no ForBlock activations will be needed.
+        // Only PegoutsOverwrites should be passed as an argument
         var rskip559 = activations.isActive(ConsensusRule.RSKIP559);
-        return this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, rskip559);
+        var pegout =  this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, rskip559);
+
+        // TODO: this condition must be moved to the top of function after hardfork
+        // If diff exists we must return and exit function
+        if (diffPegout != null) {
+            logger.info(
+                "PreRSKIP559 pegout applied! Current block:{} BTC TX:{} Creation block:{} Entry hash:{}",
+                currentBlockNumber,
+                diffPegout.getBtcTransaction().getHash(),
+                diffPegout.getPegoutCreationRskBlockNumber(),
+                diffPegout.getSha256()
+            );
+
+            // TODO: not need for this log message after a hardfork
+            if (pegout.isPresent()) {
+                logger.info(
+                    "Replaced pegout is: current block:{} BTC TX:{} Creation block:{} Entry hash:{}",
+                    currentBlockNumber,
+                    pegout.get().getBtcTransaction().getHash(),
+                    pegout.get().getPegoutCreationRskBlockNumber(),
+                    pegout.get().getSha256()
+                );
+            }
+            return Optional.of(diffPegout);
+        }
+ 
+        return pegout;
+    }
+
+    @Nullable
+    private Entry findRskip559diff(Long blk, PegoutsOverwrites overwrites) {
+        var diffPegoutHash = overwrites.getPegoutHash(blk);
+        if (diffPegoutHash.isEmpty()) {
+            return null;
+        }
+
+        var pegout = this.getPegoutByHash(diffPegoutHash.get());
+        if (pegout.isEmpty()) {
+            logger.debug("Pegout hardcode entry not found for hash {}", diffPegoutHash.get());
+            // This is ok if called after entry was removed
+            return null;
+        }
+
+        return pegout.get();
+    }
+
+    Optional<Entry> getPegoutByHash(Sha256Hash pegoutHash) {
+        return this.entries.entriesSet.stream().filter(e -> e.getSha256().equals(pegoutHash)).findFirst();
     }
 
     public void add(Entry entry) {
@@ -101,13 +160,17 @@ public class PegoutsWaitingForConfirmations {
 
     /**
      * Encapsulate entries while preserving sorting order before fork.
+     * 
+     * TODO: this class can be removed after RSKIP559.
+     * Initially it was planned to wrap different sorting logic before and after activation.
+     * But with pre-defined next pegouts for historical data it does not make any sence.
      */
     public static class EntriesStore {
 
         // From java SDK
         private static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
-        private final HashSet<Entry> entriesSet;
+        protected final HashSet<Entry> entriesSet;
 
         /**
          * Must be equal to new HashSet() call in Java 17.
@@ -140,7 +203,11 @@ public class PegoutsWaitingForConfirmations {
         /**
          * @param withTxComparator turns on deterministic order for entries before filtering.
          */
-        public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations, boolean withTxComparator) {
+        public Optional<Entry> getNextPegoutWithEnoughConfirmations(
+                Long currentBlockNumber,
+                Integer minimumConfirmations,
+                boolean withTxComparator // TODO remove after RSKIP559 activation
+                ) {
             var entries = entriesSet.stream().filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations));
             if (withTxComparator) {
                 entries = entries.sorted(Entry.BTC_TX_COMPARATOR);
@@ -198,6 +265,23 @@ public class PegoutsWaitingForConfirmations {
 
         public Keccak256 getPegoutCreationRskTxHash() {
             return pegoutCreationRskTxHash;
+        }
+
+        /**
+         * Returns Sha256 representation for this Entry.
+         */
+        Sha256Hash getSha256() {
+            var digest = Sha256Hash.newDigest();
+            digest.update(this.getBtcTransaction().getHash().getBytes());
+
+            var blockNumber = getPegoutCreationRskBlockNumber();
+            if (blockNumber != null) {
+                            digest.update(ByteUtil.longToBytes(blockNumber));
+            } else {
+                digest.update(new byte[0]);
+            }
+
+            return Sha256Hash.wrap(digest.digest());
         }
 
         @Override

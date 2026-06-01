@@ -23,6 +23,8 @@ import co.rsk.config.TestSystemProperties;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.PegoutsOverwrites;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,16 +33,28 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PegoutsWaitingForConfirmationsTest {
-    private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
+    
+    private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = initTestActivationConfig(new PegoutsOverwrites()).forBlock(0L);
 
     private Set<PegoutsWaitingForConfirmations.Entry> setEntries;
+
     private PegoutsWaitingForConfirmations set;
+
     private final TestSystemProperties config = new TestSystemProperties();
+
+    static ActivationConfig initTestActivationConfig(PegoutsOverwrites pegouts) {
+        Map<ConsensusRule, Long> consensusRules = EnumSet.allOf(ConsensusRule.class)
+                .stream()
+                .collect(Collectors.toMap(Function.identity(), ignored -> 0L));
+        return new ActivationConfig(consensusRules, new HashMap<>(), pegouts);
+    }
 
     @BeforeEach
     void createSet() {
@@ -223,6 +237,29 @@ class PegoutsWaitingForConfirmationsTest {
 
         Assertions.assertEquals(
             "fdd781c46b5ad7993b3f133e3af94b2e3cbcc8d19e443dfc6b555a1b0bac1527",
+            hash,
+            "Valid candidate for non fixed pegouts sorting"
+        );
+    }
+
+    @Test
+    void getNextPegoutWithEnoughConfirmations_rskip559_overwrites() {
+        var pegHashes = new HashMap<Long, Sha256Hash>();
+        pegHashes.put(10L, Sha256Hash.wrap("1c07c09ac3d01c0a7e3b7c6400259266cf7a835fc4e08a512a849e6114b3c5a4"));
+        var overwrites = new PegoutsOverwrites(pegHashes);
+        var activations = initTestActivationConfig(overwrites).forBlock(0L);
+
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, activations);
+
+        Assertions.assertTrue(result.isPresent());
+
+        var entry = result.get();
+        var hash = entry.getBtcTransaction().getHash().toString();
+
+        // This output does not returns for on/off rskip559 cases
+        // But it must appear for hardcoded config
+        Assertions.assertEquals(
+            "7ff02a735d691a94cd4a08c13b60b86b3e055505dcceabd305c6772043e4a423",
             hash,
             "Valid candidate for non fixed pegouts sorting"
         );
