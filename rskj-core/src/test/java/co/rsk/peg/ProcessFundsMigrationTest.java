@@ -50,6 +50,7 @@ import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OU
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProcessFundsMigrationTest {
@@ -160,26 +161,24 @@ class ProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_duringMigration_withManyMinNonDustRetiringUtxos_shouldCreateMigrationTx() throws IOException {
+        void updateCollections_duringMigration_withManyMinNonDustRetiringUtxos_shouldThrowIllegalStateException() throws IOException {
             // Arrange
-            Coin lowSpendableValue = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.add(FEE_PER_KB);
             int numberOfUtxos = 5;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
-                .withValue(lowSpendableValue)
+                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(Coin.valueOf(1_000L), executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-            // Act
-            bridgeSupport.updateCollections(updateCollectionsTransaction);
-
-            // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size());
+            // Act & Assert
+            assertThrows(IllegalStateException.class,
+                () -> bridgeSupport.updateCollections(updateCollectionsTransaction));
+            assertNoMigrationTxCreated();
             assertRetiringFederationStillPresent();
-            assertNoRemainingRetiringUtxos();
+            assertRetiringUtxosCount(numberOfUtxos);
         }
 
         @Test
