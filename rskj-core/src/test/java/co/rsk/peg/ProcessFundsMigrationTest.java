@@ -1,16 +1,7 @@
 package co.rsk.peg;
 
 import co.rsk.RskTestUtils;
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.core.TransactionWitness;
-import co.rsk.bitcoinj.core.UTXO;
-import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -44,9 +35,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithoutSignaturesHasProperFormat;
+import static co.rsk.peg.ReleaseTransactionAssertions.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
-import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -526,7 +516,7 @@ class ProcessFundsMigrationTest {
         List<UTXO> selectedUtxos = getSelectedUtxos(migrationTransaction, retiringFederationUtxos);
 
         assertBtcTxVersionIs2(migrationTransaction);
-        assertMigrationReleaseTxInputsP2shP2wshErp(
+        assertReleaseTxInputsP2shP2wshErp(
             migrationTransaction,
             retiringFederation.getRedeemScript(),
             retiringFederationUtxos,
@@ -540,59 +530,6 @@ class ProcessFundsMigrationTest {
         assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
     }
 
-    private void assertBtcTxVersionIs2(BtcTransaction migrationTransaction) {
-        assertEquals(BTC_TX_VERSION_2, migrationTransaction.getVersion());
-    }
-
-    private void assertMigrationReleaseTxInputsP2shP2wshErp(
-        BtcTransaction migrationTransaction,
-        Script retiringFederationRedeemScript,
-        List<UTXO> retiringFederationUtxos,
-        List<UTXO> selectedUtxos,
-        int expectedInputCount
-    ) {
-        List<TransactionInput> inputs = migrationTransaction.getInputs();
-        assertEquals(expectedInputCount, inputs.size());
-        assertEquals(expectedInputCount, selectedUtxos.size());
-        assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
-            migrationTransaction,
-            retiringFederationRedeemScript,
-            retiringFederationUtxos
-        );
-        assertSelectedUtxosBelongToTheInputs(selectedUtxos, inputs);
-    }
-
-    private void assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
-        BtcTransaction migrationTransaction,
-        Script retiringFederationRedeemScript,
-        List<UTXO> retiringFederationUtxos
-    ) {
-        List<TransactionInput> inputs = migrationTransaction.getInputs();
-        for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
-            TransactionWitness witness = migrationTransaction.getWitness(inputIndex);
-            assertP2shP2wshWitnessWithoutSignaturesHasProperFormat(witness, retiringFederationRedeemScript);
-            assertInputIsFromFederationUtxosWallet(inputs.get(inputIndex), retiringFederationUtxos);
-        }
-    }
-
-    private void assertInputIsFromFederationUtxosWallet(TransactionInput input, List<UTXO> federationUtxos) {
-        long matchingUtxos = federationUtxos.stream()
-            .filter(utxo -> utxo.getHash().equals(input.getOutpoint().getHash()) &&
-                utxo.getIndex() == input.getOutpoint().getIndex())
-            .count();
-        assertEquals(1, matchingUtxos);
-    }
-
-    private void assertSelectedUtxosBelongToTheInputs(List<UTXO> selectedUtxos, List<TransactionInput> inputs) {
-        for (UTXO selectedUtxo : selectedUtxos) {
-            long matchingInputs = inputs.stream()
-                .filter(input -> input.getOutpoint().getHash().equals(selectedUtxo.getHash()) &&
-                    input.getOutpoint().getIndex() == selectedUtxo.getIndex())
-                .count();
-            assertEquals(1, matchingInputs);
-        }
-    }
-
     private void assertMigrationTxWithOnlyMigrationOutputs(
         BtcTransaction migrationTransaction,
         Coin migrationValue
@@ -600,23 +537,8 @@ class ProcessFundsMigrationTest {
         int expectedNumberOfOutputs = 1;
         List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
         assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
-        assertDestinationAddress(migrationTransactionOutputs, federationSupport.getActiveFederationAddress());
+        assertDestinationAddress(migrationTransactionOutputs, federationSupport.getActiveFederationAddress(), NETWORK_PARAMETERS);
         assertOutputsWithNoChange(migrationTransaction, migrationValue);
-    }
-
-    private void assertDestinationAddress(List<TransactionOutput> outputs, Address expectedDestinationAddress) {
-        for (TransactionOutput output : outputs) {
-            Address destinationAddress = output.getScriptPubKey().getToAddress(NETWORK_PARAMETERS);
-            assertEquals(expectedDestinationAddress, destinationAddress);
-        }
-    }
-
-    private void assertOutputsWithNoChange(BtcTransaction migrationTransaction, Coin expectedSentAmount) {
-        Coin outputsAmount = migrationTransaction.getOutputSum();
-        Coin fees = migrationTransaction.getFee();
-        Coin totalAmountSent = fees.add(outputsAmount);
-        assertEquals(expectedSentAmount, totalAmountSent);
-        assertEquals(migrationTransaction.getInputSum(), totalAmountSent);
     }
 
     private List<UTXO> getSelectedUtxos(BtcTransaction migrationTransaction, List<UTXO> federationUtxos) {
