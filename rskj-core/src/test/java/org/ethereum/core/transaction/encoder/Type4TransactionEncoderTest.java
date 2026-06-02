@@ -182,7 +182,8 @@ class Type4TransactionEncoderTest {
 
         assertTrue(fields.get(11).getRLPData().length > 0, "r must be present when signed");
         assertTrue(fields.get(12).getRLPData().length > 0, "s must be present when signed");
-        byte yParity = fields.get(10).getRLPData()[0];
+        byte[] yParityData = fields.get(10).getRLPData();
+        byte yParity = yParityData == null || yParityData.length == 0 ? 0 : yParityData[0];
         assertTrue(yParity == 0 || yParity == 1, "yParity must be 0 or 1");
     }
 
