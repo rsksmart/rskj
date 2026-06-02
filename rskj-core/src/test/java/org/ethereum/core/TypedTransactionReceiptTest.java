@@ -19,10 +19,8 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -244,31 +242,45 @@ class TypedTransactionReceiptTest {
     }
 
     private Transaction createTransaction(TransactionType type) {
-        TransactionBuilder builder = Transaction.builder()
-            .nonce(new byte[]{1})
-            .gasPrice(Coin.valueOf(1000))
-            .gasLimit(new byte[]{(byte) 0x52, 0x08})
-            .receiveAddress(RskAddress.nullAddress().getBytes())
-            .value(Coin.ZERO)
-            .data(EMPTY_BYTE_ARRAY)
-            .chainId((byte) 33)
-            .type(type);
+        byte chainId = (byte) 33;
+        RskAddress to = RskAddress.nullAddress();
+        byte[] nonce = new byte[]{1};
+        byte[] gasLimit = new byte[]{(byte) 0x52, 0x08};
+        Coin gasPrice = Coin.valueOf(1000);
 
-        if (type == TransactionType.TYPE_4) {
-            builder.maxPriorityFeePerGas(Coin.valueOf(1000))
-                    .maxFeePerGas(Coin.valueOf(1000))
-                    .authorizationList(List.of(minimalSetCodeAuthorization()));
-        }
-
-        return builder.build();
-    }
-
-    private static SetCodeAuthorization minimalSetCodeAuthorization() {
-        return new SetCodeAuthorization(
-                BigInteger.valueOf(33),
-                new RskAddress(new byte[20]),
-                new byte[]{0},
-                ECDSASignature.fromComponents(new byte[]{1}, new byte[]{1}, (byte) 0));
+        return switch (type) {
+            case LEGACY -> Transaction.builder()
+                    .nonce(nonce)
+                    .gasPrice(gasPrice)
+                    .gasLimit(gasLimit)
+                    .receiveAddress(to.getBytes())
+                    .value(Coin.ZERO)
+                    .data(EMPTY_BYTE_ARRAY)
+                    .chainId(chainId)
+                    .build();
+            case TYPE_1 -> Rskip546TestSupport.unsignedType1(
+                    chainId, to, gasPrice, Coin.ZERO, BigInteger.valueOf(21_000), nonce, EMPTY_BYTE_ARRAY,
+                    Rskip546TestSupport.EMPTY_ACCESS_LIST);
+            case TYPE_2 -> Rskip546TestSupport.unsignedType2(
+                    chainId, to, gasPrice, gasPrice, Coin.ZERO, BigInteger.valueOf(21_000), nonce, EMPTY_BYTE_ARRAY,
+                    Rskip546TestSupport.EMPTY_ACCESS_LIST);
+            case TYPE_3 -> Transaction.builder()
+                    .nonce(nonce)
+                    .gasPrice(gasPrice)
+                    .gasLimit(gasLimit)
+                    .receiveAddress(to.getBytes())
+                    .value(Coin.ZERO)
+                    .data(EMPTY_BYTE_ARRAY)
+                    .chainId(chainId)
+                    .type(TransactionType.TYPE_3)
+                    .build();
+            case TYPE_4 -> Rskip545TestSupport.unsignedType4(
+                    new RskAddress("0x0000000000000000000000000000000000000002"),
+                    gasPrice,
+                    gasPrice,
+                    EMPTY_BYTE_ARRAY,
+                    Rskip545TestSupport.EMPTY_ACCESS_LIST);
+        };
     }
 
     private TransactionReceipt createReceipt(Transaction tx) {
