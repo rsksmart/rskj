@@ -1,7 +1,23 @@
 package co.rsk.peg;
 
-import co.rsk.RskTestUtils;
-import co.rsk.bitcoinj.core.*;
+import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertBtcTxVersionIs2;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationTxWithOnlyMigrationOutputs;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shP2wshErp;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.getBtcEcKeysFromSeeds;
+import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -20,27 +36,15 @@ import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import co.rsk.test.builders.UTXOBuilder;
-import org.ethereum.config.Constants;
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Comparator;
-import java.util.List;
-
-import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.ReleaseTransactionAssertions.*;
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
-import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProcessFundsMigrationTest {
 
@@ -564,23 +568,6 @@ class ProcessFundsMigrationTest {
 
     private void assertNoRemainingRetiringUtxos() {
         assertEquals(0, federationStorageProvider.getOldFederationBtcUTXOs().size());
-    }
-
-    private Transaction buildUpdateCollectionsTransaction() {
-        return buildUpdateCollectionsTransaction(0);
-    }
-
-    private Transaction buildUpdateCollectionsTransaction(long nonce) {
-        Transaction tx = Transaction
-            .builder()
-            .nonce(BigInteger.valueOf(nonce))
-            .destination(PrecompiledContracts.BRIDGE_ADDR)
-            .data(Bridge.UPDATE_COLLECTIONS.encode())
-            .chainId(Constants.MAINNET_CHAIN_ID)
-            .build();
-
-        tx.sign(RskTestUtils.getEcKeyFromSeed("sender").getPrivKeyBytes());
-        return tx;
     }
 
     private List<BtcECKey> getActiveMemberKeys() {
