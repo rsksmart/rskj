@@ -527,18 +527,12 @@ class ProcessFundsMigrationTest {
         Coin migrationValue = selectedUtxos.stream()
             .map(UTXO::getValue)
             .reduce(Coin.ZERO, Coin::add);
-        assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
-    }
-
-    private void assertMigrationTxWithOnlyMigrationOutputs(
-        BtcTransaction migrationTransaction,
-        Coin migrationValue
-    ) {
-        int expectedNumberOfOutputs = 1;
-        List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-        assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
-        assertDestinationAddress(migrationTransactionOutputs, federationSupport.getActiveFederationAddress(), NETWORK_PARAMETERS);
-        assertOutputsWithNoChange(migrationTransaction, migrationValue);
+        assertMigrationTxWithOnlyMigrationOutputs(
+            migrationTransaction,
+            migrationValue,
+            federationSupport.getActiveFederationAddress(),
+            NETWORK_PARAMETERS
+        );
     }
 
     private List<UTXO> getSelectedUtxos(BtcTransaction migrationTransaction, List<UTXO> federationUtxos) {
