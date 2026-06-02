@@ -30,6 +30,19 @@ public class ReleaseTransactionAssertions {
         }
     }
 
+    public static void assertMigrationTxWithOnlyMigrationOutputs(
+        BtcTransaction migrationTransaction,
+        Coin migratedAmount,
+        Address destination,
+        NetworkParameters networkParameters
+    ) {
+        int expectedNumberOfOutputs = 1;
+        List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
+        assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
+        assertDestinationAddress(migrationTransactionOutputs, destination, networkParameters);
+        assertOutputsWithNoChange(migrationTransaction, migratedAmount);
+    }
+
     public static void assertInputIsFromFederationUTXOsWallet(TransactionInput input, List<UTXO> federationUtxos) {
         Predicate<UTXO> isUTXOAndReleaseInputFromTheSameOutpoint = utxo ->
             utxo.getHash().equals(input.getOutpoint().getHash())
