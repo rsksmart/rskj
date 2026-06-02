@@ -2716,27 +2716,11 @@ class ReleaseTransactionBuilderTest {
             BtcTransaction migrationTransaction,
             Coin migratedAmount
         ) {
-            int expectedNumberOfChangeOutputs = 0;
             int expectedNumberOfMigrationOutputs = 1;
-            int expectedNumberOfOutputs = expectedNumberOfMigrationOutputs + expectedNumberOfChangeOutputs;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
+            assertReleaseTxNumberOfOutputs(expectedNumberOfMigrationOutputs, migrationTransactionOutputs);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
-
-            List<TransactionOutput> migrationTransactionChangeOutputs = getChangeOutputs(migrationTransaction);
-            assertEquals(expectedNumberOfChangeOutputs, migrationTransactionChangeOutputs.size());
             assertOutputsWithNoChange(migrationTransaction, migratedAmount);
-        }
-
-        private List<TransactionOutput> getChangeOutputs(BtcTransaction migrationTransaction) {
-            return migrationTransaction.getOutputs().stream()
-                .filter(this::isFederationOutput)
-                .toList();
-        }
-
-        private boolean isFederationOutput(TransactionOutput output) {
-            Address destination = output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
-            return destination.equals(retiringFederationAddress);
         }
 
         private void setUpActivationConfig(ActivationConfig.ForBlock activationConfig) {
