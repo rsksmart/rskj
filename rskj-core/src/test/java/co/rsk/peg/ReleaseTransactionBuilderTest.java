@@ -1870,7 +1870,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
 
             @Test
@@ -1900,7 +1905,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
 
             @Test
@@ -1928,7 +1938,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
 
             /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; the minimum UTXO the Federation
@@ -1983,7 +1998,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
 
             @Test
@@ -2112,7 +2132,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
         }
 
@@ -2173,7 +2198,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
 
             @Test
@@ -2203,7 +2233,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
 
             @Test
@@ -2231,7 +2266,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
 
             /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; the minimum UTXO the Federation
@@ -2286,7 +2326,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
 
             @Test
@@ -2416,7 +2461,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
         }
 
@@ -2478,7 +2528,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
 
             @Test
@@ -2506,7 +2561,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
 
             /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; the minimum UTXO the Federation
@@ -2561,7 +2621,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
 
             @Test
@@ -2692,7 +2757,12 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
 
-                assertMigrationTxWithOnlyMigrationOutputs(migrationTransaction, migrationValue);
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
         }
 
@@ -2710,17 +2780,6 @@ class ReleaseTransactionBuilderTest {
             assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
             assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
             assertMigrationTransactionIsMigratingMoreThanRequestedValue(migrationValueRequested, migrationTransaction);
-        }
-
-        private void assertMigrationTxWithOnlyMigrationOutputs(
-            BtcTransaction migrationTransaction,
-            Coin migratedAmount
-        ) {
-            int expectedNumberOfMigrationOutputs = 1;
-            List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
-            assertReleaseTxNumberOfOutputs(expectedNumberOfMigrationOutputs, migrationTransactionOutputs);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
-            assertOutputsWithNoChange(migrationTransaction, migratedAmount);
         }
 
         private void setUpActivationConfig(ActivationConfig.ForBlock activationConfig) {
