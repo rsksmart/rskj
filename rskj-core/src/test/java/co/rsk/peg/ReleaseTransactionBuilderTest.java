@@ -149,28 +149,6 @@ class ReleaseTransactionBuilderTest {
         return Sha256Hash.of(generator.getBytes(StandardCharsets.UTF_8));
     }
 
-    @Test
-    void releaseTransactionBuilder_shouldExposeWalletChangeAddressAndFeePerKbFromConstruction() {
-        Address changeAddress = BitcoinTestUtils.createP2PKHAddress(REGTEST_BTC_PARAMS, "changeAddress");
-        Wallet mockWallet = mock(Wallet.class);
-        BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(
-            bridgeRegTestConstants.getFederationConstants());
-        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
-            REGTEST_BTC_PARAMS,
-            mockWallet,
-            genesisFederation.getFormatVersion(),
-            changeAddress,
-            MOCK_FEE_PER_KB,
-            ALL_ACTIVATIONS
-        );
-        new Context(REGTEST_BTC_PARAMS);
-
-        assertSame(mockWallet, releaseTransactionBuilder.getWallet());
-        assertSame(changeAddress, releaseTransactionBuilder.getChangeAddress());
-        assertEquals(MOCK_FEE_PER_KB, releaseTransactionBuilder.getFeePerKb());
-    }
-
     private static Address recipientAddressFromPrivateKeyOffset(int keyOffset) {
         BigInteger seed = BigInteger.valueOf(keyOffset);
         return BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);

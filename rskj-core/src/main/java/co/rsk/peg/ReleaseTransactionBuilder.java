@@ -104,14 +104,6 @@ public class ReleaseTransactionBuilder {
         this.activations = activations;
     }
 
-    public Wallet getWallet() {
-        return wallet;
-    }
-
-    public Address getChangeAddress() {
-        return changeAddress;
-    }
-
     public Coin getFeePerKb() {
         return feePerKb;
     }
