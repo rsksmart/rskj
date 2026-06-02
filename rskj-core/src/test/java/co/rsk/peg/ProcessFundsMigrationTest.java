@@ -486,11 +486,14 @@ class ProcessFundsMigrationTest {
         Federation retiringFederation,
         List<UTXO> retiringFederationUtxos
     ) throws IOException {
-        List<BtcTransaction> migrationTransactions = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
+        List<PegoutsWaitingForConfirmations.Entry> migrationTransactionEntries = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
             .getEntries()
             .stream()
+            .sorted(Comparator.comparing(PegoutsWaitingForConfirmations.Entry::getPegoutCreationRskBlockNumber))
+            .toList();
+
+        List<BtcTransaction> migrationTransactions = migrationTransactionEntries.stream()
             .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
-            .sorted(Comparator.comparingInt(tx -> tx.getInputs().size()))
             .toList();
         assertEquals(EXPECTED_MULTIPLE_MIGRATION_TX_COUNT, migrationTransactions.size());
 
@@ -500,13 +503,17 @@ class ProcessFundsMigrationTest {
         assertEquals(retiringFederationUtxos.size(), selectedUtxos.size());
         assertTrue(selectedUtxos.containsAll(retiringFederationUtxos));
 
+        int maxInputCount = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
+        int remainingRetiringFederationUtxos = retiringFederationUtxos.size();
         for (BtcTransaction migrationTransaction : migrationTransactions) {
+            int expectedInputCount = Math.min(maxInputCount, remainingRetiringFederationUtxos);
             assertMigrationTransactionWasBuiltAsExpected(
                 migrationTransaction,
                 retiringFederation,
                 retiringFederationUtxos,
-                migrationTransaction.getInputs().size()
+                expectedInputCount
             );
+            remainingRetiringFederationUtxos -= expectedInputCount;
         }
     }
 
