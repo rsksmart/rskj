@@ -18,8 +18,13 @@ import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.core.TransactionWitness;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
+
 import java.util.List;
 import java.util.function.Predicate;
+
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithoutSignaturesHasProperFormat;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReleaseTransactionAssertions {
 
