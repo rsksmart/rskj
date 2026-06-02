@@ -19,9 +19,13 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.ReleaseTransactionAssertions.*;
-import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_1;
-import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertBtcTxVersionIs2;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertDestinationAddress;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertInputIsFromFederationUTXOsWallet;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationTxWithOnlyMigrationOutputs;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertOutputsWithNoChange;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shP2wshErp;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertSelectedUtxosBelongToTheInputs;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE;
@@ -31,6 +35,8 @@ import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromP2shEr
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_1;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -951,7 +957,7 @@ class ReleaseTransactionBuilderTest {
             Coin requestedAmount,
             PegoutChangeOutputExpectation outputExpectation
         ) {
-            assertBuildResultResponseCode(SUCCESS, buildResult);
+            assertSuccessBuildResult(buildResult);
             BtcTransaction pegoutTransaction = buildResult.btcTx();
             assertEquals(expectedBtcTxVersion, pegoutTransaction.getVersion());
 
@@ -1130,7 +1136,7 @@ class ReleaseTransactionBuilderTest {
                 BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, emptyWalletResult);
+                assertSuccessBuildResult(emptyWalletResult);
                 BtcTransaction refundTransaction = emptyWalletResult.btcTx();
                 assertBtcTxVersionIs1(refundTransaction);
 
@@ -1509,7 +1515,7 @@ class ReleaseTransactionBuilderTest {
             BuildResult emptyWalletResult,
             RefundTxInputsAssertion assertRefundInputs
         ) {
-            assertBuildResultResponseCode(SUCCESS, emptyWalletResult);
+            assertSuccessBuildResult(emptyWalletResult);
             BtcTransaction refundTransaction = emptyWalletResult.btcTx();
             assertBtcTxVersionIs2(refundTransaction);
             assertRefundInputs.run(refundTransaction, emptyWalletResult);
@@ -1637,7 +1643,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs1(migrationTransaction);
 
@@ -1672,7 +1678,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -1705,7 +1711,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -1765,7 +1771,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -1831,7 +1837,7 @@ class ReleaseTransactionBuilderTest {
                 );
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -1898,7 +1904,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -1964,7 +1970,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs1(migrationTransaction);
 
@@ -1999,7 +2005,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -2032,7 +2038,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -2092,7 +2098,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -2159,7 +2165,7 @@ class ReleaseTransactionBuilderTest {
                 );
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -2227,7 +2233,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -2294,7 +2300,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -2327,7 +2333,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -2387,7 +2393,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -2454,7 +2460,7 @@ class ReleaseTransactionBuilderTest {
                 );
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -2522,7 +2528,7 @@ class ReleaseTransactionBuilderTest {
                     migrationValue, newFederationAddress);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, migrationTransactionResult);
+                assertSuccessBuildResult(migrationTransactionResult);
                 BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
                 assertBtcTxVersionIs2(migrationTransaction);
 
@@ -2673,7 +2679,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs1(batchedPegoutsTransaction);
@@ -2698,7 +2704,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -2723,7 +2729,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -2757,7 +2763,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -2813,7 +2819,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -2845,7 +2851,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -2877,7 +2883,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3005,7 +3011,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
 
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3060,7 +3066,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3086,7 +3092,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3118,7 +3124,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3175,7 +3181,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3207,7 +3213,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3239,7 +3245,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3366,7 +3372,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
 
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3406,7 +3412,7 @@ class ReleaseTransactionBuilderTest {
                 // Act & Assert
                 BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
                     NO_PEGOUT_REQUESTS);
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTx = batchedPegoutsResult.btcTx();
                 assertTrue(batchedPegoutsTx.getOutputs().isEmpty());
@@ -3425,7 +3431,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3452,7 +3458,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3486,7 +3492,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3543,7 +3549,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3575,7 +3581,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3607,7 +3613,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
 
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -3736,7 +3742,7 @@ class ReleaseTransactionBuilderTest {
                     pegoutRequests);
 
                 // Assert
-                assertBuildResultResponseCode(SUCCESS, batchedPegoutsResult);
+                assertSuccessBuildResult(batchedPegoutsResult);
                 BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
 
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
@@ -4021,10 +4027,9 @@ class ReleaseTransactionBuilderTest {
         assertEquals(retiringFederationUtxos, selectedUtxos);
     }
 
-    private static void assertBuildResultResponseCode(ReleaseTransactionBuilder.Response expectedResponseCode,
-        ReleaseTransactionBuilder.BuildResult buildResult) {
+    private static void assertSuccessBuildResult(ReleaseTransactionBuilder.BuildResult buildResult) {
         ReleaseTransactionBuilder.Response actualResponseCode = buildResult.responseCode();
-        assertEquals(expectedResponseCode, actualResponseCode);
+        assertEquals(SUCCESS, actualResponseCode);
     }
 
     private static void assertBtcTxVersionIs1(BtcTransaction releaseTransaction) {
