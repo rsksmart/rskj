@@ -42,8 +42,8 @@ public class ReleaseTransactionAssertions {
         assertEquals(expectedNumberOfUtxos, matchingUtxos);
     }
 
-    public static void assertBtcTxVersionIs2(BtcTransaction migrationTransaction) {
-        assertEquals(BTC_TX_VERSION_2, migrationTransaction.getVersion());
+    public static void assertBtcTxVersionIs2(BtcTransaction btcTransaction) {
+        assertEquals(BTC_TX_VERSION_2, btcTransaction.getVersion());
     }
 
     public static void assertSelectedUtxosBelongToTheInputs(List<UTXO> selectedUtxos, List<TransactionInput> inputs) {
@@ -73,13 +73,13 @@ public class ReleaseTransactionAssertions {
     }
 
     private static void assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
-        BtcTransaction migrationTransaction,
+        BtcTransaction releaseTransaction,
         Script retiringFederationRedeemScript,
         List<UTXO> retiringFederationUtxos
     ) {
-        List<TransactionInput> inputs = migrationTransaction.getInputs();
+        List<TransactionInput> inputs = releaseTransaction.getInputs();
         for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
-            TransactionWitness witness = migrationTransaction.getWitness(inputIndex);
+            TransactionWitness witness = releaseTransaction.getWitness(inputIndex);
             assertP2shP2wshWitnessWithoutSignaturesHasProperFormat(witness, retiringFederationRedeemScript);
             assertInputIsFromFederationUTXOsWallet(inputs.get(inputIndex), retiringFederationUtxos);
         }
