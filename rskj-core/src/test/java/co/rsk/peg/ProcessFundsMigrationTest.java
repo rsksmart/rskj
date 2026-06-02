@@ -234,6 +234,8 @@ class ProcessFundsMigrationTest {
             assertRetiringUtxosCount(remainingUtxos);
 
             // Act
+            long secondExecutionBlockNumber = executionBlockNumber + 1;
+            setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber);
             Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
@@ -391,6 +393,10 @@ class ProcessFundsMigrationTest {
         setUpFeePerKb(feePerKb);
         federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
 
+        setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
+    }
+
+    private void setUpBridgeAndFederationSupportForExecutionBlock(long executionBlockNumber) {
         org.ethereum.core.Block executionBlock = new BlockGenerator().createBlock(executionBlockNumber, 1);
 
         federationSupport = FederationSupportBuilder.builder()
