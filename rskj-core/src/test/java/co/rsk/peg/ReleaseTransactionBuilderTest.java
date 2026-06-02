@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.ReleaseTransactionAssertions.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_1;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
@@ -26,7 +27,6 @@ import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.SUCCESS;
-import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
@@ -55,7 +55,6 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.core.TransactionWitness;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.core.UTXOProvider;
 import co.rsk.bitcoinj.core.UTXOProviderException;
@@ -90,7 +89,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
@@ -250,10 +248,10 @@ class ReleaseTransactionBuilderTest {
 
             assertReleaseTxInputsP2shP2wshErp(
                 svpFundTransaction,
-                1,
                 activeP2shP2wshErpFederation.getRedeemScript(),
                 utxos,
-                buildResult.selectedUTXOs()
+                buildResult.selectedUTXOs(),
+                1
             );
         }
 
@@ -283,10 +281,10 @@ class ReleaseTransactionBuilderTest {
             BtcTransaction svpFundTransaction = buildResult.btcTx();
             assertReleaseTxInputsP2shP2wshErp(
                 svpFundTransaction,
-                expectedSelectedUtxos.size(),
                 activeP2shP2wshErpFederation.getRedeemScript(),
                 utxos,
-                selectedUtxos
+                selectedUtxos,
+                expectedSelectedUtxos.size()
             );
         }
 
@@ -1182,10 +1180,10 @@ class ReleaseTransactionBuilderTest {
             assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfUserOutputs, EXPECTED_NUMBER_OF_CHANGE_OUTPUTS);
 
             List<TransactionOutput> userOutputs = getUserOutputs(pegoutTransaction);
-            assertDestinationAddress(userOutputs, RECIPIENT_ADDRESS);
+            assertDestinationAddress(userOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
 
             List<TransactionOutput> changeOutputs = getChangeOutputs(pegoutTransaction);
-            assertDestinationAddress(changeOutputs, federationAddress);
+            assertDestinationAddress(changeOutputs, federationAddress, BTC_MAINNET_PARAMS);
         }
 
         private void assertOutputsWithNoChange(
@@ -1197,9 +1195,9 @@ class ReleaseTransactionBuilderTest {
             assertPegoutTxOutputAndChangeOutputsNumbers(pegoutTransaction, expectedNumberOfUserOutputs, expectedNumberOfChangeOutputs);
 
             List<TransactionOutput> pegoutTransactionOutputs = pegoutTransaction.getOutputs();
-            assertDestinationAddress(pegoutTransactionOutputs, RECIPIENT_ADDRESS);
+            assertDestinationAddress(pegoutTransactionOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
 
-            ReleaseTransactionBuilderTest.assertOutputsWithNoChange(pegoutTransaction, requestedAmount);
+            ReleaseTransactionAssertions.assertOutputsWithNoChange(pegoutTransaction, requestedAmount);
         }
 
         private List<TransactionOutput> getUserOutputs(BtcTransaction pegoutTransaction) {
@@ -1648,7 +1646,7 @@ class ReleaseTransactionBuilderTest {
                 assertSuccessfulEmptyWalletRefundWithBtcVersion2(
                     emptyWalletResult,
                     (tx, res) -> assertReleaseTxInputsP2shP2wshErp(
-                        tx, federationUTXOs.size(), federationRedeemScript, federationUTXOs, res.selectedUTXOs())
+                        tx, federationRedeemScript, federationUTXOs, res.selectedUTXOs(), federationUTXOs.size())
                 );
             }
 
@@ -1664,7 +1662,7 @@ class ReleaseTransactionBuilderTest {
                 assertSuccessfulEmptyWalletRefundWithBtcVersion2(
                     emptyWalletResult,
                     (tx, res) -> assertReleaseTxInputsP2shP2wshErp(
-                        tx, federationUTXOs.size(), federationRedeemScript, federationUTXOs, res.selectedUTXOs())
+                        tx, federationRedeemScript, federationUTXOs, res.selectedUTXOs(), federationUTXOs.size())
                 );
             }
 
@@ -1703,7 +1701,7 @@ class ReleaseTransactionBuilderTest {
                 assertSuccessfulEmptyWalletRefundWithBtcVersion2(
                     emptyWalletResult,
                     (tx, res) -> assertReleaseTxInputsP2shP2wshErp(
-                        tx, federationUTXOs.size(), federationRedeemScript, federationUTXOs, res.selectedUTXOs())
+                        tx, federationRedeemScript, federationUTXOs, res.selectedUTXOs(), federationUTXOs.size())
                 );
             }
 
@@ -1773,7 +1771,7 @@ class ReleaseTransactionBuilderTest {
             assertEquals(expectedNumberOfOutputs, refundTransaction.getOutputs().size());
 
             TransactionOutput onlyOutput = outputs.get(0);
-            assertDestinationAddress(outputs, RECIPIENT_ADDRESS);
+            assertDestinationAddress(outputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
             assertTrue(onlyOutput.getValue().isPositive());
 
             List<TransactionOutput> changeOutputs = outputs.stream()
@@ -2710,7 +2708,7 @@ class ReleaseTransactionBuilderTest {
             int expectedNumberOfOutputs = 2;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
             assertMigrationTransactionIsMigratingMoreThanRequestedValue(migrationValueRequested, migrationTransaction);
         }
 
@@ -2723,7 +2721,7 @@ class ReleaseTransactionBuilderTest {
             int expectedNumberOfOutputs = expectedNumberOfMigrationOutputs + expectedNumberOfChangeOutputs;
             List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
             assertReleaseTxNumberOfOutputs(expectedNumberOfOutputs, migrationTransactionOutputs);
-            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress);
+            assertDestinationAddress(migrationTransactionOutputs, newFederationAddress, BTC_MAINNET_PARAMS);
 
             List<TransactionOutput> migrationTransactionChangeOutputs = getChangeOutputs(migrationTransaction);
             assertEquals(expectedNumberOfChangeOutputs, migrationTransactionChangeOutputs.size());
@@ -3616,10 +3614,11 @@ class ReleaseTransactionBuilderTest {
 
                 assertReleaseTxInputsP2shP2wshErp(
                     batchedPegoutsTransaction,
-                    1,
                     federationRedeemScript,
                     federationUTXOs,
-                    batchedPegoutsResult.selectedUTXOs());
+                    batchedPegoutsResult.selectedUTXOs(),
+                    1
+                );
                 assertOutputsWithNonDustChange(batchedPegoutsTransaction, pegoutRequests);
             }
 
@@ -3642,10 +3641,11 @@ class ReleaseTransactionBuilderTest {
 
                 assertReleaseTxInputsP2shP2wshErp(
                     batchedPegoutsTransaction,
-                    3,
                     federationRedeemScript,
                     federationUTXOs,
-                    batchedPegoutsResult.selectedUTXOs());
+                    batchedPegoutsResult.selectedUTXOs(),
+                    3
+                );
                 assertOutputsWithNonDustChange(batchedPegoutsTransaction, pegoutRequests);
             }
 
@@ -3674,10 +3674,11 @@ class ReleaseTransactionBuilderTest {
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
                 assertReleaseTxInputsP2shP2wshErp(
                     batchedPegoutsTransaction,
-                    1,
                     federationRedeemScript,
                     federationUTXOs,
-                    batchedPegoutsResult.selectedUTXOs());
+                    batchedPegoutsResult.selectedUTXOs(),
+                    1
+                );
                 assertOutputsWithNoChange(batchedPegoutsTransaction, pegoutRequests);
             }
 
@@ -3730,10 +3731,11 @@ class ReleaseTransactionBuilderTest {
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
                 assertReleaseTxInputsP2shP2wshErp(
                     batchedPegoutsTransaction,
-                    1,
                     federationRedeemScript,
                     federationUTXOs,
-                    batchedPegoutsResult.selectedUTXOs());
+                    batchedPegoutsResult.selectedUTXOs(),
+                    1
+                );
                 assertOutputsWithDustChange(batchedPegoutsTransaction, pegoutRequests);
             }
 
@@ -3761,10 +3763,11 @@ class ReleaseTransactionBuilderTest {
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
                 assertReleaseTxInputsP2shP2wshErp(
                     batchedPegoutsTransaction,
-                    1,
                     federationRedeemScript,
                     federationUTXOs,
-                    batchedPegoutsResult.selectedUTXOs());
+                    batchedPegoutsResult.selectedUTXOs(),
+                    1
+                );
                 assertOutputsWithNonDustChange(batchedPegoutsTransaction, pegoutRequests);
             }
 
@@ -3792,10 +3795,11 @@ class ReleaseTransactionBuilderTest {
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
                 assertReleaseTxInputsP2shP2wshErp(
                     batchedPegoutsTransaction,
-                    1,
                     federationRedeemScript,
                     federationUTXOs,
-                    batchedPegoutsResult.selectedUTXOs());
+                    batchedPegoutsResult.selectedUTXOs(),
+                    1
+                );
                 assertOutputsWithDustChange(batchedPegoutsTransaction, pegoutRequests);
             }
 
@@ -3920,10 +3924,11 @@ class ReleaseTransactionBuilderTest {
                 assertBtcTxVersionIs2(batchedPegoutsTransaction);
                 assertReleaseTxInputsP2shP2wshErp(
                     batchedPegoutsTransaction,
-                    expectedNumberOfUtxos,
                     federationRedeemScript,
                     federationUTXOs,
-                    batchedPegoutsResult.selectedUTXOs());
+                    batchedPegoutsResult.selectedUTXOs(),
+                    expectedNumberOfUtxos
+                );
                 assertOutputsWithNonDustChange(batchedPegoutsTransaction, pegoutRequests);
             }
         }
@@ -4051,7 +4056,7 @@ class ReleaseTransactionBuilderTest {
             assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
 
             List<TransactionOutput> batchedPegoutsTransactionChangeOutputs = getChangeOutputs(batchedPegoutsTransaction);
-            assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress);
+            assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
 
             Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
             ReleaseTransactionBuilderTest.assertOutputsWithNonDustChange(
@@ -4073,7 +4078,7 @@ class ReleaseTransactionBuilderTest {
             assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
 
             List<TransactionOutput> batchedPegoutsTransactionChangeOutputs = getChangeOutputs(batchedPegoutsTransaction);
-            assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress);
+            assertDestinationAddress(batchedPegoutsTransactionChangeOutputs, federationAddress, BTC_MAINNET_PARAMS);
 
             Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
             ReleaseTransactionBuilderTest.assertOutputsWithDustChange(
@@ -4100,7 +4105,7 @@ class ReleaseTransactionBuilderTest {
 
             assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
             Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
-            ReleaseTransactionBuilderTest.assertOutputsWithNoChange(batchedPegoutsTransaction, totalPegoutRequestsAmount);
+            ReleaseTransactionAssertions.assertOutputsWithNoChange(batchedPegoutsTransaction, totalPegoutRequestsAmount);
         }
     }
 
@@ -4123,40 +4128,6 @@ class ReleaseTransactionBuilderTest {
             Script scriptSig = input.getScriptSig();
             assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat(scriptSig, federationRedeemScript);
             assertInputIsFromFederationUTXOsWallet(input, federationUTXOs);
-        }
-    }
-
-    private static void assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
-        BtcTransaction releaseTransaction,
-        Script federationRedeemScript,
-        List<UTXO> federationUTXOs) {
-        List<TransactionInput> releaseTransactionInputs = releaseTransaction.getInputs();
-        for (int inputIndex = 0; inputIndex < releaseTransactionInputs.size(); inputIndex++) {
-            TransactionWitness witness = releaseTransaction.getWitness(inputIndex);
-            assertP2shP2wshWitnessWithoutSignaturesHasProperFormat(witness, federationRedeemScript);
-            TransactionInput input = releaseTransactionInputs.get(inputIndex);
-            assertInputIsFromFederationUTXOsWallet(input, federationUTXOs);
-        }
-    }
-
-    private static void assertInputIsFromFederationUTXOsWallet(TransactionInput input, List<UTXO> federationUtxos) {
-        Predicate<UTXO> isUTXOAndReleaseInputFromTheSameOutpoint = utxo ->
-            utxo.getHash().equals(input.getOutpoint().getHash())
-                && utxo.getIndex() == input.getOutpoint().getIndex();
-        List<UTXO> matchingUtxos = federationUtxos.stream()
-            .filter(isUTXOAndReleaseInputFromTheSameOutpoint).toList();
-        int expectedNumberOfUtxos = 1;
-        assertEquals(expectedNumberOfUtxos, matchingUtxos.size());
-    }
-
-    private static void assertSelectedUtxosBelongToTheInputs(List<UTXO> selectedUtxos,
-        List<TransactionInput> releaseTransactionInputs) {
-        assertEquals(releaseTransactionInputs.size(), selectedUtxos.size());
-        for (UTXO utxo : selectedUtxos) {
-            List<TransactionInput> matchingInputs = releaseTransactionInputs.stream().
-                filter(input -> input.getOutpoint().getHash().equals(utxo.getHash())
-                    && input.getOutpoint().getIndex() == utxo.getIndex()).toList();
-            assertEquals(1, matchingInputs.size());
         }
     }
 
@@ -4183,19 +4154,6 @@ class ReleaseTransactionBuilderTest {
         List<TransactionInput> inputs = tx.getInputs();
         assertEquals(expectedInputCount, inputs.size());
         assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
-            tx, federationRedeemScript, federationUtxos);
-        assertSelectedUtxosBelongToTheInputs(selectedUtxos, inputs);
-    }
-
-    private static void assertReleaseTxInputsP2shP2wshErp(
-        BtcTransaction tx,
-        int expectedInputCount,
-        Script federationRedeemScript,
-        List<UTXO> federationUtxos,
-        List<UTXO> selectedUtxos) {
-        List<TransactionInput> inputs = tx.getInputs();
-        assertEquals(expectedInputCount, inputs.size());
-        assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
             tx, federationRedeemScript, federationUtxos);
         assertSelectedUtxosBelongToTheInputs(selectedUtxos, inputs);
     }
@@ -4235,12 +4193,14 @@ class ReleaseTransactionBuilderTest {
         Script retiringFederationRedeemScript,
         List<UTXO> retiringFederationUtxos,
         List<UTXO> selectedUtxos) {
-        List<TransactionInput> inputs = migrationTransaction.getInputs();
-        assertEquals(retiringFederationUtxos.size(), inputs.size());
-        assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
-            migrationTransaction, retiringFederationRedeemScript, retiringFederationUtxos);
+        assertReleaseTxInputsP2shP2wshErp(
+            migrationTransaction,
+            retiringFederationRedeemScript,
+            retiringFederationUtxos,
+            selectedUtxos,
+            retiringFederationUtxos.size()
+        );
         assertEquals(retiringFederationUtxos, selectedUtxos);
-        assertSelectedUtxosBelongToTheInputs(selectedUtxos, inputs);
     }
 
     private static void assertBuildResultResponseCode(ReleaseTransactionBuilder.Response expectedResponseCode,
@@ -4251,19 +4211,6 @@ class ReleaseTransactionBuilderTest {
 
     private static void assertBtcTxVersionIs1(BtcTransaction releaseTransaction) {
         assertEquals(BTC_TX_VERSION_1, releaseTransaction.getVersion());
-    }
-
-    private static void assertBtcTxVersionIs2(BtcTransaction releaseTransaction) {
-        assertEquals(BTC_TX_VERSION_2, releaseTransaction.getVersion());
-    }
-
-    private static void assertDestinationAddress(
-        List<TransactionOutput> releaseTransactionOutputs,
-        Address expectedDestinationAddress) {
-        for (TransactionOutput output : releaseTransactionOutputs) {
-            Address destinationAddress = output.getScriptPubKey().getToAddress(BTC_MAINNET_PARAMS);
-            assertEquals(expectedDestinationAddress, destinationAddress);
-        }
     }
 
     private static void assertOutputsWithDustChange(BtcTransaction releaseTransaction,
@@ -4311,17 +4258,6 @@ class ReleaseTransactionBuilderTest {
 
     private static boolean isDust(Coin expectedChangeAmount) {
         return expectedChangeAmount.compareTo(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT) < 0;
-    }
-
-    private static void assertOutputsWithNoChange(BtcTransaction releaseTransaction,
-        Coin expectedSentAmount) {
-        Coin outputsAmount = releaseTransaction.getOutputSum();
-        Coin fees = releaseTransaction.getFee();
-        Coin totalAmountSent = fees.add(outputsAmount);
-        assertEquals(expectedSentAmount, totalAmountSent);
-
-        Coin inputTotalAmount = releaseTransaction.getInputSum();
-        assertEquals(inputTotalAmount, totalAmountSent);
     }
 
     private static void assertReleaseTxNumberOfOutputs(int expectedNumberOfOutputs,
