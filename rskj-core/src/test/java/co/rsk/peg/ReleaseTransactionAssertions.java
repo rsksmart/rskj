@@ -87,14 +87,14 @@ public class ReleaseTransactionAssertions {
 
     private static void assertReleaseTxInputsHasProperFormatAndBelongsToP2shP2wshErpFederation(
         BtcTransaction releaseTransaction,
-        Script retiringFederationRedeemScript,
-        List<UTXO> retiringFederationUtxos
+        Script federationRedeemScript,
+        List<UTXO> federationUtxos
     ) {
         List<TransactionInput> inputs = releaseTransaction.getInputs();
         for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
             TransactionWitness witness = releaseTransaction.getWitness(inputIndex);
-            assertP2shP2wshWitnessWithoutSignaturesHasProperFormat(witness, retiringFederationRedeemScript);
-            assertInputIsFromFederationUTXOsWallet(inputs.get(inputIndex), retiringFederationUtxos);
+            assertP2shP2wshWitnessWithoutSignaturesHasProperFormat(witness, federationRedeemScript);
+            assertInputIsFromFederationUTXOsWallet(inputs.get(inputIndex), federationUtxos);
         }
     }
 }
