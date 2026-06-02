@@ -161,7 +161,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(Coin.valueOf(1_000L), executionBlockNumber);
+            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act & Assert
