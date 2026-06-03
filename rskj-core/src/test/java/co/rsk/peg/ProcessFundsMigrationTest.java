@@ -115,8 +115,8 @@ class ProcessFundsMigrationTest {
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .build()
             );
-            long executionBlockNumber = blockNumberBeforeMigrationBegins();
 
+            long executionBlockNumber = blockNumberBeforeMigrationBegins();
             setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
@@ -448,8 +448,8 @@ class ProcessFundsMigrationTest {
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .build()
             );
-            long executionBlockNumber = blockNumberBeforeMigrationBegins();
 
+            long executionBlockNumber = blockNumberBeforeMigrationBegins();
             setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
