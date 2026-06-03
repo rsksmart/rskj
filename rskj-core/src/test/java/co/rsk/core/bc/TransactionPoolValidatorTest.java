@@ -53,12 +53,12 @@ public class TransactionPoolValidatorTest {
     void setUp() {
         rskTestContext = new RskTestContext(tempDir, "--regtest") {
             @Override
-            protected GenesisLoader buildGenesisLoader() {
+            protected synchronized GenesisLoader buildGenesisLoader() {
                 return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
             }
 
             @Override
-            protected RepositoryLocator buildRepositoryLocator() {
+            protected synchronized RepositoryLocator buildRepositoryLocator() {
                 return spy(super.buildRepositoryLocator());
             }
         };
