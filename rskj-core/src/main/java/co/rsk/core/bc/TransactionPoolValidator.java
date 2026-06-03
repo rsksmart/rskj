@@ -44,8 +44,9 @@ public class TransactionPoolValidator {
         this.signatureCache = signatureCache;
     }
 
-    public Optional<TransactionPoolAddResult> rejectIfTransactionAlreadyKnown(final Transaction tx,  final TransactionSet pendingTransactions,
-                                                                               final TransactionSet queuedTransactions) {
+    public Optional<TransactionPoolAddResult> rejectIfTransactionAlreadyKnown(final Transaction tx,
+                                                                              final TransactionSet pendingTransactions,
+                                                                              final TransactionSet queuedTransactions) {
         if (pendingTransactions.hasTransaction(tx)) {
             return Optional.of(TransactionPoolAddResult.withError(
                     "pending transaction with same hash already exists"
