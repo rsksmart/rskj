@@ -71,13 +71,6 @@ public class ReleaseTransactionBuilder {
     private final Coin feePerKb;
     private final ActivationConfig.ForBlock activations;
 
-    private final SendRequestConfigurator defaultSettingsConfigurator = (SendRequest sr) -> {
-        sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
-        sr.feePerKb = getFeePerKb();
-        sr.shuffleOutputs = false;
-        sr.recipientsPayFees = true;
-    };
-
     /**
      * Creates a release transaction builder.
      *
@@ -102,10 +95,6 @@ public class ReleaseTransactionBuilder {
         this.changeAddress = changeAddress;
         this.feePerKb = feePerKb;
         this.activations = activations;
-    }
-
-    public Coin getFeePerKb() {
-        return feePerKb;
     }
 
     public BuildResult buildAmountTo(Address to, Coin amount) {
@@ -149,6 +138,13 @@ public class ReleaseTransactionBuilder {
             sr.changeAddress = to;
             sr.emptyWallet = true;
         }, String.format("emptying wallet to %s", to));
+    }
+
+    private void setDefaultSettingsConfigurator(SendRequest sr) {
+        sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
+        sr.feePerKb = feePerKb;
+        sr.shuffleOutputs = false;
+        sr.recipientsPayFees = true;
     }
 
     private BuildResult buildWithConfiguration(
@@ -209,7 +205,7 @@ public class ReleaseTransactionBuilder {
     private SendRequest setSrConfiguration(SendRequestConfigurator sendRequestConfigurator, BtcTransaction btcTx) {
         SendRequest sr = SendRequest.forTx(btcTx);
         // Default settings
-        defaultSettingsConfigurator.configure(sr);
+        setDefaultSettingsConfigurator(sr);
         // Specific settings
         sendRequestConfigurator.configure(sr);
 
