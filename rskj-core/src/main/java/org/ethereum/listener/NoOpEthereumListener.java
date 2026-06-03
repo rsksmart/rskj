@@ -12,6 +12,11 @@ import org.ethereum.net.server.Channel;
 
 import java.util.List;
 
+/**
+ * Null Object implementation of EthereumListener.
+ * All events are intentionally ignored.
+ */
+@SuppressWarnings("java:S1186")
 public final class NoOpEthereumListener implements EthereumListener {
 
     public static final NoOpEthereumListener INSTANCE = new NoOpEthereumListener();
