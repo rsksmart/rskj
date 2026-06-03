@@ -93,6 +93,14 @@ public class BlockExecutor {
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
     private static final Profiler profiler = ProfilerFactory.getInstance();
 
+    /**
+     * Intent of a per-tx execution loop, used to decide how an unexpected {@link Throwable} is handled:
+     * - MINING: building a block; invalid txs (incl. those that fail with an Error) may be dropped.
+     * - VALIDATION: applying/validating a given block (connect, re-exec, trace); an Error must NOT be
+     *   turned into a block-invalidity verdict and is allowed to propagate (fail-stop).
+     */
+    private enum ExecutionMode { MINING, VALIDATION }
+
     private final RepositoryLocator repositoryLocator;
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final ActivationConfig activationConfig;
@@ -337,7 +345,7 @@ public class BlockExecutor {
         if (activationConfig.isActive(ConsensusRule.RSKIP144, block.getHeader().getNumber())) {
             return executeForMiningAfterRSKIP144(block, parent, discardInvalidTxs, ignoreReadyToExecute, saveState);
         } else {
-            return executeInternal(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute, saveState);
+            return executeInternal(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute, saveState, ExecutionMode.MINING);
         }
     }
 
@@ -364,8 +372,19 @@ public class BlockExecutor {
         if (activationConfig.isActive(ConsensusRule.RSKIP144, block.getHeader().getNumber())) {
             return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
         } else {
-            return executeInternal(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
+            return executeInternal(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState, ExecutionMode.VALIDATION);
         }
+    }
+
+    /**
+     * Rolls back the tx sub-track, logs the failure and records the tx as invalid. Returns {@code false}
+     * (the value of {@code transactionExecuted}) so callers can assign it directly.
+     */
+    private boolean markTxInvalidOnFailure(Transaction tx, Repository txSubTrack, List<Transaction> invalidTransactions, Throwable e) {
+        logger.error("Unexpected throwable executing tx [{}], skipping", tx.getHash(), e);
+        txSubTrack.rollback();
+        invalidTransactions.add(tx);
+        return false;
     }
 
     // executes the block before RSKIP 144
@@ -379,7 +398,8 @@ public class BlockExecutor {
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean acceptInvalidTransactions,
-            boolean saveState) {
+            boolean saveState,
+            ExecutionMode mode) {
         boolean vmTrace = programTraceProcessor != null;
         logger.trace("Start execute pre RSKIP144.");
         loggingApplyBlock(block);
@@ -432,10 +452,19 @@ public class BlockExecutor {
             try {
                 transactionExecuted = txExecutor.executeTransaction();
             } catch (Exception e) {
-                logger.error("Unexpected exception executing tx [{}], skipping", tx.getHash(), e);
-                txSubTrack.rollback();
-                transactionExecuted = false;
-                invalidTransactions.add(tx);
+                // Deterministic failure (same on every node): roll back and let the invalid-tx handling below
+                // reject the block gracefully (validation) or drop the tx (mining).
+                transactionExecuted = markTxInvalidOnFailure(tx, txSubTrack, invalidTransactions, e);
+            } catch (Throwable e) {
+                // Any non-Exception throwable (e.g. OutOfMemoryError, StackOverflowError) is non-deterministic
+                // across nodes. When validating a given block it must NOT become a block-invalidity verdict
+                // (fork risk) -> propagate (fail-stop), matching the post-RSKIP144 validation path. While building
+                // a block (MINING) we still recover by dropping the tx so block production cannot be stalled.
+                // The acceptInvalidTransactions guard preserves trusted/no-validation imports.
+                if (mode == ExecutionMode.VALIDATION && !acceptInvalidTransactions) {
+                    throw e;
+                }
+                transactionExecuted = markTxInvalidOnFailure(tx, txSubTrack, invalidTransactions, e);
             }
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
@@ -737,11 +766,11 @@ public class BlockExecutor {
             boolean transactionExecuted;
             try {
                 transactionExecuted = txExecutor.executeTransaction();
-            } catch (Exception e) {
-                logger.error("Unexpected exception executing tx [{}], skipping", tx.getHash(), e);
-                txSubTrack.rollback();
-                transactionExecuted = false;
-                invalidTransactions.add(tx);
+            } catch (Throwable e) {
+                // This path is mining-only (only reached via executeForMining; network validation goes
+                // through executeParallel), so we always recover by dropping the tx -including on Errors-
+                // to keep block production alive. It is not subject to the validation fail-stop rule.
+                transactionExecuted = markTxInvalidOnFailure(tx, txSubTrack, invalidTransactions, e);
             }
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
