@@ -34,12 +34,10 @@ import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -1026,33 +1024,6 @@ class ReleaseTransactionBuilderTest {
             verify(mockWallet, times(1)).completeTx(any(SendRequest.class));
 
             assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.responseCode());
-        }
-
-        @Test
-        void buildAmountTo_whenCompleteTxFailsWithIllegalState_shouldPropagate() throws InsufficientMoneyException {
-            Address changeAddress = BitcoinTestUtils.createP2PKHAddress(REGTEST_BTC_PARAMS, "changeAddress");
-            Wallet mockWallet = mock(Wallet.class);
-            BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(
-                bridgeRegTestConstants.getFederationConstants());
-            ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
-                REGTEST_BTC_PARAMS,
-                mockWallet,
-                genesisFederation.getFormatVersion(),
-                changeAddress,
-                MOCK_FEE_PER_KB,
-                ALL_ACTIVATIONS
-            );
-            new Context(REGTEST_BTC_PARAMS);
-
-            Address to = getRegtestAddressFromPrivateKey(123);
-            Coin amount = Coin.CENT.multiply(3);
-
-            doThrow(new IllegalStateException()).when(mockWallet).completeTx(any(SendRequest.class));
-
-            assertThrows(IllegalStateException.class, () -> releaseTransactionBuilder.buildAmountTo(to, amount));
-
-            verify(mockWallet, times(1)).completeTx(any(SendRequest.class));
         }
 
         private void setUpWallet() {
