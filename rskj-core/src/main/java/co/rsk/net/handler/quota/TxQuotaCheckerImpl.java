@@ -72,6 +72,7 @@ public class TxQuotaCheckerImpl implements TxQuotaChecker {
      * @param currentContext Some contextual information of the time <code>newTx</code> is being processed
      * @return true if the <code>newTx</code> was accepted, false otherwise
      */
+    @Override
     public synchronized boolean acceptTx(Transaction newTx, @Nullable Transaction replacedTx, CurrentContext currentContext) {
         // keep track of lastBlockGasLimit on each processed transaction, so we can use it from cleanMaxQuotas were we lack this context
         this.lastBlockGasLimit = currentContext.bestBlock.getGasLimitAsInteger().longValue();
@@ -143,6 +144,7 @@ public class TxQuotaCheckerImpl implements TxQuotaChecker {
      * Cleans from the underlying map those entries that have <code>maxQuota</code> after being refreshed
      * This method is intended to be called periodically with a rate similar to the time needed for an account to get <code>maxQuota</code>
      */
+    @Override
     public synchronized void cleanMaxQuotas() {
         if (lastBlockGasLimit == UNKNOWN_LAST_BLOCK_GAS_LIMIT) {
             // no transactions yet processed
