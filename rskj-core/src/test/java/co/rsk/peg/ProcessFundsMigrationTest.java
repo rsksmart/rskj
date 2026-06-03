@@ -124,11 +124,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertNoMigrationTxCreated();
-            assertRetiringFederationStillPresent();
-
-            int expectedRemainingUtxos = retiringUtxos.size();
-            assertRetiringUtxosCount(expectedRemainingUtxos);
+            assertNoMigrationTxCreatedAndRetiringFederationIsStillPresent(retiringUtxos);
         }
 
         @Test
@@ -149,9 +145,11 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size(), migrationTxInputsAssertion);
-            assertRetiringFederationStillPresent();
-            assertNoRemainingRetiringUtxos();
+            assertOneMigrationTransactionWasBuiltAsExpectedAndRetiringFederationIsStillPresent(
+                retiringFederation,
+                retiringUtxos,
+                migrationTxInputsAssertion
+            );
         }
 
         @Test
@@ -171,9 +169,11 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size(), migrationTxInputsAssertion);
-            assertRetiringFederationStillPresent();
-            assertNoRemainingRetiringUtxos();
+            assertOneMigrationTransactionWasBuiltAsExpectedAndRetiringFederationIsStillPresent(
+                retiringFederation,
+                retiringUtxos,
+                migrationTxInputsAssertion
+            );
         }
 
         @Test
@@ -192,11 +192,7 @@ class ProcessFundsMigrationTest {
             // Act & Assert
             assertThrows(IllegalStateException.class,
                 () -> bridgeSupport.updateCollections(updateCollectionsTransaction));
-            assertNoMigrationTxCreated();
-            assertRetiringFederationStillPresent();
-
-            int expectedRemainingUtxos = retiringUtxos.size();
-            assertRetiringUtxosCount(expectedRemainingUtxos);
+            assertNoMigrationTxCreatedAndRetiringFederationIsStillPresent(retiringUtxos);
         }
 
         @Test
@@ -217,11 +213,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertNoMigrationTxCreated();
-            assertRetiringFederationStillPresent();
-
-            int expectedRemainingUtxos = retiringUtxos.size();
-            assertRetiringUtxosCount(expectedRemainingUtxos);
+            assertNoMigrationTxCreatedAndRetiringFederationIsStillPresent(retiringUtxos);
         }
 
         @Test
@@ -278,9 +270,11 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size(), migrationTxInputsAssertion);
-            assertRetiringFederationCleared();
-            assertNoRemainingRetiringUtxos();
+            assertOneMigrationTransactionWasBuiltAsExpectedAndRetiringFederationIsCleared(
+                retiringFederation,
+                retiringUtxos,
+                migrationTxInputsAssertion
+            );
         }
 
         @Test
@@ -300,9 +294,11 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size(), migrationTxInputsAssertion);
-            assertRetiringFederationCleared();
-            assertNoRemainingRetiringUtxos();
+            assertOneMigrationTransactionWasBuiltAsExpectedAndRetiringFederationIsCleared(
+                retiringFederation,
+                retiringUtxos,
+                migrationTxInputsAssertion
+            );
         }
 
         @Test
@@ -364,11 +360,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertNoMigrationTxCreated();
-            assertRetiringFederationCleared();
-
-            int expectedRemainingUtxos = retiringUtxos.size();
-            assertRetiringUtxosCount(expectedRemainingUtxos);
+            assertNoMigrationTxCreatedAndRetiringFederationIsCleared(retiringUtxos);
         }
 
         @Test
@@ -388,11 +380,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertNoMigrationTxCreated();
-            assertRetiringFederationCleared();
-
-            int expectedRemainingUtxos = retiringUtxos.size();
-            assertRetiringUtxosCount(expectedRemainingUtxos);
+            assertNoMigrationTxCreatedAndRetiringFederationIsCleared(retiringUtxos);
         }
 
         @Test
@@ -414,11 +402,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertNoMigrationTxCreated();
-            assertRetiringFederationCleared();
-
-            int expectedRemainingUtxos = retiringUtxos.size();
-            assertRetiringUtxosCount(expectedRemainingUtxos);
+            assertNoMigrationTxCreatedAndRetiringFederationIsCleared(retiringUtxos);
         }
     }
 
@@ -457,11 +441,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertNoMigrationTxCreated();
-            assertRetiringFederationStillPresent();
-
-            int expectedRemainingUtxos = retiringUtxos.size();
-            assertRetiringUtxosCount(expectedRemainingUtxos);
+            assertNoMigrationTxCreatedAndRetiringFederationIsStillPresent(retiringUtxos);
         }
 
         @Test
@@ -482,9 +462,11 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size(), migrationTxInputsAssertion);
-            assertRetiringFederationStillPresent();
-            assertNoRemainingRetiringUtxos();
+            assertOneMigrationTransactionWasBuiltAsExpectedAndRetiringFederationIsStillPresent(
+                retiringFederation,
+                retiringUtxos,
+                migrationTxInputsAssertion
+            );
         }
 
         @Test
@@ -504,9 +486,11 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size(), migrationTxInputsAssertion);
-            assertRetiringFederationStillPresent();
-            assertNoRemainingRetiringUtxos();
+            assertOneMigrationTransactionWasBuiltAsExpectedAndRetiringFederationIsStillPresent(
+                retiringFederation,
+                retiringUtxos,
+                migrationTxInputsAssertion
+            );
         }
 
         @Test
@@ -525,11 +509,7 @@ class ProcessFundsMigrationTest {
             // Act & Assert
             assertThrows(IllegalStateException.class,
                 () -> bridgeSupport.updateCollections(updateCollectionsTransaction));
-            assertNoMigrationTxCreated();
-            assertRetiringFederationStillPresent();
-
-            int expectedRemainingUtxos = retiringUtxos.size();
-            assertRetiringUtxosCount(expectedRemainingUtxos);
+            assertNoMigrationTxCreatedAndRetiringFederationIsStillPresent(retiringUtxos);
         }
 
         @Test
@@ -550,11 +530,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertNoMigrationTxCreated();
-            assertRetiringFederationStillPresent();
-
-            int expectedRemainingUtxos = retiringUtxos.size();
-            assertRetiringUtxosCount(expectedRemainingUtxos);
+            assertNoMigrationTxCreatedAndRetiringFederationIsStillPresent(retiringUtxos);
         }
 
         @Test
@@ -611,9 +587,11 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size(), migrationTxInputsAssertion);
-            assertRetiringFederationCleared();
-            assertNoRemainingRetiringUtxos();
+            assertOneMigrationTransactionWasBuiltAsExpectedAndRetiringFederationIsCleared(
+                retiringFederation,
+                retiringUtxos,
+                migrationTxInputsAssertion
+            );
         }
 
         @Test
@@ -633,9 +611,11 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(retiringFederation, retiringUtxos, retiringUtxos.size(), migrationTxInputsAssertion);
-            assertRetiringFederationCleared();
-            assertNoRemainingRetiringUtxos();
+            assertOneMigrationTransactionWasBuiltAsExpectedAndRetiringFederationIsCleared(
+                retiringFederation,
+                retiringUtxos,
+                migrationTxInputsAssertion
+            );
         }
 
         @Test
@@ -697,11 +677,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertNoMigrationTxCreated();
-            assertRetiringFederationCleared();
-
-            int expectedRemainingUtxos = retiringUtxos.size();
-            assertRetiringUtxosCount(expectedRemainingUtxos);
+            assertNoMigrationTxCreatedAndRetiringFederationIsCleared(retiringUtxos);
         }
 
         @Test
@@ -721,11 +697,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertNoMigrationTxCreated();
-            assertRetiringFederationCleared();
-
-            int expectedRemainingUtxos = retiringUtxos.size();
-            assertRetiringUtxosCount(expectedRemainingUtxos);
+            assertNoMigrationTxCreatedAndRetiringFederationIsCleared(retiringUtxos);
         }
 
         @Test
@@ -747,11 +719,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertNoMigrationTxCreated();
-            assertRetiringFederationCleared();
-
-            int expectedRemainingUtxos = retiringUtxos.size();
-            assertRetiringUtxosCount(expectedRemainingUtxos);
+            assertNoMigrationTxCreatedAndRetiringFederationIsCleared(retiringUtxos);
         }
     }
 
@@ -834,6 +802,18 @@ class ProcessFundsMigrationTest {
         assertMigrationTxCount(0);
     }
 
+    private void assertNoMigrationTxCreatedAndRetiringFederationIsStillPresent(List<UTXO> retiringUtxos) throws IOException {
+        assertNoMigrationTxCreated();
+        assertRetiringFederationStillPresent();
+        assertRetiringUtxosCount(retiringUtxos.size());
+    }
+
+    private void assertNoMigrationTxCreatedAndRetiringFederationIsCleared(List<UTXO> retiringUtxos) throws IOException {
+        assertNoMigrationTxCreated();
+        assertRetiringFederationCleared();
+        assertRetiringUtxosCount(retiringUtxos.size());
+    }
+
     private void assertOneMigrationTransactionWasBuiltAsExpected(
         Federation retiringFederation,
         List<UTXO> retiringFederationUtxos,
@@ -854,6 +834,36 @@ class ProcessFundsMigrationTest {
             expectedInputCount,
             migrationTxInputsAssertion
         );
+    }
+
+    private void assertOneMigrationTransactionWasBuiltAsExpectedAndRetiringFederationIsCleared(
+        Federation retiringFederation,
+        List<UTXO> retiringFederationUtxos,
+        MigrationTxInputsAssertion migrationTxInputsAssertion
+    ) throws IOException {
+        assertOneMigrationTransactionWasBuiltAsExpected(
+            retiringFederation,
+            retiringFederationUtxos,
+            retiringFederationUtxos.size(),
+            migrationTxInputsAssertion
+        );
+        assertRetiringFederationCleared();
+        assertNoRemainingRetiringUtxos();
+    }
+
+    private void assertOneMigrationTransactionWasBuiltAsExpectedAndRetiringFederationIsStillPresent(
+        Federation retiringFederation,
+        List<UTXO> retiringFederationUtxos,
+        MigrationTxInputsAssertion migrationTxInputsAssertion
+    ) throws IOException {
+        assertOneMigrationTransactionWasBuiltAsExpected(
+            retiringFederation,
+            retiringFederationUtxos,
+            retiringFederationUtxos.size(),
+            migrationTxInputsAssertion
+        );
+        assertRetiringFederationStillPresent();
+        assertNoRemainingRetiringUtxos();
     }
 
     private void assertMultipleMigrationTransactionsWereBuiltAsExpected(
