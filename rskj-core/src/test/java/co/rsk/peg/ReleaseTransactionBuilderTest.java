@@ -169,7 +169,10 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildSvpFundTransaction_withAFederationWithEnoughUTXOsForTheSvpFundTransaction_shouldReturnACorrectSvpFundTx() {
             // Arrange
-            List<UTXO> utxos = buildUtxos(activeP2shErpFederation, DEFAULT_UTXO_COUNT);
+            List<UTXO> utxos = UTXOBuilder.builder()
+                .withScriptPubKey(activeP2shErpFederation.getP2SHScript())
+                .withValue(Coin.COIN)
+                .buildMany(DEFAULT_UTXO_COUNT, i -> BitcoinTestUtils.createHash(i + 1));
 
             // Act
             ReleaseTransactionBuilder.BuildResult buildResult = buildSvpFundTransaction(activeP2shErpFederation, utxos);
@@ -185,7 +188,10 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildSvpFundTransaction_whenActiveFederationIsP2shP2wshErp_shouldSpendUtxosWithExpectedWitnessFormat() {
             // Arrange
-            List<UTXO> utxos = buildUtxos(activeP2shP2wshErpFederation, DEFAULT_UTXO_COUNT);
+            List<UTXO> utxos = UTXOBuilder.builder()
+                .withScriptPubKey(activeP2shP2wshErpFederation.getP2SHScript())
+                .withValue(Coin.COIN)
+                .buildMany(DEFAULT_UTXO_COUNT, i -> BitcoinTestUtils.createHash(i + 1));
 
             // Act
             ReleaseTransactionBuilder.BuildResult buildResult = buildSvpFundTransaction(activeP2shP2wshErpFederation, utxos);
@@ -211,7 +217,10 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildSvpFundTransaction_whenNoSingleUtxoCoversTotalSpend_shouldCreateSvpFundTxSelectingMultipleInputs() {
             // Arrange
-            List<UTXO> utxos = buildUtxos(activeP2shP2wshErpFederation, MULTI_UTXO_COUNT, svpFundTxOutputsValue);
+            List<UTXO> utxos = UTXOBuilder.builder()
+                .withScriptPubKey(activeP2shP2wshErpFederation.getP2SHScript())
+                .withValue(svpFundTxOutputsValue)
+                .buildMany(MULTI_UTXO_COUNT, i -> BitcoinTestUtils.createHash(i + 1));
             utxos.forEach(utxo -> assertTrue(
                 utxo.getValue().compareTo(totalSvpFundPaymentOutputsValue) < 0,
                 "Each UTXO should be insufficient on its own to fund both SVP payment outputs"
@@ -278,7 +287,10 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildSvpFundTransaction_withDustValueAsSvpFundTxOutputsValue_shouldReturnDustySendRequestResponseCode() {
             // Arrange
-            List<UTXO> utxos = buildUtxos(activeP2shP2wshErpFederation, DEFAULT_UTXO_COUNT);
+            List<UTXO> utxos = UTXOBuilder.builder()
+                .withScriptPubKey(activeP2shP2wshErpFederation.getP2SHScript())
+                .withValue(Coin.COIN)
+                .buildMany(DEFAULT_UTXO_COUNT, i -> BitcoinTestUtils.createHash(i + 1));
 
             // Act
             ReleaseTransactionBuilder.BuildResult buildResult = buildSvpFundTransaction(
@@ -296,7 +308,10 @@ class ReleaseTransactionBuilderTest {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
                 activeP2shP2wshErpFederation,
-                buildUtxos(activeP2shP2wshErpFederation, DEFAULT_UTXO_COUNT)
+                UTXOBuilder.builder()
+                    .withScriptPubKey(activeP2shP2wshErpFederation.getP2SHScript())
+                    .withValue(Coin.COIN)
+                    .buildMany(DEFAULT_UTXO_COUNT, i -> BitcoinTestUtils.createHash(i + 1))
             );
 
             // Act & Assert
@@ -312,7 +327,10 @@ class ReleaseTransactionBuilderTest {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
                 activeP2shP2wshErpFederation,
-                buildUtxos(activeP2shP2wshErpFederation, DEFAULT_UTXO_COUNT)
+                UTXOBuilder.builder()
+                    .withScriptPubKey(activeP2shP2wshErpFederation.getP2SHScript())
+                    .withValue(Coin.COIN)
+                    .buildMany(DEFAULT_UTXO_COUNT, i -> BitcoinTestUtils.createHash(i + 1))
             );
 
             // Act & Assert
@@ -328,7 +346,10 @@ class ReleaseTransactionBuilderTest {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
                 activeP2shP2wshErpFederation,
-                buildUtxos(activeP2shP2wshErpFederation, DEFAULT_UTXO_COUNT)
+                UTXOBuilder.builder()
+                    .withScriptPubKey(activeP2shP2wshErpFederation.getP2SHScript())
+                    .withValue(Coin.COIN)
+                    .buildMany(DEFAULT_UTXO_COUNT, i -> BitcoinTestUtils.createHash(i + 1))
             );
 
             // Act & Assert
@@ -344,7 +365,10 @@ class ReleaseTransactionBuilderTest {
             // Arrange
             ReleaseTransactionBuilder releaseTransactionBuilder = getReleaseTransactionBuilderForMainnet(
                 activeP2shP2wshErpFederation,
-                buildUtxos(activeP2shP2wshErpFederation, DEFAULT_UTXO_COUNT)
+                UTXOBuilder.builder()
+                    .withScriptPubKey(activeP2shP2wshErpFederation.getP2SHScript())
+                    .withValue(Coin.COIN)
+                    .buildMany(DEFAULT_UTXO_COUNT, i -> BitcoinTestUtils.createHash(i + 1))
             );
 
             // Act & Assert
@@ -353,17 +377,6 @@ class ReleaseTransactionBuilderTest {
                 proposedFlyoverPrefix,
                 null
             ));
-        }
-
-        private List<UTXO> buildUtxos(Federation activeFederation, int numberOfUtxos) {
-            return buildUtxos(activeFederation, numberOfUtxos, Coin.COIN);
-        }
-
-        private List<UTXO> buildUtxos(Federation activeFederation, int numberOfUtxos, Coin value) {
-            return UTXOBuilder.builder()
-                .withScriptPubKey(activeFederation.getP2SHScript())
-                .withValue(value)
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
         }
 
         private ReleaseTransactionBuilder.BuildResult buildSvpFundTransaction(
@@ -806,11 +819,10 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildAmountTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
             // Arrange
-            int numberOfUtxos = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
                 .withValue(Coin.COIN)
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                .buildMany(STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder();
             Coin amountToSend = wallet.getBalance().subtract(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
 
@@ -824,11 +836,10 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildAmountTo_whenTxIsAlmostExceedingMaxTxSize_shouldCreatePegoutTx() {
             // Arrange
-            int numberOfUtxos = UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE;
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
                 .withValue(Coin.COIN)
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                .buildMany(UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE, i -> createHash(i + 1));
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder();
             Coin requestedAmount = wallet.getBalance().subtract(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
 
@@ -1168,11 +1179,10 @@ class ReleaseTransactionBuilderTest {
             @Test
             void buildEmptyWalletTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
-                int numberOfUtxos = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
                     .withValue(Coin.COIN)
-                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                    .buildMany(STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE, i -> createHash(i + 1));
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
                 // Act
@@ -1300,11 +1310,10 @@ class ReleaseTransactionBuilderTest {
             @Test
             void buildEmptyWalletTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
-                int numberOfUtxos = P2SH_ERP_UTXO_COUNT_OVER_MAX_TX;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
                     .withValue(Coin.COIN)
-                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                    .buildMany(P2SH_ERP_UTXO_COUNT_OVER_MAX_TX, i -> createHash(i + 1));
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
                 // Act
@@ -1432,11 +1441,10 @@ class ReleaseTransactionBuilderTest {
             @Test
             void buildEmptyWalletTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
-                int numberOfUtxos = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
                     .withValue(Coin.COIN)
-                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                    .buildMany(P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX, i -> createHash(i + 1));
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
                 // Act
@@ -1834,11 +1842,10 @@ class ReleaseTransactionBuilderTest {
             @Test
             void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
-                int numberOfUtxos = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE;
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
                     .withValue(Coin.COIN)
-                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                    .buildMany(STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE, i -> createHash(i + 1));
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
                 Coin migrationValue = wallet.getBalance();
 
