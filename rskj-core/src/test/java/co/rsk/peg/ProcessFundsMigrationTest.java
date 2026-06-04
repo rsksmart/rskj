@@ -220,7 +220,7 @@ class ProcessFundsMigrationTest {
         void updateCollections_duringMigration_withMoreUtxosThanMaxInputs_whenCalledRepeatedly_shouldCreateAMigrationTxEachTime() throws IOException {
             // Arrange
             int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            int numberOfUtxos = maxInputs + 2;
+            int numberOfUtxos = maxInputs + 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
@@ -305,7 +305,7 @@ class ProcessFundsMigrationTest {
         void updateCollections_pastMigrationAge_withMoreUtxosThanMaxInputs_shouldClearRetiringFedEvenIfUtxosRemain() throws IOException {
             // Arrange
             int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            int numberOfUtxos = maxInputs + 2;
+            int numberOfUtxos = maxInputs + 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
@@ -537,7 +537,7 @@ class ProcessFundsMigrationTest {
         void updateCollections_duringMigration_withMoreUtxosThanMaxInputs_whenCalledRepeatedly_shouldCreateAMigrationTxEachTime() throws IOException {
             // Arrange
             int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            int numberOfUtxos = maxInputs + 2;
+            int numberOfUtxos = maxInputs + 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
@@ -622,7 +622,7 @@ class ProcessFundsMigrationTest {
         void updateCollections_pastMigrationAge_withMoreUtxosThanMaxInputs_shouldClearRetiringFedEvenIfUtxosRemain() throws IOException {
             // Arrange
             int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            int numberOfUtxos = maxInputs + 2;
+            int numberOfUtxos = maxInputs + 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
