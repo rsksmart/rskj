@@ -865,7 +865,9 @@ class ReleaseTransactionBuilderTest {
                     new BtcECKey()
                 )
             );
-            FederationArgs federationArgs = new FederationArgs(members, Instant.now(), 0, BTC_MAINNET_PARAMS);
+
+            Instant creationTime = Instant.ofEpochMilli(1000L);
+            FederationArgs federationArgs = new FederationArgs(members, creationTime, 0, BTC_MAINNET_PARAMS);
 
             ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
                 federationArgs,
