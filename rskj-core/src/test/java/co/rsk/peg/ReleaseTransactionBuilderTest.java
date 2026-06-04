@@ -856,8 +856,13 @@ class ReleaseTransactionBuilderTest {
             );
         }
 
+        /**
+         * Legacy scenario: no new Non-Standard ERP Federation is expected to be built in the future.
+         * Since this federation already exists on-chain, this test verifies that it can still send a
+         * pegout.
+         */
         @Test
-        void buildAmountTo_whenNonStandardErpFederation_shouldSucceed() {
+        void buildAmountTo_whenNonStandardErpFederation_shouldCreatePegoutTx() {
             List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
                 Arrays.asList(
                     new BtcECKey(),
