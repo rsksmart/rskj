@@ -858,8 +858,8 @@ class ReleaseTransactionBuilderTest {
 
         /**
          * Legacy scenario: no new Non-Standard ERP Federation is expected to be built in the future.
-         * Since this federation already exists on-chain, this test verifies that it can still send a
-         * pegout.
+         * Since a Non-Standard ERP Federation is already part of the chain history, this test documents
+         * that it was able to send pegouts while it was active.
          */
         @Test
         void buildAmountTo_whenNonStandardErpFederation_shouldCreatePegoutTx() {
