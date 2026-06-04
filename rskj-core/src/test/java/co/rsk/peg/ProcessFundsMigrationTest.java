@@ -302,7 +302,7 @@ class ProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_pastMigrationAge_withMoreUtxosThanMaxInputs_shouldClearRetiringFedEvenIfUtxosRemain() throws IOException {
+        void updateCollections_pastMigrationAge_withMoreUtxosThanMaxInputs_shouldCreateLastMigrationTxWithMaxInputsAndClearRetiringFedEvenIfUtxosRemain() throws IOException {
             // Arrange
             int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
             int numberOfUtxos = maxInputs + 1;
@@ -619,7 +619,7 @@ class ProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_pastMigrationAge_withMoreUtxosThanMaxInputs_shouldClearRetiringFedEvenIfUtxosRemain() throws IOException {
+        void updateCollections_pastMigrationAge_withMoreUtxosThanMaxInputs_shouldCreateLastMigrationTxWithMaxInputsAndClearRetiringFedEvenIfUtxosRemain() throws IOException {
             // Arrange
             int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
             int numberOfUtxos = maxInputs + 1;
