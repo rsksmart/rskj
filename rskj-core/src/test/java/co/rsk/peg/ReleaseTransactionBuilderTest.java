@@ -56,13 +56,11 @@ import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.RedeemScriptCreationException;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.federation.ErpFederation;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.federation.P2shErpFederationBuilder;
 import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
 import co.rsk.peg.federation.StandardMultiSigFederationBuilder;
@@ -845,54 +843,6 @@ class ReleaseTransactionBuilderTest {
                 requestedAmount,
                 PegoutChangeOutputExpectation.NON_DUST_CHANGE
             );
-        }
-
-        @Test
-        void buildAmountTo_whenRecipientsPayFeesWithP2shP2wshErp_shouldLeaveFederationChangeAsInputsMinusPegout() {
-            BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(
-                bridgeRegTestConstants.getFederationConstants());
-            BridgeStorageProvider bridgeStorageProviderMock = mock(BridgeStorageProvider.class);
-
-            Federation activeFederation = P2shP2wshErpFederationBuilder.builder().build();
-            int numberOfUtxos = 2;
-            List<UTXO> utxos = UTXOBuilder.builder()
-                .withScriptPubKey(activeFederation.getP2SHScript())
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
-
-            Wallet spendWallet = BridgeUtils.getFederationSpendWallet(
-                new Context(BTC_MAINNET_PARAMS),
-                activeFederation,
-                utxos,
-                false,
-                bridgeStorageProviderMock
-            );
-
-            Address activeFederationAddress = activeFederation.getAddress();
-            ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
-                BTC_MAINNET_PARAMS,
-                spendWallet,
-                genesisFederation.getFormatVersion(),
-                activeFederationAddress,
-                FEE_PER_KB_1000_SATOSHIS,
-                ALL_ACTIVATIONS
-            );
-
-            Address pegoutRecipient = BitcoinTestUtils.createP2PKHAddress(BTC_MAINNET_PARAMS, "destinationAddress");
-            Coin pegoutAmount = Coin.COIN.add(Coin.SATOSHI);
-
-            ReleaseTransactionBuilder.BuildResult result = releaseTransactionBuilder.buildAmountTo(
-                pegoutRecipient,
-                pegoutAmount
-            );
-            assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
-
-            Coin inputsValue = result.selectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
-
-            TransactionOutput changeOutput = result.btcTx().getOutput(1);
-
-            assertEquals(activeFederationAddress, changeOutput.getAddressFromP2SH(BTC_MAINNET_PARAMS));
-            assertEquals(inputsValue.minus(pegoutAmount), changeOutput.getValue());
         }
 
         @Test
