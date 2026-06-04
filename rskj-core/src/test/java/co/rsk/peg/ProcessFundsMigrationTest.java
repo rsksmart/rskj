@@ -198,9 +198,10 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_duringMigration_withBalanceBelowThreshold_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
+            Coin valueBelowThreshold = FEE_PER_KB.divide(2);
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
-                .withValue(FEE_PER_KB.divide(2))
+                .withValue(valueBelowThreshold)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .build()
             );
@@ -515,9 +516,10 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_duringMigration_withBalanceBelowThreshold_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
+            Coin valueBelowThreshold = FEE_PER_KB.divide(2);
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
-                .withValue(FEE_PER_KB.divide(2))
+                .withValue(valueBelowThreshold)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .build()
             );
