@@ -187,6 +187,52 @@ class TraceModuleImplTest {
         retrieveSuicideInvocationBlockTrace(world, receiptStore, "latest");
     }
 
+    // Calldata values exercised by dsl/trace_subcall_calldata.txt: the top-level transaction is sent
+    // with TOP_LEVEL_CALLDATA, and the caller contract makes an internal CALL forwarding SUB_CALL_CALLDATA.
+    // These must stay in sync with the input data and bytecode marker defined in that resource.
+    private static final String TOP_LEVEL_CALLDATA = "0x1688f0b9";
+    private static final String SUB_CALL_CALLDATA = "0xb63e800d";
+
+    /**
+     * Each call frame in a trace must report its own calldata in the action {@code input} field.
+     * A sub-call's input is the data passed to that frame, which is generally different from the
+     * top-level transaction input.
+     *
+     * Here the caller contract is invoked with {@value #TOP_LEVEL_CALLDATA} and makes an internal CALL
+     * passing a distinct {@value #SUB_CALL_CALLDATA} as the sub-call calldata. The top-level frame must
+     * report its own input and the sub-call frame must report the data it received, not the top-level input.
+     */
+    @Test
+    void subCallReportsItsOwnCalldataNotTopLevelInput() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        DslParser parser = DslParser.fromResource("dsl/trace_subcall_calldata.txt");
+        World world = new World(receiptStore);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Transaction transaction = world.getTransactionByName("tx02");
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+
+        JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
+
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode) result;
+        Assertions.assertEquals(2, aresult.size());
+
+        // Top-level call carries the transaction's own input.
+        JsonNode topLevel = aresult.get(0);
+        Assertions.assertEquals("call", topLevel.get("type").asText());
+        Assertions.assertEquals(TOP_LEVEL_CALLDATA, topLevel.get("action").get("input").asText());
+
+        // The sub-call must carry its OWN calldata, not the top-level input.
+        JsonNode subCall = aresult.get(1);
+        Assertions.assertEquals("call", subCall.get("type").asText());
+        Assertions.assertEquals(SUB_CALL_CALLDATA, subCall.get("action").get("input").asText());
+    }
+
     @Test
     void retrieveTraces() throws Exception {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
