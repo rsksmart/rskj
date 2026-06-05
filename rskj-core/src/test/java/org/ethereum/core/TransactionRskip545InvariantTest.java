@@ -24,6 +24,7 @@ import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
@@ -50,8 +51,8 @@ class TransactionRskip545InvariantTest {
             new RskAddress("0x0000000000000000000000000000000000000002");
 
     @Test
-    void builder_type4Rejected_useParserIngress() {
-        assertThrows(IllegalStateException.class, () -> Transaction.builder()
+    void builder_type4WithoutAuthorizationList_rejectedAtBuild() {
+        assertThrows(RskJsonRpcRequestException.class, () -> Transaction.builder()
                 .type(TransactionType.TYPE_4)
                 .chainId(CHAIN_ID)
                 .nonce(BigInteger.ONE.toByteArray())

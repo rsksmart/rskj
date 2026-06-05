@@ -27,6 +27,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import java.util.function.Supplier;
+import java.util.Objects;
 
 public final class RawTransactionEnvelopeParser {
 
@@ -67,11 +68,13 @@ public final class RawTransactionEnvelopeParser {
         if (argsParam == null ) {
             throw new IllegalArgumentException("Transaction argsParam cannot be null or empty");
         }
-        if (argsParam.getNonce()==null && nonceSupplier != null) {
-            argsParam.setNonce(nonceSupplier.get());
-        }
-        TransactionTypePrefix typePrefix = TransactionTypePrefix.fromHex(argsParam.getType(), argsParam.getRskSubtype());
-        return resolveParser(typePrefix).parse(typePrefix, argsParam, defaultChainId);
+        return parse(TransactionInput.fromCallArguments(argsParam, nonceSupplier), defaultChainId);
+    }
+
+    public static ParsedRawTransaction parse(TransactionInput input, byte defaultChainId) {
+        Objects.requireNonNull(input, "input");
+        TransactionTypePrefix typePrefix = input.typePrefix();
+        return resolveParser(typePrefix).parse(typePrefix, input, defaultChainId);
     }
 
     /**
@@ -86,6 +89,21 @@ public final class RawTransactionEnvelopeParser {
             Constants constants
     ) {
         ParsedRawTransaction parsed = parse(argsParam, nonceSupplier, defaultChainId);
+        validateActivation(parsed, bestBlock, activationConfig, constants);
+        return parsed;
+    }
+
+    /**
+     * Parses structured transaction input and validates fork activation rules for the transaction type.
+     */
+    public static ParsedRawTransaction parse(
+            TransactionInput input,
+            byte defaultChainId,
+            long bestBlock,
+            ActivationConfig activationConfig,
+            Constants constants
+    ) {
+        ParsedRawTransaction parsed = parse(input, defaultChainId);
         validateActivation(parsed, bestBlock, activationConfig, constants);
         return parsed;
     }

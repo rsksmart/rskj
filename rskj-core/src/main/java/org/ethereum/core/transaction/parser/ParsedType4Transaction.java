@@ -89,6 +89,11 @@ public record ParsedType4Transaction(
     }
 
     @Override
+    public <R> R accept(ParsedRawTransactionVisitor<R> visitor) {
+        return visitor.visitType4(this);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ParsedType4Transaction that)) return false;

@@ -19,7 +19,6 @@ package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.util.HexUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -30,20 +29,16 @@ import org.ethereum.core.transaction.parser.util.AuthorizationListCodec;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.core.transaction.parser.util.Type4TransactionValidation;
 import org.ethereum.core.transaction.parser.util.TypedTransactionCodec;
-import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.ethereum.vm.GasCost;
 
 import java.math.BigInteger;
 import java.util.Objects;
-import java.util.Optional;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class Type4RawTransactionParser implements RawTransactionTypeParser<ParsedType4Transaction>{
 
-    private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
     private static final int FIELD_COUNT = 13;
     private static final int CHAIN_ID_INDEX = 0;
     private static final int NONCE_INDEX = 1;
@@ -118,37 +113,35 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
     }
 
     @Override
-    public ParsedType4Transaction parse(TransactionTypePrefix typePrefix, CallArguments argsParam, byte defaultChainId) {
-        BigInteger nonce = Optional.ofNullable(argsParam.getNonce())
-                .map(HexUtils::strHexOrStrNumberToBigInteger)
-                .orElse(BigInteger.ZERO);
-
-        BigInteger gasLimit = CommonParsingUtils.parseBigInteger(
-                argsParam.getGas(),
-                () -> CommonParsingUtils.parseBigInteger(argsParam.getGasLimit(), () -> DEFAULT_GAS_LIMIT));
-        Coin value = CommonParsingUtils.defaultValue(CommonParsingUtils.parseCoin(argsParam.getValue()));
-        RskAddress receiveAddress = CommonParsingUtils.parseAddress(argsParam.getTo());
-        if (receiveAddress == null || receiveAddress.equals(RskAddress.nullAddress())) {
+    public ParsedType4Transaction parse(TransactionTypePrefix typePrefix, TransactionInput input, byte defaultChainId) {
+        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce(), true);
+        BigInteger gasLimit = TransactionInput.resolveGasLimit(input.gasLimit());
+        Coin value = CommonParsingUtils.defaultValue(input.value());
+        RskAddress receiveAddress = CommonParsingUtils.defaultAddress(input.receiveAddress());
+        if (receiveAddress.equals(RskAddress.nullAddress())) {
             throw invalidParamError("Set-code transaction requires a non-null destination");
         }
-        byte[] data = CommonParsingUtils.parseHexData(argsParam.getData());
-        byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(AccessListCodec.encodeAccessList(argsParam.getAccessList()));
-        byte chainId = TypedTransactionCodec.parseRequiredTypedChainId(argsParam.getChainId());
+        byte[] data = CommonParsingUtils.nullToEmpty(input.data());
+        byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(input.accessListBytes());
+        byte chainId = TransactionInput.resolveTypedChainId(input.chainId());
         Coin maxPriorityFeePerGas = parseRequiredCoin(
-                argsParam.getMaxPriorityFeePerGas(),
+                input.maxPriorityFeePerGas(),
                 "Type 4 transaction requires maxPriorityFeePerGas"
         );
         Coin maxFeePerGas = parseRequiredCoin(
-                argsParam.getMaxFeePerGas(),
+                input.maxFeePerGas(),
                 "Type 4 transaction requires maxFeePerGas"
         );
         validateFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
 
-        var authorizationList = AuthorizationListCodec.parseFromCallArguments(argsParam.getAuthorizationList());
+        var authorizationList = input.authorizationList();
+        if (authorizationList == null || authorizationList.isEmpty()) {
+            throw invalidParamError("Set-code transaction authorization_list must not be empty");
+        }
 
         ParsedType4Transaction parsed = new ParsedType4Transaction(
                 typePrefix,
-                nonce.toByteArray(),
+                nonce,
                 gasLimit.toByteArray(),
                 receiveAddress,
                 value,
@@ -172,11 +165,10 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
         }
     }
 
-    private Coin parseRequiredCoin(String value, String errorMessage) {
-        BigInteger parsed = CommonParsingUtils.parseBigInteger(value, () -> null);
-        if (parsed == null) {
+    private Coin parseRequiredCoin(Coin value, String errorMessage) {
+        if (value == null) {
             throw invalidParamError(errorMessage);
         }
-        return new Coin(parsed);
+        return value;
     }
 }

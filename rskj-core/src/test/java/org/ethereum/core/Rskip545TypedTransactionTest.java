@@ -24,6 +24,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -135,8 +136,8 @@ class Rskip545TypedTransactionTest {
     }
 
     @Test
-    void type4_builderRejected_useFromRawOrFromCallArguments() {
-        assertThrows(IllegalStateException.class, () -> Transaction.builder()
+    void type4_builderWithoutAuthorizationList_rejectedAtBuild() {
+        assertThrows(RskJsonRpcRequestException.class, () -> Transaction.builder()
                 .type(TransactionType.TYPE_4)
                 .chainId(CHAIN_ID)
                 .nonce(BigInteger.ONE.toByteArray())
@@ -147,6 +148,25 @@ class Rskip545TypedTransactionTest {
                 .value(Coin.ZERO)
                 .data(EMPTY_DATA)
                 .build());
+    }
+
+    @Test
+    void type4_builderWithAuthorizationList_buildsViaParser() {
+        Transaction tx = Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(CHAIN_ID)
+                .nonce(BigInteger.ONE.toByteArray())
+                .maxPriorityFeePerGas(Coin.valueOf(10))
+                .maxFeePerGas(Coin.valueOf(100))
+                .gasLimit(BigInteger.valueOf(21_000))
+                .receiveAddress(TEST_ADDRESS)
+                .value(Coin.ZERO)
+                .data(EMPTY_DATA)
+                .authorizationList(List.of(Rskip545TestSupport.minimalAuthorization(CHAIN_ID)))
+                .build();
+
+        assertEquals(TransactionType.TYPE_4, tx.getType());
+        assertEquals(1, tx.getAuthorizationList().size());
     }
 
     @Test

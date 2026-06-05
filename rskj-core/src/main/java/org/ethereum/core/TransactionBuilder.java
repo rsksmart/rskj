@@ -24,21 +24,13 @@ import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
-import org.ethereum.core.transaction.parser.ParsedRawTransaction;
-import org.ethereum.core.transaction.parser.ParsedType0Transaction;
-import org.ethereum.core.transaction.parser.ParsedType1Transaction;
-import org.ethereum.core.transaction.parser.ParsedType2RSKTransaction;
-import org.ethereum.core.transaction.parser.ParsedType2Transaction;
-import org.ethereum.core.transaction.parser.ParsedType4Transaction;
-import org.ethereum.core.transaction.parser.SignedSignature;
-import org.ethereum.core.transaction.parser.UnsignedSignature;
+import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
+import org.ethereum.core.transaction.parser.TransactionInput;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 
 import java.math.BigInteger;
 import java.util.List;
-
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public final class TransactionBuilder {
 
@@ -57,9 +49,6 @@ public final class TransactionBuilder {
 	private Coin maxPriorityFeePerGas;
 	private Coin maxFeePerGas;
 	private List<SetCodeAuthorization> authorizationList;
-
-	/** Set when fields were produced by {@link #fromParsed(ParsedRawTransaction)}. */
-	private boolean parsedIngress;
 
 	TransactionBuilder() {}
 
@@ -177,113 +166,32 @@ public final class TransactionBuilder {
 	}
 
 	public TransactionBuilder authorizationList(List<SetCodeAuthorization> authorizationList) {
-		this.authorizationList = authorizationList;
+		this.authorizationList = authorizationList == null ? null : List.copyOf(authorizationList);
 		return this;
 	}
 
 	public Transaction build() {
-		normalizeTypedFields();
+		return Transaction.fromParsed(
+				RawTransactionEnvelopeParser.parse(toTransactionInput(), chainId),
+				isLocalCall
+		);
+	}
 
-		if (gasLimit == null || gasPrice == null || value == null) {
-			throw invalidParamError("Missing parameter, gasPrice, gasLimit or value");
-		}
-
-		return new Transaction(
+	TransactionInput toTransactionInput() {
+		Byte explicitChainId = chainId == 0 ? null : chainId;
+		return TransactionInput.fromBuilderState(
+				typePrefix,
 				nonce,
 				gasPrice,
+				maxPriorityFeePerGas,
+				maxFeePerGas,
 				gasLimit,
 				receiveAddress,
 				value,
 				data,
-				chainId,
-				isLocalCall,
-				typePrefix,
+				explicitChainId,
 				accessListBytes,
-				maxPriorityFeePerGas,
-				maxFeePerGas,
 				authorizationList
 		);
-	}
-
-	private void normalizeTypedFields() {
-		TransactionType type = typePrefix.type();
-
-		if (requiresParserIngress(type)) {
-			if (!parsedIngress) {
-				throw new IllegalStateException(
-						"Type " + type.getTypeName()
-								+ " transactions must be created via Transaction.fromRaw or Transaction.fromCallArguments");
-			}
-			return;
-		}
-
-		if (authorizationList != null && !authorizationList.isEmpty()) {
-			throw new IllegalArgumentException("authorization_list is only valid for Type 4 transactions");
-		}
-	}
-
-	private boolean requiresParserIngress(TransactionType type) {
-		return type == TransactionType.TYPE_1
-				|| type == TransactionType.TYPE_4
-				|| (type == TransactionType.TYPE_2 && !typePrefix.isRskNamespace());
-	}
-
-	public static TransactionBuilder fromParsed(ParsedRawTransaction parsed) {
-		byte chainId = 0;
-		byte[] accessListBytes = new byte[0];
-		Coin maxPriorityFeePerGas = null;
-		Coin maxFeePerGas = null;
-		Coin effectiveGasPrice = null;
-		List<SetCodeAuthorization> authorizationList = null;
-
-		if (parsed.signatureState() instanceof SignedSignature signed) {
-			chainId = signed.chainId();
-		}
-		if (parsed.signatureState() instanceof UnsignedSignature unsigned) {
-			chainId= unsigned.chainId() == null ? 0 : unsigned.chainId();
-		}
-		if (parsed instanceof ParsedType0Transaction type0Tx) {
-			effectiveGasPrice =  type0Tx.gasPrice();
-		}
-		if (parsed instanceof ParsedType1Transaction type1Tx) {
-			accessListBytes = type1Tx.accessListBytes();
-			effectiveGasPrice =  type1Tx.gasPrice();
-		}
-		if (parsed instanceof ParsedType2Transaction type2Tx) {
-			accessListBytes =  type2Tx.accessListBytes();
-			maxPriorityFeePerGas = type2Tx.maxPriorityFeePerGas();
-			maxFeePerGas = type2Tx.maxFeePerGas();
-			effectiveGasPrice = type2Tx.maxPriorityFeePerGas().compareTo(type2Tx.maxFeePerGas()) <= 0
-					? type2Tx.maxPriorityFeePerGas()
-					: type2Tx.maxFeePerGas();
-		}
-		if (parsed instanceof ParsedType2RSKTransaction type2RskTx) {
-			effectiveGasPrice =  type2RskTx.gasPrice();
-		}
-		if (parsed instanceof ParsedType4Transaction type4Tx) {
-			accessListBytes = type4Tx.accessListBytes();
-			maxPriorityFeePerGas = type4Tx.maxPriorityFeePerGas();
-			maxFeePerGas = type4Tx.maxFeePerGas();
-			authorizationList = type4Tx.authorizationList();
-			effectiveGasPrice = type4Tx.maxPriorityFeePerGas().compareTo(type4Tx.maxFeePerGas()) <= 0
-					? type4Tx.maxPriorityFeePerGas()
-					: type4Tx.maxFeePerGas();
-		}
-
-		TransactionBuilder builder = new TransactionBuilder()
-				.nonce(parsed.nonce())
-				.gasPrice(effectiveGasPrice)
-				.gasLimit(parsed.gasLimit())
-				.receiveAddress(parsed.receiveAddress())
-				.value(parsed.value())
-				.data(parsed.data())
-				.chainId(chainId)
-				.typePrefix(parsed.typePrefix())
-				.accessList(accessListBytes)
-				.maxPriorityFeePerGas(maxPriorityFeePerGas)
-				.maxFeePerGas(maxFeePerGas)
-				.authorizationList(authorizationList);
-		builder.parsedIngress = true;
-		return builder;
 	}
 }

@@ -130,8 +130,7 @@ class Type4RawTransactionParserTest {
         args.setGas("0x5208");
         args.setGasLimit("0x7530");
 
-        ParsedType4Transaction parsed = parser.parse(
-                TransactionTypePrefix.typed(TransactionType.TYPE_4), args, REGTEST_CHAIN_ID);
+        ParsedType4Transaction parsed = parseFromCallArguments(args);
 
         assertEquals(BigInteger.valueOf(21_000), new BigInteger(1, parsed.gasLimit()));
     }
@@ -142,7 +141,7 @@ class Type4RawTransactionParserTest {
         args.setTo(null);
 
         RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
-                () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), args, REGTEST_CHAIN_ID));
+                () -> parseFromCallArguments(args));
 
         assertTrue(ex.getMessage().contains("destination"),
                 "Expected destination error, got: " + ex.getMessage());
@@ -154,7 +153,7 @@ class Type4RawTransactionParserTest {
         args.setAuthorizationList(List.of());
 
         assertThrows(RskJsonRpcRequestException.class,
-                () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), args, REGTEST_CHAIN_ID));
+                () -> parseFromCallArguments(args));
     }
 
     @Test
@@ -164,7 +163,7 @@ class Type4RawTransactionParserTest {
         args.setMaxFeePerGas("0x32");
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), args, REGTEST_CHAIN_ID));
+                () -> parseFromCallArguments(args));
 
         assertTrue(ex.getMessage().contains("maxPriorityFeePerGas"),
                 "Expected fee-cap error, got: " + ex.getMessage());
@@ -172,8 +171,7 @@ class Type4RawTransactionParserTest {
 
     @Test
     void parse_callArguments_propagatesAuthorizationList() {
-        ParsedType4Transaction parsed = parser.parse(
-                TransactionTypePrefix.typed(TransactionType.TYPE_4), type4Args(), REGTEST_CHAIN_ID);
+        ParsedType4Transaction parsed = parseFromCallArguments(type4Args());
 
         assertEquals(1, parsed.authorizationList().size());
         assertEquals(BigInteger.valueOf(33), parsed.authorizationList().get(0).getChainId());
@@ -523,6 +521,13 @@ class Type4RawTransactionParserTest {
                 RLP.encodeElement(new byte[32])
         };
         return RLP.decodeList(RLP.encodeList(fields));
+    }
+
+    private ParsedType4Transaction parseFromCallArguments(CallArguments args) {
+        return parser.parse(
+                TransactionTypePrefix.typed(TransactionType.TYPE_4),
+                TransactionInput.fromCallArguments(args, null),
+                REGTEST_CHAIN_ID);
     }
 
     private static CallArguments type4Args() {
