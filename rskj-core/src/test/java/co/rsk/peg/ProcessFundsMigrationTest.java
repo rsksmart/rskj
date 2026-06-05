@@ -6,15 +6,13 @@ import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationTxWithOnlyM
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsStandardMultisig;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shP2wshErp;
-import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_1;
-import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.getBtcEcKeysFromSeeds;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_1;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
@@ -44,7 +42,10 @@ import co.rsk.test.builders.FederationSupportBuilder;
 import co.rsk.test.builders.UTXOBuilder;
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
@@ -56,11 +57,13 @@ import org.junit.jupiter.api.Test;
 class ProcessFundsMigrationTest {
 
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
+    public static final int MAX_INPUTS_PER_PEGOUT_TX = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
     private static final NetworkParameters NETWORK_PARAMETERS = BRIDGE_CONSTANTS.getBtcParams();
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0L);
     private static final Coin FEE_PER_KB = Coin.valueOf(8_000L);
     private static final long ACTIVE_FEDERATION_CREATION_BLOCK = 100L;
+    private static final int EXPECTED_ONE_MIGRATION_TX_COUNT = 1;
     private static final int EXPECTED_MULTIPLE_MIGRATION_TX_COUNT = 2;
     private final Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
 
@@ -167,12 +170,12 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                retiringUtxos.size(),
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                retiringUtxos.size(),
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
@@ -195,12 +198,12 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                retiringUtxos.size(),
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                retiringUtxos.size(),
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
@@ -254,8 +257,7 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_duringMigration_withMoreUtxosThanMaxInputs_whenCalledRepeatedly_shouldCreateAMigrationTxEachTime() throws IOException {
             // Arrange
-            int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            int numberOfUtxos = maxInputs + 1;
+            int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX + 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
@@ -269,16 +271,16 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                maxInputs,
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                MAX_INPUTS_PER_PEGOUT_TX,
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationStillPresent();
 
-            int remainingUtxos = retiringUtxos.size() - maxInputs;
+            int remainingUtxos = retiringUtxos.size() - MAX_INPUTS_PER_PEGOUT_TX;
             assertRetiringUtxosCount(remainingUtxos);
 
             // Act
@@ -288,7 +290,13 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
             // Assert
-            assertMultipleMigrationTransactionsWereBuiltAsExpected(retiringFederation, retiringUtxos, migrationTxInputsAssertion);
+            assertMigrationTransactionsWereBuiltAsExpected(
+                retiringFederation,
+                retiringUtxos,
+                migrationTxInputsAssertion,
+                retiringUtxos.size(),
+                EXPECTED_MULTIPLE_MIGRATION_TX_COUNT
+            );
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
         }
@@ -311,12 +319,12 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                retiringUtxos.size(),
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                retiringUtxos.size(),
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationCleared();
             assertNoRemainingRetiringUtxos();
@@ -339,12 +347,12 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                retiringUtxos.size(),
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                retiringUtxos.size(),
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationCleared();
             assertNoRemainingRetiringUtxos();
@@ -353,8 +361,7 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_pastMigrationAge_withMoreUtxosThanMaxInputs_shouldCreateLastMigrationTxWithMaxInputsAndClearRetiringFedEvenIfUtxosRemain() throws IOException {
             // Arrange
-            int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            int numberOfUtxos = maxInputs + 1;
+            int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX + 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
@@ -368,16 +375,16 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                maxInputs,
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                MAX_INPUTS_PER_PEGOUT_TX,
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationCleared();
 
-            int expectedRemainingUtxos = retiringUtxos.size() - maxInputs;
+            int expectedRemainingUtxos = retiringUtxos.size() - MAX_INPUTS_PER_PEGOUT_TX;
             assertRetiringUtxosCount(expectedRemainingUtxos);
         }
 
@@ -525,12 +532,12 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                retiringUtxos.size(),
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                retiringUtxos.size(),
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
@@ -553,12 +560,12 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                retiringUtxos.size(),
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                retiringUtxos.size(),
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
@@ -612,8 +619,7 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_duringMigration_withMoreUtxosThanMaxInputs_whenCalledRepeatedly_shouldCreateAMigrationTxEachTime() throws IOException {
             // Arrange
-            int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            int numberOfUtxos = maxInputs + 1;
+            int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX + 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
@@ -627,16 +633,16 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                maxInputs,
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                MAX_INPUTS_PER_PEGOUT_TX,
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationStillPresent();
 
-            int remainingUtxos = retiringUtxos.size() - maxInputs;
+            int remainingUtxos = retiringUtxos.size() - MAX_INPUTS_PER_PEGOUT_TX;
             assertRetiringUtxosCount(remainingUtxos);
 
             // Act
@@ -646,7 +652,13 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
             // Assert
-            assertMultipleMigrationTransactionsWereBuiltAsExpected(retiringFederation, retiringUtxos, migrationTxInputsAssertion);
+            assertMigrationTransactionsWereBuiltAsExpected(
+                retiringFederation,
+                retiringUtxos,
+                migrationTxInputsAssertion,
+                retiringUtxos.size(),
+                EXPECTED_MULTIPLE_MIGRATION_TX_COUNT
+            );
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
         }
@@ -669,12 +681,12 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                retiringUtxos.size(),
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                retiringUtxos.size(),
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationCleared();
             assertNoRemainingRetiringUtxos();
@@ -697,12 +709,12 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                retiringUtxos.size(),
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                retiringUtxos.size(),
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationCleared();
             assertNoRemainingRetiringUtxos();
@@ -711,8 +723,7 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_pastMigrationAge_withMoreUtxosThanMaxInputs_shouldCreateLastMigrationTxWithMaxInputsAndClearRetiringFedEvenIfUtxosRemain() throws IOException {
             // Arrange
-            int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            int numberOfUtxos = maxInputs + 1;
+            int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX + 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
@@ -726,16 +737,16 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                maxInputs,
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                MAX_INPUTS_PER_PEGOUT_TX,
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationCleared();
 
-            int expectedRemainingUtxos = retiringUtxos.size() - maxInputs;
+            int expectedRemainingUtxos = retiringUtxos.size() - MAX_INPUTS_PER_PEGOUT_TX;
             assertRetiringUtxosCount(expectedRemainingUtxos);
         }
 
@@ -883,12 +894,12 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                retiringUtxos.size(),
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                retiringUtxos.size(),
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
@@ -911,12 +922,12 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                retiringUtxos.size(),
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                retiringUtxos.size(),
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
@@ -970,8 +981,7 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_duringMigration_preRSKIP294_withMoreUtxosThanMaxInputs_shouldUseAllRetiringUtxos() throws IOException {
             // Arrange
-            int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            int numberOfUtxos = maxInputs + 1;
+            int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX + 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
@@ -985,12 +995,11 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertPreRSKIP294MigrationTransactionWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                retiringUtxos.size(),
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_1
+                retiringUtxos.size()
             );
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
@@ -999,8 +1008,7 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_duringMigration_withMoreUtxosThanMaxInputs_whenCalledRepeatedly_shouldCreateAMigrationTxEachTime() throws IOException {
             // Arrange
-            int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            int numberOfUtxos = maxInputs + 1;
+            int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX + 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
@@ -1014,16 +1022,16 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                maxInputs,
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                MAX_INPUTS_PER_PEGOUT_TX,
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationStillPresent();
 
-            int remainingUtxos = retiringUtxos.size() - maxInputs;
+            int remainingUtxos = retiringUtxos.size() - MAX_INPUTS_PER_PEGOUT_TX;
             assertRetiringUtxosCount(remainingUtxos);
 
             // Act
@@ -1033,7 +1041,13 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
             // Assert
-            assertMultipleMigrationTransactionsWereBuiltAsExpected(retiringFederation, retiringUtxos, migrationTxInputsAssertion);
+            assertMigrationTransactionsWereBuiltAsExpected(
+                retiringFederation,
+                retiringUtxos,
+                migrationTxInputsAssertion,
+                retiringUtxos.size(),
+                EXPECTED_MULTIPLE_MIGRATION_TX_COUNT
+            );
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
         }
@@ -1056,12 +1070,12 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                retiringUtxos.size(),
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                retiringUtxos.size(),
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationCleared();
             assertNoRemainingRetiringUtxos();
@@ -1084,12 +1098,12 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                retiringUtxos.size(),
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                retiringUtxos.size(),
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationCleared();
             assertNoRemainingRetiringUtxos();
@@ -1098,8 +1112,7 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_pastMigrationAge_preRSKIP294_withMoreUtxosThanMaxInputs_shouldUseAllRetiringUtxos() throws IOException {
             // Arrange
-            int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            int numberOfUtxos = maxInputs + 1;
+            int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX + 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
@@ -1113,12 +1126,11 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertPreRSKIP294MigrationTransactionWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                numberOfUtxos,
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_1
+                retiringUtxos.size()
             );
             assertRetiringFederationCleared();
             assertNoRemainingRetiringUtxos();
@@ -1127,8 +1139,7 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_pastMigrationAge_withMoreUtxosThanMaxInputs_shouldCreateLastMigrationTxWithMaxInputsAndClearRetiringFedEvenIfUtxosRemain() throws IOException {
             // Arrange
-            int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-            int numberOfUtxos = maxInputs + 1;
+            int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX + 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
@@ -1142,16 +1153,16 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                maxInputs,
                 migrationTxInputsAssertion,
-                BTC_TX_VERSION_2
+                MAX_INPUTS_PER_PEGOUT_TX,
+                EXPECTED_ONE_MIGRATION_TX_COUNT
             );
             assertRetiringFederationCleared();
 
-            int expectedRemainingUtxos = retiringUtxos.size() - maxInputs;
+            int expectedRemainingUtxos = retiringUtxos.size() - MAX_INPUTS_PER_PEGOUT_TX;
             assertRetiringUtxosCount(expectedRemainingUtxos);
         }
 
@@ -1338,70 +1349,68 @@ class ProcessFundsMigrationTest {
         return blockNumberBeforeMigrationBegins(activations) + migrationPeriodDuration;
     }
 
-    private void assertNoMigrationTxCreated() throws IOException {
-        assertMigrationTxCount(0);
-    }
-
-    private void assertOneMigrationTransactionWasBuiltAsExpected(
+    private void assertMigrationTransactionsWereBuiltAsExpected(
         Federation retiringFederation,
         List<UTXO> retiringFederationUtxos,
-        int expectedInputCount,
         MigrationTxInputsAssertion migrationTxInputsAssertion,
-        int expectedBtcTxVersion
+        int expectedTotalInputsCount,
+        int expectedMigrationTxsCount
     ) throws IOException {
-        assertMigrationTxCount(1);
-        BtcTransaction migrationTransaction = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
-            .getEntries()
-            .iterator()
-            .next()
-            .getBtcTransaction();
+        List<BtcTransaction> migrationTransactions = getMigrationTxsWaitingForConfirmation();
+        assertEquals(expectedMigrationTxsCount, migrationTransactions.size());
 
-        assertMigrationTransactionWasBuiltAsExpected(
-            migrationTransaction,
-            retiringFederation,
-            retiringFederationUtxos,
-            expectedInputCount,
-            expectedBtcTxVersion,
-            migrationTxInputsAssertion
-        );
+        Set<UTXO> migratedUtxos = new HashSet<>();
+        int remainingExpectedInputs = expectedTotalInputsCount;
+        for (BtcTransaction migrationTransaction : migrationTransactions) {
+            int expectedInputCountInTx = Math.min(MAX_INPUTS_PER_PEGOUT_TX, remainingExpectedInputs);
+            assertMigrationTransactionWasBuiltAsExpected(
+                migrationTransaction,
+                retiringFederation,
+                retiringFederationUtxos,
+                expectedInputCountInTx,
+                BTC_TX_VERSION_2,
+                migrationTxInputsAssertion
+            );
+            remainingExpectedInputs -= expectedInputCountInTx;
+
+            List<UTXO> selectedUtxos = getSelectedUtxos(migrationTransaction, retiringFederationUtxos);
+            assertTrue(retiringFederationUtxos.containsAll(selectedUtxos));
+            selectedUtxos.forEach(migratedUtxo -> assertFalse(migratedUtxos.contains(migratedUtxo)));
+            migratedUtxos.addAll(selectedUtxos);
+        }
+        assertEquals(0, remainingExpectedInputs);
+        assertEquals(expectedTotalInputsCount, migratedUtxos.size());
     }
 
-    private void assertMultipleMigrationTransactionsWereBuiltAsExpected(
-        Federation retiringFederation,
-        List<UTXO> retiringFederationUtxos,
-        MigrationTxInputsAssertion migrationTxInputsAssertion
-    ) throws IOException {
+    private List<BtcTransaction> getMigrationTxsWaitingForConfirmation() throws IOException {
         List<PegoutsWaitingForConfirmations.Entry> migrationTransactionEntries = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
             .getEntries()
             .stream()
             .sorted(Comparator.comparing(PegoutsWaitingForConfirmations.Entry::getPegoutCreationRskBlockNumber))
             .toList();
-
-        List<BtcTransaction> migrationTransactions = migrationTransactionEntries.stream()
+        return migrationTransactionEntries.stream()
             .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
             .toList();
-        assertEquals(EXPECTED_MULTIPLE_MIGRATION_TX_COUNT, migrationTransactions.size());
+    }
 
-        List<UTXO> selectedUtxos = migrationTransactions.stream()
-            .flatMap(tx -> getSelectedUtxos(tx, retiringFederationUtxos).stream())
-            .toList();
-        assertEquals(retiringFederationUtxos.size(), selectedUtxos.size());
-        assertTrue(selectedUtxos.containsAll(retiringFederationUtxos));
+    private void assertPreRSKIP294MigrationTransactionWasBuiltAsExpected(
+        Federation retiringFederation,
+        List<UTXO> retiringFederationUtxos,
+        MigrationTxInputsAssertion migrationTxInputsAssertion,
+        int expectedTotalInputsCount
+    ) throws IOException {
+        List<BtcTransaction> migrationTransactions = getMigrationTxsWaitingForConfirmation();
+        assertEquals(EXPECTED_ONE_MIGRATION_TX_COUNT, migrationTransactions.size());
+        BtcTransaction migrationTransaction = getMigrationTxsWaitingForConfirmation().get(0);
 
-        int maxInputCount = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
-        int remainingRetiringFederationUtxos = retiringFederationUtxos.size();
-        for (BtcTransaction migrationTransaction : migrationTransactions) {
-            int expectedInputCount = Math.min(maxInputCount, remainingRetiringFederationUtxos);
-            assertMigrationTransactionWasBuiltAsExpected(
-                migrationTransaction,
-                retiringFederation,
-                retiringFederationUtxos,
-                expectedInputCount,
-                BTC_TX_VERSION_2,
-                migrationTxInputsAssertion
-            );
-            remainingRetiringFederationUtxos -= expectedInputCount;
-        }
+        assertMigrationTransactionWasBuiltAsExpected(
+            migrationTransaction,
+            retiringFederation,
+            retiringFederationUtxos,
+            expectedTotalInputsCount,
+            BTC_TX_VERSION_1,
+            migrationTxInputsAssertion
+        );
     }
 
     private void assertMigrationTransactionWasBuiltAsExpected(
@@ -1445,8 +1454,8 @@ class ProcessFundsMigrationTest {
             .toList();
     }
 
-    private void assertMigrationTxCount(int expectedCount) throws IOException {
-        assertEquals(expectedCount, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
+    private void assertNoMigrationTxCreated() throws IOException {
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
     }
 
     private void assertRetiringFederationStillPresent() {
