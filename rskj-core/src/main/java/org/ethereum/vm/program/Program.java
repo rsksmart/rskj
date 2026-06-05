@@ -913,7 +913,10 @@ public class Program {
     }
 
     private byte[] getExecutionCode(RskAddress codeAddress) {
-        byte[] code = getStorage().isExist(codeAddress) ? getStorage().getCode(codeAddress) : EMPTY_BYTE_ARRAY;
+        if (!getStorage().isExist(codeAddress)) {
+            return EMPTY_BYTE_ARRAY;
+        }
+        byte[] code = getStorage().getCode(codeAddress);
 
         if (!DelegationCodeResolver.isDelegatedCode(code)) {
             return code;

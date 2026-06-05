@@ -30,6 +30,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,6 +42,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -601,6 +603,167 @@ class ProgramTest {
         assertStack(STACK_STATE_SUCCESS);
     }
 
+    @Test
+    void testCallToAddress_delegatedCode_executesDelegateCode() {
+        RskAddress caller = address(99);
+        RskAddress authority = address(100);
+        RskAddress delegate = address(101);
+
+        byte[] authorityCode = DelegationCodeResolver.createDelegatedCode(delegate);
+        byte[] delegateCode = new byte[] { 0x00 }; // STOP
+
+
+        when(programInvoke.getOwnerAddress()).thenReturn(DataWord.valueOf(caller.getBytes()));
+        //CALL authority
+        when(msg.getCodeAddress()).thenReturn(DataWord.valueOf(authority.getBytes()));
+
+        when(repository.startTracking()).thenReturn(repository);
+
+        when(repository.isExist(authority)).thenReturn(true);
+        // authority.code = 0xef0100 || delegate
+        when(repository.getCode(authority)).thenReturn(authorityCode);
+
+        when(repository.isExist(delegate)).thenReturn(true);
+        // delegate.code  = STOP
+        when(repository.getCode(delegate)).thenReturn(delegateCode);
+
+        when(repository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.addBalance(any(RskAddress.class), any(Coin.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.getNonce(any(RskAddress.class))).thenReturn(BigInteger.ONE);
+
+        program.callToAddress(msg);
+
+        assertStack(STACK_STATE_SUCCESS);
+    }
+
+    @Test
+    void testCallToAddress_nonDelegatedCode_executesOriginalCode() {
+        RskAddress caller = address(99);
+        RskAddress authority = address(100);
+
+        byte[] authorityCode = new byte[] { 0x00 }; // STOP
+
+        when(programInvoke.getOwnerAddress()).thenReturn(DataWord.valueOf(caller.getBytes()));
+        when(msg.getCodeAddress()).thenReturn(DataWord.valueOf(authority.getBytes()));
+
+        when(repository.startTracking()).thenReturn(repository);
+
+        when(repository.isExist(authority)).thenReturn(true);
+        when(repository.getCode(authority)).thenReturn(authorityCode);
+
+        when(repository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.addBalance(any(RskAddress.class), any(Coin.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.getNonce(any(RskAddress.class))).thenReturn(BigInteger.ONE);
+
+        program.callToAddress(msg);
+
+        assertStack(STACK_STATE_SUCCESS);
+    }
+
+    @Test
+    void testCallToAddress_missingAuthorityCode_treatedAsEmptyCode() {
+        RskAddress caller = address(99);
+        RskAddress authority = address(100);
+
+        when(programInvoke.getOwnerAddress()).thenReturn(DataWord.valueOf(caller.getBytes()));
+        when(msg.getCodeAddress()).thenReturn(DataWord.valueOf(authority.getBytes()));
+
+        when(repository.startTracking()).thenReturn(repository);
+
+        when(repository.isExist(authority)).thenReturn(false);
+
+        when(repository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.addBalance(any(RskAddress.class), any(Coin.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.getNonce(any(RskAddress.class))).thenReturn(BigInteger.ONE);
+
+        program.callToAddress(msg);
+
+        assertStack(STACK_STATE_SUCCESS);
+    }
+
+    @Test
+    void testCallToAddress_delegatedCode_missingDelegateCode_treatedAsEmptyCode() {
+        RskAddress caller = address(99);
+        RskAddress authority = address(100);
+        RskAddress delegate = address(101);
+
+        byte[] authorityCode = DelegationCodeResolver.createDelegatedCode(delegate);
+
+        when(programInvoke.getOwnerAddress()).thenReturn(DataWord.valueOf(caller.getBytes()));
+        when(msg.getCodeAddress()).thenReturn(DataWord.valueOf(authority.getBytes()));
+
+        when(repository.startTracking()).thenReturn(repository);
+
+        when(repository.isExist(authority)).thenReturn(true);
+        when(repository.getCode(authority)).thenReturn(authorityCode);
+
+        when(repository.isExist(delegate)).thenReturn(false);
+
+        when(repository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.addBalance(any(RskAddress.class), any(Coin.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.getNonce(any(RskAddress.class))).thenReturn(BigInteger.ONE);
+
+        program.callToAddress(msg);
+
+        assertStack(STACK_STATE_SUCCESS);
+    }
+
+    @Test
+    void testCallToAddress_delegatedCodeToPrecompile_treatedAsEmptyCode_withRealVm() {
+        RskAddress caller = address(99);
+        RskAddress authority = address(100);
+        RskAddress precompile = PrecompiledContracts.ECRECOVER_ADDR;
+
+        byte[] authorityCode = DelegationCodeResolver.createDelegatedCode(precompile);
+
+        when(programInvoke.getOwnerAddress()).thenReturn(DataWord.valueOf(caller.getBytes()));
+        when(msg.getCodeAddress()).thenReturn(DataWord.valueOf(authority.getBytes()));
+
+        when(repository.startTracking()).thenReturn(repository);
+
+        when(repository.isExist(authority)).thenReturn(true);
+        when(repository.getCode(authority)).thenReturn(authorityCode);
+
+        when(repository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.addBalance(any(RskAddress.class), any(Coin.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.getNonce(any(RskAddress.class))).thenReturn(BigInteger.ONE);
+
+        program.callToAddress(msg);
+
+        assertStack(STACK_STATE_SUCCESS);
+    }
+
+    @Test
+    void testCallToAddress_delegationIsOneHopOnly_withRealVm() {
+        RskAddress caller = address(99);
+        RskAddress authority = address(100);
+        RskAddress delegate = address(101);
+        RskAddress secondDelegate = address(102);
+
+        byte[] authorityCode = DelegationCodeResolver.createDelegatedCode(delegate);
+        byte[] delegateCode = DelegationCodeResolver.createDelegatedCode(secondDelegate);
+
+        when(programInvoke.getOwnerAddress()).thenReturn(DataWord.valueOf(caller.getBytes()));
+        when(msg.getCodeAddress()).thenReturn(DataWord.valueOf(authority.getBytes()));
+
+        when(repository.startTracking()).thenReturn(repository);
+
+        when(repository.isExist(authority)).thenReturn(true);
+        when(repository.getCode(authority)).thenReturn(authorityCode);
+
+        when(repository.isExist(delegate)).thenReturn(true);
+        when(repository.getCode(delegate)).thenReturn(delegateCode);
+
+        when(repository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.addBalance(any(RskAddress.class), any(Coin.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.getNonce(any(RskAddress.class))).thenReturn(BigInteger.ONE);
+
+        program.callToAddress(msg);
+
+        verify(repository, never()).getCode(secondDelegate);
+        assertStack(STACK_STATE_ERROR);
+    }
+
     /*********************************
      * ---------- UTILS ------------ *
      *********************************/
@@ -622,5 +785,9 @@ class ProgramTest {
             data[i] = (byte) (i % 256);
         }
         return data;
+    }
+
+    private RskAddress address(int value) {
+        return new RskAddress(DataWord.valueOf(value).getLast20Bytes());
     }
 }
