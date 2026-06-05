@@ -331,7 +331,7 @@ public class Transaction {
             authorizationListGas = Math.multiplyExact(GasCost.PER_EMPTY_ACCOUNT_COST, authorizationList.size());
         }
 
-        return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost + authorizationListGas;
+        return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost + accessListGas + authorizationListGas;
     }
 
     public boolean isTypedTransactionNotAllowed(ActivationConfig.ForBlock activations) {
