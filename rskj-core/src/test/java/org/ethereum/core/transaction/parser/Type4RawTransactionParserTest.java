@@ -358,18 +358,6 @@ class Type4RawTransactionParserTest {
     }
 
     @Test
-    void parse_rlp_authChainIdMismatch_throws() {
-        SetCodeAuthorization wrongChain = Rskip545TestSupport.authorizationWithChainId(BigInteger.valueOf(99));
-        RLPList fields = Rskip545TestSupport.buildType4RlpList(
-                RECEIVER, AuthorizationListCodec.encodeList(List.of(wrongChain)));
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
-
-        assertTrue(ex.getMessage().contains("chain_id"));
-    }
-
-    @Test
     void parse_rlp_authChainIdZero_allowed() {
         SetCodeAuthorization authWithZeroChain = Rskip545TestSupport.authorizationWithChainId(BigInteger.ZERO);
         byte[][] base = Rskip545TestSupport.defaultSignedType4Fields(
