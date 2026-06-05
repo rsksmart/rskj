@@ -1400,7 +1400,7 @@ class ProcessFundsMigrationTest {
     ) throws IOException {
         List<BtcTransaction> migrationTransactions = getMigrationTxsWaitingForConfirmation();
         assertEquals(EXPECTED_ONE_MIGRATION_TX_COUNT, migrationTransactions.size());
-        BtcTransaction migrationTransaction = getMigrationTxsWaitingForConfirmation().get(0);
+        BtcTransaction migrationTransaction = migrationTransactions.get(0);
 
         assertMigrationTransactionWasBuiltAsExpected(
             migrationTransaction,
