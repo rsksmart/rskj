@@ -806,8 +806,8 @@ public class TransactionExecutor {
             return code;
         }
 
-        byte[] addressBytes = Arrays.copyOfRange(code, 3, 23);
-        RskAddress delegatedAddress = new RskAddress(addressBytes);
+        RskAddress delegatedAddress = DelegationCodeResolver
+                .extractDelegatedAddress(code);
 
         if (isPrecompile(delegatedAddress)) {
             return ByteUtil.EMPTY_BYTE_ARRAY;

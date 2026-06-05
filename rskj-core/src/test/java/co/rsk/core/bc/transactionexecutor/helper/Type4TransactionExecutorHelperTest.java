@@ -204,8 +204,7 @@ public abstract class Type4TransactionExecutorHelperTest {
         );
     }
 
-    //SHOULD BE REMOVED
-    protected Transaction createSignedType4TransactionUsingBuilder(
+    protected Transaction createSignedType4Transaction(
             ECKey senderKey,
             byte chainId,
             BigInteger nonce,
@@ -361,50 +360,4 @@ public abstract class Type4TransactionExecutorHelperTest {
         mockAccountWithBalanceAndNonce(tracker, sender, balance, nonce);
         mockAccountWithCode(tracker, sender, code);
     }
-
-    protected Transaction createSignedType4Transaction(
-            ECKey senderKey,
-            byte chainId,
-            BigInteger nonce,
-            long gasLimit,
-            long maxPriorityFeePerGas,
-            long maxFeePerGas,
-            RskAddress receiveAddress,
-            long value,
-            byte[] data,
-            SetCodeAuthorization... authorizations
-    ) {
-        byte[] authList = AuthorizationListCodec.encodeList(List.of(authorizations));
-
-        RLPList fields = RLP.decodeList(RLP.encodeList(
-                RLP.encodeByte(chainId),
-                RLP.encodeElement(BigIntegers.asUnsignedByteArray(nonce)),
-                RLP.encodeCoinNonNullZero(Coin.valueOf(maxPriorityFeePerGas)),
-                RLP.encodeCoinNonNullZero(Coin.valueOf(maxFeePerGas)),
-                RLP.encodeBigInteger(BigInteger.valueOf(gasLimit)),
-                RLP.encodeRskAddress(receiveAddress),
-                RLP.encodeCoinNonNullZero(Coin.valueOf(value)),
-                RLP.encodeElement(data == null ? new byte[0] : data),
-                RLP.encodeList(), // access_list
-                authList,
-                RLP.encodeByte((byte) 0),
-                RLP.encodeElement(null),
-                RLP.encodeElement(null)
-        ));
-
-        ParsedType4Transaction parsed = new Type4RawTransactionParser().parse(
-                TransactionTypePrefix.typed(TransactionType.TYPE_4),
-                fields
-        );
-
-        Transaction tx = TransactionBuilder
-                .fromParsed(parsed)
-                .build();
-
-        tx.sign(senderKey.getPrivKeyBytes());
-
-        return tx;
-    }
-
-
 }

@@ -2,6 +2,8 @@ package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
 
+import java.util.Arrays;
+
 public class DelegationCodeResolver {
 
     public static final byte[] DELEGATION_PREFIX = new byte[] {(byte) 0xef, 0x01, 0x00};
@@ -17,7 +19,7 @@ public class DelegationCodeResolver {
                 && code[2] == DELEGATION_PREFIX[2];
     }
 
-    public static byte[]  createDelegatedCode(RskAddress delegatedAddress) {
+    public static byte[] createDelegatedCode(RskAddress delegatedAddress) {
         if (delegatedAddress.equals(RskAddress.nullAddress()) || delegatedAddress.equals(RskAddress.ZERO_ADDRESS)) {
             throw new IllegalStateException("Delegated address can not be empty");
         }
@@ -27,6 +29,11 @@ public class DelegationCodeResolver {
         System.arraycopy(DELEGATION_PREFIX, 0, codeToSet, 0, PREFIX_SIZE);
         System.arraycopy(delegatedAddressBytes, 0, codeToSet, PREFIX_SIZE, ADDRESS_SIZE);
         return codeToSet;
+    }
+
+    public static RskAddress extractDelegatedAddress(byte[] code) {
+        byte[] addressBytes = Arrays.copyOfRange(code, PREFIX_SIZE, DELEGATION_CODE_SIZE);
+        return new RskAddress(addressBytes);
     }
 
 }
