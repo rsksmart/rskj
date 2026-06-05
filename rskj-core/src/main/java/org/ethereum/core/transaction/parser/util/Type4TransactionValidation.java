@@ -46,30 +46,11 @@ public final class Type4TransactionValidation {
     private Type4TransactionValidation() {}
 
     /**
-     * Validates parsed type-4 fields that do not require chain context or {@code ecrecover}.
+     * Validates parsed type-4 fields.
      */
     public static void validateParsed(ParsedType4Transaction parsed) {
-        byte txChainId = resolveTxChainId(parsed.signatureState());
-        validateAuthorizationChainIds(txChainId, parsed.authorizationList());
         if (parsed.signatureState() instanceof SignedSignature signed) {
             validateOuterSignatureFormat(signed.signature());
-        }
-    }
-
-    /**
-     * Tx {@code chain_id} must equal each {@code authority.chain_id} unless the authority chain id is zero.
-     */
-    public static void validateAuthorizationChainIds(byte txChainId, List<SetCodeAuthorization> authorizations) {
-        BigInteger txChainIdValue = BigInteger.valueOf(txChainId & 0xFF);
-        for (int i = 0; i < authorizations.size(); i++) {
-            BigInteger authChainId = authorizations.get(i).getChainId();
-            if (authChainId.signum() != 0 && authChainId.compareTo(txChainIdValue) != 0) {
-                throw new IllegalArgumentException(
-                        "Authorization chain_id at index " + i + " (" + authChainId
-                                + ") must match transaction chain_id (" + txChainIdValue
-                                + ") or be zero"
-                );
-            }
         }
     }
 
