@@ -140,7 +140,7 @@ public class ReleaseTransactionBuilder {
         }, String.format("emptying wallet to %s", to));
     }
 
-    private void setDefaultSendRequestSettings(SendRequest sr) {
+    private void setDefaultSettings(SendRequest sr) {
         sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
         sr.feePerKb = feePerKb;
         sr.shuffleOutputs = false;
@@ -205,7 +205,7 @@ public class ReleaseTransactionBuilder {
     private SendRequest setSrConfiguration(SendRequestConfigurator sendRequestConfigurator, BtcTransaction btcTx) {
         SendRequest sr = SendRequest.forTx(btcTx);
         // Default settings
-        setDefaultSendRequestSettings(sr);
+        setDefaultSettings(sr);
         // Specific settings
         sendRequestConfigurator.configure(sr);
 
