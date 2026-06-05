@@ -15,7 +15,7 @@ import java.util.Arrays;
 
 public class SetCodeAuthorizationTransactionExecutor {
 
-    public static final byte[] DELEGATION_PREFIX_IN_BYTES = new byte[] {(byte) 0xef, 0x01, 0x00};
+    public static final byte[] CODE_FOR_CLEANING_DELEGATED_ADDRESS = HashUtil.keccak256(new byte[0]);
 
     public long processAuthorizationTuple(Repository repository, BigInteger outerTransactionChainId, SetCodeAuthorization authorizationTuple) {
         verifyChainId(authorizationTuple.getChainId(), outerTransactionChainId);
@@ -76,24 +76,16 @@ public class SetCodeAuthorizationTransactionExecutor {
         return authority;
     }
 
-
     private void verifyAuthorityCode(byte[] code) {
         if (code == null || code.length == 0) {
             return;
         }
-        if (isDelegatedCode(code)) {
+        if (DelegationCodeResolver.isDelegatedCode(code)) {
             return;
         }
         throw new IllegalStateException("Authority contains non-delegated code");
     }
 
-    public static boolean isDelegatedCode(byte[] code) {
-        // delegation indicator: 0xef0100 || 20-byte address
-        if (code == null || code.length != 23) {
-            return false;
-        }
-        return code[0] == (byte) 0xef  && code[1] == 0x01 && code[2] == 0x00;
-    }
 
     private void verifyAuthorityNonce(byte[] expectedNonce, byte[] currentNonce) {
         if (!Arrays.equals(currentNonce, expectedNonce)) {
@@ -108,22 +100,11 @@ public class SetCodeAuthorizationTransactionExecutor {
 
     private void writeDelegation(RskAddress authority, RskAddress delegatedAddress, Repository repository) {
         if (delegatedAddress.equals(RskAddress.nullAddress()) || delegatedAddress.equals(RskAddress.ZERO_ADDRESS)) {
-            repository.saveCode(authority, HashUtil.keccak256(new byte[0]));
+            repository.saveCode(authority, CODE_FOR_CLEANING_DELEGATED_ADDRESS);
             return;
         }
-        byte[] codeToSet = createDelegatedCode(delegatedAddress);
+        byte[] codeToSet = DelegationCodeResolver.createDelegatedCode(delegatedAddress);
         repository.saveCode(authority, codeToSet);
     }
 
-    public static byte[]  createDelegatedCode(RskAddress delegatedAddress) {
-        if (delegatedAddress.equals(RskAddress.nullAddress()) || delegatedAddress.equals(RskAddress.ZERO_ADDRESS)) {
-            throw new IllegalStateException("Delegated address can not be empty");
-        }
-        byte[] delegatedAddressBytes = delegatedAddress.getBytes();
-        byte[] codeToSet = new byte[DELEGATION_PREFIX_IN_BYTES.length + delegatedAddressBytes.length];
-
-        System.arraycopy(DELEGATION_PREFIX_IN_BYTES, 0, codeToSet, 0, DELEGATION_PREFIX_IN_BYTES.length);
-        System.arraycopy(delegatedAddressBytes, 0, codeToSet, DELEGATION_PREFIX_IN_BYTES.length, delegatedAddressBytes.length);
-        return codeToSet;
-    }
 }

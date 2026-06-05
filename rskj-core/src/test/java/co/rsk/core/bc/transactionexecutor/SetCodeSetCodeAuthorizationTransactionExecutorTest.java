@@ -2,6 +2,7 @@ package co.rsk.core.bc.transactionexecutor;
 
 import co.rsk.core.RskAddress;
 import org.ethereum.config.Constants;
+import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.SetCodeAuthorizationTransactionExecutor;
 import org.ethereum.core.Repository;
 import org.ethereum.core.transaction.SetCodeAuthorization;
@@ -61,16 +62,16 @@ import static org.mockito.Mockito.when;
         code[1] = 0x01;
         code[2] = 0x00;
 
-        assertTrue(SetCodeAuthorizationTransactionExecutor.isDelegatedCode(code));
+        assertTrue(DelegationCodeResolver.isDelegatedCode(code));
     }
     @Test
     void isDelegatedCode_shouldReturnFalse_whenCodeIsNull() {
-        assertFalse(SetCodeAuthorizationTransactionExecutor.isDelegatedCode(null));
+        assertFalse(DelegationCodeResolver.isDelegatedCode(null));
     }
 
     @Test
     void isDelegatedCode_shouldReturnFalse_whenLengthIsInvalid() {
-        assertFalse(SetCodeAuthorizationTransactionExecutor.isDelegatedCode(new byte[10]));
+        assertFalse(DelegationCodeResolver.isDelegatedCode(new byte[10]));
     }
 
     @Test
@@ -80,7 +81,7 @@ import static org.mockito.Mockito.when;
         code[1] = 0x01;
         code[2] = 0x00;
 
-        assertFalse(SetCodeAuthorizationTransactionExecutor.isDelegatedCode(code));
+        assertFalse(DelegationCodeResolver.isDelegatedCode(code));
     }
 
     @Test
@@ -550,10 +551,10 @@ import static org.mockito.Mockito.when;
 
     private byte[] createDelegatedCode(RskAddress delegatedAddress) {
         byte[] delegatedAddressBytes = delegatedAddress.getBytes();
-        byte[] codeToSet = new byte[SetCodeAuthorizationTransactionExecutor.DELEGATION_PREFIX_IN_BYTES.length + delegatedAddressBytes.length];
-
-        System.arraycopy(SetCodeAuthorizationTransactionExecutor.DELEGATION_PREFIX_IN_BYTES, 0, codeToSet, 0, SetCodeAuthorizationTransactionExecutor.DELEGATION_PREFIX_IN_BYTES.length);
-        System.arraycopy(delegatedAddressBytes, 0, codeToSet, SetCodeAuthorizationTransactionExecutor.DELEGATION_PREFIX_IN_BYTES.length, delegatedAddressBytes.length);
+        byte[] codeToSet = new byte[23];
+        byte[] delegationPrefix = new byte[] {(byte) 0xef, 0x01, 0x00};
+        System.arraycopy(delegationPrefix, 0, codeToSet, 0, 3);
+        System.arraycopy(delegatedAddressBytes, 0, codeToSet, 3, 20);
         return codeToSet;
     }
 

@@ -33,6 +33,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.*;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
@@ -55,6 +56,8 @@ import static co.rsk.util.ListArrayUtil.isEmpty;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP174;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP351;
+import static org.ethereum.core.DelegationCodeResolver.isDelegatedCode;
+
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -231,7 +234,7 @@ public class TransactionExecutor {
     private boolean isSenderCodeValid() {
         RskAddress sender = tx.getSender(signatureCache);
         byte[] code = track.getCode(sender);
-        return isEmpty(code) || SetCodeAuthorizationTransactionExecutor.isDelegatedCode(code);
+        return isEmpty(code) || isDelegatedCode(code);
     }
 
     private boolean transactionAddressesAreValid() {
@@ -419,17 +422,13 @@ public class TransactionExecutor {
             result.spendGas(gasUsed);
             profiler.stop(metric);
         } else {
-            byte[] code = track.getCode(targetAddress);
+            byte[] code = getExecutionCode(track, targetAddress);
             // Code can be null
             if (isEmpty(code)) {
                 gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
             } else {
-                ProgramInvoke programInvoke =  programInvokeFactory
-                        .createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
-
-                this.vm = new VM(vmConfig, precompiledContracts);
-                this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts, signatureCache);
+                createProgram(code, cacheTrack);
             }
         }
 
@@ -798,5 +797,51 @@ public class TransactionExecutor {
     @Nonnull
     public Set<RskAddress> precompiledContractsCalled() {
         return this.precompiledContractsCalled.isEmpty() ? Collections.emptySet() : new HashSet<>(this.precompiledContractsCalled);
+    }
+
+    private byte[] getExecutionCode(Repository track, RskAddress targetAddress) {
+        byte[] code = track.getCode(targetAddress);
+
+        if (!isDelegatedCode(code)) {
+            return code;
+        }
+
+        byte[] addressBytes = Arrays.copyOfRange(code, 3, 23);
+        RskAddress delegatedAddress = new RskAddress(addressBytes);
+
+        if (isPrecompile(delegatedAddress)) {
+            return ByteUtil.EMPTY_BYTE_ARRAY;
+        }
+
+        return track.getCode(delegatedAddress);
+    }
+
+    private boolean isPrecompile(RskAddress address) {
+        return precompiledContracts.getContractForAddress(activations, DataWord.valueOf(address.getBytes())) != null;
+    }
+
+    private void createProgram(byte[] code, Repository cacheTrack) {
+        ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
+                tx,
+                txindex,
+                executionBlock,
+                cacheTrack,
+                blockStore,
+                signatureCache
+        );
+
+        this.vm = new VM(vmConfig, precompiledContracts);
+
+        this.program = new Program(
+                vmConfig,
+                precompiledContracts,
+                blockFactory,
+                activations,
+                code,
+                programInvoke,
+                tx,
+                deletedAccounts,
+                signatureCache
+        );
     }
 }
