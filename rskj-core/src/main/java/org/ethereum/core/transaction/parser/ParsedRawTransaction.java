@@ -44,6 +44,8 @@ public sealed interface ParsedRawTransaction
 
     SignatureState signatureState();
 
+    <R> R accept(ParsedRawTransactionVisitor<R> visitor);
+
     default byte chainId() {
         SignatureState state = signatureState();
         if (state instanceof SignedSignature signed) {

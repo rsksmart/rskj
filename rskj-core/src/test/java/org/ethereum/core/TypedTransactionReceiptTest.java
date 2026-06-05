@@ -264,16 +264,21 @@ class TypedTransactionReceiptTest {
             case TYPE_2 -> Rskip546TestSupport.unsignedType2(
                     chainId, to, gasPrice, gasPrice, Coin.ZERO, BigInteger.valueOf(21_000), nonce, EMPTY_BYTE_ARRAY,
                     Rskip546TestSupport.EMPTY_ACCESS_LIST);
-            case TYPE_3 -> Transaction.builder()
-                    .nonce(nonce)
-                    .gasPrice(gasPrice)
-                    .gasLimit(gasLimit)
-                    .receiveAddress(to.getBytes())
-                    .value(Coin.ZERO)
-                    .data(EMPTY_BYTE_ARRAY)
-                    .chainId(chainId)
-                    .type(TransactionType.TYPE_3)
-                    .build();
+            case TYPE_3 -> new Transaction(
+                    nonce,
+                    gasPrice,
+                    gasLimit,
+                    to,
+                    Coin.ZERO,
+                    EMPTY_BYTE_ARRAY,
+                    chainId,
+                    false,
+                    TransactionTypePrefix.typed(TransactionType.TYPE_3),
+                    null,
+                    null,
+                    null,
+                    null
+            );
             case TYPE_4 -> Rskip545TestSupport.unsignedType4(
                     new RskAddress("0x0000000000000000000000000000000000000002"),
                     gasPrice,

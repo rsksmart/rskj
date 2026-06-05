@@ -20,7 +20,6 @@ package org.ethereum.core.transaction.parser;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.TransactionTypePrefix;
-import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.RLPList;
 
 public class Type2RSKTransactionParser implements RawTransactionTypeParser<ParsedType2RSKTransaction> {
@@ -31,7 +30,7 @@ public class Type2RSKTransactionParser implements RawTransactionTypeParser<Parse
     }
 
     @Override
-    public ParsedType2RSKTransaction parse(TransactionTypePrefix typePrefix, CallArguments argsPara, byte defaultChainId) {
+    public ParsedType2RSKTransaction parse(TransactionTypePrefix typePrefix, TransactionInput input, byte defaultChainId) {
         return null;
     }
 

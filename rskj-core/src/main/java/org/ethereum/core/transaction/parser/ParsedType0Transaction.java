@@ -65,6 +65,11 @@ public record ParsedType0Transaction(
     public byte[] data() { return data.clone(); }
 
     @Override
+    public <R> R accept(ParsedRawTransactionVisitor<R> visitor) {
+        return visitor.visitType0(this);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ParsedType0Transaction that)) return false;

@@ -19,25 +19,17 @@ package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.util.HexUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.core.transaction.parser.util.Type0SignatureUtils;
-import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.ethereum.vm.GasCost;
 
 import java.math.BigInteger;
-import java.util.Optional;
 
 public class Type0RawTransactionParser implements RawTransactionTypeParser<ParsedType0Transaction> {
-
-    protected static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
-    private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
 
     private static final int LEGACY_FIELD_COUNT = 9;
 
@@ -73,21 +65,18 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
     }
 
     @Override
-    public ParsedType0Transaction parse(TransactionTypePrefix typePrefix, CallArguments argsParam, byte defaultChainId) {
-        BigInteger nonce = Optional.ofNullable(argsParam.getNonce()).map(HexUtils::strHexOrStrNumberToBigInteger).orElse(null);
-        BigInteger gasLimit = CommonParsingUtils.parseBigInteger(
-                argsParam.getGas(),
-                () -> CommonParsingUtils.parseBigInteger(argsParam.getGasLimit(), () -> DEFAULT_GAS_LIMIT));
-        Coin gasPrice = CommonParsingUtils.defaultValue(CommonParsingUtils.parseCoin(argsParam.getGasPrice()));
-        Coin value = CommonParsingUtils.defaultValue(CommonParsingUtils.parseCoin(argsParam.getValue()));
-        RskAddress receiveAddress = CommonParsingUtils.parseAddress(argsParam.getTo());
-
-        byte[] data = CommonParsingUtils.parseHexData(argsParam.getData());
-        Byte chainId = hexToChainId(argsParam.getChainId(), defaultChainId);
+    public ParsedType0Transaction parse(TransactionTypePrefix typePrefix, TransactionInput input, byte defaultChainId) {
+        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce(), false);
+        BigInteger gasLimit = TransactionInput.resolveGasLimit(input.gasLimit());
+        Coin gasPrice = CommonParsingUtils.defaultValue(input.gasPrice());
+        Coin value = CommonParsingUtils.defaultValue(input.value());
+        RskAddress receiveAddress = CommonParsingUtils.defaultAddress(input.receiveAddress());
+        byte[] data = CommonParsingUtils.nullToEmpty(input.data());
+        byte chainId = TransactionInput.resolveLegacyChainId(input.chainId(), defaultChainId);
 
         return new ParsedType0Transaction(
                 typePrefix,
-                nonce == null ? null : nonce.toByteArray(),
+                nonce,
                 gasPrice,
                 gasLimit.toByteArray(),
                 receiveAddress,
@@ -95,22 +84,5 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
                 data,
                 new UnsignedSignature(chainId)
         );
-    }
-
-
-    private byte hexToChainId(String hex, byte defaultChainId) {
-        if (hex == null) {
-            return defaultChainId;
-        }
-        try {
-            byte[] bytes = HexUtils.strHexOrStrNumberToByteArray(hex);
-            if (bytes.length != 1) {
-                throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex);
-            }
-
-            return bytes[0] == 0 ? defaultChainId : bytes[0];
-        } catch (Exception e) {
-            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex, e);
-        }
     }
 }

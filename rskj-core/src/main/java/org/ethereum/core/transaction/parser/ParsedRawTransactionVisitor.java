@@ -17,17 +17,18 @@
  */
 package org.ethereum.core.transaction.parser;
 
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.TransactionTypePrefix;
-import org.ethereum.util.RLPList;
+/**
+ * Visitor for the sealed {@link ParsedRawTransaction} hierarchy.
+ */
+public interface ParsedRawTransactionVisitor<R> {
 
-public interface RawTransactionTypeParser<T extends ParsedRawTransaction> {
+    R visitType0(ParsedType0Transaction transaction);
 
-    T parse(TransactionTypePrefix typePrefix, RLPList txFields);
+    R visitType1(ParsedType1Transaction transaction);
 
-    T parse(TransactionTypePrefix typePrefix, TransactionInput input, byte defaultChainId);
+    R visitType2(ParsedType2Transaction transaction);
 
-    void validate(long bestBlock, ActivationConfig activationConfig, Constants constants);
+    R visitType2Rsk(ParsedType2RSKTransaction transaction);
 
+    R visitType4(ParsedType4Transaction transaction);
 }

@@ -19,7 +19,6 @@ package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.util.HexUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -28,19 +27,15 @@ import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AccessListCodec;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.core.transaction.parser.util.TypedTransactionCodec;
-import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.ethereum.vm.GasCost;
 
 import java.math.BigInteger;
-import java.util.Optional;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class Type1RawTransactionParser implements RawTransactionTypeParser<ParsedType1Transaction> {
 
-    private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
     private static final int FIELD_COUNT = 11;
 
     private static final int CHAIN_ID_INDEX = 0;
@@ -93,24 +88,18 @@ public class Type1RawTransactionParser implements RawTransactionTypeParser<Parse
     }
 
     @Override
-    public ParsedType1Transaction parse(TransactionTypePrefix typePrefix, CallArguments argsParam, byte defaultChainId) {
-        BigInteger nonce = Optional.ofNullable(argsParam.getNonce())
-                .map(HexUtils::strHexOrStrNumberToBigInteger)
-                .orElse(BigInteger.ZERO);
-
-        Coin gasPrice = CommonParsingUtils.defaultValue(CommonParsingUtils.parseCoin(argsParam.getGasPrice()));
-        BigInteger gasLimit = CommonParsingUtils.parseBigInteger(
-                argsParam.getGas(),
-                () -> CommonParsingUtils.parseBigInteger(argsParam.getGasLimit(), () -> DEFAULT_GAS_LIMIT));
-        RskAddress receiveAddress = CommonParsingUtils.parseAddress(argsParam.getTo());
-
-        Coin value = CommonParsingUtils.defaultValue(CommonParsingUtils.parseCoin(argsParam.getValue()));
-        byte[] data = CommonParsingUtils.parseHexData(argsParam.getData());
-        byte chainId = TypedTransactionCodec.parseRequiredTypedChainId(argsParam.getChainId());
-        byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(AccessListCodec.encodeAccessList(argsParam.getAccessList()));
+    public ParsedType1Transaction parse(TransactionTypePrefix typePrefix, TransactionInput input, byte defaultChainId) {
+        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce(), true);
+        Coin gasPrice = CommonParsingUtils.defaultValue(input.gasPrice());
+        BigInteger gasLimit = TransactionInput.resolveGasLimit(input.gasLimit());
+        RskAddress receiveAddress = CommonParsingUtils.defaultAddress(input.receiveAddress());
+        Coin value = CommonParsingUtils.defaultValue(input.value());
+        byte[] data = CommonParsingUtils.nullToEmpty(input.data());
+        byte chainId = TransactionInput.resolveTypedChainId(input.chainId());
+        byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(input.accessListBytes());
         return new ParsedType1Transaction(
                 typePrefix,
-                nonce.toByteArray(),
+                nonce,
                 gasPrice,
                 gasLimit.toByteArray(),
                 receiveAddress,

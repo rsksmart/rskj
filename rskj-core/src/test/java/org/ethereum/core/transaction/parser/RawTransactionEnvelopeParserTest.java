@@ -24,7 +24,6 @@ import org.ethereum.config.Constants;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Rskip546TestSupport;
 import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionBuilder;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.encoder.Type4TransactionEncoder;
 import org.ethereum.datasource.HashMapDB;
@@ -72,8 +71,7 @@ class RawTransactionEnvelopeParserTest {
         RskAddress receiver = wallet.addAccount();
 
         CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
-        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(args, null, (byte) 33);
-        Transaction tx = TransactionBuilder.fromParsed(parsed).build();
+        Transaction tx = Transaction.fromCallArguments(args, null, (byte) 33);
 
         assertEquals(BigInteger.valueOf(100000L), tx.getValue().asBigInteger());
         assertEquals(BigInteger.valueOf(10000000000000L), tx.getGasPrice().asBigInteger());
@@ -109,8 +107,7 @@ class RawTransactionEnvelopeParserTest {
         CallArguments args = legacyArgs();
         args.setChainId(chainIdHex);
 
-        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(args, null, REGTEST_CHAIN_ID);
-        Transaction tx = TransactionBuilder.fromParsed(parsed).build();
+        Transaction tx = Transaction.fromCallArguments(args, null, REGTEST_CHAIN_ID);
 
         assertEquals(REGTEST_CHAIN_ID, tx.getChainId());
     }
@@ -125,8 +122,7 @@ class RawTransactionEnvelopeParserTest {
         args.setType("0x1");
         args.setChainId("0x21");
 
-        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(args, null, REGTEST_CHAIN_ID);
-        Transaction tx = TransactionBuilder.fromParsed(parsed).build();
+        Transaction tx = Transaction.fromCallArguments(args, null, REGTEST_CHAIN_ID);
 
         assertEquals(TransactionType.TYPE_1, tx.getTypePrefix().type());
         assertFalse(tx.getTypePrefix().isRskNamespace());
@@ -143,8 +139,7 @@ class RawTransactionEnvelopeParserTest {
         args.setRskSubtype("0x3");
         args.setNonce("0x1");
 
-        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(args, null, REGTEST_CHAIN_ID);
-        Transaction tx = TransactionBuilder.fromParsed(parsed).build();
+        Transaction tx = Transaction.fromCallArguments(args, null, REGTEST_CHAIN_ID);
 
         assertEquals(TransactionType.TYPE_2, tx.getTypePrefix().type());
         assertTrue(tx.getTypePrefix().isRskNamespace(),
@@ -158,8 +153,7 @@ class RawTransactionEnvelopeParserTest {
         args.setGasPrice("0x1");
         args.setRskSubtype("0x3");
 
-        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(args, null, REGTEST_CHAIN_ID);
-        Transaction tx = TransactionBuilder.fromParsed(parsed).build();
+        Transaction tx = Transaction.fromCallArguments(args, null, REGTEST_CHAIN_ID);
 
         assertEquals(TransactionType.TYPE_2, tx.getTypePrefix().type());
         assertTrue(tx.getTypePrefix().isRskNamespace());
@@ -175,8 +169,7 @@ class RawTransactionEnvelopeParserTest {
         args.setMaxPriorityFeePerGas("0xa");
         args.setMaxFeePerGas("0x64");
 
-        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(args, null, REGTEST_CHAIN_ID);
-        Transaction tx = TransactionBuilder.fromParsed(parsed).build();
+        Transaction tx = Transaction.fromCallArguments(args, null, REGTEST_CHAIN_ID);
 
         assertEquals(TransactionType.TYPE_2, tx.getTypePrefix().type());
         assertFalse(tx.getTypePrefix().isRskNamespace());
@@ -235,8 +228,7 @@ class RawTransactionEnvelopeParserTest {
         Transaction original = buildSignedLegacyTx();
         byte[] encoded = original.getEncoded();
 
-        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(encoded);
-        Transaction rebuilt = TransactionBuilder.fromParsed(parsed).build();
+        Transaction rebuilt = Transaction.fromRaw(encoded);
 
         assertEquals(TransactionType.LEGACY, rebuilt.getType());
         assertArrayEquals(original.getNonce(), rebuilt.getNonce());
@@ -251,8 +243,7 @@ class RawTransactionEnvelopeParserTest {
         Transaction original = buildSignedType1Tx();
         byte[] encoded = original.getEncoded();
 
-        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(encoded);
-        Transaction rebuilt = TransactionBuilder.fromParsed(parsed).build();
+        Transaction rebuilt = Transaction.fromRaw(encoded);
 
         assertEquals(TransactionType.TYPE_1, rebuilt.getType());
         assertFalse(rebuilt.getTypePrefix().isRskNamespace());
@@ -265,8 +256,7 @@ class RawTransactionEnvelopeParserTest {
         Transaction original = buildSignedType2Tx();
         byte[] encoded = original.getEncoded();
 
-        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(encoded);
-        Transaction rebuilt = TransactionBuilder.fromParsed(parsed).build();
+        Transaction rebuilt = Transaction.fromRaw(encoded);
 
         assertEquals(TransactionType.TYPE_2, rebuilt.getType());
         assertFalse(rebuilt.getTypePrefix().isRskNamespace());
@@ -288,8 +278,7 @@ class RawTransactionEnvelopeParserTest {
         original.sign(PRIVATE_KEY);
         byte[] encoded = original.getEncoded();
 
-        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(encoded);
-        Transaction rebuilt = TransactionBuilder.fromParsed(parsed).build();
+        Transaction rebuilt = Transaction.fromRaw(encoded);
 
         assertEquals(TransactionType.TYPE_2, rebuilt.getType());
         assertTrue(rebuilt.getTypePrefix().isRskNamespace());
@@ -344,8 +333,7 @@ class RawTransactionEnvelopeParserTest {
     void parse_type4_buildsType4Transaction() {
         CallArguments args = baseType4Args();
 
-        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(args, null, REGTEST_CHAIN_ID);
-        Transaction tx = TransactionBuilder.fromParsed(parsed).build();
+        Transaction tx = Transaction.fromCallArguments(args, null, REGTEST_CHAIN_ID);
 
         assertEquals(TransactionType.TYPE_4, tx.getTypePrefix().type());
         assertEquals(1, tx.getAuthorizationList().size());
@@ -358,8 +346,7 @@ class RawTransactionEnvelopeParserTest {
         Transaction original = buildSignedType4Tx();
         byte[] encoded = original.getEncoded();
 
-        ParsedRawTransaction parsed = RawTransactionEnvelopeParser.parse(encoded);
-        Transaction rebuilt = TransactionBuilder.fromParsed(parsed).build();
+        Transaction rebuilt = Transaction.fromRaw(encoded);
 
         assertEquals(TransactionType.TYPE_4, rebuilt.getType());
         assertEquals(original.getMaxFeePerGas(), rebuilt.getMaxFeePerGas());

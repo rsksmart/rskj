@@ -36,6 +36,12 @@ import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.encoder.TransactionEncoderFactory;
 import org.ethereum.core.transaction.parser.ParsedRawTransaction;
+import org.ethereum.core.transaction.parser.ParsedRawTransactionVisitor;
+import org.ethereum.core.transaction.parser.ParsedType0Transaction;
+import org.ethereum.core.transaction.parser.ParsedType1Transaction;
+import org.ethereum.core.transaction.parser.ParsedType2RSKTransaction;
+import org.ethereum.core.transaction.parser.ParsedType2Transaction;
+import org.ethereum.core.transaction.parser.ParsedType4Transaction;
 import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
 import org.ethereum.core.transaction.parser.util.Type4TransactionValidation;
 import org.ethereum.cost.InitcodeCostCalculator;
@@ -182,12 +188,94 @@ public class Transaction {
         this.signature = tx.signature;
     }
 
-    private static Transaction fromParsed(ParsedRawTransaction parsed, boolean isLocalCall) {
-        Transaction tx = TransactionBuilder.fromParsed(parsed)
-                .isLocalCall(isLocalCall)
-                .build();
-        tx.signature = parsed.signature();
-        return tx;
+    static Transaction fromParsed(ParsedRawTransaction parsed, boolean isLocalCall) {
+        return parsed.accept(new ParsedRawTransactionToTransaction(isLocalCall));
+    }
+
+    private static Coin effectiveGasPrice(Coin maxPriorityFeePerGas, Coin maxFeePerGas) {
+        return maxPriorityFeePerGas.compareTo(maxFeePerGas) <= 0 ? maxPriorityFeePerGas : maxFeePerGas;
+    }
+
+    private static final class ParsedRawTransactionToTransaction implements ParsedRawTransactionVisitor<Transaction> {
+
+        private final boolean isLocalCall;
+
+        private ParsedRawTransactionToTransaction(boolean isLocalCall) {
+            this.isLocalCall = isLocalCall;
+        }
+
+        @Override
+        public Transaction visitType0(ParsedType0Transaction parsed) {
+            return assemble(parsed, parsed.gasPrice(), null, null, null, parsed.chainId(), null);
+        }
+
+        @Override
+        public Transaction visitType1(ParsedType1Transaction parsed) {
+            return assemble(parsed, parsed.gasPrice(), parsed.accessListBytes(), null, null, parsed.chainId(), null);
+        }
+
+        @Override
+        public Transaction visitType2(ParsedType2Transaction parsed) {
+            Coin maxPriorityFeePerGas = parsed.maxPriorityFeePerGas();
+            Coin maxFeePerGas = parsed.maxFeePerGas();
+            return assemble(
+                    parsed,
+                    effectiveGasPrice(maxPriorityFeePerGas, maxFeePerGas),
+                    parsed.accessListBytes(),
+                    maxPriorityFeePerGas,
+                    maxFeePerGas,
+                    parsed.chainId(),
+                    null
+            );
+        }
+
+        @Override
+        public Transaction visitType2Rsk(ParsedType2RSKTransaction parsed) {
+            return assemble(parsed, parsed.gasPrice(), null, null, null, parsed.chainId(), null);
+        }
+
+        @Override
+        public Transaction visitType4(ParsedType4Transaction parsed) {
+            Coin maxPriorityFeePerGas = parsed.maxPriorityFeePerGas();
+            Coin maxFeePerGas = parsed.maxFeePerGas();
+            return assemble(
+                    parsed,
+                    effectiveGasPrice(maxPriorityFeePerGas, maxFeePerGas),
+                    parsed.accessListBytes(),
+                    maxPriorityFeePerGas,
+                    maxFeePerGas,
+                    parsed.chainId(),
+                    parsed.authorizationList()
+            );
+        }
+
+        private Transaction assemble(
+                ParsedRawTransaction parsed,
+                Coin effectiveGasPrice,
+                byte[] accessListBytes,
+                Coin maxPriorityFeePerGas,
+                Coin maxFeePerGas,
+                byte chainId,
+                List<SetCodeAuthorization> authorizationList
+        ) {
+            Transaction tx = new Transaction(
+                    parsed.nonce(),
+                    effectiveGasPrice,
+                    parsed.gasLimit(),
+                    parsed.receiveAddress(),
+                    parsed.value(),
+                    parsed.data(),
+                    chainId,
+                    isLocalCall,
+                    parsed.typePrefix(),
+                    accessListBytes,
+                    maxPriorityFeePerGas,
+                    maxFeePerGas,
+                    authorizationList
+            );
+            tx.signature = parsed.signature();
+            return tx;
+        }
     }
 
     public Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
