@@ -1375,8 +1375,7 @@ class ProcessFundsMigrationTest {
 
             List<UTXO> selectedUtxos = getSelectedUtxos(migrationTransaction, retiringFederationUtxos);
             assertTrue(retiringFederationUtxos.containsAll(selectedUtxos));
-            selectedUtxos.forEach(migratedUtxo -> assertFalse(migratedUtxos.contains(migratedUtxo)));
-            migratedUtxos.addAll(selectedUtxos);
+            selectedUtxos.forEach(migratedUtxo -> assertTrue(migratedUtxos.add(migratedUtxo)));
         }
         assertEquals(0, remainingExpectedInputs);
         assertEquals(expectedTotalInputsCount, migratedUtxos.size());
