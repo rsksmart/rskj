@@ -189,7 +189,7 @@ public class PendingState implements AccountInformationProvider {
             tx.getGasPrice();
             tx.getHash();
             return true;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return false;
         }
     }

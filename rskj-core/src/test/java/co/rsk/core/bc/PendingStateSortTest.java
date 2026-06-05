@@ -97,6 +97,52 @@ class PendingStateSortTest {
     }
 
     @Test
+    void sortWithTxThrowingRuntimeException_discardsAndReturnsSortedValidTxs() {
+        byte[] addressBytes = TestUtils.generateBytes("addr", 20);
+        RskAddress sender = new RskAddress(addressBytes);
+
+        Transaction validTx = mockTransaction(sender, new byte[]{0x01}, Coin.valueOf(10), hashFromByte((byte) 1));
+        Transaction throwingTx = Mockito.mock(Transaction.class);
+        Mockito.when(throwingTx.getNonce()).thenReturn(new byte[]{0x02});
+        Mockito.when(throwingTx.getSender(any(SignatureCache.class))).thenThrow(new RuntimeException("malformed signature"));
+
+        List<Transaction> txs = new LinkedList<>();
+        txs.add(validTx);
+        txs.add(throwingTx);
+
+        List<Transaction> discardedTxs = new ArrayList<>();
+        List<Transaction> result = PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs, signatureCache, discardedTxs);
+
+        Assertions.assertEquals(1, result.size());
+        Assertions.assertEquals(validTx, result.get(0));
+        Assertions.assertEquals(1, discardedTxs.size());
+        Assertions.assertEquals(throwingTx, discardedTxs.get(0));
+    }
+
+    @Test
+    void sortWithTxThrowingOutOfMemoryError_discardsAndReturnsSortedValidTxs() {
+        byte[] addressBytes = TestUtils.generateBytes("addr", 20);
+        RskAddress sender = new RskAddress(addressBytes);
+
+        Transaction validTx = mockTransaction(sender, new byte[]{0x01}, Coin.valueOf(10), hashFromByte((byte) 1));
+        Transaction throwingTx = Mockito.mock(Transaction.class);
+        Mockito.when(throwingTx.getNonce()).thenReturn(new byte[]{0x02});
+        Mockito.when(throwingTx.getSender(any(SignatureCache.class))).thenThrow(new OutOfMemoryError("heap space"));
+
+        List<Transaction> txs = new LinkedList<>();
+        txs.add(validTx);
+        txs.add(throwingTx);
+
+        List<Transaction> discardedTxs = new ArrayList<>();
+        List<Transaction> result = PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs, signatureCache, discardedTxs);
+
+        Assertions.assertEquals(1, result.size());
+        Assertions.assertEquals(validTx, result.get(0));
+        Assertions.assertEquals(1, discardedTxs.size());
+        Assertions.assertEquals(throwingTx, discardedTxs.get(0));
+    }
+
+    @Test
     void sortWithNullDiscardedList_doesNotThrow() {
         byte[] addressBytes = TestUtils.generateBytes("addr", 20);
         RskAddress sender = new RskAddress(addressBytes);
