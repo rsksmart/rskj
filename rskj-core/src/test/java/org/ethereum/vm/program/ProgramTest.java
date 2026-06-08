@@ -46,6 +46,7 @@ import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.PrecompiledContractArgs;
@@ -709,7 +710,7 @@ class ProgramTest {
     }
 
     @Test
-    void testCallToAddress_delegatedCodeToPrecompile_treatedAsEmptyCode_withRealVm() {
+    void testCallToAddress_delegatedCodeToPrecompile_treatedAsEmptyCode() {
         RskAddress caller = address(99);
         RskAddress authority = address(100);
         RskAddress precompile = PrecompiledContracts.ECRECOVER_ADDR;
@@ -734,7 +735,7 @@ class ProgramTest {
     }
 
     @Test
-    void testCallToAddress_delegationIsOneHopOnly_withRealVm() {
+    void testCallToAddress_delegationIsOneHopOnly() {
         RskAddress caller = address(99);
         RskAddress authority = address(100);
         RskAddress delegate = address(101);
@@ -762,6 +763,30 @@ class ProgramTest {
 
         verify(repository, never()).getCode(secondDelegate);
         assertStack(STACK_STATE_ERROR);
+    }
+
+    @Test
+    void testCallToAddress_delegatedCodeRemoved_treatedAsNonDelegatedCode() {
+        RskAddress caller = address(99);
+        RskAddress authority = address(100);
+
+        byte[] removedDelegationCode = new byte[0];
+
+        when(programInvoke.getOwnerAddress()).thenReturn(DataWord.valueOf(caller.getBytes()));
+        when(msg.getCodeAddress()).thenReturn(DataWord.valueOf(authority.getBytes()));
+
+        when(repository.startTracking()).thenReturn(repository);
+
+        when(repository.isExist(authority)).thenReturn(true);
+        when(repository.getCode(authority)).thenReturn(removedDelegationCode);
+
+        when(repository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.addBalance(any(RskAddress.class), any(Coin.class))).thenReturn(Coin.valueOf(20L));
+        when(repository.getNonce(any(RskAddress.class))).thenReturn(BigInteger.ONE);
+
+        program.callToAddress(msg);
+
+        assertStack(STACK_STATE_SUCCESS);
     }
 
     /*********************************

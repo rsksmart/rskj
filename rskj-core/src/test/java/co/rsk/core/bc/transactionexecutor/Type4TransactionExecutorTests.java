@@ -1,63 +1,40 @@
 package co.rsk.core.bc.transactionexecutor;
 
-import co.rsk.config.TestSystemProperties;
+
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.transactionexecutor.helper.Type4TransactionExecutorHelperTest;
-import co.rsk.db.MutableTrieImpl;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStore;
-import co.rsk.trie.TrieStoreImpl;
-import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
-import org.ethereum.core.transaction.parser.ParsedType4Transaction;
-import org.ethereum.core.transaction.parser.Type4RawTransactionParser;
-import org.ethereum.core.transaction.parser.util.AuthorizationListCodec;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepository;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
 import java.math.BigInteger;
+import java.security.SignatureException;
 import java.util.Arrays;
-import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class Type4TransactionExecutorTests extends Type4TransactionExecutorHelperTest {
-
-
 
     @Test
     void type4TransactionProcessesAuthorizationListAndExecutesAValueTransferCall() {
@@ -241,7 +218,7 @@ class Type4TransactionExecutorTests extends Type4TransactionExecutorHelperTest {
 
         verifyTrackerIncreaseNonceAndReduceBalance(sender, 600_000);
         verifyTrackerStartTrackingInvocations(2);
-        verifyValidAuthorityChanges(authorizationTracker, authority, HashUtil.keccak256(new byte[0]));
+        verifyValidAuthorityChanges(authorizationTracker, authority, new byte[0]);
         verifyTransfer(cacheTracker, sender, 2);
     }
 
@@ -1148,4 +1125,258 @@ class Type4TransactionExecutorTests extends Type4TransactionExecutorHelperTest {
         verifyTrackerIncreaseNonceAndReduceBalance(sender, 600_000);
         verifyTransfer(cacheTracker, sender, 2);
     }
+
+    @Test
+    void type4TransactionWithInvalidAuthorizationNonceSkipsAuthorizationButExecutesOuterTx() {
+
+
+        var cacheTracker = mock(MutableRepository.class);
+        var authorizationTracker = mock(MutableRepository.class);
+        when(tracker.startTracking()).thenReturn(cacheTracker, authorizationTracker);
+
+        mockValidSender(sender, 1_000_000, ONE_NONCE, EMPTY_CODE);
+        mockReceiver(receiver, EMPTY_CODE);
+
+        var invalidSignatureAuthorization = createValidAuthorizationTuple(
+                delegatedAddress,
+                ZERO_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        mockAuthorizationAccount(authorizationTracker, authorityAddress, ONE_NONCE, EMPTY_CODE);
+
+        var tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ONE_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                2,
+                EMPTY_DATA,
+                invalidSignatureAuthorization
+        );
+
+        var txExecutor = newExecutor(tx);
+
+        assertTrue(txExecutor.executeTransaction());
+
+        verifyTrackerIncreaseNonceAndReduceBalance(sender, 600_000);
+        verifyInvalidAuthorityChanges(authorizationTracker, authorityAddress, delegatedAddress);
+        verifyTransfer(cacheTracker, sender, 2);
+        verifyTransactionCostBiggerOrEqualThan(tx, GasCost.PER_EMPTY_ACCOUNT_COST);
+    }
+
+    @Test
+    void type4TransactionWithAuthorizationSignedOverWrongMessageDoesNotMutateOriginalAuthorityButExecutesOuterTx() {
+        ECDSASignature wrongMessageSignature = ECDSASignature.fromSignature(
+                authorityKey.sign(HashUtil.keccak256(new byte[0]))
+        );
+
+        var cacheTracker = mock(MutableRepository.class);
+        var authorizationTracker = mock(MutableRepository.class);
+
+        when(tracker.startTracking()).thenReturn(cacheTracker, authorizationTracker);
+
+        mockValidSender(sender, 1_000_000, ONE_NONCE, EMPTY_CODE);
+        mockReceiver(receiver, EMPTY_CODE);
+
+        mockAuthorizationAccount(
+                authorizationTracker,
+                authorityAddress,
+                ZERO_NONCE,
+                EMPTY_CODE
+        );
+
+        var authorization = new SetCodeAuthorization(
+                BigInteger.valueOf(constants.getChainId()),
+                delegatedAddress,
+                ZERO_NONCE.toByteArray(),
+                wrongMessageSignature
+        );
+
+        var tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ONE_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                2,
+                EMPTY_DATA,
+                authorization
+        );
+
+        var txExecutor = newExecutor(tx);
+
+        assertTrue(txExecutor.executeTransaction());
+
+        verifyTrackerIncreaseNonceAndReduceBalance(sender, 600_000);
+
+        verify(authorizationTracker, never()).saveCode(eq(authorityAddress), any());
+        verify(authorizationTracker, never()).increaseNonce(eq(authorityAddress));
+
+        verifyTransfer(cacheTracker, sender, 2);
+        verifyTransactionCostBiggerOrEqualThan(tx, GasCost.PER_EMPTY_ACCOUNT_COST);
+    }
+
+    @Test
+    void shouldChargeGasForDuplicateAuthorizationTupleAndApplyOnlyFirst() {
+        var cacheTracker = mock(MutableRepository.class);
+        var firstAuthorizationTracker = mock(MutableRepository.class);
+        var secondAuthorizationTracker = mock(MutableRepository.class);
+
+        when(tracker.startTracking()).thenReturn(cacheTracker, firstAuthorizationTracker, secondAuthorizationTracker);
+
+        mockValidSender(sender, 1_000_000, ONE_NONCE, EMPTY_CODE);
+        mockReceiver(receiver, EMPTY_CODE);
+
+        mockAuthorizationAccount(firstAuthorizationTracker, authorityAddress, ZERO_NONCE, EMPTY_CODE);
+
+        byte[] delegatedCode = DelegationCodeResolver.createDelegatedCode(delegatedAddress);
+        mockAuthorizationAccount(secondAuthorizationTracker, authorityAddress, ONE_NONCE, delegatedCode);
+
+        var authorization = createValidAuthorizationTuple(
+                delegatedAddress,
+                ZERO_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        var tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ONE_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                2,
+                EMPTY_DATA,
+                authorization,
+                authorization
+        );
+
+        var txExecutor = newExecutor(tx);
+
+        assertTrue(txExecutor.executeTransaction());
+
+        verifyTrackerIncreaseNonceAndReduceBalance(sender, 600_000);
+        verifyTrackerStartTrackingInvocations(3);
+
+        verifyValidAuthorityChanges(firstAuthorizationTracker, authorityAddress, delegatedAddress);
+
+        verifyInvalidAuthorityChanges(secondAuthorizationTracker, authorityAddress, delegatedAddress);
+        verifyTransfer(cacheTracker, sender, 2);
+        verifyTransactionCostBiggerOrEqualThan(tx, GasCost.PER_EMPTY_ACCOUNT_COST * 2L);
+    }
+
+    @Test
+    void shouldApplySecondAuthorizationWhenFirstAuthorizationIsInvalid() {
+        var firstDelegatedAddress = createRandomAddress();
+        var secondDelegatedAddress = createRandomAddress();
+
+        var cacheTracker = mock(MutableRepository.class);
+        var firstAuthorizationTracker = mock(MutableRepository.class);
+        var secondAuthorizationTracker = mock(MutableRepository.class);
+
+        when(tracker.startTracking()).thenReturn(
+                cacheTracker,
+                firstAuthorizationTracker,
+                secondAuthorizationTracker
+        );
+
+        mockValidSender(sender, 1_000_000, ONE_NONCE, EMPTY_CODE);
+        mockReceiver(receiver, EMPTY_CODE);
+        mockAuthorizationAccount(firstAuthorizationTracker, authorityAddress, ONE_NONCE, EMPTY_CODE);
+        mockAuthorizationAccount(secondAuthorizationTracker, authorityAddress, ONE_NONCE, EMPTY_CODE);
+
+        var invalidFirstAuthorization = createValidAuthorizationTuple(
+                firstDelegatedAddress,
+                ZERO_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        var validSecondAuthorization = createValidAuthorizationTuple(
+                secondDelegatedAddress,
+                ONE_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        var tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ONE_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                2,
+                EMPTY_DATA,
+                invalidFirstAuthorization,
+                validSecondAuthorization
+        );
+
+        var txExecutor = newExecutor(tx);
+
+        assertTrue(txExecutor.executeTransaction());
+
+        verifyTrackerIncreaseNonceAndReduceBalance(sender, 600_000);
+        verifyTrackerStartTrackingInvocations(3);
+        verifyInvalidAuthorityChanges(firstAuthorizationTracker, authorityAddress, firstDelegatedAddress);
+        verifyValidAuthorityChanges(secondAuthorizationTracker, authorityAddress, secondDelegatedAddress);
+        verifyTransfer(cacheTracker, sender, 2);
+        verifyTransactionCostBiggerOrEqualThan(tx, GasCost.PER_EMPTY_ACCOUNT_COST * 2L);
+    }
+
+    @Test
+    void shouldRejectTransactionWhenBalanceCannotCoverAuthorizationCosts() {
+        var authorizationTracker = mock(MutableRepository.class);
+        when(tracker.startTracking()).thenReturn(authorizationTracker);
+
+        long intrinsicCostWithoutAuth = 21_000L;
+        long authCost = GasCost.PER_EMPTY_ACCOUNT_COST;
+        long requiredGasCost = intrinsicCostWithoutAuth + authCost;
+        long senderBalance = requiredGasCost - 1;
+
+        mockAccountWithBalanceAndNonce(tracker, sender, senderBalance, ONE_NONCE);
+        mockAuthorizationAccount(authorizationTracker, authorityAddress, ZERO_NONCE, EMPTY_CODE);
+        mockReceiver(receiver, EMPTY_CODE);
+
+        var authorization = createValidAuthorizationTuple(
+                delegatedAddress,
+                ZERO_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        var tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ONE_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                0,
+                EMPTY_DATA,
+                authorization
+        );
+
+        var txExecutor = newExecutor(tx);
+
+        assertFalse(txExecutor.executeTransaction());
+
+        verify(tracker, never()).increaseNonce(sender);
+        verify(tracker, never()).addBalance(eq(sender), any(Coin.class));
+        verify(authorizationTracker, never()).saveCode(any(), any());
+        verify(authorizationTracker, never()).increaseNonce(any());
+        verify(authorizationTracker, never()).commit();
+    }
+
 }

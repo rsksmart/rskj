@@ -918,6 +918,10 @@ public class Program {
         }
         byte[] code = getStorage().getCode(codeAddress);
 
+        if (code == null || code.length == 0) {
+            return EMPTY_BYTE_ARRAY;
+        }
+
         if (!DelegationCodeResolver.isDelegatedCode(code)) {
             return code;
         }

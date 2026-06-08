@@ -15,23 +15,23 @@ import java.util.Arrays;
 
 public class SetCodeAuthorizationTransactionExecutor {
 
-    public static final byte[] CODE_FOR_CLEANING_DELEGATED_ADDRESS = HashUtil.keccak256(new byte[0]);
+    public static final byte[] CODE_FOR_CLEANING_DELEGATED_ADDRESS = new byte[0];
 
-    public long processAuthorizationTuple(Repository repository, BigInteger outerTransactionChainId, SetCodeAuthorization authorizationTuple) {
-        verifyChainId(authorizationTuple.getChainId(), outerTransactionChainId);
-        authorizationTuple.verifyNonceRange();
+    public long processAuthorizationTuple(Repository repository, BigInteger outerTransactionChainId, SetCodeAuthorization authorization) {
+        verifyChainId(authorization.getChainId(), outerTransactionChainId);
+        authorization.verifyNonceRange();
 
-        RskAddress authority = checkRecoveredAuthority(authorizationTuple);
+        RskAddress authority = checkRecoveredAuthority(authorization);
 
         byte[] code = repository.getCode(authority);
         byte[] currentNonce  = repository.getNonce(authority).toByteArray();
 
         verifyAuthorityCode(code);
-        verifyAuthorityNonce(authorizationTuple.getNonce(), currentNonce);
+        verifyAuthorityNonce(authorization.getNonce(), currentNonce);
 
         long refund = calculateRefund(code);
 
-        writeDelegation(authority, authorizationTuple.getAddress(), repository);
+        writeDelegation(authority, authorization.getAddress(), repository);
 
         repository.increaseNonce(authority);
 
