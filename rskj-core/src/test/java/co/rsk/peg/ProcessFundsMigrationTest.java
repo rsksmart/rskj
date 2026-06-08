@@ -1238,9 +1238,7 @@ class ProcessFundsMigrationTest {
             return blockNumberBeforeMigrationBegins(IRIS_ACTIVATIONS) + 1;
         }
 
-        private void setUpBridgeAndFederationSupportForIRIS(
-            long executionBlockNumber
-            ) {
+        private void setUpBridgeAndFederationSupportForIRIS(long executionBlockNumber) {
             bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, IRIS_ACTIVATIONS);
             setUpFeePerKb(FEE_PER_KB);
             federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
