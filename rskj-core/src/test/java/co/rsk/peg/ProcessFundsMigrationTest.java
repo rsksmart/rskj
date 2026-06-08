@@ -49,6 +49,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -62,6 +63,7 @@ class ProcessFundsMigrationTest {
     private static final long ACTIVE_FEDERATION_CREATION_BLOCK = 100L;
     private static final int EXPECTED_MULTIPLE_MIGRATION_TX_COUNT = 2;
     private final Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
+    private final Repository repository = createRepository();
 
     private StorageAccessor bridgeStorageAccessor;
     private BridgeStorageProvider bridgeStorageProvider;
@@ -79,6 +81,12 @@ class ProcessFundsMigrationTest {
             List<UTXO> selectedUtxos,
             int expectedInputCount
         );
+    }
+
+    @BeforeEach
+    void setUp() {
+        bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, ALL_ACTIVATIONS);
+        bridgeStorageAccessor = new InMemoryStorage();
     }
 
     @Nested
@@ -268,7 +276,7 @@ class ProcessFundsMigrationTest {
 
             // Act
             long secondExecutionBlockNumber = executionBlockNumber + 1;
-            setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber);
+            setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber, ALL_ACTIVATIONS);
             Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
@@ -626,7 +634,7 @@ class ProcessFundsMigrationTest {
 
             // Act
             long secondExecutionBlockNumber = executionBlockNumber + 1;
-            setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber);
+            setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber, ALL_ACTIVATIONS);
             Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
@@ -963,8 +971,8 @@ class ProcessFundsMigrationTest {
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
-            long executionBlockNumber = duringMigrationBlockNumberPreRSKIP294();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber, IRIS_ACTIVATIONS);
+            long executionBlockNumber = duringMigrationBlockNumberForIRIS();
+            setUpBridgeAndFederationSupportForIRIS(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -1014,7 +1022,7 @@ class ProcessFundsMigrationTest {
 
             // Act
             long secondExecutionBlockNumber = executionBlockNumber + 1;
-            setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber);
+            setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber, ALL_ACTIVATIONS);
             Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
@@ -1092,7 +1100,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = pastMigrationBlockNumber(IRIS_ACTIVATIONS);
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber, IRIS_ACTIVATIONS);
+            setUpBridgeAndFederationSupportForIRIS(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -1226,8 +1234,17 @@ class ProcessFundsMigrationTest {
             assertRetiringUtxosCount(retiringUtxos.size());
         }
 
-        private long duringMigrationBlockNumberPreRSKIP294() {
+        private long duringMigrationBlockNumberForIRIS() {
             return blockNumberBeforeMigrationBegins(IRIS_ACTIVATIONS) + 1;
+        }
+
+        private void setUpBridgeAndFederationSupportForIRIS(
+            long executionBlockNumber
+            ) {
+            bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, IRIS_ACTIVATIONS);
+            setUpFeePerKb(FEE_PER_KB);
+            federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, IRIS_ACTIVATIONS);
         }
     }
 
@@ -1235,24 +1252,8 @@ class ProcessFundsMigrationTest {
         Coin feePerKb,
         long executionBlockNumber
     ) {
-        setUpBridgeAndFederationSupport(feePerKb, executionBlockNumber, ALL_ACTIVATIONS);
-    }
-
-    private void setUpBridgeAndFederationSupport(
-        Coin feePerKb,
-        long executionBlockNumber,
-        ActivationConfig.ForBlock activations
-    ) {
-        Repository repository = createRepository();
-        bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, activations);
-        bridgeStorageAccessor = new InMemoryStorage();
         setUpFeePerKb(feePerKb);
         federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
-
-        setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, activations);
-    }
-
-    private void setUpBridgeAndFederationSupportForExecutionBlock(long executionBlockNumber) {
         setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, ALL_ACTIVATIONS);
     }
 
