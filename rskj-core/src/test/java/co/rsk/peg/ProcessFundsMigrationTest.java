@@ -1082,7 +1082,7 @@ class ProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_pastMigrationAge_preRSKIP294_withMoreUtxosThanMaxInputs_shouldCreateLastMigrationTxAndClearRetiringFedEvenIfUtxosRemain() throws IOException {
+        void updateCollections_pastMigrationAge_preRSKIP294_withMoreUtxosThanMaxInputs_shouldUseAllRetiringUtxos() throws IOException {
             // Arrange
             int maxInputs = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction();
             int numberOfUtxos = maxInputs + 1;
