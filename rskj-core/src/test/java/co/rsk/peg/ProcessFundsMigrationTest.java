@@ -1473,12 +1473,20 @@ class ProcessFundsMigrationTest {
             .toList();
     }
 
+    private void assertMigrationTxCount(int expectedCount) throws IOException {
+        assertEquals(expectedCount, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
+    }
+
     private void assertNoMigrationTxCreated() throws IOException {
-        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertMigrationTxCount(0);
     }
 
     private void assertOneMigrationTxCreated() throws IOException {
-        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertMigrationTxCount(1);
+    }
+
+    private int getPendingPegoutsCount() throws IOException {
+        return bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size();
     }
 
     private void assertTwoMigrationTxsCreated(List<BtcTransaction> migrationTransactions) {
