@@ -453,9 +453,7 @@ class ProcessFundsMigrationTest {
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos
         ) throws IOException {
-            List<PegoutsWaitingForConfirmations.Entry> migrationTransactionEntries = getMigrationTransactionEntriesSortedByCreation();
-
-            List<BtcTransaction> migrationTransactions = getMigrationTransactions(migrationTransactionEntries);
+            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreation();
             assertTwoMigrationTxsCreated(migrationTransactions);
             assertAllExpectedUtxosWereMigrated(migrationTransactions, retiringFederationUtxos);
 
@@ -836,9 +834,7 @@ class ProcessFundsMigrationTest {
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos
         ) throws IOException {
-            List<PegoutsWaitingForConfirmations.Entry> migrationTransactionEntries = getMigrationTransactionEntriesSortedByCreation();
-
-            List<BtcTransaction> migrationTransactions = getMigrationTransactions(migrationTransactionEntries);
+            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreation();
             assertTwoMigrationTxsCreated(migrationTransactions);
             assertAllExpectedUtxosWereMigrated(migrationTransactions, retiringFederationUtxos);
 
@@ -1319,9 +1315,7 @@ class ProcessFundsMigrationTest {
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos
         ) throws IOException {
-            List<PegoutsWaitingForConfirmations.Entry> migrationTransactionEntries = getMigrationTransactionEntriesSortedByCreation();
-
-            List<BtcTransaction> migrationTransactions = getMigrationTransactions(migrationTransactionEntries);
+            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreation();
             assertTwoMigrationTxsCreated(migrationTransactions);
             assertAllExpectedUtxosWereMigrated(migrationTransactions, retiringFederationUtxos);
 
@@ -1348,17 +1342,14 @@ class ProcessFundsMigrationTest {
         return Math.min(MAX_INPUTS_PER_PEGOUT_TX, remainingRetiringFederationUtxos);
     }
 
-    private static List<BtcTransaction> getMigrationTransactions(List<PegoutsWaitingForConfirmations.Entry> migrationTransactionEntries) {
-        return migrationTransactionEntries.stream()
-            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
-            .toList();
-    }
-
-    private List<PegoutsWaitingForConfirmations.Entry> getMigrationTransactionEntriesSortedByCreation() throws IOException {
-        return bridgeStorageProvider.getPegoutsWaitingForConfirmations()
+    private List<BtcTransaction> getMigrationTransactionsSortedByCreation() throws IOException {
+        List<PegoutsWaitingForConfirmations.Entry> migrationTransactionEntries = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
             .getEntries()
             .stream()
             .sorted(Comparator.comparing(PegoutsWaitingForConfirmations.Entry::getPegoutCreationRskBlockNumber))
+            .toList();
+        return migrationTransactionEntries.stream()
+            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
             .toList();
     }
 
