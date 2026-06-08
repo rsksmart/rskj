@@ -1485,10 +1485,6 @@ class ProcessFundsMigrationTest {
         assertMigrationTxCount(1);
     }
 
-    private int getPendingPegoutsCount() throws IOException {
-        return bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size();
-    }
-
     private void assertTwoMigrationTxsCreated(List<BtcTransaction> migrationTransactions) {
         assertEquals(2, migrationTransactions.size());
     }
