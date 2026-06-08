@@ -1690,8 +1690,8 @@ class BridgeSupportReleaseBtcTest {
         Map<Keccak256, BtcTransaction> signatures = runConfirmationSelection(buildPegoutEntries(6), ACTIVATIONS_RSKIP559_OFF);
         assertEquals(1, signatures.size(), "Exactly one pegout is confirmed per updateCollections");
 
+        // To refresh the golden: temporarily print `selected`, run on Java 17, and paste it into PROCESS_CONFIRMED_OFF_GOLDEN.
         String selected = signatures.values().iterator().next().getHash().toString();
-        System.out.println("PROCESS_CONFIRMED_OFF_SELECTED=" + selected);
         assertEquals(PROCESS_CONFIRMED_OFF_GOLDEN, selected,
             "Pre-fork HashSet-order selection diverged from the Java-17 golden (Java 17/21 mismatch?)");
     }
@@ -1797,8 +1797,8 @@ class BridgeSupportReleaseBtcTest {
         // (i.e. the Java-17 HashSet emulation reproduces on Java 21).
         runConfirmationSelection(entries, ACTIVATIONS_RSKIP559_OFF);
         provider.save();
+        // To refresh the golden: temporarily print `rootOff`, run on Java 17, and paste it into PEGOUT_STATE_ROOT_OFF_GOLDEN.
         String rootOff = Hex.toHexString(repository.getRoot());
-        System.out.println("PEGOUT_STATE_ROOT_OFF=" + rootOff);
         assertEquals(PEGOUT_STATE_ROOT_OFF_GOLDEN, rootOff,
             "Pre-fork bridge storage root diverged from the Java-17 golden (Java 17/21 mismatch?)");
     }

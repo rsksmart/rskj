@@ -406,10 +406,7 @@ class PegoutsWaitingForConfirmationsTest {
             pegouts.removeEntry(next.get());
         }
 
-        System.out.println("PREFORK_DRAIN_ORDER=" + drainOrder);
-        if (PREFORK_GOLDEN_ORDER.isEmpty()) {
-            Assertions.fail("Golden vector not yet captured; copy PREFORK_DRAIN_ORDER above into PREFORK_GOLDEN_ORDER");
-        }
+        // To refresh the golden: temporarily print `drainOrder`, run on Java 17, and paste it into PREFORK_GOLDEN_ORDER.
         Assertions.assertEquals(PREFORK_GOLDEN_ORDER, drainOrder,
             "Pre-fork HashSet iteration order diverged from the Java-17 golden (Java 17/21 mismatch?)");
     }
