@@ -88,6 +88,12 @@ class ProcessFundsMigrationTest {
         repository = createRepository();
         bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, ALL_ACTIVATIONS);
         bridgeStorageAccessor = new InMemoryStorage();
+        federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+
+        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
+        FeePerKbConstants feePerKbConstants = BRIDGE_CONSTANTS.getFeePerKbConstants();
+        feePerKbSupport = new FeePerKbSupportImpl(feePerKbConstants, feePerKbStorageProvider);
+        setUpFeePerKb(FEE_PER_KB);
     }
 
     @Nested
@@ -110,7 +116,7 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_withNoRetiringFederation_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
-            setUpBridgeAndFederationSupport(FEE_PER_KB, ACTIVE_FEDERATION_CREATION_BLOCK + 1);
+            setUpBridgeAndFederationSupport(ACTIVE_FEDERATION_CREATION_BLOCK + 1);
             setUpActiveFederation(activeFederation);
 
             // Act
@@ -131,7 +137,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = blockNumberBeforeMigrationBegins();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -154,7 +160,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -182,7 +188,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -210,7 +216,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act & Assert
@@ -233,7 +239,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -256,7 +262,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -277,7 +283,7 @@ class ProcessFundsMigrationTest {
 
             // Act
             long secondExecutionBlockNumber = executionBlockNumber + 1;
-            setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber, ALL_ACTIVATIONS);
+            setUpBridgeAndFederationSupport(secondExecutionBlockNumber);
             Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
@@ -298,7 +304,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -326,7 +332,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -355,7 +361,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -379,7 +385,7 @@ class ProcessFundsMigrationTest {
         void updateCollections_pastMigrationAge_withZeroBalance_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
             // Arrange
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, List.of());
 
             // Act
@@ -402,7 +408,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -424,7 +430,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -448,7 +454,8 @@ class ProcessFundsMigrationTest {
 
             Coin highFeePerKb = Coin.COIN.multiply(2);
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(highFeePerKb, executionBlockNumber);
+            setUpFeePerKb(highFeePerKb);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -489,7 +496,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = blockNumberBeforeMigrationBegins();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -512,7 +519,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -540,7 +547,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -568,7 +575,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act & Assert
@@ -591,7 +598,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -614,7 +621,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -635,7 +642,7 @@ class ProcessFundsMigrationTest {
 
             // Act
             long secondExecutionBlockNumber = executionBlockNumber + 1;
-            setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber, ALL_ACTIVATIONS);
+            setUpBridgeAndFederationSupport(secondExecutionBlockNumber);
             Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
@@ -656,7 +663,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -684,7 +691,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -713,7 +720,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -737,7 +744,7 @@ class ProcessFundsMigrationTest {
         void updateCollections_pastMigrationAge_withZeroBalance_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
             // Arrange
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, List.of());
 
             // Act
@@ -760,7 +767,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -782,7 +789,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -806,7 +813,8 @@ class ProcessFundsMigrationTest {
 
             Coin highFeePerKb = Coin.COIN.multiply(2);
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(highFeePerKb, executionBlockNumber);
+            setUpFeePerKb(highFeePerKb);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -848,7 +856,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = blockNumberBeforeMigrationBegins();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -871,7 +879,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -899,7 +907,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -927,7 +935,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act & Assert
@@ -950,7 +958,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -1002,7 +1010,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -1023,7 +1031,7 @@ class ProcessFundsMigrationTest {
 
             // Act
             long secondExecutionBlockNumber = executionBlockNumber + 1;
-            setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber, ALL_ACTIVATIONS);
+            setUpBridgeAndFederationSupport(secondExecutionBlockNumber);
             Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
@@ -1044,7 +1052,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -1072,7 +1080,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -1130,7 +1138,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -1154,7 +1162,7 @@ class ProcessFundsMigrationTest {
         void updateCollections_pastMigrationAge_withZeroBalance_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
             // Arrange
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, List.of());
 
             // Act
@@ -1177,7 +1185,7 @@ class ProcessFundsMigrationTest {
             );
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -1199,7 +1207,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -1223,7 +1231,8 @@ class ProcessFundsMigrationTest {
 
             Coin highFeePerKb = Coin.COIN.multiply(2);
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupport(highFeePerKb, executionBlockNumber);
+            setUpFeePerKb(highFeePerKb);
+            setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -1241,18 +1250,11 @@ class ProcessFundsMigrationTest {
 
         private void setUpBridgeAndFederationSupportForIRIS(long executionBlockNumber) {
             bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, IRIS_ACTIVATIONS);
-            setUpFeePerKb(FEE_PER_KB);
-            federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, IRIS_ACTIVATIONS);
         }
     }
 
-    private void setUpBridgeAndFederationSupport(
-        Coin feePerKb,
-        long executionBlockNumber
-    ) {
-        setUpFeePerKb(feePerKb);
-        federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+    private void setUpBridgeAndFederationSupport(long executionBlockNumber) {
         setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, ALL_ACTIVATIONS);
     }
 
@@ -1281,9 +1283,6 @@ class ProcessFundsMigrationTest {
 
     private void setUpFeePerKb(Coin feePerKb) {
         bridgeStorageAccessor.saveToRepository(FeePerKbStorageIndexKey.FEE_PER_KB.getKey(), feePerKb, BridgeSerializationUtils::serializeCoin);
-        FeePerKbConstants feePerKbConstants = BRIDGE_CONSTANTS.getFeePerKbConstants();
-        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
-        feePerKbSupport = new FeePerKbSupportImpl(feePerKbConstants, feePerKbStorageProvider);
     }
 
     private void setUpActiveFederation(Federation activeFederation) {
