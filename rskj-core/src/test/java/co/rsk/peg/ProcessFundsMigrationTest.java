@@ -445,6 +445,7 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_pastMigrationAge_withHighFees_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
             // Arrange
+            setUpHighFeePerKb();
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
                 .withValue(Coin.COIN)
@@ -452,9 +453,7 @@ class ProcessFundsMigrationTest {
                 .build()
             );
 
-            Coin highFeePerKb = Coin.COIN.multiply(2);
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpFeePerKb(highFeePerKb);
             setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
@@ -804,16 +803,14 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_pastMigrationAge_withHighFees_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
             // Arrange
+            setUpHighFeePerKb();
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .build()
             );
-
-            Coin highFeePerKb = Coin.COIN.multiply(2);
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpFeePerKb(highFeePerKb);
             setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
@@ -1222,6 +1219,7 @@ class ProcessFundsMigrationTest {
         @Test
         void updateCollections_pastMigrationAge_withHighFees_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
             // Arrange
+            setUpHighFeePerKb();
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
                 .withValue(Coin.COIN)
@@ -1229,9 +1227,7 @@ class ProcessFundsMigrationTest {
                 .build()
             );
 
-            Coin highFeePerKb = Coin.COIN.multiply(2);
             long executionBlockNumber = pastMigrationBlockNumber();
-            setUpFeePerKb(highFeePerKb);
             setUpBridgeAndFederationSupport(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
@@ -1252,6 +1248,11 @@ class ProcessFundsMigrationTest {
             bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, IRIS_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, IRIS_ACTIVATIONS);
         }
+    }
+
+    private void setUpHighFeePerKb() {
+        Coin highFeePerKb = Coin.COIN.multiply(2);
+        setUpFeePerKb(highFeePerKb);
     }
 
     private void setUpBridgeAndFederationSupport(long executionBlockNumber) {
