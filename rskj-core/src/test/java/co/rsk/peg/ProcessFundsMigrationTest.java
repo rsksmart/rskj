@@ -995,7 +995,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertPreRSKIP294MigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionWasBuiltAsExpectedForIRIS(
                 retiringFederation,
                 retiringUtxos,
                 migrationTxInputsAssertion,
@@ -1126,7 +1126,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertPreRSKIP294MigrationTransactionWasBuiltAsExpected(
+            assertMigrationTransactionWasBuiltAsExpectedForIRIS(
                 retiringFederation,
                 retiringUtxos,
                 migrationTxInputsAssertion,
@@ -1392,7 +1392,7 @@ class ProcessFundsMigrationTest {
             .toList();
     }
 
-    private void assertPreRSKIP294MigrationTransactionWasBuiltAsExpected(
+    private void assertMigrationTransactionWasBuiltAsExpectedForIRIS(
         Federation retiringFederation,
         List<UTXO> retiringFederationUtxos,
         MigrationTxInputsAssertion migrationTxInputsAssertion,
