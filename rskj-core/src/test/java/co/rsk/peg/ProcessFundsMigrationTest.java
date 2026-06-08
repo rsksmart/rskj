@@ -63,7 +63,6 @@ class ProcessFundsMigrationTest {
     private static final long ACTIVE_FEDERATION_CREATION_BLOCK = 100L;
     private static final int EXPECTED_MULTIPLE_MIGRATION_TX_COUNT = 2;
     private final Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
-    private final Repository repository = createRepository();
 
     private StorageAccessor bridgeStorageAccessor;
     private BridgeStorageProvider bridgeStorageProvider;
@@ -71,6 +70,7 @@ class ProcessFundsMigrationTest {
     private FederationSupport federationSupport;
     private BridgeSupport bridgeSupport;
     private FeePerKbSupport feePerKbSupport;
+    private Repository repository;
 
     @FunctionalInterface
     private interface MigrationTxInputsAssertion {
@@ -85,6 +85,7 @@ class ProcessFundsMigrationTest {
 
     @BeforeEach
     void setUp() {
+        repository = createRepository();
         bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, ALL_ACTIVATIONS);
         bridgeStorageAccessor = new InMemoryStorage();
     }
