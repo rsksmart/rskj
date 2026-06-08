@@ -46,13 +46,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Given a set of UTXOs, a ReleaseTransactionBuilder
- * knows how to build a release transaction
- * of a certain amount to a certain address
- * and how to signal the used UTXOs so they
- * can be invalidated.
- *
- * @author Ariel Mendelzon
+ * Given a set of UTXOs, a ReleaseTransactionBuilder knows how to build a release transaction
+ * of a certain amount to a certain address and how to signal the used UTXOs so they can be invalidated.
  */
 public class ReleaseTransactionBuilder {
 
@@ -62,7 +57,7 @@ public class ReleaseTransactionBuilder {
         void configure(SendRequest sr);
     }
 
-    private static final Logger logger = LoggerFactory.getLogger("ReleaseTransactionBuilder");
+    private static final Logger logger = LoggerFactory.getLogger(ReleaseTransactionBuilder.class);
 
     private final NetworkParameters params;
     private final Wallet wallet;
@@ -113,7 +108,11 @@ public class ReleaseTransactionBuilder {
         }, String.format("batching %d pegouts", entries.size()));
     }
 
-    public BuildResult buildSvpFundTransaction(Federation proposedFederation, Keccak256 proposedFederationFlyoverPrefix, Coin svpFundTxOutputsValue) {
+    public BuildResult buildSvpFundTransaction(
+        Federation proposedFederation,
+        Keccak256 proposedFederationFlyoverPrefix,
+        Coin svpFundTxOutputsValue
+    ) {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(svpFundTxOutputsValue, proposedFederation.getAddress());
             sr.tx.addOutput(svpFundTxOutputsValue, getFlyoverFederationAddress(params, proposedFederationFlyoverPrefix, proposedFederation));
@@ -140,19 +139,12 @@ public class ReleaseTransactionBuilder {
         }, String.format("emptying wallet to %s", to));
     }
 
-    private void setDefaultSettings(SendRequest sr) {
-        sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
-        sr.feePerKb = feePerKb;
-        sr.shuffleOutputs = false;
-        sr.recipientsPayFees = true;
-    }
-
     private BuildResult buildWithConfiguration(
         SendRequestConfigurator sendRequestConfigurator,
         String operationDescription
     ) {
         // Build a tx and send request and configure it
-        BtcTransaction btcTx = setDefaultTxConfig();
+        BtcTransaction btcTx = setDefaultReleaseTxConfig();
         SendRequest sr = setSrConfiguration(sendRequestConfigurator, btcTx);
 
         try {
@@ -175,24 +167,29 @@ public class ReleaseTransactionBuilder {
 
             return new BuildResult(btcTx, selectedUTXOs, Response.SUCCESS);
         } catch (InsufficientMoneyException e) {
-            logger.warn(String.format("Not enough BTC in the wallet to complete %s", operationDescription), e);
+            String message = String.format("Not enough BTC in the wallet to complete %s", operationDescription);
+            logger.warn(message, e);
             return new BuildResult(null, null, Response.INSUFFICIENT_MONEY);
         } catch (Wallet.CouldNotAdjustDownwards e) {
-            logger.warn(String.format("A user output could not be adjusted downwards to pay tx fees %s", operationDescription), e);
+            String message = String.format("A user output could not be adjusted downwards to pay tx fees %s", operationDescription);
+            logger.warn(message, e);
             return new BuildResult(null, null, Response.COULD_NOT_ADJUST_DOWNWARDS);
         } catch (Wallet.DustySendRequested e) {
-            logger.warn(String.format("Tx contains a dust output %s", operationDescription), e);
+            String message = String.format("Tx contains a dust output %s", operationDescription);
+            logger.warn(message, e);
             return new BuildResult(null, null, Response.DUSTY_SEND_REQUESTED);
         } catch (Wallet.ExceededMaxTransactionSize e) {
-            logger.warn(String.format("Tx size too big %s", operationDescription), e);
+            String message = String.format("Tx size too big %s", operationDescription);
+            logger.warn(message, e);
             return new BuildResult(null, null, Response.EXCEED_MAX_TRANSACTION_SIZE);
         } catch (UTXOProviderException e) {
-            logger.warn(String.format("UTXO provider exception sending %s", operationDescription), e);
+            String message = String.format("UTXO provider exception sending %s", operationDescription);
+            logger.warn(message, e);
             return new BuildResult(null, null, Response.UTXO_PROVIDER_EXCEPTION);
         }
     }
 
-    private BtcTransaction setDefaultTxConfig() {
+    private BtcTransaction setDefaultReleaseTxConfig() {
         // Build a tx and send request and configure it
         BtcTransaction btcTx = new BtcTransaction(params);
         if (activations.isActive(ConsensusRule.RSKIP201)) {
@@ -215,6 +212,13 @@ public class ReleaseTransactionBuilder {
         }
 
         return sr;
+    }
+
+    private void setDefaultSettings(SendRequest sr) {
+        sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
+        sr.feePerKb = feePerKb;
+        sr.shuffleOutputs = false;
+        sr.recipientsPayFees = true;
     }
 
     private void completeTx(SendRequest sr) throws InsufficientMoneyException {
