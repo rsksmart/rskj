@@ -58,7 +58,6 @@ class ProcessFundsMigrationTest {
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
     private static final NetworkParameters NETWORK_PARAMETERS = BRIDGE_CONSTANTS.getBtcParams();
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0L);
-    private static final ActivationConfig.ForBlock PRE_RSKIP294_ACTIVATIONS = ActivationConfigsForTest.iris300().forBlock(0L);
     private static final Coin FEE_PER_KB = Coin.valueOf(8_000L);
     private static final long ACTIVE_FEDERATION_CREATION_BLOCK = 100L;
     private static final int EXPECTED_MULTIPLE_MIGRATION_TX_COUNT = 2;
@@ -814,6 +813,7 @@ class ProcessFundsMigrationTest {
     @Nested
     class StandardMultisigFederationTest {
 
+        private static final ActivationConfig.ForBlock IRIS_ACTIVATIONS = ActivationConfigsForTest.iris300().forBlock(0L);
         private final Federation retiringFederation = StandardMultiSigFederationBuilder.builder().build();
         private final Federation activeFederation = StandardMultiSigFederationBuilder.builder()
             .withCreationBlockNumber(ACTIVE_FEDERATION_CREATION_BLOCK)
@@ -964,7 +964,7 @@ class ProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumberPreRSKIP294();
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber, PRE_RSKIP294_ACTIVATIONS);
+            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber, IRIS_ACTIVATIONS);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -1091,8 +1091,8 @@ class ProcessFundsMigrationTest {
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
-            long executionBlockNumber = pastMigrationBlockNumber(PRE_RSKIP294_ACTIVATIONS);
-            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber, PRE_RSKIP294_ACTIVATIONS);
+            long executionBlockNumber = pastMigrationBlockNumber(IRIS_ACTIVATIONS);
+            setUpBridgeAndFederationSupport(FEE_PER_KB, executionBlockNumber, IRIS_ACTIVATIONS);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -1225,6 +1225,10 @@ class ProcessFundsMigrationTest {
             assertRetiringFederationCleared();
             assertRetiringUtxosCount(retiringUtxos.size());
         }
+
+        private long duringMigrationBlockNumberPreRSKIP294() {
+            return blockNumberBeforeMigrationBegins(IRIS_ACTIVATIONS) + 1;
+        }
     }
 
     private void setUpBridgeAndFederationSupport(
@@ -1313,10 +1317,6 @@ class ProcessFundsMigrationTest {
 
     private long duringMigrationBlockNumber() {
         return blockNumberBeforeMigrationBegins() + 1;
-    }
-
-    private long duringMigrationBlockNumberPreRSKIP294() {
-        return blockNumberBeforeMigrationBegins(PRE_RSKIP294_ACTIVATIONS) + 1;
     }
 
     private long pastMigrationBlockNumber() {
