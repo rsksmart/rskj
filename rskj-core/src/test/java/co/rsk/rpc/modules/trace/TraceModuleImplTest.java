@@ -222,15 +222,65 @@ class TraceModuleImplTest {
         ArrayNode aresult = (ArrayNode) result;
         Assertions.assertEquals(2, aresult.size());
 
-        // Top-level call carries the transaction's own input.
+        // Top-level call carries the transaction's own input. Its traceAddress is empty (it is the root frame).
         JsonNode topLevel = aresult.get(0);
         Assertions.assertEquals("call", topLevel.get("type").asText());
+        Assertions.assertEquals(0, topLevel.get("traceAddress").size());
         Assertions.assertEquals(TOP_LEVEL_CALLDATA, topLevel.get("action").get("input").asText());
 
-        // The sub-call must carry its OWN calldata, not the top-level input.
+        // The sub-call is the nested frame (traceAddress [0]) and must carry its OWN calldata.
         JsonNode subCall = aresult.get(1);
         Assertions.assertEquals("call", subCall.get("type").asText());
+        Assertions.assertEquals(1, subCall.get("traceAddress").size());
         Assertions.assertEquals(SUB_CALL_CALLDATA, subCall.get("action").get("input").asText());
+
+        // The bug being guarded against: the sub-call must not reuse the root calldata.
+        Assertions.assertNotEquals(
+                topLevel.get("action").get("input").asText(),
+                subCall.get("action").get("input").asText());
+    }
+
+    /**
+     * trace_block shares the per-frame calldata logic with trace_transaction, so the same invariant must
+     * hold when tracing a whole block: the top-level frame reports the transaction input and the nested
+     * frame reports its own sub-call calldata.
+     */
+    @Test
+    void subCallReportsItsOwnCalldataNotTopLevelInputInTraceBlock() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        DslParser parser = DslParser.fromResource("dsl/trace_subcall_calldata.txt");
+        World world = new World(receiptStore);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Block block = world.getBlockByName("b02");
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache(), world.getConfig());
+
+        JsonNode result = traceModule.traceBlock(block.getHash().toJsonString());
+
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode) result;
+        Assertions.assertEquals(2, aresult.size());
+
+        // Top-level call carries the transaction's own input. Its traceAddress is empty (it is the root frame).
+        JsonNode topLevel = aresult.get(0);
+        Assertions.assertEquals("call", topLevel.get("type").asText());
+        Assertions.assertEquals(0, topLevel.get("traceAddress").size());
+        Assertions.assertEquals(TOP_LEVEL_CALLDATA, topLevel.get("action").get("input").asText());
+
+        // The sub-call is the nested frame (traceAddress [0]) and must carry its OWN calldata.
+        JsonNode subCall = aresult.get(1);
+        Assertions.assertEquals("call", subCall.get("type").asText());
+        Assertions.assertEquals(1, subCall.get("traceAddress").size());
+        Assertions.assertEquals(SUB_CALL_CALLDATA, subCall.get("action").get("input").asText());
+
+        // The bug being guarded against: the sub-call must not reuse the root calldata.
+        Assertions.assertNotEquals(
+                topLevel.get("action").get("input").asText(),
+                subCall.get("action").get("input").asText());
     }
 
     @Test
