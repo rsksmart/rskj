@@ -58,6 +58,9 @@ class TraceTransformerTest {
         Assertions.assertEquals("0x01020304", action.getInput());
         Assertions.assertEquals("0xf4240", action.getGas());
         Assertions.assertEquals("0x186a0", action.getValue());
+        // a CALL action carries calldata in input, never creation-only fields
+        Assertions.assertNull(action.getInit());
+        Assertions.assertNull(action.getCreationMethod());
     }
 
     @Test
@@ -90,6 +93,8 @@ class TraceTransformerTest {
         Assertions.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
         Assertions.assertEquals("0x01020304", action.getInit());
         Assertions.assertNull(action.getCreationMethod());
+        // creation traces expose the init code, never calldata through input
+        Assertions.assertNull(action.getInput());
         Assertions.assertEquals("0xf4240", action.getGas());
         Assertions.assertEquals("0x186a0", action.getValue());
     }
@@ -124,6 +129,8 @@ class TraceTransformerTest {
         Assertions.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
         Assertions.assertEquals("0x01020304", action.getInit());
         Assertions.assertEquals("create2", action.getCreationMethod());
+        // creation traces expose the init code, never calldata through input
+        Assertions.assertNull(action.getInput());
         Assertions.assertEquals("0xf4240", action.getGas());
         Assertions.assertEquals("0x186a0", action.getValue());
     }
