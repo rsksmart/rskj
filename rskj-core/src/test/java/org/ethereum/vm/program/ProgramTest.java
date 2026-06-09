@@ -789,6 +789,74 @@ class ProgramTest {
         assertStack(STACK_STATE_SUCCESS);
     }
 
+    @Test
+    void testCallToAddress_delegatedCodeWithCreate_incrementsAuthorityNonce() {
+        int createGas = 100_000;
+
+        RskAddress tom = address(99);
+        RskAddress alice = address(100);
+        RskAddress delegate = address(101);
+
+        byte[] aliceDelegationCode = DelegationCodeResolver.createDelegatedCode(delegate);
+
+        byte[] delegateCode = new byte[] {
+                0x60, 0x00, // PUSH1 0x00 size
+                0x60, 0x00, // PUSH1 0x00 offset
+                0x60, 0x00, // PUSH1 0x00 value
+                (byte) 0xf0, // CREATE
+                0x50, // POP
+                0x00  // STOP
+        };
+
+        when(programInvoke.getOwnerAddress()).thenReturn(DataWord.valueOf(tom.getBytes()));
+        when(msg.getCodeAddress()).thenReturn(DataWord.valueOf(alice.getBytes()));
+        when(msg.getGas()).thenReturn(DataWord.valueOf(createGas));
+
+        when(repository.isExist(alice)).thenReturn(true);
+        when(repository.getCode(alice)).thenReturn(aliceDelegationCode);
+
+        when(repository.isExist(delegate)).thenReturn(true);
+        when(repository.getCode(delegate)).thenReturn(delegateCode);
+
+        when(repository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(1_000_000L));
+        when(repository.addBalance(any(RskAddress.class), any(Coin.class))).thenReturn(Coin.valueOf(1_000_000L));
+
+        when(repository.getNonce(alice)).thenReturn(BigInteger.TEN);
+
+        Transaction transaction = Transaction
+                .builder()
+                .nonce(BigInteger.ONE.toByteArray())
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(createGas))
+                .receiveAddress(alice)
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.ZERO)
+                .build();
+
+        BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
+
+        Program createProgram = new Program(
+                config.getVmConfig(),
+                precompiledContracts,
+                blockFactory,
+                activations,
+                null,
+                programInvoke,
+                transaction,
+                Sets.newHashSet(),
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        createProgram.getResult().spendGas(createGas);
+
+        createProgram.callToAddress(msg);
+
+        verify(repository).increaseNonce(alice);
+
+        assertFalse(createProgram.getStack().empty());
+        assertEquals(1, createProgram.getStack().size());
+        assertEquals(DataWord.valueOf(STACK_STATE_SUCCESS), createProgram.getStack().pop());
+    }
+
     /*********************************
      * ---------- UTILS ------------ *
      *********************************/
