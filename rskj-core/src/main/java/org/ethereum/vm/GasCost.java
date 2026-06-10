@@ -20,6 +20,8 @@
 
 package org.ethereum.vm;
 
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
@@ -56,16 +58,18 @@ public class GasCost {
     public static final long GENESISGASLIMIT = 1000000;
     public static final long MINGASLIMIT = 125000;
 
-    public static final long BALANCE = 400;
+    private static final long BALANCE = 400;
+    private static final long BALANCE_RSKIP555 = 700;
     public static final long SHA3 = 30;
     public static final long SHA3_WORD = 6;
-    public static final long SLOAD = 200;
+    private static final long SLOAD = 200; // SLOAD_GAS
+    public static final long SLOAD_RSKIP555 = 800; // SLOAD_GAS
     public static final long STOP = 0;
     public static final long SUICIDE = 5000;
     public static final long CLEAR_SSTORE = 5000;
-    public static final long SET_SSTORE = 20000;
-    public static final long RESET_SSTORE = 5000;
-    public static final long REFUND_SSTORE = 15000;
+    public static final long SSTORE_SET_GAS = 20000; // Renamed from: SET_SSTORE
+    public static final long SSTORE_RESET_GAS = 5000; // Renamed from: RESET_SSTORE
+    public static final long SSTORE_CLEARS_SCHEDULE = 15000; // Renamed from: REFUND_SSTORE
     public static final long CREATE = 32000;
 
     public static final long TLOAD = 100;
@@ -74,7 +78,7 @@ public class GasCost {
     public static final long JUMPDEST = 1;
     public static final long CREATE_DATA_BYTE = 5;
     public static final long CALL = 700;
-    public static final long STIPEND_CALL = 2300; // For transferring coins in CALL, this is always passed to child
+    public static final long STIPEND_CALL = 2300; // For transferring coins in CALL, this is ahways passed to child
     public static final long VT_CALL = 9000;  //value transfer call
     public static final long NEW_ACCT_CALL = 25000;  //new account call
     public static final long MEMORY = 3; // TODO: Memory in V0 is more expensive than V1: This MUST be modified before release
@@ -104,7 +108,9 @@ public class GasCost {
     public static final long EC_RECOVER = 3000;
     public static final long EXT_CODE_SIZE = 700;
     public static final long EXT_CODE_COPY = 700;
-    public static final long EXT_CODE_HASH = 400;
+    // EXT_CODE_HASH
+    private static final long EXTCODEHASH = 400;
+    private static final long EXTCODEHASH_RSKIP555 = 700;
     public static final long CODEREPLACE = 15000;
     public static final long NEW_ACCT_SUICIDE = 25000;
     public static final long RETURN = 0;
@@ -266,5 +272,26 @@ public class GasCost {
             return (y != 0) && (result/ y != x);
         }
         return false;
+    }
+
+    public static long getBalance(ActivationConfig.ForBlock activation) {
+        if(activation.isActive(ConsensusRule.RSKIP555)) {
+            return GasCost.BALANCE_RSKIP555;
+        }
+        return GasCost.BALANCE;
+    }
+
+    public static long getSload(ActivationConfig.ForBlock activation) {
+        if(activation.isActive(ConsensusRule.RSKIP555)) {
+            return GasCost.SLOAD_RSKIP555;
+        }
+        return GasCost.SLOAD;
+    }
+
+    public static long getExtCodeHash(ActivationConfig.ForBlock activation) {
+        if(activation.isActive(ConsensusRule.RSKIP555)) {
+            return GasCost.EXTCODEHASH_RSKIP555;
+        }
+        return GasCost.EXTCODEHASH;
     }
 }

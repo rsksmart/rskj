@@ -41,9 +41,10 @@ import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
@@ -51,14 +52,28 @@ import java.util.Set;
 
 public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
+
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
     public static final Keccak256 KECCAK_256_OF_EMPTY_ARRAY = new Keccak256(Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
+
     private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
 
     private final TrieKeyMapper trieKeyMapper;
+
     private final MutableTrie mutableTrie;
-    private MutableTrie transientTrie;
+
     private final IReadWrittenKeysTracker tracker;
+
+    private MutableTrie transientTrie;
+
+    /**
+     * Holds storage original values in the scope of TX according to EIP-2200.
+     *
+     * Null - means value was not cached
+     * DataWord.ZERO - means original value is empty
+     */
+    private final HashMap<ByteArrayWrapper, DataWord> originalValues;
 
     public MutableRepository(TrieStore trieStore, Trie trie) {
         this(new MutableTrieImpl(trieStore, trie), aInMemoryMutableTrie());
@@ -77,17 +92,29 @@ public class MutableRepository implements Repository {
     }
 
     public MutableRepository(MutableTrie mutableTrie, MutableTrie transientTrie) {
+        this(mutableTrie, transientTrie, new HashMap<>());
+    }
+
+    private MutableRepository(MutableTrie mutableTrie, MutableTrie transientTrie,
+            HashMap<ByteArrayWrapper, DataWord> originalValues) {
         this.trieKeyMapper = new TrieKeyMapper();
         this.mutableTrie = mutableTrie;
         this.transientTrie = transientTrie;
         this.tracker = new DummyReadWrittenKeysTracker();
+        this.originalValues = originalValues;
     }
 
     public MutableRepository(MutableTrie mutableTrie, MutableTrie transientTrie, IReadWrittenKeysTracker tracker) {
+        this(mutableTrie, transientTrie, tracker, new HashMap<>());
+    }
+
+    private MutableRepository(MutableTrie mutableTrie, MutableTrie transientTrie, IReadWrittenKeysTracker tracker,
+            HashMap<ByteArrayWrapper, DataWord> originalValues) {
         this.trieKeyMapper = new TrieKeyMapper();
         this.mutableTrie = mutableTrie;
         this.transientTrie = transientTrie;
         this.tracker = tracker;
+        this.originalValues = originalValues;
     }
 
     @Override
@@ -263,17 +290,43 @@ public class MutableRepository implements Repository {
             setupContract(addr);
         }
 
-        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
+        byte[] trieKey = trieKeyMapper.getAccountStorageKey(addr, key);
 
         // Special case: if the value is an empty vector, we pass "null" which commands the trie to remove the item.
         // Note that if the call comes from addStorageRow(), this method will already have replaced 0 by null, so the
         // conversion here only applies if this is called directly. If suppose this only occurs in tests, but it can
         // also occur in precompiled contracts that store data directly using this method.
         if (value == null || value.length == 0) {
-            internalPut(triekey, null);
+            internalPut(trieKey, null);
         } else {
-            internalPut(triekey, value);
+            internalPut(trieKey, value);
         }
+    }
+
+    @Override
+    public synchronized SlotState getSlotState(RskAddress addr, DataWord key) {
+        // Not reusing existing functions
+        // to avoid multiple calls to `internalGet`
+
+        byte[] trieKey = trieKeyMapper.getAccountStorageKey(addr, key);
+ 
+        var origKey = new ByteArrayWrapper(trieKey);
+
+        var origValue = this.originalValues.get(origKey);
+        DataWord currentValue;
+
+        if (origValue == null) {
+            var rawValue = internalGet(trieKey);
+            origValue = rawValue == null ? DataWord.ZERO : DataWord.valueOf(rawValue);
+
+            this.originalValues.put(origKey, origValue);
+            currentValue = origValue;
+        } else {
+            var rawValue = internalGet(trieKey);
+            currentValue = rawValue == null ? DataWord.ZERO : DataWord.valueOf(rawValue);
+        }
+
+        return new SlotState(origValue, currentValue);
     }
 
     @Override
@@ -352,7 +405,11 @@ public class MutableRepository implements Repository {
     // To start tracking, a new repository is created, with a MutableTrieCache in the middle
     @Override
     public synchronized Repository startTracking() {
-        return new MutableRepository(new MutableTrieCache(mutableTrie), new MutableTrieCache(transientTrie), tracker);
+        return new MutableRepository(
+                new MutableTrieCache(mutableTrie),
+                new MutableTrieCache(transientTrie),
+                tracker,
+                originalValues);
     }
 
     @Override
@@ -370,6 +427,11 @@ public class MutableRepository implements Repository {
     public synchronized void rollback() {
         mutableTrie.rollback();
         transientTrie.rollback();
+    }
+
+    @Override
+    public synchronized void rootTxCompleted() {
+        originalValues.clear();
     }
 
     @Override
@@ -403,7 +465,7 @@ public class MutableRepository implements Repository {
         return storageRootNode.getHash().getBytes();
     }
 
-    @Nonnull
+    @NonNull
     private synchronized AccountState getAccountStateOrCreateNew(RskAddress addr) {
         AccountState account = getAccountState(addr);
         return (account == null) ? createAccount(addr) : account;
