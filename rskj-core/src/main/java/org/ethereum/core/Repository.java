@@ -116,7 +116,7 @@ public interface Repository extends RepositorySnapshot, TransientRepository {
     /**
      * Put raw value in storage by an account/key.
      *
-     * Notice that you basically can put any byte[] length even greater that 32.
+     * Notice that you basically can put any byte[] length even greater than 32.
      * So this method used not just for storing data for regular smart contracts.
      *
      * @param addr account address
@@ -173,7 +173,7 @@ public interface Repository extends RepositorySnapshot, TransientRepository {
     }
 
     /**
-     * Represents current and orinal slot value in the context of TX.
+     * Represents current and original slot value in the context of TX.
      */
     public static record SlotState(
             @NonNull DataWord original,

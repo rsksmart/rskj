@@ -47,14 +47,14 @@ public abstract class AbstractEvmTester {
     protected ProgramInvokeMockImpl invoke;
 
     /**
-     * Builds default TX and execute default smart contract within it's scope.
+     * Builds default TX and execute default smart contract within its scope.
      */
     Program executeSmartContract() {
         return executeSmartContract(createTransaction(), invoke.getContractAddress());
     }
 
     /**
-     * Execute smart contract that already loaded in storage by some address witin
+     * Execute smart contract that already loaded in storage by some address within
      * some TX.
      */
     Program executeSmartContract(Transaction transaction, RskAddress smartContractAddress) {
