@@ -217,8 +217,18 @@ public final class BlockFactory implements BtcHeaderSizeRule {
             }
 
 
-        if (rlpHeader.size() > r && isBaseEventEnabled(blockNumber) && !compressed) {
-            baseEvent = rlpHeader.get(r++).getRLPRawData();
+        if (isBaseEventEnabled(blockNumber) && !compressed) {
+            // baseEvent is followed only by the optional merged-mining fields, so the
+            // remaining element count is 0, 1, miningFieldCount, or 1 + miningFieldCount.
+            // A remaining count of 0 or miningFieldCount means the baseEvent field is
+            // absent -- a header persisted before the baseEvent encoding fix.
+            int remaining = rlpHeader.size() - r;
+            int miningFieldCount = MAX_RLP_HEADER_SIZE_WITH_MINING - MAX_RLP_HEADER_SIZE_WITHOUT_MINING;
+            if (remaining != 0 && remaining != miningFieldCount) {
+                baseEvent = rlpHeader.get(r++).getRLPRawData();
+            } else {
+                baseEvent = ByteUtil.EMPTY_BYTE_ARRAY;
+            }
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -334,9 +344,20 @@ public final class BlockFactory implements BtcHeaderSizeRule {
     private boolean canBeDecoded(RLPList rlpHeader, long blockNumber, boolean compressed) {
         int expectedSizeWithoutMining = calculateExpectedHeaderSize(blockNumber, compressed, false);
         int expectedSizeWithMining = calculateExpectedHeaderSize(blockNumber, compressed, true);
+        int actualSize = rlpHeader.size();
 
-        return rlpHeader.size() == expectedSizeWithoutMining ||
-                rlpHeader.size() == expectedSizeWithMining;
+        if (actualSize == expectedSizeWithoutMining || actualSize == expectedSizeWithMining) {
+            return true;
+        }
+
+        // Backward compatibility: a header persisted before the baseEvent encoding fix is
+        // missing the baseEvent element, so it is exactly one RLP element short.
+        if (isBaseEventEnabled(blockNumber) && !compressed) {
+            return actualSize == expectedSizeWithoutMining - 1 ||
+                    actualSize == expectedSizeWithMining - 1;
+        }
+
+        return false;
     }
 
     /**

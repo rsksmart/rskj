@@ -93,7 +93,7 @@ class BlockHeaderExtensionV2Test {
 
         assertNull(decoded.getLogsBloom());
         assertNull(decoded.getTxExecutionSublistsEdges());
-        assertNull(decoded.getBaseEvent());
+        assertArrayEquals(new byte[0], decoded.getBaseEvent());
     }
 
     @Test
@@ -111,7 +111,7 @@ class BlockHeaderExtensionV2Test {
 
         assertArrayEquals(logsBloom, decoded.getLogsBloom());
         assertNull(decoded.getTxExecutionSublistsEdges());
-        assertNull(decoded.getBaseEvent());
+        assertArrayEquals(new byte[0], decoded.getBaseEvent());
     }
 
     @Test
@@ -125,7 +125,7 @@ class BlockHeaderExtensionV2Test {
 
         assertArrayEquals(logsBloom, decoded.getLogsBloom());
         assertArrayEquals(edges, decoded.getTxExecutionSublistsEdges());
-        assertNull(decoded.getBaseEvent());
+        assertArrayEquals(new byte[0], decoded.getBaseEvent());
     }
 
     @Test
@@ -154,7 +154,9 @@ class BlockHeaderExtensionV2Test {
 
         assertArrayEquals(logsBloom, decoded.getLogsBloom());
         assertArrayEquals(edges, decoded.getTxExecutionSublistsEdges());
-        assertNull(decoded.getBaseEvent());
+        // An empty baseEvent is encoded as the RLP byte 0x80 and fromEncoded() reads it
+        // back as byte[0] (via getRLPRawData()) -- it must not be lost as null.
+        assertArrayEquals(new byte[0], decoded.getBaseEvent());
     }
 
     @Test

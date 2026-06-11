@@ -27,6 +27,8 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderBuilder;
+import org.ethereum.core.BlockHeaderExtension;
+import org.ethereum.core.BlockHeaderExtensionV2;
 import org.ethereum.core.BlockHeaderV1;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
@@ -877,6 +879,154 @@ class BlockFactoryTest {
         assertArrayEquals(logsBloom, decodedHeader.getLogsBloom());
         assertArrayEquals(edges, decodedHeader.getTxExecutionSublistsEdges());
         assertArrayEquals(baseEvent, decodedHeader.getBaseEvent());
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // baseEvent encoding bug — regression tests
+    //
+    // VETIVER-9.0.x nodes (RSKIP535 active) crashed during sync with
+    //   "java.lang.IllegalArgumentException: Invalid block header size: 22"
+    // because BlockHeaderExtensionV2.fromEncoded() decoded an empty baseEvent as null
+    // (instead of byte[0]); BlockHeader.addBaseEvent() then dropped the null field on
+    // re-encode, so the header was persisted one RLP element short.
+    //
+    // The tests below verify the fix: the backward body-sync store-and-reload path no
+    // longer corrupts the header, and a header already persisted in the short form is
+    // still decodable (backward compatibility).
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * Verifies the backward body-sync store-and-reload path for a block with merged-mining
+     * fields: an empty baseEvent must survive the wire round-trip and be persisted in full.
+     */
+    @Test
+    void blockWithEmptyBaseEventSurvivesBackwardSyncStoreAndReloadWithMining() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP92, RSKIPUMM, RSKIP351, RSKIP535, RSKIP144);
+        when(activationConfig.areActive(number, RSKIP351, RSKIP144)).thenReturn(true);
+        when(activationConfig.getHeaderVersion(anyLong())).thenCallRealMethod();
+
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+
+        // A block with no Union Bridge event -> empty baseEvent (BlockHeaderBuilder fills byte[0]).
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withMergedMining()
+                .withUmmRoot(ummRoot)
+                .withEdges(edges)
+                .build();
+        assertArrayEquals(new byte[0], header.getBaseEvent());
+
+        // Backward body sync: the extension travels over the wire and is parsed via
+        // BlockHeaderExtension.fromEncoded (MessageType.BODY_RESPONSE_MESSAGE.createMessage),
+        // then attached to the header (DownloadingBackwardsBodiesSyncState.newBody -> setExtension).
+        BlockHeaderExtension wireExtension = BlockHeaderExtension.fromEncoded(
+                BlockHeaderExtension.toEncoded(header.getExtension()));
+        header.setExtension(wireExtension);
+
+        // IndexedBlockStore.saveBlock stores block.getEncoded() -> header.getFullEncoded().
+        // The empty baseEvent is preserved, so the header keeps all 23 RLP elements.
+        byte[] stored = header.getFullEncoded();
+        assertThat(RLP.decodeList(stored).size(), is(23));
+
+        // IndexedBlockStore.getBlock reloads via blockFactory.decodeBlock -> decodeHeader.
+        BlockHeader reloaded = factory.decodeHeader(stored, false);
+
+        assertArrayEquals(new byte[0], reloaded.getBaseEvent());
+        assertThat(reloaded.getHash(), is(header.getHash()));
+    }
+
+    /**
+     * Same backward body-sync store-and-reload path as above, for a block without
+     * merged-mining fields.
+     */
+    @Test
+    void blockWithEmptyBaseEventSurvivesBackwardSyncStoreAndReloadNoMining() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP92, RSKIP351, RSKIP535, RSKIP144);
+        when(activationConfig.areActive(number, RSKIP351, RSKIP144)).thenReturn(true);
+        when(activationConfig.getHeaderVersion(anyLong())).thenCallRealMethod();
+
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withEdges(edges)
+                .build();
+        assertArrayEquals(new byte[0], header.getBaseEvent());
+
+        BlockHeaderExtension wireExtension = BlockHeaderExtension.fromEncoded(
+                BlockHeaderExtension.toEncoded(header.getExtension()));
+        header.setExtension(wireExtension);
+
+        byte[] stored = header.getFullEncoded();
+        BlockHeader reloaded = factory.decodeHeader(stored, false);
+
+        assertArrayEquals(new byte[0], reloaded.getBaseEvent());
+        assertThat(reloaded.getHash(), is(header.getHash()));
+    }
+
+    /**
+     * Backward compatibility: a block already persisted with a missing baseEvent (an
+     * existing corrupted database entry, with merged-mining fields) must still decode.
+     * Exercises the decoder's "remaining == miningFieldCount" disambiguation branch.
+     */
+    @Test
+    void blockStoredWithMissingBaseEventCanBeDecoded() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP92, RSKIPUMM, RSKIP351, RSKIP535, RSKIP144);
+        when(activationConfig.areActive(number, RSKIP351, RSKIP144)).thenReturn(true);
+        when(activationConfig.getHeaderVersion(anyLong())).thenCallRealMethod();
+
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withMergedMining()
+                .withUmmRoot(ummRoot)
+                .withEdges(edges)
+                .build();
+
+        // Attach a V2 extension whose baseEvent is null directly, then encode: addBaseEvent()
+        // drops the field, yielding the 22-element layout of an already-corrupted DB entry.
+        header.setExtension(new BlockHeaderExtensionV2(
+                header.getLogsBloom(),
+                header.getTxExecutionSublistsEdges(),
+                null));
+        byte[] corrupted = header.getFullEncoded();
+        assertThat(RLP.decodeList(corrupted).size(), is(22));
+
+        // The tolerant decoder reads the short header and treats the absent field as empty.
+        BlockHeader reloaded = factory.decodeHeader(corrupted, false);
+
+        assertArrayEquals(new byte[0], reloaded.getBaseEvent());
+        assertArrayEquals(edges, reloaded.getTxExecutionSublistsEdges());
+    }
+
+    /**
+     * Backward compatibility for a corrupted entry without merged-mining fields. Exercises
+     * the decoder's "remaining == 0" disambiguation branch.
+     */
+    @Test
+    void blockStoredWithMissingBaseEventCanBeDecodedNoMining() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP92, RSKIP351, RSKIP535, RSKIP144);
+        when(activationConfig.areActive(number, RSKIP351, RSKIP144)).thenReturn(true);
+        when(activationConfig.getHeaderVersion(anyLong())).thenCallRealMethod();
+
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withEdges(edges)
+                .build();
+
+        // Corrupted entry: a V2 extension with a null baseEvent, encoded without the field.
+        header.setExtension(new BlockHeaderExtensionV2(
+                header.getLogsBloom(),
+                header.getTxExecutionSublistsEdges(),
+                null));
+        byte[] corrupted = header.getFullEncoded();
+
+        BlockHeader reloaded = factory.decodeHeader(corrupted, false);
+
+        assertArrayEquals(new byte[0], reloaded.getBaseEvent());
+        assertArrayEquals(edges, reloaded.getTxExecutionSublistsEdges());
     }
 
     @ParameterizedTest(name = "btcHeaderSize={0}, shouldSucceed={1} — {2}")
