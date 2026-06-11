@@ -145,7 +145,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenP2shP2wshErpFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 retiringUtxos.size()
@@ -171,7 +171,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenP2shP2wshErpFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 retiringUtxos.size()
@@ -240,7 +240,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenP2shP2wshErpFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 MAX_INPUTS_PER_PEGOUT_TX
@@ -257,7 +257,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
             // Assert
-            assertMultipleMigrationTransactionsWereBuiltAsExpected(retiringFederation, retiringUtxos);
+            assertMultipleMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(retiringFederation, retiringUtxos);
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
         }
@@ -280,7 +280,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenP2shP2wshErpFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 retiringUtxos.size()
@@ -306,7 +306,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenP2shP2wshErpFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 retiringUtxos.size()
@@ -331,7 +331,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenP2shP2wshErpFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 MAX_INPUTS_PER_PEGOUT_TX
@@ -427,7 +427,7 @@ class ProcessFundsMigrationTest {
             assertRetiringUtxosCount(retiringUtxos.size());
         }
 
-        private void assertOneMigrationTransactionWasBuiltAsExpected(
+        private void assertOneMigrationTransactionBetweenP2shP2wshErpFedsWasBuiltAsExpected(
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos,
             int expectedInputCount
@@ -448,7 +448,7 @@ class ProcessFundsMigrationTest {
             assertReleaseTxOutputs(migrationTransaction, selectedUtxos);
         }
 
-        private void assertMultipleMigrationTransactionsWereBuiltAsExpected(
+        private void assertMultipleMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos
         ) throws IOException {
@@ -525,7 +525,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenP2shErpFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 retiringUtxos.size()
@@ -551,7 +551,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenP2shErpFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 retiringUtxos.size()
@@ -620,7 +620,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenP2shErpFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 MAX_INPUTS_PER_PEGOUT_TX
@@ -637,7 +637,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
             // Assert
-            assertMultipleMigrationTransactionsWereBuiltAsExpected(retiringFederation, retiringUtxos);
+            assertMultipleMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(retiringFederation, retiringUtxos);
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
         }
@@ -660,7 +660,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenP2shErpFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 retiringUtxos.size()
@@ -686,7 +686,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenP2shErpFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 retiringUtxos.size()
@@ -711,7 +711,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenP2shErpFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 MAX_INPUTS_PER_PEGOUT_TX
@@ -806,7 +806,7 @@ class ProcessFundsMigrationTest {
             assertRetiringUtxosCount(retiringUtxos.size());
         }
 
-        private void assertOneMigrationTransactionWasBuiltAsExpected(
+        private void assertOneMigrationTransactionBetweenP2shErpFedsWasBuiltAsExpected(
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos,
             int expectedInputCount
@@ -827,7 +827,7 @@ class ProcessFundsMigrationTest {
             assertReleaseTxOutputs(migrationTransaction, selectedUtxos);
         }
 
-        private void assertMultipleMigrationTransactionsWereBuiltAsExpected(
+        private void assertMultipleMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos
         ) throws IOException {
@@ -905,7 +905,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenStandardMultisigFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 retiringUtxos.size()
@@ -931,7 +931,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenStandardMultisigFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 retiringUtxos.size()
@@ -1000,7 +1000,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpectedForIRIS(
+            assertOneMigrationTransactionBetweenStandardMultisigFedsWasBuiltAsExpectedForIRIS(
                 retiringFederation,
                 retiringUtxos,
                 retiringUtxos.size()
@@ -1025,7 +1025,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenStandardMultisigFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 MAX_INPUTS_PER_PEGOUT_TX
@@ -1042,7 +1042,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
             // Assert
-            assertMultipleMigrationTransactionsWereBuiltAsExpected(retiringFederation, retiringUtxos);
+            assertMultipleMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(retiringFederation, retiringUtxos);
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
         }
@@ -1065,7 +1065,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenStandardMultisigFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 retiringUtxos.size()
@@ -1091,7 +1091,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenStandardMultisigFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 retiringUtxos.size()
@@ -1141,7 +1141,7 @@ class ProcessFundsMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert
-            assertOneMigrationTransactionWasBuiltAsExpected(
+            assertOneMigrationTransactionBetweenStandardMultisigFedsWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
                 MAX_INPUTS_PER_PEGOUT_TX
@@ -1262,7 +1262,7 @@ class ProcessFundsMigrationTest {
                 .build();
         }
 
-        private void assertOneMigrationTransactionWasBuiltAsExpected(
+        private void assertOneMigrationTransactionBetweenStandardMultisigFedsWasBuiltAsExpected(
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos,
             int expectedInputCount
@@ -1283,7 +1283,7 @@ class ProcessFundsMigrationTest {
             assertReleaseTxOutputs(migrationTransaction, selectedUtxos);
         }
 
-        private void assertOneMigrationTransactionWasBuiltAsExpectedForIRIS(
+        private void assertOneMigrationTransactionBetweenStandardMultisigFedsWasBuiltAsExpectedForIRIS(
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos,
             int expectedInputCount
@@ -1304,7 +1304,7 @@ class ProcessFundsMigrationTest {
             assertReleaseTxOutputs(migrationTransaction, selectedUtxos);
         }
 
-        private void assertMultipleMigrationTransactionsWereBuiltAsExpected(
+        private void assertMultipleMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos
         ) throws IOException {
