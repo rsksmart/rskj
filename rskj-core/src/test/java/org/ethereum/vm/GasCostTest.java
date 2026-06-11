@@ -142,6 +142,24 @@ class GasCostTest {
     }
 
     @Test
+    void calculateAddSignedGas() {
+        // Normal signed addition
+        Assertions.assertEquals(0, GasCost.addSigned(1, -1));
+        Assertions.assertEquals(-2, GasCost.addSigned(-1, -1));
+        Assertions.assertEquals(1000000, GasCost.addSigned(500000, 500000));
+
+        // Positive overflow
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.addSigned(Long.MAX_VALUE - 1, 2));
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.addSigned(2, Long.MAX_VALUE - 1));
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.addSigned(Long.MAX_VALUE, Long.MAX_VALUE));
+
+        // Negative overflow
+        Assertions.assertEquals(Long.MIN_VALUE, GasCost.addSigned(Long.MIN_VALUE + 1, -2));
+        Assertions.assertEquals(Long.MIN_VALUE, GasCost.addSigned(-2, Long.MIN_VALUE + 1));
+        Assertions.assertEquals(Long.MIN_VALUE, GasCost.addSigned(Long.MIN_VALUE, Long.MIN_VALUE));
+    }
+
+    @Test
     void calculateSubtractGasCost() {
         Assertions.assertEquals(1, GasCost.subtract(1, 0));
         Assertions.assertEquals(0, GasCost.subtract(1, 1));
