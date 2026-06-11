@@ -453,8 +453,8 @@ class ProcessFundsMigrationTest {
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos
         ) throws IOException {
+            assertTwoMigrationTxsCreated();
             List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreation();
-            assertTwoMigrationTxsCreated(migrationTransactions);
             assertAllExpectedUtxosWereMigrated(migrationTransactions, retiringFederationUtxos);
 
             int remainingRetiringFederationUtxos = retiringFederationUtxos.size();
@@ -834,8 +834,8 @@ class ProcessFundsMigrationTest {
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos
         ) throws IOException {
+            assertTwoMigrationTxsCreated();
             List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreation();
-            assertTwoMigrationTxsCreated(migrationTransactions);
             assertAllExpectedUtxosWereMigrated(migrationTransactions, retiringFederationUtxos);
 
             int remainingRetiringFederationUtxos = retiringFederationUtxos.size();
@@ -1319,8 +1319,8 @@ class ProcessFundsMigrationTest {
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos
         ) throws IOException {
+            assertTwoMigrationTxsCreated();
             List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreation();
-            assertTwoMigrationTxsCreated(migrationTransactions);
             assertAllExpectedUtxosWereMigrated(migrationTransactions, retiringFederationUtxos);
 
             int remainingRetiringFederationUtxos = retiringFederationUtxos.size();
@@ -1477,8 +1477,8 @@ class ProcessFundsMigrationTest {
         assertMigrationTxCount(1, ALL_ACTIVATIONS);
     }
 
-    private void assertTwoMigrationTxsCreated(List<BtcTransaction> migrationTransactions) {
-        assertEquals(2, migrationTransactions.size());
+    private void assertTwoMigrationTxsCreated() throws IOException {
+        assertMigrationTxCount(2);
     }
 
     private void assertRetiringFederationStillPresent() {
