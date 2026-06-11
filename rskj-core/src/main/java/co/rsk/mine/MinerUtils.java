@@ -163,10 +163,12 @@ public class MinerUtils {
     }
 
     public List<org.ethereum.core.Transaction> getAllTransactions(TransactionPool transactionPool, SignatureCache signatureCache) {
+        return getAllTransactions(transactionPool, signatureCache, null);
+    }
 
-        List<Transaction> txs = transactionPool.getPendingTransactions();
-
-        return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs, signatureCache);
+    public List<org.ethereum.core.Transaction> getAllTransactions(TransactionPool transactionPool, SignatureCache signatureCache, List<Transaction> txsToRemove) {
+        List<Transaction> txs = new ArrayList<>(transactionPool.getPendingTransactions());
+        return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs, signatureCache, txsToRemove);
     }
 
     public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled, SignatureCache signatureCache) {

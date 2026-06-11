@@ -21,6 +21,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
+import co.rsk.net.handler.txvalidator.TxValidatorNonceEncodingValidator;
 import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
@@ -115,12 +116,31 @@ public class PendingState implements AccountInformationProvider {
     // Note that this sort doesn't return the best solution, it is an approximation algorithm to find approximate
     // solution. (No trivial solution)
     public static List<Transaction> sortByPriceTakingIntoAccountSenderAndNonce(List<Transaction> transactions, SignatureCache signatureCache) {
+        return sortByPriceTakingIntoAccountSenderAndNonce(transactions, signatureCache, null);
+    }
+
+    public static List<Transaction> sortByPriceTakingIntoAccountSenderAndNonce(List<Transaction> transactions, SignatureCache signatureCache, List<Transaction> discardedTxs) {
+
+        // Pre-validate each transaction before sorting. Every field the sort
+        // comparator touches is exercised here so that a single malformed
+        // transaction cannot crash the entire sort (and therefore block production).
+        List<Transaction> validTxs = new ArrayList<>();
+        for (Transaction tx : transactions) {
+            if (isSortSafe(tx, signatureCache)) {
+                validTxs.add(tx);
+            } else {
+                LOGGER.warn("Discarding tx from sort due to non-canonical or unreadable fields");
+                if (discardedTxs != null) {
+                    discardedTxs.add(tx);
+                }
+            }
+        }
 
         //Priority heap, and list of transactions are ordered by descending gas price.
         Comparator<Transaction> gasPriceComparator = reverseOrder(Comparator.comparing(Transaction::getGasPrice));
 
         //First create a map to separate txs by each sender.
-        Map<RskAddress, List<Transaction>> senderTxs = transactions.stream().collect(Collectors.groupingBy(transaction -> transaction.getSender(signatureCache)));
+        Map<RskAddress, List<Transaction>> senderTxs = validTxs.stream().collect(Collectors.groupingBy(transaction -> transaction.getSender(signatureCache)));
 
         //For each sender, order all txs by nonce and then by hash,
         //finally we order by price in cases where nonce are equal, and then by hash to disambiguate
@@ -142,7 +162,7 @@ public class PendingState implements AccountInformationProvider {
             candidateTxs.add(tx);
         });
 
-        long txsCount = transactions.size();
+        long txsCount = validTxs.size();
         List<Transaction> sortedTxs = new ArrayList<>();
         //In each iteration we get the tx with max price (head) from the heap.
         while (txsCount > 0) {
@@ -158,6 +178,20 @@ public class PendingState implements AccountInformationProvider {
         }
 
         return sortedTxs;
+    }
+
+    private static boolean isSortSafe(Transaction tx, SignatureCache signatureCache) {
+        if (!TxValidatorNonceEncodingValidator.hasCanonicalEncoding(tx.getNonce())) {
+            return false;
+        }
+        try {
+            tx.getSender(signatureCache);
+            tx.getGasPrice();
+            tx.getHash();
+            return true;
+        } catch (Throwable e) {
+            return false;
+        }
     }
 
     private <T> T postExecutionReturn(PostExecutionAction<T> action) {
