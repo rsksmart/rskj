@@ -19,6 +19,7 @@ package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -243,8 +244,16 @@ public class TransactionPoolImpl implements TransactionPool {
         RepositorySnapshot currentRepository = getCurrentRepository();
         TransactionValidationResult validationResult = shouldAcceptTx(tx, currentRepository);
 
+
         if (!validationResult.transactionIsValid()) {
             return TransactionPoolAddResult.withError(validationResult.getErrorMessage());
+        }
+        PendingState pendingState = getPendingState(currentRepository);
+
+        Optional<TransactionPoolAddResult> delegatedAccountResult = rejectIfDelegatedAccountCannotBeAccepted(tx, tx.getSender(signatureCache), currentRepository, pendingState);
+
+        if (delegatedAccountResult.isPresent()) {
+            return delegatedAccountResult.get();
         }
 
         Keccak256 hash = tx.getHash();
@@ -260,7 +269,7 @@ public class TransactionPoolImpl implements TransactionPool {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
         transactionTimes.put(hash, timestampSeconds);
 
-        BigInteger currentNonce = getPendingState(currentRepository).getNonce(tx.getSender(signatureCache));
+        BigInteger currentNonce = pendingState.getNonce(tx.getSender(signatureCache));
         BigInteger txNonce = tx.getNonceAsInteger();
         if (txNonce.compareTo(currentNonce) > 0) {
             this.addQueuedTransaction(tx);
@@ -504,6 +513,35 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private long getTransactionCost(Transaction tx, long number) {
         return tx.transactionCost(config.getNetworkConstants(), config.getActivationConfig().forBlock(number), signatureCache);
+    }
+
+
+
+    private Optional<TransactionPoolAddResult> rejectIfDelegatedAccountCannotBeAccepted(
+            Transaction tx,
+            RskAddress sender,
+            RepositorySnapshot repository,
+            PendingState pendingState
+    ) {
+        byte[] code = repository.getCode(sender);
+
+        if (!DelegationCodeResolver.isDelegatedCode(code)) {
+            return Optional.empty();
+        }
+
+        boolean alreadyHasTransaction = !pendingTransactions.getTransactionsWithSender(sender).isEmpty() || !queuedTransactions.getTransactionsWithSender(sender).isEmpty();
+
+        if (alreadyHasTransaction) {
+            return Optional.of(TransactionPoolAddResult.withError("delegated account already has a transaction in the pool"));
+        }
+
+        BigInteger expectedNonce = pendingState.getNonce(sender);
+        boolean hasNonceGap = tx.getNonceAsInteger().compareTo(expectedNonce) > 0;
+
+        if (hasNonceGap) {
+            return Optional.of(TransactionPoolAddResult.withError("gapped-nonce transaction from delegated account"));
+        }
+        return Optional.empty();
     }
 
 }
