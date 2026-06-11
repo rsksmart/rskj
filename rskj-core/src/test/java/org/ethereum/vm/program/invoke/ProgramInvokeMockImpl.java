@@ -69,9 +69,6 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         this(CONTRACT_CODE_DEFAULT, null);
     }
 
-    public ProgramInvokeMockImpl(boolean defaults) {
-    }
-
     public ProgramInvokeMockImpl(byte[] msgDataRaw) {
         this();
         this.msgData = msgDataRaw;

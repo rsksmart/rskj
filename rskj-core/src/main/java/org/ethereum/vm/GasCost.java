@@ -204,6 +204,25 @@ public class GasCost {
     }
 
     /**
+     * Adds two longs numbers representing gas, capping at max/min long values.
+     *
+     * Allows negative inputs.
+     *
+     * @param x some gas.
+     * @param y another gas.
+     * @return the sum of the two numbers, capped.
+     */
+    public static long addSigned(long x, long y) throws InvalidGasException {
+        if (y > 0 && x > Long.MAX_VALUE - y) {
+            return Long.MAX_VALUE;
+        }
+        if (y < 0 && x < Long.MIN_VALUE - y) {
+            return Long.MIN_VALUE;
+        }
+        return x + y;
+    }
+
+    /**
      * Multply two longs representing gas, capping at Long.MAX_VALUE.
      * @param x some gas.
      * @param y another gas.

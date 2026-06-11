@@ -271,6 +271,70 @@ class Rskip555Eip2200Tests extends AbstractEvmTester {
     }
 
     /**
+     * Per EIP-2200 each reverted call rolls back its SSTORE and discards its refund,
+     * and every call sees the slot at its transaction-startoriginal value (0),
+     * so each update is charged as a fresh SET.
+     */
+    @Test
+    void nestedFailingCallsLeaveEmptySlotUnchanged() {
+        long empty = 0;
+        long a = 1;
+        long b = 2;
+
+        RskAddress nestedAddress = ProgramInvokeMockImpl.CONTRACT_ADDRESS_NESTED_DEFAULT;
+        setTargetSlotValue(nestedAddress, DataWord.valueOf(empty));
+
+        initFailingCallableContract();
+        initCallerContract(a, b);
+
+        Program program = executeSmartContract();
+
+        // Parent does not fail
+        assertFalse(program.getResult().isRevert());
+        // Each nested SSTORE is rolled back on REVERT, so the slot keeps its original value.
+        assertEquals(DataWord.valueOf(empty), readTargetSlotValue(nestedAddress));
+        // Refunds accrued inside a reverted frame are discarded.
+        assertEquals(0, program.getResult().getFutureRefund());
+        // Two calls, each a clean SET (0->a, then 0->b); both reverted but still charged.
+        assertEquals(
+            GasCost.SSTORE_SET_GAS * 2,
+            deductFailingCallerCodeGas(program.getResult().getGasUsed(), 2)
+        );
+    }
+
+    /**
+     * Per EIP-2200 the reset cost is still charged,
+     * but the SSTORE_CLEARS_SCHEDULE refund is discarded on revert
+     * and the slot rolls back to its original non-zero value.
+     */
+    @Test
+    void nestedFailingClearDiscardsRefund() {
+        long nonZero = 1;
+        long zero = 0;
+
+        RskAddress nestedAddress = ProgramInvokeMockImpl.CONTRACT_ADDRESS_NESTED_DEFAULT;
+        setTargetSlotValue(nestedAddress, DataWord.valueOf(nonZero));
+
+        initFailingCallableContract();
+        initCallerContract(zero, zero);
+
+        Program program = executeSmartContract();
+
+        // Parent does not fail.
+        assertFalse(program.getResult().isRevert());
+        // Each reverted call rolls back its clear, so the slot keeps its original non-zero value.
+        assertEquals(DataWord.valueOf(nonZero), readTargetSlotValue(nestedAddress));
+        // Each call sees the slot at its original non-zero value and clears it to zero;
+        // on success each clear would add SSTORE_CLEARS_SCHEDULE (15000), but on REVERT it is discarded.
+        assertEquals(0, program.getResult().getFutureRefund());
+        // Two calls, each a clean RESET (nonZero->zero); both reverted but still charged.
+        assertEquals(
+            GasCost.SSTORE_RESET_GAS * 2,
+            deductFailingCallerCodeGas(program.getResult().getGasUsed(), 2)
+        );
+    }
+
+    /**
      * Build/execute SC and validate gas+refund for slot transitions.
      *
      * All logic is executed inside single SC bytecode.
@@ -374,6 +438,12 @@ class Rskip555Eip2200Tests extends AbstractEvmTester {
         invoke.initNestedContract(bytes, null);
     }
 
+    void initFailingCallableContract() {
+        var code = this.buildFailingCallableCode();
+        var bytes = compiler.compile(code);
+        invoke.initNestedContract(bytes, null);
+    }
+
     void setTargetSlotValue(RskAddress address, DataWord value) {
         setSlotValue(address, DataWord.valueOf(TARGET_SLOT), value);
     }
@@ -428,6 +498,20 @@ class Rskip555Eip2200Tests extends AbstractEvmTester {
         return gasUsed - GasCost.MEMORY - perCallCallerOverhead * callOps;
     }
 
+    /**
+     * Returns gas cost minus the caller-side overhead from {@link #buildCallerCode}
+     * and the nested failing callee overhead from {@link #buildFailingCallableCode}.
+     */
+    private long deductFailingCallerCodeGas(long gasUsed, int callOps) {
+        var perCallCallerOverhead = GasCost.FASTESTSTEP * 9 + GasCost.QUICKSTEP * 2 + GasCost.CALL;
+
+        for (int i = 0; i < callOps; i++) {
+            gasUsed = deductFailingCallableCodeGas(gasUsed);
+        }
+
+        return gasUsed - GasCost.MEMORY - perCallCallerOverhead * callOps;
+    }
+
     String buildCallableCode() {
         return "PUSH1 0x00 " + // calldata offset
                 "CALLDATALOAD " + // value -> stack
@@ -436,14 +520,29 @@ class Rskip555Eip2200Tests extends AbstractEvmTester {
                 "STOP";
     }
 
+    String buildFailingCallableCode() {
+        return "PUSH1 0x00 " + // calldata offset
+                "CALLDATALOAD " + // value -> stack
+                "PUSH32 0x" + DataWord.valueOf(TARGET_SLOT) + " " +
+                "SSTORE " +
+                "PUSH1 0x00 " + // REVERT size
+                "PUSH1 0x00 " + // REVERT offset
+                "REVERT";
+    }
+
     /**
-     * Returns gas cost minus the fixed overhead introduced by
-     * {@link #buildCallableCode}:
-     * PUSH1 + CALLDATALOAD + PUSH32 (the callable always executes as a single
-     * block).
+     * Returns gas cost minus the fixed overhead introduced by {@link #buildCallableCode}:
      */
     private long deductCallableCodeGas(long gasUsed) {
         var overhead = GasCost.FASTESTSTEP * 3;
+        return gasUsed - overhead;
+    }
+
+    /**
+     * Returns gas cost minus the fixed overhead introduced by {@link #buildFailingCallableCode}:
+     */
+    private long deductFailingCallableCodeGas(long gasUsed) {
+        var overhead = GasCost.FASTESTSTEP * 5;
         return gasUsed - overhead;
     }
 
