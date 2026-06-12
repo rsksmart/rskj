@@ -166,8 +166,10 @@ jobs:
           echo "Triggered run $RUN_ID — $RUN_URL"
           # Wait for completion by polling the run status (keyed on the id we
           # already hold — deterministic, unlike `gh run watch`, which can race a
-          # just-created run). ~600 * 30s = 5h, matching this job's timeout; the
-          # report job gates centrally on the conclusion, so we never fail here.
+          # just-created run). ~600 * 30s = 5h, matching this job's timeout. A
+          # downstream *test* failure is captured as the conclusion (not raised
+          # here) so the report job can gate centrally; a dispatch/infra error
+          # already exited non-zero above.
           CONCLUSION=""
           for _ in $(seq 1 600); do
             STATUS=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null || echo "")
