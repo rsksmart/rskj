@@ -29,7 +29,7 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.mine.gas.provider.FixedMinGasPriceProvider;
 import co.rsk.net.TransactionGateway;
-import co.rsk.net.handler.quota.TxQuotaChecker;
+import co.rsk.net.handler.quota.TxQuotaCheckerImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.ExecutionBlockRetriever;
@@ -108,7 +108,7 @@ class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaCheckerImpl.class), Mockito.mock(GasPriceTracker.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
         Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache(), transactionGateway);
@@ -135,7 +135,7 @@ class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaCheckerImpl.class), Mockito.mock(GasPriceTracker.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
 
@@ -200,7 +200,7 @@ class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaCheckerImpl.class), Mockito.mock(GasPriceTracker.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, true, world.getBlockTxSignatureCache(), transactionGateway);
@@ -229,7 +229,7 @@ class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaCheckerImpl.class), Mockito.mock(GasPriceTracker.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache(), transactionGateway);
@@ -266,7 +266,7 @@ class TransactionModuleTest {
                 receivedTxSignatureCache,
                 10,
                 100,
-                Mockito.mock(TxQuotaChecker.class),
+                Mockito.mock(TxQuotaCheckerImpl.class),
                 Mockito.mock(GasPriceTracker.class)
         );
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
