@@ -41,6 +41,11 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  # issues: write is required because the sticky PR comment is posted via the
+  # issue-comments REST endpoint (repos/.../issues/<n>/comments); pull-requests:
+  # write alone can 403 there, which would fail the report job even when all
+  # suites pass.
+  issues: write
 
 concurrency:
   group: rskj-core-automated-tests-${{ github.ref }}
@@ -155,8 +160,8 @@ jobs:
             echo "::error::failed to dispatch $WORKFLOW in $REPO"
             exit 1
           fi
-          RUN_ID=$(jq -r '.workflow_run_id // empty' <<<"$RESP")
-          RUN_URL=$(jq -r '.html_url // empty' <<<"$RESP")
+          RUN_ID=$(jq -r '.workflow_run_id // empty' <<<"$RESP" 2>/dev/null || true)
+          RUN_URL=$(jq -r '.html_url // empty' <<<"$RESP" 2>/dev/null || true)
           if [ -z "$RUN_ID" ]; then
             echo "::error::dispatch did not return a run id; response: $RESP"
             exit 1
@@ -211,8 +216,8 @@ jobs:
             echo "::error::failed to dispatch $WORKFLOW in $REPO"
             exit 1
           fi
-          RUN_ID=$(jq -r '.workflow_run_id // empty' <<<"$RESP")
-          RUN_URL=$(jq -r '.html_url // empty' <<<"$RESP")
+          RUN_ID=$(jq -r '.workflow_run_id // empty' <<<"$RESP" 2>/dev/null || true)
+          RUN_URL=$(jq -r '.html_url // empty' <<<"$RESP" 2>/dev/null || true)
           if [ -z "$RUN_ID" ]; then
             echo "::error::dispatch did not return a run id; response: $RESP"
             exit 1
@@ -255,8 +260,8 @@ jobs:
             echo "::error::failed to dispatch $WORKFLOW in $REPO"
             exit 1
           fi
-          RUN_ID=$(jq -r '.workflow_run_id // empty' <<<"$RESP")
-          RUN_URL=$(jq -r '.html_url // empty' <<<"$RESP")
+          RUN_ID=$(jq -r '.workflow_run_id // empty' <<<"$RESP" 2>/dev/null || true)
+          RUN_URL=$(jq -r '.html_url // empty' <<<"$RESP" 2>/dev/null || true)
           if [ -z "$RUN_ID" ]; then
             echo "::error::dispatch did not return a run id; response: $RESP"
             exit 1
