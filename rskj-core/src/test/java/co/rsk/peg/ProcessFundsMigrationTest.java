@@ -448,7 +448,8 @@ class ProcessFundsMigrationTest {
             int expectedTotalInputCount
         ) throws IOException {
             assertMigrationTxCount(expectedMigrationTxCount);
-            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreation();
+
+            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount();
             List<UTXO> migratedUtxos = new ArrayList<>();
             int remainingExpectedInputs = expectedTotalInputCount;
             for (BtcTransaction migrationTransaction : migrationTransactions) {
@@ -821,7 +822,8 @@ class ProcessFundsMigrationTest {
             int expectedTotalInputCount
         ) throws IOException {
             assertMigrationTxCount(expectedMigrationTxCount);
-            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreation();
+
+            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount();
             List<UTXO> migratedUtxos = new ArrayList<>();
             int remainingExpectedInputs = expectedTotalInputCount;
             for (BtcTransaction migrationTransaction : migrationTransactions) {
@@ -1273,7 +1275,7 @@ class ProcessFundsMigrationTest {
         ) throws IOException {
             assertMigrationTxCount(expectedMigrationTxCount);
 
-            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreation();
+            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount();
             List<UTXO> migratedUtxos = new ArrayList<>();
             int remainingExpectedInputs = expectedTotalInputCount;
             for (BtcTransaction migrationTransaction : migrationTransactions) {
@@ -1340,11 +1342,17 @@ class ProcessFundsMigrationTest {
         return Math.min(MAX_INPUTS_PER_PEGOUT_TX, remainingRetiringFederationUtxos);
     }
 
-    private List<BtcTransaction> getMigrationTransactionsSortedByCreation() throws IOException {
+    private List<BtcTransaction> getMigrationTransactionsSortedByCreationAndInputsCount() throws IOException {
         return bridgeStorageProvider.getPegoutsWaitingForConfirmations()
             .getEntries(ALL_ACTIVATIONS)
             .stream()
-            .sorted(Comparator.comparing(PegoutsWaitingForConfirmations.Entry::getPegoutCreationRskBlockNumber))
+            .sorted(Comparator
+                .comparing(PegoutsWaitingForConfirmations.Entry::getPegoutCreationRskBlockNumber)
+                .thenComparing(
+                    entry -> entry.getBtcTransaction().getInputs().size(),
+                    Comparator.reverseOrder()
+                )
+            )
             .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
             .toList();
     }
