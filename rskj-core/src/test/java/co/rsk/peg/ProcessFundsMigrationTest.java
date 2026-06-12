@@ -1338,8 +1338,8 @@ class ProcessFundsMigrationTest {
         assertEquals(0, remainingExpectedInputs);
     }
 
-    private static int getExpectedInputCountInTx(int remainingRetiringFederationUtxos) {
-        return Math.min(MAX_INPUTS_PER_PEGOUT_TX, remainingRetiringFederationUtxos);
+    private static int getExpectedInputCountInTx(int remainingExpectedInputs) {
+        return Math.min(MAX_INPUTS_PER_PEGOUT_TX, remainingExpectedInputs);
     }
 
     private List<BtcTransaction> getMigrationTransactionsSortedByCreationAndInputsCount() throws IOException {
