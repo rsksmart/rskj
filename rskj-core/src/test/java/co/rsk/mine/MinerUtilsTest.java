@@ -346,4 +346,74 @@ class MinerUtilsTest {
         Assertions.assertEquals(res.get(8).getGasPrice(), Coin.valueOf(1));
     }
 
+    @Test
+    void getAllTransactions_withNonCanonicalNonce_discardsAndReturnsValidTxs() {
+        TransactionPool transactionPool = Mockito.mock(TransactionPool.class);
+
+        Transaction validTx = Mockito.mock(Transaction.class);
+        Transaction nonCanonicalTx = Mockito.mock(Transaction.class);
+
+        byte[] addressBytes = TestUtils.generateBytes("addressBytes", 20);
+
+        Mockito.when(validTx.getHash()).thenReturn(new Keccak256(new byte[32]));
+        Mockito.when(validTx.getNonce()).thenReturn(new byte[]{0x01});
+        Mockito.when(validTx.getGasPrice()).thenReturn(Coin.valueOf(1));
+        Mockito.when(validTx.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(addressBytes));
+
+        byte[] nonCanonicalHash = new byte[32];
+        nonCanonicalHash[0] = 1;
+        Mockito.when(nonCanonicalTx.getHash()).thenReturn(new Keccak256(nonCanonicalHash));
+        Mockito.when(nonCanonicalTx.getNonce()).thenReturn(new byte[9]);
+        Mockito.when(nonCanonicalTx.getGasPrice()).thenReturn(Coin.valueOf(1));
+        Mockito.when(nonCanonicalTx.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(addressBytes));
+
+        List<Transaction> txs = new LinkedList<>();
+        txs.add(validTx);
+        txs.add(nonCanonicalTx);
+
+        Mockito.when(transactionPool.getPendingTransactions()).thenReturn(txs);
+
+        List<Transaction> txsToRemove = new ArrayList<>();
+        List<Transaction> res = minerUtils.getAllTransactions(transactionPool, signatureCache, txsToRemove);
+
+        Assertions.assertEquals(1, res.size());
+        Assertions.assertEquals(validTx, res.get(0));
+        Assertions.assertEquals(1, txsToRemove.size());
+        Assertions.assertEquals(nonCanonicalTx, txsToRemove.get(0));
+    }
+
+    @Test
+    void getAllTransactions_allValid_noDiscarding() {
+        TransactionPool transactionPool = Mockito.mock(TransactionPool.class);
+
+        Transaction tx1 = Mockito.mock(Transaction.class);
+        Transaction tx2 = Mockito.mock(Transaction.class);
+
+        byte[] addressBytes = TestUtils.generateBytes("addressBytes", 20);
+
+        Mockito.when(tx1.getHash()).thenReturn(new Keccak256(new byte[32]));
+        Mockito.when(tx1.getNonce()).thenReturn(new byte[]{0x01});
+        Mockito.when(tx1.getGasPrice()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx1.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(addressBytes));
+
+        byte[] hash2 = new byte[32];
+        hash2[0] = 1;
+        Mockito.when(tx2.getHash()).thenReturn(new Keccak256(hash2));
+        Mockito.when(tx2.getNonce()).thenReturn(new byte[]{0x02});
+        Mockito.when(tx2.getGasPrice()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx2.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(addressBytes));
+
+        List<Transaction> txs = new LinkedList<>();
+        txs.add(tx1);
+        txs.add(tx2);
+
+        Mockito.when(transactionPool.getPendingTransactions()).thenReturn(txs);
+
+        List<Transaction> txsToRemove = new ArrayList<>();
+        List<Transaction> res = minerUtils.getAllTransactions(transactionPool, signatureCache, txsToRemove);
+
+        Assertions.assertEquals(2, res.size());
+        Assertions.assertTrue(txsToRemove.isEmpty());
+    }
+
 }

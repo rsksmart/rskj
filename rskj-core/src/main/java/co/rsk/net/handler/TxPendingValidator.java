@@ -63,6 +63,7 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorNotRemascTxValidator());
         validatorSteps.add(new TxValidatorGasLimitValidator());
         validatorSteps.add(new TxValidatorAccountStateValidator());
+        validatorSteps.add(new TxValidatorNonceEncodingValidator());
         validatorSteps.add(new TxValidatorNonceRangeValidator(accountSlots));
         validatorSteps.add(new TxValidatorAccountBalanceValidator());
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());

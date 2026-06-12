@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BtcHeaderSizeRule;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.util.ByteUtil;
@@ -62,10 +63,19 @@ public final class BlockFactory implements BtcHeaderSizeRule {
     private static final int MAX_RLP_HEADER_SIZE_WITH_MINING = 23;
     private static final int NUMBER_OF_ELEMENTS_IN_BLOCK_RLP = 3;
 
+    // Upper block-height bound for the testnet baseEvent size-tolerance branch in canBeDecoded.
+    private static final long BASE_EVENT_RECOVERY_UPPER_BOUND = 7_800_000L;
+
     private final ActivationConfig activationConfig;
+    private final byte chainId;
 
     public BlockFactory(ActivationConfig activationConfig) {
+        this(activationConfig, Constants.MAINNET_CHAIN_ID);
+    }
+
+    public BlockFactory(ActivationConfig activationConfig, byte chainId) {
         this.activationConfig = activationConfig;
+        this.chainId = chainId;
     }
 
     private static BigInteger parseBigInteger(byte[] bytes) {
@@ -217,8 +227,20 @@ public final class BlockFactory implements BtcHeaderSizeRule {
             }
 
 
-        if (rlpHeader.size() > r && isBaseEventEnabled(blockNumber) && !compressed) {
-            baseEvent = rlpHeader.get(r++).getRLPRawData();
+        if (isBaseEventEnabled(blockNumber) && !compressed) {
+            int miningFieldCount = MAX_RLP_HEADER_SIZE_WITH_MINING - MAX_RLP_HEADER_SIZE_WITHOUT_MINING;
+            // How many more fields are present starting from the baseEvent index?
+            int remaining = rlpHeader.size() - r;
+            // We are exactly at the offset where the baseEvent is expected to be present.
+            // If there are no more fields to process OR there are exactly miningFieldCount
+            // fields left, this means the baseEvent is not present and this is represented
+            // as an EMPTY_BYTE_ARRAY.
+            boolean isBaseEventAbsent = remaining == 0 || remaining == miningFieldCount;
+            if (isBaseEventAbsent) {
+                baseEvent = ByteUtil.EMPTY_BYTE_ARRAY;
+            } else {
+                baseEvent = rlpHeader.get(r++).getRLPRawData();
+            }
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -335,8 +357,26 @@ public final class BlockFactory implements BtcHeaderSizeRule {
         int expectedSizeWithoutMining = calculateExpectedHeaderSize(blockNumber, compressed, false);
         int expectedSizeWithMining = calculateExpectedHeaderSize(blockNumber, compressed, true);
 
-        return rlpHeader.size() == expectedSizeWithoutMining ||
-                rlpHeader.size() == expectedSizeWithMining;
+        if (rlpHeader.size() == expectedSizeWithoutMining
+                || rlpHeader.size() == expectedSizeWithMining) {
+            return true;
+        }
+
+        // Testnet-only tolerance: accept a header that is one RLP element short of the
+        // expected layout and have the decoder supply an empty baseEvent for it.
+        if (isInBaseEventRecoveryWindow(blockNumber, compressed)) {
+            return rlpHeader.size() == expectedSizeWithoutMining - 1
+                    || rlpHeader.size() == expectedSizeWithMining - 1;
+        }
+
+        return false;
+    }
+
+    private boolean isInBaseEventRecoveryWindow(long blockNumber, boolean compressed) {
+        return !compressed
+                && chainId == Constants.TESTNET_CHAIN_ID
+                && isBaseEventEnabled(blockNumber)
+                && blockNumber < BASE_EVENT_RECOVERY_UPPER_BOUND;
     }
 
     /**

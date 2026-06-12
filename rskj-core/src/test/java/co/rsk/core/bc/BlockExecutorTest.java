@@ -21,10 +21,15 @@ package co.rsk.core.bc;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import java.math.BigInteger;
 import java.nio.file.Path;
@@ -50,6 +55,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.ECKey;
@@ -197,6 +203,76 @@ public class BlockExecutorTest {
         Assertions.assertTrue(result.getTransactionReceipts().isEmpty());
         Assertions.assertArrayEquals(repository.getRoot(), parent.getStateRoot());
         Assertions.assertArrayEquals(repository.getRoot(), result.getFinalState().getHash().getBytes());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void executeForMining_whenTxExecutionThrowsError_isCaughtAndTxMarkedInvalid(boolean activeRskip144) {
+        // A java.lang.Error (not just an Exception) thrown while executing a transaction must
+        // be caught at the block-execution layer so block building does not abort: the
+        // transaction is collected as invalid (so it can be evicted from the pending pool)
+        // and execution continues with the remaining transactions.
+        doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        Block block = getBlockWithOneTransaction(); // this changes the best block
+        Block parent = blockchain.getBestBlock();
+        Transaction tx = block.getTransactionsList().get(0);
+
+        TransactionExecutor throwingExecutor = mock(TransactionExecutor.class);
+        when(throwingExecutor.executeTransaction()).thenThrow(new OutOfMemoryError("simulated error during tx execution"));
+
+        TransactionExecutorFactory factory = mock(TransactionExecutorFactory.class);
+        // pre-RSKIP144 path (executeInternal) uses the 9-arg newInstance(...)
+        when(factory.newInstance(any(), anyInt(), any(), any(), any(), anyLong(), anyBoolean(), anyInt(), any()))
+                .thenReturn(throwingExecutor);
+        // post-RSKIP144 mining path (executeForMiningAfterRSKIP144) uses the 11-arg newInstance(...)
+        when(factory.newInstance(any(), anyInt(), any(), any(), any(), anyLong(), anyBoolean(), anyInt(), any(), anyBoolean(), anyLong()))
+                .thenReturn(throwingExecutor);
+
+        BlockExecutor executor = buildBlockExecutorWithFactory(factory, activeRskip144);
+
+        BlockResult result = Assertions.assertDoesNotThrow(
+                () -> executor.executeForMining(block, parent.getHeader(), true, false, false));
+
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.getInvalidTransactions().contains(tx));
+    }
+
+    @Test
+    void execute_whenValidationTxThrowsError_propagatesInsteadOfRejectingBlock() {
+        // During block validation, an Error (e.g. OutOfMemoryError) is non-deterministic across nodes
+        // (heap-dependent), so it must NOT be turned into a block-invalidity verdict -that could split the
+        // chain. It must propagate (fail-stop) instead. Mining, by contrast, recovers by dropping the tx
+        // (covered by executeForMining_whenTxExecutionThrowsError_isCaughtAndTxMarkedInvalid).
+        // pre-RSKIP144 validation goes through executeInternal, which is the path guarded by this rule.
+        boolean activeRskip144 = false;
+        doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+
+        Block block = getBlockWithOneTransaction(); // this changes the best block
+        Block parent = blockchain.getBestBlock();
+
+        TransactionExecutor throwingExecutor = mock(TransactionExecutor.class);
+        when(throwingExecutor.executeTransaction()).thenThrow(new OutOfMemoryError("simulated error during tx execution"));
+
+        TransactionExecutorFactory factory = mock(TransactionExecutorFactory.class);
+        when(factory.newInstance(any(), anyInt(), any(), any(), any(), anyLong(), anyBoolean(), anyInt(), any()))
+                .thenReturn(throwingExecutor);
+
+        BlockExecutor executor = buildBlockExecutorWithFactory(factory, activeRskip144);
+
+        // discardInvalidTxs=false, acceptInvalidTransactions=false -> the block-validation path.
+        Assertions.assertThrows(OutOfMemoryError.class,
+                () -> executor.execute(null, 0, block, parent.getHeader(), false, false, false));
+    }
+
+    private BlockExecutor buildBlockExecutorWithFactory(TransactionExecutorFactory factory, boolean activeRskip144) {
+        RskSystemProperties cfg = spy(config);
+        doReturn(activationConfig).when(cfg).getActivationConfig();
+        doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+        doReturn(RSKIP_126_IS_ACTIVE).when(activationConfig).isActive(eq(RSKIP126), anyLong());
+        StateRootHandler stateRootHandler = new StateRootHandler(cfg.getActivationConfig(),
+                new StateRootsStoreImpl(new HashMapDB()));
+        return new BlockExecutor(new RepositoryLocator(trieStore, stateRootHandler), factory, cfg);
     }
 
     @ParameterizedTest
