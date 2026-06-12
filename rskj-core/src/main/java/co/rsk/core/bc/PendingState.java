@@ -22,14 +22,24 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.handler.txvalidator.TxValidatorNonceEncodingValidator;
-import org.ethereum.core.*;
+import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
+import org.ethereum.core.TransactionSet;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.reverseOrder;
@@ -129,7 +139,7 @@ public class PendingState implements AccountInformationProvider {
             if (isSortSafe(tx, signatureCache)) {
                 validTxs.add(tx);
             } else {
-                LOGGER.warn("Discarding tx from sort due to non-canonical or unreadable fields");
+                LOGGER.warn("Discarding tx {} from sort due to non-canonical or unreadable fields", tx.getHash());
                 if (discardedTxs != null) {
                     discardedTxs.add(tx);
                 }

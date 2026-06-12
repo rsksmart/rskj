@@ -60,7 +60,7 @@ public class TxValidatorNonceEncodingValidator implements TxValidatorStep {
         }
 
         if (nonce.length > Long.BYTES) {
-            return TransactionValidationResult.withError("transaction nonce byte length exceeds maximum");
+            return TransactionValidationResult.withError("transaction nonce byte length exceeds maximum: " + nonce.length + " > " + Long.BYTES);
         }
 
         return TransactionValidationResult.withError("transaction nonce has non-canonical encoding");
