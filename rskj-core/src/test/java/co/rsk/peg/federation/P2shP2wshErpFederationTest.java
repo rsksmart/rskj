@@ -1,6 +1,6 @@
 package co.rsk.peg.federation;
 
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.signTxInputWithKey;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
@@ -12,7 +12,6 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegUtils;
-import co.rsk.peg.ReleaseTransactionBuilder;
 import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -161,7 +160,7 @@ class P2shP2wshErpFederationTest {
             int outputIndex = 0;
             tx.addInput(prevTxHash, outputIndex, new Script(new byte[]{}));
             tx.addOutput(prevTxSentValue.minus(fee), receiver);
-            tx.setVersion(ReleaseTransactionBuilder.BTC_TX_VERSION_2);
+            tx.setVersion(BTC_TX_VERSION_2);
         }
 
         private void signTx() {

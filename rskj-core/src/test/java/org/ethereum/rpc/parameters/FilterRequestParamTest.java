@@ -37,12 +37,14 @@ class FilterRequestParamTest {
 
     @Test
     void validInput() throws JsonProcessingException {
-        String filterRequestInput = "{\n" +
-                "            \"fromBlock\": \"0x1\"," +
-                "            \"toBlock\" : \"0x2\"," +
-                "            \"address\": \"0x7857288e171c6159c5576d1bd9ac40c0c48a771c\"," +
-                "            \"topics\":[\"0x000000000000000000000000000000006d696e696e675f6665655f746f706963\"]," +
-                "            \"blockHash\": \"0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3\"}";
+        String filterRequestInput = """
+                {
+                    "fromBlock": "0x1",
+                    "toBlock": "0x2",
+                    "address": "0x7857288e171c6159c5576d1bd9ac40c0c48a771c",
+                    "topics":["0x000000000000000000000000000000006d696e696e675f6665655f746f706963"],
+                    "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3"
+                }""";
         JsonNode jsonNode = objectMapper.readTree(filterRequestInput);
         FilterRequestParam filterRequestParam = objectMapper.convertValue(jsonNode, FilterRequestParam.class);
         assertNotNull(filterRequestParam);
@@ -55,10 +57,11 @@ class FilterRequestParamTest {
 
     @Test
     void filterRequestParsesArrayOfTopic() throws JsonProcessingException {
-        String filterRequestInput = "{\n" +
-                "            \"topics\":[\"0x000000000000000000000000000000006d696e696e675f6665655f746f706963\", " +
-                "                        [\"0x0000000000000000000000000000000000000000000000000000000000001111\",\"0x000000000000000000000000000000006d696e696e675f6665655f746f706963\"]]" +
-                "}";
+        String filterRequestInput = """
+                {
+                    "topics":["0x000000000000000000000000000000006d696e696e675f6665655f746f706963",
+                              ["0x0000000000000000000000000000000000000000000000000000000000001111","0x000000000000000000000000000000006d696e696e675f6665655f746f706963"]]
+                }""";
         JsonNode jsonNode = objectMapper.readTree(filterRequestInput);
         FilterRequestParam filterRequestParam = objectMapper.convertValue(jsonNode, FilterRequestParam.class);
         assertNotNull(filterRequestParam);
@@ -71,19 +74,21 @@ class FilterRequestParamTest {
 
     @Test
     void invalidTopicFails() throws JsonProcessingException {
-        String filterRequestInput = "{\n" +
-                "            \"topics\":[\"0x000000000000000000000000000000006d696e696e675f6665655f746f706963\", " +
-                "                        [\"0x0000000000000000000000000000000000000000000000000000000000001111\",\"0x0000w0000000000000000000000000006d696e696e675f6665655f746f706963\"]]" +
-                "}";
+        String filterRequestInput = """
+                {
+                    "topics":["0x000000000000000000000000000000006d696e696e675f6665655f746f706963",
+                              ["0x0000000000000000000000000000000000000000000000000000000000001111","0x0000w0000000000000000000000000006d696e696e675f6665655f746f706963"]]
+                }""";
         JsonNode jsonNode = objectMapper.readTree(filterRequestInput);
         Assertions.assertThrows(RskJsonRpcRequestException.class, () -> objectMapper.convertValue(jsonNode, FilterRequestParam.class));
     }
 
     @Test
     void filterRequestParsesSingleTopic() throws JsonProcessingException {
-        String filterRequestInput = "{\n" +
-                "            \"topics\":\"0x000000000000000000000000000000006d696e696e675f6665655f746f706963\"" +
-                "}";
+        String filterRequestInput = """
+                {
+                    "topics":"0x000000000000000000000000000000006d696e696e675f6665655f746f706963"
+                }""";
         JsonNode jsonNode = objectMapper.readTree(filterRequestInput);
         FilterRequestParam filterRequestParam = objectMapper.convertValue(jsonNode, FilterRequestParam.class);
         assertNotNull(filterRequestParam);
@@ -138,8 +143,10 @@ class FilterRequestParamTest {
 
     @Test
     void canHandleNullTopics() throws JsonProcessingException {
-        String filterRequestInput = "{\n" +
-                "            \"topics\":[\"0x000000000000000000000000000000006d696e696e675f6665655f746f706963\", null, [\"0x000000000000000000000000000000006d696e696e675f6665655f746f706963\",null]]}";
+        String filterRequestInput = """
+                {
+                    "topics":["0x000000000000000000000000000000006d696e696e675f6665655f746f706963", null, ["0x000000000000000000000000000000006d696e696e675f6665655f746f706963",null]]
+                }""";
         JsonNode jsonNode = objectMapper.readTree(filterRequestInput);
         FilterRequestParam filterRequestParam = objectMapper.convertValue(jsonNode, FilterRequestParam.class);
         FilterRequest fr = objectMapper.convertValue(jsonNode, FilterRequest.class);

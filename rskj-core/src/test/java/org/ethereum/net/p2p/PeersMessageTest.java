@@ -56,9 +56,10 @@ class PeersMessageTest {
 
     @Test
     void correctStringMustBeReturned(){
-        String expectedString = "[PEERS\n" +
-                "       [ip=118.73.71.36 port=46814 peerId=1010]\n" +
-                "       [ip=115.204.229.36 port=63659 peerId=1010]]";
+        String expectedString = """
+                [PEERS
+                       [ip=118.73.71.36 port=46814 peerId=1010]
+                       [ip=115.204.229.36 port=63659 peerId=1010]]""";
         PeersMessage peersMessage = new PeersMessage(getTestPeerMessagePayload());
         assertEquals(expectedString,peersMessage.toString());
 

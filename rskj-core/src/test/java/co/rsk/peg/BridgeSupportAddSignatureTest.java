@@ -5,7 +5,7 @@ import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeStorageIndexKey.PEGOUTS_WAITING_FOR_SIGNATURES;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.federation.FederationTestUtils.REGTEST_FEDERATION_PRIVATE_KEYS;
 import static org.hamcrest.MatcherAssert.assertThat;

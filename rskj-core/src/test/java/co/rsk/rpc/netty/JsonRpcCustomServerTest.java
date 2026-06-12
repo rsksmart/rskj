@@ -141,26 +141,28 @@ class JsonRpcCustomServerTest {
         long sleepTimePerRequest = 300;
         //The request has 2 methods, each one will sleep for 300ms, so the total time will be 600ms.
         // The timeout per method is 550ms, so the request will be executed successfully.
-        String jsonRequest = " [\n" +
-                "    {\n" +
-                "      \"jsonrpc\": \"2.0\",\n" +
-                "      \"method\": \"test_second\",\n" +
-                "      \"params\": [\n" +
-                "        \"param1\",\n" +
-                "        \"param2\"\n" +
-                "      ],\n" +
-                "      \"id\": 1\n" +
-                "    },\n" +
-                "    {\n" +
-                "      \"jsonrpc\": \"2.0\",\n" +
-                "      \"method\": \"test_second\",\n" +
-                "      \"params\": [\n" +
-                "        \"param1\",\n" +
-                "        \"param2\"\n" +
-                "      ],\n" +
-                "      \"id\": 2\n" +
-                "    }\n" +
-                "  ]";
+        String jsonRequest = """
+                [
+                    {
+                      "jsonrpc": "2.0",
+                      "method": "test_second",
+                      "params": [
+                        "param1",
+                        "param2"
+                      ],
+                      "id": 1
+                    },
+                    {
+                      "jsonrpc": "2.0",
+                      "method": "test_second",
+                      "params": [
+                        "param1",
+                        "param2"
+                      ],
+                      "id": 2
+                    }
+                ]
+                """;
 
         String response = "Expected response";
         JsonNode request = objectMapper.readTree(jsonRequest);
@@ -181,26 +183,28 @@ class JsonRpcCustomServerTest {
     void testHandleJsonNodeRequest_WithMethodTimeout_BatchRequest_FAIL() throws Exception {
         long timeoutPerMethod = 150;
         long sleepTimePerRequest = 200;
-        String jsonRequest = " [\n" +
-                "    {\n" +
-                "      \"jsonrpc\": \"2.0\",\n" +
-                "      \"method\": \"test_second\",\n" +
-                "      \"params\": [\n" +
-                "        \"param1\",\n" +
-                "        \"param2\"\n" +
-                "      ],\n" +
-                "      \"id\": 1\n" +
-                "    },\n" +
-                "    {\n" +
-                "      \"jsonrpc\": \"2.0\",\n" +
-                "      \"method\": \"test_second\",\n" +
-                "      \"params\": [\n" +
-                "        \"param1\",\n" +
-                "        \"param2\"\n" +
-                "      ],\n" +
-                "      \"id\": 2\n" +
-                "    }\n" +
-                "  ]";
+        String jsonRequest = """
+                [
+                    {
+                      "jsonrpc": "2.0",
+                      "method": "test_second",
+                      "params": [
+                        "param1",
+                        "param2"
+                      ],
+                      "id": 1
+                    },
+                    {
+                      "jsonrpc": "2.0",
+                      "method": "test_second",
+                      "params": [
+                        "param1",
+                        "param2"
+                      ],
+                      "id": 2
+                    }
+                ]
+                """;
 
         String response = "Expected response";
         JsonNode request = objectMapper.readTree(jsonRequest);
@@ -219,12 +223,13 @@ class JsonRpcCustomServerTest {
 
     @Test
     void sendingRequestWithNonDeclaredMethodShouldFail() throws Exception {
-        String jsonRequest = "    {\n" +
-                "      \"jsonrpc\": \"2.0\",\n" +
-                "      \"method\": \"invalid_method\",\n" +
-                "      \"params\": [],\n" +
-                "      \"id\": 1\n" +
-                "    }";
+        String jsonRequest = """
+                {
+                  "jsonrpc": "2.0",
+                  "method": "invalid_method",
+                  "params": [],
+                  "id": 1
+                }""";
 
         String expectedResponse = "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"method not found\"}}";
         JsonNode request = objectMapper.readTree(jsonRequest);
