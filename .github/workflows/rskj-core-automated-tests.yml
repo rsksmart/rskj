@@ -1,0 +1,397 @@
+name: RSKj Core Automated Tests
+
+# Umbrella check: on an rskj PR (or manual dispatch), trigger the three external
+# test suites against this rskj change in parallel, wait for all of them, and
+# surface a single concise pass/fail report.
+#
+#   JSON-RPC  -> rsksmart/rskj-json-rpc-tests   (rskj-json-rpc-tests.yml,     test_branch)
+#   Hardhat   -> rsksmart/rskj-hardhat-tests     (rskj-smart-contract-tests.yml, hardhat_branch)
+#   K6        -> rsksmart/rskj-k6-tests           (rskj-k6-tests.yml,           test_branch)
+#
+# Pure first-party tooling — gh / gh api / jq are all preinstalled on the runner;
+# there are no third-party (marketplace) actions. Cross-repo dispatch uses the
+# AUTOMATED_TESTS_GH_TOKEN fine-grained PAT (Actions: read+write, Contents: read
+# on the three test repos). The dispatch endpoint returns the created run id
+# directly via return_run_details=true (GitHub, 2026-02-19), so there is no
+# poll-to-correlate step.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: ["master", "*-rc"]
+  workflow_dispatch:
+    inputs:
+      rskj_branch:
+        description: "rskj branch the suites build the node from (default: this ref)"
+        type: string
+        required: false
+      jsonrpc_branch:
+        description: "rskj-json-rpc-tests branch (default: auto-match, else main)"
+        type: string
+        required: false
+      hardhat_branch:
+        description: "rskj-hardhat-tests branch (default: auto-match, else main)"
+        type: string
+        required: false
+      k6_branch:
+        description: "rskj-k6-tests branch (default: auto-match, else main)"
+        type: string
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: rskj-core-automated-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  resolve:
+    name: Resolve refs
+    runs-on: ubuntu-latest
+    outputs:
+      has_token: ${{ steps.token.outputs.has_token }}
+      rskj_ref: ${{ steps.refs.outputs.rskj_ref }}
+      jsonrpc_ref: ${{ steps.refs.outputs.jsonrpc_ref }}
+      hardhat_ref: ${{ steps.refs.outputs.hardhat_ref }}
+      k6_ref: ${{ steps.refs.outputs.k6_ref }}
+    steps:
+      # The PAT is a secret, so it is empty on fork PRs (GitHub withholds secrets
+      # from pull_request runs triggered by forks). Detect that here so the rest
+      # of the workflow can degrade gracefully instead of erroring on every gh call.
+      - name: Check cross-repo token
+        id: token
+        env:
+          TOKEN: ${{ secrets.AUTOMATED_TESTS_GH_TOKEN }}
+        run: |
+          if [ -n "$TOKEN" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::AUTOMATED_TESTS_GH_TOKEN is empty (fork PR?) — downstream suites will be skipped."
+          fi
+
+      - name: Resolve rskj + per-suite test refs
+        id: refs
+        if: steps.token.outputs.has_token == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATED_TESTS_GH_TOKEN }}
+          EVENT: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          REF_NAME: ${{ github.ref_name }}
+          IN_RSKJ: ${{ inputs.rskj_branch }}
+          IN_JSONRPC: ${{ inputs.jsonrpc_branch }}
+          IN_HARDHAT: ${{ inputs.hardhat_branch }}
+          IN_K6: ${{ inputs.k6_branch }}
+        run: |
+          set -euo pipefail
+
+          # rskj ref: PR head branch on PRs; the dispatch input (or the dispatched
+          # ref) on manual runs. The three suites build the node from this.
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            RSKJ_REF="${IN_RSKJ:-$REF_NAME}"
+          else
+            RSKJ_REF="$HEAD_REF"
+          fi
+          echo "rskj_ref=$RSKJ_REF" >> "$GITHUB_OUTPUT"
+          echo "rskj ref: $RSKJ_REF"
+
+          # Matching-branch convention: if a branch named "$RSKJ_REF" exists in a
+          # test repo, run that branch there (so companion test/workflow changes on
+          # a same-named branch are exercised); otherwise fall back to main. An
+          # explicit dispatch input always wins.
+          resolve_ref() {
+            repo="$1"; override="$2"
+            if [ -n "$override" ]; then
+              echo "$override"; return
+            fi
+            if gh api "repos/$repo/branches/$RSKJ_REF" >/dev/null 2>&1; then
+              echo "$RSKJ_REF"
+            else
+              echo "main"
+            fi
+          }
+
+          JSONRPC_REF=$(resolve_ref rsksmart/rskj-json-rpc-tests "$IN_JSONRPC")
+          HARDHAT_REF=$(resolve_ref rsksmart/rskj-hardhat-tests "$IN_HARDHAT")
+          K6_REF=$(resolve_ref rsksmart/rskj-k6-tests "$IN_K6")
+
+          {
+            echo "jsonrpc_ref=$JSONRPC_REF"
+            echo "hardhat_ref=$HARDHAT_REF"
+            echo "k6_ref=$K6_REF"
+          } >> "$GITHUB_OUTPUT"
+          echo "json-rpc ref: $JSONRPC_REF | hardhat ref: $HARDHAT_REF | k6 ref: $K6_REF"
+
+  json_rpc:
+    name: JSON-RPC suite
+    needs: resolve
+    if: needs.resolve.outputs.has_token == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    outputs:
+      conclusion: ${{ steps.run.outputs.conclusion }}
+      run_url: ${{ steps.run.outputs.run_url }}
+    steps:
+      - name: Dispatch and wait
+        id: run
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATED_TESTS_GH_TOKEN }}
+          REPO: rsksmart/rskj-json-rpc-tests
+          WORKFLOW: rskj-json-rpc-tests.yml
+          TEST_INPUT: test_branch
+          RSKJ_REF: ${{ needs.resolve.outputs.rskj_ref }}
+          TEST_REF: ${{ needs.resolve.outputs.jsonrpc_ref }}
+        run: |
+          set -euo pipefail
+          INPUTS=$(jq -n --arg rskj "$RSKJ_REF" --arg k "$TEST_INPUT" --arg v "$TEST_REF" \
+            '{rskj_branch: $rskj, ($k): $v}')
+          BODY=$(jq -n --arg ref "$TEST_REF" --argjson inputs "$INPUTS" \
+            '{ref: $ref, inputs: $inputs, return_run_details: true}')
+          echo "Dispatching $WORKFLOW in $REPO on '$TEST_REF' (rskj_branch=$RSKJ_REF)"
+          if ! RESP=$(printf '%s' "$BODY" | gh api -X POST \
+              "repos/$REPO/actions/workflows/$WORKFLOW/dispatches" --input -); then
+            echo "::error::failed to dispatch $WORKFLOW in $REPO"
+            exit 1
+          fi
+          RUN_ID=$(jq -r '.workflow_run_id // empty' <<<"$RESP")
+          RUN_URL=$(jq -r '.html_url // empty' <<<"$RESP")
+          if [ -z "$RUN_ID" ]; then
+            echo "::error::dispatch did not return a run id; response: $RESP"
+            exit 1
+          fi
+          echo "run_url=$RUN_URL" >> "$GITHUB_OUTPUT"
+          echo "Triggered run $RUN_ID — $RUN_URL"
+          # Wait for completion by polling the run status (keyed on the id we
+          # already hold — deterministic, unlike `gh run watch`, which can race a
+          # just-created run). ~600 * 30s = 5h, matching this job's timeout; the
+          # report job gates centrally on the conclusion, so we never fail here.
+          CONCLUSION=""
+          for _ in $(seq 1 600); do
+            STATUS=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null || echo "")
+            if [ "$STATUS" = "completed" ]; then
+              CONCLUSION=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.conclusion // "unknown"' || echo "unknown")
+              break
+            fi
+            sleep 30
+          done
+          [ -n "$CONCLUSION" ] || CONCLUSION="timed_out"
+          echo "conclusion=$CONCLUSION" >> "$GITHUB_OUTPUT"
+          echo "JSON-RPC suite concluded: $CONCLUSION"
+
+  hardhat:
+    name: Hardhat suite
+    needs: resolve
+    if: needs.resolve.outputs.has_token == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    outputs:
+      conclusion: ${{ steps.run.outputs.conclusion }}
+      run_url: ${{ steps.run.outputs.run_url }}
+    steps:
+      - name: Dispatch and wait
+        id: run
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATED_TESTS_GH_TOKEN }}
+          REPO: rsksmart/rskj-hardhat-tests
+          WORKFLOW: rskj-smart-contract-tests.yml
+          TEST_INPUT: hardhat_branch
+          RSKJ_REF: ${{ needs.resolve.outputs.rskj_ref }}
+          TEST_REF: ${{ needs.resolve.outputs.hardhat_ref }}
+        run: |
+          set -euo pipefail
+          INPUTS=$(jq -n --arg rskj "$RSKJ_REF" --arg k "$TEST_INPUT" --arg v "$TEST_REF" \
+            '{rskj_branch: $rskj, ($k): $v}')
+          BODY=$(jq -n --arg ref "$TEST_REF" --argjson inputs "$INPUTS" \
+            '{ref: $ref, inputs: $inputs, return_run_details: true}')
+          echo "Dispatching $WORKFLOW in $REPO on '$TEST_REF' (rskj_branch=$RSKJ_REF)"
+          if ! RESP=$(printf '%s' "$BODY" | gh api -X POST \
+              "repos/$REPO/actions/workflows/$WORKFLOW/dispatches" --input -); then
+            echo "::error::failed to dispatch $WORKFLOW in $REPO"
+            exit 1
+          fi
+          RUN_ID=$(jq -r '.workflow_run_id // empty' <<<"$RESP")
+          RUN_URL=$(jq -r '.html_url // empty' <<<"$RESP")
+          if [ -z "$RUN_ID" ]; then
+            echo "::error::dispatch did not return a run id; response: $RESP"
+            exit 1
+          fi
+          echo "run_url=$RUN_URL" >> "$GITHUB_OUTPUT"
+          echo "Triggered run $RUN_ID — $RUN_URL"
+          gh run watch "$RUN_ID" -R "$REPO" --exit-status --interval 30 || true
+          CONCLUSION=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.conclusion // "unknown"' || echo "unknown")
+          echo "conclusion=$CONCLUSION" >> "$GITHUB_OUTPUT"
+          echo "Hardhat suite concluded: $CONCLUSION"
+
+  k6:
+    name: K6 suite
+    needs: resolve
+    if: needs.resolve.outputs.has_token == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    outputs:
+      conclusion: ${{ steps.run.outputs.conclusion }}
+      run_url: ${{ steps.run.outputs.run_url }}
+    steps:
+      - name: Dispatch and wait
+        id: run
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATED_TESTS_GH_TOKEN }}
+          REPO: rsksmart/rskj-k6-tests
+          WORKFLOW: rskj-k6-tests.yml
+          TEST_INPUT: test_branch
+          RSKJ_REF: ${{ needs.resolve.outputs.rskj_ref }}
+          TEST_REF: ${{ needs.resolve.outputs.k6_ref }}
+        run: |
+          set -euo pipefail
+          INPUTS=$(jq -n --arg rskj "$RSKJ_REF" --arg k "$TEST_INPUT" --arg v "$TEST_REF" \
+            '{rskj_branch: $rskj, ($k): $v}')
+          BODY=$(jq -n --arg ref "$TEST_REF" --argjson inputs "$INPUTS" \
+            '{ref: $ref, inputs: $inputs, return_run_details: true}')
+          echo "Dispatching $WORKFLOW in $REPO on '$TEST_REF' (rskj_branch=$RSKJ_REF)"
+          if ! RESP=$(printf '%s' "$BODY" | gh api -X POST \
+              "repos/$REPO/actions/workflows/$WORKFLOW/dispatches" --input -); then
+            echo "::error::failed to dispatch $WORKFLOW in $REPO"
+            exit 1
+          fi
+          RUN_ID=$(jq -r '.workflow_run_id // empty' <<<"$RESP")
+          RUN_URL=$(jq -r '.html_url // empty' <<<"$RESP")
+          if [ -z "$RUN_ID" ]; then
+            echo "::error::dispatch did not return a run id; response: $RESP"
+            exit 1
+          fi
+          echo "run_url=$RUN_URL" >> "$GITHUB_OUTPUT"
+          echo "Triggered run $RUN_ID — $RUN_URL"
+          gh run watch "$RUN_ID" -R "$REPO" --exit-status --interval 30 || true
+          CONCLUSION=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.conclusion // "unknown"' || echo "unknown")
+          echo "conclusion=$CONCLUSION" >> "$GITHUB_OUTPUT"
+          echo "K6 suite concluded: $CONCLUSION"
+
+  report:
+    name: Report
+    needs: [resolve, json_rpc, hardhat, k6]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build report, comment, notify and gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HAS_TOKEN: ${{ needs.resolve.outputs.has_token }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_OWNER: ${{ github.event.pull_request.head.repo.owner.login }}
+          RSKJ_REF: ${{ needs.resolve.outputs.rskj_ref }}
+          JSONRPC_CONCLUSION: ${{ needs.json_rpc.outputs.conclusion }}
+          JSONRPC_URL: ${{ needs.json_rpc.outputs.run_url }}
+          JSONRPC_REF: ${{ needs.resolve.outputs.jsonrpc_ref }}
+          HARDHAT_CONCLUSION: ${{ needs.hardhat.outputs.conclusion }}
+          HARDHAT_URL: ${{ needs.hardhat.outputs.run_url }}
+          HARDHAT_REF: ${{ needs.resolve.outputs.hardhat_ref }}
+          K6_CONCLUSION: ${{ needs.k6.outputs.conclusion }}
+          K6_URL: ${{ needs.k6.outputs.run_url }}
+          K6_REF: ${{ needs.resolve.outputs.k6_ref }}
+          SLACK_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
+          SLACK_CHANNEL: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
+        run: |
+          set -euo pipefail
+
+          # Fork PR: the cross-repo token was unavailable, so nothing was
+          # dispatched. Report the skip and stay green — the PR cannot supply the
+          # secret, so we do not block it.
+          if [ "$HAS_TOKEN" != "true" ]; then
+            {
+              echo "### RSKj Core Automated Tests — ⏭️ skipped"
+              echo ""
+              echo "Cross-repo token \`AUTOMATED_TESTS_GH_TOKEN\` was unavailable"
+              echo "(expected on fork PRs, where secrets are withheld). The"
+              echo "JSON-RPC / Hardhat / K6 suites were not dispatched."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          emoji() {
+            case "$1" in
+              success) echo "✅";;
+              failure) echo "❌";;
+              cancelled) echo "🚫";;
+              timed_out) echo "⏱️";;
+              skipped) echo "⏭️";;
+              "") echo "⚠️";;
+              *) echo "❓";;
+            esac
+          }
+
+          row() { # name conclusion ref url
+            # shellcheck disable=SC2016  # the backticks are literal markdown, not command substitution
+            printf '| %s | %s %s | `%s` | [run](%s) |\n' \
+              "$1" "$(emoji "$2")" "${2:-no result}" "${3:-?}" "${4:-#}"
+          }
+
+          # Header + table, reused for the summary and the PR comment.
+          REPORT_FILE="$(mktemp)"
+          {
+            echo "### RSKj Core Automated Tests"
+            echo ""
+            echo "rskj node built from \`${RSKJ_REF}\`."
+            echo ""
+            echo "| Suite | Result | Branch tested | Run |"
+            echo "| --- | --- | --- | --- |"
+            row "JSON-RPC" "$JSONRPC_CONCLUSION" "$JSONRPC_REF" "$JSONRPC_URL"
+            row "Hardhat"  "$HARDHAT_CONCLUSION" "$HARDHAT_REF" "$HARDHAT_URL"
+            row "K6"       "$K6_CONCLUSION"      "$K6_REF"      "$K6_URL"
+          } > "$REPORT_FILE"
+
+          cat "$REPORT_FILE" >> "$GITHUB_STEP_SUMMARY"
+
+          # Determine overall result up front (drives the PR-comment marker,
+          # Slack styling, and the final gate).
+          OVERALL=success
+          for c in "$JSONRPC_CONCLUSION" "$HARDHAT_CONCLUSION" "$K6_CONCLUSION"; do
+            [ "$c" = "success" ] || OVERALL=failure
+          done
+
+          # Sticky PR comment: upsert by a hidden marker so each push updates the
+          # same comment instead of stacking new ones. Uses the built-in token.
+          if [ "$EVENT" = "pull_request" ] && [ -n "${PR_NUMBER:-}" ]; then
+            MARKER="<!-- rskj-core-automated-tests -->"
+            BODY_FILE="$(mktemp)"
+            { printf '%s\n' "$MARKER"; cat "$REPORT_FILE"; } > "$BODY_FILE"
+            CID=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate \
+              --jq "map(select(.body | startswith(\"$MARKER\"))) | .[0].id // empty" 2>/dev/null \
+              | head -n1 || true)
+            if [ -n "$CID" ]; then
+              gh api -X PATCH "repos/$REPO/issues/comments/$CID" \
+                -f body="$(cat "$BODY_FILE")" >/dev/null
+              echo "Updated sticky PR comment $CID"
+            else
+              gh api -X POST "repos/$REPO/issues/$PR_NUMBER/comments" \
+                -f body="$(cat "$BODY_FILE")" >/dev/null
+              echo "Created sticky PR comment"
+            fi
+          fi
+
+          # Slack: only for rsksmart-owned PRs (mirrors rit.yml) and only when the
+          # bot token is present. curl, not a marketplace action.
+          if [ "$EVENT" = "pull_request" ] && [ "$PR_OWNER" = "rsksmart" ] && [ -n "${SLACK_TOKEN:-}" ]; then
+            if [ "$OVERALL" = "success" ]; then HEADER="✅ PASSED — Core Automated Tests"; else HEADER="❌ FAILED — Core Automated Tests"; fi
+            TEXT=$(printf '*%s* — %s #%s\n• JSON-RPC: %s %s\n• Hardhat: %s %s\n• K6: %s %s' \
+              "$HEADER" "$REPO" "$PR_NUMBER" \
+              "$(emoji "$JSONRPC_CONCLUSION")" "${JSONRPC_CONCLUSION:-no result}" \
+              "$(emoji "$HARDHAT_CONCLUSION")" "${HARDHAT_CONCLUSION:-no result}" \
+              "$(emoji "$K6_CONCLUSION")" "${K6_CONCLUSION:-no result}")
+            PAYLOAD=$(jq -n --arg ch "$SLACK_CHANNEL" --arg text "$TEXT" \
+              '{channel: $ch, text: $text}')
+            curl -sS -X POST https://slack.com/api/chat.postMessage \
+              -H "Authorization: Bearer $SLACK_TOKEN" \
+              -H "Content-type: application/json; charset=utf-8" \
+              --data "$PAYLOAD" >/dev/null || echo "::warning::Slack notification failed"
+          fi
+
+          # Authoritative gate.
+          if [ "$OVERALL" != "success" ]; then
+            echo "::error::one or more downstream suites did not succeed (JSON-RPC=$JSONRPC_CONCLUSION, Hardhat=$HARDHAT_CONCLUSION, K6=$K6_CONCLUSION)"
+            exit 1
+          fi
+          echo "All downstream suites passed."
