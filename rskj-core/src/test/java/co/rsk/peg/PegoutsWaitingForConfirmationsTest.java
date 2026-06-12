@@ -244,9 +244,12 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void getNextPegoutWithEnoughConfirmations_rskip559_overwrites() {
-        var pegHashes = new HashMap<Long, Sha256Hash>();
-        pegHashes.put(10L, Sha256Hash.wrap("1c07c09ac3d01c0a7e3b7c6400259266cf7a835fc4e08a512a849e6114b3c5a4"));
-        var overwrites = new PegoutsOverwrites(pegHashes);
+        var pegoutRefs = new HashMap<Long, PegoutsOverwrites.PegoutRef>();
+        pegoutRefs.put(10L, new PegoutsOverwrites.PegoutRef(
+            Sha256Hash.wrap("7ff02a735d691a94cd4a08c13b60b86b3e055505dcceabd305c6772043e4a423"),
+            5L
+        ));
+        var overwrites = new PegoutsOverwrites(pegoutRefs);
         var activations = initTestActivationConfig(overwrites).forBlock(0L);
 
         Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, activations);
@@ -262,6 +265,27 @@ class PegoutsWaitingForConfirmationsTest {
             "7ff02a735d691a94cd4a08c13b60b86b3e055505dcceabd305c6772043e4a423",
             hash,
             "Valid candidate for non fixed pegouts sorting"
+        );
+
+        pegoutRefs.put(10L, new PegoutsOverwrites.PegoutRef(
+            Sha256Hash.wrap("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"),
+            5L
+        ));
+
+        result = set.getNextPegoutWithEnoughConfirmations(10L, 5, activations);
+
+        Assertions.assertTrue(result.isPresent());
+
+        entry = result.get();
+        hash = entry.getBtcTransaction().getHash().toString();
+
+        // In a case if there are multiple pegouts for same block.
+        // Previous processing consumed hardcoded pegout and we nave hardcoded value
+        // but no such entry.
+        Assertions.assertEquals(
+            "fdd781c46b5ad7993b3f133e3af94b2e3cbcc8d19e443dfc6b555a1b0bac1527",
+            hash,
+            "Default candidate should be returned when hardcoded pegout is not found"
         );
     }
 
