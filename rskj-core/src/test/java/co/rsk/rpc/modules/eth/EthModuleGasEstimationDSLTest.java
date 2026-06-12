@@ -85,10 +85,11 @@ class EthModuleGasEstimationDSLTest {
         Exception e = Assertions.assertThrows(GasCost.InvalidGasException.class, () -> runWithArgumentsAndBlock(eth, args, block));
         assertEquals("Got invalid gas value, tried operation: 20999 - 21000", e.getMessage());
 
-        // Try to estimate with not enough gas
+        // Try to estimate with not enough gas: must still return the correct gas estimate
         args.setGas(HexUtils.toQuantityJsonHex(1000));
-        e = Assertions.assertThrows(GasCost.InvalidGasException.class, () -> estimateGas(eth, args, BlockTag.LATEST.getTag()));
-        assertEquals("Got invalid gas value, tried operation: 1000 - 21000", e.getMessage());
+        long estimateBelowIntrinsic = estimateGas(eth, args, BlockTag.LATEST.getTag());
+        assertEquals(21000, estimateBelowIntrinsic,
+                "estimateGas must return the true minimum (21000) regardless of the caller's gas hint");
     }
 
     /**
@@ -778,6 +779,61 @@ class EthModuleGasEstimationDSLTest {
 
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
+    }
+
+    /**
+     * Regression test for the eth_estimateGas under-counting.
+     *
+     * Expected behaviour: the estimate a caller gets back must depend only
+     * on the transaction, never on the {@code gas} hint the caller happened
+     * to send — and it must be large enough to actually run the tx.
+     *
+     * Pre-fix, the caller's {@code gas} was used as the *simulation budget*.
+     * A hint below the true cost made the simulation run out of gas; the OOG
+     * was swallowed (only REVERT was handled) and the under-sized hint was
+     * handed back as the "estimate", so a client that trusted it submitted a
+     * tx that OOG'd on-chain.
+     */
+    @Test
+    void testEstimateGas_estimateIsIndependentOfCallerGasHint()
+            throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/updateStorage.txt");
+
+        TransactionReceipt deployReceipt = world.getTransactionReceiptByName("tx01");
+        String contractAddress = "0x" + deployReceipt.getTransaction()
+                .getContractAddress().toHexString();
+
+        EthModuleTestUtils.EthModuleGasEstimation eth =
+                EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+        Block block = world.getBlockChain().getBestBlock();
+
+        CallArguments args = new CallArguments();
+        args.setTo(contractAddress);
+        args.setValue(HexUtils.toQuantityJsonHex(0));
+        args.setNonce(HexUtils.toQuantityJsonHex(1));
+        args.setData("0x7b8d56e3" +
+                "0000000000000000000000000000000000000000000000000000000000000001" +
+                "0000000000000000000000000000000000000000000000000000000000000001"); // setValue(1, 1)
+
+        // Honest estimate: the caller sends a generous gas hint.
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        long honestEstimate = estimateGas(eth, args, BlockTag.LATEST.getTag());
+
+        // Exact same call, but the caller sends a hint one unit *below* the
+        // true cost.
+        long underfundedHint = honestEstimate - 1;
+        args.setGas(HexUtils.toQuantityJsonHex(underfundedHint));
+        long estimateWithUnderfundedHint = estimateGas(eth, args, BlockTag.LATEST.getTag());
+
+        assertTrue(estimateWithUnderfundedHint > underfundedHint,
+                "eth_estimateGas must not echo back an under-sized caller gas hint");
+
+        assertEquals(honestEstimate, estimateWithUnderfundedHint,
+                "eth_estimateGas must not depend on the caller-provided gas hint");
+
+        args.setGas(HexUtils.toQuantityJsonHex(estimateWithUnderfundedHint));
+        assertTrue(runWithArgumentsAndBlock(eth, args, block),
+                "the returned estimate must be a viable gasLimit");
     }
 
     public boolean runWithArgumentsAndBlock(EthModuleTestUtils.EthModuleGasEstimation ethModule, CallArguments args, Block block) {

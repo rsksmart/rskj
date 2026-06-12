@@ -50,6 +50,7 @@ import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
@@ -242,7 +243,7 @@ public class EthModule
                     block,
                     block.getCoinbase(),
                     hexArgs.getGasPrice(),
-                    hexArgs.gasLimitForGasEstimation(gasEstimationCap),
+                    ByteUtil.longToBytes(gasEstimationCap),
                     hexArgs.getToAddress(),
                     hexArgs.getValue(),
                     hexArgs.getData(),
