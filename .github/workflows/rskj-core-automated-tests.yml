@@ -279,14 +279,13 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Build report, comment, notify and gate
+      - name: Build report, comment and gate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HAS_TOKEN: ${{ needs.resolve.outputs.has_token }}
           EVENT: ${{ github.event_name }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_OWNER: ${{ github.event.pull_request.head.repo.owner.login }}
           RSKJ_REF: ${{ needs.resolve.outputs.rskj_ref }}
           JSONRPC_CONCLUSION: ${{ needs.json_rpc.outputs.conclusion }}
           JSONRPC_URL: ${{ needs.json_rpc.outputs.run_url }}
@@ -297,8 +296,6 @@ jobs:
           K6_CONCLUSION: ${{ needs.k6.outputs.conclusion }}
           K6_URL: ${{ needs.k6.outputs.run_url }}
           K6_REF: ${{ needs.resolve.outputs.k6_ref }}
-          SLACK_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
-          SLACK_CHANNEL: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
         run: |
           set -euo pipefail
 
@@ -350,8 +347,7 @@ jobs:
 
           cat "$REPORT_FILE" >> "$GITHUB_STEP_SUMMARY"
 
-          # Determine overall result up front (drives the PR-comment marker,
-          # Slack styling, and the final gate).
+          # Determine overall result up front (drives the final gate).
           OVERALL=success
           for c in "$JSONRPC_CONCLUSION" "$HARDHAT_CONCLUSION" "$K6_CONCLUSION"; do
             [ "$c" = "success" ] || OVERALL=failure
@@ -375,23 +371,6 @@ jobs:
                 -f body="$(cat "$BODY_FILE")" >/dev/null
               echo "Created sticky PR comment"
             fi
-          fi
-
-          # Slack: only for rsksmart-owned PRs (mirrors rit.yml) and only when the
-          # bot token is present. curl, not a marketplace action.
-          if [ "$EVENT" = "pull_request" ] && [ "$PR_OWNER" = "rsksmart" ] && [ -n "${SLACK_TOKEN:-}" ]; then
-            if [ "$OVERALL" = "success" ]; then HEADER="✅ PASSED — Core Automated Tests"; else HEADER="❌ FAILED — Core Automated Tests"; fi
-            TEXT=$(printf '*%s* — %s #%s\n• JSON-RPC: %s %s\n• Hardhat: %s %s\n• K6: %s %s' \
-              "$HEADER" "$REPO" "$PR_NUMBER" \
-              "$(emoji "$JSONRPC_CONCLUSION")" "${JSONRPC_CONCLUSION:-no result}" \
-              "$(emoji "$HARDHAT_CONCLUSION")" "${HARDHAT_CONCLUSION:-no result}" \
-              "$(emoji "$K6_CONCLUSION")" "${K6_CONCLUSION:-no result}")
-            PAYLOAD=$(jq -n --arg ch "$SLACK_CHANNEL" --arg text "$TEXT" \
-              '{channel: $ch, text: $text}')
-            curl -sS -X POST https://slack.com/api/chat.postMessage \
-              -H "Authorization: Bearer $SLACK_TOKEN" \
-              -H "Content-type: application/json; charset=utf-8" \
-              --data "$PAYLOAD" >/dev/null || echo "::warning::Slack notification failed"
           fi
 
           # Authoritative gate.
