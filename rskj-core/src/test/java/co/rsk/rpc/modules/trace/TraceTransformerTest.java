@@ -19,24 +19,15 @@
 package co.rsk.rpc.modules.trace;
 
 import co.rsk.core.types.bytes.Bytes;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionReceipt;
-import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 class TraceTransformerTest {
     @Test
     void getActionFromInvokeData() {
-        TransactionInfo txInfo = mock(TransactionInfo.class);
-        TransactionReceipt receipt = mock(TransactionReceipt.class);
-        Transaction transaction = mock(Transaction.class);
 
         DataWord address = DataWord.valueOf(1);
         DataWord origin = DataWord.valueOf(2);
@@ -57,19 +48,19 @@ class TraceTransformerTest {
                 null, null, null, null, null, null, null,
                 null, null, 0, null, false, false);
 
-        when(txInfo.getReceipt()).thenReturn(receipt);
-        when(receipt.getTransaction()).thenReturn(transaction);
-        when(transaction.getData()).thenReturn(data);
-
-        TraceAction action = TraceTransformer.toAction(TraceType.CALL, invoke, CallType.CALL, null, null, null, txInfo);
+        TraceAction action = TraceTransformer.toAction(TraceType.CALL, invoke, CallType.CALL, null, null, null);
 
         Assertions.assertNotNull(action);
         Assertions.assertEquals("call", action.getCallType());
         Assertions.assertEquals("0x0000000000000000000000000000000000000001", action.getTo());
         Assertions.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
+        // input is sourced from the per-frame invoke data, not the top-level transaction
         Assertions.assertEquals("0x01020304", action.getInput());
         Assertions.assertEquals("0xf4240", action.getGas());
         Assertions.assertEquals("0x186a0", action.getValue());
+        // a CALL action carries calldata in input, never creation-only fields
+        Assertions.assertNull(action.getInit());
+        Assertions.assertNull(action.getCreationMethod());
     }
 
     @Test
@@ -93,7 +84,7 @@ class TraceTransformerTest {
                 null, null, null, null, null, null, null,
                 null, null, 0, null, false, false);
 
-        TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, null, null, null);
+        TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, null, null);
 
         Assertions.assertNotNull(action);
 
@@ -102,6 +93,8 @@ class TraceTransformerTest {
         Assertions.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
         Assertions.assertEquals("0x01020304", action.getInit());
         Assertions.assertNull(action.getCreationMethod());
+        // creation traces expose the init code, never calldata through input
+        Assertions.assertNull(action.getInput());
         Assertions.assertEquals("0xf4240", action.getGas());
         Assertions.assertEquals("0x186a0", action.getValue());
     }
@@ -127,7 +120,7 @@ class TraceTransformerTest {
                 null, null, null, null, null, null, null,
                 null, null, 0, null, false, false);
 
-        TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, "create2", null, null);
+        TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, "create2", null);
 
         Assertions.assertNotNull(action);
 
@@ -136,6 +129,8 @@ class TraceTransformerTest {
         Assertions.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
         Assertions.assertEquals("0x01020304", action.getInit());
         Assertions.assertEquals("create2", action.getCreationMethod());
+        // creation traces expose the init code, never calldata through input
+        Assertions.assertNull(action.getInput());
         Assertions.assertEquals("0xf4240", action.getGas());
         Assertions.assertEquals("0x186a0", action.getValue());
     }
