@@ -175,23 +175,25 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         DataWord minimumGasPrice = program.getMinimumGasPrice();
 
         if (logger.isInfoEnabled()) {
-            logger.info("Internal call: \n" +
-                            "address={}\n" +
-                            "origin={}\n" +
-                            "caller={}\n" +
-                            "balance={}\n" +
-                            "txGasPrice={}\n" +
-                            "gas={}\n" +
-                            "callValue={}\n" +
-                            "data={}\n" +
-                            "lastHash={}\n" +
-                            "coinbase={}\n" +
-                            "timestamp={}\n" +
-                            "blockNumber={}\n" +
-                            "transactionIndex={}\n" +
-                            "difficulty={}\n" +
-                            "gaslimit={}\n" +
-                            "minimumGasPrice={}\n",
+            logger.info("""
+                            Internal call:
+                            address={}
+                            origin={}
+                            caller={}
+                            balance={}
+                            txGasPrice={}
+                            gas={}
+                            callValue={}
+                            data={}
+                            lastHash={}
+                            coinbase={}
+                            timestamp={}
+                            blockNumber={}
+                            transactionIndex={}
+                            difficulty={}
+                            gaslimit={}
+                            minimumGasPrice={}
+                            """,
                     Bytes.of(address.getLast20Bytes()),
                     Bytes.of(origin.getLast20Bytes()),
                     Bytes.of(caller.getLast20Bytes()),
