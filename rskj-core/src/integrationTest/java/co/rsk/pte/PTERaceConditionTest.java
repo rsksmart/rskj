@@ -50,7 +50,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -111,8 +110,11 @@ class PTERaceConditionTest {
         String rskConfFileChangedServer = configureServerWithGeneratedInformation(serverDbDir);
         serverNode = new NodeIntegrationTestCommandLine(rskConfFileChangedServer, "--regtest");
         serverNode.startNode();
-        IntegrationTestUtils.waitFor(8, SECONDS);
+        awaitNodeReady(rpcPort);
 
+        // Mining is on demand only (autonomous miner disabled), so leave genesis by
+        // mining one block before capturing the baseline used by the assertions below.
+        RPCBlockRequests.mineBlock(rpcPort);
         initialBlock = RPCBlockRequests.getLatestBlockNumber(rpcPort);
         assertTrue(initialBlock > 0);
 
@@ -129,20 +131,46 @@ class PTERaceConditionTest {
         //call reset method
         String resetData = SimpleAbi.encode("reset(bytes32)", List.of(RACE_ID));
         Optional<String> resetTx = racePOCContractCaller.callIgnoreFailure(coordinatorAccount, resetData);
+        RPCBlockRequests.mineBlock(rpcPort);
         resetTx.ifPresent(txHash -> RpcTransactionAssertions.assertMined(rpcPort, 50, 2000, txHash));
 
         //call register method
         String registerData = SimpleAbi.encode("register(bytes32)", List.of(RACE_ID));
         Optional<String> registerTx = racePOCContractCaller.call(coordinatorAccount, registerData);
         String registerTxHash = registerTx.orElseThrow(() -> new AssertionError("register tx was not sent"));
+        RPCBlockRequests.mineBlock(rpcPort);
         RpcTransactionAssertions.assertMined(rpcPort, 50, 2000, registerTxHash);
 
         // allow bridge to be called by this.racePOCContractCaller contract
         String setBridgeData = SimpleAbi.encode("setUnionBridgeContractAddressForTestnet(address)", List.of(racePOCContractAddress));
         String setBridgeTx = bridgeContractCaller.call(authorizedBridgeAccount, setBridgeData).orElseThrow(() -> new AssertionError("setBridge tx not sent"));
+        RPCBlockRequests.mineBlock(rpcPort);
         RpcTransactionAssertions.assertMined(rpcPort, 50, 2000, setBridgeTx);
+    }
 
-        IntegrationTestUtils.waitFor(10, SECONDS);
+    /**
+     * Polls the node's RPC endpoint until it is ready to serve requests, replacing a
+     * fixed boot sleep with a deterministic readiness check.
+     */
+    private static void awaitNodeReady(int rpcPort) throws InterruptedException, IOException {
+        int maxAttempts = 60;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            com.squareup.okhttp.Response response = null;
+            try {
+                response = OkHttpClientTestFixture.sendHealthProbe(rpcPort, 1000);
+                if (response.code() == 200) {
+                    return;
+                }
+            } catch (IOException ignored) {
+                // node not up yet, retry
+            } finally {
+                if (response != null && response.body() != null) {
+                    response.body().close();
+                }
+            }
+            Thread.sleep(500);
+        }
+        throw new IllegalStateException("Node RPC did not become ready on port " + rpcPort);
     }
 
     @AfterAll
@@ -162,7 +190,10 @@ class PTERaceConditionTest {
                     .orElseThrow(() -> new AssertionError("acceptSimple tx not sent for " + from));
             sameBlockTransactions.add(txHash);
         }
-        IntegrationTestUtils.waitFor(10, SECONDS);
+        // All transactions are now in the pending pool; mine exactly one block so
+        // they are all included together, then assert they share that block.
+        RpcTransactionAssertions.awaitTransactionsInPool(rpcPort, 50, 200, sameBlockTransactions);
+        RPCBlockRequests.mineBlock(rpcPort);
 
         long minedBlock = RpcTransactionAssertions.assertAllMinedInSameBlock(this.rpcPort, sameBlockTransactions);
 
@@ -189,7 +220,10 @@ class PTERaceConditionTest {
             sameBlockTransactions.add(txHash);
         }
 
-        IntegrationTestUtils.waitFor(10, SECONDS);
+        // All transactions are now in the pending pool; mine exactly one block so
+        // they are all included together, then assert they share that block.
+        RpcTransactionAssertions.awaitTransactionsInPool(rpcPort, 50, 200, sameBlockTransactions);
+        RPCBlockRequests.mineBlock(rpcPort);
 
         long minedBlock = RpcTransactionAssertions.assertAllMinedInSameBlock(rpcPort, sameBlockTransactions);
 
@@ -219,7 +253,10 @@ class PTERaceConditionTest {
             sameBlockTransactions.add(txHash);
         }
 
-        IntegrationTestUtils.waitFor(10, SECONDS);
+        // All transactions are now in the pending pool; mine exactly one block so
+        // they are all included together, then assert they share that block.
+        RpcTransactionAssertions.awaitTransactionsInPool(rpcPort, 50, 200, sameBlockTransactions);
+        RPCBlockRequests.mineBlock(rpcPort);
 
         long minedBlock = RpcTransactionAssertions.assertAllMinedInSameBlock(rpcPort, sameBlockTransactions);
 
