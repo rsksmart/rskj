@@ -36,7 +36,8 @@ public enum NetworkUpgrade {
     LOVELL700("lovell700"),
     REED800("reed800"),
     REED810("reed810"),
-    VETIVER900("vetiver900");
+    VETIVER900("vetiver900"),
+    NEXTRELEASE("NextRelease");
 
     private String name;
 

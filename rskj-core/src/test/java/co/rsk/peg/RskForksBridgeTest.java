@@ -32,6 +32,7 @@ import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.db.BlockStore;
@@ -51,6 +52,8 @@ import java.util.List;
 import static co.rsk.peg.federation.FederationTestUtils.REGTEST_FEDERATION_PRIVATE_KEYS;
 
 class RskForksBridgeTest {
+    private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
+
     private static final ECKey fedECPrivateKey = ECKey.fromPrivate(
             REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKey()
     );
@@ -434,19 +437,19 @@ class RskForksBridgeTest {
         BridgeState stateForDebugging = callGetStateForDebuggingTx();
         if (ReleaseTransactionState.WAITING_FOR_SELECTION.equals(state)) {
             Assertions.assertEquals(1, stateForDebugging.getReleaseRequestQueue().getEntries().size());
-            Assertions.assertEquals(0, stateForDebugging.getPegoutsWaitingForConfirmations().getEntries().size());
+            Assertions.assertEquals(0, stateForDebugging.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
             Assertions.assertEquals(0, stateForDebugging.getRskTxsWaitingForSignatures().size());
         } else if (ReleaseTransactionState.WAITING_FOR_SIGNATURES.equals(state)) {
             Assertions.assertEquals(0, stateForDebugging.getReleaseRequestQueue().getEntries().size());
-            Assertions.assertEquals(0, stateForDebugging.getPegoutsWaitingForConfirmations().getEntries().size());
+            Assertions.assertEquals(0, stateForDebugging.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
             Assertions.assertEquals(1, stateForDebugging.getRskTxsWaitingForSignatures().size());
         } else if (ReleaseTransactionState.WAITING_FOR_CONFIRMATIONS.equals(state)) {
             Assertions.assertEquals(0, stateForDebugging.getReleaseRequestQueue().getEntries().size());
-            Assertions.assertEquals(1, stateForDebugging.getPegoutsWaitingForConfirmations().getEntries().size());
+            Assertions.assertEquals(1, stateForDebugging.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
             Assertions.assertEquals(0, stateForDebugging.getRskTxsWaitingForSignatures().size());
         } else if (ReleaseTransactionState.NO_TX.equals(state)) {
             Assertions.assertEquals(0, stateForDebugging.getReleaseRequestQueue().getEntries().size());
-            Assertions.assertEquals(0, stateForDebugging.getPegoutsWaitingForConfirmations().getEntries().size());
+            Assertions.assertEquals(0, stateForDebugging.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
             Assertions.assertEquals(0, stateForDebugging.getRskTxsWaitingForSignatures().size());
         }
     }

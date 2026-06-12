@@ -26,6 +26,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.PegoutsWaitingForConfirmations.EntriesStore;
 import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.vote.ABICallElection;
@@ -48,7 +49,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by mario on 20/04/17.
@@ -770,8 +770,7 @@ public class BridgeSerializationUtils {
     // serialized btc transaction bytes
     // (see PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR)
     public static byte[] serializePegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations) {
-        List<PegoutsWaitingForConfirmations.Entry> entries = pegoutsWaitingForConfirmations.getEntriesWithoutHash().stream().collect(Collectors.toList());
-        entries.sort(PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR);
+        var entries = pegoutsWaitingForConfirmations.getEntriesWithoutHashOrdered();
 
         byte[][] bytes = new byte[entries.size() * 2][];
         int n = 0;
@@ -785,8 +784,7 @@ public class BridgeSerializationUtils {
     }
 
     public static byte[] serializePegoutsWaitingForConfirmationsWithTxHash(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations) {
-        List<PegoutsWaitingForConfirmations.Entry> entries = new ArrayList<>(pegoutsWaitingForConfirmations.getEntriesWithHash());
-        entries.sort(PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR);
+        var entries = pegoutsWaitingForConfirmations.getEntriesWithHashOrdered();
 
         byte[][] bytes = new byte[entries.size() * 3][];
         int n = 0;
@@ -822,7 +820,7 @@ public class BridgeSerializationUtils {
 
     // For the serialization format, see BridgeSerializationUtils::serializePegoutsWaitingForConfirmations
     private static PegoutsWaitingForConfirmations deserializePegoutsWaitingForConfirmationsWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
-        Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>();
+        var entries = EntriesStore.setOfEntries();
 
         int n = rlpList.size() / 2;
         for (int k = 0; k < n; k++) {
@@ -838,7 +836,7 @@ public class BridgeSerializationUtils {
     }
 
     private static PegoutsWaitingForConfirmations deserializePegoutWaitingForConfirmationsWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
-        Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>();
+        var entries = EntriesStore.setOfEntries();
 
         int n = rlpList.size() / 3;
         for (int k = 0; k < n; k++) {
