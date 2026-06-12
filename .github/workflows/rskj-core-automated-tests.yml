@@ -38,14 +38,10 @@ on:
         type: string
         required: false
 
+# Least privilege at the top level; the only job that needs a write scope
+# (pull-requests: write, for the sticky PR comment) declares it itself.
 permissions:
   contents: read
-  pull-requests: write
-  # issues: write is required because the sticky PR comment is posted via the
-  # issue-comments REST endpoint (repos/.../issues/<n>/comments); pull-requests:
-  # write alone can 403 there, which would fail the report job even when all
-  # suites pass.
-  issues: write
 
 concurrency:
   group: rskj-core-automated-tests-${{ github.ref }}
@@ -278,6 +274,10 @@ jobs:
     needs: [resolve, json_rpc, hardhat, k6]
     if: always()
     runs-on: ubuntu-latest
+    # Only this job writes with GITHUB_TOKEN (the sticky PR comment). The other
+    # jobs use the PAT, so they keep the top-level contents: read default.
+    permissions:
+      pull-requests: write
     steps:
       - name: Build report, comment and gate
         env:
