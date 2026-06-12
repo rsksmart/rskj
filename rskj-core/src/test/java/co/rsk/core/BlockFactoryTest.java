@@ -1245,6 +1245,9 @@ class BlockFactoryTest {
         when(activationConfig.getHeaderVersion(lt(blockNumber))).thenReturn((byte) 0x0);
         when(activationConfig.getHeaderVersion(geq(blockNumber))).thenReturn((byte) 0x2);
         when(activationConfig.isActive(eq(RSKIP351), geq(blockNumber))).thenReturn(true);
+        when(activationConfig.areActive(geq(blockNumber), eq(RSKIP351), eq(RSKIP144)))
+                .thenAnswer(inv -> activationConfig.isActive(RSKIP351, blockNumber)
+                        && activationConfig.isActive(RSKIP144, blockNumber));
     }
 
     private BlockHeader createBlockHeaderWithMergedMiningFields(
