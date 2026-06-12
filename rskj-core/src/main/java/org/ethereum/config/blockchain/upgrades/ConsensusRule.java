@@ -115,6 +115,8 @@ public enum ConsensusRule {
     RSKIP540("rskip540"), // Min pegout value as the extra pegout in getEstimatedFeesForNextPegOutEvent, and enables getEstimatedFeesForPegOutAmount
     RSKIP543("rskip543"), // Typed transactions
     RSKIP544("rskip544"), // From EIP-3541 Reject new contract code starting with the 0xEF byte
+    RSKIP545("rskip545"), // Account Abstraction / EOA delegation (EIP-7702)
+    RSKIP546("rskip546"), // Type 1 and Type 2 transaction formats (EIP-2930/EIP-1559 encoding)
     RSKIP551("rskip551"), // Disable RSKIP459
     RSKIP552("rskip552"), // Blake2F improvements in data handling
 

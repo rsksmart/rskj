@@ -111,7 +111,7 @@ class TransactionTest {
         Transaction tx = Transaction.builder()
                 .gasPrice(gasPrice)
                 .gasLimit(gas)
-                .destination(ecKey.getAddress())
+                .receiveAddress(ecKey.getAddress())
                 .value(value.toByteArray())
                 .build();
 
@@ -157,7 +157,7 @@ class TransactionTest {
                 .nonce(nonce)
                 .gasPrice(gasPrice)
                 .gasLimit(gasLimit)
-                .destination(ecKey.getAddress())
+                .receiveAddress(ecKey.getAddress())
                 .value(value)
                 .build();
 
@@ -243,7 +243,7 @@ class TransactionTest {
                 .nonce(testNonce)
                 .gasPrice(testGasPrice)
                 .gasLimit(testGasLimit)
-                .destination(testReceiveAddress)
+                .receiveAddress(testReceiveAddress)
                 .value(testValue)
                 .data(testData)
                 .build();
@@ -287,7 +287,7 @@ class TransactionTest {
                 .nonce(nonce)
                 .gasPrice(gasPrice)
                 .gasLimit(gas)
-                .destination(recieveAddress)
+                .receiveAddress(recieveAddress)
                 .value(value)
                 .data(data)
                 .build();
@@ -325,7 +325,7 @@ class TransactionTest {
                 .nonce(nonce)
                 .gasPrice(gasPrice)
                 .gasLimit(gas)
-                .destination(recieveAddress)
+                .receiveAddress(recieveAddress)
                 .value(endowment)
                 .build();
         tx1.sign(senderPrivKey);
@@ -755,7 +755,7 @@ class TransactionTest {
         Transaction tx = Transaction.builder()
                 .gasPrice(gasPrice)
                 .gasLimit(gas)
-                .destination(ecKey.getAddress())
+                .receiveAddress(ecKey.getAddress())
                 .value(value)
                 .build();
         try {
@@ -778,7 +778,7 @@ class TransactionTest {
         Transaction tx = Transaction.builder()
                 .gasPrice(gasPrice)
                 .gasLimit(gas)
-                .destination(ecKey.getAddress())
+                .receiveAddress(ecKey.getAddress())
                 .value(value)
                 .build();
         tx.sign(senderPrivKey);
@@ -813,7 +813,7 @@ class TransactionTest {
                 .nonce(nonce)
                 .gasPrice(ByteUtil.longToBytesNoLeadZeroes(1))
                 .gasLimit(ByteUtil.longToBytesNoLeadZeroes(3_000_000))
-                .destination(receiveAddress)
+                .receiveAddress(receiveAddress)
                 .value(ByteUtil.longToBytesNoLeadZeroes(value))
                 .data(data)
                 .build();

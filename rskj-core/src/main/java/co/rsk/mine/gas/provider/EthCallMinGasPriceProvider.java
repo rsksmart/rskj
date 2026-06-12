@@ -22,7 +22,11 @@ import co.rsk.config.mining.EthCallMinGasPriceSystemConfig;
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.util.HexUtils;
-import org.ethereum.rpc.parameters.*;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataParam;
+import org.ethereum.rpc.parameters.HexNumberParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,9 +68,13 @@ public class EthCallMinGasPriceProvider extends StableMinGasPriceProvider {
                 null,
                 null,
                 null,
+                null,
+                null,
                 new HexNumberParam(ethModule.chainId()),
                 null,
                 new HexDataParam(data),
+                null,
+                null,
                 null,
                 null,
                 null

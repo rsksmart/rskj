@@ -79,7 +79,7 @@ public class TxPendingValidator {
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
         if (tx.isTypedTransactionNotAllowed(activations)) {
-            return TransactionValidationResult.withError("typed transactions are not supported before RSKIP543 activation");
+            return TransactionValidationResult.withError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
         }
 
         long basicTxCost = tx.transactionCost(constants, activations, signatureCache);
@@ -89,6 +89,10 @@ public class TxPendingValidator {
                 logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender(signatureCache));
             }
             return TransactionValidationResult.withError("the sender account doesn't exist");
+        }
+
+        if (tx.getTypePrefix().isTyped() && !activations.isActive(ConsensusRule.RSKIP543)) {
+            return TransactionValidationResult.withError("typed transactions are not supported before RSKIP543 activation");
         }
 
         if (tx.isInitCodeSizeInvalidForTx(activationConfig.forBlock(bestBlockNumber))) {

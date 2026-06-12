@@ -54,7 +54,7 @@ class BlockEncodingTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(new ECKey().getAddress())
+                .receiveAddress(new ECKey().getAddress())
                 .value(BigInteger.valueOf(1000))
                 .build();
 

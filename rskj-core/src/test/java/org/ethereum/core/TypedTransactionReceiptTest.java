@@ -19,15 +19,24 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for typed transaction receipts (RSKIP543)
@@ -55,6 +64,9 @@ class TypedTransactionReceiptTest {
             "Type 1 receipt should start with 0x01 prefix");
         assertTrue(encoded[1] >= (byte) 0xc0,
             "Second byte should be RLP list marker");
+        ArrayList<RLPElement> inner = RLP.decode2(Arrays.copyOfRange(encoded, 1, encoded.length));
+        RLPList body = (RLPList) inner.get(0);
+        assertEquals(4, body.size(), "RSKIP-546 Type 1 receipt body should have 4 RLP elements");
     }
 
     @Test
@@ -67,6 +79,9 @@ class TypedTransactionReceiptTest {
             "Type 2 receipt should start with 0x02 prefix");
         assertTrue(encoded[1] >= (byte) 0xc0,
             "Second byte should be RLP list marker");
+        ArrayList<RLPElement> inner = RLP.decode2(Arrays.copyOfRange(encoded, 1, encoded.length));
+        RLPList body = (RLPList) inner.get(0);
+        assertEquals(4, body.size(), "RSKIP-546 standard Type 2 receipt body should have 4 RLP elements");
     }
 
     @Test
@@ -87,6 +102,11 @@ class TypedTransactionReceiptTest {
 
         assertEquals((byte) 0x04, encoded[0],
             "Type 4 receipt should start with 0x04 prefix");
+        assertTrue(encoded[1] >= (byte) 0xc0,
+            "Second byte should be RLP list marker");
+        ArrayList<RLPElement> inner = RLP.decode2(Arrays.copyOfRange(encoded, 1, encoded.length));
+        RLPList body = (RLPList) inner.get(0);
+        assertEquals(4, body.size(), "RSKIP-545 Type 4 receipt body should have 4 RLP elements");
     }
 
     @Test
@@ -126,8 +146,15 @@ class TypedTransactionReceiptTest {
                 "PostTxState mismatch for " + type.getTypeName());
             assertArrayEquals(originalReceipt.getCumulativeGas(), decodedReceipt.getCumulativeGas(),
                 "CumulativeGas mismatch for " + type.getTypeName());
-            assertArrayEquals(originalReceipt.getGasUsed(), decodedReceipt.getGasUsed(),
-                "GasUsed mismatch for " + type.getTypeName());
+            if (type == TransactionType.TYPE_1
+                    || type == TransactionType.TYPE_2
+                    || type == TransactionType.TYPE_4) {
+                assertArrayEquals(EMPTY_BYTE_ARRAY, decodedReceipt.getGasUsed(),
+                    "Four-field typed receipt omits gasUsed on the wire for " + type.getTypeName());
+            } else {
+                assertArrayEquals(originalReceipt.getGasUsed(), decodedReceipt.getGasUsed(),
+                    "GasUsed mismatch for " + type.getTypeName());
+            }
             assertArrayEquals(originalReceipt.getStatus(), decodedReceipt.getStatus(),
                 "Status mismatch for " + type.getTypeName());
         }
@@ -215,16 +242,50 @@ class TypedTransactionReceiptTest {
     }
 
     private Transaction createTransaction(TransactionType type) {
-        return Transaction.builder()
-            .nonce(new byte[]{1})
-            .gasPrice(Coin.valueOf(1000))
-            .gasLimit(new byte[]{(byte) 0x52, 0x08})
-            .destination(RskAddress.nullAddress().getBytes())
-            .value(Coin.ZERO)
-            .data(EMPTY_BYTE_ARRAY)
-            .chainId((byte) 33)
-            .type(type)
-            .build();
+        byte chainId = (byte) 33;
+        RskAddress to = RskAddress.nullAddress();
+        byte[] nonce = new byte[]{1};
+        byte[] gasLimit = new byte[]{(byte) 0x52, 0x08};
+        Coin gasPrice = Coin.valueOf(1000);
+
+        return switch (type) {
+            case LEGACY -> Transaction.builder()
+                    .nonce(nonce)
+                    .gasPrice(gasPrice)
+                    .gasLimit(gasLimit)
+                    .receiveAddress(to.getBytes())
+                    .value(Coin.ZERO)
+                    .data(EMPTY_BYTE_ARRAY)
+                    .chainId(chainId)
+                    .build();
+            case TYPE_1 -> Rskip546TestSupport.unsignedType1(
+                    chainId, to, gasPrice, Coin.ZERO, BigInteger.valueOf(21_000), nonce, EMPTY_BYTE_ARRAY,
+                    Rskip546TestSupport.EMPTY_ACCESS_LIST);
+            case TYPE_2 -> Rskip546TestSupport.unsignedType2(
+                    chainId, to, gasPrice, gasPrice, Coin.ZERO, BigInteger.valueOf(21_000), nonce, EMPTY_BYTE_ARRAY,
+                    Rskip546TestSupport.EMPTY_ACCESS_LIST);
+            case TYPE_3 -> new Transaction(
+                    nonce,
+                    gasPrice,
+                    gasLimit,
+                    to,
+                    Coin.ZERO,
+                    EMPTY_BYTE_ARRAY,
+                    chainId,
+                    false,
+                    TransactionTypePrefix.typed(TransactionType.TYPE_3),
+                    null,
+                    null,
+                    null,
+                    null
+            );
+            case TYPE_4 -> Rskip545TestSupport.unsignedType4(
+                    new RskAddress("0x0000000000000000000000000000000000000002"),
+                    gasPrice,
+                    gasPrice,
+                    EMPTY_BYTE_ARRAY,
+                    Rskip545TestSupport.EMPTY_ACCESS_LIST);
+        };
     }
 
     private TransactionReceipt createReceipt(Transaction tx) {

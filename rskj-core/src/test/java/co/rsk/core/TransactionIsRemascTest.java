@@ -45,7 +45,7 @@ class TransactionIsRemascTest {
         byte[] gasLimit
     ) {
         return Transaction.builder()
-            .destination(destination)
+            .receiveAddress(destination)
             .data(data)
             .value(value)
             .gasPrice(gasPrice)
@@ -151,4 +151,3 @@ class TransactionIsRemascTest {
         assertIsNotRemascTransaction(destination, data, value, gasPrice, gasLimit, txPosition, txsSize);
     }
 }
-

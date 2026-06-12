@@ -641,7 +641,7 @@ public class TestRunner {
                 .nonce(BigInteger.valueOf(tx.nonce))
                 .gasPrice(BigInteger.valueOf(tx.gasPrice))
                 .gasLimit(tx.gasLimit)
-                .destination(tx.getTo())
+                .receiveAddress(tx.getTo())
                 .value(BigInteger.valueOf(tx.value))
                 .data(tx.getData())
                 .build();

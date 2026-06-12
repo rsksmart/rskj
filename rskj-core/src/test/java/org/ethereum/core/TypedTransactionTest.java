@@ -19,6 +19,7 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Test;
@@ -54,7 +55,7 @@ class TypedTransactionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = TransactionType.class, names = "LEGACY", mode = EnumSource.Mode.EXCLUDE)
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2"})
     void typedTransactionEncoding_startsWithCorrectTypePrefix(TransactionType type) {
         Transaction tx = createTransaction(type, EMPTY_DATA);
         byte[] encoded = tx.getEncoded();
@@ -67,11 +68,11 @@ class TypedTransactionTest {
     }
 
     // ========================================================================
-    // Round-trip (encode -> decode) for all types
+    // Encode -> decode for all types
     // ========================================================================
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_preservesCoreFields(TransactionType type) {
         Transaction original = createSignedTransaction(type, EMPTY_DATA);
         byte[] encoded = original.getEncoded();
@@ -90,7 +91,7 @@ class TypedTransactionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_preservesGasFields(TransactionType type) {
         Transaction original = createSignedTransaction(type, EMPTY_DATA);
         Transaction decoded = new Transaction(original.getEncoded());
@@ -100,7 +101,7 @@ class TypedTransactionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_withNonEmptyData(TransactionType type) {
         byte[] data = {0x01, 0x02, 0x03, 0x04, 0x05};
         Transaction original = createSignedTransaction(type, data);
@@ -112,7 +113,7 @@ class TypedTransactionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_withLargeData(TransactionType type) {
         byte[] largeData = new byte[1024];
         for (int i = 0; i < largeData.length; i++) {
@@ -127,7 +128,7 @@ class TypedTransactionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_withZeroNonce(TransactionType type) {
         Transaction original = createSignedTransactionWith(type, BigInteger.ZERO,
             Coin.valueOf(1_000_000_000_000_000_000L), EMPTY_DATA);
@@ -135,11 +136,11 @@ class TypedTransactionTest {
         Transaction decoded = new Transaction(original.getEncoded());
 
         assertEquals(type, decoded.getType());
-        assertArrayEquals(original.getNonce(), decoded.getNonce());
+        assertEquals(new BigInteger(1, original.getNonce()), new BigInteger(1, decoded.getNonce()));
     }
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_withHighNonce(TransactionType type) {
         BigInteger highNonce = BigInteger.valueOf(Integer.MAX_VALUE).add(BigInteger.ONE);
         Transaction original = createSignedTransactionWith(type, highNonce,
@@ -152,7 +153,7 @@ class TypedTransactionTest {
     }
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void signedTransactionEncodeDecode_withZeroValue(TransactionType type) {
         Transaction original = createSignedTransactionWith(type, BigInteger.ONE,
             Coin.ZERO, EMPTY_DATA);
@@ -167,7 +168,7 @@ class TypedTransactionTest {
     // ========================================================================
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void doubleEncode_producesIdenticalBytes(TransactionType type) {
         Transaction original = createSignedTransaction(type, EMPTY_DATA);
         byte[] firstEncode = original.getEncoded();
@@ -176,7 +177,7 @@ class TypedTransactionTest {
         byte[] secondEncode = decoded.getEncoded();
 
         assertArrayEquals(firstEncode, secondEncode,
-            "Re-encoding a decoded transaction should produce identical bytes");
+            "Encoding a decoded transaction should produce identical bytes");
     }
 
     // ========================================================================
@@ -184,7 +185,7 @@ class TypedTransactionTest {
     // ========================================================================
 
     @ParameterizedTest
-    @EnumSource(value = TransactionType.class, names = "LEGACY", mode = EnumSource.Mode.EXCLUDE)
+    @EnumSource(value = TransactionType.class, names = {"TYPE_1", "TYPE_2"})
     void typedTransactionRawEncoding_startsWithTypePrefix(TransactionType type) {
         Transaction tx = createTransaction(type, EMPTY_DATA);
         byte[] rawEncoded = tx.getEncodedRaw();
@@ -208,30 +209,13 @@ class TypedTransactionTest {
     // ========================================================================
 
     @ParameterizedTest
-    @EnumSource(TransactionType.class)
+    @EnumSource(value = TransactionType.class, names = {"LEGACY", "TYPE_1", "TYPE_2"})
     void transactionType_isCorrectlyIdentified(TransactionType type) {
         Transaction tx = createTransaction(type, EMPTY_DATA);
 
         assertEquals(type, tx.getType());
         assertEquals(type == TransactionType.LEGACY, tx.getType().isLegacy());
         assertEquals(type != TransactionType.LEGACY, tx.getType().isTyped());
-    }
-
-    // ========================================================================
-    // Encoding length: typed txs are 1 byte longer than the same legacy tx
-    // ========================================================================
-
-    @ParameterizedTest
-    @EnumSource(value = TransactionType.class, names = "LEGACY", mode = EnumSource.Mode.EXCLUDE)
-    void typedTransactionEncoding_isOneByteLongerThanLegacy(TransactionType type) {
-        Transaction legacyTx = createSignedTransaction(TransactionType.LEGACY, EMPTY_DATA);
-        Transaction typedTx = createSignedTransaction(type, EMPTY_DATA);
-
-        int legacyLen = legacyTx.getEncoded().length;
-        int typedLen = typedTx.getEncoded().length;
-
-        assertEquals(legacyLen + 1, typedLen,
-            type + " encoded length should be legacy length + 1 (for type prefix)");
     }
 
     // ========================================================================
@@ -284,6 +268,183 @@ class TypedTransactionTest {
             () -> new Transaction(new byte[0]));
     }
 
+    @Test
+    void type2Standard_effectiveGasPrice_isMinOfMaxPriorityAndMaxFee() {
+        Transaction tx = Rskip546TestSupport.unsignedType2(
+                (byte) 33,
+                TEST_ADDRESS,
+                Coin.valueOf(10),
+                Coin.valueOf(100),
+                BigInteger.ONE.toByteArray(),
+                EMPTY_DATA,
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
+
+        assertEquals(Coin.valueOf(10), tx.getGasPrice());
+        assertEquals(Coin.valueOf(10), tx.getMaxPriorityFeePerGas());
+        assertEquals(Coin.valueOf(100), tx.getMaxFeePerGas());
+    }
+
+    @Test
+    void type1FromRpcArgs_withoutAccessList_encodeDecodePreservesBytes() {
+        org.ethereum.rpc.CallArguments args = new org.ethereum.rpc.CallArguments();
+        args.setFrom("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        args.setTo("0x7986b3df570230288501eea3d890bd66948c9b79");
+        args.setGas("0x5208");
+        args.setGasPrice("0x3b9aca00");
+        args.setValue("0xde0b6b3a7640000");
+        args.setNonce("0x1");
+        args.setChainId("0x21");
+        args.setType("0x1");
+
+
+        Transaction tx = Transaction.fromCallArguments(args, () -> "0", (byte) 33);
+        tx.sign(TEST_KEY.getPrivKeyBytes());
+
+        byte[] encoded = tx.getEncoded();
+        Transaction decoded = new Transaction(encoded);
+
+        assertEquals(TransactionType.TYPE_1, decoded.getType());
+        assertArrayEquals(encoded, decoded.getEncoded(),
+            "Type 1 RPC envelope without access list must stay identical through encode/decode");
+    }
+
+    @Test
+    void type2FromRpcArgs_withoutAccessList_encodeDecodePreservesBytes() {
+        org.ethereum.rpc.CallArguments args = new org.ethereum.rpc.CallArguments();
+        args.setFrom("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        args.setTo("0x7986b3df570230288501eea3d890bd66948c9b79");
+        args.setGas("0x5208");
+        args.setMaxPriorityFeePerGas("0x3b9aca00");
+        args.setMaxFeePerGas("0x77359400");
+        args.setValue("0x6f05b59d3b20000");
+        args.setNonce("0x1");
+        args.setChainId("0x21");
+        args.setType("0x2");
+
+        Transaction tx = Transaction.fromCallArguments(args, () -> "0", (byte) 33);
+        tx.sign(TEST_KEY.getPrivKeyBytes());
+
+        byte[] encoded = tx.getEncoded();
+        Transaction decoded = new Transaction(encoded);
+
+        assertEquals(TransactionType.TYPE_2, decoded.getType());
+        assertArrayEquals(encoded, decoded.getEncoded(),
+            "Standard Type 2 RPC envelope without access list must stay identical through encode/decode");
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {0, 5, 10, 15, 16, 32, 255, 256})
+    void rpcNonceSupplier_preservesNonceValueThroughConstruction(long nonceValue) {
+        org.ethereum.rpc.CallArguments args = new org.ethereum.rpc.CallArguments();
+        args.setFrom("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        args.setTo("0x7986b3df570230288501eea3d890bd66948c9b79");
+        args.setGas("0x5208");
+        args.setGasPrice("0x3b9aca00");
+        args.setValue("0x0");
+        args.setChainId("0x21");
+        args.setType("0x1");
+        // Intentionally omit nonce; the supplier must produce it.
+        BigInteger nonce = BigInteger.valueOf(nonceValue);
+
+        Transaction tx = Transaction.fromCallArguments(args, nonce::toString, (byte) 33);
+        assertEquals(nonce, new BigInteger(1, tx.getNonce()),
+            "Nonce supplied by the RPC nonce supplier must be parsed as the same numeric value");
+    }
+
+    @Test
+    void type1WithAccessList_intrinsicGasIncludesAccessListSurcharge() {
+        org.ethereum.rpc.CallArguments args = new org.ethereum.rpc.CallArguments();
+        args.setFrom("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        args.setTo("0x7986b3df570230288501eea3d890bd66948c9b79");
+        args.setGas("0x5208"); // 21000 - exactly the legacy base, no headroom for access list
+        args.setGasPrice("0x3b9aca00");
+        args.setValue("0x0");
+        args.setChainId("0x21");
+        args.setType("0x1");
+        org.ethereum.rpc.CallArguments.AccessListEntry entry = new org.ethereum.rpc.CallArguments.AccessListEntry();
+        entry.setAddress("0x7986b3df570230288501eea3d890bd66948c9b79");
+        entry.setStorageKeys(java.util.List.of(
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+            "0x0000000000000000000000000000000000000000000000000000000000000002"
+        ));
+        args.setAccessList(java.util.List.of(entry));
+
+        Transaction tx = Transaction.fromCallArguments(args, () -> "0", (byte) 33);
+        tx.sign(TEST_KEY.getPrivKeyBytes());
+
+        Transaction reparsed = new Transaction(tx.getEncoded());
+
+        org.ethereum.config.Constants constants = org.ethereum.config.Constants.regtest();
+        org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock activations =
+            org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest.all().forBlock(0);
+        org.ethereum.core.SignatureCache signatureCache = new org.ethereum.core.ReceivedTxSignatureCache();
+
+        long cost = reparsed.transactionCost(constants, activations, signatureCache);
+        BigInteger gasLimit = reparsed.getGasLimitAsInteger();
+        byte[] accessListBytes = reparsed.getAccessListBytes();
+
+        assertEquals(BigInteger.valueOf(21_000), gasLimit,
+            "Type 1 RPC parser must honor the Ethereum-standard `gas` field (regression: it "
+                + "previously read only `gasLimit`, defaulting `gas` to 90000 and silently "
+                + "letting an under-funded ERR-9-style tx pass intrinsic-gas validation)");
+        assertNotNull(accessListBytes, "Type 1 must carry the access list after re-parsing");
+        assertTrue(accessListBytes.length > 1,
+            "Non-empty access list must be longer than the canonical empty-list encoding (1 byte)");
+        assertTrue(cost > gasLimit.longValue(),
+            "RSKIP-546 surcharge (80 gas/byte) on a 1-address-3-keys access list must push the "
+                + "intrinsic cost above gas=21000; got cost=" + cost + ", gasLimit=" + gasLimit);
+    }
+
+    @Test
+    void type2WithAccessList_intrinsicGasIncludesAccessListSurcharge() {
+        org.ethereum.rpc.CallArguments args = new org.ethereum.rpc.CallArguments();
+        args.setFrom("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        args.setTo("0x7986b3df570230288501eea3d890bd66948c9b79");
+        args.setGas("0x5208"); // 21000 - exactly the legacy base, no headroom for access list
+        args.setMaxPriorityFeePerGas("0x3b9aca00");
+        args.setMaxFeePerGas("0x77359400");
+        args.setValue("0x0");
+        args.setChainId("0x21");
+        args.setType("0x2");
+        org.ethereum.rpc.CallArguments.AccessListEntry entry = new org.ethereum.rpc.CallArguments.AccessListEntry();
+        entry.setAddress("0x7986b3df570230288501eea3d890bd66948c9b79");
+        entry.setStorageKeys(java.util.List.of(
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+            "0x0000000000000000000000000000000000000000000000000000000000000002",
+            "0x0000000000000000000000000000000000000000000000000000000000000003"
+        ));
+        args.setAccessList(java.util.List.of(entry));
+
+        Transaction tx = Transaction.fromCallArguments(args, () -> "0", (byte) 33);
+        tx.sign(TEST_KEY.getPrivKeyBytes());
+
+        Transaction reparsed = new Transaction(tx.getEncoded());
+
+        org.ethereum.config.Constants constants = org.ethereum.config.Constants.regtest();
+        org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock activations =
+            org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest.all().forBlock(0);
+        org.ethereum.core.SignatureCache signatureCache = new org.ethereum.core.ReceivedTxSignatureCache();
+
+        long cost = reparsed.transactionCost(constants, activations, signatureCache);
+        BigInteger gasLimit = reparsed.getGasLimitAsInteger();
+
+        assertEquals(BigInteger.valueOf(21_000), gasLimit);
+        assertTrue(cost > gasLimit.longValue());
+    }
+
+    @Test
+    void type2Standard_whenMaxPriorityExceedsMaxFee_parseShouldThrow() {
+        assertThrows(IllegalArgumentException.class, () -> Rskip546TestSupport.unsignedType2(
+                (byte) 33,
+                TEST_ADDRESS,
+                Coin.valueOf(50),
+                Coin.valueOf(20),
+                EMPTY_DATA,
+                Rskip546TestSupport.EMPTY_ACCESS_LIST),
+                "Parsing Type 2 tx with maxPriorityFeePerGas > maxFeePerGas must throw per EIP-1559");
+    }
+
     // ========================================================================
     // Helpers
     // ========================================================================
@@ -299,12 +460,23 @@ class TypedTransactionTest {
 
     private Transaction createTransaction(TransactionType type, byte[] data) {
         byte[] nonce = ByteUtil.bigIntegerToBytes(BigInteger.ONE);
-        byte[] gasPrice = Coin.valueOf(1_000_000_000).getBytes();
         byte[] gasLimit = ByteUtil.bigIntegerToBytes(BigInteger.valueOf(21_000));
         byte[] receiveAddress = TEST_ADDRESS.getBytes();
         byte[] value = Coin.valueOf(1_000_000_000_000_000_000L).getBytes();
 
-        return new Transaction(nonce, gasPrice, gasLimit, receiveAddress, value, data, type);
+        if (type == TransactionType.TYPE_1) {
+            return Rskip546TestSupport.unsignedType1(
+                    (byte) 33, TEST_ADDRESS, Coin.valueOf(1_000_000_000), data, Rskip546TestSupport.EMPTY_ACCESS_LIST);
+        }
+        if (type == TransactionType.TYPE_2) {
+            return Rskip546TestSupport.unsignedType2(
+                    (byte) 33, TEST_ADDRESS, Coin.valueOf(1_000_000_000), Coin.valueOf(1_000_000_000), data,
+                    Rskip546TestSupport.EMPTY_ACCESS_LIST);
+        }
+
+        byte[] gasPrice = Coin.valueOf(1_000_000_000).getBytes();
+
+        return Transaction.builder().nonce(nonce).gasPrice(gasPrice).gasLimit(gasLimit).receiveAddress(receiveAddress).value(value).data(data).type(type).build();
     }
 
     private Transaction createSignedTransaction(TransactionType type, byte[] data) {
@@ -315,14 +487,28 @@ class TypedTransactionTest {
 
     private Transaction createSignedTransactionWith(TransactionType type, BigInteger nonce,
                                                     Coin value, byte[] data) {
+        if (type == TransactionType.TYPE_1) {
+            Transaction tx = Rskip546TestSupport.unsignedType1(
+                    (byte) 33, TEST_ADDRESS, Coin.valueOf(1_000_000_000), data, Rskip546TestSupport.EMPTY_ACCESS_LIST);
+            tx.sign(TEST_KEY.getPrivKeyBytes());
+            return tx;
+        }
+        if (type == TransactionType.TYPE_2) {
+            Transaction tx = Rskip546TestSupport.unsignedType2(
+                    (byte) 33, TEST_ADDRESS, Coin.valueOf(1_000_000_000), Coin.valueOf(1_000_000_000), data,
+                    Rskip546TestSupport.EMPTY_ACCESS_LIST);
+            tx.sign(TEST_KEY.getPrivKeyBytes());
+            return tx;
+        }
+
         byte[] nonceBytes = ByteUtil.bigIntegerToBytes(nonce);
         byte[] gasPrice = Coin.valueOf(1_000_000_000).getBytes();
         byte[] gasLimit = ByteUtil.bigIntegerToBytes(BigInteger.valueOf(21_000));
         byte[] receiveAddress = TEST_ADDRESS.getBytes();
         byte[] valueBytes = value.getBytes();
 
-        Transaction tx = new Transaction(nonceBytes, gasPrice, gasLimit, receiveAddress,
-            valueBytes, data, type);
+
+        Transaction tx = Transaction.builder().nonce(nonceBytes).gasPrice(gasPrice).gasLimit(gasLimit).receiveAddress(receiveAddress).value(valueBytes).data(data).type(type).build();
         tx.sign(TEST_KEY.getPrivKeyBytes());
         return tx;
     }

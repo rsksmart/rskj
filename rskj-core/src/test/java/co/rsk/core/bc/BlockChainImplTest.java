@@ -639,7 +639,7 @@ public class BlockChainImplTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(22000L))
-                .destination(Hex.decode("0000000000000000000000000000000000000100"))
+                .receiveAddress(Hex.decode("0000000000000000000000000000000000000100"))
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.ZERO)
                 .build();
@@ -672,7 +672,7 @@ public class BlockChainImplTest {
                 .nonce(nonce)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
-                .destination(Hex.decode(toAddress))
+                .receiveAddress(Hex.decode(toAddress))
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();

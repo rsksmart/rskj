@@ -18,6 +18,8 @@
 
 package org.ethereum.rpc;
 
+import java.util.List;
+
 /**
  * Wraps call arguments for several json-rpc methods.
  * Take account to fill up the arguments using the right hex value encoding (QUANTITY and UNFORMATTED DATA),
@@ -31,12 +33,102 @@ public class CallArguments {
     private String gas;
     private String gasLimit;
     private String gasPrice;
+    /** EIP-1559 (Type 2); optional hex quantity */
+    private String maxPriorityFeePerGas;
+    private String maxFeePerGas;
     private String value;
     private String data; // compiledCode
     private String nonce;
     private String chainId;
     private String type; // This was ignored before (see https://github.com/rsksmart/rskj/pull/1601)
     private String rskSubtype;
+    /** EIP-2930 / EIP-1559 access list; null or empty means no access list entries */
+    private List<AccessListEntry> accessList;
+    /** RSKIP-545 / EIP-7702 authorization list */
+    private List<AuthorizationListEntry> authorizationList;
+
+    /**
+     * A single entry in an EIP-2930 / EIP-1559 access list.
+     * {@code address} is a hex-encoded 20-byte Ethereum address.
+     * {@code storageKeys} is a list of hex-encoded 32-byte storage slot keys.
+     */
+    public static class AccessListEntry {
+        private String address;
+        private List<String> storageKeys;
+
+        public String getAddress() {
+            return address;
+        }
+
+        public void setAddress(String address) {
+            this.address = address;
+        }
+
+        public List<String> getStorageKeys() {
+            return storageKeys;
+        }
+
+        public void setStorageKeys(List<String> storageKeys) {
+            this.storageKeys = storageKeys;
+        }
+    }
+
+    public static class AuthorizationListEntry {
+        private String chainId;
+        private String address;
+        private String nonce;
+        private String yParity;
+        private String r;
+        private String s;
+
+        public String getChainId() {
+            return chainId;
+        }
+
+        public void setChainId(String chainId) {
+            this.chainId = chainId;
+        }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public void setAddress(String address) {
+            this.address = address;
+        }
+
+        public String getNonce() {
+            return nonce;
+        }
+
+        public void setNonce(String nonce) {
+            this.nonce = nonce;
+        }
+
+        public String getYParity() {
+            return yParity;
+        }
+
+        public void setYParity(String yParity) {
+            this.yParity = yParity;
+        }
+
+        public String getR() {
+            return r;
+        }
+
+        public void setR(String r) {
+            this.r = r;
+        }
+
+        public String getS() {
+            return s;
+        }
+
+        public void setS(String s) {
+            this.s = s;
+        }
+    }
 
     public String getFrom() {
         return from;
@@ -76,6 +168,22 @@ public class CallArguments {
 
     public void setGasPrice(String gasPrice) {
         this.gasPrice = gasPrice;
+    }
+
+    public String getMaxPriorityFeePerGas() {
+        return maxPriorityFeePerGas;
+    }
+
+    public void setMaxPriorityFeePerGas(String maxPriorityFeePerGas) {
+        this.maxPriorityFeePerGas = maxPriorityFeePerGas;
+    }
+
+    public String getMaxFeePerGas() {
+        return maxFeePerGas;
+    }
+
+    public void setMaxFeePerGas(String maxFeePerGas) {
+        this.maxFeePerGas = maxFeePerGas;
     }
 
     public String getValue() {
@@ -126,6 +234,22 @@ public class CallArguments {
         this.rskSubtype = rskSubtype;
     }
 
+    public List<AccessListEntry> getAccessList() {
+        return accessList;
+    }
+
+    public void setAccessList(List<AccessListEntry> accessList) {
+        this.accessList = accessList;
+    }
+
+    public List<AuthorizationListEntry> getAuthorizationList() {
+        return authorizationList;
+    }
+
+    public void setAuthorizationList(List<AuthorizationListEntry> authorizationList) {
+        this.authorizationList = authorizationList;
+    }
+
     public String getInput() {
         return this.data;
     }
@@ -142,12 +266,16 @@ public class CallArguments {
                 ", gas='" + gas + '\'' +
                 ", gasLimit='" + gasLimit + '\'' +
                 ", gasPrice='" + gasPrice + '\'' +
+                ", maxPriorityFeePerGas='" + maxPriorityFeePerGas + '\'' +
+                ", maxFeePerGas='" + maxFeePerGas + '\'' +
                 ", value='" + value + '\'' +
                 ", data='" + data + '\'' +
                 ", nonce='" + nonce + '\'' +
                 ", chainId='" + chainId + '\'' +
                 ", type='" + type + '\'' +
                 ", rskSubtype='" + rskSubtype + '\'' +
+                ", accessList=" + accessList +
+                ", authorizationList=" + authorizationList +
                 '}';
     }
 }

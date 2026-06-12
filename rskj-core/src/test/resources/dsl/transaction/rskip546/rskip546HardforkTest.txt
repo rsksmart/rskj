@@ -1,0 +1,216 @@
+comment
+
+// RSKIP-546 Hardfork Safety DSL Test
+//
+// This test exercises the network hardfork transition boundary.
+// Configuration (set in the Java driver): RSKIP-543 and RSKIP-546 activate at block 5.
+//
+// Phases:
+//   Pre-activation  (blocks 1-4): only legacy transactions are valid
+//   Transition      (block 5):    first block where typed transactions are accepted
+//   Post-activation (blocks 6-8): typed transactions coexist with legacy
+//
+// Key hardfork safety assertions (verified in Java):
+//   A. Pre-activation blocks are valid and contain only legacy receipts
+//   B. A typed tx included in a pre-activation block is DROPPED (not executed)
+//   C. Transition block at height 5 accepts typed transactions
+//   D. All pre-activation block data remains retrievable and decodable after fork
+//   E. Legacy transactions remain valid and working after fork
+//   F. Mixed post-activation blocks (legacy + typed) work correctly
+
+end
+
+# Create test accounts with sufficient balances
+account_new acc1 100000000000000000
+account_new acc2 1000000
+account_new acc3 1000000
+
+# ============================================================================
+# PRE-ACTIVATION PHASE: blocks 1-4
+# Only legacy transactions are valid. Typed txs are rejected at execution time.
+# ============================================================================
+
+# Block 1: simple legacy transfer (the "genesis" of the chain history we will read back)
+transaction_build txPreLegacy1
+    sender acc1
+    receiver acc2
+    value 10000
+    gas 21000
+    build
+
+block_build b01
+    parent g00
+    transactions txPreLegacy1
+    build
+
+block_connect b01
+assert_best b01
+assert_tx_success txPreLegacy1
+
+# Block 2: another legacy transfer
+transaction_build txPreLegacy2
+    sender acc1
+    nonce 1
+    receiver acc2
+    value 20000
+    gas 21000
+    build
+
+block_build b02
+    parent b01
+    transactions txPreLegacy2
+    build
+
+block_connect b02
+assert_best b02
+assert_tx_success txPreLegacy2
+
+# Block 3: legacy contract deployment (to verify pre-activation contract state is
+# still accessible post-fork)
+# SimpleStorage bytecode: setValue(uint256) / value()
+transaction_build txPreLegacyDeploy
+    sender acc1
+    nonce 2
+    receiverAddress 00
+    value 0
+    data 603980600b6000396000f36004361060205760003560e01c806360fe47b114602557632a1afcd914602d575b600080fd5b600435600055005b60005460005260206000f3
+    gas 200000
+    build
+
+block_build b03
+    parent b02
+    transactions txPreLegacyDeploy
+    build
+
+block_connect b03
+assert_best b03
+assert_tx_success txPreLegacyDeploy
+
+# Block 4: a typed tx is submitted but must be DROPPED by the executor (pre-activation).
+# The Java test verifies block b04 ends up with 0 transactions after execution.
+# This is the same behaviour as an initcode-size violation: the tx is silently dropped.
+
+transaction_build txPreTypedAttempt
+    sender acc1
+    nonce 3
+    receiver acc2
+    value 5000
+    gas 21000
+    gasPrice 1000000000
+    transactionType 01
+    build
+
+block_build b04
+    parent b03
+    transactions txPreTypedAttempt
+    build
+
+block_connect b04
+assert_best b04
+# Note: txPreTypedAttempt is NOT asserted as success here.
+# The Java test verifies b04 has no transactions (tx was dropped pre-activation).
+
+# ============================================================================
+# TRANSITION BLOCK: block 5 — first block where RSKIP-546 is active
+# ============================================================================
+
+# Type 1 transaction in the very first post-activation block
+transaction_build txTransitionType1
+    sender acc1
+    nonce 3
+    receiver acc2
+    value 1000
+    gas 21000
+    gasPrice 1000000000
+    transactionType 01
+    build
+
+# Legacy tx in the same transition block (they must coexist)
+transaction_build txTransitionLegacy
+    sender acc3
+    receiver acc2
+    value 500
+    gas 21000
+    build
+
+block_build b05
+    parent b04
+    transactions txTransitionType1 txTransitionLegacy
+    build
+
+block_connect b05
+assert_best b05
+assert_tx_success txTransitionType1
+assert_tx_success txTransitionLegacy
+
+# ============================================================================
+# POST-ACTIVATION PHASE: blocks 6-8
+# All three transaction types coexist.
+# ============================================================================
+
+# Block 6: Type 2 transaction (standard EIP-1559 format)
+transaction_build txPostType2
+    sender acc1
+    nonce 4
+    receiver acc2
+    value 2000
+    gas 21000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 02
+    build
+
+block_build b06
+    parent b05
+    transactions txPostType2
+    build
+
+block_connect b06
+assert_best b06
+assert_tx_success txPostType2
+
+# Block 7: Legacy transaction still works post-activation (backward compatibility)
+transaction_build txPostLegacy
+    sender acc1
+    nonce 5
+    receiver acc2
+    value 3000
+    gas 21000
+    build
+
+block_build b07
+    parent b06
+    transactions txPostLegacy
+    build
+
+block_connect b07
+assert_best b07
+assert_tx_success txPostLegacy
+
+# Block 8: Type 2 interaction with the pre-activation deployed contract
+# (contract was deployed pre-fork, must remain accessible post-fork)
+transaction_build txPostType2CallContract
+    sender acc1
+    nonce 6
+    contract txPreLegacyDeploy
+    value 0
+    data 60fe47b10000000000000000000000000000000000000000000000000000000000000099
+    gas 60000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 1000000000
+    transactionType 02
+    build
+
+block_build b08
+    parent b07
+    transactions txPostType2CallContract
+    build
+
+block_connect b08
+assert_best b08
+assert_tx_success txPostType2CallContract
+
+# ============================================================================
+# Final state: best block is b08 at height 8
+# ============================================================================
+assert_best b08
