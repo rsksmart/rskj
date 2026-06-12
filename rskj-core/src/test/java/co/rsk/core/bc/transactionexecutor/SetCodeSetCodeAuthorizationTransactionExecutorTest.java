@@ -1,10 +1,27 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2026 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package co.rsk.core.bc.transactionexecutor;
 
 import co.rsk.core.RskAddress;
 import org.ethereum.config.Constants;
 import org.ethereum.core.DelegationCodeResolver;
-import org.ethereum.core.SetCodeAuthorizationTransactionExecutor;
 import org.ethereum.core.Repository;
+import org.ethereum.core.SetCodeAuthorizationTransactionExecutor;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -15,7 +32,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.lang.reflect.Method;
 import java.math.BigInteger;
 
 import static java.math.BigInteger.ONE;
@@ -23,7 +39,6 @@ import static java.math.BigInteger.ZERO;
 import static org.ethereum.config.Constants.MAINNET_CHAIN_ID;
 import static org.ethereum.config.Constants.REGTEST_CHAIN_ID;
 import static org.ethereum.config.Constants.TESTNET_CHAIN_ID;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -64,6 +79,7 @@ import static org.mockito.Mockito.when;
 
         assertTrue(DelegationCodeResolver.isDelegatedCode(code));
     }
+
     @Test
     void isDelegatedCode_shouldReturnFalse_whenCodeIsNull() {
         assertFalse(DelegationCodeResolver.isDelegatedCode(null));

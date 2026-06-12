@@ -56,7 +56,6 @@ import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.core.genesis.BlockTag;
-import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;

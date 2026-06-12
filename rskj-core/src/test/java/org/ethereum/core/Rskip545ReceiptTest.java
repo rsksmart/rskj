@@ -21,7 +21,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.HexUtils;
-import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
@@ -30,14 +29,12 @@ import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

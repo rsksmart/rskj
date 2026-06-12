@@ -25,7 +25,6 @@ import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
 

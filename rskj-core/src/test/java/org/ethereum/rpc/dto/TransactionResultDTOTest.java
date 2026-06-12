@@ -30,7 +30,6 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Rskip546TestSupport;
 import org.ethereum.core.Transaction;
-import org.ethereum.core.transaction.TransactionType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

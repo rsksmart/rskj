@@ -22,16 +22,12 @@ import org.ethereum.config.Constants;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.exception.TransactionException;
-import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.ParsedType4Transaction;
-import org.ethereum.core.transaction.parser.SignatureState;
 import org.ethereum.core.transaction.parser.SignedSignature;
-import org.ethereum.core.transaction.parser.UnsignedSignature;
 import org.ethereum.crypto.signature.ECDSASignature;
 
 import java.math.BigInteger;
-import java.util.List;
 
 /**
  * RSKIP-545 structural and format validations for type-4 (set-code) transactions.
@@ -81,18 +77,5 @@ public final class Type4TransactionValidation {
             throw new TransactionException(
                     "Type 4 transaction signature recovery failed or sender is the zero address");
         }
-    }
-
-    private static byte resolveTxChainId(SignatureState signatureState) {
-        if (signatureState instanceof SignedSignature signed) {
-            return signed.chainId();
-        }
-        if (signatureState instanceof UnsignedSignature unsigned) {
-            if (unsigned.chainId() == null) {
-                throw new IllegalArgumentException("Type 4 transaction chainId must not be absent");
-            }
-            return unsigned.chainId();
-        }
-        throw new IllegalArgumentException("Type 4 transaction signature state is missing");
     }
 }
