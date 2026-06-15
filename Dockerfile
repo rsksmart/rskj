@@ -1,7 +1,8 @@
 FROM eclipse-temurin:17-jdk@sha256:0613a19436dc8f745914b25235d43f3b0eddb8d432d19edce30ffaf2d2f95403 AS build
 
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends curl git gnupg
+    apt-get install -y --no-install-recommends curl git gnupg && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN useradd -ms /bin/bash rsk
 USER rsk
