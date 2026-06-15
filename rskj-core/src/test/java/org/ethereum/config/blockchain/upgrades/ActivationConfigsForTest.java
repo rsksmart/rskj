@@ -19,9 +19,6 @@
 package org.ethereum.config.blockchain.upgrades;
 
 import com.typesafe.config.ConfigFactory;
-import org.ethereum.config.SystemProperties;
-
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import org.ethereum.config.SystemProperties;
 
 @SuppressWarnings({"squid:S2187"}) // used from another class
 public class ActivationConfigsForTest {
@@ -214,6 +213,12 @@ public class ActivationConfigsForTest {
             ConsensusRule.RSKIP544,
             ConsensusRule.RSKIP551,
             ConsensusRule.RSKIP552
+        ));
+    }
+
+    private static List<ConsensusRule> getTbdRskips() {
+        return new ArrayList<>(List.of(
+            // TBD
         ));
     }
 
@@ -480,6 +485,34 @@ public class ActivationConfigsForTest {
         rskips.addAll(getReed800Rskips());
         rskips.addAll(getReed810Rskips());
         rskips.addAll(getVetiverRskips());
+
+        return enableTheseDisableThose(rskips, except);
+    }
+
+    public static ActivationConfig tbd1000() {
+        return tbd1000(Collections.emptyList());
+    }
+
+    public static ActivationConfig tbd1000(List<ConsensusRule> except) {
+        List<ConsensusRule> rskips = new ArrayList<>();
+        rskips.addAll(getPaidBridgeTxsRskip());
+        rskips.addAll(getOrchidRskips());
+        rskips.addAll(getOrchid060Rskips());
+        rskips.addAll(getWasabi100Rskips());
+        rskips.addAll(getBahamasRskips());
+        rskips.addAll(getTwoToThreeRskips());
+        rskips.addAll(getPapyrus200Rskips());
+        rskips.addAll(getIris300Rskips());
+        rskips.addAll(getHop400Rskips());
+        rskips.addAll(getHop401Rskips());
+        rskips.addAll(getFingerroot500Rskips());
+        rskips.addAll(getArrowhead600Rskips());
+        rskips.addAll(getArrowhead631Rskips());
+        rskips.addAll(getLovell700Rskips());
+        rskips.addAll(getReed800Rskips());
+        rskips.addAll(getReed810Rskips());
+        rskips.addAll(getVetiverRskips());
+        rskips.addAll(getTbdRskips());
 
         return enableTheseDisableThose(rskips, except);
     }

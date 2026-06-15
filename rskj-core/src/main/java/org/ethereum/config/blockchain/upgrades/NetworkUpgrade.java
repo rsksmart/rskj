@@ -36,9 +36,10 @@ public enum NetworkUpgrade {
     LOVELL700("lovell700"),
     REED800("reed800"),
     REED810("reed810"),
-    VETIVER900("vetiver900");
+    VETIVER900("vetiver900"),
+    TBD1000("tbd1000");
 
-    private String name;
+    private final String name;
 
     NetworkUpgrade(String name) {
         this.name = name;
