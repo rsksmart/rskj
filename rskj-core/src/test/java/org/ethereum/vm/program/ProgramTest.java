@@ -17,6 +17,34 @@ package org.ethereum.vm.program;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.peg.Bridge;
+import com.google.common.collect.Sets;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.DelegationCodeResolver;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.MessageCall;
+import org.ethereum.vm.PrecompiledContractArgs;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
+import org.ethereum.vm.program.invoke.ProgramInvoke;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigInteger;
+
 import static org.ethereum.vm.PrecompiledContracts.NO_LIMIT_ON_MAX_INPUT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -34,37 +62,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import java.math.BigInteger;
-
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.BlockTxSignatureCache;
-import org.ethereum.core.DelegationCodeResolver;
-import org.ethereum.core.ReceivedTxSignatureCache;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.MessageCall;
-import org.ethereum.vm.PrecompiledContractArgs;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.exception.VMException;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import com.google.common.collect.Sets;
-
-import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.peg.Bridge;
 
 @ExtendWith(MockitoExtension.class)
 class ProgramTest {
