@@ -22,11 +22,14 @@ import co.rsk.config.RskMiningConstants;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderBuilder;
+import org.ethereum.core.BlockHeaderExtension;
+import org.ethereum.core.BlockHeaderExtensionV2;
 import org.ethereum.core.BlockHeaderV1;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
@@ -879,6 +882,285 @@ class BlockFactoryTest {
         assertArrayEquals(baseEvent, decodedHeader.getBaseEvent());
     }
 
+    // ---------------------------------------------------------------------------------------
+    // baseEvent encoding and size-tolerance coverage.
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * An empty baseEvent on a header with merged-mining fields round-trips through the
+     * extension wire encoding and the outer header re-encode, keeping the full 23-element
+     * RLP layout intact and the hash stable.
+     */
+    @Test
+    void emptyBaseEventPreservedAcrossExtensionRoundTripWithMining() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIPUMM, RSKIP144);
+
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withMergedMining()
+                .withUmmRoot(ummRoot)
+                .withEdges(edges)
+                .build();
+        assertArrayEquals(new byte[0], header.getBaseEvent());
+
+        // Round-trip the extension through its wire encoding so an empty baseEvent
+        // is read back via fromEncoded.
+        BlockHeaderExtension wireExtension = BlockHeaderExtension.fromEncoded(
+                BlockHeaderExtension.toEncoded(header.getExtension()));
+        header.setExtension(wireExtension);
+
+        // Re-encode the header: the empty baseEvent slot is preserved in the layout.
+        byte[] stored = header.getFullEncoded();
+        assertThat(RLP.decodeList(stored).size(), is(23));
+
+        BlockHeader reloaded = factory.decodeHeader(stored, false);
+
+        assertArrayEquals(new byte[0], reloaded.getBaseEvent());
+        assertThat(reloaded.getHash(), is(header.getHash()));
+    }
+
+    /**
+     * Same round-trip property as above, for a header without merged-mining fields.
+     */
+    @Test
+    void emptyBaseEventPreservedAcrossExtensionRoundTripNoMining() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIP144);
+
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withEdges(edges)
+                .build();
+        assertArrayEquals(new byte[0], header.getBaseEvent());
+
+        BlockHeaderExtension wireExtension = BlockHeaderExtension.fromEncoded(
+                BlockHeaderExtension.toEncoded(header.getExtension()));
+        header.setExtension(wireExtension);
+
+        byte[] stored = header.getFullEncoded();
+        BlockHeader reloaded = factory.decodeHeader(stored, false);
+
+        assertArrayEquals(new byte[0], reloaded.getBaseEvent());
+        assertThat(reloaded.getHash(), is(header.getHash()));
+    }
+
+    /**
+     * A header whose RLP layout is one element shy of the expected with-mining shape
+     * decodes on a testnet factory within the bounded height range; the absent baseEvent
+     * slot is supplied as an empty byte array. Exercises the decoder's
+     * "remaining == miningFieldCount" disambiguation branch.
+     */
+    @Test
+    void headerOneElementShortDecodableOnTestnetWithinBoundWithMining() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIPUMM, RSKIP144);
+
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withMergedMining()
+                .withUmmRoot(ummRoot)
+                .withEdges(edges)
+                .build();
+
+        // Build a 22-element layout by attaching a V2 extension with a null baseEvent so
+        // the outer encode omits the baseEvent slot.
+        header.setExtension(new BlockHeaderExtensionV2(
+                header.getLogsBloom(),
+                header.getTxExecutionSublistsEdges(),
+                null));
+        byte[] stored = header.getFullEncoded();
+        assertThat(RLP.decodeList(stored).size(), is(22));
+
+        BlockFactory testnetFactory = new BlockFactory(activationConfig, Constants.TESTNET_CHAIN_ID);
+        BlockHeader reloaded = testnetFactory.decodeHeader(stored, false);
+
+        assertArrayEquals(new byte[0], reloaded.getBaseEvent());
+        assertArrayEquals(edges, reloaded.getTxExecutionSublistsEdges());
+    }
+
+    /**
+     * Same as the with-mining case above, for a header without merged-mining fields.
+     * Exercises the decoder's "remaining == 0" disambiguation branch.
+     */
+    @Test
+    void headerOneElementShortDecodableOnTestnetWithinBoundNoMining() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIP144);
+
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withEdges(edges)
+                .build();
+
+        header.setExtension(new BlockHeaderExtensionV2(
+                header.getLogsBloom(),
+                header.getTxExecutionSublistsEdges(),
+                null));
+        byte[] stored = header.getFullEncoded();
+
+        BlockFactory testnetFactory = new BlockFactory(activationConfig, Constants.TESTNET_CHAIN_ID);
+        BlockHeader reloaded = testnetFactory.decodeHeader(stored, false);
+
+        assertArrayEquals(new byte[0], reloaded.getBaseEvent());
+        assertArrayEquals(edges, reloaded.getTxExecutionSublistsEdges());
+    }
+
+    /**
+     * The one-element-short tolerance is testnet-scoped: a mainnet factory rejects the
+     * same payload.
+     */
+    @Test
+    void headerOneElementShortRejectedOnMainnetFactory() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIPUMM, RSKIP144);
+
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withMergedMining()
+                .withUmmRoot(ummRoot)
+                .withEdges(edges)
+                .build();
+        header.setExtension(new BlockHeaderExtensionV2(
+                header.getLogsBloom(),
+                header.getTxExecutionSublistsEdges(),
+                null));
+        byte[] stored = header.getFullEncoded();
+        assertThat(RLP.decodeList(stored).size(), is(22));
+
+        // The default `factory` field uses the single-arg constructor and so defaults the
+        // chain ID to mainnet.
+        assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(stored, false));
+    }
+
+    /**
+     * The tolerance applies only below BASE_EVENT_RECOVERY_UPPER_BOUND. A payload at the
+     * bound itself is rejected even on testnet.
+     */
+    @Test
+    void headerOneElementShortRejectedAboveUpperBound() {
+        long number = 7_800_000L;
+        setupRskip535Test(number, RSKIPUMM, RSKIP144);
+
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withMergedMining()
+                .withUmmRoot(ummRoot)
+                .withEdges(edges)
+                .build();
+        header.setExtension(new BlockHeaderExtensionV2(
+                header.getLogsBloom(),
+                header.getTxExecutionSublistsEdges(),
+                null));
+        byte[] stored = header.getFullEncoded();
+        assertThat(RLP.decodeList(stored).size(), is(22));
+
+        BlockFactory testnetFactory = new BlockFactory(activationConfig, Constants.TESTNET_CHAIN_ID);
+        assertThrows(IllegalArgumentException.class, () -> testnetFactory.decodeHeader(stored, false));
+    }
+
+    /**
+     * The tolerance does not extend to other chain IDs. Regtest stands in for any
+     * non-testnet network.
+     */
+    @Test
+    void headerOneElementShortRejectedOnNonTestnetChainId() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIPUMM, RSKIP144);
+
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withMergedMining()
+                .withUmmRoot(ummRoot)
+                .withEdges(edges)
+                .build();
+        header.setExtension(new BlockHeaderExtensionV2(
+                header.getLogsBloom(),
+                header.getTxExecutionSublistsEdges(),
+                null));
+        byte[] stored = header.getFullEncoded();
+
+        BlockFactory regtestFactory = new BlockFactory(activationConfig, Constants.REGTEST_CHAIN_ID);
+        assertThrows(IllegalArgumentException.class, () -> regtestFactory.decodeHeader(stored, false));
+    }
+
+    /**
+     * The one-element-short tolerance only covers headers where the absent element is
+     * the baseEvent slot. A layout that keeps baseEvent but drops one merged-mining
+     * element lands on the same size; the decoder then reads the baseEvent slot as the
+     * BTC merged-mining header and the downstream size guard rejects it because the
+     * slot is not 80 bytes.
+     */
+    @Test
+    void headerOneElementShortWithBaseEventPresentRejectedOnTestnet() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIPUMM, RSKIP144, RSKIP98);
+
+        byte[] baseEvent = TestUtils.generateBytes("baseEvent", 32);
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withMergedMining()
+                .withUmmRoot(ummRoot)
+                .withEdges(edges)
+                .withBaseEvent(baseEvent)
+                .build();
+
+        byte[] fullEncoded = header.getFullEncoded();
+        RLPList parsed = RLP.decodeList(fullEncoded);
+        assertThat(parsed.size(), is(23));
+
+        // Drop the last RLP element so the resulting header has baseEvent present but
+        // only two of the three merged-mining elements (a one-element-short layout
+        // whose missing element is not the baseEvent slot). All header fields are
+        // byte-string elements, so re-wrapping each payload with RLP.encodeElement
+        // reconstructs the original on-wire form.
+        byte[][] reencodedElements = new byte[parsed.size() - 1][];
+        for (int i = 0; i < reencodedElements.length; i++) {
+            reencodedElements[i] = RLP.encodeElement(parsed.get(i).getRLPRawData());
+        }
+        byte[] truncated = RLP.encodeList(reencodedElements);
+        assertThat(RLP.decodeList(truncated).size(), is(22));
+
+        BlockFactory testnetFactory = new BlockFactory(activationConfig, Constants.TESTNET_CHAIN_ID);
+        assertThrows(IllegalArgumentException.class, () -> testnetFactory.decodeHeader(truncated, false));
+    }
+
+    /**
+     * Smoke coverage that a 22-element uncompressed payload does not accidentally decode
+     * through the compressed code path. The compressed expected sizes for this block
+     * (20 with mining, 17 without) do not align with the recovery targets either, so
+     * this only verifies the rejection path stays rejecting when compressed=true is
+     * requested.
+     */
+    @Test
+    void compressedHeaderRejectedWhenSizeDoesNotMatch() {
+        long number = 500L;
+        setupRskip535Test(number, RSKIPUMM, RSKIP144);
+
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot", 20);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+        BlockHeader header = new TestBlockHeaderBuilder(number)
+                .withMergedMining()
+                .withUmmRoot(ummRoot)
+                .withEdges(edges)
+                .build();
+        header.setExtension(new BlockHeaderExtensionV2(
+                header.getLogsBloom(),
+                header.getTxExecutionSublistsEdges(),
+                null));
+        byte[] stored = header.getFullEncoded();
+
+        BlockFactory testnetFactory = new BlockFactory(activationConfig, Constants.TESTNET_CHAIN_ID);
+        assertThrows(IllegalArgumentException.class, () -> testnetFactory.decodeHeader(stored, true));
+    }
+
     @ParameterizedTest(name = "btcHeaderSize={0}, shouldSucceed={1} — {2}")
     @MethodSource("btcHeaderSizeValidationArgs")
     void decodeHeaderValidatesBtcHeaderSize(int btcHeaderSize, boolean shouldSucceed, String description) {
@@ -963,6 +1245,11 @@ class BlockFactoryTest {
         when(activationConfig.getHeaderVersion(lt(blockNumber))).thenReturn((byte) 0x0);
         when(activationConfig.getHeaderVersion(geq(blockNumber))).thenReturn((byte) 0x2);
         when(activationConfig.isActive(eq(RSKIP351), geq(blockNumber))).thenReturn(true);
+        when(activationConfig.areActive(geq(blockNumber), eq(RSKIP351), eq(RSKIP144)))
+                .thenAnswer(inv -> {
+                    long n = inv.getArgument(0, Long.class);
+                    return activationConfig.isActive(RSKIP351, n) && activationConfig.isActive(RSKIP144, n);
+                });
     }
 
     private BlockHeader createBlockHeaderWithMergedMiningFields(

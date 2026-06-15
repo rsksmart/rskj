@@ -91,6 +91,9 @@ class ValidateBtcHeadersTest {
         }
 
         private static void handle(HttpExchange exchange, String responseBody) throws IOException {
+            try (var ignored = exchange.getRequestBody()) {
+                ignored.readAllBytes();
+            }
             byte[] responseBytes = responseBody.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, responseBytes.length);
