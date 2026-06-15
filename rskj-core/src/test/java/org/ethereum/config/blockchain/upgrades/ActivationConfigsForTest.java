@@ -490,7 +490,7 @@ public class ActivationConfigsForTest {
     }
 
     public static ActivationConfig tbd1000() {
-        return vetiver900(Collections.emptyList());
+        return tbd1000(Collections.emptyList());
     }
 
     public static ActivationConfig tbd1000(List<ConsensusRule> except) {
