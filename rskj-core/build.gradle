@@ -612,13 +612,25 @@ artifacts {
 }
 
 static def gitCurrentBranch() {
-    def process = "git rev-parse --abbrev-ref HEAD".execute()
-    return process.text.trim()
+    return resolveGitValue("COMMIT_BRANCH", "git rev-parse --abbrev-ref HEAD")
 }
 
 static def gitCommitHash() {
-    def process = "git rev-parse --short HEAD".execute()
-    return process.text.trim()
+    return resolveGitValue("COMMIT_HASH", "git rev-parse --short HEAD")
+}
+
+static def resolveGitValue(String envVar, String gitCommand) {
+    def envValue = System.getenv(envVar)?.trim()
+    if (envValue) return envValue
+    try {
+        def process = gitCommand.execute()
+        process.waitFor()
+        if (process.exitValue() == 0) {
+            def result = process.text.trim()
+            if (result) return result
+        }
+    } catch (Exception ignored) {}
+    return "unknown"
 }
 
 static def amendPathIfNeeded(details) {
