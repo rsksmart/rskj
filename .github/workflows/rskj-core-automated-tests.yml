@@ -8,12 +8,15 @@ name: RSKj Core Automated Tests
 #   Hardhat   -> rsksmart/rskj-hardhat-tests     (rskj-smart-contract-tests.yml, hardhat_branch)
 #   K6        -> rsksmart/rskj-k6-tests           (rskj-k6-tests.yml,           test_branch)
 #
-# Pure first-party tooling — gh / gh api / jq are all preinstalled on the runner;
-# there are no third-party (marketplace) actions. Cross-repo dispatch uses the
-# AUTOMATED_TESTS_GH_TOKEN fine-grained PAT (Actions: read+write, Contents: read
-# on the three test repos). The dispatch endpoint returns the created run id
-# directly via return_run_details=true (GitHub, 2026-02-19), so there is no
-# poll-to-correlate step.
+# gh / gh api / jq are all preinstalled on the runner. Cross-repo auth uses a
+# short-lived GitHub App installation token, minted per job via
+# actions/create-github-app-token (pinned by SHA) from the GH_APP_ID /
+# GH_APP_PRIVATE_KEY secrets. The App is installed on the three test repos with
+# Actions: read+write and Contents: read. Each token lasts ~1h, which comfortably
+# covers a job's dispatch + poll-to-completion (all suites finish well under that,
+# and timeout-minutes keeps every job inside the token's lifetime). The dispatch
+# endpoint returns the created run id directly via return_run_details=true
+# (GitHub, 2026-02-19), so there is no poll-to-correlate step.
 
 on:
   pull_request:
@@ -58,26 +61,41 @@ jobs:
       hardhat_ref: ${{ steps.refs.outputs.hardhat_ref }}
       k6_ref: ${{ steps.refs.outputs.k6_ref }}
     steps:
-      # The PAT is a secret, so it is empty on fork PRs (GitHub withholds secrets
-      # from pull_request runs triggered by forks). Detect that here so the rest
-      # of the workflow can degrade gracefully instead of erroring on every gh call.
-      - name: Check cross-repo token
+      # App secrets are withheld from fork pull_request runs (GitHub does not expose
+      # secrets to runs triggered by forks). An empty private key is our fork-PR
+      # signal: detect it here so the rest of the workflow degrades gracefully
+      # (skip + stay green) instead of failing token mint / every gh call.
+      - name: Check cross-repo App credentials
         id: token
         env:
-          TOKEN: ${{ secrets.AUTOMATED_TESTS_GH_TOKEN }}
+          APP_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
         run: |
-          if [ -n "$TOKEN" ]; then
+          if [ -n "$APP_KEY" ]; then
             echo "has_token=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_token=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::AUTOMATED_TESTS_GH_TOKEN is empty (fork PR?) — downstream suites will be skipped."
+            echo "::warning::GH_APP_PRIVATE_KEY is empty (fork PR?) — downstream suites will be skipped."
           fi
+
+      # Mint a short-lived (~1h) installation token scoped to the three test repos.
+      - name: Generate GitHub App token
+        id: app-token
+        if: steps.token.outputs.has_token == 'true'
+        uses: actions/create-github-app-token@31c86eb3b33c9b601a1f60f98dcbfd1d70f379b4 # v1.10.3
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: rsksmart
+          repositories: |
+            rskj-json-rpc-tests
+            rskj-hardhat-tests
+            rskj-k6-tests
 
       - name: Resolve rskj + per-suite test refs
         id: refs
         if: steps.token.outputs.has_token == 'true'
         env:
-          GH_TOKEN: ${{ secrets.AUTOMATED_TESTS_GH_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           EVENT: ${{ github.event_name }}
           HEAD_REF: ${{ github.head_ref }}
           REF_NAME: ${{ github.ref_name }}
@@ -130,15 +148,24 @@ jobs:
     needs: resolve
     if: needs.resolve.outputs.has_token == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 50
     outputs:
       conclusion: ${{ steps.run.outputs.conclusion }}
       run_url: ${{ steps.run.outputs.run_url }}
     steps:
+      # Fresh ~1h token, minted at job start so the full dispatch + poll fits inside it.
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@31c86eb3b33c9b601a1f60f98dcbfd1d70f379b4 # v1.10.3
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: rsksmart
+          repositories: rskj-json-rpc-tests
       - name: Dispatch and wait
         id: run
         env:
-          GH_TOKEN: ${{ secrets.AUTOMATED_TESTS_GH_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: rsksmart/rskj-json-rpc-tests
           WORKFLOW: rskj-json-rpc-tests.yml
           TEST_INPUT: test_branch
@@ -166,12 +193,12 @@ jobs:
           echo "Triggered run $RUN_ID — $RUN_URL"
           # Wait for completion by polling the run status (keyed on the id we
           # already hold — deterministic, unlike `gh run watch`, which can race a
-          # just-created run). ~600 * 30s = 5h, matching this job's timeout. A
+          # just-created run). ~100 * 30s = 50m, matching this job's timeout. A
           # downstream *test* failure is captured as the conclusion (not raised
           # here) so the report job can gate centrally; a dispatch/infra error
           # already exited non-zero above.
           CONCLUSION=""
-          for _ in $(seq 1 600); do
+          for _ in $(seq 1 100); do
             STATUS=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null || echo "")
             if [ "$STATUS" = "completed" ]; then
               CONCLUSION=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.conclusion // "unknown"' || echo "unknown")
@@ -188,15 +215,24 @@ jobs:
     needs: resolve
     if: needs.resolve.outputs.has_token == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 50
     outputs:
       conclusion: ${{ steps.run.outputs.conclusion }}
       run_url: ${{ steps.run.outputs.run_url }}
     steps:
+      # Fresh ~1h token, minted at job start so the full dispatch + poll fits inside it.
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@31c86eb3b33c9b601a1f60f98dcbfd1d70f379b4 # v1.10.3
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: rsksmart
+          repositories: rskj-hardhat-tests
       - name: Dispatch and wait
         id: run
         env:
-          GH_TOKEN: ${{ secrets.AUTOMATED_TESTS_GH_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: rsksmart/rskj-hardhat-tests
           WORKFLOW: rskj-smart-contract-tests.yml
           TEST_INPUT: hardhat_branch
@@ -232,15 +268,24 @@ jobs:
     needs: resolve
     if: needs.resolve.outputs.has_token == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 50
     outputs:
       conclusion: ${{ steps.run.outputs.conclusion }}
       run_url: ${{ steps.run.outputs.run_url }}
     steps:
+      # Fresh ~1h token, minted at job start so the full dispatch + poll fits inside it.
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@31c86eb3b33c9b601a1f60f98dcbfd1d70f379b4 # v1.10.3
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: rsksmart
+          repositories: rskj-k6-tests
       - name: Dispatch and wait
         id: run
         env:
-          GH_TOKEN: ${{ secrets.AUTOMATED_TESTS_GH_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: rsksmart/rskj-k6-tests
           WORKFLOW: rskj-k6-tests.yml
           TEST_INPUT: test_branch
@@ -277,7 +322,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     # Only this job writes with GITHUB_TOKEN (the sticky PR comment). The other
-    # jobs use the PAT, so they keep the top-level contents: read default.
+    # jobs use the App token, so they keep the top-level contents: read default.
     permissions:
       pull-requests: write
     steps:
@@ -301,15 +346,15 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Fork PR: the cross-repo token was unavailable, so nothing was
-          # dispatched. Report the skip and stay green — the PR cannot supply the
-          # secret, so we do not block it.
+          # Fork PR: the App credentials were unavailable, so no token could be
+          # minted and nothing was dispatched. Report the skip and stay green — the
+          # PR cannot supply the secret, so we do not block it.
           if [ "$HAS_TOKEN" != "true" ]; then
             {
               echo "### RSKj Core Automated Tests — ⏭️ skipped"
               echo ""
-              echo "Cross-repo token \`AUTOMATED_TESTS_GH_TOKEN\` was unavailable"
-              echo "(expected on fork PRs, where secrets are withheld). The"
+              echo "GitHub App credentials (\`GH_APP_ID\` / \`GH_APP_PRIVATE_KEY\`) were"
+              echo "unavailable (expected on fork PRs, where secrets are withheld). The"
               echo "JSON-RPC / Hardhat / K6 suites were not dispatched."
             } >> "$GITHUB_STEP_SUMMARY"
             exit 0
