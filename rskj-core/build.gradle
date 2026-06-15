@@ -612,11 +612,15 @@ artifacts {
 }
 
 static def gitCurrentBranch() {
+    def envBranch = System.getenv("COMMIT_BRANCH")
+    if (envBranch) return envBranch
     def process = "git rev-parse --abbrev-ref HEAD".execute()
     return process.text.trim()
 }
 
 static def gitCommitHash() {
+    def envHash = System.getenv("COMMIT_HASH")
+    if (envHash) return envHash
     def process = "git rev-parse --short HEAD".execute()
     return process.text.trim()
 }

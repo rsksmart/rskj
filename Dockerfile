@@ -1,13 +1,18 @@
 FROM eclipse-temurin:17-jdk@sha256:0613a19436dc8f745914b25235d43f3b0eddb8d432d19edce30ffaf2d2f95403 AS build
 
 RUN apt-get update -y && \
-    apt-get install -y git curl gnupg
+    apt-get install -y --no-install-recommends curl git gnupg
 
 RUN useradd -ms /bin/bash rsk
 USER rsk
 
 WORKDIR /home/rsk
 COPY --chown=rsk:rsk . ./
+
+ARG COMMIT_HASH=unknown
+ARG COMMIT_BRANCH=unknown
+ENV COMMIT_HASH=${COMMIT_HASH}
+ENV COMMIT_BRANCH=${COMMIT_BRANCH}
 
 RUN gpg --keyserver https://secchannel.rsk.co/SUPPORT.asc --recv-keys 1DC9157991323D23FD37BAA7A6DBEAC640C5A14B && \
     gpg --verify --output SHA256SUMS SHA256SUMS.asc && \
