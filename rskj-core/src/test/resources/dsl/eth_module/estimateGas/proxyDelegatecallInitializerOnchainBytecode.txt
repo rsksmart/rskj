@@ -7,7 +7,7 @@ constructor running (storage lives on the proxy).
 
 This fixture pairs with the second @Test in EthModuleGasEstimationDSLTest:
 testEstimateGas_proxyConstructorDelegatecallToInitializer_onchainBytecode,
-which uses Jeremy's exact proxy creation calldata (tx
+which uses the exact testnet proxy creation calldata (tx
 0xddb735039288b9b8e08c9929e26577866e9a0f38edf8c61f01da69e827face96)
 and patches the impl address to point at the contract deployed below.
 end
