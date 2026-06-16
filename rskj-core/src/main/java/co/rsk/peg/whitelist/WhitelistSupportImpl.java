@@ -1,14 +1,22 @@
 package co.rsk.peg.whitelist;
 
-import static co.rsk.peg.whitelist.WhitelistResponseCode.*;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.ADDRESS_ALREADY_WHITELISTED;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.ADDRESS_NOT_EXIST;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.DELAY_ALREADY_SET;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.DISABLE_BLOCK_DELAY_INVALID;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.INVALID_ADDRESS_FORMAT;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.SUCCESS;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.UNAUTHORIZED_CALLER;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.AddressFormatException;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
-
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;

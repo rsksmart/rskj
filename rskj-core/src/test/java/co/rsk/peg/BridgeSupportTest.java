@@ -67,6 +67,7 @@ import co.rsk.peg.utils.*;
 import co.rsk.peg.utils.NonRefundablePeginReason;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.whitelist.*;
+import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 import co.rsk.test.builders.*;
 import co.rsk.util.HexUtils;
@@ -147,12 +148,16 @@ class BridgeSupportTest {
 
     @BeforeEach
     void setUpOnEachTest() {
+        WhitelistConstants whitelistConstants = WhitelistMainNetConstants.getInstance();
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         tx.sign(senderKey.getPrivKeyBytes());
 
         bridgeStorageAccessor = new InMemoryStorage();
         federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
-        whitelistStorageProvider = new WhitelistStorageProviderImpl(bridgeStorageAccessor);
+        whitelistStorageProvider = new WhitelistStorageProviderImpl(
+            bridgeStorageAccessor,
+            whitelistConstants.isGenesisWhitelistEnabled()
+        );
         LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
 
         feePerKbSupport = mock(FeePerKbSupport.class);
@@ -164,7 +169,7 @@ class BridgeSupportTest {
             .withActivations(allActivations)
             .build();
         whitelistSupport = new WhitelistSupportImpl(
-            WhitelistMainNetConstants.getInstance(),
+            whitelistConstants,
             whitelistStorageProvider,
             allActivations,
             signatureCache

@@ -21,10 +21,16 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
 
     private final StorageAccessor bridgeStorageAccessor;
+    private final boolean genesisWhitelistEnabled;
+
     private LockWhitelist lockWhitelist;
 
-    public WhitelistStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
+    public WhitelistStorageProviderImpl(
+        StorageAccessor bridgeStorageAccessor,
+        boolean genesisWhitelistEnabled
+    ) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
+        this.genesisWhitelistEnabled = genesisWhitelistEnabled;
     }
 
     @Override
@@ -52,7 +58,8 @@ public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
     }
 
     @Override
-    public synchronized LockWhitelist getLockWhitelist(ActivationConfig.ForBlock activations, NetworkParameters networkParameters) {
+    public synchronized LockWhitelist getLockWhitelist(ActivationConfig.ForBlock activations, NetworkParameters networkParameters
+    ) {
         if (lockWhitelist == null) {
             lockWhitelist = initializeLockWhitelist(activations, networkParameters);
         }
@@ -66,7 +73,9 @@ public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
         );
 
         if (oneOffWhitelistAndDisableBlockHeightData == null) {
-            lockWhitelist = new LockWhitelist(new HashMap<>());
+            int initialDisableBlockHeight = genesisWhitelistEnabled ? Integer.MAX_VALUE : 0;
+            lockWhitelist = new LockWhitelist(new HashMap<>(), initialDisableBlockHeight);
+
             return lockWhitelist;
         }
 

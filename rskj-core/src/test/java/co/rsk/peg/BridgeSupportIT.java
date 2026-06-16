@@ -56,6 +56,7 @@ import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.vote.*;
 import co.rsk.peg.whitelist.*;
+import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 import co.rsk.test.builders.*;
 import com.google.common.collect.Lists;
@@ -138,6 +139,7 @@ public class BridgeSupportIT {
 
     @BeforeEach
     void setUpOnEachTest() {
+        WhitelistConstants whitelistConstants = WhitelistMainNetConstants.getInstance();
         federationConstants = bridgeRegTestConstants.getFederationConstants();
         btcParams = bridgeRegTestConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
@@ -146,9 +148,12 @@ public class BridgeSupportIT {
         feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
         StorageAccessor inMemoryStorage = new InMemoryStorage();
-        whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
+        whitelistStorageProvider = new WhitelistStorageProviderImpl(
+            inMemoryStorage,
+            whitelistConstants.isGenesisWhitelistEnabled()
+        );
         whitelistSupport = new WhitelistSupportImpl(
-            WhitelistMainNetConstants.getInstance(),
+            whitelistConstants,
             whitelistStorageProvider,
             activations,
             signatureCache

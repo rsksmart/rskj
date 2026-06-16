@@ -146,7 +146,10 @@ public class BridgeSupportFactory {
 
     private WhitelistSupport getWhitelistSupportInstance(StorageAccessor bridgeStorageAccessor, ActivationConfig.ForBlock activations) {
         WhitelistConstants whitelistConstants = bridgeConstants.getWhitelistConstants();
-        WhitelistStorageProvider whitelistStorageProvider = new WhitelistStorageProviderImpl(bridgeStorageAccessor);
+        WhitelistStorageProvider whitelistStorageProvider = new WhitelistStorageProviderImpl(
+            bridgeStorageAccessor,
+            whitelistConstants.isGenesisWhitelistEnabled()
+        );
 
         return new WhitelistSupportImpl(
             whitelistConstants,

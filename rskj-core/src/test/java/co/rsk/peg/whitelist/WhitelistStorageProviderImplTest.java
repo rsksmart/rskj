@@ -12,8 +12,8 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
@@ -40,7 +40,10 @@ class WhitelistStorageProviderImplTest {
     @BeforeEach
     void setUp() {
         inMemoryStorage = new InMemoryStorage();
-        whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
+        whitelistStorageProvider = new WhitelistStorageProviderImpl(
+            inMemoryStorage,
+            whitelistConstants.isGenesisWhitelistEnabled()
+        );
         activationConfig = mock(ActivationConfig.ForBlock.class);
         firstBtcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "firstBtcAddress");
         secondBtcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "secondBtcAddress");
@@ -77,7 +80,10 @@ class WhitelistStorageProviderImplTest {
 
         whitelistStorageProvider.save(activationConfig);
 
-        whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
+        whitelistStorageProvider = new WhitelistStorageProviderImpl(
+            inMemoryStorage,
+            whitelistConstants.isGenesisWhitelistEnabled()
+        );
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
         assertEquals(1, actualLockWhitelist.getAll().size());
 
@@ -105,7 +111,10 @@ class WhitelistStorageProviderImplTest {
 
         whitelistStorageProvider.save(activationConfig);
 
-        whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
+        whitelistStorageProvider = new WhitelistStorageProviderImpl(
+            inMemoryStorage,
+            whitelistConstants.isGenesisWhitelistEnabled()
+        );
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
         assertEquals(2, actualLockWhitelist.getAll().size());
 
@@ -115,6 +124,26 @@ class WhitelistStorageProviderImplTest {
 
         Map<Address, UnlimitedWhiteListEntry> lockWhitelistEntryMap = getAddressFromUnlimitedStorageEntry();
         assertTrue(lockWhitelistEntryMap.containsKey(secondBtcAddress));
+    }
+
+    @Test
+    void getLockWhitelist_whenNoEntriesInStorageAndGenesisWhitelistEnabled_shouldReturnWhitelistEnabled() {
+        whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage, true);
+
+        LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
+
+        assertEquals(0, actualLockWhitelist.getAll().size());
+        assertEquals(Integer.MAX_VALUE, actualLockWhitelist.getDisableBlockHeight());
+    }
+
+    @Test
+    void getLockWhitelist_whenNoEntriesInStorageAndGenesisWhitelistDisabled_shouldReturnWhitelistDisabled() {
+        whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage, false);
+
+        LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
+
+        assertEquals(0, actualLockWhitelist.getAll().size());
+        assertEquals(0, actualLockWhitelist.getDisableBlockHeight());
     }
 
     @Test
@@ -142,7 +171,10 @@ class WhitelistStorageProviderImplTest {
         assertFalse(tempLockWhitelist.isWhitelisted(firstBtcAddress));
 
         // Recreating whitelistStorageProvider to make sure it is querying the storage
-        whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
+        whitelistStorageProvider = new WhitelistStorageProviderImpl(
+            inMemoryStorage,
+            whitelistConstants.isGenesisWhitelistEnabled()
+        );
         tempLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         // Return one entry that was saved directly in storage

@@ -41,7 +41,10 @@ class WhitelistSupportImplTest {
     @BeforeEach
     void setUp() {
         inMemoryStorage = new InMemoryStorage();
-        WhitelistStorageProvider whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
+        WhitelistStorageProvider whitelistStorageProvider = new WhitelistStorageProviderImpl(
+            inMemoryStorage,
+            whitelistConstants.isGenesisWhitelistEnabled()
+        );
         ActivationConfig.ForBlock activationConfig = ActivationConfigsForTest.all().forBlock(0);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         whitelistSupport = new WhitelistSupportImpl(whitelistConstants, whitelistStorageProvider, activationConfig, signatureCache);
