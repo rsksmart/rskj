@@ -6,6 +6,7 @@ import co.rsk.peg.vote.AddressBasedAuthorizer;
 public class WhitelistConstants {
     protected NetworkParameters btcParams;
     protected AddressBasedAuthorizer lockWhitelistChangeAuthorizer;
+    protected boolean genesisWhitelistEnabled;
 
     public NetworkParameters getBtcParams() {
         return btcParams;
@@ -13,5 +14,9 @@ public class WhitelistConstants {
 
     public AddressBasedAuthorizer getLockWhitelistChangeAuthorizer() {
         return lockWhitelistChangeAuthorizer;
+    }
+
+    public boolean isGenesisWhitelistEnabled() {
+        return genesisWhitelistEnabled;
     }
 }
