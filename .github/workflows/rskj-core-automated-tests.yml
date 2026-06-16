@@ -70,14 +70,26 @@ jobs:
         env:
           APP_ID: ${{ secrets.GH_APP_ID }}
           APP_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          # Only a PR whose head is a fork has secrets withheld by GitHub. Same-repo
+          # PRs and workflow_dispatch always have them (head.repo.fork is empty on
+          # dispatch → treated as non-fork).
+          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
         run: |
           # Require BOTH secrets: a present key with a missing/misconfigured id
           # would still fail token mint later, in a less obvious way.
           if [ -n "$APP_ID" ] && [ -n "$APP_KEY" ]; then
             echo "has_token=true" >> "$GITHUB_OUTPUT"
-          else
+          elif [ "$IS_FORK" = "true" ]; then
+            # Fork PR: secrets are legitimately unavailable. Skip + stay green —
+            # the PR cannot supply them, so we do not block it.
             echo "has_token=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::GH_APP_ID / GH_APP_PRIVATE_KEY unavailable (fork PR?) — downstream suites will be skipped."
+            echo "::warning::GH_APP_ID / GH_APP_PRIVATE_KEY unavailable (fork PR — secrets are withheld); downstream suites will be skipped."
+          else
+            # Non-fork run with missing secrets means they were removed or
+            # misconfigured on this repo. Fail loudly rather than silently
+            # skipping, which would defeat this check's required-gate purpose.
+            echo "::error::GH_APP_ID / GH_APP_PRIVATE_KEY are missing on a non-fork run; configure the GitHub App secrets so the cross-repo suites can be dispatched."
+            exit 1
           fi
 
       # Mint a short-lived (~1h) installation token scoped to the three test repos.
@@ -375,10 +387,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Fork PR: the App credentials were unavailable, so no token could be
-          # minted and nothing was dispatched. Report the skip and stay green — the
-          # PR cannot supply the secret, so we do not block it.
-          if [ "$HAS_TOKEN" != "true" ]; then
+          # Fork PR (has_token == "false"): the App credentials were legitimately
+          # unavailable, so no token could be minted and nothing was dispatched.
+          # Report the skip and stay green — the PR cannot supply the secret, so we
+          # do not block it. A missing-secret failure on a non-fork run is a
+          # different case: resolve exits non-zero there, leaving has_token empty,
+          # which falls through to the normal report below and gates the PR red.
+          if [ "$HAS_TOKEN" = "false" ]; then
             {
               echo "### RSKj Core Automated Tests — ⏭️ skipped"
               echo ""
