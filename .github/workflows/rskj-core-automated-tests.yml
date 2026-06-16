@@ -68,13 +68,16 @@ jobs:
       - name: Check cross-repo App credentials
         id: token
         env:
+          APP_ID: ${{ secrets.GH_APP_ID }}
           APP_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
         run: |
-          if [ -n "$APP_KEY" ]; then
+          # Require BOTH secrets: a present key with a missing/misconfigured id
+          # would still fail token mint later, in a less obvious way.
+          if [ -n "$APP_ID" ] && [ -n "$APP_KEY" ]; then
             echo "has_token=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_token=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::GH_APP_PRIVATE_KEY is empty (fork PR?) — downstream suites will be skipped."
+            echo "::warning::GH_APP_ID / GH_APP_PRIVATE_KEY unavailable (fork PR?) — downstream suites will be skipped."
           fi
 
       # Mint a short-lived (~1h) installation token scoped to the three test repos.
@@ -86,10 +89,10 @@ jobs:
           app-id: ${{ secrets.GH_APP_ID }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
           owner: rsksmart
-          repositories: |
-            rskj-json-rpc-tests
-            rskj-hardhat-tests
-            rskj-k6-tests
+          # Comma-separated single line: this action version does not split a
+          # multi-line block into a list (it took the whole newline-joined string
+          # as one repo name and 404'd looking up its installation).
+          repositories: rskj-json-rpc-tests,rskj-hardhat-tests,rskj-k6-tests
 
       - name: Resolve rskj + per-suite test refs
         id: refs
@@ -193,12 +196,14 @@ jobs:
           echo "Triggered run $RUN_ID — $RUN_URL"
           # Wait for completion by polling the run status (keyed on the id we
           # already hold — deterministic, unlike `gh run watch`, which can race a
-          # just-created run). ~100 * 30s = 50m, matching this job's timeout. A
-          # downstream *test* failure is captured as the conclusion (not raised
-          # here) so the report job can gate centrally; a dispatch/infra error
-          # already exited non-zero above.
+          # just-created run). ~90 * 30s = 45m, leaving a buffer under this job's
+          # timeout-minutes: 50 so the conclusion can still be written to
+          # $GITHUB_OUTPUT instead of the job being killed mid-step. A downstream
+          # *test* failure is captured as the conclusion (not raised here) so the
+          # report job can gate centrally; a dispatch/infra error already exited
+          # non-zero above.
           CONCLUSION=""
-          for _ in $(seq 1 100); do
+          for _ in $(seq 1 90); do
             STATUS=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null || echo "")
             if [ "$STATUS" = "completed" ]; then
               CONCLUSION=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.conclusion // "unknown"' || echo "unknown")
@@ -258,8 +263,20 @@ jobs:
           fi
           echo "run_url=$RUN_URL" >> "$GITHUB_OUTPUT"
           echo "Triggered run $RUN_ID — $RUN_URL"
-          gh run watch "$RUN_ID" -R "$REPO" --exit-status --interval 30 || true
-          CONCLUSION=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.conclusion // "unknown"' || echo "unknown")
+          # Deterministic poll on the id we hold (see JSON-RPC job): `gh run watch`
+          # can return early on a transient error or a just-created run, leaving
+          # .conclusion null → coerced to "unknown" → a false gate failure even
+          # though the run later succeeds. Poll to status=completed (or time out).
+          CONCLUSION=""
+          for _ in $(seq 1 90); do
+            STATUS=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null || echo "")
+            if [ "$STATUS" = "completed" ]; then
+              CONCLUSION=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.conclusion // "unknown"' || echo "unknown")
+              break
+            fi
+            sleep 30
+          done
+          [ -n "$CONCLUSION" ] || CONCLUSION="timed_out"
           echo "conclusion=$CONCLUSION" >> "$GITHUB_OUTPUT"
           echo "Hardhat suite concluded: $CONCLUSION"
 
@@ -311,8 +328,20 @@ jobs:
           fi
           echo "run_url=$RUN_URL" >> "$GITHUB_OUTPUT"
           echo "Triggered run $RUN_ID — $RUN_URL"
-          gh run watch "$RUN_ID" -R "$REPO" --exit-status --interval 30 || true
-          CONCLUSION=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.conclusion // "unknown"' || echo "unknown")
+          # Deterministic poll on the id we hold (see JSON-RPC job): `gh run watch`
+          # can return early on a transient error or a just-created run, leaving
+          # .conclusion null → coerced to "unknown" → a false gate failure even
+          # though the run later succeeds. Poll to status=completed (or time out).
+          CONCLUSION=""
+          for _ in $(seq 1 90); do
+            STATUS=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null || echo "")
+            if [ "$STATUS" = "completed" ]; then
+              CONCLUSION=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.conclusion // "unknown"' || echo "unknown")
+              break
+            fi
+            sleep 30
+          done
+          [ -n "$CONCLUSION" ] || CONCLUSION="timed_out"
           echo "conclusion=$CONCLUSION" >> "$GITHUB_OUTPUT"
           echo "K6 suite concluded: $CONCLUSION"
 
