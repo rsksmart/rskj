@@ -2,6 +2,7 @@ package co.rsk.peg.whitelist;
 
 import static co.rsk.peg.whitelist.WhitelistStorageIndexKey.LOCK_ONE_OFF;
 import static co.rsk.peg.whitelist.WhitelistStorageIndexKey.LOCK_UNLIMITED;
+import static java.util.Objects.requireNonNull;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP87;
 
 import co.rsk.bitcoinj.core.Address;
@@ -29,6 +30,8 @@ public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
         StorageAccessor bridgeStorageAccessor,
         boolean genesisWhitelistEnabled
     ) {
+        requireNonNull(bridgeStorageAccessor);
+
         this.bridgeStorageAccessor = bridgeStorageAccessor;
         this.genesisWhitelistEnabled = genesisWhitelistEnabled;
     }
@@ -58,8 +61,7 @@ public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
     }
 
     @Override
-    public synchronized LockWhitelist getLockWhitelist(ActivationConfig.ForBlock activations, NetworkParameters networkParameters
-    ) {
+    public synchronized LockWhitelist getLockWhitelist(ActivationConfig.ForBlock activations, NetworkParameters networkParameters) {
         if (lockWhitelist == null) {
             lockWhitelist = initializeLockWhitelist(activations, networkParameters);
         }
