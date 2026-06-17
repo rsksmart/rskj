@@ -34,8 +34,10 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.FederationMember.KeyType;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
+import co.rsk.peg.federation.constants.FederationTestNetConstants;
 import co.rsk.peg.storage.InMemoryStorage;
 import java.time.Instant;
 import java.util.*;
@@ -2632,6 +2634,56 @@ class FederationSupportImplTest {
             assertTrue(federationSupport.isActiveFederationPastMigrationAge());
         }
 
+    }
+
+    @Nested
+    @Tag("genesis federation type")
+    class GenesisFederationTypeTests {
+
+        @Test
+        void getActiveFederation_withMainnetConstants_returnsStandardMultisigFederation() {
+            FederationSupport support = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(new FederationStorageProviderImpl(new InMemoryStorage()))
+                .withActivations(allActivations)
+                .build();
+
+            Federation activeFederation = support.getActiveFederation();
+
+            assertInstanceOf(StandardMultisigFederation.class, activeFederation);
+        }
+
+        @Test
+        void getActiveFederation_withTestnetConstants_returnsStandardMultisigFederation() {
+            FederationConstants testnetConstants = FederationTestNetConstants.getInstance();
+            FederationSupport support = federationSupportBuilder
+                .withFederationConstants(testnetConstants)
+                .withFederationStorageProvider(new FederationStorageProviderImpl(new InMemoryStorage()))
+                .withActivations(allActivations)
+                .build();
+
+            Federation activeFederation = support.getActiveFederation();
+
+            assertInstanceOf(StandardMultisigFederation.class, activeFederation);
+        }
+
+        @Test
+        void getActiveFederation_withRegtestConstants_returnsP2shP2wshErpFederation() {
+            FederationConstants regtestConstants = new BridgeRegTestConstants().getFederationConstants();
+            FederationSupport support = federationSupportBuilder
+                .withFederationConstants(regtestConstants)
+                .withFederationStorageProvider(new FederationStorageProviderImpl(new InMemoryStorage()))
+                .withActivations(allActivations)
+                .build();
+
+            Federation activeFederation = support.getActiveFederation();
+
+            assertInstanceOf(ErpFederation.class, activeFederation);
+            assertEquals(
+                FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion(),
+                activeFederation.getFormatVersion()
+            );
+        }
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
