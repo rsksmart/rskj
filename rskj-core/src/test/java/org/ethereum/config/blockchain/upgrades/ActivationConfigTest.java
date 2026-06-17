@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ActivationConfigTest {
     private static final Config BASE_CONFIG = ConfigFactory.parseString(String.join("\n",
+        "name = unit_tests",
         "hardforkActivationHeights: {",
         "    genesis: 0",
         "    bahamas: 0",
@@ -158,8 +159,7 @@ class ActivationConfigTest {
         "    rskip551: vetiver900",
         "    rskip552: vetiver900",
         "    rskip559: NextRelease",
-        "},",
-        "rskip559diff = {}"
+        "}"
     ));
 
     @Test
