@@ -77,7 +77,6 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.PegoutsOverwrites;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -140,7 +139,6 @@ public class BridgeSupportIT {
         btcParams = bridgeRegTestConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.getRskip559diff()).thenReturn(new PegoutsOverwrites());
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);

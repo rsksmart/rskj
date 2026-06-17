@@ -28,31 +28,32 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class ActivationConfig {
+import org.jspecify.annotations.NonNull;
 
-    protected static final String PEGOUTS_OVERWRITES_RULES = "rskip559diff";
+public class ActivationConfig {
 
     private static final String PROPERTY_ACTIVATION_HEIGHTS = "hardforkActivationHeights";
 
     private static final String PROPERTY_CONSENSUS_RULES = "consensusRules";
 
+    private final String networkName;
+
     private final Map<ConsensusRule, Long> activationHeights;
 
     private final Map<NetworkUpgrade, Long> networkUpgrades;
 
-    private final PegoutsOverwrites pegoutsOverwrites;
-
     @VisibleForTesting
     ActivationConfig(Map<ConsensusRule, Long> activationHeights) {
-        this(activationHeights, new HashMap<>(), new PegoutsOverwrites());
+        this("unit_tests", activationHeights, new HashMap<>());
     }
 
     public ActivationConfig(
+        String networkName,
         Map<ConsensusRule, Long> activationHeights,
-        Map<NetworkUpgrade, Long> networkUpgrades,
-        PegoutsOverwrites pegoutsOverwrites
+        Map<NetworkUpgrade, Long> networkUpgrades
     ) {
         if (activationHeights.size() != ConsensusRule.values().length) {
             List<ConsensusRule> missing = new ArrayList<>(Arrays.asList(ConsensusRule.values()));
@@ -63,9 +64,9 @@ public class ActivationConfig {
             ));
         }
 
+        this.networkName = Objects.requireNonNull(networkName);
         this.activationHeights = activationHeights;
         this.networkUpgrades = networkUpgrades;
-        this.pegoutsOverwrites = pegoutsOverwrites;
     }
 
     public static ActivationConfig read(Config config) {
@@ -85,10 +86,9 @@ public class ActivationConfig {
             activationHeights.put(consensusRule, activationHeight);
         }
 
-        Config pegoutsOverwritesConfig = config.getConfig(PEGOUTS_OVERWRITES_RULES);
-        var pegoutsOverwrites = new PegoutsOverwrites(pegoutsOverwritesConfig);
+        String networkName = config.getString("name");
 
-        return new ActivationConfig(activationHeights, networkUpgrades, pegoutsOverwrites);
+        return new ActivationConfig(networkName, activationHeights, networkUpgrades);
     }
 
     private static long parseActivationHeight(
@@ -147,6 +147,10 @@ public class ActivationConfig {
         return 0 <= activationHeight && activationHeight <= blockNumber;
     }
 
+    @NonNull
+    public String getNetworkName() {
+        return networkName;
+    }
 
     private boolean isActivating(ConsensusRule consensusRule, long blockNumber) {
         long activationHeight = activationHeights.get(consensusRule);
@@ -172,12 +176,9 @@ public class ActivationConfig {
             return ActivationConfig.this.isActivating(consensusRule, blockNumber);
         }
 
-        /**
-         * Return historical pegouts outputs that are 
-         * not compatible with RSKIP559 update.
-         */
-        public PegoutsOverwrites getRskip559diff() {
-            return pegoutsOverwrites;
+        @NonNull
+        public String getNetworkName() {
+            return ActivationConfig.this.networkName;
         }
     }
 }
