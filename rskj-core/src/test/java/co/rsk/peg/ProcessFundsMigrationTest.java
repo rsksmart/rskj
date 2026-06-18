@@ -1391,7 +1391,7 @@ class ProcessFundsMigrationTest {
         return Math.min(MAX_INPUTS_PER_PEGOUT_TX, remainingExpectedInputs);
     }
 
-    private void setUpFlyoverUtxoInStorage(UTXO flyoverUtxo, Script flyoverP2SH, Federation federation) {
+    private void setUpFlyoverUtxoInStorage(UTXO flyoverUtxo, Script flyoverOutputScript, Federation federation) {
         Sha256Hash flyoverTransactionHash = flyoverUtxo.getHash();
         bridgeStorageProvider.markFlyoverDerivationHashAsUsed(flyoverTransactionHash, FLYOVER_DERIVATION_HASH);
 
@@ -1399,7 +1399,7 @@ class ProcessFundsMigrationTest {
             new FlyoverFederationInformation(
                 FLYOVER_DERIVATION_HASH,
                 federation.getP2SHScript().getPubKeyHash(),
-                flyoverP2SH.getPubKeyHash()
+                flyoverOutputScript.getPubKeyHash()
             );
         bridgeStorageProvider.setFlyoverFederationInformation(flyoverFederationInformation);
         bridgeSupport.save();
