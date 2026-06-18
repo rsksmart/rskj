@@ -20,7 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.peg.PegoutsWaitingForConfirmations.PegoutRef;
+import co.rsk.peg.constants.PegoutsHistory;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -235,19 +235,19 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void getNextPegoutWithEnoughConfirmations_rskip559_overwrites() {
-        Map<Long, PegoutRef[]> hardPegouts = new HashMap<>();
+        Map<Long, PegoutsHistory.Ref[]> hardPegouts = new HashMap<>();
         // Populate hardcoded refs for "current network"
-        hardPegouts.put(10L, new PegoutRef[]{
+        hardPegouts.put(10L, new PegoutsHistory.Ref[]{
             // First entry would never exist in entry set
-            PegoutRef.from( "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", 5L),
+            PegoutsHistory.Ref.from( "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", 5L),
             // So we should fallback to the second one if it exists
-            PegoutRef.from( "7ff02a735d691a94cd4a08c13b60b86b3e055505dcceabd305c6772043e4a423", 5L)
+            PegoutsHistory.Ref.from( "7ff02a735d691a94cd4a08c13b60b86b3e055505dcceabd305c6772043e4a423", 5L)
             // Or proceed with standard ordering if no matching entries exist
         });
 
-        try (var mocked = mockStatic(PegoutsWaitingForConfirmations.class)) {
+        try (var mocked = mockStatic(PegoutsHistory.class)) {
             mocked
-                .when(() -> PegoutsWaitingForConfirmations.getHardcodedPegouts(any()))
+                .when(() -> PegoutsHistory.getHardcodedPegouts(any()))
                 .thenReturn(hardPegouts);
 
             set = new PegoutsWaitingForConfirmations(setEntries);
