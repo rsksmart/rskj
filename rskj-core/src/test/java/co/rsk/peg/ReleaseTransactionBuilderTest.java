@@ -113,7 +113,7 @@ class ReleaseTransactionBuilderTest {
     private static final int STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE = 277;
     private static final int UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = 276;
     private static final Keccak256 FLYOVER_DERIVATION_HASH = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
-    private static final Sha256Hash BTC_TX_HASH_FLYOVER_UTXO = createHash(50);
+    private static final Sha256Hash BTC_TX_HASH_FLYOVER_UTXO = createHash(10_000);
 
     private ActivationConfig.ForBlock activations;
     private Coin feePerKb;
