@@ -1427,7 +1427,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
         BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsMainnet);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
@@ -2528,7 +2528,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsMainnet);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
@@ -2595,7 +2595,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsMainnet);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         FederationArgs newFederationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembers(1),
@@ -2663,7 +2663,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsMainnet);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         FederationArgs newFederationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembers(1),
@@ -2729,7 +2729,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsMainnet);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         FederationArgs newFederationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembers(1),
