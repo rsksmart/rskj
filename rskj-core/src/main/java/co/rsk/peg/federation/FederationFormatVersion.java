@@ -15,4 +15,13 @@ public enum FederationFormatVersion {
     public int getFormatVersion() {
         return version;
     }
+
+    public static FederationFormatVersion fromFormatVersion(int version) {
+        for (FederationFormatVersion v : values()) {
+            if (v.version == version) {
+                return v;
+            }
+        }
+        throw new IllegalArgumentException("Unknown federation format version: " + version);
+    }
 }
