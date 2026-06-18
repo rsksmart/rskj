@@ -165,7 +165,7 @@ class ReleaseTransactionBuilderTest {
         private BridgeStorageProvider bridgeStorageProvider;
 
         @BeforeEach
-        public void setUp() {
+        void setUp() {
             setUpActivations(ALL_ACTIVATIONS);
             Repository repository = createRepository();
             bridgeStorageProvider = new BridgeStorageProvider(
