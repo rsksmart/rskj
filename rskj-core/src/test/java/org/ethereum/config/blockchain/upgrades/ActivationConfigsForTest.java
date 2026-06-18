@@ -506,6 +506,22 @@ public class ActivationConfigsForTest {
         return enableTheseDisableThose(tbd1000AllRskips(), except);
     }
 
+    /**
+     * All vetiver900 rules active from genesis, but RSKIP559 activating only at {@code rskip559ActivationBlock}.
+     * Useful to exercise the pre-&gt;post RSKIP559 transition across a fork height (RSKCORE-5409).
+     */
+    public static ActivationConfig nextReleaseWithRskip559ActivatingAt(long rskip559ActivationBlock) {
+        Map<ConsensusRule, Long> consensusRules = EnumSet.allOf(ConsensusRule.class)
+                .stream()
+                .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
+        for (ConsensusRule consensusRule : vetiver900AllRskips()) {
+            consensusRules.put(consensusRule, 0L);
+        }
+        consensusRules.put(ConsensusRule.RSKIP559, rskip559ActivationBlock);
+
+        return new ActivationConfig(consensusRules);
+    }
+
     public static ActivationConfig regtest() {
         return REGTEST;
     }

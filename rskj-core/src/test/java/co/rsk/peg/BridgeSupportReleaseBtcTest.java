@@ -1660,6 +1660,155 @@ class BridgeSupportReleaseBtcTest {
         );
     }
 
+    // ===== RSKIP-559 (RSKCORE-5409) differential pegout-confirmation selection =====
+    // Drives the real updateCollections -> processConfirmedPegouts path with several pegouts
+    // simultaneously eligible, and checks WHICH one is moved to pegoutsWaitingForSignatures.
+
+    private static final ActivationConfig.ForBlock ACTIVATIONS_RSKIP559_OFF = ActivationConfigsForTest.vetiver900().forBlock(0L);
+    private static final ActivationConfig.ForBlock ACTIVATIONS_RSKIP559_ON = ActivationConfigsForTest.nextRelease().forBlock(0L);
+
+    // Pre-fork (HashSet-order) selection. Captured on Java 17; must reproduce on Java 21.
+    private static final String PROCESS_CONFIRMED_OFF_GOLDEN = "2b5bbcb852ee544e3a758cafb2403cda0241b110f5a486a39389cd1024f0b8eb";
+
+    @Test
+    void processConfirmedPegouts_rskip559On_selectsComparatorMinIndependentOfInsertionOrder() throws IOException {
+        List<PegoutsWaitingForConfirmations.Entry> entries = buildPegoutEntries(6);
+        Sha256Hash expected = comparatorMinBtcTxHash(entries);
+
+        List<PegoutsWaitingForConfirmations.Entry> reversed = new ArrayList<>(entries);
+        Collections.reverse(reversed);
+        for (List<PegoutsWaitingForConfirmations.Entry> order : Arrays.asList(entries, reversed)) {
+            Map<Keccak256, BtcTransaction> signatures = runConfirmationSelection(order, ACTIVATIONS_RSKIP559_ON);
+            assertEquals(1, signatures.size(), "Exactly one pegout is confirmed per updateCollections");
+            assertEquals(expected, signatures.values().iterator().next().getHash(),
+                "Post-fork must move the BTC_TX_COMPARATOR-minimum pegout to signatures, regardless of insertion order");
+        }
+    }
+
+    @Test
+    void processConfirmedPegouts_rskip559Off_selectsJava17Golden() throws IOException {
+        Map<Keccak256, BtcTransaction> signatures = runConfirmationSelection(buildPegoutEntries(6), ACTIVATIONS_RSKIP559_OFF);
+        assertEquals(1, signatures.size(), "Exactly one pegout is confirmed per updateCollections");
+
+        // To refresh the golden: temporarily print `selected`, run on Java 17, and paste it into PROCESS_CONFIRMED_OFF_GOLDEN.
+        String selected = signatures.values().iterator().next().getHash().toString();
+        assertEquals(PROCESS_CONFIRMED_OFF_GOLDEN, selected,
+            "Pre-fork HashSet-order selection diverged from the Java-17 golden (Java 17/21 mismatch?)");
+    }
+
+    @Test
+    void processConfirmedPegouts_selectionFlipsAtRskip559ActivationHeight() throws IOException {
+        long activationBlock = 500L;
+        ActivationConfig config = ActivationConfigsForTest.nextReleaseWithRskip559ActivatingAt(activationBlock);
+
+        List<PegoutsWaitingForConfirmations.Entry> entries = buildPegoutEntries(6);
+        Sha256Hash comparatorMin = comparatorMinBtcTxHash(entries);
+
+        Map<Keccak256, BtcTransaction> before = runConfirmationSelection(entries, config.forBlock(activationBlock - 1));
+        Map<Keccak256, BtcTransaction> atActivation = runConfirmationSelection(entries, config.forBlock(activationBlock));
+
+        // Guard: the test is only meaningful if the two strategies pick different pegouts for this pool;
+        // otherwise both asserts below could pass without any actual flip at the boundary.
+        assertNotEquals(PROCESS_CONFIRMED_OFF_GOLDEN, comparatorMin.toString(),
+            "Pre-fork (HashSet-order) and post-fork (comparator-min) picks must differ for this pool, else the test proves nothing");
+
+        // Before the fork: HashSet-order selection (same pool/order as the vetiver900 off test -> same golden).
+        assertEquals(PROCESS_CONFIRMED_OFF_GOLDEN, before.values().iterator().next().getHash().toString(),
+            "Before activation height the pre-fork selection must hold");
+        // At the fork height: deterministic comparator-minimum selection.
+        assertEquals(comparatorMin, atActivation.values().iterator().next().getHash(),
+            "At activation height the selection must switch to the BTC_TX_COMPARATOR minimum");
+    }
+
+    // 6 distinct pegouts, each with its own (tx-bound) pegoutCreationRskTxHash, all created at block 1.
+    private List<PegoutsWaitingForConfirmations.Entry> buildPegoutEntries(int n) {
+        List<PegoutsWaitingForConfirmations.Entry> entries = new ArrayList<>();
+        for (int i = 1; i <= n; i++) {
+            entries.add(new PegoutsWaitingForConfirmations.Entry(createDistinctPegoutBtcTx(i), 1L, PegTestUtils.createHash3(i)));
+        }
+        return entries;
+    }
+
+    private Sha256Hash comparatorMinBtcTxHash(List<PegoutsWaitingForConfirmations.Entry> entries) {
+        return entries.stream()
+            .min(PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR)
+            .orElseThrow()
+            .getBtcTransaction()
+            .getHash();
+    }
+
+    private Map<Keccak256, BtcTransaction> runConfirmationSelection(List<PegoutsWaitingForConfirmations.Entry> entries, ActivationConfig.ForBlock activations) throws IOException {
+        repository = spy(RskTestUtils.createRepository());
+        federationStorageProvider = initFederationStorageProvider();
+        BridgeStorageProvider seededProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, activations);
+
+        PegoutsWaitingForConfirmations pegouts = seededProvider.getPegoutsWaitingForConfirmations();
+        entries.forEach(pegouts::add);
+
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(1_000_000L); // far beyond min confirmations -> all eligible
+
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
+            .withFederationConstants(FEDERATION_CONSTANTS)
+            .withFederationStorageProvider(federationStorageProvider)
+            .build();
+
+        BridgeSupport bridgeSupportToTest = BridgeSupportBuilder.builder()
+            .withBridgeConstants(BRIDGE_CONSTANTS)
+            .withProvider(seededProvider)
+            .withRepository(repository)
+            .withEventLogger(eventLogger)
+            .withActivations(activations)
+            .withSignatureCache(signatureCache)
+            .withFederationSupport(federationSupport)
+            .withFeePerKbSupport(feePerKbSupport)
+            .withExecutionBlock(executionBlock)
+            .build();
+
+        bridgeSupportToTest.updateCollections(buildUpdateTx());
+
+        this.provider = seededProvider; // expose for storage-root snapshot
+        return seededProvider.getPegoutsWaitingForSignatures();
+    }
+
+    // Pre-fork bridge pegout storage root after one confirmation cycle. Captured on Java 17; must hold on Java 21.
+    private static final String PEGOUT_STATE_ROOT_OFF_GOLDEN = "85329683f4d0da9a466f99e71f93612143ddc4ba47fd91622221d8e612d567ea";
+
+    @Test
+    void processConfirmedPegouts_pegoutStorageRootIsDeterministic() throws IOException {
+        List<PegoutsWaitingForConfirmations.Entry> entries = buildPegoutEntries(6);
+        List<PegoutsWaitingForConfirmations.Entry> reversed = new ArrayList<>(entries);
+        Collections.reverse(reversed);
+
+        // Determinism guard (NOT RSKIP-559-specific: serialization always sorts, so this also holds pre-fork):
+        // the persisted bridge storage root must be identical regardless of insertion order.
+        runConfirmationSelection(entries, ACTIVATIONS_RSKIP559_ON);
+        provider.save();
+        String rootOnForward = Hex.toHexString(repository.getRoot());
+
+        runConfirmationSelection(reversed, ACTIVATIONS_RSKIP559_ON);
+        provider.save();
+        String rootOnReversed = Hex.toHexString(repository.getRoot());
+
+        assertEquals(rootOnForward, rootOnReversed,
+            "Bridge storage root must be insertion-order independent (determinism regression guard)");
+
+        // Load-bearing cross-JVM check: the pre-fork persisted root must match the Java-17 golden
+        // (i.e. the Java-17 HashSet emulation reproduces on Java 21).
+        runConfirmationSelection(entries, ACTIVATIONS_RSKIP559_OFF);
+        provider.save();
+        // To refresh the golden: temporarily print `rootOff`, run on Java 17, and paste it into PEGOUT_STATE_ROOT_OFF_GOLDEN.
+        String rootOff = Hex.toHexString(repository.getRoot());
+        assertEquals(PEGOUT_STATE_ROOT_OFF_GOLDEN, rootOff,
+            "Pre-fork bridge storage root diverged from the Java-17 golden (Java 17/21 mismatch?)");
+    }
+
+    private BtcTransaction createDistinctPegoutBtcTx(int i) {
+        BtcTransaction tx = new BtcTransaction(NETWORK_PARAMETERS);
+        tx.addOutput(Coin.COIN.add(Coin.valueOf(i)), BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "dest" + i));
+        return tx;
+    }
+
     private Transaction buildUpdateTx() {
         final BigInteger value = new BigInteger("1");
 
