@@ -28,6 +28,22 @@ Review-ability is the top priority. Use these heuristics to flag PRs and to auth
 
 Java style conventions are defined in `CONTRIBUTING.md`. Key reviewer-facing rules: prefer constructor injection with `private final` fields and `Objects.requireNonNull` on parameters; prefer `Optional<T>` over `null` (annotate nullable returns with `@Nullable`); always brace control structures; treat `@VisibleForTesting` as a design smell and flag accordingly. Standard Java naming applies: lowercase packages, `UpperCamelCase` classes, `lowerCamelCase` members, `CONSTANT_CASE` for static final immutable constants.
 
+## Rootstock coding principles
+
+Follow the coding principles documented in `docs/coding-principles.md`.
+
+Key rules:
+
+* Code is read more often than written. Optimize for readability and maintainability.
+* Use intention-revealing names.
+* Include units in monetary and time-related names, such as `amountInSatoshis`, `amountInWei`, `amountInRBTC`, and `timeoutMillis`.
+* Never rely on implicit monetary units.
+* Prefer focused functions and classes with clear responsibilities.
+* Eliminate duplication when practical.
+* Prefer self-explanatory code over explanatory comments.
+* Tests should be readable, independent, and cover boundary/error cases.
+* Refactors must improve clarity, maintainability, or correctness. Do not introduce abstractions, indirection, or code movement without a clear benefit.
+
 ## CI gates a reviewer must predict
 
 Every build job uses JDK 17 and the in-repo Gradle wrapper 8.6. Workflows live in `.github/workflows/`.
