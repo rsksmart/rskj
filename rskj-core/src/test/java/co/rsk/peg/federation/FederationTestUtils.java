@@ -110,6 +110,24 @@ public final class FederationTestUtils {
         );
     }
 
+    /**
+     * @deprecated use {@link #getGenesisFederation(FederationConstants)} instead, which allows creating different types of federations based on the configuration
+     */
+    public static Federation getGenesisFederationLegacy(FederationConstants federationConstants) {
+        final long GENESIS_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
+        final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(
+            federationConstants.getGenesisFederationPublicKeys()
+        );
+        final FederationArgs federationArgs = new FederationArgs(
+            federationMembers,
+            federationConstants.getGenesisFederationCreationTime(),
+            GENESIS_FEDERATION_CREATION_BLOCK_NUMBER,
+            federationConstants.getBtcParams()
+        );
+
+        return  FederationFactory.buildStandardMultiSigFederation(federationArgs);
+    }
+
     public static Federation getGenesisFederation(FederationConstants federationConstants) {
         final long GENESIS_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
         final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(

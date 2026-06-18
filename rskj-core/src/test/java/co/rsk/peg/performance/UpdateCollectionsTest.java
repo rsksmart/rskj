@@ -192,7 +192,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
             // Generate some utxos
             int numUTXOs = Helper.randomInRange(minUTXOs, maxUTXOs);
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
+            Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(bridgeRegTestConstants.getFederationConstants());
             Script federationP2SHScript = genesisFederation.getP2SHScript();
             UTXOBuilder utxoBuilder = UTXOBuilder.builder()
                 .withBlockHeight(1)
@@ -258,7 +258,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 throw new RuntimeException("Unable to gather release tx set");
             }
 
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
+            Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(bridgeRegTestConstants.getFederationConstants());
 
             // Generate some txs waiting for signatures
             Script genesisFederationScript = genesisFederation.getP2SHScript();
@@ -319,7 +319,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
             // Generate some utxos
             int numUTXOs = Helper.randomInRange(minUTXOs, maxUTXOs);
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
+            Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(bridgeRegTestConstants.getFederationConstants());
             Script federationP2SHScript =  genesisFederation.getP2SHScript();
             UTXOBuilder utxoBuilder = UTXOBuilder.builder()
                 .withBlockHeight(1)
