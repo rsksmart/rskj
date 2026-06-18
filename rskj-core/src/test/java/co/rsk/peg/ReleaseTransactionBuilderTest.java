@@ -46,20 +46,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.ReleaseRequestQueue.Entry;
 import co.rsk.peg.ReleaseTransactionBuilder.BuildResult;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.bitcoin.RedeemScriptCreationException;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -71,6 +65,7 @@ import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.P2shErpFederationBuilder;
 import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
 import co.rsk.peg.federation.StandardMultiSigFederationBuilder;
+import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.test.builders.UTXOBuilder;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -94,6 +89,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 class ReleaseTransactionBuilderTest {
     private static final BridgeConstants BRIDGE_MAINNET_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters BTC_MAINNET_PARAMS = BRIDGE_MAINNET_CONSTANTS.getBtcParams();
+    private static final Context BTC_MAINNET_CONTEXT = new Context(BTC_MAINNET_PARAMS);
 
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0);
     private static final ActivationConfig.ForBlock FINGERROOT_ACTIVATIONS =
@@ -116,6 +112,8 @@ class ReleaseTransactionBuilderTest {
     private static final int EXPECTED_NUMBER_OF_CHANGE_OUTPUTS = 1;
     private static final int STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE = 277;
     private static final int UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = 276;
+    private static final Keccak256 FLYOVER_DERIVATION_HASH = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
+    private static final Sha256Hash BTC_TX_HASH_FLYOVER_UTXO = createHash(50);
 
     private ActivationConfig.ForBlock activations;
     private Coin feePerKb;
@@ -133,25 +131,18 @@ class ReleaseTransactionBuilderTest {
         return BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
     }
 
-    private static Wallet createMainnetFederationSpendWallet(
-        Federation federation,
-        List<UTXO> utxos,
-        ActivationConfig.ForBlock activationsForBridgeStorage,
-        Context btcContext
-    ) {
-        Repository repository = createRepository();
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-            repository,
-            BTC_MAINNET_PARAMS,
-            activationsForBridgeStorage
-        );
-        return BridgeUtils.getFederationSpendWallet(
-            btcContext,
-            federation,
-            utxos,
-            true,
-            bridgeStorageProvider
-        );
+    private static void setUpFlyoverUtxoInStorage(UTXO flyoverUtxo, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider) {
+        Sha256Hash flyoverTransactionHash = flyoverUtxo.getHash();
+        provider.markFlyoverDerivationHashAsUsed(flyoverTransactionHash, FLYOVER_DERIVATION_HASH);
+
+        FlyoverFederationInformation flyoverFederationInformation =
+            new FlyoverFederationInformation(
+                FLYOVER_DERIVATION_HASH,
+                federation.getP2SHScript().getPubKeyHash(),
+                flyoverOutputScript.getPubKeyHash()
+            );
+        provider.setFlyoverFederationInformation(flyoverFederationInformation);
+        provider.save();
     }
 
     /**
@@ -171,6 +162,18 @@ class ReleaseTransactionBuilderTest {
         private final Keccak256 proposedFlyoverPrefix = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
         private final Coin svpFundTxOutputsValue = BRIDGE_MAINNET_CONSTANTS.getSvpFundTxOutputsValue();
         private final Coin totalSvpFundPaymentOutputsValue = svpFundTxOutputsValue.multiply(2);
+        private BridgeStorageProvider bridgeStorageProvider;
+
+        @BeforeEach
+        public void setUp() {
+            setUpActivations(ALL_ACTIVATIONS);
+            Repository repository = createRepository();
+            bridgeStorageProvider = new BridgeStorageProvider(
+                repository,
+                BTC_MAINNET_PARAMS,
+                activations
+            );
+        }
 
         @Test
         void buildSvpFundTransaction_withAFederationWithEnoughUTXOsForTheSvpFundTransaction_shouldReturnACorrectSvpFundTx() {
@@ -188,6 +191,33 @@ class ReleaseTransactionBuilderTest {
                 buildResult,
                 activeP2shErpFederationAddress,
                 List.of(utxos.get(0))
+            );
+        }
+
+        @Test
+        void buildSvpFundTransaction_withAFederationWithOneFlyoverUTXOForTheSvpFundTransaction_shouldReturnACorrectSvpFundTx() {
+            // Arrange
+            Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+                FLYOVER_DERIVATION_HASH,
+                activeP2shErpFederation.getRedeemScript()
+            );
+            Script flyoverOutputScript = PegUtils.getFlyoverFederationOutputScript(flyoverRedeemScript, activeP2shErpFederation.getFormatVersion());
+            UTXO flyoverUtxo = UTXOBuilder.builder()
+                .withValue(Coin.COIN)
+                .withScriptPubKey(flyoverOutputScript)
+                .withTransactionHash(BTC_TX_HASH_FLYOVER_UTXO)
+                .build();
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, activeP2shErpFederation, bridgeStorageProvider);
+            List<UTXO> utxos = List.of(flyoverUtxo);
+
+            // Act
+            ReleaseTransactionBuilder.BuildResult buildResult = buildSvpFundTransaction(activeP2shErpFederation, utxos);
+
+            // Assert
+            assertSuccessfulSvpFundTransaction(
+                buildResult,
+                activeP2shErpFederationAddress,
+                utxos
             );
         }
 
@@ -493,11 +523,11 @@ class ReleaseTransactionBuilderTest {
             List<UTXO> utxos
         ) {
             Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-                new Context(BTC_MAINNET_PARAMS),
+                BTC_MAINNET_CONTEXT,
                 activeFederation,
                 utxos,
-                false,
-                mock(BridgeStorageProvider.class)
+                true,
+                bridgeStorageProvider
             );
 
             return new ReleaseTransactionBuilder(
@@ -523,6 +553,7 @@ class ReleaseTransactionBuilderTest {
         private Script federationOutputScript;
         private Script federationRedeemScript;
         private Wallet wallet;
+        private BridgeStorageProvider bridgeStorageProvider;
 
         @BeforeEach
         void setup() {
@@ -533,6 +564,12 @@ class ReleaseTransactionBuilderTest {
             federationAddress = federation.getAddress();
             federationOutputScript = federation.getP2SHScript();
             federationRedeemScript = federation.getRedeemScript();
+            Repository repository = createRepository();
+            bridgeStorageProvider = new BridgeStorageProvider(
+                repository,
+                BTC_MAINNET_PARAMS,
+                activations
+            );
         }
 
         @Test
@@ -604,6 +641,8 @@ class ReleaseTransactionBuilderTest {
                 .withScriptPubKey(federationOutputScript)
                 .withValue(MINIMUM_PEGOUT_TX_VALUE)
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+            addFlyoverUtxoToFederationUtxos();
             ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder();
             Coin amountToSend = MINIMUM_PEGOUT_TX_VALUE.add(THOUSAND_SATOSHIS);
 
@@ -893,7 +932,7 @@ class ReleaseTransactionBuilderTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
             Wallet spendWallet = BridgeUtils.getFederationSpendWallet(
-                new Context(BTC_MAINNET_PARAMS),
+                BTC_MAINNET_CONTEXT,
                 nonStandardErpFederation,
                 utxos,
                 false,
@@ -920,17 +959,29 @@ class ReleaseTransactionBuilderTest {
             assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.responseCode());
         }
 
-        private void setUpWallet() {
-            wallet = ReleaseTransactionBuilderTest.createMainnetFederationSpendWallet(
-                federation,
-                federationUTXOs,
-                activations,
-                new Context(BTC_MAINNET_PARAMS)
+        private void addFlyoverUtxoToFederationUtxos() {
+            Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+                FLYOVER_DERIVATION_HASH,
+                federation.getRedeemScript()
             );
+            Script flyoverOutputScript = PegUtils.getFlyoverFederationOutputScript(flyoverRedeemScript, federation.getFormatVersion());
+            UTXO flyoverUtxo = UTXOBuilder.builder()
+                .withValue(Coin.COIN)
+                .withScriptPubKey(flyoverOutputScript)
+                .withTransactionHash(BTC_TX_HASH_FLYOVER_UTXO)
+                .build();
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, bridgeStorageProvider);
+            federationUTXOs.add(flyoverUtxo);
         }
 
         private ReleaseTransactionBuilder setupWalletAndCreateReleaseTransactionBuilder() {
-            setUpWallet();
+            wallet = BridgeUtils.getFederationSpendWallet(
+                BTC_MAINNET_CONTEXT,
+                federation,
+                federationUTXOs,
+                true,
+                bridgeStorageProvider
+            );
             return new ReleaseTransactionBuilder(
                 BTC_MAINNET_PARAMS,
                 wallet,
@@ -1066,7 +1117,6 @@ class ReleaseTransactionBuilderTest {
 
     @Nested
     class BuildEmptyWalletToTest {
-        private static final Context BTC_CONTEXT = new Context(BTC_MAINNET_PARAMS);
 
         private static final int RECIPIENT_ADDRESS_KEY_OFFSET = 3100;
         private static final Address RECIPIENT_ADDRESS = ReleaseTransactionBuilderTest.recipientAddressFromPrivateKeyOffset(
@@ -1085,6 +1135,7 @@ class ReleaseTransactionBuilderTest {
         private Script federationOutputScript;
         private Script federationRedeemScript;
         private Wallet wallet;
+        private BridgeStorageProvider bridgeStorageProvider;
 
         @BeforeEach
         void setUp() {
@@ -1102,6 +1153,14 @@ class ReleaseTransactionBuilderTest {
                 federationAddress = federation.getAddress();
                 federationOutputScript = federation.getP2SHScript();
                 federationRedeemScript = federation.getRedeemScript();
+
+                Repository repository = createRepository();
+                bridgeStorageProvider = new BridgeStorageProvider(
+                    repository,
+                    BTC_MAINNET_PARAMS,
+                    activations
+                );
+
                 int numberOfUtxos = 10;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -1190,6 +1249,37 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
+            void buildEmptyWalletTo_whenMultipleFlyoverUtxosInWallet_shouldCreateRefundTxSpendingAllUtxos() {
+                // Arrange
+                Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+                    FLYOVER_DERIVATION_HASH,
+                    federation.getRedeemScript()
+                );
+                Script flyoverOutputScript = PegUtils.getFlyoverFederationOutputScript(flyoverRedeemScript, federation.getFormatVersion());
+                int numberOfUtxos = 2;
+                List<UTXO> flyoverUtxos = UTXOBuilder.builder()
+                    .withValue(Coin.COIN)
+                    .withScriptPubKey(flyoverOutputScript)
+                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+                for (UTXO flyoverUtxo : flyoverUtxos) {
+                    setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, bridgeStorageProvider);
+                }
+
+                ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(flyoverUtxos);
+
+                // Act
+                BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
+
+                // Assert
+                assertSuccessfulEmptyWalletRefundWithBtcVersion2(
+                    emptyWalletResult,
+                    (tx, res) -> assertReleaseTxInputsStandardMultisig(
+                        tx, flyoverUtxos.size(), federationRedeemScript, flyoverUtxos, res.selectedUTXOs())
+                );
+            }
+
+            @Test
             void buildEmptyWalletTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
                 federationUTXOs = UTXOBuilder.builder()
@@ -1256,6 +1346,14 @@ class ReleaseTransactionBuilderTest {
                 federationAddress = federation.getAddress();
                 federationOutputScript = federation.getP2SHScript();
                 federationRedeemScript = federation.getRedeemScript();
+
+                Repository repository = createRepository();
+                bridgeStorageProvider = new BridgeStorageProvider(
+                    repository,
+                    BTC_MAINNET_PARAMS,
+                    activations
+                );
+
                 int numberOfUtxos = 10;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -1317,6 +1415,37 @@ class ReleaseTransactionBuilderTest {
                     emptyWalletResult,
                     (tx, res) -> assertReleaseTxInputsP2shErp(
                         tx, federationUTXOs.size(), federationRedeemScript, federationUTXOs, res.selectedUTXOs())
+                );
+            }
+
+            @Test
+            void buildEmptyWalletTo_whenMultipleFlyoverUtxosInWallet_shouldCreateRefundTxSpendingAllUtxos() {
+                // Arrange
+                Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+                    FLYOVER_DERIVATION_HASH,
+                    federation.getRedeemScript()
+                );
+                Script flyoverOutputScript = PegUtils.getFlyoverFederationOutputScript(flyoverRedeemScript, federation.getFormatVersion());
+                int numberOfUtxos = 2;
+                List<UTXO> flyoverUtxos = UTXOBuilder.builder()
+                    .withValue(Coin.COIN)
+                    .withScriptPubKey(flyoverOutputScript)
+                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+                for (UTXO flyoverUtxo : flyoverUtxos) {
+                    setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, bridgeStorageProvider);
+                }
+
+                ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(flyoverUtxos);
+
+                // Act
+                BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
+
+                // Assert
+                assertSuccessfulEmptyWalletRefundWithBtcVersion2(
+                    emptyWalletResult,
+                    (tx, res) -> assertReleaseTxInputsP2shErp(
+                        tx, flyoverUtxos.size(), federationRedeemScript, flyoverUtxos, res.selectedUTXOs())
                 );
             }
 
@@ -1387,6 +1516,14 @@ class ReleaseTransactionBuilderTest {
                 federationAddress = federation.getAddress();
                 federationOutputScript = federation.getP2SHScript();
                 federationRedeemScript = federation.getRedeemScript();
+
+                Repository repository = createRepository();
+                bridgeStorageProvider = new BridgeStorageProvider(
+                    repository,
+                    BTC_MAINNET_PARAMS,
+                    activations
+                );
+
                 int numberOfUtxos = 10;
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -1448,6 +1585,37 @@ class ReleaseTransactionBuilderTest {
                     emptyWalletResult,
                     (tx, res) -> assertReleaseTxInputsP2shP2wshErp(
                         tx, federationRedeemScript, federationUTXOs, res.selectedUTXOs(), federationUTXOs.size())
+                );
+            }
+
+            @Test
+            void buildEmptyWalletTo_whenMultipleFlyoverUtxosInWallet_shouldCreateRefundTxSpendingAllUtxos() {
+                // Arrange
+                Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+                    FLYOVER_DERIVATION_HASH,
+                    federation.getRedeemScript()
+                );
+                Script flyoverOutputScript = PegUtils.getFlyoverFederationOutputScript(flyoverRedeemScript, federation.getFormatVersion());
+                int numberOfUtxos = 2;
+                List<UTXO> flyoverUtxos = UTXOBuilder.builder()
+                    .withValue(Coin.COIN)
+                    .withScriptPubKey(flyoverOutputScript)
+                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+                for (UTXO flyoverUtxo : flyoverUtxos) {
+                    setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, bridgeStorageProvider);
+                }
+
+                ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(flyoverUtxos);
+
+                // Act
+                BuildResult emptyWalletResult = releaseTransactionBuilder.buildEmptyWalletTo(RECIPIENT_ADDRESS);
+
+                // Assert
+                assertSuccessfulEmptyWalletRefundWithBtcVersion2(
+                    emptyWalletResult,
+                    (tx, res) -> assertReleaseTxInputsP2shP2wshErp(
+                        tx, federationRedeemScript, flyoverUtxos, res.selectedUTXOs(), flyoverUtxos.size())
                 );
             }
 
@@ -1525,20 +1693,17 @@ class ReleaseTransactionBuilderTest {
         }
 
         private void setUpWallet(List<UTXO> utxos) {
-            wallet = ReleaseTransactionBuilderTest.createMainnetFederationSpendWallet(
+            wallet = BridgeUtils.getFederationSpendWallet(
+                BTC_MAINNET_CONTEXT,
                 federation,
                 utxos,
-                activations,
-                BTC_CONTEXT
+                true,
+                bridgeStorageProvider
             );
         }
 
         private ReleaseTransactionBuilder setupWalletAndCreateReleaseTransactionBuilder(List<UTXO> utxos) {
             setUpWallet(utxos);
-            return createReleaseTransactionBuilder();
-        }
-
-        private ReleaseTransactionBuilder createReleaseTransactionBuilder() {
             return new ReleaseTransactionBuilder(
                 BTC_MAINNET_PARAMS,
                 wallet,
@@ -1589,6 +1754,7 @@ class ReleaseTransactionBuilderTest {
         private ActivationConfig.ForBlock activations;
         private Coin feePerKb;
         private Address newFederationAddress;
+        private BridgeStorageProvider bridgeStorageProvider;
 
         @BeforeEach
         void setUp() {
@@ -1606,9 +1772,15 @@ class ReleaseTransactionBuilderTest {
                 retiringFederationAddress = retiringFederation.getAddress();
                 retiringFederationOutputScript = retiringFederation.getP2SHScript();
                 retiringFederationRedeemScript = retiringFederation.getRedeemScript();
-
                 Federation newFederation = P2shErpFederationBuilder.builder().build();
                 newFederationAddress = newFederation.getAddress();
+
+                Repository repository = createRepository();
+                bridgeStorageProvider = new BridgeStorageProvider(
+                    repository,
+                    BTC_MAINNET_PARAMS,
+                    activations
+                );
             }
 
             @Test
@@ -1705,6 +1877,7 @@ class ReleaseTransactionBuilderTest {
                     .withScriptPubKey(retiringFederationOutputScript)
                     .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                addFlyoverUtxoToFederationUtxos();
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
                 Coin migrationValue = wallet.getBalance();
 
@@ -1936,6 +2109,13 @@ class ReleaseTransactionBuilderTest {
                 retiringFederationRedeemScript = retiringFederation.getRedeemScript();
                 Federation newFederation = P2shP2wshErpFederationBuilder.builder().build();
                 newFederationAddress = newFederation.getAddress();
+
+                Repository repository = createRepository();
+                bridgeStorageProvider = new BridgeStorageProvider(
+                    repository,
+                    BTC_MAINNET_PARAMS,
+                    activations
+                );
             }
 
             @Test
@@ -2032,6 +2212,7 @@ class ReleaseTransactionBuilderTest {
                     .withScriptPubKey(retiringFederationOutputScript)
                     .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                addFlyoverUtxoToFederationUtxos();
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
                 Coin migrationValue = wallet.getBalance();
 
@@ -2266,6 +2447,13 @@ class ReleaseTransactionBuilderTest {
                 List<BtcECKey> newFederationMembersKeys = BitcoinTestUtils.getBtcEcKeys(20);
                 Federation newFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(newFederationMembersKeys).build();
                 newFederationAddress =  newFederation.getAddress();
+
+                Repository repository = createRepository();
+                bridgeStorageProvider = new BridgeStorageProvider(
+                    repository,
+                    BTC_MAINNET_PARAMS,
+                    activations
+                );
             }
 
             @Test
@@ -2327,6 +2515,7 @@ class ReleaseTransactionBuilderTest {
                     .withScriptPubKey(retiringFederationOutputScript)
                     .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                addFlyoverUtxoToFederationUtxos();
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
                 Coin migrationValue = wallet.getBalance();
 
@@ -2549,6 +2738,21 @@ class ReleaseTransactionBuilderTest {
             }
         }
 
+        private void addFlyoverUtxoToFederationUtxos() {
+            Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+                FLYOVER_DERIVATION_HASH,
+                retiringFederationRedeemScript
+            );
+            Script flyoverOutputScript = PegUtils.getFlyoverFederationOutputScript(flyoverRedeemScript, retiringFederationFormatVersion);
+            UTXO flyoverUtxo = UTXOBuilder.builder()
+                .withValue(Coin.COIN)
+                .withScriptPubKey(flyoverOutputScript)
+                .withTransactionHash(BTC_TX_HASH_FLYOVER_UTXO)
+                .build();
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider);
+            retiringFederationUTXOs.add(flyoverUtxo);
+        }
+
         /**
          * Used only in unrealistic scenarios where the requested migration value differs from the total value
          * available in the retiring federation UTXOs. In that case, the change is also sent to the
@@ -2584,22 +2788,14 @@ class ReleaseTransactionBuilderTest {
             return migrationTransaction.getOutputs().stream().map(TransactionOutput::getValue).reduce(Coin.ZERO, Coin::add);
         }
 
-        private void setUpWallet(List<UTXO> utxos) {
-            wallet = ReleaseTransactionBuilderTest.createMainnetFederationSpendWallet(
+        private ReleaseTransactionBuilder setupWalletAndCreateReleaseTransactionBuilder(List<UTXO> utxos) {
+            wallet = BridgeUtils.getFederationSpendWallet(
+                BTC_MAINNET_CONTEXT,
                 retiringFederation,
                 utxos,
-                activations,
-                new Context(BTC_MAINNET_PARAMS)
+                true,
+                bridgeStorageProvider
             );
-        }
-
-        private ReleaseTransactionBuilder setupWalletAndCreateReleaseTransactionBuilder(
-            List<UTXO> utxos) {
-            setUpWallet(utxos);
-            return createReleaseTransactionBuilder();
-        }
-
-        protected ReleaseTransactionBuilder createReleaseTransactionBuilder() {
             return new ReleaseTransactionBuilder(
                 BTC_MAINNET_PARAMS,
                 wallet,
@@ -2627,6 +2823,7 @@ class ReleaseTransactionBuilderTest {
         protected Wallet wallet;
 
         private Script federationRedeemScript;
+        private BridgeStorageProvider bridgeStorageProvider;
 
         @BeforeEach
         void setUp() {
@@ -2649,6 +2846,13 @@ class ReleaseTransactionBuilderTest {
                     .withScriptPubKey(federationOutputScript)
                     .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                Repository repository = createRepository();
+                bridgeStorageProvider = new BridgeStorageProvider(
+                    repository,
+                    BTC_MAINNET_PARAMS,
+                    activations
+                );
+                addFlyoverUtxoToFederationUtxos();
                 setUpWallet(federationUTXOs);
             }
 
@@ -3042,6 +3246,13 @@ class ReleaseTransactionBuilderTest {
                     .withScriptPubKey(federationOutputScript)
                     .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                Repository repository = createRepository();
+                bridgeStorageProvider = new BridgeStorageProvider(
+                    repository,
+                    BTC_MAINNET_PARAMS,
+                    activations
+                );
+                addFlyoverUtxoToFederationUtxos();
                 setUpWallet(federationUTXOs);
             }
 
@@ -3403,6 +3614,13 @@ class ReleaseTransactionBuilderTest {
                     .withScriptPubKey(federationOutputScript)
                     .withValue(MINIMUM_PEGIN_TX_VALUE_WITH_ALL_ACTIVATIONS)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                Repository repository = createRepository();
+                bridgeStorageProvider = new BridgeStorageProvider(
+                    repository,
+                    BTC_MAINNET_PARAMS,
+                    activations
+                );
+                addFlyoverUtxoToFederationUtxos();
                 setUpWallet(federationUTXOs);
             }
 
@@ -3759,12 +3977,28 @@ class ReleaseTransactionBuilderTest {
             }
         }
 
+        private void addFlyoverUtxoToFederationUtxos() {
+            Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+                FLYOVER_DERIVATION_HASH,
+                federation.getRedeemScript()
+            );
+            Script flyoverOutputScript = PegUtils.getFlyoverFederationOutputScript(flyoverRedeemScript, federation.getFormatVersion());
+            UTXO flyoverUtxo = UTXOBuilder.builder()
+                .withValue(Coin.COIN)
+                .withScriptPubKey(flyoverOutputScript)
+                .withTransactionHash(BTC_TX_HASH_FLYOVER_UTXO)
+                .build();
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, bridgeStorageProvider);
+            federationUTXOs.add(flyoverUtxo);
+        }
+
         private void setUpWallet(List<UTXO> utxos) {
-            wallet = ReleaseTransactionBuilderTest.createMainnetFederationSpendWallet(
+            wallet = BridgeUtils.getFederationSpendWallet(
+                BTC_MAINNET_CONTEXT,
                 federation,
                 utxos,
-                activations,
-                new Context(BTC_MAINNET_PARAMS)
+                true,
+                bridgeStorageProvider
             );
         }
 
