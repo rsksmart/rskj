@@ -216,9 +216,9 @@ public class ActivationConfigsForTest {
         ));
     }
 
-    private static List<ConsensusRule> getTbdRskips() {
+    private static List<ConsensusRule> getTbd1000Rskips() {
         return new ArrayList<>(List.of(
-            // TBD
+            ConsensusRule.RSKIP559
         ));
     }
 
@@ -467,6 +467,10 @@ public class ActivationConfigsForTest {
     }
 
     public static ActivationConfig vetiver900(List<ConsensusRule> except) {
+        return enableTheseDisableThose(vetiver900AllRskips(), except);
+    }
+
+    public static List<ConsensusRule> vetiver900AllRskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(getPaidBridgeTxsRskip());
         rskips.addAll(getOrchidRskips());
@@ -485,8 +489,13 @@ public class ActivationConfigsForTest {
         rskips.addAll(getReed800Rskips());
         rskips.addAll(getReed810Rskips());
         rskips.addAll(getVetiverRskips());
+        return rskips;
+    }
 
-        return enableTheseDisableThose(rskips, except);
+    public static List<ConsensusRule> tbd1000AllRskips() {
+        var rskips = vetiver900AllRskips();
+        rskips.addAll(getTbd1000Rskips());
+        return rskips;
     }
 
     public static ActivationConfig tbd1000() {
@@ -494,27 +503,7 @@ public class ActivationConfigsForTest {
     }
 
     public static ActivationConfig tbd1000(List<ConsensusRule> except) {
-        List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(getPaidBridgeTxsRskip());
-        rskips.addAll(getOrchidRskips());
-        rskips.addAll(getOrchid060Rskips());
-        rskips.addAll(getWasabi100Rskips());
-        rskips.addAll(getBahamasRskips());
-        rskips.addAll(getTwoToThreeRskips());
-        rskips.addAll(getPapyrus200Rskips());
-        rskips.addAll(getIris300Rskips());
-        rskips.addAll(getHop400Rskips());
-        rskips.addAll(getHop401Rskips());
-        rskips.addAll(getFingerroot500Rskips());
-        rskips.addAll(getArrowhead600Rskips());
-        rskips.addAll(getArrowhead631Rskips());
-        rskips.addAll(getLovell700Rskips());
-        rskips.addAll(getReed800Rskips());
-        rskips.addAll(getReed810Rskips());
-        rskips.addAll(getVetiverRskips());
-        rskips.addAll(getTbdRskips());
-
-        return enableTheseDisableThose(rskips, except);
+        return enableTheseDisableThose(tbd1000AllRskips(), except);
     }
 
     public static ActivationConfig regtest() {
