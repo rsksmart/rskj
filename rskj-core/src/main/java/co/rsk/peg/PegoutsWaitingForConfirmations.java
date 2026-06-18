@@ -370,6 +370,7 @@ public class PegoutsWaitingForConfirmations {
         m.put(5002812L, PegoutRef.listFrom("40921869eae466df43132a88faef2f71b5c481f52bd8925b3752e5a27713c5d7", 4998807L));
         m.put(7073815L, PegoutRef.listFrom("d2ca62b50287a300122672a9b05e08422ec36e41d0424c2ba7612bf1ca96d607", 7069808L));
         // These are not required after RSKIP559 activation when old output algo will be dropped
+        // because new sorting/selection algo producing same outputs on this heights
         // ... TBD
         MAINNET = Collections.unmodifiableMap(m);
     }
@@ -381,15 +382,17 @@ public class PegoutsWaitingForConfirmations {
         // These are known diff between historical outputs and RSKIP559 stable output algo
         t.put(1120318L, PegoutRef.listFrom("fc48fd9099b0ed41511e5d6da7a536880ef7dd1deb1ed1289e3c651e934aaa49", 1120291L));
         t.put(1865157L, PegoutRef.listFrom("816a0708cfe301b1076d795d74b36955f4ef1fc477487772d06121a5dedfeca0", 1865146L));
-        t.put(2589068L, new PegoutRef[]{
-            PegoutRef.from("c6f1fe4aba2e98cc9e190ae7aa6664901d417172847232a03a8112a3342ef53e", 2589056L),
-            PegoutRef.from("4dbe93aaaab473d53039e88ab6f4b81704c3c9ae34a60fa94e32fc350763a9d3", 2589056L)
+        t.put(2589068L, new PegoutRef[] {
+             PegoutRef.from("2924e68abd7371f9e34cb817213528478cc8ec22f48389f756623d5a4c35e0a4", 2589056L),
+             PegoutRef.from("c6f1fe4aba2e98cc9e190ae7aa6664901d417172847232a03a8112a3342ef53e", 2589056L),
+             PegoutRef.from("4dbe93aaaab473d53039e88ab6f4b81704c3c9ae34a60fa94e32fc350763a9d3", 2589056L)
         });
         t.put(2589071L, PegoutRef.listFrom("a476e91aeca06b6c52d276fb6734c2a4849dfe9f9feca2a055ad5f3add2ec328", 2589056L));
         t.put(2589077L, PegoutRef.listFrom("0359d4b1621b4faa203f94394dd0c9f5094fcf6cad4acf6af604da9ce1ec3217", 2589056L));
         t.put(2589086L, PegoutRef.listFrom("6ceb7c9be0f828f7d6e6d847671aba87760b72ae4e63a14afb1e11170d306d4f", 2589068L));
-        t.put(2589112L, new PegoutRef[]{
+        t.put(2589112L, new PegoutRef[] {
             PegoutRef.from("9d5b2dc437edc59f216257e202e9ab1bc6d10a791624cb1e976879049a74178d", 2589086L),
+            PegoutRef.from("0c5b2a437187481623e755ec0f4c7095fcdf66e6eff5b68852b0c8ad9f1063da", 2589086L),
             PegoutRef.from("30f776e7e2842db08ffe1424cba3caf8857654fa2269c0cfd22a9bae177ee39c", 2589086L)
         });
         t.put(2589115L, PegoutRef.listFrom("caf72f6d65f287981afdba49d617a1bad8490e2b0a445629e797a7864d95b15f", 2589086L));
@@ -423,7 +426,23 @@ public class PegoutsWaitingForConfirmations {
         t.put(6858657L, PegoutRef.listFrom("9a163ae0df24833af87992fa0e3a09e4c0bed27a660e6fd94814b0da48c629e6", 6858644L));
 
         // These are not required after RSKIP559 activation when old output algo will be dropped
-        // ... TBD
+        // because new sorting/selection algo producing same outputs on this heights
+        t.put(1112233L, PegoutRef.listFrom("7f199079f5c55b5ea4d4bf150c105bbac1af068f96e2897e88bb798289578c75", 1112212L));
+        t.put(1638761L, PegoutRef.listFrom("3d4f1c085e42b273ddd327fc30a6633b1277d952d3b5e76156acbdeffdaf7809", 1638742L));
+        t.put(1865172L, PegoutRef.listFrom("fa2350f918db4a59b6f4a74b7f10420dc309226d87c8c0b0ce56d71fd94abad8", 1865146L));
+        t.put(2589423L, PegoutRef.listFrom("181a0390efa4866580e586159201756b8dc1089661d5a14a3b1f8aa4a4fafb41", 2589308L));
+        t.put(2589656L, PegoutRef.listFrom("496a1d5334751c0cca06ca40becc276672c37845deca8ae613250250f8f75bf5", 2589112L));
+        t.put(2589662L, PegoutRef.listFrom("a4a3f843e789b1be9a2aa5155d2ae7cb54709f02c78115c8392ad4efbbcffce1", 2589112L));
+        t.put(2863896L, PegoutRef.listFrom("1a7f93e39d3e7a87f26d5cfd8047d909945250a2c87c80f710085d4d97e940fc", 2863880L));
+        t.put(3364542L, PegoutRef.listFrom("75db78f6c0ba87bad1d7bd41a1b4bc412a4ae069916e6a47eb713afa92f3267f", 3364531L));
+        t.put(5577212L, PegoutRef.listFrom("342b34571db7d9bc2783ec490b6a2a6abddf34c0ea0cf27e14b65e238f4eda34", 5577158L));
+        t.put(6858665L, PegoutRef.listFrom("5bd422c96cabc0c4adecc4d7a2a23dd7c18ace92fb86348910e596449570a45f", 6858649L));
+        t.put(7440352L, PegoutRef.listFrom("7cbe57e4b3c79a4187e21c1185a91212aa832a7dc9ff988f6cefb2be06b1fb86", 7440339L));
+        //
+        t.put(695811L, PegoutRef.listFrom("a9bdc4e4a48a3e3754b2722b3e61eeca9ae4009379a62a8313acf485c79171c1", 695800L));
+        t.put(739307L, PegoutRef.listFrom("648858fe92cd7c9078b9870852d8abceecd472a8d1102fd767ec658fe414af9c", 739296L));
+        t.put(752839L, PegoutRef.listFrom("bb52a27915b91e628066d51713f1f39ac3f0770919e84a4fd5285841496d77ca", 752823L));
+
         TESTNET = Collections.unmodifiableMap(t);
     }
 }
