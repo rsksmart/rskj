@@ -64,7 +64,7 @@ class BridgeSupportSigHashTest {
     @MethodSource("pegoutTxIndexArgsProvider")
     void test_pegoutTxIndex_when_pegout_batch_is_created(ActivationConfig.ForBlock activations) throws IOException {
         // Arrange
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants.getFederationConstants());
+        Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(bridgeMainnetConstants.getFederationConstants());
         int numberOfUtxos = 10;
         List<UTXO> fedUTXOs = UTXOBuilder.builder()
             .withScriptPubKey(genesisFederation.getP2SHScript())
@@ -124,7 +124,7 @@ class BridgeSupportSigHashTest {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants.getFederationConstants());
+        Federation oldFederation = FederationTestUtils.getGenesisFederationLegacy(bridgeMainnetConstants.getFederationConstants());
         long newFedCreationBlockNumber = 5L;
 
         FederationArgs newFederationArgs = new FederationArgs(
@@ -207,7 +207,7 @@ class BridgeSupportSigHashTest {
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(PegTestUtils.createReleaseRequestQueueEntries(3)));
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants.getFederationConstants());
+        Federation oldFederation = FederationTestUtils.getGenesisFederationLegacy(bridgeMainnetConstants.getFederationConstants());
 
         long newFedCreationBlockNumber = 5L;
         FederationArgs newFederationArgs = new FederationArgs(
