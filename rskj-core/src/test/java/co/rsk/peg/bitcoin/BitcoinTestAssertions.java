@@ -86,7 +86,7 @@ public class BitcoinTestAssertions {
         int startIndex = 1; // First push is OP_0, next come the signatures
 
         // A non-empty chunk for each signature required to spend
-        for (int i = startIndex; i < numberOfSignaturesRequiredToSpend; i++) {
+        for (int i = startIndex; i <= numberOfSignaturesRequiredToSpend; i++) {
             ScriptChunk signatureChunk = scriptSigChunks.get(i);
             int signatureLength = signatureChunk.data.length;
             assertAll(
@@ -115,7 +115,7 @@ public class BitcoinTestAssertions {
         int numberOfSignaturesRequiredToSpend = expectedRedeemScript.getNumberOfSignaturesRequiredToSpend();
         int startIndex = 1; // First push is OP_0, next come the signatures
 
-        for (int i = startIndex; i < numberOfSignaturesRequiredToSpend; i++) {
+        for (int i = startIndex; i <= numberOfSignaturesRequiredToSpend; i++) {
             byte[] signaturePush = witness.getPush(i);
             assertAll(
                 () -> assertTrue(signaturePush.length >= MIN_SIGNATURE_LENGTH, "Signature should be at least " + MIN_SIGNATURE_LENGTH + " bytes long"),
