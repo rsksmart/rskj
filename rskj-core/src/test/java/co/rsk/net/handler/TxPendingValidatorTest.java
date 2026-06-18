@@ -178,4 +178,58 @@ class TxPendingValidatorTest {
 
         assertFalse(result.transactionIsValid());
     }
+
+    @Test
+    void isValid_ShouldBeInvalid_WhenNonceHasNineBytes() {
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(10L).toByteArray());
+        when(executionBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
+
+        Transaction tx = mock(Transaction.class);
+        when(tx.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(1L));
+        when(tx.getNonce()).thenReturn(new byte[9]);
+        when(tx.getNonceAsInteger()).thenReturn(BigInteger.ZERO);
+        when(tx.getGasPrice()).thenReturn(Coin.valueOf(1L));
+
+        AccountState state = mock(AccountState.class);
+        when(state.getNonce()).thenReturn(BigInteger.ZERO);
+
+        TestSystemProperties config = new TestSystemProperties();
+        ActivationConfig activationConfig = spy(config.getActivationConfig());
+
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        TxPendingValidator validator = new TxPendingValidator(config.getNetworkConstants(), activationConfig, config.getNumOfAccountSlots(), signatureCache);
+
+        TransactionValidationResult result = validator.isValid(tx, executionBlock, state);
+
+        assertFalse(result.transactionIsValid());
+        assertTrue(result.getErrorMessage().contains("nonce"));
+    }
+
+    @Test
+    void isValid_ShouldBeInvalid_WhenNonceHasLeadingZeros() {
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(10L).toByteArray());
+        when(executionBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
+
+        Transaction tx = mock(Transaction.class);
+        when(tx.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(1L));
+        when(tx.getNonce()).thenReturn(new byte[]{0x00, 0x01});
+        when(tx.getNonceAsInteger()).thenReturn(BigInteger.ONE);
+        when(tx.getGasPrice()).thenReturn(Coin.valueOf(1L));
+
+        AccountState state = mock(AccountState.class);
+        when(state.getNonce()).thenReturn(BigInteger.ONE);
+
+        TestSystemProperties config = new TestSystemProperties();
+        ActivationConfig activationConfig = spy(config.getActivationConfig());
+
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        TxPendingValidator validator = new TxPendingValidator(config.getNetworkConstants(), activationConfig, config.getNumOfAccountSlots(), signatureCache);
+
+        TransactionValidationResult result = validator.isValid(tx, executionBlock, state);
+
+        assertFalse(result.transactionIsValid());
+        assertTrue(result.getErrorMessage().contains("nonce"));
+    }
 }

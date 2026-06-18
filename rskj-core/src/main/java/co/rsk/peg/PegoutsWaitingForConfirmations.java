@@ -114,7 +114,7 @@ public class PegoutsWaitingForConfirmations {
          * Uset it to preserve old behaviour in Java21+.
          */
         public static HashSet<Entry> setOfEntries() {
-            return new HashSet<>(0, DEFAULT_LOAD_FACTOR);
+            return new HashSet<>(16, DEFAULT_LOAD_FACTOR);
         }
 
         /**

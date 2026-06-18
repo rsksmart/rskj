@@ -19,9 +19,6 @@
 package org.ethereum.config.blockchain.upgrades;
 
 import com.typesafe.config.ConfigFactory;
-import org.ethereum.config.SystemProperties;
-
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import org.ethereum.config.SystemProperties;
 
 @SuppressWarnings({"squid:S2187"}) // used from another class
 public class ActivationConfigsForTest {
@@ -217,7 +216,7 @@ public class ActivationConfigsForTest {
         ));
     }
 
-    private static List<ConsensusRule> getNextReleaseRskips() {
+    private static List<ConsensusRule> getTbd1000Rskips() {
         return new ArrayList<>(List.of(
             ConsensusRule.RSKIP559
         ));
@@ -493,18 +492,18 @@ public class ActivationConfigsForTest {
         return rskips;
     }
 
-    public static List<ConsensusRule> nextReleaseAllRskips() {
+    public static List<ConsensusRule> tbd1000AllRskips() {
         var rskips = vetiver900AllRskips();
-        rskips.addAll(getNextReleaseRskips());
+        rskips.addAll(getTbd1000Rskips());
         return rskips;
     }
 
-    public static ActivationConfig nextRelease() {
-        return nextRelease(Collections.emptyList());
+    public static ActivationConfig tbd1000() {
+        return tbd1000(Collections.emptyList());
     }
 
-    public static ActivationConfig nextRelease(List<ConsensusRule> except) {
-        return enableTheseDisableThose(nextReleaseAllRskips(), except);
+    public static ActivationConfig tbd1000(List<ConsensusRule> except) {
+        return enableTheseDisableThose(tbd1000AllRskips(), except);
     }
 
     public static ActivationConfig regtest() {

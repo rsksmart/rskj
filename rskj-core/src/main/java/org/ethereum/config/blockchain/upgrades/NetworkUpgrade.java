@@ -37,9 +37,9 @@ public enum NetworkUpgrade {
     REED800("reed800"),
     REED810("reed810"),
     VETIVER900("vetiver900"),
-    NEXTRELEASE("NextRelease");
+    TBD1000("tbd1000");
 
-    private String name;
+    private final String name;
 
     NetworkUpgrade(String name) {
         this.name = name;
