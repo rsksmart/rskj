@@ -2644,13 +2644,17 @@ class FederationSupportImplTest {
         void getActiveFederation_withMainnetConstants_returnsStandardMultisigFederation() {
             FederationSupport support = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
-                .withFederationStorageProvider(new FederationStorageProviderImpl(new InMemoryStorage()))
+                .withFederationStorageProvider(storageProvider)
                 .withActivations(allActivations)
                 .build();
 
             Federation activeFederation = support.getActiveFederation();
 
             assertInstanceOf(StandardMultisigFederation.class, activeFederation);
+            assertEquals(
+                FederationFormatVersion.STANDARD_MULTISIG_FEDERATION.getFormatVersion(),
+                activeFederation.getFormatVersion()
+            );
         }
 
         @Test
@@ -2665,6 +2669,10 @@ class FederationSupportImplTest {
             Federation activeFederation = support.getActiveFederation();
 
             assertInstanceOf(StandardMultisigFederation.class, activeFederation);
+            assertEquals(
+                FederationFormatVersion.STANDARD_MULTISIG_FEDERATION.getFormatVersion(),
+                activeFederation.getFormatVersion()
+            );
         }
 
         @Test
