@@ -1402,7 +1402,7 @@ class ProcessFundsMigrationTest {
                 flyoverOutputScript.getPubKeyHash()
             );
         bridgeStorageProvider.setFlyoverFederationInformation(flyoverFederationInformation);
-        bridgeSupport.save();
+        bridgeStorageProvider.save();
     }
 
     private List<BtcTransaction> getMigrationTransactionsSortedByCreationAndInputsCount() throws IOException {
