@@ -2637,7 +2637,7 @@ class FederationSupportImplTest {
     }
 
     @Nested
-    @Tag("genesis federation type")
+    @Tag("genesis-federation-type")
     class GenesisFederationTypeTests {
 
         @Test
