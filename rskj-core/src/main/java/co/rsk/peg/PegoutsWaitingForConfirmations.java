@@ -49,17 +49,17 @@ public class PegoutsWaitingForConfirmations {
 
     private static final Logger logger = LoggerFactory.getLogger(PegoutsWaitingForConfirmations.class);
 
-    private final EntriesStore entries;
+    private final Set<Entry> entries;
 
     public PegoutsWaitingForConfirmations(Set<Entry> entries) {
-        this.entries = new EntriesStore(entries);
+        this.entries = new HashSet<>(entries);
     }
 
     /**
      * Return entries ordered according to {@link Entry.BTC_TX_COMPARATOR}.
      */
     public Collection<Entry> getEntriesWithoutHashOrdered() {
-        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() == null)
+        return entries.stream().filter(e -> e.getPegoutCreationRskTxHash() == null)
                 .sorted(Entry.BTC_TX_COMPARATOR).toList();
     }
 
@@ -67,19 +67,12 @@ public class PegoutsWaitingForConfirmations {
      * Return entries ordered according to {@link Entry.BTC_TX_COMPARATOR}.
      */
     public Collection<Entry> getEntriesWithHashOrdered() {
-        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() != null)
+        return entries.stream().filter(e -> e.getPegoutCreationRskTxHash() != null)
                 .sorted(Entry.BTC_TX_COMPARATOR).toList();
     }
 
-    public Collection<Entry> getEntries(ForBlock activations) {
-        // TODO: after fork, leave only sorted output no need for rskip559 switch
-        // And rename it to getEntriesOrdered
-
-        var rskip559 = activations.isActive(ConsensusRule.RSKIP559);
-        if (rskip559) {
-            return entries.entriesSet.stream().sorted(Entry.BTC_TX_COMPARATOR).toList();
-        }
-        return entries.entriesSet.stream().toList();
+    public Collection<Entry> getEntriesSorted() {
+        return entries.stream().sorted(Entry.BTC_TX_COMPARATOR).toList();
     }
 
     /**
@@ -101,33 +94,34 @@ public class PegoutsWaitingForConfirmations {
         Integer minimumConfirmations,
         ForBlock activations
     ) {
+        // NOTE: Overwrites returned only for hardcoded data which:
+        // - provided for history before RSKIP559 activation
+        // - cover output differences betwen new (post RSKIP559) pegout selection and real history before RSKIP559
+        // - could have redundant values for all cases where we had more than one pegout to select from
         var pegoutOverwrite = this.getOutputOverwrite(currentBlockNumber, activations);
-
-        var rskip559 = activations.isActive(ConsensusRule.RSKIP559);
-        var pegout = this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, rskip559);
-
-        // TODO: must be moved to the top of function after hardfork
-        // If diff overwrite exists - just return it
         if (pegoutOverwrite != null) {
-            logger.info(
+            logger.debug(
                     "PreRSKIP559 pegout applied! Current block:{} Pegout ref:{}@{}",
                     currentBlockNumber,
                     pegoutOverwrite.getBtcTransaction().getHash(),
                     pegoutOverwrite.getPegoutCreationRskBlockNumber());
-
-            // TODO: no need for this log message after a hardfork
-            // it is used only to validate how node syncing with hardcoded outputs
-            if (pegout.isPresent()) {
-                logger.info(
-                        "Replaced pegout is: current block:{} Pegout ref:{}@{}",
-                        currentBlockNumber,
-                        pegout.get().getBtcTransaction().getHash(),
-                        pegout.get().getPegoutCreationRskBlockNumber());
-            }
             return Optional.of(pegoutOverwrite);
         }
 
-        return pegout;
+        // If this line is running it means that:
+        // - If we are before RSKIP559 then:
+        //      - entries.size() <= 1
+        //      - entries filtering output is the same for pre RSKIP559 algo and new one
+        // - Or we are after RSKIP559 activation and it is just a new algo
+        return entries
+            .stream()
+            .filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations))
+            .sorted(Entry.BTC_TX_COMPARATOR)
+            .findFirst();
+    }
+
+    private boolean hasEnoughConfirmations(Entry entry, Long currentBlockNumber, Integer minimumConfirmations) {
+        return (currentBlockNumber - entry.getPegoutCreationRskBlockNumber()) >= minimumConfirmations;
     }
 
     @Nullable
@@ -174,89 +168,20 @@ public class PegoutsWaitingForConfirmations {
      * Search entries by pegout reference.
      */
     Optional<Entry> getPegoutByRef(PegoutRef pegoutRef) {
-        return this.entries.entriesSet.stream().filter(e -> {
+        return this.entries.stream().filter(e -> {
             return pegoutRef.btcTxHash().equals(e.getBtcTransaction().getHash())
                     && Long.valueOf(pegoutRef.rskBlock()).equals(e.getPegoutCreationRskBlockNumber());
         }).findFirst();
     }
 
     public void add(Entry entry) {
-        this.entries.addEntry(entry);
+        if (this.entries.stream().noneMatch(e -> e.getBtcTransaction().equals(entry.getBtcTransaction()))) {
+            this.entries.add(entry);
+        }
     }
 
     public boolean removeEntry(Entry entry) {
-        return entries.removeEntry(entry);
-    }
-
-    /**
-     * Encapsulate entries while preserving sorting order before fork.
-     *
-     * @deprecated: should be removed after RSKIP559 activation,
-     * historical outputs will be hardcoded thus no need for this Java 21+ tricks at all.
-     */
-    @Deprecated
-    public static class EntriesStore {
-
-        // From java SDK
-        private static final float DEFAULT_LOAD_FACTOR = 0.75f;
-
-        private final HashSet<Entry> entriesSet;
-
-        /**
-         * Must be equal to new HashSet() call in Java 17.
-         * Use it to preserve old behaviour in Java21+.
-         */
-        public static HashSet<Entry> setOfEntries() {
-            return new HashSet<>(0, DEFAULT_LOAD_FACTOR);
-        }
-
-        /**
-         * This is a standard code for `new HashSet<>(entries);` in Java 17.
-         * Coefficients were changed in Java 21.
-         * Use it to preserve old behaviour in Java21+.
-         */
-        public static HashSet<Entry> setOfEntries(Collection<Entry> entries) {
-            // Need to hardcode Java 17 init params here to preserve old behaviour in Java 21+
-            var ehs = new HashSet<Entry>(Math.max((int) (entries.size() / DEFAULT_LOAD_FACTOR) + 1, 16));
-            ehs.addAll(entries);
-            return ehs;
-        }
-
-        private EntriesStore(Collection<Entry> entries) {
-            this.entriesSet = EntriesStore.setOfEntries(entries);
-        }
-
-        private boolean hasEnoughConfirmations(Entry entry, Long currentBlockNumber, Integer minimumConfirmations) {
-            return (currentBlockNumber - entry.getPegoutCreationRskBlockNumber()) >= minimumConfirmations;
-        }
-
-        /**
-         * @param isRskip559 turns on deterministic order for entries before filtering.
-         */
-        public Optional<Entry> getNextPegoutWithEnoughConfirmations(
-                Long currentBlockNumber,
-                Integer minimumConfirmations,
-                boolean isRskip559 // TODO remove after RSKIP559 activation
-        ) {
-            var entries = entriesSet.stream()
-                    .filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations));
-            // TODO: In next release after RSKIP559 activation we must use only properly sorted entries
-            // all historical difference will be hardcoded
-            if (isRskip559) {
-                entries = entries.sorted(Entry.BTC_TX_COMPARATOR);
-            }
-            return entries.findFirst();
-        }
-
-        public void addEntry(Entry entry) {
-            if (this.entriesSet.stream().noneMatch(e -> e.getBtcTransaction().equals(entry.getBtcTransaction()))) {
-                this.entriesSet.add(entry);
-            }
-        }
-
-        public boolean removeEntry(Entry entry) {
-            return this.entriesSet.remove(entry);
-        }
+        return entries.remove(entry);
     }
 
     public static class Entry {
