@@ -6,6 +6,10 @@ Trust these instructions. If a step is missing here or appears wrong, fall back 
 
 RSKj is the Java implementation of the Rootstock node — an EVM-compatible sidechain that is merge-mined with Bitcoin and operates a Bitcoin↔RSK two-way peg ("powpeg"). The repository is a single-module Gradle build; the primary module is `rskj-core` and the entry point is `co.rsk.Start`. Java 17 source/target. Gradle wrapper 8.6. License: GNU LGPL v3.0.
 
+## Versioning and release tags
+
+Published releases are tagged `<CODENAME>-<MAJOR>.<MINOR>.<PATCH>` (e.g. `VETIVER-9.0.3`, `REED-8.1.0`). The codename is the network-upgrade name and rotates with each major version. In `rskj-core/src/main/resources/version.properties`, `modifier` holds that codename on a release and is **non-empty for every release tag**; the full artifact version is `versionNumber-modifier` (e.g. `9.0.3-VETIVER`). An empty `modifier` — or `SNAPSHOT` — denotes a **development / local build only** and never appears on a release tag.
+
 ## PR review priorities
 
 Review-ability is the top priority. Use these heuristics to flag PRs and to author them.
@@ -18,6 +22,8 @@ Review-ability is the top priority. Use these heuristics to flag PRs and to auth
 - **Anti-flakiness.** This repository has a known flakiness backlog the team is actively reducing. Flag new or changed tests that use `Thread.sleep` for synchronization, real-clock timing dependencies, real network calls without stubs, parallel-execution ordering assumptions, fragile filesystem assumptions, or that are newly `@Disabled` / `@Ignore`d.
 - **Clean Code is a guideline, not a rule.** The codebase is large and partly legacy; do not demand rewrites in legacy modules. Apply Clean Code principles where reasonable.
 - **No unrelated reordering or renaming.** Diffs that reorder or rename unchanged code without a clear benefit hurt review-ability — flag them.
+- **Ground claims of breakage in observation.** Before asserting that code is broken, will fail at runtime, or produces invalid output, verify the claim against repo reality — the actual file format, an existing working usage of the same idiom, or the trigger/permission model. Prefer "this is unusual, please confirm X" over "this is broken". Distinguish *the underlying tool/library supports case X* from *this repo's inputs ever reach case X*.
+- **Review the change holistically.** Do not raise a finding that another part of the same diff already prevents (e.g. an early validation guard that makes a later branch unreachable). Read the whole changed unit before commenting on a line in isolation.
 - **PR template compliance.** PRs targeted at **master** or a branch ending with the **-rc** sufix must populate every section of `.github/pull_request_template.md`: **Description**, **Motivation and Context**, **How Has This Been Tested?**, **Types of changes**, **Checklist**. The checklist contains a deliberate "Requires Activation Code (Hard Fork)" question — flag PRs that touch consensus, validators, VM, peg, mining, or activation logic without answering it.
 
 Java style conventions are defined in `CONTRIBUTING.md`. Key reviewer-facing rules: prefer constructor injection with `private final` fields and `Objects.requireNonNull` on parameters; prefer `Optional<T>` over `null` (annotate nullable returns with `@Nullable`); always brace control structures; treat `@VisibleForTesting` as a design smell and flag accordingly. Standard Java naming applies: lowercase packages, `UpperCamelCase` classes, `lowerCamelCase` members, `CONSTANT_CASE` for static final immutable constants.
@@ -53,9 +59,15 @@ Commands that mirror CI:
 - `./gradlew checkstyleFile -PfilePath="src/main/java/A.java,src/main/java/B.java"` — checkstyle on a specific file set (mirrors CI). Paths must be relative to the `rskj-core` subproject; the lint workflow strips the `rskj-core/` prefix before invocation, and the task resolves the list via `project.files(...)` inside `rskj-core`. Repo-relative paths (e.g. `rskj-core/src/main/java/...`) silently match nothing.
 - `./gradlew spotlessJavaCheck -PratchetFrom=origin/master` — Spotless on changed files; replace `master` with the PR base branch when applicable.
 - `./gradlew spotlessApply` — auto-fix Spotless violations.
-- `./gradlew fatJar` — produces `rskj-core/build/libs/rskj-core-<version>-all.jar`, where `<version>` is `versionNumber[-modifier]` from `rskj-core/src/main/resources/version.properties` (e.g. `rskj-core-9.1.0-SNAPSHOT-all.jar` for snapshot builds, `rskj-core-9.1.0-all.jar` when the modifier is empty).
+- `./gradlew fatJar` — produces `rskj-core/build/libs/rskj-core-<version>-all.jar`, where `<version>` is `versionNumber[-modifier]` from `rskj-core/src/main/resources/version.properties` (e.g. `rskj-core-9.1.0-SNAPSHOT-all.jar` for snapshot builds, `rskj-core-9.1.0-all.jar` when the modifier is empty — an empty modifier is a local/dev state only; see *Versioning and release tags*).
 
 Style configuration files (informational): checkstyle at `config/checkstyle/checkstyle.xml` and `config/checkstyle/suppressions.xml`; Spotless is declared inside `rskj-core/build.gradle` with `enforceCheck false` (not bound to the `check` lifecycle — the lint workflow invokes `spotlessJavaCheck` explicitly) and currently enforces only `endWithNewline()`, scoped by the ratchet to changed files. There is no `.editorconfig`.
+
+## Containerized build and reproducible builds
+
+`/Dockerfile` is the canonical container build for the node and the reference for "how RSKj is built in a container". It bootstraps with `./configure.sh` and verifies that script against a signed checksum with `gpg --verify --output SHA256SUMS SHA256SUMS.asc && sha256sum --check SHA256SUMS` (`SHA256SUMS.asc` is a cleartext-signed file; `--output` extracts the payload and the `&&` chain gates the build on a good signature). This exact pattern is established and working — do **not** flag it as broken or claim the output file "is never created".
+
+The workflow and templates under `.github/reproducible-build/` exist to **mirror** `/Dockerfile` for a published tag, so prefer consistency with `/Dockerfile` over alternative idioms; any change to the verify/build sequence should be made in `/Dockerfile` and the templates **together**, not in one alone. Before flagging a shell or Docker idiom here as incorrect, confirm it is not already the established, working pattern in `/Dockerfile`, `build_and_test.yml`, or `lint-java-code.yml`.
 
 ## Project layout
 
@@ -88,3 +100,5 @@ Changes touching the following require deeper review even when the diff is small
 ## Trust these instructions
 
 This document is the canonical reference for working in this repository. Trust it. Search the repo only when a step is missing here or has been proven wrong by direct observation.
+
+One scoping caveat: the "trust, don't explore" bias optimizes authoring and CI prediction. For **review correctness specifically, the bias flips** — a claim that existing code is defective, will fail, or is non-idiomatic must be backed by direct observation (an actual failing case, the real file format, or a contradicting in-repo usage), never inferred from this document's silence on a topic.
