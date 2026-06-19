@@ -25,14 +25,21 @@ import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.Rskip545TestSupport;
+import org.ethereum.core.Rskip546TestSupport;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionTypePrefix;
+import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
@@ -56,6 +63,7 @@ public class TransactionBuilder {
     private Byte rskSubtype = null;
     private BigInteger maxFeePerGas = null;
     private BigInteger maxPriorityFeePerGas = null;
+    private final List<SetCodeAuthorization> authorizations = new ArrayList<>();
 
     public TransactionBuilder sender(Account sender) {
         this.sender = sender;
@@ -132,6 +140,18 @@ public class TransactionBuilder {
         return this;
     }
 
+    public TransactionBuilder authorization(
+            Account authority,
+            RskAddress delegate,
+            BigInteger authNonce,
+            byte authChainId
+    ) {
+        this.authorizations.add(
+                Rskip545TestSupport.createSignedAuthorization(
+                        authority.getEcKey(), delegate, authNonce, authChainId));
+        return this;
+    }
+
     public Transaction build() {
         byte chainId = Optional.ofNullable(this.chainId).orElse(Constants.REGTEST_CHAIN_ID);
 
@@ -176,8 +196,7 @@ public class TransactionBuilder {
             tx = switch (txType) {
                 case TYPE_1 -> buildType1FromCallArguments(to, nonce, gasLimit, gasPrice, chainId, data, value);
                 case TYPE_2 -> buildType2FromCallArguments(to, nonce, gasLimit, chainId, data, value);
-                case TYPE_4 -> throw new IllegalArgumentException(
-                        "Type 4 transactions must be built via Transaction.fromRaw or Transaction.fromCallArguments");
+                case TYPE_4 -> buildType4FromBuilder(to, nonce, gasLimit, chainId, data, value);
                 default -> throw new IllegalArgumentException(
                         "transaction type not supported: 0x" + Integer.toHexString(this.transactionType & 0xFF));
             };
@@ -228,6 +247,27 @@ public class TransactionBuilder {
                 nonce.toByteArray(),
                 data != null ? data : new byte[0],
                 Rskip546TestSupport.EMPTY_ACCESS_LIST);
+    }
+
+    private Transaction buildType4FromBuilder(RskAddress to, BigInteger nonce, BigInteger gasLimit, byte chainId,
+                                            byte[] data, BigInteger value) {
+        if (authorizations.isEmpty()) {
+            throw new IllegalArgumentException("Type 4 transaction requires at least one authorization");
+        }
+        BigInteger maxP = this.maxPriorityFeePerGas != null ? this.maxPriorityFeePerGas : this.gasPrice;
+        BigInteger maxF = this.maxFeePerGas != null ? this.maxFeePerGas : this.gasPrice;
+        return Transaction.builder()
+                .type(TransactionType.TYPE_4)
+                .chainId(chainId)
+                .nonce(nonce)
+                .gasLimit(gasLimit)
+                .maxPriorityFeePerGas(new Coin(maxP))
+                .maxFeePerGas(new Coin(maxF))
+                .receiveAddress(to)
+                .value(new Coin(value))
+                .data(data != null ? data : new byte[0])
+                .authorizationList(authorizations)
+                .build();
     }
 
     private Transaction buildType2FromCallArguments(RskAddress to, BigInteger nonce, BigInteger gasLimit, byte chainId,

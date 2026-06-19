@@ -23,7 +23,6 @@ import org.ethereum.core.TransactionTypePrefix;
 
 import java.util.Objects;
 
-//Temporal implementation of ParsedType0Transaction, to be used until we have the full implementation of Transaction aligned with AA
 public record ParsedType2Transaction(
         TransactionTypePrefix typePrefix,
         byte[] nonce,

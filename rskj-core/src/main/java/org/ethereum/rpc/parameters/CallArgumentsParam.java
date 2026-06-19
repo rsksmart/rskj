@@ -71,8 +71,8 @@ public class CallArgumentsParam {
         this.input = input;
         this.type = type;
         this.rskSubtype = rskSubtype;
-        this.accessList = accessList;
-        this.authorizationList = authorizationList;
+        this.accessList = accessList == null ? null : List.copyOf(accessList);
+        this.authorizationList = authorizationList == null ? null : List.copyOf(authorizationList);
     }
 
     public HexAddressParam getFrom() {

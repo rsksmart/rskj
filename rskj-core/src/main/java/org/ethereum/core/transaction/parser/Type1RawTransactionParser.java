@@ -62,6 +62,7 @@ public class Type1RawTransactionParser implements RawTransactionTypeParser<Parse
         Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(txFields.get(VALUE_INDEX).getRLPData()));
         byte[] data = CommonParsingUtils.nullToEmpty(txFields.get(DATA_INDEX).getRLPData());
         byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(txFields.get(ACCESS_LIST_INDEX).getRLPRawData());
+        CommonParsingUtils.requireLegacyScalarFields(nonce, gasPrice, gasLimit, value);
 
         return new ParsedType1Transaction(
                 typePrefix,
@@ -97,11 +98,14 @@ public class Type1RawTransactionParser implements RawTransactionTypeParser<Parse
         byte[] data = CommonParsingUtils.nullToEmpty(input.data());
         byte chainId = TransactionInput.resolveTypedChainId(input.chainId());
         byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(input.accessListBytes());
+        byte[] gasLimitBytes = CommonParsingUtils.unsignedBytes(gasLimit);
+        CommonParsingUtils.requireLegacyScalarFields(nonce, gasPrice, gasLimitBytes, value);
+
         return new ParsedType1Transaction(
                 typePrefix,
                 nonce,
                 gasPrice,
-                gasLimit.toByteArray(),
+                gasLimitBytes,
                 receiveAddress,
                 value,
                 data,

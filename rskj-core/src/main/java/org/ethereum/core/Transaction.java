@@ -43,6 +43,7 @@ import org.ethereum.core.transaction.parser.ParsedType2RSKTransaction;
 import org.ethereum.core.transaction.parser.ParsedType2Transaction;
 import org.ethereum.core.transaction.parser.ParsedType4Transaction;
 import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
+import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.core.transaction.parser.util.Type4TransactionValidation;
 import org.ethereum.cost.InitcodeCostCalculator;
 import org.ethereum.crypto.ECKey;
@@ -366,20 +367,28 @@ public class Transaction {
     }
 
     private void validate(SignatureCache signatureCache) {
-        if (getNonce().length > DATAWORD_LENGTH) {
+        if (CommonParsingUtils.exceedsDataWordLength(getNonce())) {
             throw new TransactionException("Nonce is not valid");
         }
         if (receiveAddress != null && receiveAddress.getBytes().length != 0 && receiveAddress.getBytes().length != Constants.getMaxAddressByteLength()) {
             throw new TransactionException("Receive address is not valid");
         }
-        if (gasLimit.length > DATAWORD_LENGTH) {
+        if (CommonParsingUtils.exceedsDataWordLength(gasLimit)) {
             throw new TransactionException("Gas Limit is not valid");
         }
-        if (gasPrice != null && gasPrice.getBytes().length > DATAWORD_LENGTH) {
+        if (CommonParsingUtils.exceedsDataWordLength(gasPrice)) {
             throw new TransactionException("Gas Price is not valid");
         }
-        if (value.getBytes().length > DATAWORD_LENGTH) {
+        if (CommonParsingUtils.exceedsDataWordLength(value)) {
             throw new TransactionException("Value is not valid");
+        }
+        if (usesRskip546FeeFields()) {
+            if (CommonParsingUtils.exceedsDataWordLength(maxPriorityFeePerGas)) {
+                throw new TransactionException("Gas Price is not valid");
+            }
+            if (CommonParsingUtils.exceedsDataWordLength(maxFeePerGas)) {
+                throw new TransactionException("Gas Price is not valid");
+            }
         }
         if (getSignature() != null) {
             if (BigIntegers.asUnsignedByteArray(signature.getR()).length > DATAWORD_LENGTH) {

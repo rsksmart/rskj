@@ -275,11 +275,13 @@ public final class TransactionInput {
         if (gasLimitBytes == null) {
             return DEFAULT_GAS_LIMIT;
         }
+        CommonParsingUtils.requireDataWordBytes(gasLimitBytes, "Gas Limit is not valid");
         return new BigInteger(1, gasLimitBytes);
     }
 
     static byte[] resolveNonceBytes(@Nullable byte[] nonceBytes, boolean defaultToZero) {
         if (nonceBytes != null) {
+            CommonParsingUtils.requireDataWordBytes(nonceBytes, "Nonce is not valid");
             return nonceBytes;
         }
         return defaultToZero ? BigInteger.ZERO.toByteArray() : null;

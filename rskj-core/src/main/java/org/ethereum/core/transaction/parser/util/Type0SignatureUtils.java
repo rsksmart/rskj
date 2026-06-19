@@ -48,6 +48,12 @@ public final class Type0SignatureUtils {
 
         byte[] r = txFields.get(rIndex).getRLPData();
         byte[] s = txFields.get(sIndex).getRLPData();
+        if (r != null) {
+            CommonParsingUtils.requireSignatureComponent(r, "Signature R is not valid");
+        }
+        if (s != null) {
+            CommonParsingUtils.requireSignatureComponent(s, "Signature S is not valid");
+        }
 
         return new SignedSignature(chainId, ECDSASignature.fromComponents(r, s, getRealV(v)));
     }

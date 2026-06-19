@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLP;
@@ -73,11 +74,15 @@ public class TransactionResultDTO {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String yParity;
 
-    // Type 2 only fields (omitted from JSON for legacy and Type 1)
+    // Type 2 / Type 4 fields (omitted from JSON for legacy and Type 1)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String maxPriorityFeePerGas;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String maxFeePerGas;
+
+    // Type 4 only field (omitted from JSON for other transaction types)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private List<AuthorizationListEntryDTO> authorizationList;
 
     public TransactionResultDTO(Block b, Integer index, Transaction tx, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
         type = tx.getTypeAsHex();
@@ -137,7 +142,38 @@ public class TransactionResultDTO {
                     maxFeePerGas = HexUtils.toQuantityJsonHex(maxF.getBytes());
                 }
             }
+        } else if (txType == TransactionType.TYPE_4) {
+            chainId = HexUtils.toQuantityJsonHex(tx.getChainId() & 0xFF);
+            yParity = HexUtils.toQuantityJsonHex(tx.getEncodedV() & 0xFF);
+            Coin maxP = tx.getMaxPriorityFeePerGas();
+            Coin maxF = tx.getMaxFeePerGas();
+            if (maxP != null) {
+                maxPriorityFeePerGas = HexUtils.toQuantityJsonHex(maxP.getBytes());
+            }
+            if (maxF != null) {
+                maxFeePerGas = HexUtils.toQuantityJsonHex(maxF.getBytes());
+            }
+            authorizationList = encodeAuthorizationList(tx.getAuthorizationList());
         }
+    }
+
+    private static List<AuthorizationListEntryDTO> encodeAuthorizationList(List<SetCodeAuthorization> auths) {
+        if (auths == null || auths.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<AuthorizationListEntryDTO> result = new ArrayList<>(auths.size());
+        for (SetCodeAuthorization auth : auths) {
+            ECDSASignature signature = auth.getSignature();
+            result.add(new AuthorizationListEntryDTO(
+                    HexUtils.toQuantityJsonHex(auth.getChainId()),
+                    auth.getAddress().toJsonString(),
+                    HexUtils.toQuantityJsonHex(auth.getNonce()),
+                    HexUtils.toQuantityJsonHex(signature.getV() - Transaction.LOWER_REAL_V),
+                    HexUtils.toQuantityJsonHex(signature.getR()),
+                    HexUtils.toQuantityJsonHex(signature.getS())
+            ));
+        }
+        return result;
     }
 
     /**
@@ -199,6 +235,58 @@ public class TransactionResultDTO {
 
         public List<String> getStorageKeys() {
             return storageKeys;
+        }
+    }
+
+    /**
+     * Represents a single entry in a Type 4 set-code authorization list.
+     */
+    public static class AuthorizationListEntryDTO {
+        private final String chainId;
+        private final String address;
+        private final String nonce;
+        private final String yParity;
+        private final String r;
+        private final String s;
+
+        public AuthorizationListEntryDTO(
+                String chainId,
+                String address,
+                String nonce,
+                String yParity,
+                String r,
+                String s
+        ) {
+            this.chainId = chainId;
+            this.address = address;
+            this.nonce = nonce;
+            this.yParity = yParity;
+            this.r = r;
+            this.s = s;
+        }
+
+        public String getChainId() {
+            return chainId;
+        }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public String getNonce() {
+            return nonce;
+        }
+
+        public String getYParity() {
+            return yParity;
+        }
+
+        public String getR() {
+            return r;
+        }
+
+        public String getS() {
+            return s;
         }
     }
 
@@ -280,5 +368,9 @@ public class TransactionResultDTO {
 
     public String getMaxFeePerGas() {
         return maxFeePerGas;
+    }
+
+    public List<AuthorizationListEntryDTO> getAuthorizationList() {
+        return authorizationList;
     }
 }

@@ -28,12 +28,15 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Rskip546TestSupport;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -202,6 +205,53 @@ class TransactionResultDTOTest {
         Assertions.assertTrue(json.has("maxFeePerGas"), "maxFeePerGas must appear in JSON for Type 2");
         Assertions.assertTrue(json.has("maxPriorityFeePerGas"),
                 "maxPriorityFeePerGas must appear in JSON for Type 2 tx");
+    }
+
+    @Test
+    void type4Transaction_populatesAuthorizationListAndMaxFeeFields() throws Exception {
+        RskAddress delegate = new RskAddress("0x0000000000000000000000000000000000000003");
+        SetCodeAuthorization auth1 = Rskip545TestSupport.createSignedAuthorization(
+                new org.ethereum.crypto.ECKey(), delegate, BigInteger.ZERO, (byte) 33);
+        SetCodeAuthorization auth2 = Rskip545TestSupport.createSignedAuthorization(
+                new org.ethereum.crypto.ECKey(), delegate, BigInteger.ZERO, (byte) 33);
+        SetCodeAuthorization auth3 = Rskip545TestSupport.createSignedAuthorization(
+                new org.ethereum.crypto.ECKey(), delegate, BigInteger.ZERO, (byte) 33);
+        Transaction tx = Rskip545TestSupport.unsignedType4WithAuthorizations(
+                new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"),
+                BigInteger.valueOf(100_000),
+                List.of(auth1, auth2, auth3));
+        tx.sign(new byte[]{});
+
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 0, tx, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertEquals("0x4", dto.getType());
+        Assertions.assertNotNull(dto.getAuthorizationList());
+        Assertions.assertEquals(3, dto.getAuthorizationList().size());
+        Assertions.assertEquals(delegate.toJsonString(), dto.getAuthorizationList().get(0).getAddress());
+        Assertions.assertNotNull(dto.getMaxFeePerGas());
+        Assertions.assertNotNull(dto.getMaxPriorityFeePerGas());
+        Assertions.assertNotNull(dto.getChainId());
+
+        JsonNode json = new ObjectMapper().valueToTree(dto);
+        Assertions.assertTrue(json.has("authorizationList"));
+        Assertions.assertEquals(3, json.get("authorizationList").size());
+    }
+
+    @Test
+    void legacyTransaction_omitsAuthorizationListFromDtoAndJson() throws Exception {
+        Transaction originalTransaction = CallTransaction.createCallTransaction(
+                1, 0, 100000000000000L,
+                new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
+                CallTransaction.Function.fromSignature("get"), chainId);
+        originalTransaction.sign(new byte[]{});
+
+        TransactionResultDTO dto = new TransactionResultDTO(null, null, originalTransaction, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertNull(dto.getAuthorizationList());
+        JsonNode json = new ObjectMapper().valueToTree(dto);
+        Assertions.assertFalse(json.has("authorizationList"));
     }
 
     @Test

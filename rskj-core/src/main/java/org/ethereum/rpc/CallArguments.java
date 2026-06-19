@@ -239,7 +239,7 @@ public class CallArguments {
     }
 
     public void setAccessList(List<AccessListEntry> accessList) {
-        this.accessList = accessList;
+        this.accessList = accessList == null ? null : List.copyOf(accessList);
     }
 
     public List<AuthorizationListEntry> getAuthorizationList() {
@@ -247,7 +247,7 @@ public class CallArguments {
     }
 
     public void setAuthorizationList(List<AuthorizationListEntry> authorizationList) {
-        this.authorizationList = authorizationList;
+        this.authorizationList = authorizationList == null ? null : List.copyOf(authorizationList);
     }
 
     public String getInput() {

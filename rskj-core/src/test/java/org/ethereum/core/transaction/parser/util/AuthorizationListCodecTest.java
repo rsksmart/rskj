@@ -301,6 +301,28 @@ class AuthorizationListCodecTest {
     }
 
     @Test
+    void decodeTuple_nonceAtMaxUint64MinusOne_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 2,
+                RLP.encodeBigInteger(BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE)));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("2^64"),
+                "Expected nonce range error, got: " + ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_nonceAtMaxAllowedValue_succeeds() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger maxAllowed = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.valueOf(2));
+        byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeBigInteger(maxAllowed));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+        assertEquals(maxAllowed, new BigInteger(1, decoded.getNonce()));
+    }
+
+    @Test
     void decodeTuple_missingSignatureComponents_throws() {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
         byte[] tuple = rebuildTupleField(reference, 4, RLP.encodeElement(null));
@@ -337,6 +359,51 @@ class AuthorizationListCodecTest {
         SetCodeAuthorization decoded = AuthorizationListCodec.decodeTuple(RLP.decode2(tuple).get(0));
 
         assertEquals((byte) 0, (byte) (decoded.getSignature().getV() - Transaction.LOWER_REAL_V));
+    }
+
+    @Test
+    void decodeTuple_oversizeNonceBytes_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] oversizeNonce = new byte[33];
+        oversizeNonce[0] = 0x00;
+        oversizeNonce[32] = 0x01;
+        byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeElement(oversizeNonce));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("Authorization nonce is not valid"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_oversizeChainIdBytes_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] oversizeChainId = new byte[33];
+        oversizeChainId[0] = 0x01;
+        byte[] tuple = rebuildTupleField(reference, 0, RLP.encodeElement(oversizeChainId));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("Authorization chain_id is not valid"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_oversizeSignatureR_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] oversizeR = new byte[33];
+        oversizeR[0] = 0x01;
+        byte[] tuple = rebuildTupleField(reference, 4, RLP.encodeElement(oversizeR));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("Authorization signature r is not valid"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_oversizeSignatureS_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] oversizeS = new byte[33];
+        oversizeS[0] = 0x01;
+        byte[] tuple = rebuildTupleField(reference, 5, RLP.encodeElement(oversizeS));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("Authorization signature s is not valid"), ex.getMessage());
     }
 
     @Test

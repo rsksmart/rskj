@@ -51,6 +51,8 @@ public final class TypedTransactionCodec {
         if (r == null || s == null) {
             throw new IllegalArgumentException("Typed transaction signature is incomplete");
         }
+        CommonParsingUtils.requireSignatureComponent(r, "Signature R is not valid");
+        CommonParsingUtils.requireSignatureComponent(s, "Signature S is not valid");
         byte yParity = parseTypedYParity(txFields.get(yParityIndex).getRLPData());
         byte v = (byte) (LOWER_REAL_V + yParity);
         byte chainId = parseTypedTxChainId(txFields.get(chainIdIndex).getRLPData());

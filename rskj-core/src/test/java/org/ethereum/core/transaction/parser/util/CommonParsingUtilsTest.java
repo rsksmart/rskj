@@ -161,6 +161,49 @@ class CommonParsingUtilsTest {
         assertEquals(coin, CommonParsingUtils.defaultValue(coin));
     }
 
+    @Test
+    void requireSignatureComponent_signPaddedFullWord_doesNotThrow() {
+        byte[] component = new byte[33];
+        component[1] = (byte) 0x80;
+
+        assertDoesNotThrow(() -> CommonParsingUtils.requireSignatureComponent(component, "Signature R is not valid"));
+    }
+
+    @Test
+    void requireSignatureComponent_exceedsLimit_throws() {
+        byte[] oversize = new byte[33];
+        oversize[0] = 0x01;
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> CommonParsingUtils.requireSignatureComponent(oversize, "Signature R is not valid"));
+        assertTrue(ex.getMessage().contains("Signature R is not valid"));
+    }
+
+    @Test
+    void requireDataWordBytes_exceedsLimit_throws() {
+        byte[] oversize = new byte[33];
+        oversize[0] = 0x01;
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> CommonParsingUtils.requireDataWordBytes(oversize, "Nonce is not valid"));
+        assertTrue(ex.getMessage().contains("Nonce is not valid"));
+    }
+
+    @Test
+    void requireDataWordBytes_withinLimit_doesNotThrow() {
+        assertDoesNotThrow(() -> CommonParsingUtils.requireDataWordBytes(new byte[32], "Nonce is not valid"));
+    }
+
+    @Test
+    void requireDataWordCoin_exceedsLimit_throws() {
+        byte[] oversize = new byte[33];
+        oversize[0] = 0x01;
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> CommonParsingUtils.requireDataWordCoin(new Coin(oversize), "Gas Price is not valid"));
+        assertTrue(ex.getMessage().contains("Gas Price is not valid"));
+    }
+
     // -------------------------------------------------------------------------
     // requireFieldCount
     // -------------------------------------------------------------------------

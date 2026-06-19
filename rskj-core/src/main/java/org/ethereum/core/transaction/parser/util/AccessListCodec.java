@@ -17,10 +17,14 @@
  */
 package org.ethereum.core.transaction.parser.util;
 
+import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
+import org.ethereum.core.Transaction;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 
 import java.util.Collections;
 import java.util.List;
@@ -45,11 +49,50 @@ public final class AccessListCodec {
             return EMPTY_ACCESS_LIST_RLP.clone();
         }
         try {
-            RLP.decode2(accessListBytes);
+            RLPElement decoded = RLP.decode2(accessListBytes).get(0);
+            if (!(decoded instanceof RLPList accessList)) {
+                throw new IllegalArgumentException("Access list must be an RLP list");
+            }
+            validateAccessListEntries(accessList);
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new IllegalArgumentException("Access list contains invalid RLP encoding", e);
         }
         return accessListBytes;
+    }
+
+    private static void validateAccessListEntries(RLPList accessList) {
+        for (int i = 0; i < accessList.size(); i++) {
+            RLPElement entryElement = accessList.get(i);
+            byte[] entryBytes = entryElement.getRLPRawData();
+            if (entryBytes == null || entryBytes.length == 0) {
+                throw new IllegalArgumentException("Access list entry at index " + i + " must not be empty");
+            }
+            RLPList entry = RLP.decodeList(entryBytes);
+            if (entry.size() != 2) {
+                throw new IllegalArgumentException("Access list entry at index " + i + " must have exactly 2 elements");
+            }
+
+            byte[] addressData = entry.get(0).getRLPData();
+            if (addressData == null || addressData.length != RskAddress.LENGTH_IN_BYTES) {
+                throw new IllegalArgumentException(
+                        "Access list entry address at index " + i + " must be exactly 20 bytes");
+            }
+
+            byte[] storageKeyListBytes = entry.get(1).getRLPRawData();
+            if (storageKeyListBytes == null) {
+                throw new IllegalArgumentException("Access list storage keys at index " + i + " must be an RLP list");
+            }
+            RLPList storageKeys = RLP.decodeList(storageKeyListBytes);
+            for (int k = 0; k < storageKeys.size(); k++) {
+                byte[] keyData = storageKeys.get(k).getRLPData();
+                if (keyData == null || keyData.length != Transaction.DATAWORD_LENGTH) {
+                    throw new IllegalArgumentException(
+                            "Access list storage key at entry " + i + ", key " + k + " must be exactly 32 bytes");
+                }
+            }
+        }
     }
 
     /**

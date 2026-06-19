@@ -19,10 +19,12 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.ethereum.config.Constants;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AuthorizationListCodec;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.ByteUtil;
@@ -45,8 +47,37 @@ public final class Rskip545TestSupport {
     public static final Coin DEFAULT_MAX_FEE = Coin.valueOf(100);
     public static final byte[] EMPTY_ACCESS_LIST = new byte[]{(byte) 0xc0};
     public static final byte[] EMPTY_AUTH_LIST = RLP.encodeList();
+    public static final RskAddress DEFAULT_DELEGATE =
+            new RskAddress("0x0000000000000000000000000000000000000003");
 
     private Rskip545TestSupport() {
+    }
+
+    /**
+     * Signs an authorization tuple per RSKIP-545: {@code keccak256(0x05 || rlp([chainId, address, nonce]))}.
+     */
+    public static SetCodeAuthorization createSignedAuthorization(
+            ECKey authorityKey,
+            RskAddress delegate,
+            BigInteger nonce,
+            byte chainId
+    ) {
+        byte[] rlpEncoded = RLP.encodeList(
+                RLP.encodeBigInteger(BigInteger.valueOf(chainId & 0xFF)),
+                RLP.encodeElement(delegate.getBytes()),
+                RLP.encodeElement(nonce.toByteArray())
+        );
+        byte[] payload = new byte[1 + rlpEncoded.length];
+        payload[0] = 0x05;
+        System.arraycopy(rlpEncoded, 0, payload, 1, rlpEncoded.length);
+        ECDSASignature signature =
+                ECDSASignature.fromSignature(authorityKey.sign(HashUtil.keccak256(payload)));
+        return new SetCodeAuthorization(
+                BigInteger.valueOf(chainId & 0xFF),
+                delegate,
+                nonce.toByteArray(),
+                signature
+        );
     }
 
     public static SetCodeAuthorization minimalAuthorization(byte chainId) {
@@ -191,6 +222,60 @@ public final class Rskip545TestSupport {
             fields[i] = (i == fieldIndex) ? encodedField : reencodeAuthTupleField(inner.get(i), i);
         }
         return RLP.encodeList(RLP.encodeList(fields[0], fields[1], fields[2], fields[3], fields[4], fields[5]));
+    }
+
+    /**
+     * Builds a valid authorization then replaces {@code s} with the high-{@code s} malleated counterpart
+     * ({@code n - s}), which must be rejected per EIP-2 during tuple processing.
+     */
+    public static SetCodeAuthorization createHighSAuthorization(
+            ECKey authorityKey,
+            RskAddress delegate,
+            BigInteger nonce,
+            byte chainId
+    ) {
+        SetCodeAuthorization valid = createSignedAuthorization(authorityKey, delegate, nonce, chainId);
+        BigInteger highS = Constants.getSECP256K1N().subtract(valid.getSignature().getS());
+        ECDSASignature highSig = ECDSASignature.fromComponents(
+                org.bouncycastle.util.BigIntegers.asUnsignedByteArray(valid.getSignature().getR()),
+                org.bouncycastle.util.BigIntegers.asUnsignedByteArray(highS),
+                valid.getSignature().getV()
+        );
+        return new SetCodeAuthorization(valid.getChainId(), valid.getAddress(), valid.getNonce(), highSig);
+    }
+
+    /**
+     * Signs an authorization for a chain ID that is not accepted by RSKIP-545 (not 0/30/31/33).
+     */
+    public static SetCodeAuthorization createWrongChainIdAuthorization(
+            ECKey authorityKey,
+            RskAddress delegate,
+            BigInteger nonce
+    ) {
+        return createSignedAuthorization(authorityKey, delegate, nonce, (byte) 99);
+    }
+
+    public static Transaction unsignedType4WithAuthorizations(
+            RskAddress to,
+            BigInteger gasLimit,
+            List<SetCodeAuthorization> authorizations
+    ) {
+        byte[][] fields = new byte[][]{
+                RLP.encodeByte(REGTEST_CHAIN_ID),
+                RLP.encodeElement(BigInteger.ZERO.toByteArray()),
+                RLP.encodeCoinNonNullZero(DEFAULT_MAX_PRIORITY),
+                RLP.encodeCoinNonNullZero(DEFAULT_MAX_FEE),
+                RLP.encodeElement(gasLimit.toByteArray()),
+                RLP.encodeRskAddress(to),
+                RLP.encodeBigInteger(BigInteger.ZERO),
+                RLP.encodeElement(new byte[0]),
+                EMPTY_ACCESS_LIST,
+                AuthorizationListCodec.encodeList(authorizations),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null)
+        };
+        return Transaction.fromRaw(buildRawType4Bytes(fields));
     }
 
     private static byte[] reencodeAuthTupleField(org.ethereum.util.RLPElement element, int fieldIndex) {

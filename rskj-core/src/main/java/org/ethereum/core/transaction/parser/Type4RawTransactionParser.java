@@ -80,6 +80,7 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
         Coin maxPriorityFeePerGas = Objects.requireNonNull(RLP.parseCoinNonNullZero(txFields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData()), "Type 4 maxPriorityFeePerGas");
         Coin maxFeePerGas = Objects.requireNonNull(RLP.parseCoinNonNullZero(txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData()), "Type 4 maxFeePerGas");
         validateFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
+        CommonParsingUtils.requireTypedScalarFields(nonce, gasLimit, value, maxPriorityFeePerGas, maxFeePerGas);
 
         ParsedType4Transaction parsed = new ParsedType4Transaction(
                 typePrefix,
@@ -133,6 +134,8 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
                 "Type 4 transaction requires maxFeePerGas"
         );
         validateFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
+        byte[] gasLimitBytes = CommonParsingUtils.unsignedBytes(gasLimit);
+        CommonParsingUtils.requireTypedScalarFields(nonce, gasLimitBytes, value, maxPriorityFeePerGas, maxFeePerGas);
 
         var authorizationList = input.authorizationList();
         if (authorizationList == null || authorizationList.isEmpty()) {
@@ -142,7 +145,7 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
         ParsedType4Transaction parsed = new ParsedType4Transaction(
                 typePrefix,
                 nonce,
-                gasLimit.toByteArray(),
+                gasLimitBytes,
                 receiveAddress,
                 value,
                 data,

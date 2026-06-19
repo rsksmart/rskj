@@ -1,0 +1,193 @@
+comment
+
+// RSKIP-545 DSL Test: Type 4 (EIP-7702 set-code) transactions in Rootstock
+//
+// Self-auth nonce rule: sender nonce is incremented before auth processing, so when the
+// authority is the sender the auth tuple nonce must equal (account nonce after sender increment).
+//
+// Revoke leaves CODE_FOR_CLEANING on the authority; that account cannot originate further
+// Type 4 transactions until delegation is restored (see Rskip545DslTest).
+
+end
+
+account_new acc1 10000000000000000000
+account_new acc2 1000000
+account_new authority 10000000000000000000
+
+# Test 1: Self-authorization (tx nonce 0, auth nonce 1)
+
+transaction_build txType4SelfAuth
+    sender acc1
+    receiver acc2
+    value 0
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc1 0000000000000000000000000000000000000003 1
+    build
+
+block_build b01
+    parent g00
+    transactions txType4SelfAuth
+    build
+
+block_connect b01
+
+assert_best b01
+assert_tx_success txType4SelfAuth
+
+# Test 2: Value transfer with re-authorization (acc1 nonce 2, auth nonce 3)
+
+transaction_build txType4WithValue
+    sender acc1
+    nonce 2
+    receiver acc2
+    value 1000
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc1 0000000000000000000000000000000000000003 3
+    build
+
+block_build b02
+    parent b01
+    transactions txType4WithValue
+    build
+
+block_connect b02
+
+assert_best b02
+assert_tx_success txType4WithValue
+
+# Test 3: chainId 0 wildcard (acc1 nonce 4, auth nonce 5)
+
+transaction_build txType4ChainId0
+    sender acc1
+    nonce 4
+    receiver acc2
+    value 0
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc1 0000000000000000000000000000000000000003 5 00
+    build
+
+block_build b03
+    parent b02
+    transactions txType4ChainId0
+    build
+
+block_connect b03
+
+assert_best b03
+assert_tx_success txType4ChainId0
+
+# Test 4: External authority (acc1 nonce 6; authority auth nonce 0)
+
+transaction_build txType4ExternalAuth
+    sender acc1
+    nonce 6
+    receiver acc2
+    value 0
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization authority 0000000000000000000000000000000000000003 0
+    build
+
+block_build b04
+    parent b03
+    transactions txType4ExternalAuth
+    build
+
+block_connect b04
+
+assert_best b04
+assert_tx_success txType4ExternalAuth
+
+# Test 5: Type 4 receipt scenario (acc1 nonce 7, auth nonce 8)
+
+transaction_build txType4Receipt
+    sender acc1
+    nonce 7
+    receiver acc2
+    value 0
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc1 0000000000000000000000000000000000000003 8
+    build
+
+block_build b05
+    parent b04
+    transactions txType4Receipt
+    build
+
+block_connect b05
+
+assert_best b05
+assert_tx_success txType4Receipt
+
+# Test 6: Mixed block — legacy from acc1, Type 4 from authority (still delegated)
+
+transaction_build txMixedLegacy
+    sender acc1
+    nonce 9
+    receiver acc2
+    value 100
+    gas 21000
+    build
+
+transaction_build txMixedType4
+    sender authority
+    nonce 1
+    receiver acc2
+    value 200
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization authority 0000000000000000000000000000000000000003 2
+    build
+
+block_build b06
+    parent b05
+    transactions txMixedLegacy txMixedType4
+    build
+
+block_connect b06
+
+assert_best b06
+assert_tx_success txMixedLegacy
+assert_tx_success txMixedType4
+
+# Test 7: Revoke acc1 delegation (acc1 nonce 10, auth nonce 11) — last acc1 Type 4
+
+transaction_build txType4Revoke
+    sender acc1
+    nonce 10
+    receiver acc2
+    value 0
+    gas 100000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization acc1 00 11
+    build
+
+block_build b07
+    parent b06
+    transactions txType4Revoke
+    build
+
+block_connect b07
+
+assert_best b07
+assert_tx_success txType4Revoke
+
+assert_best b07

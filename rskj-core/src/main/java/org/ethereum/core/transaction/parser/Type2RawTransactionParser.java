@@ -66,7 +66,7 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
         Coin maxFeePerGas = Objects.requireNonNull(RLP.parseCoinNonNullZero(txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData()), "Type 2 maxFeePerGas");
 
         validateFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
-
+        CommonParsingUtils.requireTypedScalarFields(nonce, gasLimit, value, maxPriorityFeePerGas, maxFeePerGas);
 
         return new ParsedType2Transaction(
                 typePrefix,
@@ -112,11 +112,13 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
         );
 
         validateFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
+        byte[] gasLimitBytes = CommonParsingUtils.unsignedBytes(gasLimit);
+        CommonParsingUtils.requireTypedScalarFields(nonce, gasLimitBytes, value, maxPriorityFeePerGas, maxFeePerGas);
 
         return new ParsedType2Transaction(
                 typePrefix,
                 nonce,
-                gasLimit.toByteArray(),
+                gasLimitBytes,
                 receiveAddress,
                 value,
                 data,

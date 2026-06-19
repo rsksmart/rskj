@@ -4,7 +4,14 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockHeaderExtension;
+import org.ethereum.core.BlockHeaderExtensionV1;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Transaction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +20,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class BodyResponseMessageTest {
 
@@ -106,20 +115,20 @@ class BodyResponseMessageTest {
                 .transactionType((byte) 1)
                 .build());
 
-//        transactions.add(new TransactionBuilder()
-//                .sender(acbuilder.name("rskSender").build())
-//                .receiver(acbuilder.name("rskReceiver").build())
-//                .value(BigInteger.valueOf(3000)).nonce(0)
-//                .transactionType((byte) 2)
-//                .rskSubtype((byte) 5)
-//                .build());
+        transactions.add(new TransactionBuilder()
+                .sender(acbuilder.name("rskSender").build())
+                .receiver(acbuilder.name("rskReceiver").build())
+                .value(BigInteger.valueOf(3000)).nonce(0)
+                .transactionType((byte) 2)
+                .rskSubtype((byte) 5)
+                .build());
 
         List<BlockHeader> uncles = new ArrayList<>();
         BodyResponseMessage message = new BodyResponseMessage(42, transactions, uncles, null);
         BodyResponseMessage decoded = encodeAndDecodeMessage(message);
 
         Assertions.assertNotNull(decoded);
-        Assertions.assertEquals(2, decoded.getTransactions().size());
+        Assertions.assertEquals(3, decoded.getTransactions().size());
 
         Transaction decodedLegacy = decoded.getTransactions().get(0);
         Assertions.assertTrue(decodedLegacy.getTypePrefix().isLegacy());
@@ -130,10 +139,10 @@ class BodyResponseMessageTest {
         Assertions.assertFalse(decodedType1.getTypePrefix().isRskNamespace());
         Assertions.assertArrayEquals(transactions.get(1).getHash().getBytes(), decodedType1.getHash().getBytes());
 
-//        Transaction decodedRsk = decoded.getTransactions().get(2);
-//        Assertions.assertTrue(decodedRsk.getTypePrefix().isRskNamespace());
-//        Assertions.assertEquals((byte) 5, decodedRsk.getTypePrefix().subtype());
-//        Assertions.assertArrayEquals(transactions.get(2).getHash().getBytes(), decodedRsk.getHash().getBytes());
+        Transaction decodedRsk = decoded.getTransactions().get(2);
+        Assertions.assertTrue(decodedRsk.getTypePrefix().isRskNamespace());
+        Assertions.assertEquals((byte) 5, decodedRsk.getTypePrefix().subtype());
+        Assertions.assertArrayEquals(transactions.get(2).getHash().getBytes(), decodedRsk.getHash().getBytes());
     }
 
     @Test

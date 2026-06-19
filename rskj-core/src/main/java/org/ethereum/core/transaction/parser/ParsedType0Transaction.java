@@ -24,7 +24,6 @@ import org.ethereum.core.TransactionTypePrefix;
 import java.util.Arrays;
 import java.util.Objects;
 
-//Temporal implementation of ParsedType0Transaction, to be used until we have the full implementation of Transaction aligned with AA
 public record ParsedType0Transaction(
         TransactionTypePrefix typePrefix,
         byte[] nonce,
@@ -38,7 +37,7 @@ public record ParsedType0Transaction(
 
     public ParsedType0Transaction {
         Objects.requireNonNull(typePrefix, "typePrefix cannot be null");
-     //   Objects.requireNonNull(nonce, "nonce cannot be null");
+        Objects.requireNonNull(nonce, "nonce cannot be null");
         Objects.requireNonNull(gasPrice, "gasPrice cannot be null");
         Objects.requireNonNull(gasLimit, "gasLimit cannot be null");
         Objects.requireNonNull(receiveAddress, "receiveAddress cannot be null");

@@ -129,9 +129,17 @@ public final class AuthorizationListCodec {
             throw new IllegalArgumentException("Authorization list tuple must have " + TUPLE_FIELD_COUNT + " fields");
         }
 
-        BigInteger chainId = decodeChainId(inner.get(0).getRLPData());
+        byte[] chainIdData = inner.get(0).getRLPData();
+        CommonParsingUtils.requireDataWordBytes(chainIdData, "Authorization chain_id is not valid");
+        BigInteger chainId = decodeChainId(chainIdData);
         RskAddress address = decodeAddress(inner.get(1).getRLPData());
-        byte[] nonce = ByteUtil.cloneBytes(inner.get(2).getRLPData());
+        byte[] nonce = inner.get(2).getRLPData();
+        if (nonce == null) {
+            nonce = new byte[0];
+        } else {
+            nonce = ByteUtil.cloneBytes(nonce);
+        }
+        CommonParsingUtils.requireDataWordBytes(nonce, "Authorization nonce is not valid");
         validateNonceValue(decodeNonce(nonce));
         byte yParity = parseYParity(inner.get(3).getRLPData());
         byte[] r = inner.get(4).getRLPData();
@@ -139,6 +147,8 @@ public final class AuthorizationListCodec {
         if (r == null || s == null) {
             throw new IllegalArgumentException("Authorization list tuple signature is incomplete");
         }
+        CommonParsingUtils.requireSignatureComponent(r, "Authorization signature r is not valid");
+        CommonParsingUtils.requireSignatureComponent(s, "Authorization signature s is not valid");
         byte v = (byte) (Transaction.LOWER_REAL_V + yParity);
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
 
@@ -167,7 +177,11 @@ public final class AuthorizationListCodec {
             throw invalidParamError("Authorization list entry missing s at index " + index);
         }
 
-        BigInteger chainId = HexUtils.strHexOrStrNumberToBigInteger(entry.getChainId());
+        byte[] chainIdBytes = HexUtils.strHexOrStrNumberToByteArray(entry.getChainId());
+        CommonParsingUtils.requireDataWordBytes(chainIdBytes, "Authorization chain_id is not valid");
+        BigInteger chainId = chainIdBytes == null || chainIdBytes.length == 0
+                ? BigInteger.ZERO
+                : new BigInteger(1, chainIdBytes);
         byte[] addressBytes = HexUtils.stringHexToByteArray(entry.getAddress());
         if (addressBytes == null || addressBytes.length != RskAddress.LENGTH_IN_BYTES) {
             throw invalidParamError(
@@ -177,6 +191,7 @@ public final class AuthorizationListCodec {
         if (nonce == null) {
             nonce = new byte[0];
         }
+        CommonParsingUtils.requireDataWordBytes(nonce, "Authorization nonce is not valid");
         validateNonceValue(decodeNonce(nonce));
         byte yParity = parseYParity(HexUtils.strHexOrStrNumberToByteArray(entry.getYParity()));
         byte[] r = HexUtils.stringHexToByteArray(entry.getR());
@@ -184,6 +199,8 @@ public final class AuthorizationListCodec {
         if (r == null || s == null) {
             throw invalidParamError("Authorization list entry signature r/s must be hex at index " + index);
         }
+        CommonParsingUtils.requireSignatureComponent(r, "Authorization signature r is not valid");
+        CommonParsingUtils.requireSignatureComponent(s, "Authorization signature s is not valid");
         byte v = (byte) (Transaction.LOWER_REAL_V + yParity);
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
 

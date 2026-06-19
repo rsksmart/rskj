@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link AccessListCodec}.
@@ -71,6 +72,59 @@ class AccessListCodecTest {
         byte[] garbage = new byte[]{(byte) 0xff, 0x01, 0x02};
         assertThrows(IllegalArgumentException.class,
                 () -> AccessListCodec.defaultAccessListBytes(garbage));
+    }
+
+    @Test
+    void defaultAccessListBytes_wrongAddressLength_throws() {
+        byte[] accessList = RLP.encodeList(
+                RLP.encodeList(
+                        RLP.encodeElement(new byte[21]),
+                        RLP.encodeList()
+                )
+        );
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> AccessListCodec.defaultAccessListBytes(accessList));
+        assertTrue(ex.getMessage().contains("20 bytes"), ex.getMessage());
+    }
+
+    @Test
+    void defaultAccessListBytes_wrongStorageKeyLength_throws() {
+        byte[] accessList = RLP.encodeList(
+                RLP.encodeList(
+                        RLP.encodeElement(new byte[20]),
+                        RLP.encodeList(RLP.encodeElement(new byte[16]))
+                )
+        );
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> AccessListCodec.defaultAccessListBytes(accessList));
+        assertTrue(ex.getMessage().contains("32 bytes"), ex.getMessage());
+    }
+
+    @Test
+    void defaultAccessListBytes_malformedEntryShape_throws() {
+        byte[] accessList = RLP.encodeList(RLP.encodeList(RLP.encodeElement(new byte[20])));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> AccessListCodec.defaultAccessListBytes(accessList));
+        assertTrue(ex.getMessage().contains("2 elements"), ex.getMessage());
+    }
+
+    @Test
+    void defaultAccessListBytes_validEntry_passes() {
+        byte[] address = new byte[20];
+        address[19] = 0x01;
+        byte[] storageKey = new byte[32];
+        storageKey[0] = 0x02;
+        byte[] accessList = RLP.encodeList(
+                RLP.encodeList(
+                        RLP.encodeElement(address),
+                        RLP.encodeList(RLP.encodeElement(storageKey))
+                )
+        );
+
+        assertDoesNotThrow(() -> AccessListCodec.defaultAccessListBytes(accessList));
     }
 
     @Test

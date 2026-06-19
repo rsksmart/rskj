@@ -46,14 +46,24 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
     @Override
     public ParsedType0Transaction parse(TransactionTypePrefix typePrefix, RLPList txFields) {
         CommonParsingUtils.requireFieldCount(txFields, LEGACY_FIELD_COUNT, "Legacy-format");
-         return new ParsedType0Transaction(
+
+        byte[] nonce = CommonParsingUtils.nullToEmpty(txFields.get(NONCE_INDEX).getRLPData());
+        Coin gasPrice = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(GAS_PRICE_INDEX).getRLPData()));
+        byte[] gasLimit = CommonParsingUtils.nullToEmpty(txFields.get(GAS_LIMIT_INDEX).getRLPData());
+        RskAddress receiveAddress = CommonParsingUtils.defaultAddress(
+                RLP.parseRskAddress(txFields.get(RECEIVE_ADDRESS_INDEX).getRLPData()));
+        Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(txFields.get(VALUE_INDEX).getRLPData()));
+        byte[] data = CommonParsingUtils.nullToEmpty(txFields.get(DATA_INDEX).getRLPData());
+        CommonParsingUtils.requireLegacyScalarFields(nonce, gasPrice, gasLimit, value);
+
+        return new ParsedType0Transaction(
                 typePrefix,
-                CommonParsingUtils.nullToEmpty(txFields.get(NONCE_INDEX).getRLPData()),
-                CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(GAS_PRICE_INDEX).getRLPData())),
-                CommonParsingUtils.nullToEmpty(txFields.get(GAS_LIMIT_INDEX).getRLPData()),
-                CommonParsingUtils.defaultAddress(RLP.parseRskAddress(txFields.get(RECEIVE_ADDRESS_INDEX).getRLPData())),
-                CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(txFields.get(VALUE_INDEX).getRLPData())),
-                CommonParsingUtils.nullToEmpty(txFields.get(DATA_INDEX).getRLPData()),
+                nonce,
+                gasPrice,
+                gasLimit,
+                receiveAddress,
+                value,
+                data,
                 Type0SignatureUtils.parseType0SignatureState(txFields, V_INDEX, R_INDEX, S_INDEX)
         );
     }
@@ -73,12 +83,14 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
         RskAddress receiveAddress = CommonParsingUtils.defaultAddress(input.receiveAddress());
         byte[] data = CommonParsingUtils.nullToEmpty(input.data());
         byte chainId = TransactionInput.resolveLegacyChainId(input.chainId(), defaultChainId);
+        byte[] gasLimitBytes = CommonParsingUtils.unsignedBytes(gasLimit);
+        CommonParsingUtils.requireLegacyScalarFields(nonce, gasPrice, gasLimitBytes, value);
 
         return new ParsedType0Transaction(
                 typePrefix,
                 nonce,
                 gasPrice,
-                gasLimit.toByteArray(),
+                gasLimitBytes,
                 receiveAddress,
                 value,
                 data,

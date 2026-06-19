@@ -20,6 +20,8 @@ package org.ethereum.core.transaction.parser.util;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
+import org.bouncycastle.util.BigIntegers;
+import org.ethereum.core.Transaction;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
@@ -29,6 +31,61 @@ import java.util.function.Supplier;
 public final class CommonParsingUtils {
 
     private CommonParsingUtils() {}
+
+    public static boolean exceedsDataWordLength(byte[] field) {
+        return field != null && field.length > Transaction.DATAWORD_LENGTH;
+    }
+
+    public static boolean exceedsDataWordLength(Coin coin) {
+        return coin != null && coin.getBytes().length > Transaction.DATAWORD_LENGTH;
+    }
+
+    public static void requireDataWordBytes(byte[] field, String message) {
+        if (exceedsDataWordLength(field)) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    public static void requireDataWordCoin(Coin coin, String message) {
+        if (exceedsDataWordLength(coin)) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    public static void requireSignatureComponent(byte[] component, String message) {
+        if (component == null) {
+            return;
+        }
+        requireDataWordBytes(unsignedBytes(new BigInteger(1, component)), message);
+    }
+
+    /**
+     * Converts a non-negative {@link BigInteger} to its minimal unsigned byte encoding.
+     * Unlike {@link BigInteger#toByteArray()}, this does not add a leading sign byte when the
+     * magnitude occupies a full 32-byte data word.
+     */
+    public static byte[] unsignedBytes(BigInteger value) {
+        if (value == null || value.signum() == 0) {
+            return new byte[0];
+        }
+        return BigIntegers.asUnsignedByteArray(value);
+    }
+
+    public static void requireLegacyScalarFields(byte[] nonce, Coin gasPrice, byte[] gasLimit, Coin value) {
+        requireDataWordBytes(nonce, "Nonce is not valid");
+        requireDataWordCoin(gasPrice, "Gas Price is not valid");
+        requireDataWordBytes(gasLimit, "Gas Limit is not valid");
+        requireDataWordCoin(value, "Value is not valid");
+    }
+
+    public static void requireTypedScalarFields(byte[] nonce, byte[] gasLimit, Coin value, Coin... feeFields) {
+        requireDataWordBytes(nonce, "Nonce is not valid");
+        requireDataWordBytes(gasLimit, "Gas Limit is not valid");
+        requireDataWordCoin(value, "Value is not valid");
+        for (Coin feeField : feeFields) {
+            requireDataWordCoin(feeField, "Gas Price is not valid");
+        }
+    }
 
     public static void requireFieldCount(RLPList txFields, int expected, String typeName) {
         if (txFields.size() != expected) {
