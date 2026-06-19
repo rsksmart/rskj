@@ -671,7 +671,7 @@ public class VM {
 
     protected void doBALANCE() {
         if (computeGas) {
-            gasCost = GasCost.BALANCE;
+            gasCost = GasCost.getBalance(program.getActivations());
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -832,7 +832,7 @@ public class VM {
 
     protected void doEXTCODEHASH() {
         if (computeGas) {
-            gasCost = GasCost.EXT_CODE_HASH;
+            gasCost = GasCost.getExtCodeHash(program.getActivations());
             spendOpCodeGas();
         }
 
@@ -1297,7 +1297,7 @@ public class VM {
 
     protected void doSLOAD() {
         if (computeGas) {
-            gasCost = GasCost.SLOAD;
+            gasCost = GasCost.getSload(program.getActivations());
             spendOpCodeGas();
         }
         // EXECUTION PHASE
