@@ -145,6 +145,12 @@ class ReleaseTransactionBuilderTest {
         provider.save();
     }
 
+    private static void setUpFlyoverUtxosInStorage(List<UTXO> flyoverUtxos, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider) {
+        for (UTXO flyoverUtxo : flyoverUtxos) {
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, provider);
+        }
+    }
+
     /**
      * Mainnet {@link Wallet} + {@link ReleaseTransactionBuilder#buildSvpFundTransaction} success and
      * failure paths (UTXO selection, dust, invalid flyover prefix, null args).
@@ -1262,9 +1268,7 @@ class ReleaseTransactionBuilderTest {
                     .withScriptPubKey(flyoverOutputScript)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
-                for (UTXO flyoverUtxo : flyoverUtxos) {
-                    setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, bridgeStorageProvider);
-                }
+                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider);
 
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(flyoverUtxos);
 
@@ -1431,10 +1435,7 @@ class ReleaseTransactionBuilderTest {
                     .withValue(Coin.COIN)
                     .withScriptPubKey(flyoverOutputScript)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
-
-                for (UTXO flyoverUtxo : flyoverUtxos) {
-                    setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, bridgeStorageProvider);
-                }
+                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider);
 
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(flyoverUtxos);
 
@@ -1601,10 +1602,7 @@ class ReleaseTransactionBuilderTest {
                     .withValue(Coin.COIN)
                     .withScriptPubKey(flyoverOutputScript)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
-
-                for (UTXO flyoverUtxo : flyoverUtxos) {
-                    setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, bridgeStorageProvider);
-                }
+                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider);
 
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(flyoverUtxos);
 
