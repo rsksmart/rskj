@@ -182,7 +182,7 @@ class ReleaseTransactionBuilderTest {
         }
 
         @Test
-        void buildSvpFundTransaction_withAFederationWithEnoughUTXOsForTheSvpFundTransaction_shouldReturnACorrectSvpFundTx() {
+        void buildSvpFundTransaction_withAFederationWithEnoughUTXOs_shouldCreateSvpFundTx() {
             // Arrange
             List<UTXO> utxos = UTXOBuilder.builder()
                 .withScriptPubKey(activeP2shErpFederation.getP2SHScript())
@@ -201,7 +201,7 @@ class ReleaseTransactionBuilderTest {
         }
 
         @Test
-        void buildSvpFundTransaction_withAFederationWithOneFlyoverUTXOForTheSvpFundTransaction_shouldReturnACorrectSvpFundTx() {
+        void buildSvpFundTransaction_withAFederationWithOneFlyoverUTXO_shouldCreateSvpFundTx() {
             // Arrange
             Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
                 FLYOVER_DERIVATION_HASH,
