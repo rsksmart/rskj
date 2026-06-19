@@ -25,7 +25,7 @@ Names are one of the most important parts of readability.
 * Names should describe domain concepts, not implementation details.
 * Include units in names when working with monetary values, time values, or measurements, such as `amountInSatoshis`, `amountInWei`, `amountInRBTC`, `timeoutMillis`, and `blockHeight`.
 * Never rely on implicit monetary units.
-* Avoid vague suffixes such as Data, Info, Manager, Processor, or Helper unless they accurately describe the abstraction.
+* Avoid vague suffixes such as `Data`, `Info`, `Manager`, `Processor`, or `Helper` unless they accurately describe the abstraction.
 * Avoid names that differ only in small or unclear ways.
 * Prefer searchable names over overly short names.
 * Prefer pronounceable names.
