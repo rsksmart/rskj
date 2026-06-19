@@ -155,4 +155,4 @@ Functions are the first line of organization in a program.
 * Avoid wildcard imports; prefer explicit imports to keep diffs predictable and consistent with the existing codebase.
 * Prefer constructor injection and immutable fields for new code when practical.
 * Validate required constructor arguments.
-* Avoid nullable returns where Optional<T> would make behavior clearer.
+* Avoid nullable returns where `Optional<T>` would make behavior clearer.
