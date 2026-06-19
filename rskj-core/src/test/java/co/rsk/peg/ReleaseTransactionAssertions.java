@@ -142,7 +142,10 @@ public class ReleaseTransactionAssertions {
         List<TransactionInput> inputs = tx.getInputs();
         assertEquals(expectedInputCount, inputs.size());
         assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-            tx, federationRedeemScript, federationUtxos);
+            tx,
+            federationRedeemScript,
+            federationUtxos
+        );
         assertSelectedUtxosBelongToTheInputs(selectedUtxos, inputs);
     }
 
@@ -154,8 +157,7 @@ public class ReleaseTransactionAssertions {
         List<UTXO> selectedUtxos) {
         List<TransactionInput> inputs = tx.getInputs();
         assertEquals(expectedInputCount, inputs.size());
-        assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(
-            tx, federationRedeemScript, federationUtxos);
+        assertReleaseTxInputsHasProperFormatAndBelongsToP2shErpFederation(tx, federationRedeemScript, federationUtxos);
         assertSelectedUtxosBelongToTheInputs(selectedUtxos, inputs);
     }
 
@@ -221,7 +223,10 @@ public class ReleaseTransactionAssertions {
         List<TransactionInput> inputs = migrationTransaction.getInputs();
         assertEquals(retiringFederationUtxos.size(), inputs.size());
         assertReleaseTxInputsHasProperFormatAndBelongsToStandardMultisigFederation(
-            migrationTransaction, retiringFederationRedeemScript, retiringFederationUtxos);
+            migrationTransaction,
+            retiringFederationRedeemScript,
+            retiringFederationUtxos
+        );
         assertEquals(retiringFederationUtxos, selectedUtxos);
         assertSelectedUtxosBelongToTheInputs(selectedUtxos, inputs);
     }
