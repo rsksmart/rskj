@@ -62,7 +62,7 @@ class ProcessFundsMigrationTest {
     private static final Coin FEE_PER_KB = Coin.valueOf(8_000L);
     private static final Coin FUNDS_BELOW_MIGRATION_THRESHOLD = FEE_PER_KB.divide(2);
     private static final long ACTIVE_FEDERATION_CREATION_BLOCK = 100L;
-    private static final Sha256Hash BTC_TX_HASH_FLYOVER_UTXO = createHash(ABOVE_MAX_INPUTS_PER_PEGOUT_TX + 1);
+    private static final Sha256Hash BTC_TX_HASH_FLYOVER_UTXO = createHash(10_000);
     private static final Keccak256 FLYOVER_DERIVATION_HASH = BRIDGE_CONSTANTS.getProposedFederationFlyoverPrefix();
     private final Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
 
