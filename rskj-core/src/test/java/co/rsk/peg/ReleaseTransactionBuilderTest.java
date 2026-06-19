@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertBtcTxVersionIs1;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertBtcTxVersionIs2;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertDestinationAddress;
@@ -65,7 +66,6 @@ import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.P2shErpFederationBuilder;
 import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
 import co.rsk.peg.federation.StandardMultiSigFederationBuilder;
-import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.test.builders.UTXOBuilder;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -131,23 +131,9 @@ class ReleaseTransactionBuilderTest {
         return BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
     }
 
-    private static void setUpFlyoverUtxoInStorage(UTXO flyoverUtxo, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider) {
-        Sha256Hash flyoverTransactionHash = flyoverUtxo.getHash();
-        provider.markFlyoverDerivationHashAsUsed(flyoverTransactionHash, FLYOVER_DERIVATION_HASH);
-
-        FlyoverFederationInformation flyoverFederationInformation =
-            new FlyoverFederationInformation(
-                FLYOVER_DERIVATION_HASH,
-                federation.getP2SHScript().getPubKeyHash(),
-                flyoverOutputScript.getPubKeyHash()
-            );
-        provider.setFlyoverFederationInformation(flyoverFederationInformation);
-        provider.save();
-    }
-
     private static void setUpFlyoverUtxosInStorage(List<UTXO> flyoverUtxos, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider) {
         for (UTXO flyoverUtxo : flyoverUtxos) {
-            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, provider);
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, provider, FLYOVER_DERIVATION_HASH);
         }
     }
 
@@ -213,7 +199,7 @@ class ReleaseTransactionBuilderTest {
                 .withScriptPubKey(flyoverOutputScript)
                 .withTransactionHash(BTC_TX_HASH_FLYOVER_UTXO)
                 .build();
-            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, activeP2shErpFederation, bridgeStorageProvider);
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, activeP2shErpFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             List<UTXO> utxos = List.of(flyoverUtxo);
 
             // Act
@@ -976,7 +962,7 @@ class ReleaseTransactionBuilderTest {
                 .withScriptPubKey(flyoverOutputScript)
                 .withTransactionHash(BTC_TX_HASH_FLYOVER_UTXO)
                 .build();
-            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, bridgeStorageProvider);
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             federationUTXOs.add(flyoverUtxo);
         }
 
@@ -2747,7 +2733,7 @@ class ReleaseTransactionBuilderTest {
                 .withScriptPubKey(flyoverOutputScript)
                 .withTransactionHash(BTC_TX_HASH_FLYOVER_UTXO)
                 .build();
-            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider);
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             retiringFederationUTXOs.add(flyoverUtxo);
         }
 
@@ -3586,7 +3572,7 @@ class ReleaseTransactionBuilderTest {
                 .withScriptPubKey(flyoverOutputScript)
                 .withTransactionHash(BTC_TX_HASH_FLYOVER_UTXO)
                 .build();
-            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, bridgeStorageProvider);
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             federationUTXOs.add(flyoverUtxo);
         }
 
