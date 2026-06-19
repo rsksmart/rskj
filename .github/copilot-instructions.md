@@ -26,11 +26,11 @@ Review-ability is the top priority. Use these heuristics to flag PRs and to auth
 - **Review the change holistically.** Do not raise a finding that another part of the same diff already prevents (e.g. an early validation guard that makes a later branch unreachable). Read the whole changed unit before commenting on a line in isolation.
 - **PR template compliance.** PRs targeted at **master** or a branch ending with the **-rc** sufix must populate every section of `.github/pull_request_template.md`: **Description**, **Motivation and Context**, **How Has This Been Tested?**, **Types of changes**, **Checklist**. The checklist contains a deliberate "Requires Activation Code (Hard Fork)" question — flag PRs that touch consensus, validators, VM, peg, mining, or activation logic without answering it.
 
-Java style conventions are defined in `CONTRIBUTING.md`. Key reviewer-facing rules: prefer constructor injection with `private final` fields and `Objects.requireNonNull` on parameters; prefer `Optional<T>` over `null` (annotate nullable returns with `@Nullable`); always brace control structures; treat `@VisibleForTesting` as a design smell and flag accordingly. Standard Java naming applies: lowercase packages, `UpperCamelCase` classes, `lowerCamelCase` members, `CONSTANT_CASE` for static final immutable constants.
+Java style conventions are defined in `./CONTRIBUTING.md`. Key reviewer-facing rules: prefer constructor injection with `private final` fields and `Objects.requireNonNull` on parameters; prefer `Optional<T>` over `null` (annotate nullable returns with `@Nullable`); always brace control structures; treat `@VisibleForTesting` as a design smell and flag accordingly. Standard Java naming applies: lowercase packages, `UpperCamelCase` classes, `lowerCamelCase` members, `CONSTANT_CASE` for static final immutable constants.
 
 ## Rootstock coding principles
 
-Follow the coding principles documented in `docs/coding-principles.md`.
+Follow the coding principles documented in `./coding-principles.md`.
 
 Key rules:
 
