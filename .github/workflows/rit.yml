@@ -27,6 +27,8 @@ jobs:
     name: Rootstock Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      SLACK_NOTIFICATION_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
     steps:
       - name: Checkout Repository # Step needed to access the PR description using github CLI
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
@@ -136,7 +138,7 @@ jobs:
           repo-owner: ${{ env.REPO_OWNER }}
 
       - name: Send Slack Notification on Success
-        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart'
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart' && env.SLACK_NOTIFICATION_TOKEN != ''
         uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           token: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
@@ -170,7 +172,7 @@ jobs:
                   url: "${{ env.BUILD_URL }}"
 
       - name: Send Slack Notification on Failure
-        if: failure() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart'
+        if: failure() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart' && env.SLACK_NOTIFICATION_TOKEN != ''
         uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           token: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
