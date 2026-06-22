@@ -115,9 +115,16 @@ jobs:
           # gate centrally; a dispatch/infra error already exited non-zero above.
           CONCLUSION=""
           for _ in $(seq 1 100); do
+            # `|| true`: read returns non-zero on EOF-without-newline, which would
+            # otherwise abort the step under `set -e`. A transient API error makes
+            # the substitution empty, leaving STATUS unset → another tick.
+            STATUS=""; RUN_CONCLUSION=""
             read -r STATUS RUN_CONCLUSION < <(gh api "repos/$REPO/actions/runs/$RUN_ID" \
-              --jq '"\(.status) \(.conclusion // "unknown")"' 2>/dev/null || echo " ")
-            if [ "$STATUS" = "completed" ]; then
+              --jq '"\(.status) \(.conclusion // "unknown")"' 2>/dev/null || echo " ") || true
+            # Require a non-empty conclusion too: a completed run always has one, so
+            # an empty value here means a partial/blipped read — keep polling rather
+            # than recording a spurious empty conclusion (which reports as a failure).
+            if [ "$STATUS" = "completed" ] && [ -n "$RUN_CONCLUSION" ]; then
               CONCLUSION="$RUN_CONCLUSION"
               break
             fi

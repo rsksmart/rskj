@@ -133,6 +133,18 @@ jobs:
           else
             RSKJ_REF="$HEAD_REF"
           fi
+
+          # Validate the ref before it is ever interpolated, unencoded, into a
+          # gh api REST path below (resolve_ref's "repos/<repo>/branches/$RSKJ_REF").
+          # github.head_ref and the workflow_dispatch inputs are caller-controlled
+          # and the dispatch inputs are not constrained to real ref syntax, so a
+          # crafted value containing ".." or path/control characters could redirect
+          # the call. Restrict to safe git-ref characters and reject any "..".
+          case "$RSKJ_REF" in
+            ""|*..*) echo "::error::invalid rskj ref (empty or contains '..'): '$RSKJ_REF'"; exit 1;;
+            *[!A-Za-z0-9._/-]*) echo "::error::rskj ref has disallowed characters: '$RSKJ_REF'"; exit 1;;
+          esac
+
           echo "rskj_ref=$RSKJ_REF" >> "$GITHUB_OUTPUT"
           echo "rskj ref: $RSKJ_REF"
 
@@ -239,12 +251,15 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           RSKJ_REF: ${{ needs.resolve.outputs.rskj_ref }}
           JSONRPC_CONCLUSION: ${{ needs.json_rpc.outputs.conclusion }}
+          JSONRPC_RESULT: ${{ needs.json_rpc.result }}
           JSONRPC_URL: ${{ needs.json_rpc.outputs.run_url }}
           JSONRPC_REF: ${{ needs.resolve.outputs.jsonrpc_ref }}
           HARDHAT_CONCLUSION: ${{ needs.hardhat.outputs.conclusion }}
+          HARDHAT_RESULT: ${{ needs.hardhat.result }}
           HARDHAT_URL: ${{ needs.hardhat.outputs.run_url }}
           HARDHAT_REF: ${{ needs.resolve.outputs.hardhat_ref }}
           K6_CONCLUSION: ${{ needs.k6.outputs.conclusion }}
+          K6_RESULT: ${{ needs.k6.result }}
           K6_URL: ${{ needs.k6.outputs.run_url }}
           K6_REF: ${{ needs.resolve.outputs.k6_ref }}
         run: |
@@ -266,6 +281,16 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+
+          # A suite that failed at the infrastructure level (token mint, dispatch,
+          # runner death, job timeout) never wrote its `conclusion` output, so it
+          # arrives here empty. Fall back to the job's own result (failure /
+          # cancelled / skipped) so the table and gate report the real outcome
+          # instead of a blank "no result" cell. The gate already fails closed on a
+          # non-success value either way; this only makes the report honest.
+          JSONRPC_CONCLUSION="${JSONRPC_CONCLUSION:-$JSONRPC_RESULT}"
+          HARDHAT_CONCLUSION="${HARDHAT_CONCLUSION:-$HARDHAT_RESULT}"
+          K6_CONCLUSION="${K6_CONCLUSION:-$K6_RESULT}"
 
           emoji() {
             case "$1" in
