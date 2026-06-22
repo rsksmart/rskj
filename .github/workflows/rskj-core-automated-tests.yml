@@ -152,21 +152,30 @@ jobs:
           # test repo, run that branch there (so companion test/workflow changes on
           # a same-named branch are exercised); otherwise fall back to main. An
           # explicit dispatch input always wins.
+          #
+          # Only a genuine 404 (branch absent) may fall back to main. Any OTHER API
+          # failure (rate limit, auth, transient outage) must fail the job loudly:
+          # silently treating it as "branch missing" would exercise the wrong test
+          # branch and could produce a false-green run. Result is returned in
+          # RESOLVED so the non-404 error path can `return 1` and trip `set -e` in
+          # the caller (an `exit` inside $(...) would only leave the subshell).
           resolve_ref() {
             repo="$1"; override="$2"
             if [ -n "$override" ]; then
-              echo "$override"; return
+              RESOLVED="$override"; return 0
             fi
-            if gh api "repos/$repo/branches/$RSKJ_REF" >/dev/null 2>&1; then
-              echo "$RSKJ_REF"
-            else
-              echo "main"
+            if err=$(gh api "repos/$repo/branches/$RSKJ_REF" 2>&1 >/dev/null); then
+              RESOLVED="$RSKJ_REF"; return 0
             fi
+            case "$err" in
+              *"HTTP 404"*) RESOLVED="main"; return 0;;
+              *) echo "::error::could not check for branch '$RSKJ_REF' in $repo (non-404 API error; refusing to fall back to main): $err"; return 1;;
+            esac
           }
 
-          JSONRPC_REF=$(resolve_ref rsksmart/rskj-json-rpc-tests "$IN_JSONRPC")
-          HARDHAT_REF=$(resolve_ref rsksmart/rskj-hardhat-tests "$IN_HARDHAT")
-          K6_REF=$(resolve_ref rsksmart/rskj-k6-tests "$IN_K6")
+          resolve_ref rsksmart/rskj-json-rpc-tests "$IN_JSONRPC"; JSONRPC_REF="$RESOLVED"
+          resolve_ref rsksmart/rskj-hardhat-tests "$IN_HARDHAT"; HARDHAT_REF="$RESOLVED"
+          resolve_ref rsksmart/rskj-k6-tests "$IN_K6"; K6_REF="$RESOLVED"
 
           {
             echo "jsonrpc_ref=$JSONRPC_REF"
