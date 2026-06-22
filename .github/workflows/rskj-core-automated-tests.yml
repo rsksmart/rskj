@@ -9,7 +9,7 @@ name: RSKj Core Automated Tests
 #   K6        -> rsksmart/rskj-k6-tests           (rskj-k6-tests.yml,           test_branch)
 #
 # gh / gh api / jq are all preinstalled on the runner. Cross-repo auth uses a
-# short-lived GitHub App installation token, minted per job via
+# short-lived GitHub App installation token, minted per suite via
 # actions/create-github-app-token (pinned by SHA) from the GH_APP_ID /
 # GH_APP_PRIVATE_KEY secrets. The App is installed on the three test repos with
 # Actions: read+write and Contents: read. Each token lasts ~1h, which comfortably
@@ -17,6 +17,11 @@ name: RSKj Core Automated Tests
 # and timeout-minutes keeps every job inside the token's lifetime). The dispatch
 # endpoint returns the created run id directly via return_run_details=true
 # (GitHub, 2026-02-19), so there is no poll-to-correlate step.
+#
+# The per-suite dispatch + poll logic lives once in the reusable workflow
+# .github/workflows/_dispatch-suite.yml; the three suite jobs below are thin
+# callers that pass per-suite parameters and expose its conclusion / run_url
+# outputs to the report job.
 
 on:
   pull_request:
@@ -158,222 +163,56 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "json-rpc ref: $JSONRPC_REF | hardhat ref: $HARDHAT_REF | k6 ref: $K6_REF"
 
+  # Each suite is dispatched + polled by the shared reusable workflow
+  # (_dispatch-suite.yml); these jobs only supply the per-suite parameters. Their
+  # named outputs (conclusion / run_url) are consumed by the report job below.
   json_rpc:
     name: JSON-RPC suite
     needs: resolve
     if: needs.resolve.outputs.has_token == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 55
-    outputs:
-      conclusion: ${{ steps.run.outputs.conclusion }}
-      run_url: ${{ steps.run.outputs.run_url }}
-    steps:
-      # Fresh ~1h token, minted at job start so the full dispatch + poll fits inside it.
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.GH_APP_ID }}
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-          owner: rsksmart
-          repositories: rskj-json-rpc-tests
-      - name: Dispatch and wait
-        id: run
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          REPO: rsksmart/rskj-json-rpc-tests
-          WORKFLOW: rskj-json-rpc-tests.yml
-          TEST_INPUT: test_branch
-          RSKJ_REF: ${{ needs.resolve.outputs.rskj_ref }}
-          TEST_REF: ${{ needs.resolve.outputs.jsonrpc_ref }}
-        run: |
-          set -euo pipefail
-          INPUTS=$(jq -n --arg rskj "$RSKJ_REF" --arg k "$TEST_INPUT" --arg v "$TEST_REF" \
-            '{rskj_branch: $rskj, ($k): $v}')
-          BODY=$(jq -n --arg ref "$TEST_REF" --argjson inputs "$INPUTS" \
-            '{ref: $ref, inputs: $inputs, return_run_details: true}')
-          echo "Dispatching $WORKFLOW in $REPO on '$TEST_REF' (rskj_branch=$RSKJ_REF)"
-          if ! RESP=$(printf '%s' "$BODY" | gh api -X POST \
-              "repos/$REPO/actions/workflows/$WORKFLOW/dispatches" --input -); then
-            echo "::error::failed to dispatch $WORKFLOW in $REPO"
-            exit 1
-          fi
-          RUN_ID=$(jq -r '.workflow_run_id // empty' <<<"$RESP" 2>/dev/null || true)
-          RUN_URL=$(jq -r '.html_url // empty' <<<"$RESP" 2>/dev/null || true)
-          if [ -z "$RUN_ID" ]; then
-            echo "::error::dispatch did not return a run id; response: $RESP"
-            exit 1
-          fi
-          echo "run_url=$RUN_URL" >> "$GITHUB_OUTPUT"
-          echo "Triggered run $RUN_ID — $RUN_URL"
-          # If THIS job is cancelled (e.g. concurrency cancel-in-progress on a new
-          # push), cancel the downstream run too so it doesn't keep burning minutes
-          # orphaned. Best-effort: fires on the grace-period INT/TERM during the
-          # poll's sleep below; a hard kill may skip it.
-          cleanup() { gh api -X POST "repos/$REPO/actions/runs/$RUN_ID/cancel" >/dev/null 2>&1 || true; }
-          trap cleanup INT TERM
-          # Wait for completion by polling the run status (keyed on the id we
-          # already hold — deterministic, unlike `gh run watch`, which can race a
-          # just-created run). 100 * 30s = 50m of polling, kept under this job's
-          # timeout-minutes: 55 so a run finishing near the top of the window is
-          # still observed (not falsely marked timed_out) and the conclusion can be
-          # written to $GITHUB_OUTPUT before the job is killed mid-step. status and
-          # conclusion are read in one API call per tick. A downstream *test* failure
-          # is captured as the conclusion (not raised here) so the report job can
-          # gate centrally; a dispatch/infra error already exited non-zero above.
-          CONCLUSION=""
-          for _ in $(seq 1 100); do
-            read -r STATUS RUN_CONCLUSION < <(gh api "repos/$REPO/actions/runs/$RUN_ID" \
-              --jq '"\(.status) \(.conclusion // "unknown")"' 2>/dev/null || echo " ")
-            if [ "$STATUS" = "completed" ]; then
-              CONCLUSION="$RUN_CONCLUSION"
-              break
-            fi
-            sleep 30
-          done
-          [ -n "$CONCLUSION" ] || CONCLUSION="timed_out"
-          echo "conclusion=$CONCLUSION" >> "$GITHUB_OUTPUT"
-          echo "JSON-RPC suite concluded: $CONCLUSION"
+    uses: ./.github/workflows/_dispatch-suite.yml
+    with:
+      name: JSON-RPC
+      repo: rskj-json-rpc-tests
+      workflow: rskj-json-rpc-tests.yml
+      test_input: test_branch
+      rskj_ref: ${{ needs.resolve.outputs.rskj_ref }}
+      test_ref: ${{ needs.resolve.outputs.jsonrpc_ref }}
+    secrets:
+      app_id: ${{ secrets.GH_APP_ID }}
+      app_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
   hardhat:
     name: Hardhat suite
     needs: resolve
     if: needs.resolve.outputs.has_token == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 55
-    outputs:
-      conclusion: ${{ steps.run.outputs.conclusion }}
-      run_url: ${{ steps.run.outputs.run_url }}
-    steps:
-      # Fresh ~1h token, minted at job start so the full dispatch + poll fits inside it.
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.GH_APP_ID }}
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-          owner: rsksmart
-          repositories: rskj-hardhat-tests
-      - name: Dispatch and wait
-        id: run
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          REPO: rsksmart/rskj-hardhat-tests
-          WORKFLOW: rskj-smart-contract-tests.yml
-          TEST_INPUT: hardhat_branch
-          RSKJ_REF: ${{ needs.resolve.outputs.rskj_ref }}
-          TEST_REF: ${{ needs.resolve.outputs.hardhat_ref }}
-        run: |
-          set -euo pipefail
-          INPUTS=$(jq -n --arg rskj "$RSKJ_REF" --arg k "$TEST_INPUT" --arg v "$TEST_REF" \
-            '{rskj_branch: $rskj, ($k): $v}')
-          BODY=$(jq -n --arg ref "$TEST_REF" --argjson inputs "$INPUTS" \
-            '{ref: $ref, inputs: $inputs, return_run_details: true}')
-          echo "Dispatching $WORKFLOW in $REPO on '$TEST_REF' (rskj_branch=$RSKJ_REF)"
-          if ! RESP=$(printf '%s' "$BODY" | gh api -X POST \
-              "repos/$REPO/actions/workflows/$WORKFLOW/dispatches" --input -); then
-            echo "::error::failed to dispatch $WORKFLOW in $REPO"
-            exit 1
-          fi
-          RUN_ID=$(jq -r '.workflow_run_id // empty' <<<"$RESP" 2>/dev/null || true)
-          RUN_URL=$(jq -r '.html_url // empty' <<<"$RESP" 2>/dev/null || true)
-          if [ -z "$RUN_ID" ]; then
-            echo "::error::dispatch did not return a run id; response: $RESP"
-            exit 1
-          fi
-          echo "run_url=$RUN_URL" >> "$GITHUB_OUTPUT"
-          echo "Triggered run $RUN_ID — $RUN_URL"
-          # Cancel the downstream run if THIS job is cancelled (see JSON-RPC job).
-          cleanup() { gh api -X POST "repos/$REPO/actions/runs/$RUN_ID/cancel" >/dev/null 2>&1 || true; }
-          trap cleanup INT TERM
-          # Deterministic poll on the id we hold (see JSON-RPC job): `gh run watch`
-          # can return early on a transient error or a just-created run, leaving
-          # .conclusion null → coerced to "unknown" → a false gate failure even
-          # though the run later succeeds. 100 * 30s = 50m, kept under timeout-minutes: 55;
-          # status and conclusion are read in one API call per tick.
-          CONCLUSION=""
-          for _ in $(seq 1 100); do
-            read -r STATUS RUN_CONCLUSION < <(gh api "repos/$REPO/actions/runs/$RUN_ID" \
-              --jq '"\(.status) \(.conclusion // "unknown")"' 2>/dev/null || echo " ")
-            if [ "$STATUS" = "completed" ]; then
-              CONCLUSION="$RUN_CONCLUSION"
-              break
-            fi
-            sleep 30
-          done
-          [ -n "$CONCLUSION" ] || CONCLUSION="timed_out"
-          echo "conclusion=$CONCLUSION" >> "$GITHUB_OUTPUT"
-          echo "Hardhat suite concluded: $CONCLUSION"
+    uses: ./.github/workflows/_dispatch-suite.yml
+    with:
+      name: Hardhat
+      repo: rskj-hardhat-tests
+      workflow: rskj-smart-contract-tests.yml
+      test_input: hardhat_branch
+      rskj_ref: ${{ needs.resolve.outputs.rskj_ref }}
+      test_ref: ${{ needs.resolve.outputs.hardhat_ref }}
+    secrets:
+      app_id: ${{ secrets.GH_APP_ID }}
+      app_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
   k6:
     name: K6 suite
     needs: resolve
     if: needs.resolve.outputs.has_token == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 55
-    outputs:
-      conclusion: ${{ steps.run.outputs.conclusion }}
-      run_url: ${{ steps.run.outputs.run_url }}
-    steps:
-      # Fresh ~1h token, minted at job start so the full dispatch + poll fits inside it.
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.GH_APP_ID }}
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-          owner: rsksmart
-          repositories: rskj-k6-tests
-      - name: Dispatch and wait
-        id: run
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          REPO: rsksmart/rskj-k6-tests
-          WORKFLOW: rskj-k6-tests.yml
-          TEST_INPUT: test_branch
-          RSKJ_REF: ${{ needs.resolve.outputs.rskj_ref }}
-          TEST_REF: ${{ needs.resolve.outputs.k6_ref }}
-        run: |
-          set -euo pipefail
-          INPUTS=$(jq -n --arg rskj "$RSKJ_REF" --arg k "$TEST_INPUT" --arg v "$TEST_REF" \
-            '{rskj_branch: $rskj, ($k): $v}')
-          BODY=$(jq -n --arg ref "$TEST_REF" --argjson inputs "$INPUTS" \
-            '{ref: $ref, inputs: $inputs, return_run_details: true}')
-          echo "Dispatching $WORKFLOW in $REPO on '$TEST_REF' (rskj_branch=$RSKJ_REF)"
-          if ! RESP=$(printf '%s' "$BODY" | gh api -X POST \
-              "repos/$REPO/actions/workflows/$WORKFLOW/dispatches" --input -); then
-            echo "::error::failed to dispatch $WORKFLOW in $REPO"
-            exit 1
-          fi
-          RUN_ID=$(jq -r '.workflow_run_id // empty' <<<"$RESP" 2>/dev/null || true)
-          RUN_URL=$(jq -r '.html_url // empty' <<<"$RESP" 2>/dev/null || true)
-          if [ -z "$RUN_ID" ]; then
-            echo "::error::dispatch did not return a run id; response: $RESP"
-            exit 1
-          fi
-          echo "run_url=$RUN_URL" >> "$GITHUB_OUTPUT"
-          echo "Triggered run $RUN_ID — $RUN_URL"
-          # Cancel the downstream run if THIS job is cancelled (see JSON-RPC job).
-          cleanup() { gh api -X POST "repos/$REPO/actions/runs/$RUN_ID/cancel" >/dev/null 2>&1 || true; }
-          trap cleanup INT TERM
-          # Deterministic poll on the id we hold (see JSON-RPC job): `gh run watch`
-          # can return early on a transient error or a just-created run, leaving
-          # .conclusion null → coerced to "unknown" → a false gate failure even
-          # though the run later succeeds. 100 * 30s = 50m, kept under timeout-minutes: 55;
-          # status and conclusion are read in one API call per tick.
-          CONCLUSION=""
-          for _ in $(seq 1 100); do
-            read -r STATUS RUN_CONCLUSION < <(gh api "repos/$REPO/actions/runs/$RUN_ID" \
-              --jq '"\(.status) \(.conclusion // "unknown")"' 2>/dev/null || echo " ")
-            if [ "$STATUS" = "completed" ]; then
-              CONCLUSION="$RUN_CONCLUSION"
-              break
-            fi
-            sleep 30
-          done
-          [ -n "$CONCLUSION" ] || CONCLUSION="timed_out"
-          echo "conclusion=$CONCLUSION" >> "$GITHUB_OUTPUT"
-          echo "K6 suite concluded: $CONCLUSION"
+    uses: ./.github/workflows/_dispatch-suite.yml
+    with:
+      name: K6
+      repo: rskj-k6-tests
+      workflow: rskj-k6-tests.yml
+      test_input: test_branch
+      rskj_ref: ${{ needs.resolve.outputs.rskj_ref }}
+      test_ref: ${{ needs.resolve.outputs.k6_ref }}
+    secrets:
+      app_id: ${{ secrets.GH_APP_ID }}
+      app_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
   report:
     name: Report
