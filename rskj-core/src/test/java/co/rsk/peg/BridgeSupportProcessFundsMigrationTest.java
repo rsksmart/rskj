@@ -491,7 +491,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
                 // Assert
-                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpectedForRSKIP455(
+                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
                     ONE_MIGRATION_TX_COUNT,
@@ -517,7 +517,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
                 // Assert
-                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpectedForRSKIP455(
+                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
                     ONE_MIGRATION_TX_COUNT,
@@ -543,7 +543,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
                 // Assert
-                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpectedForRSKIP455(
+                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
                     ONE_MIGRATION_TX_COUNT,
@@ -569,7 +569,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
                 // Assert — call 1: 150 inputs, 1 UTXO remaining
-                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpectedForRSKIP455(
+                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
                     ONE_MIGRATION_TX_COUNT,
@@ -584,7 +584,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
                 // Assert — call 2: cumulative 151 inputs across 2 txs, 0 UTXOs remain
-                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpectedForRSKIP455(
+                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
                     TWO_MIGRATION_TXS_COUNT,
@@ -611,7 +611,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
                 // Assert — call 1
-                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpectedForRSKIP455(
+                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
                     retiringFederation, retiringUtxos, ONE_MIGRATION_TX_COUNT, MAX_INPUTS_PER_MIGRATION_TX
                 );
                 assertRetiringFederationStillPresent();
@@ -622,7 +622,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
 
                 // Assert — call 2
-                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpectedForRSKIP455(
+                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
                     retiringFederation, retiringUtxos, TWO_MIGRATION_TXS_COUNT, MAX_INPUTS_PER_MIGRATION_TX * 2
                 );
                 assertRetiringFederationStillPresent();
@@ -634,7 +634,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Assert — call 3
                 int threeMigrationTxsCount = 3;
-                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpectedForRSKIP455(
+                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
                     retiringFederation, retiringUtxos, threeMigrationTxsCount, totalUtxos
                 );
                 assertRetiringFederationStillPresent();
@@ -657,7 +657,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
                 // Assert
-                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpectedForRSKIP455(
+                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
                     ONE_MIGRATION_TX_COUNT,
@@ -683,7 +683,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
                 // Assert
-                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpectedForRSKIP455(
+                assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
                     ONE_MIGRATION_TX_COUNT,
@@ -693,11 +693,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertRetiringUtxosCount(retiringUtxos.size() - MAX_INPUTS_PER_MIGRATION_TX);
             }
 
-            private static int getExpectedInputCountInTxForRSKIP455(int remainingExpectedInputs) {
+            private static int getExpectedInputCountInTx(int remainingExpectedInputs) {
                 return Math.min(MAX_INPUTS_PER_MIGRATION_TX, remainingExpectedInputs);
             }
 
-            private void assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpectedForRSKIP455(
+            private void assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
                 Federation retiringFederation,
                 List<UTXO> retiringFederationUtxos,
                 int expectedMigrationTxCount,
@@ -711,7 +711,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 for (BtcTransaction migrationTransaction : migrationTransactions) {
                     assertBtcTxVersionIs2(migrationTransaction);
 
-                    int expectedInputCountInTx = getExpectedInputCountInTxForRSKIP455(remainingExpectedInputs);
+                    int expectedInputCountInTx = getExpectedInputCountInTx(remainingExpectedInputs);
                     List<UTXO> selectedUtxosInTx = getSelectedUtxos(migrationTransaction, retiringFederationUtxos);
                     assertReleaseTxInputsP2shP2wshErp(
                         migrationTransaction,
@@ -726,37 +726,6 @@ class BridgeSupportProcessFundsMigrationTest {
                 }
                 assertAllExpectedInputsWereIncluded(remainingExpectedInputs);
                 assertExpectedUtxosWereMigrated(migratedUtxos, retiringFederationUtxos, expectedTotalInputCount);
-        }
-
-        private void assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
-            Federation retiringFederation,
-            List<UTXO> retiringFederationUtxos,
-            int expectedMigrationTxCount,
-            int expectedTotalInputCount
-        ) throws IOException {
-            assertMigrationTxCount(expectedMigrationTxCount);
-
-            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount();
-            List<UTXO> migratedUtxos = new ArrayList<>();
-            int remainingExpectedInputs = expectedTotalInputCount;
-            for (BtcTransaction migrationTransaction : migrationTransactions) {
-                assertBtcTxVersionIs2(migrationTransaction);
-
-                int expectedInputCountInTx = getExpectedInputCountInTx(remainingExpectedInputs);
-                List<UTXO> selectedUtxosInTx = getSelectedUtxos(migrationTransaction, retiringFederationUtxos);
-                assertReleaseTxInputsP2shP2wshErp(
-                    migrationTransaction,
-                    retiringFederation.getRedeemScript(),
-                    retiringFederationUtxos,
-                    selectedUtxosInTx,
-                    expectedInputCountInTx
-                );
-                migratedUtxos.addAll(selectedUtxosInTx);
-                assertReleaseTxOutputs(migrationTransaction, selectedUtxosInTx);
-                remainingExpectedInputs -= expectedInputCountInTx;
-            }
-            assertAllExpectedInputsWereIncluded(remainingExpectedInputs);
-            assertExpectedUtxosWereMigrated(migratedUtxos, retiringFederationUtxos, expectedTotalInputCount);
         }
 
         private long pastMigrationBlockNumberForVETIVER() {
