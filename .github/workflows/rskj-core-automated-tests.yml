@@ -214,8 +214,14 @@ jobs:
       app_id: ${{ secrets.GH_APP_ID }}
       app_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
+  # This is the authoritative gate: it always runs (if: always()), consolidates
+  # the three suite conclusions, and exits non-zero on any failure. Pin THIS check
+  # (name: "Automated Regression Report") as the required status check in branch
+  # protection — never the per-suite checks, whose names change if the suites are
+  # refactored (e.g. the reusable-workflow extraction renamed them to
+  # "<suite> suite / <suite>"). Its name is intentionally stable for that reason.
   report:
-    name: Report
+    name: Automated Regression Report
     needs: [resolve, json_rpc, hardhat, k6]
     if: always()
     runs-on: ubuntu-latest
