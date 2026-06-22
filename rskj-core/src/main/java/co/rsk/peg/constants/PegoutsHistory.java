@@ -64,6 +64,7 @@ public class PegoutsHistory {
 
     private static final Map<Long, Ref[]> MAINNET;
 
+    // MAINNET data collected up to the 8.8M height
     static {
         var m = new HashMap<Long, Ref[]>();
         // These are known diff between historical outputs and RSKIP559 stable output algo
@@ -77,13 +78,22 @@ public class PegoutsHistory {
         m.put(7073815L, Ref.listFrom("d2ca62b50287a300122672a9b05e08422ec36e41d0424c2ba7612bf1ca96d607", 7069808L));
         // These are not required after RSKIP559 activation when old output algo will be dropped
         // because new sorting/selection algo producing same outputs on this heights
-        // ... TBD
+        m.put(3334327L, Ref.listFrom("49796a89abfd770308cf4f4a8c49e3f97ac2f0edb33bdba98434603c82135802", 3330316L));
+        m.put(3340058L, Ref.listFrom("2c6f69d2f7746b01dba7c9cdf248973a239fcc78f7dd5971f99992e941a0715e", 3336051L));
+        m.put(3344303L, Ref.listFrom("20806dadc7c9cbe777c2599983d38831461f7b701afb1ac93a3ec386c376edb9", 3340302L));
+        m.put(3438812L, Ref.listFrom("5f1119f0d62babb36c513a41d4ccb4b0545a2a2dbd2b07ffd98d259e1c194e1f", 3434812L));
+        m.put(4261189L, Ref.listFrom("3c17261a2361da8e82e705007ad1c5f35c4712f20d34522e4b588edbb7ab1380", 4257188L));
+        m.put(4580303L, Ref.listFrom("56c0defa95f2039f26b091f03b1a049d3cba4b577ebe8fccf178f9da98da1910", 4576299L));
+        m.put(4580424L, Ref.listFrom("58350f1b447372373a2a2f60b6a301fd708a9527294320f1171a6aedef197749", 4576407L));
+        m.put(4675306L, Ref.listFrom("b8bdca02f08b4313b9e9051d5747d7472bae300ff2866480c73f37c3b4da10cb", 4671305L));
+        m.put(4675313L, Ref.listFrom("99fd3ef49673538e60321a0dca5b5b3ee74b43e9788d98dfe7caed9f429b6d75", 4671312L));
+
         MAINNET = Collections.unmodifiableMap(m);
     }
 
     private static final Map<Long, Ref[]> TESTNET;
 
-    // TESTNET data collected up to height of 7.6M
+    // TESTNET data collected up to the 7.6M height
     static {
         var t = new HashMap<Long, Ref[]>();
         // These are known diff between historical outputs and RSKIP559 stable output algo
@@ -134,6 +144,9 @@ public class PegoutsHistory {
 
         // These are not required after RSKIP559 activation when old output algo will be dropped
         // because new sorting/selection algo producing same outputs on this heights
+        t.put(695811L, Ref.listFrom("a9bdc4e4a48a3e3754b2722b3e61eeca9ae4009379a62a8313acf485c79171c1", 695800L));
+        t.put(739307L, Ref.listFrom("648858fe92cd7c9078b9870852d8abceecd472a8d1102fd767ec658fe414af9c", 739296L));
+        t.put(752839L, Ref.listFrom("bb52a27915b91e628066d51713f1f39ac3f0770919e84a4fd5285841496d77ca", 752823L));
         t.put(1112233L, Ref.listFrom("7f199079f5c55b5ea4d4bf150c105bbac1af068f96e2897e88bb798289578c75", 1112212L));
         t.put(1638761L, Ref.listFrom("3d4f1c085e42b273ddd327fc30a6633b1277d952d3b5e76156acbdeffdaf7809", 1638742L));
         t.put(1865172L, Ref.listFrom("fa2350f918db4a59b6f4a74b7f10420dc309226d87c8c0b0ce56d71fd94abad8", 1865146L));
@@ -145,10 +158,6 @@ public class PegoutsHistory {
         t.put(5577212L, Ref.listFrom("342b34571db7d9bc2783ec490b6a2a6abddf34c0ea0cf27e14b65e238f4eda34", 5577158L));
         t.put(6858665L, Ref.listFrom("5bd422c96cabc0c4adecc4d7a2a23dd7c18ace92fb86348910e596449570a45f", 6858649L));
         t.put(7440352L, Ref.listFrom("7cbe57e4b3c79a4187e21c1185a91212aa832a7dc9ff988f6cefb2be06b1fb86", 7440339L));
-        //
-        t.put(695811L, Ref.listFrom("a9bdc4e4a48a3e3754b2722b3e61eeca9ae4009379a62a8313acf485c79171c1", 695800L));
-        t.put(739307L, Ref.listFrom("648858fe92cd7c9078b9870852d8abceecd472a8d1102fd767ec658fe414af9c", 739296L));
-        t.put(752839L, Ref.listFrom("bb52a27915b91e628066d51713f1f39ac3f0770919e84a4fd5285841496d77ca", 752823L));
 
         TESTNET = Collections.unmodifiableMap(t);
     }
