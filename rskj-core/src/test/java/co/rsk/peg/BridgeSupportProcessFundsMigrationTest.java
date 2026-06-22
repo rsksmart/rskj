@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.blockchain.utils.BlockGenerator;
@@ -63,7 +64,7 @@ class BridgeSupportProcessFundsMigrationTest {
     private static final Coin FUNDS_BELOW_MIGRATION_THRESHOLD = FEE_PER_KB.divide(2);
     private static final long ACTIVE_FEDERATION_CREATION_BLOCK = 100L;
     private static final Sha256Hash BTC_TX_HASH_FLYOVER_UTXO = createHash(10_000);
-    private static final Keccak256 FLYOVER_DERIVATION_HASH = BRIDGE_CONSTANTS.getProposedFederationFlyoverPrefix();
+    private static final Keccak256 FLYOVER_DERIVATION_HASH = RskTestUtils.createHash(100_000);
     private final Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
 
     private StorageAccessor bridgeStorageAccessor;
