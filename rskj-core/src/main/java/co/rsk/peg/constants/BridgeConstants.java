@@ -56,6 +56,7 @@ public abstract class BridgeConstants {
 
     protected int minimumPegoutValuePercentageToReceiveAfterFee;
 
+    protected int legacyMaxInputsPerPegoutTransaction;
     protected int maxInputsPerPegoutTransaction;
 
     protected int numberOfBlocksBetweenPegouts;
@@ -120,8 +121,8 @@ public abstract class BridgeConstants {
         return minimumPegoutValuePercentageToReceiveAfterFee;
     }
 
-    public int getMaxInputsPerPegoutTransaction() {
-        return maxInputsPerPegoutTransaction;
+    public int getMaxInputsPerPegoutTransaction(ActivationConfig.ForBlock activations) {
+        return activations.isActive(ConsensusRule.RSKIP455) ? maxInputsPerPegoutTransaction : legacyMaxInputsPerPegoutTransaction;
     }
 
     public int getNumberOfBlocksBetweenPegouts() {
