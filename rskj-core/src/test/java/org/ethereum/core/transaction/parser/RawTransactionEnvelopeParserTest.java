@@ -21,6 +21,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Rskip546TestSupport;
 import org.ethereum.core.Transaction;
@@ -383,6 +384,38 @@ class RawTransactionEnvelopeParserTest {
 
         assertDoesNotThrow(() -> RawTransactionEnvelopeParser.parse(raw));
         assertEquals(13, RLP.decodeList(java.util.Arrays.copyOfRange(raw, 1, raw.length)).size());
+    }
+
+    @Test
+    void parseRawWithActivation_validType4_doesNotThrow() {
+        Transaction tx = buildSignedType4Tx();
+        byte[] raw = tx.getEncoded();
+
+        assertDoesNotThrow(() -> RawTransactionEnvelopeParser.parse(
+                raw, 1L, ActivationConfigsForTest.all(), Constants.regtest()));
+    }
+
+    @Test
+    void parseCallArgumentsWithActivation_validType1_doesNotThrow() {
+        CallArguments args = legacyArgs();
+        args.setType("0x1");
+        args.setChainId("0x21");
+
+        assertDoesNotThrow(() -> RawTransactionEnvelopeParser.parse(
+                args, () -> "0x1", REGTEST_CHAIN_ID, 1L, ActivationConfigsForTest.all(), Constants.regtest()));
+    }
+
+    @Test
+    void parseInputWithActivation_validType2_doesNotThrow() {
+        CallArguments args = legacyArgs();
+        args.setType("0x2");
+        args.setChainId("0x21");
+        args.setMaxPriorityFeePerGas("0xa");
+        args.setMaxFeePerGas("0x64");
+        TransactionInput input = TransactionInput.fromCallArguments(args, () -> "0x1");
+
+        assertDoesNotThrow(() -> RawTransactionEnvelopeParser.parse(
+                input, REGTEST_CHAIN_ID, 1L, ActivationConfigsForTest.all(), Constants.regtest()));
     }
 
     // -------------------------------------------------------------------------

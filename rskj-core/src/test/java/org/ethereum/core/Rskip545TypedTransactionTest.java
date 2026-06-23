@@ -19,6 +19,7 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.exception.InvalidRskAddressException;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.transaction.TransactionType;
@@ -26,6 +27,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -53,6 +55,54 @@ class Rskip545TypedTransactionTest {
     private static final ECKey TEST_KEY = new ECKey();
     private static final RskAddress TEST_ADDRESS = new RskAddress("0x1234567890123456789012345678901234567890");
     private static final byte CHAIN_ID = 33;
+    private static final byte[] OVERSIZE_WORD = oversizeDataWord();
+
+    private record FieldOverride(int index, byte[] encoded) {}
+
+    private static FieldOverride field(int index, byte[] encoded) {
+        return new FieldOverride(index, encoded);
+    }
+
+    private static byte[] oversizeDataWord() {
+        byte[] word = new byte[33];
+        word[0] = 0x01;
+        return word;
+    }
+
+    private static void assertDecodeRejects(byte[] raw, String expectedMessageFragment) {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new ImmutableTransaction(raw));
+        assertTrue(ex.getMessage().contains(expectedMessageFragment),
+                "Expected message containing '" + expectedMessageFragment + "', got: " + ex.getMessage());
+    }
+
+    private static byte[] rawType4(FieldOverride... overrides) {
+        byte[][] fields = defaultSignedType4Fields();
+        applyOverrides(fields, overrides);
+        return Rskip545TestSupport.buildRawType4Bytes(fields);
+    }
+
+    private static byte[] rawUnsignedType4(FieldOverride... overrides) {
+        byte[][] fields = defaultSignedType4Fields();
+        fields[10] = RLP.encodeElement(null);
+        fields[11] = RLP.encodeElement(null);
+        fields[12] = RLP.encodeElement(null);
+        applyOverrides(fields, overrides);
+        return Rskip545TestSupport.buildRawType4Bytes(fields);
+    }
+
+    private static byte[][] defaultSignedType4Fields() {
+        return Rskip545TestSupport.defaultSignedType4Fields(
+                TEST_ADDRESS,
+                Rskip545TestSupport.defaultAuthListBytes()
+        );
+    }
+
+    private static void applyOverrides(byte[][] fields, FieldOverride... overrides) {
+        for (FieldOverride override : overrides) {
+            fields[override.index()] = override.encoded();
+        }
+    }
 
     @Test
     void type4Encoding_startsWithTypePrefix() {
@@ -184,6 +234,64 @@ class Rskip545TypedTransactionTest {
                 new byte[]{(byte) 0xff, 0x01});
 
         assertThrows(Exception.class, () -> new ImmutableTransaction(raw));
+    }
+
+    @Test
+    void decode_rejectsToAddressWrongLength() {
+        byte[] badTo = new byte[21];
+        badTo[20] = 0x01;
+        byte[] raw = rawType4(field(5, RLP.encodeElement(badTo)));
+
+        assertThrows(InvalidRskAddressException.class, () -> new ImmutableTransaction(raw));
+    }
+
+    @Test
+    void decode_rejectsTruncatedAuthorizationListRlp() {
+        byte[] truncatedAuthList = new byte[] {(byte) 0xC4, 0x01};
+        byte[] raw = rawType4(field(9, truncatedAuthList));
+
+        assertThrows(Exception.class, () -> new ImmutableTransaction(raw));
+    }
+
+    @Test
+    void decode_rejectsOversizeNonce() {
+        assertDecodeRejects(rawUnsignedType4(field(1, RLP.encodeElement(OVERSIZE_WORD))), "Nonce is not valid");
+    }
+
+    @Test
+    void decode_rejectsOversizeGasLimit() {
+        assertDecodeRejects(rawUnsignedType4(field(4, RLP.encodeElement(OVERSIZE_WORD))), "Gas Limit is not valid");
+    }
+
+    @Test
+    void decode_rejectsOversizeValue() {
+        assertDecodeRejects(rawUnsignedType4(field(6, RLP.encodeElement(OVERSIZE_WORD))), "Value is not valid");
+    }
+
+    @Test
+    void decode_rejectsOversizeEffectiveGasPrice() {
+        assertDecodeRejects(rawUnsignedType4(
+                field(2, RLP.encodeCoinNonNullZero(new Coin(OVERSIZE_WORD))),
+                field(3, RLP.encodeCoinNonNullZero(new Coin(OVERSIZE_WORD)))
+        ), "Gas Price is not valid");
+    }
+
+    @Test
+    void decode_rejectsOversizeSignatureR() {
+        assertDecodeRejects(rawType4(
+                field(10, RLP.encodeByte((byte) 0)),
+                field(11, RLP.encodeElement(OVERSIZE_WORD)),
+                field(12, RLP.encodeElement(new byte[32]))
+        ), "Signature R is not valid");
+    }
+
+    @Test
+    void decode_rejectsOversizeSignatureS() {
+        assertDecodeRejects(rawType4(
+                field(10, RLP.encodeByte((byte) 0)),
+                field(11, RLP.encodeElement(new byte[32])),
+                field(12, RLP.encodeElement(OVERSIZE_WORD))
+        ), "Signature S is not valid");
     }
 
     @ParameterizedTest(name = "rskip543={0}, rskip546={1}, rskip545={2} -> blocked={3}")

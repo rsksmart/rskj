@@ -19,7 +19,10 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.exception.InvalidRskAddressException;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
@@ -319,5 +322,90 @@ class RskNamespaceTransactionTest {
 
         byte[] encoded = type1.getEncoded();
         assertEquals(0x01, encoded[0]);
+    }
+
+    // =========================================================================
+    // RSK namespace decode-time field validation
+    // =========================================================================
+
+    private static final byte[] OVERSIZE_WORD = oversizeDataWord();
+    private static final byte RSK_NAMESPACE_SUBTYPE = 0x03;
+
+    @Test
+    void rskNamespace_decodeRejectsToAddressWrongLength() {
+        byte[] badTo = new byte[21];
+        badTo[20] = 0x01;
+        byte[] raw = rawRskNamespaceType2(field(3, RLP.encodeElement(badTo)));
+
+        assertThrows(InvalidRskAddressException.class, () -> new ImmutableTransaction(raw));
+    }
+
+    @Test
+    void rskNamespace_decodeRejectsOversizeNonce() {
+        assertDecodeRejects(rawRskNamespaceType2(field(0, RLP.encodeElement(OVERSIZE_WORD))), "Nonce is not valid");
+    }
+
+    @Test
+    void rskNamespace_decodeRejectsOversizeGasLimit() {
+        assertDecodeRejects(rawRskNamespaceType2(field(2, RLP.encodeElement(OVERSIZE_WORD))), "Gas Limit is not valid");
+    }
+
+    @Test
+    void rskNamespace_decodeRejectsOversizeValue() {
+        assertDecodeRejects(rawRskNamespaceType2(field(4, RLP.encodeElement(OVERSIZE_WORD))), "Value is not valid");
+    }
+
+    @Test
+    void rskNamespace_decodeRejectsOversizeGasPrice() {
+        assertDecodeRejects(rawRskNamespaceType2(field(1, RLP.encodeCoinNonNullZero(new Coin(OVERSIZE_WORD)))),
+                "Gas Price is not valid");
+    }
+
+    private record FieldOverride(int index, byte[] encoded) {}
+
+    private static FieldOverride field(int index, byte[] encoded) {
+        return new FieldOverride(index, encoded);
+    }
+
+    private static byte[] oversizeDataWord() {
+        byte[] word = new byte[33];
+        word[0] = 0x01;
+        return word;
+    }
+
+    private static void assertDecodeRejects(byte[] raw, String expectedMessageFragment) {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new ImmutableTransaction(raw));
+        assertTrue(ex.getMessage().contains(expectedMessageFragment),
+                "Expected message containing '" + expectedMessageFragment + "', got: " + ex.getMessage());
+    }
+
+    private static byte[] rawRskNamespaceType2(FieldOverride... overrides) {
+        byte[][] fields = defaultLegacyShapeFields();
+        applyOverrides(fields, overrides);
+        return ByteUtil.merge(
+                new byte[] {TransactionType.TYPE_2.getByteCode(), RSK_NAMESPACE_SUBTYPE},
+                RLP.encodeList(fields)
+        );
+    }
+
+    private static byte[][] defaultLegacyShapeFields() {
+        return new byte[][] {
+                RLP.encodeElement(TEST_NONCE),
+                RLP.encodeCoinNonNullZero(TEST_GAS_PRICE),
+                RLP.encodeElement(TEST_GAS_LIMIT),
+                RLP.encodeElement(TEST_ADDRESS.getBytes()),
+                RLP.encodeElement(TEST_VALUE.getBytes()),
+                RLP.encodeElement(TEST_DATA),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null)
+        };
+    }
+
+    private static void applyOverrides(byte[][] fields, FieldOverride... overrides) {
+        for (FieldOverride override : overrides) {
+            fields[override.index()] = override.encoded();
+        }
     }
 }

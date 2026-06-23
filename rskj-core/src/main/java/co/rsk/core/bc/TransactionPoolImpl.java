@@ -28,7 +28,15 @@ import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.net.handler.quota.TxQuotaChecker;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.DelegationCodeResolver;
+import org.ethereum.core.EventDispatchThread;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionPoolAddResult;
+import org.ethereum.core.TransactionSet;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
@@ -38,7 +46,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -515,8 +529,6 @@ public class TransactionPoolImpl implements TransactionPool {
         return tx.transactionCost(config.getNetworkConstants(), config.getActivationConfig().forBlock(number), signatureCache);
     }
 
-
-
     private Optional<TransactionPoolAddResult> rejectIfDelegatedAccountCannotBeAccepted(
             Transaction tx,
             RskAddress sender,
@@ -543,5 +555,4 @@ public class TransactionPoolImpl implements TransactionPool {
         }
         return Optional.empty();
     }
-
 }

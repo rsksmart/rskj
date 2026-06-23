@@ -54,5 +54,4 @@ public class DelegationCodeResolver {
         byte[] addressBytes = Arrays.copyOfRange(code, PREFIX_SIZE, DELEGATION_CODE_SIZE);
         return new RskAddress(addressBytes);
     }
-
 }

@@ -413,4 +413,73 @@ public class CallArgumentsParamTest {
         assertNull(callArgumentsParam.getType());
         assertNull(callArgumentsParam.getRskSubtype());
     }
+
+    @Test
+    void testAccessListIsDeserialized() throws JsonProcessingException {
+        String callArgumentsInput = "{\n" +
+                "            \"from\": \"" + FROM + "\"," +
+                "            \"accessList\": [{" +
+                "              \"address\": \"0x" + "aa".repeat(20) + "\"," +
+                "              \"storageKeys\": [\"0x" + "bb".repeat(32) + "\"]" +
+                "            }]" +
+                "          }";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+        CallArgumentsParam param = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
+
+        assertNotNull(param.getAccessList());
+        assertEquals(1, param.getAccessList().size());
+        assertEquals("0x" + "aa".repeat(20), param.getAccessList().get(0).getAddress());
+        assertEquals(1, param.getAccessList().get(0).getStorageKeys().size());
+
+        CallArguments args = param.toCallArguments();
+        assertEquals(param.getAccessList(), args.getAccessList());
+    }
+
+    @Test
+    void testAuthorizationListIsDeserialized() throws JsonProcessingException {
+        String callArgumentsInput = "{\n" +
+                "            \"from\": \"" + FROM + "\"," +
+                "            \"type\": \"0x4\"," +
+                "            \"authorizationList\": [{" +
+                "              \"chainId\": \"0x21\"," +
+                "              \"address\": \"0x0000000000000000000000000000000000000003\"," +
+                "              \"nonce\": \"0x0\"," +
+                "              \"yParity\": \"0x0\"," +
+                "              \"r\": \"0x01\"," +
+                "              \"s\": \"0x01\"" +
+                "            }]" +
+                "          }";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+        CallArgumentsParam param = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
+
+        assertNotNull(param.getAuthorizationList());
+        assertEquals(1, param.getAuthorizationList().size());
+        assertEquals("0x21", param.getAuthorizationList().get(0).getChainId());
+        assertEquals("0x0000000000000000000000000000000000000003",
+                param.getAuthorizationList().get(0).getAddress());
+
+        CallArguments args = param.toCallArguments();
+        assertEquals(param.getAuthorizationList(), args.getAuthorizationList());
+    }
+
+    @Test
+    void testGasLimitGetterIsExposed() {
+        CallArgumentsParam param = new CallArgumentsParam(
+                null, null, null, null, null, null,
+                new HexNumberParam("0x5208"),
+                null, null, null, null, null, null, null, null, null);
+
+        assertEquals("0x5208", param.getGasLimit().getHexNumber());
+    }
+
+    @Test
+    void testInputGetterIsExposed() {
+        CallArgumentsParam param = new CallArgumentsParam(
+                null, null, null, null, null, null, null, null, null, null,
+                null, new HexDataParam("0x1234"), null, null, null, null);
+
+        assertEquals("0x1234", param.getInput().getAsHexString());
+    }
 }

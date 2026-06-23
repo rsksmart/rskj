@@ -19,60 +19,37 @@ package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.TransactionTypePrefix;
-import org.ethereum.core.transaction.SetCodeAuthorization;
-import org.ethereum.core.transaction.TransactionType;
-import org.ethereum.util.RLP;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.signature.ECDSASignature;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Unit tests for {@link ParsedType4Transaction} compact-constructor invariants.
- */
-class ParsedType4TransactionTest {
+class ParsedType0TransactionTest {
 
-    private static final byte CHAIN_ID = 33;
     private static final RskAddress RECEIVER =
-            new RskAddress("0x0000000000000000000000000000000000000002");
-
-    @Test
-    void constructor_emptyAuthorizationList_throws() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> newParsedType4(List.of()));
-
-        assertTrue(ex.getMessage().contains("authorization_list must not be empty"),
-                "Expected empty authorization_list error, got: " + ex.getMessage());
-    }
-
-    @Test
-    void constructor_nullAuthorizationList_throws() {
-        assertThrows(NullPointerException.class, () -> newParsedType4(null));
-    }
+            new RskAddress("0x1234567890123456789012345678901234567890");
 
     @Test
     void equals_hashCode_andToString_coverValueSemantics() {
-        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization(CHAIN_ID);
-        ParsedType4Transaction parsed = newParsedType4(List.of(auth));
+        ParsedType0Transaction parsed = sample();
 
         assertEquals(parsed, parsed);
         assertEquals(parsed.hashCode(), parsed.hashCode());
         assertFalse(parsed.equals("other"));
-        assertTrue(parsed.toString().contains("ParsedType4Transaction"));
+        assertTrue(parsed.toString().contains("ParsedType0Transaction"));
     }
 
     @Test
     void accept_dispatchesToVisitor() {
-        ParsedType4Transaction parsed = newParsedType4(List.of(Rskip545TestSupport.minimalAuthorization(CHAIN_ID)));
+        ParsedType0Transaction parsed = sample();
 
-        assertEquals("type4", parsed.accept(new ParsedRawTransactionVisitor<>() {
+        assertEquals("type0", parsed.accept(new ParsedRawTransactionVisitor<>() {
             @Override
             public String visitType0(ParsedType0Transaction transaction) {
                 return "type0";
@@ -100,22 +77,21 @@ class ParsedType4TransactionTest {
         }));
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
+    private static ParsedType0Transaction sample() {
+        ECKey.ECDSASignature sig = new ECKey().sign(new byte[32]);
+        ECDSASignature signature = ECDSASignature.fromComponents(
+                org.bouncycastle.util.BigIntegers.asUnsignedByteArray(sig.r),
+                org.bouncycastle.util.BigIntegers.asUnsignedByteArray(sig.s),
+                sig.v);
 
-    private static ParsedType4Transaction newParsedType4(List<SetCodeAuthorization> authorizationList) {
-        return new ParsedType4Transaction(
-                TransactionTypePrefix.typed(TransactionType.TYPE_4),
-                new byte[]{0x01},
+        return new ParsedType0Transaction(
+                TransactionTypePrefix.legacy(),
+                BigInteger.ONE.toByteArray(),
+                Coin.valueOf(10),
                 BigInteger.valueOf(21_000).toByteArray(),
                 RECEIVER,
                 Coin.ZERO,
                 new byte[0],
-                new UnsignedSignature(CHAIN_ID),
-                RLP.encodeList(),
-                Coin.valueOf(10),
-                Coin.valueOf(100),
-                authorizationList);
+                new SignedSignature((byte) 33, signature));
     }
 }

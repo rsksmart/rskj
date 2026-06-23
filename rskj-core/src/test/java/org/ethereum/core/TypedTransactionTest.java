@@ -19,9 +19,12 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.exception.InvalidRskAddressException;
+import org.ethereum.core.exception.TransactionException;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -29,7 +32,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for RSKIP543 Typed Transaction encoding and decoding.
@@ -446,8 +453,145 @@ class TypedTransactionTest {
     }
 
     // ========================================================================
+    // Legacy decode-time field validation
+    // ========================================================================
+
+    private static final byte[] LEGACY_OVERSIZE_WORD = oversizeDataWord();
+    private static final Coin LEGACY_GAS_PRICE = Coin.valueOf(10_000_000_000L);
+    private static final byte LEGACY_CHAIN_ID_V = (byte) (33 * 2 + 35);
+
+    @Test
+    void legacy_decodeRejectsToAddressWrongLength() {
+        byte[] badTo = new byte[21];
+        badTo[20] = 0x01;
+        byte[] raw = rawLegacy(field(3, RLP.encodeElement(badTo)));
+
+        assertThrows(InvalidRskAddressException.class, () -> new ImmutableTransaction(raw));
+    }
+
+    @Test
+    void legacy_decodeRejectsInvalidSignatureVLength() {
+        byte[] raw = rawLegacy(field(6, RLP.encodeElement(new byte[] {0x01, 0x02})));
+
+        TransactionException ex = assertThrows(TransactionException.class, () -> new ImmutableTransaction(raw));
+        assertTrue(ex.getMessage().contains("Signature V is invalid"), ex.getMessage());
+    }
+
+    @Test
+    void type3_decodeRejectsUnsupportedTransactionType() {
+        byte[] raw = ByteUtil.merge(
+                new byte[] {TransactionType.TYPE_3.getByteCode()},
+                RLP.encodeList(defaultType2ShapeFields()));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new ImmutableTransaction(raw));
+        assertTrue(ex.getMessage().contains("Unsupported transaction type"), ex.getMessage());
+    }
+
+    @Test
+    void legacy_decodeRejectsOversizeNonce() {
+        assertDecodeRejects(rawLegacy(field(0, RLP.encodeElement(LEGACY_OVERSIZE_WORD))), "Nonce is not valid");
+    }
+
+    @Test
+    void legacy_decodeRejectsOversizeGasLimit() {
+        assertDecodeRejects(rawLegacy(field(2, RLP.encodeElement(LEGACY_OVERSIZE_WORD))), "Gas Limit is not valid");
+    }
+
+    @Test
+    void legacy_decodeRejectsOversizeValue() {
+        assertDecodeRejects(rawLegacy(field(4, RLP.encodeElement(LEGACY_OVERSIZE_WORD))), "Value is not valid");
+    }
+
+    @Test
+    void legacy_decodeRejectsOversizeGasPrice() {
+        assertDecodeRejects(rawLegacy(field(1, RLP.encodeCoinNonNullZero(new Coin(LEGACY_OVERSIZE_WORD)))),
+                "Gas Price is not valid");
+    }
+
+    @Test
+    void legacy_decodeRejectsOversizeSignatureR() {
+        assertDecodeRejects(rawLegacy(
+                field(6, RLP.encodeByte(LEGACY_CHAIN_ID_V)),
+                field(7, RLP.encodeElement(LEGACY_OVERSIZE_WORD)),
+                field(8, RLP.encodeElement(new byte[32]))
+        ), "Signature R is not valid");
+    }
+
+    @Test
+    void legacy_decodeRejectsOversizeSignatureS() {
+        assertDecodeRejects(rawLegacy(
+                field(6, RLP.encodeByte(LEGACY_CHAIN_ID_V)),
+                field(7, RLP.encodeElement(new byte[32])),
+                field(8, RLP.encodeElement(LEGACY_OVERSIZE_WORD))
+        ), "Signature S is not valid");
+    }
+
+    // ========================================================================
     // Helpers
     // ========================================================================
+
+    private record FieldOverride(int index, byte[] encoded) {}
+
+    private static FieldOverride field(int index, byte[] encoded) {
+        return new FieldOverride(index, encoded);
+    }
+
+    private static byte[] oversizeDataWord() {
+        byte[] word = new byte[33];
+        word[0] = 0x01;
+        return word;
+    }
+
+    private static void assertDecodeRejects(byte[] raw, String expectedMessageFragment) {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new ImmutableTransaction(raw));
+        assertTrue(ex.getMessage().contains(expectedMessageFragment),
+                "Expected message containing '" + expectedMessageFragment + "', got: " + ex.getMessage());
+    }
+
+    private static byte[] rawLegacy(FieldOverride... overrides) {
+        byte[][] fields = defaultLegacyFields();
+        applyOverrides(fields, overrides);
+        return RLP.encodeList(fields);
+    }
+
+    private static byte[][] defaultLegacyFields() {
+        return new byte[][] {
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                RLP.encodeCoinNonNullZero(LEGACY_GAS_PRICE),
+                RLP.encodeElement(org.bouncycastle.util.BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21_000))),
+                RLP.encodeElement(TEST_ADDRESS.getBytes()),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null)
+        };
+    }
+
+    private static byte[][] defaultType2ShapeFields() {
+        return new byte[][] {
+                RLP.encodeByte((byte) 33),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                RLP.encodeCoinNonNullZero(LEGACY_GAS_PRICE),
+                RLP.encodeCoinNonNullZero(LEGACY_GAS_PRICE),
+                RLP.encodeElement(org.bouncycastle.util.BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21_000))),
+                RLP.encodeElement(TEST_ADDRESS.getBytes()),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                Rskip546TestSupport.EMPTY_ACCESS_LIST,
+                RLP.encodeByte((byte) 0),
+                RLP.encodeElement(new byte[32]),
+                RLP.encodeElement(new byte[32])
+        };
+    }
+
+    private static void applyOverrides(byte[][] fields, FieldOverride... overrides) {
+        for (FieldOverride override : overrides) {
+            fields[override.index()] = override.encoded();
+        }
+    }
 
     private static void assertDataEquals(byte[] expected, byte[] actual) {
         if (expected == null || expected.length == 0) {

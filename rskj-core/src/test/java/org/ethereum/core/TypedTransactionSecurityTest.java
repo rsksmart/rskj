@@ -19,6 +19,7 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.exception.InvalidRskAddressException;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -59,6 +60,83 @@ class TypedTransactionSecurityTest {
     private static final byte[] TEST_ADDRESS = new RskAddress("0x1234567890123456789012345678901234567890").getBytes();
     private static final Coin GAS_PRICE = Coin.valueOf(10_000_000_000L);
     private static final byte[] EMPTY_ACCESS_LIST = new byte[]{(byte) 0xc0};
+    private static final byte[] OVERSIZE_WORD = oversizeDataWord();
+
+    // =========================================================================
+    // Malformed `to` address and oversize scalar fields
+    // =========================================================================
+
+    @Test
+    void type1_decodeRejectsToAddressWrongLength() {
+        byte[] badTo = new byte[21];
+        badTo[20] = 0x01;
+        byte[] raw = buildRawType1WithFieldOverride(4, RLP.encodeElement(badTo));
+
+        assertThrows(InvalidRskAddressException.class, () -> new ImmutableTransaction(raw));
+    }
+
+    @Test
+    void type2_decodeRejectsToAddressWrongLength() {
+        byte[] badTo = new byte[21];
+        badTo[20] = 0x01;
+        byte[] raw = buildRawType2WithFieldOverride(5, RLP.encodeElement(badTo));
+
+        assertThrows(InvalidRskAddressException.class, () -> new ImmutableTransaction(raw));
+    }
+
+    @Test
+    void type1_decodeRejectsOversizeNonce() {
+        assertDecodeRejects(buildRawType1WithFieldOverride(1, RLP.encodeElement(OVERSIZE_WORD)), "Nonce is not valid");
+    }
+
+    @Test
+    void type1_decodeRejectsOversizeGasLimit() {
+        assertDecodeRejects(buildRawType1WithFieldOverride(3, RLP.encodeElement(OVERSIZE_WORD)), "Gas Limit is not valid");
+    }
+
+    @Test
+    void type1_decodeRejectsOversizeValue() {
+        assertDecodeRejects(buildRawType1WithFieldOverride(5, RLP.encodeElement(OVERSIZE_WORD)), "Value is not valid");
+    }
+
+    @Test
+    void type1_decodeRejectsOversizeGasPrice() {
+        assertDecodeRejects(buildRawType1WithFieldOverride(2, RLP.encodeCoinNonNullZero(new Coin(OVERSIZE_WORD))),
+                "Gas Price is not valid");
+    }
+
+    @Test
+    void type1_decodeRejectsOversizeSignatureR() {
+        assertDecodeRejects(buildRawType1WithFieldOverrides(
+                fieldOverride(8, RLP.encodeByte((byte) 0)),
+                fieldOverride(9, RLP.encodeElement(OVERSIZE_WORD)),
+                fieldOverride(10, RLP.encodeElement(new byte[32]))
+        ), "Signature R is not valid");
+    }
+
+    @Test
+    void type2_decodeRejectsOversizeNonce() {
+        assertDecodeRejects(buildRawType2WithFieldOverride(1, RLP.encodeElement(OVERSIZE_WORD)), "Nonce is not valid");
+    }
+
+    @Test
+    void type2_decodeRejectsOversizeGasLimit() {
+        assertDecodeRejects(buildRawType2WithFieldOverride(4, RLP.encodeElement(OVERSIZE_WORD)), "Gas Limit is not valid");
+    }
+
+    @Test
+    void type2_decodeRejectsOversizeValue() {
+        assertDecodeRejects(buildRawType2WithFieldOverride(6, RLP.encodeElement(OVERSIZE_WORD)), "Value is not valid");
+    }
+
+    @Test
+    void type2_decodeRejectsOversizeEffectiveGasPrice() {
+        Coin oversizeFee = new Coin(OVERSIZE_WORD);
+        assertDecodeRejects(buildRawType2WithFieldOverrides(
+                fieldOverride(2, RLP.encodeCoinNonNullZero(oversizeFee)),
+                fieldOverride(3, RLP.encodeCoinNonNullZero(oversizeFee))
+        ), "Gas Price is not valid");
+    }
 
     // =========================================================================
     // S1: Chain ID truncation — cross-chain replay prevention
@@ -279,6 +357,86 @@ class TypedTransactionSecurityTest {
     // =========================================================================
     // Helpers
     // =========================================================================
+
+    private record FieldOverride(int index, byte[] encoded) {}
+
+    private static FieldOverride fieldOverride(int index, byte[] encoded) {
+        return new FieldOverride(index, encoded);
+    }
+
+    private static byte[] oversizeDataWord() {
+        byte[] word = new byte[33];
+        word[0] = 0x01;
+        return word;
+    }
+
+    private void assertDecodeRejects(byte[] raw, String expectedMessageFragment) {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new ImmutableTransaction(raw));
+        assertTrue(ex.getMessage().contains(expectedMessageFragment),
+                "Expected message containing '" + expectedMessageFragment + "', got: " + ex.getMessage());
+    }
+
+    private byte[] buildRawType1WithFieldOverride(int index, byte[] encodedField) {
+        return buildRawType1WithFieldOverrides(fieldOverride(index, encodedField));
+    }
+
+    private byte[] buildRawType2WithFieldOverride(int index, byte[] encodedField) {
+        return buildRawType2WithFieldOverrides(fieldOverride(index, encodedField));
+    }
+
+    private byte[] buildRawType1WithFieldOverrides(FieldOverride... overrides) {
+        byte[][] fields = defaultType1Fields();
+        applyOverrides(fields, overrides);
+        return buildRawType1WithFields(fields[0], fields[1], fields[2], fields[3], fields[4], fields[5],
+                fields[6], fields[7], fields[8], fields[9], fields[10]);
+    }
+
+    private byte[] buildRawType2WithFieldOverrides(FieldOverride... overrides) {
+        byte[][] fields = defaultType2Fields();
+        applyOverrides(fields, overrides);
+        return buildRawType2WithFields(fields[0], fields[1], fields[2], fields[3], fields[4], fields[5],
+                fields[6], fields[7], fields[8], fields[9], fields[10], fields[11]);
+    }
+
+    private static byte[][] defaultType1Fields() {
+        return new byte[][] {
+                RLP.encodeByte(RSK_REGTEST_CHAIN_ID),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                RLP.encodeCoinNonNullZero(GAS_PRICE),
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21_000))),
+                RLP.encodeElement(TEST_ADDRESS),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                EMPTY_ACCESS_LIST,
+                RLP.encodeByte((byte) 0),
+                RLP.encodeElement(new byte[32]),
+                RLP.encodeElement(new byte[32])
+        };
+    }
+
+    private static byte[][] defaultType2Fields() {
+        return new byte[][] {
+                RLP.encodeByte(RSK_REGTEST_CHAIN_ID),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                RLP.encodeCoinNonNullZero(GAS_PRICE),
+                RLP.encodeCoinNonNullZero(GAS_PRICE),
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21_000))),
+                RLP.encodeElement(TEST_ADDRESS),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                EMPTY_ACCESS_LIST,
+                RLP.encodeByte((byte) 0),
+                RLP.encodeElement(new byte[32]),
+                RLP.encodeElement(new byte[32])
+        };
+    }
+
+    private static void applyOverrides(byte[][] fields, FieldOverride... overrides) {
+        for (FieldOverride override : overrides) {
+            fields[override.index()] = override.encoded();
+        }
+    }
 
     private Transaction buildSignedType1(byte chainId) {
         Transaction tx = Rskip546TestSupport.unsignedType1(

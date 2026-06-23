@@ -75,6 +75,24 @@ class AccessListCodecTest {
     }
 
     @Test
+    void defaultAccessListBytes_notAList_throws() {
+        byte[] notList = RLP.encodeElement(new byte[] {0x01});
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> AccessListCodec.defaultAccessListBytes(notList));
+        assertTrue(ex.getMessage().contains("Access list must be an RLP list"), ex.getMessage());
+    }
+
+    @Test
+    void defaultAccessListBytes_emptyEntry_throws() {
+        byte[] accessList = RLP.encodeList(RLP.encodeList());
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> AccessListCodec.defaultAccessListBytes(accessList));
+        assertTrue(ex.getMessage().contains("2 elements"), ex.getMessage());
+    }
+
+    @Test
     void defaultAccessListBytes_wrongAddressLength_throws() {
         byte[] accessList = RLP.encodeList(
                 RLP.encodeList(
