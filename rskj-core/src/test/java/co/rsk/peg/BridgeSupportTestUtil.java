@@ -214,6 +214,19 @@ public final class BridgeSupportTestUtil {
         return activations.isActive(ConsensusRule.RSKIP459) && !activations.isActive(ConsensusRule.RSKIP551);
     }
 
+    public static ReleaseRequestQueue addPegoutRequestsToQueue(
+        ReleaseRequestQueue releaseRequestQueue,
+        int pegoutRequestCount,
+        Coin value,
+        NetworkParameters networkParameters
+    ) {
+        for (int i = 0; i < pegoutRequestCount; i++) {
+            Address receiver = BitcoinTestUtils.createP2PKHAddress(networkParameters, "receiver" + i);
+            releaseRequestQueue.add(receiver, value, PegTestUtils.createHash3(i));
+        }
+        return releaseRequestQueue;
+    }
+
     public static void assertWitnessAndScriptSigHaveExpectedInputRedeemData(TransactionWitness witness, TransactionInput input, Script expectedRedeemScript) {
         // assert last push has the redeem script
         int redeemScriptIndex = witness.getPushCount() - 1;
