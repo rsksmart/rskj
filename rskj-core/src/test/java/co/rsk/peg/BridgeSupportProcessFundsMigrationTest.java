@@ -263,7 +263,8 @@ class BridgeSupportProcessFundsMigrationTest {
             retiringUtxos.add(flyoverUtxo);
 
             long executionBlockNumber = duringMigrationBlockNumberForVETIVER();
-            setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(executionBlockNumber);
+            bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, VETIVER_ACTIVATIONS);
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, VETIVER_ACTIVATIONS);
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
@@ -289,7 +290,7 @@ class BridgeSupportProcessFundsMigrationTest {
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
             // Assert — second call consumed the 1 remaining UTXO
-            assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT);
+            assertMigrationTxCountForVETIVER(TWO_MIGRATION_TXS_COUNT);
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
         }
@@ -362,7 +363,8 @@ class BridgeSupportProcessFundsMigrationTest {
             retiringUtxos.add(flyoverUtxo);
 
             long executionBlockNumber = pastMigrationBlockNumberForVETIVER();
-            setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(executionBlockNumber);
+            bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, VETIVER_ACTIVATIONS);
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, VETIVER_ACTIVATIONS);
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
@@ -693,9 +695,9 @@ class BridgeSupportProcessFundsMigrationTest {
             int expectedMigrationTxCount,
             int expectedTotalInputCount
         ) throws IOException {
-            assertMigrationTxCount(expectedMigrationTxCount);
+            assertMigrationTxCountForVETIVER(expectedMigrationTxCount);
 
-            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount();
+            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount(VETIVER_ACTIVATIONS);
             List<UTXO> migratedUtxos = new ArrayList<>();
             int remainingExpectedInputs = expectedTotalInputCount;
             for (BtcTransaction migrationTransaction : migrationTransactions) {
@@ -726,7 +728,7 @@ class BridgeSupportProcessFundsMigrationTest {
         ) throws IOException {
             assertMigrationTxCount(expectedMigrationTxCount);
 
-            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount();
+            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount(ALL_ACTIVATIONS);
             List<UTXO> migratedUtxos = new ArrayList<>();
             int remainingExpectedInputs = expectedTotalInputCount;
             for (BtcTransaction migrationTransaction : migrationTransactions) {
@@ -747,19 +749,6 @@ class BridgeSupportProcessFundsMigrationTest {
             }
             assertAllExpectedInputsWereIncluded(remainingExpectedInputs);
             assertExpectedUtxosWereMigrated(migratedUtxos, retiringFederationUtxos, expectedTotalInputCount);
-        }
-
-        private long pastMigrationBlockNumberForVETIVER() {
-            return pastMigrationBlockNumber(VETIVER_ACTIVATIONS);
-        }
-
-        private long duringMigrationBlockNumberForVETIVER() {
-            return blockNumberBeforeMigrationBegins(VETIVER_ACTIVATIONS) + 1;
-        }
-
-        private void setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(long executionBlockNumber) {
-            bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, VETIVER_ACTIVATIONS);
-            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, VETIVER_ACTIVATIONS);
         }
     }
 
@@ -916,7 +905,8 @@ class BridgeSupportProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             retiringUtxos.add(flyoverUtxo);
 
-            long executionBlockNumber = duringMigrationBlockNumber(VETIVER_ACTIVATIONS);
+            long executionBlockNumber = duringMigrationBlockNumberForVETIVER();
+            bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, VETIVER_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, VETIVER_ACTIVATIONS);
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
@@ -1020,7 +1010,8 @@ class BridgeSupportProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             retiringUtxos.add(flyoverUtxo);
 
-            long executionBlockNumber = pastMigrationBlockNumber(VETIVER_ACTIVATIONS);
+            long executionBlockNumber = pastMigrationBlockNumberForVETIVER();
+            bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, VETIVER_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, VETIVER_ACTIVATIONS);
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
@@ -1133,7 +1124,7 @@ class BridgeSupportProcessFundsMigrationTest {
         ) throws IOException {
             assertMigrationTxCount(expectedMigrationTxCount);
 
-            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount();
+            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount(ALL_ACTIVATIONS);
             List<UTXO> migratedUtxos = new ArrayList<>();
             int remainingExpectedInputs = expectedTotalInputCount;
             for (BtcTransaction migrationTransaction : migrationTransactions) {
@@ -1163,9 +1154,9 @@ class BridgeSupportProcessFundsMigrationTest {
             int expectedMigrationTxCount,
             int expectedTotalInputCount
         ) throws IOException {
-            assertMigrationTxCount(expectedMigrationTxCount);
+            assertMigrationTxCountForVETIVER(expectedMigrationTxCount);
 
-            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount();
+            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount(VETIVER_ACTIVATIONS);
             List<UTXO> migratedUtxos = new ArrayList<>();
             int remainingExpectedInputs = expectedTotalInputCount;
             for (BtcTransaction migrationTransaction : migrationTransactions) {
@@ -1369,7 +1360,8 @@ class BridgeSupportProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             retiringUtxos.add(flyoverUtxo);
 
-            long executionBlockNumber = duringMigrationBlockNumber(VETIVER_ACTIVATIONS);
+            long executionBlockNumber = duringMigrationBlockNumberForVETIVER();
+            bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, VETIVER_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, VETIVER_ACTIVATIONS);
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
@@ -1491,14 +1483,15 @@ class BridgeSupportProcessFundsMigrationTest {
         @Test
         void updateCollections_pastMigrationAge_preRSKIP455_withMoreUtxosThanMaxInputs_shouldCreateLastMigrationTxWithMaxInputsAndClearRetiringFedEvenIfUtxosRemain() throws IOException {
             // Arrange
-            int numberOfUtxos = ABOVE_MAX_INPUTS_PER_PEGOUT_TX - 1;
+            int numberOfUtxos = ABOVE_MAX_INPUTS_PER_PEGOUT_TX_LEGACY - 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             retiringUtxos.add(flyoverUtxo);
 
-            long executionBlockNumber = pastMigrationBlockNumber(VETIVER_ACTIVATIONS);
+            long executionBlockNumber = pastMigrationBlockNumberForVETIVER();
+            bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, VETIVER_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, VETIVER_ACTIVATIONS);
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
@@ -1625,7 +1618,7 @@ class BridgeSupportProcessFundsMigrationTest {
         ) throws IOException {
             assertMigrationTxCount(expectedMigrationTxCount);
 
-            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount();
+            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount(ALL_ACTIVATIONS);
             List<UTXO> migratedUtxos = new ArrayList<>();
             int remainingExpectedInputs = expectedTotalInputCount;
             for (BtcTransaction migrationTransaction : migrationTransactions) {
@@ -1655,9 +1648,9 @@ class BridgeSupportProcessFundsMigrationTest {
             int expectedMigrationTxCount,
             int expectedTotalInputCount
         ) throws IOException {
-            assertMigrationTxCount(expectedMigrationTxCount);
+            assertMigrationTxCountForVETIVER(expectedMigrationTxCount);
 
-            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount();
+            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount(VETIVER_ACTIVATIONS);
             List<UTXO> migratedUtxos = new ArrayList<>();
             int remainingExpectedInputs = expectedTotalInputCount;
             for (BtcTransaction migrationTransaction : migrationTransactions) {
@@ -1728,9 +1721,9 @@ class BridgeSupportProcessFundsMigrationTest {
         return Math.min(MAX_INPUTS_PER_PEGOUT_TX_LEGACY, remainingExpectedInputs);
     }
 
-    private List<BtcTransaction> getMigrationTransactionsSortedByCreationAndInputsCount() throws IOException {
+    private List<BtcTransaction> getMigrationTransactionsSortedByCreationAndInputsCount(ActivationConfig.ForBlock activations) throws IOException {
         return bridgeStorageProvider.getPegoutsWaitingForConfirmations()
-            .getEntries(ALL_ACTIVATIONS)
+            .getEntries(activations)
             .stream()
             .sorted(Comparator
                 .comparing(PegoutsWaitingForConfirmations.Entry::getPegoutCreationRskBlockNumber)
@@ -1831,12 +1824,20 @@ class BridgeSupportProcessFundsMigrationTest {
         return duringMigrationBlockNumber(ALL_ACTIVATIONS);
     }
 
+    private long duringMigrationBlockNumberForVETIVER() {
+        return duringMigrationBlockNumber(VETIVER_ACTIVATIONS);
+    }
+
     private long duringMigrationBlockNumber(ActivationConfig.ForBlock activations) {
         return blockNumberBeforeMigrationBegins(activations) + 1;
     }
 
     private long pastMigrationBlockNumber() {
         return pastMigrationBlockNumber(ALL_ACTIVATIONS);
+    }
+
+    private long pastMigrationBlockNumberForVETIVER() {
+        return pastMigrationBlockNumber(VETIVER_ACTIVATIONS);
     }
 
     private long pastMigrationBlockNumber(ActivationConfig.ForBlock activations) {
@@ -1858,6 +1859,10 @@ class BridgeSupportProcessFundsMigrationTest {
 
     private void assertMigrationTxCount(int expectedCount) throws IOException {
         assertEquals(expectedCount, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ALL_ACTIVATIONS).size());
+    }
+
+    private void assertMigrationTxCountForVETIVER(int expectedCount) throws IOException {
+        assertEquals(expectedCount, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(VETIVER_ACTIVATIONS).size());
     }
 
     private void assertNoMigrationTxCreated() throws IOException {
