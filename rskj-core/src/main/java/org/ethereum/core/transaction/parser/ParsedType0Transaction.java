@@ -45,7 +45,7 @@ public record ParsedType0Transaction(
         Objects.requireNonNull(data, "data cannot be null");
         Objects.requireNonNull(signatureState, "signatureState cannot be null");
 
-        nonce = nonce == null ? null : nonce.clone();
+        nonce = nonce.clone();
         gasLimit = gasLimit.clone();
         data = data.clone();
     }
