@@ -20,7 +20,9 @@ package org.ethereum.core.genesis;
 import javax.annotation.Nullable;
 
 public enum BlockTag {
-    PENDING("pending"), LATEST("latest"), EARLIEST("earliest"), FINALIZED("finalized"), SAFE("safe");
+    PENDING("pending"), LATEST("latest"), EARLIEST("earliest"), FINALIZED("finalized"), SAFE("safe"),
+    /** FAC fork-safe head (RSK extension); not Ethereum {@code safe}. */
+    FORK_SAFE("forkSafe");
 
     private final String tag;
 

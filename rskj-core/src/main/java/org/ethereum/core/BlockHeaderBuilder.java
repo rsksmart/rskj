@@ -21,6 +21,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.mine.ForkBalanceProofUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
@@ -57,6 +58,7 @@ public class BlockHeaderBuilder {
     private byte[] mergedMiningForkDetectionData;
     private byte[] ummRoot;
     private byte[] baseEvent;
+    private byte[] forkBalanceProof;
     private short[] txExecutionSublistsEdges;
     private Coin minimumGasPrice;
     private int uncleCount;
@@ -264,6 +266,11 @@ public class BlockHeaderBuilder {
         return this;
     }
 
+    public BlockHeaderBuilder setForkBalanceProof(byte[] forkBalanceProof) {
+        this.forkBalanceProof = copy(forkBalanceProof, null);
+        return this;
+    }
+
     public BlockHeaderBuilder setTxExecutionSublistsEdges(short[] edges) {
         if (edges != null) {
             this.txExecutionSublistsEdges = new short[edges.length];
@@ -342,8 +349,24 @@ public class BlockHeaderBuilder {
         }
 
         byte version = activationConfig.getHeaderVersion(number);
+        if (version == 0x3 && forkBalanceProof == null) {
+            forkBalanceProof = ForkBalanceProofUtils.defaultForkBalanceProofSkeletonBytes();
+        }
 
         return switch (version) {
+            case 0x3 -> new BlockHeaderV3(
+                    parentHash, unclesHash, coinbase,
+                    stateRoot, txTrieRoot, receiptTrieRoot,
+                    logsBloom, difficulty, number,
+                    gasLimit, gasUsed, timestamp, extraData, paidFees,
+                    bitcoinMergedMiningHeader,
+                    bitcoinMergedMiningMerkleProof,
+                    bitcoinMergedMiningCoinbaseTransaction,
+                    mergedMiningForkDetectionData,
+                    minimumGasPrice, uncleCount,
+                    false, useRskip92Encoding,
+                    includeForkDetectionData, ummRoot, baseEvent, forkBalanceProof, txExecutionSublistsEdges, false);
+
             case 0x2 -> new BlockHeaderV2(
                     parentHash, unclesHash, coinbase,
                     stateRoot, txTrieRoot, receiptTrieRoot,

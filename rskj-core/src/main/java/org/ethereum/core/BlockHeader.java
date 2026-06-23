@@ -58,6 +58,19 @@ public abstract class BlockHeader {
     public abstract byte[] getBaseEvent();
     public abstract void setBaseEvent(byte[] baseEvent);
 
+    /**
+     * Optional fork-balance proof (header extension v3). Default: unsupported / null.
+     */
+    public byte[] getForkBalanceProof() {
+        return null;
+    }
+
+    public void setForkBalanceProof(byte[] forkBalanceProof) {
+        if (forkBalanceProof != null) {
+            throw new UnsupportedOperationException("forkBalanceProof not supported for this header version");
+        }
+    }
+
     // called after encoding the header, used to add elements at the end
     public abstract void addExtraFieldsToEncodedHeader(boolean usingCompressedEncoding, List<byte[]> fieldsToEncode);
 

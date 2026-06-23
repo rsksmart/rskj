@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.validators.BlockParentDependantValidationRule;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.BlockValidator;
+import co.rsk.validators.ForkBalanceValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
@@ -41,10 +42,21 @@ public class BlockValidatorImpl implements BlockValidator {
 
     private final BlockValidationRule blockValidator;
 
+    private final ForkBalanceValidationRule forkBalanceValidationRule;
+
     public BlockValidatorImpl(BlockStore blockStore, BlockParentDependantValidationRule blockParentValidator, BlockValidationRule blockValidator) {
+        this(blockStore, blockParentValidator, blockValidator, null);
+    }
+
+    public BlockValidatorImpl(
+            BlockStore blockStore,
+            BlockParentDependantValidationRule blockParentValidator,
+            BlockValidationRule blockValidator,
+            ForkBalanceValidationRule forkBalanceValidationRule) {
         this.blockStore = blockStore;
         this.blockParentValidator = blockParentValidator;
         this.blockValidator = blockValidator;
+        this.forkBalanceValidationRule = forkBalanceValidationRule;
     }
 
     /**
@@ -72,6 +84,10 @@ public class BlockValidatorImpl implements BlockValidator {
         }
 
         if(!this.blockValidator.isValid(block)) {
+            return false;
+        }
+
+        if (forkBalanceValidationRule != null && !forkBalanceValidationRule.isValid(block)) {
             return false;
         }
 

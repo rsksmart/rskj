@@ -172,6 +172,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private ConsensusValidationMainchainView consensusValidationMainchainView;
     private BlockFactory blockFactory;
     private BlockChainLoader blockChainLoader;
+    private BlockFacTracker blockFacTracker;
+    private FacBlockHashesCache facBlockHashesCache;
+    private BtcBlockFacCache btcBlockFacCache;
     private org.ethereum.db.BlockStore blockStore;
     private NetBlockStore netBlockStore;
     private TrieStore trieStore;
@@ -965,7 +968,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getMinerClock(),
                     getBlockFactory(),
                     getBuildInfo(),
-                    getMiningConfig()
+                    getMiningConfig(),
+                    getFacBlockHashesCache(),
+                    getBtcBlockFacCache(),
+                    getRskSystemProperties().getBitcoinjNetworkConstants()
             );
         }
 
@@ -1457,7 +1463,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return new BlockValidatorImpl(
                 getBlockStore(),
                 getBlockParentDependantValidationRule(),
-                getBlockValidationRule()
+                getBlockValidationRule(),
+                new ForkBalanceValidationRule(
+                        getRskSystemProperties().getActivationConfig(),
+                        getRskSystemProperties().getNetworkConstants().getBridgeConstants(),
+                        getFacBlockHashesCache())
         );
     }
 
@@ -1720,6 +1730,37 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return new ArrayList<>(initialBootNodes);
     }
 
+    private synchronized BlockFacTracker getBlockFacTracker() {
+        if (blockFacTracker == null) {
+            blockFacTracker = new BlockFacTracker();
+        }
+        return blockFacTracker;
+    }
+
+    private synchronized FacBlockHashesCache getFacBlockHashesCache() {
+        if (facBlockHashesCache == null) {
+            facBlockHashesCache = new FacBlockHashesCache(
+                    getRskSystemProperties().forkBalanceFacCacheConfig().getDelayParameterSeconds());
+        }
+        return facBlockHashesCache;
+    }
+
+    private synchronized BtcBlockFacCache getBtcBlockFacCache() {
+        if (btcBlockFacCache == null) {
+            RskSystemProperties props = getRskSystemProperties();
+            ForkBalanceBtcCacheConfig cacheConfig = props.forkBalanceBtcCacheConfig();
+            BitcoinBlockRpcClient rpcClient = cacheConfig.isBtcRpcEnabled()
+                    ? new BitcoinBlockRpcClient(cacheConfig)
+                    : null;
+            btcBlockFacCache = new BtcBlockFacCache(
+                    cacheConfig,
+                    props.getNetworkConstants().getBridgeConstants().getBtcParams(),
+                    rpcClient,
+                    props.getActivationConfig());
+        }
+        return btcBlockFacCache;
+    }
+
     private BlockChainLoader getBlockChainLoader() {
         if (blockChainLoader == null) {
             blockChainLoader = new BlockChainLoader(
@@ -1731,7 +1772,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockExecutor(),
                     getGenesis(),
                     getStateRootHandler(),
-                    getRepositoryLocator()
+                    getRepositoryLocator(),
+                    getBlockFacTracker(),
+                    getFacBlockHashesCache(),
+                    getBtcBlockFacCache()
             );
         }
 

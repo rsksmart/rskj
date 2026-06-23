@@ -21,6 +21,8 @@ package org.ethereum.core;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.core.bc.BlockFacFields;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.TransactionInfo;
 
@@ -42,6 +44,17 @@ public interface Blockchain {
      * @return - bloc by that hash
      */
     Block getBlockByHash(byte[] hash);
+
+    /**
+     * Fork-balance / FAC metadata for a block (in-memory; may be null if unknown or tracker disabled).
+     */
+    @Nullable
+    BlockFacFields getBlockFacFields(Keccak256 blockHash);
+
+    /**
+     * {@code BTC_TAIL} from the latest FAC hash-cache update ({@link FacBlockCacheEviction}); {@code 0} when unset.
+     */
+    long getLastBtcBlockTimestamp();
 
     /**
      * Get total difficulty from the start

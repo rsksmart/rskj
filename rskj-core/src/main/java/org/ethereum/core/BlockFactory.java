@@ -205,6 +205,7 @@ public final class BlockFactory implements BtcHeaderSizeRule {
             version = compressed
                     ? RLP.decodeList(extensionData).get(0).getRLPData()[0]
                     : rlpHeader.get(r++).getRLPData()[0];
+            validateWireVersionForRelaxedForkBalanceLayout(rlpHeader, blockNumber, compressed, version);
         }
 
         short[] txExecutionSublistsEdges = null;
@@ -219,6 +220,11 @@ public final class BlockFactory implements BtcHeaderSizeRule {
 
         if (rlpHeader.size() > r && isBaseEventEnabled(blockNumber) && !compressed) {
             baseEvent = rlpHeader.get(r++).getRLPRawData();
+        }
+
+        byte[] forkBalanceProof = null;
+        if (rlpHeader.size() > r && !compressed && version == 0x3) {
+            forkBalanceProof = rlpHeader.get(r++).getRLPRawData();
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -238,7 +244,7 @@ public final class BlockFactory implements BtcHeaderSizeRule {
         return createBlockHeader(compressed, sealed, parentHash, unclesHash,
                 coinBaseBytes, coinbase, stateRoot, txTrieRoot, receiptTrieRoot, extensionData,
                 difficultyBytes, difficulty, glBytes, blockNumber, gasUsed, timestamp, extraData,
-                paidFees, minimumGasPriceBytes, minimumGasPrice, uncleCount, ummRoot, baseEvent, version,
+                paidFees, minimumGasPriceBytes, minimumGasPrice, uncleCount, ummRoot, baseEvent, forkBalanceProof, version,
                 txExecutionSublistsEdges,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 useRskip92Encoding, includeForkDetectionData);
@@ -259,7 +265,7 @@ public final class BlockFactory implements BtcHeaderSizeRule {
                                           byte[] difficultyBytes, BlockDifficulty difficulty, byte[] glBytes, long blockNumber, long gasUsed,
                                           long timestamp, byte[] extraData,
                                           Coin paidFees, byte[] minimumGasPriceBytes, Coin minimumGasPrice, int uncleCount, byte[] ummRoot,
-                                          byte[] baseEvent, byte version, short[] txExecutionSublistsEdges,
+                                          byte[] baseEvent, byte[] forkBalanceProof, byte version, short[] txExecutionSublistsEdges,
                                           byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                                           byte[] bitcoinMergedMiningCoinbaseTransaction,
                                           boolean useRskip92Encoding, boolean includeForkDetectionData) {
@@ -281,6 +287,17 @@ public final class BlockFactory implements BtcHeaderSizeRule {
                     useRskip92Encoding,
                     coinBaseBytes,
                     stateRoot);
+        }
+
+        if (version == 3) {
+            return new BlockHeaderV3(
+                    parentHash, unclesHash, coinbase, stateRoot,
+                    txTrieRoot, receiptTrieRoot, extensionData, difficulty,
+                    blockNumber, glBytes, gasUsed, timestamp, extraData,
+                    paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                    bitcoinMergedMiningCoinbaseTransaction, new byte[0],
+                    minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
+                    ummRoot, baseEvent, forkBalanceProof, txExecutionSublistsEdges, compressed);
         }
 
         if (version == 2) {
@@ -335,8 +352,51 @@ public final class BlockFactory implements BtcHeaderSizeRule {
         int expectedSizeWithoutMining = calculateExpectedHeaderSize(blockNumber, compressed, false);
         int expectedSizeWithMining = calculateExpectedHeaderSize(blockNumber, compressed, true);
 
-        return rlpHeader.size() == expectedSizeWithoutMining ||
-                rlpHeader.size() == expectedSizeWithMining;
+        int n = rlpHeader.size();
+        if (n == expectedSizeWithoutMining || n == expectedSizeWithMining) {
+            return true;
+        }
+
+        if (!forkBalanceTopLevelWireLayoutCanDiffer(blockNumber, compressed)) {
+            return false;
+        }
+
+        byte configuredHeaderVersion = activationConfig.getHeaderVersion(blockNumber);
+        if (configuredHeaderVersion == 0x02) {
+            return n == expectedSizeWithoutMining + 1 || n == expectedSizeWithMining + 1;
+        }
+        return false;
+    }
+
+    /**
+     * Uncompressed v2/v3 headers differ by one optional top-level {@code forkBalanceProof} element.
+     */
+    private boolean forkBalanceTopLevelWireLayoutCanDiffer(long blockNumber, boolean compressed) {
+        if (compressed) {
+            return false;
+        }
+        return activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)
+                && activationConfig.isActive(ConsensusRule.RSKIP535, blockNumber);
+    }
+
+    private void validateWireVersionForRelaxedForkBalanceLayout(
+            RLPList rlpHeader,
+            long blockNumber,
+            boolean compressed,
+            byte wireVersion) {
+        if (!forkBalanceTopLevelWireLayoutCanDiffer(blockNumber, compressed)) {
+            return;
+        }
+        int withoutMining = calculateExpectedHeaderSize(blockNumber, compressed, false);
+        int withMining = calculateExpectedHeaderSize(blockNumber, compressed, true);
+        int n = rlpHeader.size();
+        if (activationConfig.getHeaderVersion(blockNumber) == 0x02
+                && (n == withoutMining + 1 || n == withMining + 1)
+                && wireVersion != 0x03) {
+            throw new IllegalArgumentException(
+                    "Invalid block header: list length implies fork-balance field (v3 wire) but version is "
+                            + wireVersion);
+        }
     }
 
     /**
@@ -365,10 +425,17 @@ public final class BlockFactory implements BtcHeaderSizeRule {
             // baseEvent is not enabled, field baseEvent is not present
             expectedFullSize -= 1;
         }
+        if (isForkBalanceProofTopLevelFieldActive(blockNumber, compressed)) {
+            expectedFullSize += 1;
+        }
         expectedFullSize -= getRSKIP351SizeAdjustmentFromExtensionData(blockNumber, compressed);
 
         return expectedFullSize;
 
+    }
+
+    private boolean isForkBalanceProofTopLevelFieldActive(long blockNumber, boolean compressed) {
+        return !compressed && activationConfig.getHeaderVersion(blockNumber) == 0x3;
     }
 
     private boolean isBlockHeaderCompressionEnabled(long blockNumber) {
@@ -409,6 +476,9 @@ public final class BlockFactory implements BtcHeaderSizeRule {
             // counting
             if (!isBaseEventEnabled(blockNumber)) {
                 extraHeaderFieldsToRemoveWhenCompressed -= 1;
+            }
+            if (activationConfig.getHeaderVersion(blockNumber) == 0x3) {
+                extraHeaderFieldsToRemoveWhenCompressed += 1;
             }
             return extraHeaderFieldsToRemoveWhenCompressed;
         }

@@ -40,14 +40,37 @@ public class BlockHeaderV2 extends BlockHeaderV1 {
                          Coin minimumGasPrice, int uncleCount, boolean sealed, boolean useRskip92Encoding,
                          boolean includeForkDetectionData, byte[] ummRoot, byte[] baseEvent,
                          short[] txExecutionSublistsEdges, boolean compressed) {
-        super(parentHash, unclesHash, coinbase, stateRoot,
+        this(
+                parentHash, unclesHash, coinbase, stateRoot,
+                txTrieRoot, receiptTrieRoot, extensionData, difficulty,
+                number, gasLimit, gasUsed, timestamp, extraData, paidFees,
+                bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
+                minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData, ummRoot,
+                makeExtension(compressed, extensionData, txExecutionSublistsEdges, baseEvent), compressed);
+    }
+
+    /**
+     * For subclasses (e.g. {@link BlockHeaderV3}) that supply a custom {@link BlockHeaderExtensionV2} subtype.
+     */
+    protected BlockHeaderV2(
+            byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot, byte[] txTrieRoot,
+            byte[] receiptTrieRoot, byte[] extensionData, BlockDifficulty difficulty, long number,
+            byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData, Coin paidFees,
+            byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+            byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
+            Coin minimumGasPrice, int uncleCount, boolean sealed, boolean useRskip92Encoding,
+            boolean includeForkDetectionData, byte[] ummRoot,
+            BlockHeaderExtensionV2 extension, boolean compressed) {
+        super(
+                parentHash, unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, compressed ? extensionData : null, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount, sealed,
                 useRskip92Encoding, includeForkDetectionData, ummRoot,
-                makeExtension(compressed, extensionData, txExecutionSublistsEdges, baseEvent), compressed);
+                extension, compressed);
     }
 
     private static BlockHeaderExtensionV2 makeExtension(boolean compressed,

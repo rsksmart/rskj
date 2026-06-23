@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
@@ -38,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -95,6 +97,13 @@ public class BlockChainImpl implements Blockchain {
     private final BlockExecutor blockExecutor;
     private boolean noValidation;
 
+    @Nullable
+    private final BlockFacTracker blockFacTracker;
+    @Nullable
+    private final FacBlockHashesCache facBlockHashesCache;
+    @Nullable
+    private final BtcBlockFacCache btcBlockFacCache;
+
     public BlockChainImpl(BlockStore blockStore,
                           ReceiptStore receiptStore,
                           TransactionPool transactionPool,
@@ -102,6 +111,42 @@ public class BlockChainImpl implements Blockchain {
                           BlockValidator blockValidator,
                           BlockExecutor blockExecutor,
                           StateRootHandler stateRootHandler) {
+        this(blockStore, receiptStore, transactionPool, listener, blockValidator, blockExecutor, stateRootHandler, null, null, null);
+    }
+
+    public BlockChainImpl(BlockStore blockStore,
+                          ReceiptStore receiptStore,
+                          TransactionPool transactionPool,
+                          EthereumListener listener,
+                          BlockValidator blockValidator,
+                          BlockExecutor blockExecutor,
+                          StateRootHandler stateRootHandler,
+                          @Nullable BlockFacTracker blockFacTracker) {
+        this(blockStore, receiptStore, transactionPool, listener, blockValidator, blockExecutor, stateRootHandler, blockFacTracker, null, null);
+    }
+
+    public BlockChainImpl(BlockStore blockStore,
+                          ReceiptStore receiptStore,
+                          TransactionPool transactionPool,
+                          EthereumListener listener,
+                          BlockValidator blockValidator,
+                          BlockExecutor blockExecutor,
+                          StateRootHandler stateRootHandler,
+                          @Nullable BlockFacTracker blockFacTracker,
+                          @Nullable FacBlockHashesCache facBlockHashesCache) {
+        this(blockStore, receiptStore, transactionPool, listener, blockValidator, blockExecutor, stateRootHandler, blockFacTracker, facBlockHashesCache, null);
+    }
+
+    public BlockChainImpl(BlockStore blockStore,
+                          ReceiptStore receiptStore,
+                          TransactionPool transactionPool,
+                          EthereumListener listener,
+                          BlockValidator blockValidator,
+                          BlockExecutor blockExecutor,
+                          StateRootHandler stateRootHandler,
+                          @Nullable BlockFacTracker blockFacTracker,
+                          @Nullable FacBlockHashesCache facBlockHashesCache,
+                          @Nullable BtcBlockFacCache btcBlockFacCache) {
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.listener = listener;
@@ -109,6 +154,9 @@ public class BlockChainImpl implements Blockchain {
         this.blockExecutor = blockExecutor;
         this.transactionPool = transactionPool;
         this.stateRootHandler = stateRootHandler;
+        this.blockFacTracker = blockFacTracker;
+        this.facBlockHashesCache = facBlockHashesCache;
+        this.btcBlockFacCache = btcBlockFacCache;
     }
 
     @VisibleForTesting
@@ -237,6 +285,7 @@ public class BlockChainImpl implements Blockchain {
         // Validate incoming block before its processing
         if (!isValid(block)) {
             long blockNumber = block.getNumber();
+            FacPerfLogger.logBlockValidatorRejected(block);
             logger.warn("Invalid block with number: {}", blockNumber);
             panicProcessor.panic("invalidblock", String.format("Invalid block %s %s", blockNumber, block.getHash()));
             profiler.stop(metric);
@@ -281,6 +330,10 @@ public class BlockChainImpl implements Blockchain {
             profiler.stop(metric);
         }
 
+        if (btcBlockFacCache != null) {
+            btcBlockFacCache.recordFromImportedRskBlock(block);
+        }
+
         metric = profiler.start(MetricKind.AFTER_BLOCK_EXEC);
         // the new accumulated difficulty
         BlockDifficulty totalDifficulty = parentTotalDifficulty.add(block.getCumulativeDifficulty());
@@ -288,12 +341,15 @@ public class BlockChainImpl implements Blockchain {
 
         // It is the new best block
         if (SelectionRule.shouldWeAddThisBlock(totalDifficulty, status.getTotalDifficulty(),block, bestBlock)) {
-            if (bestBlock != null && !bestBlock.isParentOf(block)) {
+            boolean reorg = bestBlock != null && !bestBlock.isParentOf(block);
+            if (reorg) {
                 logger.trace("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
                         bestBlock.getPrintableHash(), block.getPrintableHash(), bestBlock.getNumber(), block.getNumber(),
                         status.getTotalDifficulty(), totalDifficulty);
                 blockStore.reBranch(block);
             }
+
+            updateFacForImportedBestBlock(block, parent, bestBlock, reorg);
 
             logger.trace("Start switchToBlockChain");
             switchToBlockChain(block, totalDifficulty);
@@ -313,6 +369,7 @@ public class BlockChainImpl implements Blockchain {
             if (block.getNumber() % 100 == 0) {
                 logger.info("*** Last block added [ #{} ]", block.getNumber());
             }
+            FacPerfLogger.logBlockConnected(block, ImportResult.IMPORTED_BEST, blockFacTracker, blockStore);
 
             profiler.stop(metric);
             return ImportResult.IMPORTED_BEST;
@@ -338,6 +395,7 @@ public class BlockChainImpl implements Blockchain {
             }
 
             logger.trace("Block not imported {} {}", block.getNumber(), block.getPrintableHash());
+            FacPerfLogger.logBlockConnected(block, ImportResult.IMPORTED_NOT_BEST, blockFacTracker, blockStore);
             profiler.stop(metric);
             return ImportResult.IMPORTED_NOT_BEST;
         }
@@ -416,6 +474,57 @@ public class BlockChainImpl implements Blockchain {
 
     @Override
     public Block getBlockByNumber(long number) { return blockStore.getChainBlockByNumber(number); }
+
+    @Override
+    @Nullable
+    public BlockFacFields getBlockFacFields(Keccak256 blockHash) {
+        if (blockFacTracker == null) {
+            return null;
+        }
+        Block b = blockStore.getBlockByHash(blockHash.getBytes());
+        if (b == null) {
+            return null;
+        }
+        blockFacTracker.ensureChainRecorded(blockStore, b);
+        return blockFacTracker.get(blockHash);
+    }
+
+    @Override
+    public long getLastBtcBlockTimestamp() {
+        if (facBlockHashesCache == null) {
+            return 0L;
+        }
+        return facBlockHashesCache.getLastBtcTailTimestampSeconds();
+    }
+
+    /**
+     * Updates in-memory FAC state only for blocks that become (or extend) the canonical best chain.
+     */
+    private void updateFacForImportedBestBlock(
+            Block block,
+            @Nullable Block parent,
+            @Nullable Block previousBest,
+            boolean reorg) {
+        if (blockFacTracker == null && facBlockHashesCache == null) {
+            return;
+        }
+        if (reorg && previousBest != null) {
+            BlockFork fork = new BlockchainBranchComparator(blockStore).calculateFork(previousBest, block);
+            if (blockFacTracker != null) {
+                blockFacTracker.onReorganization(blockStore, fork);
+            }
+            if (facBlockHashesCache != null && blockFacTracker != null) {
+                facBlockHashesCache.warmFromCanonicalTip(blockFacTracker, blockStore, block);
+            }
+            return;
+        }
+        if (blockFacTracker != null) {
+            blockFacTracker.recordAfterSuccessfulValidation(blockStore, block, parent);
+        }
+        if (facBlockHashesCache != null && blockFacTracker != null) {
+            facBlockHashesCache.appendAfterSuccessfulValidation(blockFacTracker, blockStore, block, parent);
+        }
+    }
 
     @Override
     public Block getBestBlock() {

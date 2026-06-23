@@ -34,6 +34,7 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
+import co.rsk.validators.ForkBalanceValidationRule;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoaderImpl;
@@ -48,6 +49,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +74,15 @@ public class BlockChainBuilder {
     private RepositoryLocator repositoryLocator;
     private TrieStore trieStore;
     private boolean requireUnclesValidation;
+    @Nullable
+    private BlockFacTracker blockFacTracker;
+    @Nullable
+    private ForkBalanceValidationRule forkBalanceValidationRule;
+    @Nullable
+    private FacBlockHashesCache facBlockHashesCache;
+    @Nullable
+    private BtcBlockFacCache btcBlockFacCache;
+    private BlockExecutor blockExecutor;
 
     public BlockChainBuilder() {
         this.requireUnclesValidation = true; // default
@@ -165,6 +176,30 @@ public class BlockChainBuilder {
         return blockStore;
     }
 
+    public BlockChainBuilder setBlockFacTracker(@Nullable BlockFacTracker blockFacTracker) {
+        this.blockFacTracker = blockFacTracker;
+        return this;
+    }
+
+    public BlockChainBuilder setForkBalanceValidationRule(@Nullable ForkBalanceValidationRule forkBalanceValidationRule) {
+        this.forkBalanceValidationRule = forkBalanceValidationRule;
+        return this;
+    }
+
+    public BlockChainBuilder setFacBlockHashesCache(@Nullable FacBlockHashesCache facBlockHashesCache) {
+        this.facBlockHashesCache = facBlockHashesCache;
+        return this;
+    }
+
+    public BlockChainBuilder setBtcBlockFacCache(@Nullable BtcBlockFacCache btcBlockFacCache) {
+        this.btcBlockFacCache = btcBlockFacCache;
+        return this;
+    }
+
+    public BlockExecutor getBlockExecutor() {
+        return blockExecutor;
+    }
+
     public BlockChainImpl build() {
         BlocksIndex blocksIndex = new HashMapBlocksIndex();
 
@@ -217,13 +252,18 @@ public class BlockChainBuilder {
                     signatureCache);
         }
 
-        BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
-
+        BlockValidatorBuilder validatorBuilder = config instanceof TestSystemProperties
+                ? new BlockValidatorBuilder((TestSystemProperties) config)
+                : new BlockValidatorBuilder();
 
         validatorBuilder.addBlockRootValidationRule().addBlockTxsValidationRule(trieStore).blockStore(blockStore);
 
         if (requireUnclesValidation) { // to avoid UnnecessaryStubbingException when this mocking is not needed
             validatorBuilder.addBlockUnclesValidationRule(blockStore);
+        }
+
+        if (forkBalanceValidationRule != null) {
+            validatorBuilder.forkBalanceValidationRule(forkBalanceValidationRule);
         }
 
         BlockValidator blockValidator = validatorBuilder.build();
@@ -245,7 +285,7 @@ public class BlockChainBuilder {
         transactionPool = new TransactionPoolImpl(
                 config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
                 transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
-        BlockExecutor blockExecutor = new BlockExecutor(
+        this.blockExecutor = new BlockExecutor(
                 repositoryLocator,
                 transactionExecutorFactory,
                 config);
@@ -255,10 +295,13 @@ public class BlockChainBuilder {
                 transactionPool,
                 listener,
                 blockValidator,
-                blockExecutor,
+                this.blockExecutor,
                 genesis,
                 stateRootHandler,
-                repositoryLocator
+                repositoryLocator,
+                blockFacTracker,
+                facBlockHashesCache,
+                btcBlockFacCache
         ).loadBlockchain();
 
         if (this.testing) {
@@ -269,7 +312,7 @@ public class BlockChainBuilder {
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
         if (this.blocks != null) {
             for (Block b : this.blocks) {
-                blockExecutor.executeAndFillAll(b, blockChain.getBestBlock().getHeader());
+                this.blockExecutor.executeAndFillAll(b, blockChain.getBestBlock().getHeader());
                 b.seal();
                 blockChain.tryToConnect(b);
             }

@@ -23,6 +23,9 @@ import co.rsk.cli.tools.RewindBlocks;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockFacTracker;
+import co.rsk.core.bc.BtcBlockFacCache;
+import co.rsk.core.bc.FacBlockHashesCache;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
@@ -37,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 
 /**
@@ -55,6 +59,12 @@ public class BlockChainLoader {
     private final Genesis genesis;
     private final StateRootHandler stateRootHandler;
     private final RepositoryLocator repositoryLocator;
+    @Nullable
+    private final BlockFacTracker blockFacTracker;
+    @Nullable
+    private final FacBlockHashesCache facBlockHashesCache;
+    @Nullable
+    private final BtcBlockFacCache btcBlockFacCache;
 
     public BlockChainLoader(
             BlockStore blockStore,
@@ -65,7 +75,26 @@ public class BlockChainLoader {
             BlockExecutor blockExecutor,
             Genesis genesis,
             StateRootHandler stateRootHandler,
-            RepositoryLocator repositoryLocator) {
+            RepositoryLocator repositoryLocator,
+            @Nullable BlockFacTracker blockFacTracker,
+            @Nullable FacBlockHashesCache facBlockHashesCache) {
+        this(blockStore, receiptStore, transactionPool, listener, blockValidator, blockExecutor, genesis,
+                stateRootHandler, repositoryLocator, blockFacTracker, facBlockHashesCache, null);
+    }
+
+    public BlockChainLoader(
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            TransactionPool transactionPool,
+            EthereumListener listener,
+            BlockValidator blockValidator,
+            BlockExecutor blockExecutor,
+            Genesis genesis,
+            StateRootHandler stateRootHandler,
+            RepositoryLocator repositoryLocator,
+            @Nullable BlockFacTracker blockFacTracker,
+            @Nullable FacBlockHashesCache facBlockHashesCache,
+            @Nullable BtcBlockFacCache btcBlockFacCache) {
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.transactionPool = transactionPool;
@@ -75,6 +104,9 @@ public class BlockChainLoader {
         this.genesis = genesis;
         this.stateRootHandler = stateRootHandler;
         this.repositoryLocator = repositoryLocator;
+        this.blockFacTracker = blockFacTracker;
+        this.facBlockHashesCache = facBlockHashesCache;
+        this.btcBlockFacCache = btcBlockFacCache;
     }
 
     public BlockChainImpl loadBlockchain() {
@@ -112,9 +144,19 @@ public class BlockChainLoader {
                 listener,
                 blockValidator,
                 blockExecutor,
-                stateRootHandler
+                stateRootHandler,
+                blockFacTracker,
+                facBlockHashesCache,
+                btcBlockFacCache
         );
         blockchain.setStatus(bestBlock, totalDifficulty);
+
+        if (blockFacTracker != null) {
+            blockFacTracker.ensureChainRecorded(blockStore, bestBlock);
+        }
+        if (facBlockHashesCache != null && blockFacTracker != null) {
+            facBlockHashesCache.warmFromCanonicalTip(blockFacTracker, blockStore, bestBlock);
+        }
 
         return blockchain;
     }

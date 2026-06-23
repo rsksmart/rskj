@@ -95,11 +95,16 @@ public class ActivationConfig {
     }
 
     public byte getHeaderVersion(long blockNumber) {
-        if (this.isActive(ConsensusRule.RSKIP351, blockNumber)) {
-            return (byte) (this.isActive(ConsensusRule.RSKIP535, blockNumber) ? 0x2 : 0x1);
+        if (!this.isActive(ConsensusRule.RSKIP351, blockNumber)) {
+            return 0x0;
         }
-
-        return 0x0;
+        if (this.isActive(ConsensusRule.RSKIP555, blockNumber)) {
+            return 0x3;
+        }
+        if (this.isActive(ConsensusRule.RSKIP535, blockNumber)) {
+            return 0x2;
+        }
+        return 0x1;
     }
 
     public boolean isActive(ConsensusRule consensusRule, long blockNumber) {

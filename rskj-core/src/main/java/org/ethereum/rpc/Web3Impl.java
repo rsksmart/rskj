@@ -21,6 +21,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.core.bc.BlockFacFields;
 import co.rsk.crypto.Keccak256;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
@@ -393,16 +394,45 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_blockNumber() {
-        Block bestBlock = blockchain.getBestBlock();
+        return eth_blockNumber(null);
+    }
 
-        long b = 0;
+    @Override
+    public String eth_blockNumber(Boolean forkSafe) {
+        Block bestBlock = blockchain.getBestBlock();
+        long blockNumber = 0;
         if (bestBlock != null) {
-            b = bestBlock.getNumber();
+            if (Boolean.TRUE.equals(forkSafe)) {
+                Block forkSafeHead = loadFacSafeHeadBlock(bestBlock);
+                blockNumber = forkSafeHead != null ? forkSafeHead.getNumber() : bestBlock.getNumber();
+            } else {
+                blockNumber = bestBlock.getNumber();
+            }
         }
 
-        logger.debug("eth_blockNumber(): {}", b);
+        logger.debug("eth_blockNumber(forkSafe={}): {}", forkSafe, blockNumber);
 
-        return toQuantityJsonHex(b);
+        return toQuantityJsonHex(blockNumber);
+    }
+
+    /**
+     * FAC safe head for {@code anchor}, or {@code null} if not recorded or not found in the block store.
+     */
+    @Nullable
+    private Block loadFacSafeHeadBlock(Block anchor) {
+        BlockFacFields fac = blockchain.getBlockFacFields(anchor.getHash());
+        if (fac == null || fac.getLastSafeBlock() == null) {
+            return null;
+        }
+        return blockchain.getBlockByHash(fac.getLastSafeBlock().getBytes());
+    }
+
+    @Nullable
+    private Block resolveFacSafeBlock(@Nullable Block anchor, boolean useSafeHead) {
+        if (!useSafeHead || anchor == null) {
+            return anchor;
+        }
+        return loadFacSafeHeadBlock(anchor);
     }
 
     private String eth_call(CallArgumentsParam args, Map<String, String> inputs, List<AccountOverride> accountOverrideList) {
@@ -419,7 +449,7 @@ public class Web3Impl implements Web3 {
         List<AccountOverride> accountOverrideList = accParam.entrySet().stream()
                 .map(entry -> new AccountOverride(entry.getKey().getAddress()).fromAccountOverrideParam(entry.getValue())).toList();
         if (blockRefParam.getIdentifier() != null) {
-            return getEthModule().call(args, new BlockIdentifierParam(blockRefParam.getIdentifier()), accountOverrideList);
+            return getEthModule().call(args, new BlockIdentifierParam(resolveStateQueryBlockRef(blockRefParam)), accountOverrideList);
         }
         return eth_call(args, blockRefParam.getInputs(), accountOverrideList);
     }
@@ -427,7 +457,7 @@ public class Web3Impl implements Web3 {
     @Override
     public String eth_getCode(HexAddressParam address, BlockRefParam blockRefParam) {
         if (blockRefParam.getIdentifier() != null) {
-            return this.getCode(address, blockRefParam.getIdentifier());
+            return this.getCode(address, resolveStateQueryBlockRef(blockRefParam));
         } else {
             return this.eth_getCode(address, blockRefParam.getInputs());
         }
@@ -440,7 +470,7 @@ public class Web3Impl implements Web3 {
     @Override
     public String eth_getBalance(HexAddressParam address, BlockRefParam blockRefParam) {
         if (blockRefParam.getIdentifier() != null) {
-            return this.eth_getBalance(address, blockRefParam.getIdentifier());
+            return this.eth_getBalance(address, resolveStateQueryBlockRef(blockRefParam));
         } else {
             return this.eth_getBalance(address, blockRefParam.getInputs());
         }
@@ -483,7 +513,7 @@ public class Web3Impl implements Web3 {
     @Override
     public String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, BlockRefParam blockRefParam) {
         if (blockRefParam.getIdentifier() != null) {
-            return this.eth_getStorageAt(address, storageIdx, blockRefParam.getIdentifier());
+            return this.eth_getStorageAt(address, storageIdx, resolveStateQueryBlockRef(blockRefParam));
         }
         return this.eth_getStorageAt(address, storageIdx, blockRefParam.getInputs());
     }
@@ -513,7 +543,7 @@ public class Web3Impl implements Web3 {
     @Override
     public String rsk_getStorageBytesAt(HexAddressParam address, HexNumberParam storageIdx, BlockRefParam blockRefParam) {
         if (blockRefParam.getIdentifier() != null) {
-            return this.rsk_getStorageBytesAt(address, storageIdx, blockRefParam.getIdentifier());
+            return this.rsk_getStorageBytesAt(address, storageIdx, resolveStateQueryBlockRef(blockRefParam));
         }
         return this.rsk_getStorageBytesAt(address, storageIdx, blockRefParam.getInputs());
     }
@@ -542,7 +572,7 @@ public class Web3Impl implements Web3 {
     @Override
     public String eth_getTransactionCount(HexAddressParam address, BlockRefParam blockRefParam) {
         if (blockRefParam.getIdentifier() != null) {
-            return this.eth_getTransactionCount(address, blockRefParam.getIdentifier());
+            return this.eth_getTransactionCount(address, resolveStateQueryBlockRef(blockRefParam));
         } else {
             return this.eth_getTransactionCount(address, blockRefParam.getInputs());
         }
@@ -550,6 +580,38 @@ public class Web3Impl implements Web3 {
 
     private String eth_getTransactionCount(HexAddressParam address, Map<String, String> inputs) {
         return invokeByBlockRef(inputs, blockNumber -> this.eth_getTransactionCount(address, blockNumber));
+    }
+
+    /**
+     * Resolves a {@link BlockRefParam} to the block identifier used by {@link Web3InformationRetriever#getInformationProvider(String)}.
+     * {@code safe} maps to the canonical best block; {@code forkSafe} and {@code requireForkSafe} apply FAC fork-safe head.
+     */
+    private String resolveStateQueryBlockRef(BlockRefParam blockRefParam) {
+        if (blockRefParam.getIdentifier() != null) {
+            String identifier = blockRefParam.getIdentifier();
+            if (BlockTag.PENDING.tagEquals(identifier)) {
+                return BlockTag.PENDING.getTag();
+            }
+            if (blockRefParam.isSafeTag()) {
+                Block best = web3InformationRetriever.getBlock(BlockTag.SAFE.getTag())
+                        .orElseThrow(() -> blockNotFound("Block safe not found"));
+                return toQuantityJsonHex(best.getNumber());
+            }
+            if (blockRefParam.isForkSafeTag()) {
+                Block anchor = web3InformationRetriever.getBlock(BlockTag.FORK_SAFE.getTag())
+                        .orElseThrow(() -> blockNotFound("Block forkSafe not found"));
+                return toQuantityJsonHex(resolveFacSafeHeadOrFallback(anchor).getNumber());
+            }
+            return identifier;
+        }
+        return invokeByBlockRef(blockRefParam.getInputs(), blockNumber -> blockNumber);
+    }
+
+    private String resolveFacForkSafeBlockNumberHex(String blockNumberHex) {
+        long blockNumber = HexUtils.stringHexToBigInteger(blockNumberHex).longValue();
+        Block anchor = Optional.ofNullable(blockchain.getBlockByNumber(blockNumber))
+                .orElseThrow(() -> blockNotFound(String.format("Block %s not found", blockNumberHex)));
+        return toQuantityJsonHex(resolveFacSafeHeadOrFallback(anchor).getNumber());
     }
 
     /**
@@ -564,22 +626,31 @@ public class Web3Impl implements Web3 {
      */
     protected String invokeByBlockRef(Map<String, String> inputs, UnaryOperator<String> toInvokeByBlockNumber) {
         final boolean requireCanonical = Boolean.parseBoolean(inputs.get("requireCanonical"));
-        return applyIfPresent(inputs, "blockHash", blockHash -> this.toInvokeByBlockHash(blockHash, requireCanonical, toInvokeByBlockNumber))
-                    .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
-                    .orElseThrow(() -> invalidParamError("Invalid block input"))
-                );
+        final boolean requireForkSafe = Boolean.parseBoolean(inputs.get("requireForkSafe"));
+        UnaryOperator<String> invokeAtBlock = blockNumberHex -> {
+            String resolved = requireForkSafe ? resolveFacForkSafeBlockNumberHex(blockNumberHex) : blockNumberHex;
+            return toInvokeByBlockNumber.apply(resolved);
+        };
+        return applyIfPresent(inputs, "blockHash",
+                blockHash -> this.toInvokeByBlockHash(blockHash, requireCanonical, requireForkSafe, invokeAtBlock))
+                .orElseGet(() -> applyIfPresent(inputs, "blockNumber", invokeAtBlock)
+                        .orElseThrow(() -> invalidParamError("Invalid block input")));
     }
 
-    private String toInvokeByBlockHash(String blockHash, boolean requireCanonical, Function<String, String> toInvokeByBlockNumber) {
+    private String toInvokeByBlockHash(
+            String blockHash,
+            boolean requireCanonical,
+            boolean requireForkSafe,
+            Function<String, String> toInvokeByBlockNumber) {
         Block block = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(blockHash)))
                 .orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", blockHash)));
 
-        //check if is canonical required
         if (requireCanonical && !isInMainChain(block)) {
             throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", blockHash));
         }
 
-        return toInvokeByBlockNumber.apply(toQuantityJsonHex(block.getNumber()));
+        Block anchor = requireForkSafe ? resolveFacSafeHeadOrFallback(block) : block;
+        return toInvokeByBlockNumber.apply(toQuantityJsonHex(anchor.getNumber()));
     }
 
     private String eth_getTransactionCount(HexAddressParam address, String blockId) {
@@ -719,37 +790,83 @@ public class Web3Impl implements Web3 {
 
     @Override
     public BlockResultDTO eth_getBlockByHash(BlockHashParam blockHash, Boolean fullTransactionObjects) {
+        return eth_getBlockByHash(blockHash, fullTransactionObjects, null);
+    }
+
+    @Override
+    public BlockResultDTO eth_getBlockByHash(BlockHashParam blockHash, Boolean fullTransactionObjects, Boolean forkSafe) {
         if (blockHash == null) {
             throw invalidParamError("blockHash is null");
         }
 
-        BlockResultDTO s = null;
+        BlockResultDTO dto = null;
         try {
-            Block b = this.blockchain.getBlockByHash(blockHash.getHash().getBytes());
-            s = (b == null ? null : getBlockResult(b, fullTransactionObjects));
-            return s;
+            Block block = blockchain.getBlockByHash(blockHash.getHash().getBytes());
+            Block resolved = resolveFacSafeBlock(block, Boolean.TRUE.equals(forkSafe));
+            if (resolved == null && Boolean.TRUE.equals(forkSafe)) {
+                resolved = block;
+            }
+            dto = resolved == null ? null : getBlockResult(resolved, fullTransactionObjects);
+            return dto;
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getBlockByHash({}, {}): {}", blockHash, fullTransactionObjects, s);
+                logger.debug("eth_getBlockByHash({}, {}, forkSafe={}): {}", blockHash, fullTransactionObjects, forkSafe, dto);
             }
         }
     }
 
     @Override
     public BlockResultDTO eth_getBlockByNumber(BlockIdentifierParam identifierParam, Boolean fullTransactionObjects) {
-        BlockResultDTO s = null;
+        return eth_getBlockByNumber(identifierParam, fullTransactionObjects, null);
+    }
+
+    @Nullable
+    private Block resolveFacSafeHeadOrFallback(@Nullable Block anchor) {
+        if (anchor == null) {
+            return null;
+        }
+        Block safeHead = loadFacSafeHeadBlock(anchor);
+        return safeHead != null ? safeHead : anchor;
+    }
+
+    @Override
+    public BlockResultDTO eth_getBlockByNumber(BlockIdentifierParam identifierParam, Boolean fullTransactionObjects, Boolean forkSafe) {
         String bnOrId = identifierParam.getIdentifier();
-
+        BlockResultDTO dto = null;
         try {
-
-            s = web3InformationRetriever.getBlock(bnOrId)
-                    .map(b -> getBlockResult(b, fullTransactionObjects))
-                    .orElse(null);
-
-            return s;
+            boolean useForkSafe = Boolean.TRUE.equals(forkSafe) || identifierParam.isRequireForkSafe();
+            if (identifierParam.isSafeTag()) {
+                Optional<Block> best = web3InformationRetriever.getBlock(BlockTag.SAFE.getTag());
+                if (best.isEmpty()) {
+                    return null;
+                }
+                dto = getBlockResult(best.get(), fullTransactionObjects);
+                return dto;
+            }
+            if (identifierParam.isForkSafeTag()) {
+                Optional<Block> anchor = web3InformationRetriever.getBlock(BlockTag.FORK_SAFE.getTag());
+                if (anchor.isEmpty()) {
+                    return null;
+                }
+                Block resolved = resolveFacSafeHeadOrFallback(anchor.get());
+                dto = getBlockResult(resolved, fullTransactionObjects);
+                return dto;
+            }
+            Optional<Block> anchor = web3InformationRetriever.getBlock(bnOrId);
+            if (anchor.isEmpty()) {
+                return null;
+            }
+            Block resolved = useForkSafe
+                    ? resolveFacSafeHeadOrFallback(anchor.get())
+                    : anchor.get();
+            if (resolved == null) {
+                return null;
+            }
+            dto = getBlockResult(resolved, fullTransactionObjects);
+            return dto;
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getBlockByNumber({}, {}): {}", bnOrId, fullTransactionObjects, s);
+                logger.debug("eth_getBlockByNumber({}, {}, forkSafe={}): {}", bnOrId, fullTransactionObjects, forkSafe, dto);
             }
         }
     }

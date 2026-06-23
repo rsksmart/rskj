@@ -33,11 +33,13 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Arrays;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
@@ -56,11 +58,19 @@ import com.google.common.annotations.VisibleForTesting;
 
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.MiningConfig;
+import co.rsk.config.ForkBalanceBtcCacheConfig;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BtcBlockFacCache;
+import co.rsk.core.bc.BtcMiningParentResolution;
+import co.rsk.core.bc.CachedBtcBlockForFac;
+import co.rsk.core.bc.FacBlockHashesCache;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockProcessor;
@@ -95,10 +105,13 @@ public class MinerServerImpl implements MinerServer {
     private final ProofOfWorkRule powRule;
     private final BlockToMineBuilder builder;
     private final ActivationConfig activationConfig;
+    private final ForkBalanceBtcCacheConfig forkBalanceBtcCacheConfig;
     private final MinerClock clock;
     private final BlockFactory blockFactory;
 
     private Timer refreshWorkTimer;
+    @Nullable
+    private TimerTask pendingWorkBuildRetry;
     private NewBlockTxListener blockListener;
 
     private boolean started;
@@ -107,6 +120,8 @@ public class MinerServerImpl implements MinerServer {
 
     @GuardedBy("lock")
     private final LinkedHashMap<Keccak256, Block> blocksWaitingForPoW;
+    @GuardedBy("lock")
+    private final LinkedHashMap<Keccak256, Sha256Hash> btcMiningParentByWorkHash;
     @GuardedBy("lock")
     private Keccak256 latestParentHash;
     @GuardedBy("lock")
@@ -125,7 +140,19 @@ public class MinerServerImpl implements MinerServer {
     private final SubmissionRateLimitHandler submissionRateLimitHandler;
 
     private final boolean updateWorkOnNewTransaction;
-    
+
+    @Nullable
+    private final FacBlockHashesCache facBlockHashesCache;
+
+    @Nullable
+    private final BtcBlockFacCache btcBlockFacCache;
+
+    private final NetworkParameters bitcoinNetworkParameters;
+
+    @GuardedBy("lock")
+    @Nullable
+    private BtcBlock regtestBtcMiningTip;
+
     public MinerServerImpl(
             RskSystemProperties config,
             Ethereum ethereum,
@@ -138,7 +165,44 @@ public class MinerServerImpl implements MinerServer {
             BuildInfo buildInfo,
             MiningConfig miningConfig) {
         this(config, ethereum, mainchainView, nodeBlockProcessor, powRule, builder,
-                clock, blockFactory, buildInfo, miningConfig, SubmissionRateLimitHandler.ofMiningConfig(miningConfig));
+                clock, blockFactory, buildInfo, miningConfig, SubmissionRateLimitHandler.ofMiningConfig(miningConfig),
+                null, null, config.getBitcoinjNetworkConstants());
+    }
+
+    public MinerServerImpl(
+            RskSystemProperties config,
+            Ethereum ethereum,
+            MiningMainchainView mainchainView,
+            BlockProcessor nodeBlockProcessor,
+            ProofOfWorkRule powRule,
+            BlockToMineBuilder builder,
+            MinerClock clock,
+            BlockFactory blockFactory,
+            BuildInfo buildInfo,
+            MiningConfig miningConfig,
+            @Nullable FacBlockHashesCache facBlockHashesCache) {
+        this(config, ethereum, mainchainView, nodeBlockProcessor, powRule, builder,
+                clock, blockFactory, buildInfo, miningConfig, SubmissionRateLimitHandler.ofMiningConfig(miningConfig),
+                facBlockHashesCache, null, config.getBitcoinjNetworkConstants());
+    }
+
+    public MinerServerImpl(
+            RskSystemProperties config,
+            Ethereum ethereum,
+            MiningMainchainView mainchainView,
+            BlockProcessor nodeBlockProcessor,
+            ProofOfWorkRule powRule,
+            BlockToMineBuilder builder,
+            MinerClock clock,
+            BlockFactory blockFactory,
+            BuildInfo buildInfo,
+            MiningConfig miningConfig,
+            @Nullable FacBlockHashesCache facBlockHashesCache,
+            @Nullable BtcBlockFacCache btcBlockFacCache,
+            NetworkParameters bitcoinNetworkParameters) {
+        this(config, ethereum, mainchainView, nodeBlockProcessor, powRule, builder,
+                clock, blockFactory, buildInfo, miningConfig, SubmissionRateLimitHandler.ofMiningConfig(miningConfig),
+                facBlockHashesCache, btcBlockFacCache, bitcoinNetworkParameters);
     }
 
     @VisibleForTesting
@@ -154,6 +218,27 @@ public class MinerServerImpl implements MinerServer {
             BuildInfo buildInfo,
             MiningConfig miningConfig,
             SubmissionRateLimitHandler submissionRateLimitHandler) {
+        this(config, ethereum, mainchainView, nodeBlockProcessor, powRule, builder,
+                clock, blockFactory, buildInfo, miningConfig, submissionRateLimitHandler,
+                null, null, config.getBitcoinjNetworkConstants());
+    }
+
+    @VisibleForTesting
+    MinerServerImpl(
+            RskSystemProperties config,
+            Ethereum ethereum,
+            MiningMainchainView mainchainView,
+            BlockProcessor nodeBlockProcessor,
+            ProofOfWorkRule powRule,
+            BlockToMineBuilder builder,
+            MinerClock clock,
+            BlockFactory blockFactory,
+            BuildInfo buildInfo,
+            MiningConfig miningConfig,
+            SubmissionRateLimitHandler submissionRateLimitHandler,
+            @Nullable FacBlockHashesCache facBlockHashesCache,
+            @Nullable BtcBlockFacCache btcBlockFacCache,
+            NetworkParameters bitcoinNetworkParameters) {
         this.ethereum = ethereum;
         this.mainchainView = mainchainView;
         this.nodeBlockProcessor = nodeBlockProcessor;
@@ -162,6 +247,7 @@ public class MinerServerImpl implements MinerServer {
         this.clock = clock;
         this.blockFactory = blockFactory;
         this.activationConfig = config.getActivationConfig();
+        this.forkBalanceBtcCacheConfig = config.forkBalanceBtcCacheConfig();
 
         this.submissionRateLimitHandler = Objects.requireNonNull(submissionRateLimitHandler);
         if (this.submissionRateLimitHandler.isEnabled()) {
@@ -169,6 +255,7 @@ public class MinerServerImpl implements MinerServer {
         }
 
         blocksWaitingForPoW = createNewBlocksWaitingList();
+        btcMiningParentByWorkHash = createNewBtcParentByWorkMap();
 
         latestPaidFeesWithNotify = Coin.ZERO;
         latestParentHash = null;
@@ -177,8 +264,12 @@ public class MinerServerImpl implements MinerServer {
         gasUnitInDollars = BigDecimal.valueOf(miningConfig.getGasUnitInDollars());
 
         updateWorkOnNewTransaction = config.updateWorkOnNewTransaction();
-        
+
         extraData = buildExtraData(config, buildInfo);
+
+        this.facBlockHashesCache = facBlockHashesCache;
+        this.btcBlockFacCache = btcBlockFacCache;
+        this.bitcoinNetworkParameters = Objects.requireNonNull(bitcoinNetworkParameters, "bitcoinNetworkParameters");
     }
 
     private byte[] buildExtraData(RskSystemProperties config, BuildInfo buildInfo) {
@@ -193,6 +284,18 @@ public class MinerServerImpl implements MinerServer {
 
             @Override
             protected boolean removeEldestEntry(Map.Entry<Keccak256, Block> eldest) {
+                return size() > CACHE_SIZE;
+            }
+        };
+    }
+
+    private LinkedHashMap<Keccak256, Sha256Hash> createNewBtcParentByWorkMap() {
+        return new LinkedHashMap<Keccak256, Sha256Hash>(CACHE_SIZE) {
+
+            private static final long serialVersionUID = -5847293847129476319L;
+
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<Keccak256, Sha256Hash> eldest) {
                 return size() > CACHE_SIZE;
             }
         };
@@ -221,6 +324,16 @@ public class MinerServerImpl implements MinerServer {
                 refreshWorkTimer.cancel();
                 refreshWorkTimer = null;
             }
+            cancelPendingWorkBuildRetry();
+        }
+    }
+
+    private void cancelPendingWorkBuildRetry() {
+        synchronized (lock) {
+            if (pendingWorkBuildRetry != null) {
+                pendingWorkBuildRetry.cancel();
+                pendingWorkBuildRetry = null;
+            }
         }
     }
 
@@ -229,6 +342,8 @@ public class MinerServerImpl implements MinerServer {
         if (started) {
             return;
         }
+
+        requireBitcoinRpcForV3MiningIfApplicable();
 
         synchronized (lock) {
             started = true;
@@ -243,6 +358,32 @@ public class MinerServerImpl implements MinerServer {
             refreshWorkTimer = new Timer("Refresh work for mining");
             refreshWorkTimer.schedule(new RefreshBlock(), DELAY_BETWEEN_BUILD_BLOCKS_MS, DELAY_BETWEEN_BUILD_BLOCKS_MS);
         }
+    }
+
+    /**
+     * Mining pools must configure {@code miner.forkBalance.btcRpc.url} when the next block uses header v3.
+     */
+    @VisibleForTesting
+    void requireBitcoinRpcForV3MiningIfApplicable() {
+        if (bitcoinNetworkParameters instanceof RegTestParams) {
+            return;
+        }
+        long nextBlockNumber = mainchainView.get().isEmpty()
+                ? 0L
+                : mainchainView.get().get(mainchainView.get().size() - 1).getNumber() + 1L;
+        if (!activationConfig.isActive(ConsensusRule.RSKIP555, nextBlockNumber)) {
+            return;
+        }
+        if (activationConfig.getHeaderVersion(nextBlockNumber) != (byte) 0x03) {
+            return;
+        }
+        if (forkBalanceBtcCacheConfig.isBtcRpcEnabled()) {
+            return;
+        }
+        throw new IllegalStateException(
+                "miner.forkBalance.btcRpc.url must point to a local bitcoind when mining header v3 blocks "
+                        + "(RSKIP555 active at next height " + nextBlockNumber + "). "
+                        + "Validating-only nodes should leave this empty and keep miner.server.enabled=false.");
     }
 
     @Override
@@ -334,7 +475,15 @@ public class MinerServerImpl implements MinerServer {
 
         newBlock.setBitcoinMergedMiningHeader(blockWithHeaderOnly.cloneAsHeader().bitcoinSerialize());
         newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(coinbase.bitcoinSerialize(), lastTag));
-        newBlock.setBitcoinMergedMiningMerkleProof(MinerUtils.buildMerkleProof(activationConfig, proofBuilderFunction, newBlock.getNumber()));
+        byte[] mergedMiningMerkleProof = MinerUtils.buildMerkleProof(activationConfig, proofBuilderFunction, newBlock.getNumber());
+        newBlock.setBitcoinMergedMiningMerkleProof(mergedMiningMerkleProof);
+        if (!applyForkBalanceProofFromBtcParentIfApplicable(
+                newBlock, blockWithHeaderOnly, coinbase, key)) {
+            return new SubmitBlockResult(
+                    "ERROR",
+                    "Header v3 requires a valid Bitcoin parent block for fork-balance proof (parent unavailable or failed validation).");
+        }
+        updateRegtestBtcMiningTip(blockWithHeaderOnly);
         newBlock.seal();
 
         if (!isValid(newBlock)) {
@@ -342,14 +491,235 @@ public class MinerServerImpl implements MinerServer {
             logger.error(message);
 
             return new SubmitBlockResult("ERROR", message);
-        } else {
-            ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
-
-            logger.info("Mined block import result is {}: {} {} at height {}", importResult, newBlock.getPrintableHash(), newBlock.getPrintableHashForMergedMining(), newBlock.getNumber());
-            SubmittedBlockInfo blockInfo = new SubmittedBlockInfo(importResult, newBlock.getHash().getBytes(), newBlock.getNumber());
-
-            return new SubmitBlockResult("OK", "OK", blockInfo);
         }
+        if (btcBlockFacCache != null) {
+            btcBlockFacCache.recordFromMiningSubmit(
+                    blockWithHeaderOnly, coinbase, mergedMiningMerkleProof, newBlock.getNumber());
+        }
+        ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
+
+        logger.info("Mined block import result is {}: {} {} at height {}", importResult, newBlock.getPrintableHash(), newBlock.getPrintableHashForMergedMining(), newBlock.getNumber());
+        SubmittedBlockInfo blockInfo = new SubmittedBlockInfo(importResult, newBlock.getHash().getBytes(), newBlock.getNumber());
+
+        return new SubmitBlockResult("OK", "OK", blockInfo);
+    }
+
+    /**
+     * Rebuilds the fork-balance proof from the submitted merge-mined Bitcoin block and its parent (BTCB).
+     */
+    private boolean applyForkBalanceProofFromBtcParentIfApplicable(
+            Block newBlock,
+            BtcBlock mergedMinedBtcHeaderOrBlock,
+            BtcTransaction coinbase,
+            Keccak256 mergedMiningHashKey) {
+        if (newBlock.getHeader().getVersion() != (byte) 0x03) {
+            return true;
+        }
+        if (coinbase == null) {
+            logger.error("Fork balance proof: coinbase must not be null for v3 header at height {}", newBlock.getNumber());
+            return false;
+        }
+        Sha256Hash parentHash = mergedMinedBtcHeaderOrBlock.getPrevBlockHash();
+        synchronized (lock) {
+            Sha256Hash boundParent = btcMiningParentByWorkHash.get(mergedMiningHashKey);
+            if (boundParent != null && !boundParent.equals(parentHash)) {
+                logger.error(
+                        "Fork balance proof: submitted BTC parent {} does not match work-bound parent {} at height {}",
+                        parentHash,
+                        boundParent,
+                        newBlock.getNumber());
+                return false;
+            }
+        }
+        Optional<CachedBtcBlockForFac> cachedParent = resolveCachedBtcParent(parentHash);
+        if (cachedParent.isEmpty()) {
+            logger.warn(
+                    "Fork balance proof: BTC parent {} not available for v3 header at height {}",
+                    parentHash,
+                    newBlock.getNumber());
+            return false;
+        }
+        try {
+            List<Keccak256> rskHashesForProofType = facBlockHashesCache != null
+                    ? facBlockHashesCache.getMergedMiningHashesForProofType()
+                    : Collections.singletonList(mergedMiningHashKey);
+            byte[] proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
+                    rskHashesForProofType,
+                    mergedMinedBtcHeaderOrBlock,
+                    cachedParent.get());
+            newBlock.getHeader().setForkBalanceProof(proof);
+            return true;
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            logger.error("Fork balance proof failed for block at height {}: {}", newBlock.getNumber(), e.getMessage());
+            return false;
+        }
+    }
+
+    private Optional<CachedBtcBlockForFac> resolveCachedBtcParent(Sha256Hash parentHash) {
+        if (btcBlockFacCache == null) {
+            return Optional.empty();
+        }
+        return btcBlockFacCache.resolveParent(parentHash);
+    }
+
+    @Override
+    public BtcBlock buildBitcoinMergedMiningBlock(NetworkParameters params, MinerWork work) {
+        BtcTransaction coinbase = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(params, work);
+        if (shouldChainRegtestBtcBlocks(params)) {
+            synchronized (lock) {
+                BtcBlock parent = ensureRegtestBtcParent(params);
+                return RegtestBtcMergeMiningHelper.buildChildOnParent(params, parent, coinbase);
+            }
+        }
+        Optional<Sha256Hash> boundParent = resolveBoundBtcParentForWork(work);
+        if (boundParent.isPresent() && btcBlockFacCache != null) {
+            Optional<CachedBtcBlockForFac> miningParent = btcBlockFacCache.resolveParent(boundParent.get());
+            if (miningParent.isPresent()) {
+                BtcBlock parentBlock = miningParent.get().toBtcBlock(params);
+                return MinerUtils.buildChildTemplateOnParent(params, parentBlock, coinbase);
+            }
+            logger.warn(
+                    "Bound BTC parent {} is not available in fork-balance cache for work {}",
+                    boundParent.get(),
+                    work.getBlockHashForMergedMining());
+        }
+        return MinerUtils.getBitcoinMergedMiningBlock(params, coinbase);
+    }
+
+    private Optional<Sha256Hash> resolveBoundBtcParentForWork(MinerWork work) {
+        String btcParentFromWork = work.getBtcParentBlockHash();
+        if (btcParentFromWork != null && !btcParentFromWork.isEmpty()) {
+            return Optional.of(Sha256Hash.wrap(HexUtils.removeHexPrefix(btcParentFromWork)));
+        }
+        synchronized (lock) {
+            Keccak256 workKey = new Keccak256(HexUtils.removeHexPrefix(work.getBlockHashForMergedMining()));
+            return Optional.ofNullable(btcMiningParentByWorkHash.get(workKey));
+        }
+    }
+
+    private boolean shouldChainRegtestBtcBlocks(NetworkParameters params) {
+        return params instanceof RegTestParams;
+    }
+
+    private BtcBlock ensureRegtestBtcParent(NetworkParameters params) {
+        if (regtestBtcMiningTip != null) {
+            return regtestBtcMiningTip;
+        }
+        BtcTransaction parentCoinbase = RegtestBtcMergeMiningHelper.neutralCoinbase(params, (byte) 0x51);
+        BtcBlock parent = RegtestBtcMergeMiningHelper.mineParentWithTwoTransactions(
+                params, parentCoinbase);
+        if (btcBlockFacCache != null) {
+            byte[] parentMerkleProof = MinerUtils.buildMerkleProof(
+                    activationConfig,
+                    pb -> pb.buildFromBlock(parent),
+                    1L);
+            btcBlockFacCache.recordFromFullBtcBlock(parent, parentMerkleProof);
+        }
+        regtestBtcMiningTip = parent;
+        return parent;
+    }
+
+    private void updateRegtestBtcMiningTip(BtcBlock mergedMinedBtcBlock) {
+        if (!(bitcoinNetworkParameters instanceof RegTestParams)) {
+            return;
+        }
+        synchronized (lock) {
+            regtestBtcMiningTip = mergedMinedBtcBlock;
+        }
+    }
+
+    /**
+     * Precomputes the fork-balance proof at work-build time so the merged-mining hash is stable before
+     * the Bitcoin coinbase is assembled.
+     *
+     * @return the bound BTC parent hash when proof precomputation succeeds
+     */
+    private Optional<Sha256Hash> prepareForkBalanceProofAtWorkBuild(Block block) {
+        if (block == null || block.getHeader() == null) {
+            return Optional.empty();
+        }
+        if (block.getHeader().getVersion() != (byte) 0x03) {
+            throw new IllegalStateException("prepareForkBalanceProofAtWorkBuild is only for header v3");
+        }
+        if (btcBlockFacCache == null) {
+            logger.error(
+                    "Fork balance proof: BtcBlockFacCache is not configured for v3 work at height {}",
+                    block.getNumber());
+            return Optional.empty();
+        }
+        try {
+            synchronized (lock) {
+                Optional<BtcMiningParentResolution> parentResolution = resolveBtcMiningParentForWorkBuild();
+                if (parentResolution.isEmpty()) {
+                    logger.error(
+                            "Fork balance proof: BTC mining parent unavailable for v3 work at height {} "
+                                    + "(configure miner.forkBalance.btcRpc.url and ensure bitcoind is reachable)",
+                            block.getNumber());
+                    return Optional.empty();
+                }
+                BtcMiningParentResolution resolution = parentResolution.get();
+                if (resolution.getSource() == BtcMiningParentResolution.Source.CACHE_FALLBACK) {
+                    logger.info(
+                            "Fork balance proof: using cached BTC parent {} at height {} (RPC tip unavailable)",
+                            resolution.getParent().getBlockHash(),
+                            resolution.getParent().getHeight());
+                }
+                CachedBtcBlockForFac cachedParent = resolution.getParent();
+                List<Keccak256> rskHashes = facBlockHashesCache != null
+                        ? facBlockHashesCache.getMergedMiningHashesForProofType()
+                        : Collections.emptyList();
+
+                byte[] mergedMiningHash = block.getHashForMergedMining();
+                BtcBlock childTemplate = buildBtcChildTemplateForMining(cachedParent, mergedMiningHash);
+                byte[] proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
+                        rskHashes, childTemplate, cachedParent);
+                block.getHeader().setForkBalanceProof(proof);
+
+                byte[] mergedMiningHashAfterProof = block.getHashForMergedMining();
+                if (!java.util.Arrays.equals(mergedMiningHash, mergedMiningHashAfterProof)) {
+                    childTemplate = buildBtcChildTemplateForMining(cachedParent, mergedMiningHashAfterProof);
+                    proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
+                            rskHashes, childTemplate, cachedParent);
+                    block.getHeader().setForkBalanceProof(proof);
+                }
+
+                byte[] finalProof = block.getHeader().getForkBalanceProof();
+                if (finalProof == null || ForkBalanceProofUtils.isDefaultForkBalancePlaceholder(finalProof)) {
+                    logger.error(
+                            "Fork balance proof: placeholder proof remains after precompute for v3 work at height {}",
+                            block.getNumber());
+                    return Optional.empty();
+                }
+                return Optional.of(cachedParent.getBlockHash());
+            }
+        } catch (RuntimeException e) {
+            logger.error(
+                    "Fork balance proof: could not precompute for v3 work at height {}: {}",
+                    block.getNumber(),
+                    e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private Optional<BtcMiningParentResolution> resolveBtcMiningParentForWorkBuild() {
+        if (bitcoinNetworkParameters instanceof RegTestParams) {
+            BtcBlock parent = ensureRegtestBtcParent(bitcoinNetworkParameters);
+            return btcBlockFacCache.resolveParent(parent.getHash())
+                    .map(p -> new BtcMiningParentResolution(
+                            p, BtcMiningParentResolution.Source.LOCAL_CACHE_ONLY, null));
+        }
+        return btcBlockFacCache.resolveMiningParentForNewWork();
+    }
+
+    private BtcBlock buildBtcChildTemplateForMining(CachedBtcBlockForFac miningParent, byte[] mergedMiningHash) {
+        BtcTransaction coinbase = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(
+                bitcoinNetworkParameters, mergedMiningHash);
+        BtcBlock parentBlock = miningParent.toBtcBlock(bitcoinNetworkParameters);
+        if (bitcoinNetworkParameters instanceof RegTestParams) {
+            return RegtestBtcMergeMiningHelper.buildChildOnParent(
+                    bitcoinNetworkParameters, parentBlock, coinbase);
+        }
+        return MinerUtils.buildChildTemplateOnParent(bitcoinNetworkParameters, parentBlock, coinbase);
     }
 
     private boolean isValid(Block block) {
@@ -420,7 +790,8 @@ public class MinerServerImpl implements MinerServer {
                     return currentWork;
                 }
                 currentWork = new MinerWork(currentWork.getBlockHashForMergedMining(), currentWork.getTarget(),
-                       currentWork.getFeesPaidToMiner(), false, currentWork.getParentBlockHash());
+                       currentWork.getFeesPaidToMiner(), false, currentWork.getParentBlockHash(),
+                       currentWork.getBtcParentBlockHash());
             }
         }
         return work;
@@ -431,7 +802,17 @@ public class MinerServerImpl implements MinerServer {
         this.currentWork = work;
     }
 
-    public MinerWork updateGetWork(@Nonnull final Block block, @Nonnull final boolean notify) {
+    @VisibleForTesting
+    public Block getLatestBuiltBlockForTesting() {
+        synchronized (lock) {
+            return latestBlock;
+        }
+    }
+
+    public MinerWork updateGetWork(
+            @Nonnull final Block block,
+            @Nonnull final boolean notify,
+            @Nullable Sha256Hash btcParentHash) {
         Keccak256 blockMergedMiningHash = new Keccak256(block.getHashForMergedMining());
 
         BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
@@ -439,8 +820,40 @@ public class MinerServerImpl implements MinerServer {
         byte[] targetArray = new byte[32];
         System.arraycopy(targetUnknownLengthArray, 0, targetArray, 32 - targetUnknownLengthArray.length, targetUnknownLengthArray.length);
 
+        String btcParentJson = btcParentHash != null ? btcParentHash.toString() : "";
         logger.debug("Sending work for merged mining. Hash: {}", block.getPrintableHashForMergedMining());
-        return new MinerWork(blockMergedMiningHash.toJsonString(), HexUtils.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, block.getParentHashJsonString());
+        return new MinerWork(
+                blockMergedMiningHash.toJsonString(),
+                HexUtils.toJsonHex(targetArray),
+                String.valueOf(block.getFeesPaidToMiner()),
+                notify,
+                block.getParentHashJsonString(),
+                btcParentJson);
+    }
+
+    private void scheduleWorkBuildRetry() {
+        if (!started) {
+            return;
+        }
+        synchronized (lock) {
+            if (pendingWorkBuildRetry != null || refreshWorkTimer == null) {
+                return;
+            }
+            long delayMs = forkBalanceBtcCacheConfig.getWorkBuildRetryIntervalMs();
+            pendingWorkBuildRetry = new TimerTask() {
+                @Override
+                public void run() {
+                    synchronized (lock) {
+                        pendingWorkBuildRetry = null;
+                    }
+                    if (started) {
+                        logger.debug("Retrying work build after fork-balance parent resolution stall");
+                        buildBlockToMine(false);
+                    }
+                }
+            };
+            refreshWorkTimer.schedule(pendingWorkBuildRetry, delayMs);
+        }
     }
 
     public void setExtraData(byte[] clientExtraData) {
@@ -499,6 +912,19 @@ public class MinerServerImpl implements MinerServer {
 
         List<BlockHeader> mainchainHeaders = mainchainView.get();
         final Block newBlock = builder.build(mainchainHeaders, extraData).getBlock();
+        Optional<Sha256Hash> btcParentForWork = Optional.empty();
+        if (newBlock.getHeader().getVersion() == (byte) 0x03) {
+            Optional<Sha256Hash> btcParent = prepareForkBalanceProofAtWorkBuild(newBlock);
+            if (btcParent.isEmpty()) {
+                logger.error(
+                        "Skipping work update for block at height {}: fork-balance proof could not be precomputed",
+                        newBlock.getNumber());
+                scheduleWorkBuildRetry();
+                return;
+            }
+            btcParentForWork = btcParent;
+        }
+        cancelPendingWorkBuildRetry();
         clock.clearIncreaseTime();
 
         synchronized (lock) {
@@ -512,10 +938,12 @@ public class MinerServerImpl implements MinerServer {
             latestParentHash = parentHash;
             latestBlock = newBlock;
 
-            currentWork = updateGetWork(newBlock, notify);
+            currentWork = updateGetWork(newBlock, notify, btcParentForWork.orElse(null));
             Keccak256 latestBlockHashWaitingForPoW = new Keccak256(newBlock.getHashForMergedMining());
 
             blocksWaitingForPoW.put(latestBlockHashWaitingForPoW, latestBlock);
+            btcParentForWork.ifPresent(btcParent ->
+                    btcMiningParentByWorkHash.put(latestBlockHashWaitingForPoW, btcParent));
             logger.debug("blocksWaitingForPoW size {}", blocksWaitingForPoW.size());
         }
 

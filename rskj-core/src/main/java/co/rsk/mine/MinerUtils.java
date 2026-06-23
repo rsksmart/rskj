@@ -17,6 +17,7 @@
  */
 package co.rsk.mine;
 
+import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
@@ -145,6 +146,24 @@ public class MinerUtils {
         long time = System.currentTimeMillis() / 1000L;
         long difficultyTarget = co.rsk.bitcoinj.core.Utils.encodeCompactBits(params.getMaxTarget());
         return new co.rsk.bitcoinj.core.BtcBlock(params, params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT), prevBlockHash, null, time, difficultyTarget, 0, transactions);
+    }
+
+    /**
+     * Builds a merge-mining child template on a known Bitcoin parent (mainnet/testnet work-build path).
+     */
+    public static BtcBlock buildChildTemplateOnParent(
+            NetworkParameters params,
+            BtcBlock parent,
+            BtcTransaction childCoinbase) {
+        return new BtcBlock(
+                params,
+                params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT),
+                parent.getHash(),
+                null,
+                parent.getTimeSeconds() + 1,
+                parent.getDifficultyTarget(),
+                0,
+                Collections.singletonList(childCoinbase));
     }
 
     /**

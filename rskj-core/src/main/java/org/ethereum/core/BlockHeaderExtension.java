@@ -28,6 +28,12 @@ public interface BlockHeaderExtension {
         if (!(Objects.requireNonNull(extension) instanceof BlockHeaderExtensionV1)) {
             throw new IllegalArgumentException("Unknown extension");
         }
+        if (extension instanceof BlockHeaderExtensionV3) {
+            return RLP.encodeList(
+                    RLP.encodeByte((byte) 0x3),
+                    RLP.encodeElement(extension.getEncoded())
+            );
+        }
         if (extension instanceof BlockHeaderExtensionV2) {
             return RLP.encodeList(
                     RLP.encodeByte((byte) 0x2),
@@ -47,6 +53,9 @@ public interface BlockHeaderExtension {
         }
         byte[] versionData = rlpList.get(0).getRLPData();
         byte version = versionData == null || versionData.length == 0 ? 0 : versionData[0];
+        if (version == 0x3) {
+            return BlockHeaderExtensionV3.fromEncoded(rlpList.get(1).getRLPData());
+        }
         if (version == 0x2) {
             return BlockHeaderExtensionV2.fromEncoded(rlpList.get(1).getRLPData());
         }

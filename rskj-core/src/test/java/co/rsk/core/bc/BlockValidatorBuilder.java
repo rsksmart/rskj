@@ -65,6 +65,8 @@ public class BlockValidatorBuilder {
 
     private BlockStore blockStore;
 
+    private ForkBalanceValidationRule forkBalanceValidationRule;
+
     public BlockValidatorBuilder(TestSystemProperties customConfig) {
         this.config = customConfig;
     }
@@ -135,6 +137,11 @@ public class BlockValidatorBuilder {
         return this;
     }
 
+    public BlockValidatorBuilder forkBalanceValidationRule(ForkBalanceValidationRule forkBalanceValidationRule) {
+        this.forkBalanceValidationRule = forkBalanceValidationRule;
+        return this;
+    }
+
     public BlockValidatorImpl build() {
         if (this.blockCompositeRule == null) {
             this.blockCompositeRule = new BlockCompositeRule(this.txsMinGasPriceRule, this.blockUnclesValidationRule, this.blockRootValidationRule, this.remascValidationRule, this.blockTimeStampValidationRule);
@@ -144,7 +151,7 @@ public class BlockValidatorBuilder {
             this.blockParentCompositeRule = new BlockParentCompositeRule(this.blockTxsFieldsValidationRule, this.blockTxsValidationRule, this.prevMinGasPriceRule);
         }
 
-        return new BlockValidatorImpl(this.blockStore, this.blockParentCompositeRule, this.blockCompositeRule);
+        return new BlockValidatorImpl(this.blockStore, this.blockParentCompositeRule, this.blockCompositeRule, this.forkBalanceValidationRule);
     }
 
     public BlockValidatorBuilder addBlockTimeStampValidation(

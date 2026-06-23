@@ -33,14 +33,22 @@ public class MinerWork {
     private final String feesPaidToMiner;
     private final boolean notify;
     private final String parentBlockHash;
+    private final String btcParentBlockHash;
 
     public MinerWork(@Nonnull final String blockHashForMergedMining, @Nonnull final String target,
                      final String paidFees, final boolean notify, @Nonnull final String parentBlockHash) {
+        this(blockHashForMergedMining, target, paidFees, notify, parentBlockHash, "");
+    }
+
+    public MinerWork(@Nonnull final String blockHashForMergedMining, @Nonnull final String target,
+                     final String paidFees, final boolean notify, @Nonnull final String parentBlockHash,
+                     @Nonnull final String btcParentBlockHash) {
         this.blockHashForMergedMining = blockHashForMergedMining;
         this.target = target;
         this.feesPaidToMiner = paidFees;
         this.notify = notify;
         this.parentBlockHash = parentBlockHash;
+        this.btcParentBlockHash = btcParentBlockHash != null ? btcParentBlockHash : "";
     }
 
     public String getBlockHashForMergedMining() {
@@ -61,5 +69,13 @@ public class MinerWork {
 
     public String getParentBlockHash() {
         return parentBlockHash;
+    }
+
+    /**
+     * Header v3 only: Bitcoin parent block hash (BTCB) miners must extend for a valid fork-balance proof.
+     * Empty when not applicable.
+     */
+    public String getBtcParentBlockHash() {
+        return btcParentBlockHash;
     }
 }

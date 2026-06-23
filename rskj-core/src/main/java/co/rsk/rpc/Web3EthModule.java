@@ -75,6 +75,8 @@ public interface Web3EthModule {
 
     String eth_blockNumber();
 
+    String eth_blockNumber(Boolean forkSafe);
+
     String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam);
 
     String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam, Map<HexAddressParam, AccountOverrideParam> accParam);
@@ -111,7 +113,11 @@ public interface Web3EthModule {
 
     BlockResultDTO eth_getBlockByHash(BlockHashParam blockHash, Boolean fullTransactionObjects) throws Exception;
 
+    BlockResultDTO eth_getBlockByHash(BlockHashParam blockHash, Boolean fullTransactionObjects, Boolean forkSafe) throws Exception;
+
     BlockResultDTO eth_getBlockByNumber(BlockIdentifierParam bnOrId, Boolean fullTransactionObjects) throws Exception;
+
+    BlockResultDTO eth_getBlockByNumber(BlockIdentifierParam bnOrId, Boolean fullTransactionObjects, Boolean forkSafe) throws Exception;
 
     TransactionResultDTO eth_getTransactionByHash(TxHashParam transactionHash) throws Exception;
 

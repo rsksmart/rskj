@@ -174,6 +174,53 @@ public class RskSystemProperties extends SystemProperties {
         return getBoolean("miner.server.updateWorkOnNewTransaction", false);
     }
 
+    public ForkBalanceBtcCacheConfig forkBalanceBtcCacheConfig() {
+        Config cfg = configFromFiles;
+        String base = "miner.forkBalance";
+        int maxHeights = cfg.hasPath(base + ".btcBlockCache.maxHeights")
+                ? cfg.getInt(base + ".btcBlockCache.maxHeights")
+                : ForkBalanceBtcCacheConfig.DEFAULT_MAX_HEIGHTS;
+        String rpcUrl = cfg.hasPath(base + ".btcRpc.url")
+                ? cfg.getString(base + ".btcRpc.url")
+                : ForkBalanceBtcCacheConfig.DEFAULT_BTC_RPC_URL;
+        long requestDelayMs = cfg.hasPath(base + ".btcRpc.requestDelayMs")
+                ? cfg.getLong(base + ".btcRpc.requestDelayMs")
+                : ForkBalanceBtcCacheConfig.DEFAULT_RPC_REQUEST_DELAY_MS;
+        long timeoutMs = cfg.hasPath(base + ".btcRpc.timeout")
+                ? cfg.getDuration(base + ".btcRpc.timeout").toMillis()
+                : ForkBalanceBtcCacheConfig.DEFAULT_RPC_TIMEOUT_MS;
+        int retryAttempts = cfg.hasPath(base + ".btcRpc.retryAttempts")
+                ? cfg.getInt(base + ".btcRpc.retryAttempts")
+                : ForkBalanceBtcCacheConfig.DEFAULT_RPC_RETRY_ATTEMPTS;
+        long retryBackoffMs = cfg.hasPath(base + ".btcRpc.retryBackoffMs")
+                ? cfg.getLong(base + ".btcRpc.retryBackoffMs")
+                : ForkBalanceBtcCacheConfig.DEFAULT_RPC_RETRY_BACKOFF_MS;
+        long retryMaxBudgetMs = cfg.hasPath(base + ".btcRpc.retryMaxBudgetMs")
+                ? cfg.getDuration(base + ".btcRpc.retryMaxBudgetMs").toMillis()
+                : ForkBalanceBtcCacheConfig.DEFAULT_RPC_RETRY_MAX_BUDGET_MS;
+        long workBuildRetryIntervalMs = cfg.hasPath(base + ".btcRpc.workBuildRetryIntervalMs")
+                ? cfg.getDuration(base + ".btcRpc.workBuildRetryIntervalMs").toMillis()
+                : ForkBalanceBtcCacheConfig.DEFAULT_WORK_BUILD_RETRY_INTERVAL_MS;
+        return new ForkBalanceBtcCacheConfig(
+                maxHeights,
+                rpcUrl,
+                requestDelayMs,
+                timeoutMs,
+                retryAttempts,
+                retryBackoffMs,
+                retryMaxBudgetMs,
+                workBuildRetryIntervalMs);
+    }
+
+    public ForkBalanceFacCacheConfig forkBalanceFacCacheConfig() {
+        Config cfg = configFromFiles;
+        String path = "miner.forkBalance.facCache.delayParameterSeconds";
+        long delaySeconds = cfg.hasPath(path)
+                ? cfg.getLong(path)
+                : ForkBalanceFacCacheConfig.DEFAULT_DELAY_PARAMETER_SECONDS;
+        return new ForkBalanceFacCacheConfig(delaySeconds);
+    }
+
     public long minerMinGasPrice() {
         return configFromFiles.getLong("miner.minGasPrice");
     }

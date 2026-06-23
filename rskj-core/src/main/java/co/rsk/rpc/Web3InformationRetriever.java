@@ -51,6 +51,8 @@ public class Web3InformationRetriever {
     private static final String EARLIEST = "earliest";
     private static final String LATEST = "latest";
     public static final String PENDING = "pending";
+    private static final String SAFE = "safe";
+    private static final String FORK_SAFE = "forkSafe";
 
     private final TransactionPool transactionPool;
     private final Blockchain blockchain;
@@ -79,6 +81,10 @@ public class Web3InformationRetriever {
         switch (identifier) {
             case PENDING:
                 block = executionBlockRetriever.retrieveExecutionBlock(identifier).getBlock();
+                break;
+            case SAFE:
+            case FORK_SAFE:
+                block = blockchain.getBestBlock();
                 break;
             case LATEST:
                 block = blockchain.getBestBlock();

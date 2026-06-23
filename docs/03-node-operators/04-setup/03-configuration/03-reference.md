@@ -29,6 +29,7 @@ The following detail the most commonly used configuration fields parsed by RSKj.
 - [`wallet`](#wallet)
 - [`scoring`](#scoring)
 - [`miner`](#miner)
+- [`miner.forkBalance`](#minerforkbalance)
 - [`miner.stableGasPrice`](#minerstablegasprice)
 - [`blockchain.config.name`](#blockchainconfigname)
 - [`bind_address`](#bind_address)
@@ -339,6 +340,12 @@ scoring {
 
 Check out [Configure RSKj node for mining](/node-operators/merged-mining/configure-mining)
 for detailed information about the `miner` configuration.
+
+## miner.forkBalance
+
+Header v3 / RSKIP555 merge-mining pools need a local **Bitcoin Core** JSON-RPC endpoint to resolve parent BTC blocks when building fork-balance proofs. Validating nodes should leave `miner.forkBalance.btcRpc.url` empty.
+
+See [Fork-balance mining (header v3)](./fork-balance-mining.md) for `bitcoind` setup, configuration fields, and operational notes.
 
 ## miner.stableGasPrice
 

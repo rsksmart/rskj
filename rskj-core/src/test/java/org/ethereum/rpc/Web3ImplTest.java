@@ -27,7 +27,9 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
+import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockFacFields;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -136,12 +138,14 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -153,13 +157,17 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -1262,8 +1270,11 @@ class Web3ImplTest {
     }
 
     private Web3Impl createWeb3WithMocks(EthModule ethModule) {
+        return createWeb3WithMocks(ethModule, mock(Blockchain.class), mock(Web3InformationRetriever.class));
+    }
+
+    private Web3Impl createWeb3WithMocks(EthModule ethModule, Blockchain blockchain, Web3InformationRetriever web3InformationRetriever) {
         Ethereum eth = mock(Ethereum.class);
-        Blockchain blockchain = mock(Blockchain.class);
         BlockStore blockStore = mock(BlockStore.class);
         ReceiptStore receiptStore = mock(ReceiptStore.class);
         MinerClient minerClient = mock(MinerClient.class);
@@ -1282,17 +1293,245 @@ class Web3ImplTest {
         ConfigCapabilities configCapabilities = mock(ConfigCapabilities.class);
         BuildInfo buildInfo = mock(BuildInfo.class);
         BlocksBloomStore blocksBloomStore = mock(BlocksBloomStore.class);
-        SyncProcessor syncProcessor = mock(SyncProcessor.class);
         SignatureCache signatureCache = mock(SignatureCache.class);
-        Web3InformationRetriever web3InformationRetriever = mock(Web3InformationRetriever.class);
         PersonalModule personalModule = mock(PersonalModule.class);
 
-        // Create Web3Impl with the mocked dependencies
         return new Web3Impl(eth, blockchain, blockStore, receiptStore, config, minerClient, minerServer,
                 personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule,
                 traceModule, rskModule, channelManager, peerScoringManager, peerServer,
                 nodeBlockProcessor, hashRateCalculator, configCapabilities, buildInfo,
                 blocksBloomStore, web3InformationRetriever, syncProcessor, signatureCache);
+    }
+
+    @Test
+    void eth_blockNumber_forkSafeTrue_usesLastSafeBlockNumberFromFac() {
+        EthModule ethModule = mock(EthModule.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        Block best = mock(Block.class);
+        Keccak256 bestHash = new Keccak256(HashUtil.keccak256("best".getBytes(StandardCharsets.UTF_8)));
+        when(best.getHash()).thenReturn(bestHash);
+        when(best.getNumber()).thenReturn(99L);
+        when(blockchain.getBestBlock()).thenReturn(best);
+
+        Keccak256 lastSafeHash = new Keccak256(HashUtil.keccak256("safe".getBytes(StandardCharsets.UTF_8)));
+        Block safeBlock = mock(Block.class);
+        when(safeBlock.getNumber()).thenReturn(42L);
+        when(blockchain.getBlockFacFields(bestHash)).thenReturn(new BlockFacFields(1, 1, lastSafeHash, 0, 0));
+        when(blockchain.getBlockByHash(any(byte[].class))).thenAnswer(invocation -> {
+            byte[] h = invocation.getArgument(0);
+            return Arrays.equals(h, lastSafeHash.getBytes()) ? safeBlock : null;
+        });
+
+        Web3Impl web3 = createWeb3WithMocks(ethModule, blockchain, mock(Web3InformationRetriever.class));
+
+        assertEquals("0x2a", web3.eth_blockNumber(true));
+
+        verify(blockchain).getBlockFacFields(bestHash);
+        verify(blockchain).getBlockByHash(argThat((byte[] b) -> Arrays.equals(b, lastSafeHash.getBytes())));
+    }
+
+    @Test
+    void eth_blockNumber_forkSafeTrue_fallsBackToBestWhenFacHasNoLastSafe() {
+        EthModule ethModule = mock(EthModule.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        Block best = mock(Block.class);
+        Keccak256 bestHash = new Keccak256(HashUtil.keccak256("best".getBytes(StandardCharsets.UTF_8)));
+        when(best.getHash()).thenReturn(bestHash);
+        when(best.getNumber()).thenReturn(99L);
+        when(blockchain.getBestBlock()).thenReturn(best);
+        when(blockchain.getBlockFacFields(bestHash)).thenReturn(new BlockFacFields(0, 0, null, 0, 0));
+
+        Web3Impl web3 = createWeb3WithMocks(ethModule, blockchain, mock(Web3InformationRetriever.class));
+
+        assertEquals("0x63", web3.eth_blockNumber(true));
+        verify(blockchain, never()).getBlockByHash(any(byte[].class));
+    }
+
+    @Test
+    void eth_getBlockByHash_forkSafeTrue_resolvesViaFacLastSafe() {
+        EthModule ethModule = mock(EthModule.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        Web3InformationRetriever retriever = mock(Web3InformationRetriever.class);
+
+        Keccak256 anchorHash = new Keccak256(HashUtil.keccak256("anchor".getBytes(StandardCharsets.UTF_8)));
+        Block anchor = mock(Block.class);
+        when(anchor.getHash()).thenReturn(anchorHash);
+
+        Keccak256 lastSafeHash = new Keccak256(HashUtil.keccak256("safeblk".getBytes(StandardCharsets.UTF_8)));
+        Block safeBlock = mock(Block.class);
+        when(blockchain.getBlockByHash(any(byte[].class))).thenAnswer(invocation -> {
+            byte[] h = invocation.getArgument(0);
+            if (Arrays.equals(h, anchorHash.getBytes())) {
+                return anchor;
+            }
+            if (Arrays.equals(h, lastSafeHash.getBytes())) {
+                return safeBlock;
+            }
+            return null;
+        });
+        when(blockchain.getBlockFacFields(anchorHash)).thenReturn(new BlockFacFields(1, 1, lastSafeHash, 0, 0));
+
+        Web3Impl web3 = Mockito.spy(createWeb3WithMocks(ethModule, blockchain, retriever));
+        BlockResultDTO stubDto = mock(BlockResultDTO.class);
+        doReturn(stubDto).when(web3).getBlockResult(any(Block.class), anyBoolean());
+
+        BlockResultDTO result = web3.eth_getBlockByHash(new BlockHashParam(anchorHash.toJsonString()), false, true);
+
+        assertSame(stubDto, result);
+        verify(web3).getBlockResult(eq(safeBlock), eq(false));
+        verify(web3, never()).getBlockResult(eq(anchor), anyBoolean());
+    }
+
+    @Test
+    void eth_getBlockByNumber_latest_forkSafeTrue_resolvesViaFacLastSafe() {
+        EthModule ethModule = mock(EthModule.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        Web3InformationRetriever retriever = mock(Web3InformationRetriever.class);
+
+        Keccak256 latestHash = new Keccak256(HashUtil.keccak256("latest".getBytes(StandardCharsets.UTF_8)));
+        Block latest = mock(Block.class);
+        when(latest.getHash()).thenReturn(latestHash);
+        when(retriever.getBlock("latest")).thenReturn(Optional.of(latest));
+
+        Keccak256 lastSafeHash = new Keccak256(HashUtil.keccak256("safeln".getBytes(StandardCharsets.UTF_8)));
+        Block safeBlock = mock(Block.class);
+        when(blockchain.getBlockFacFields(latestHash)).thenReturn(new BlockFacFields(1, 1, lastSafeHash, 0, 0));
+        when(blockchain.getBlockByHash(any(byte[].class))).thenAnswer(invocation -> {
+            byte[] h = invocation.getArgument(0);
+            return Arrays.equals(h, lastSafeHash.getBytes()) ? safeBlock : null;
+        });
+
+        Web3Impl web3 = Mockito.spy(createWeb3WithMocks(ethModule, blockchain, retriever));
+        BlockResultDTO stubDto = mock(BlockResultDTO.class);
+        doReturn(stubDto).when(web3).getBlockResult(any(Block.class), anyBoolean());
+
+        BlockResultDTO result = web3.eth_getBlockByNumber(new BlockIdentifierParam("latest"), false, true);
+
+        assertSame(stubDto, result);
+        verify(web3).getBlockResult(eq(safeBlock), eq(false));
+        verify(web3, never()).getBlockResult(eq(latest), anyBoolean());
+    }
+
+    @Test
+    void eth_getBlockByNumber_safeTag_returnsBestBlockWithoutFacResolution() {
+        EthModule ethModule = mock(EthModule.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        Web3InformationRetriever retriever = mock(Web3InformationRetriever.class);
+
+        Block best = mock(Block.class);
+        when(retriever.getBlock(BlockTag.SAFE.getTag())).thenReturn(Optional.of(best));
+
+        Web3Impl web3 = Mockito.spy(createWeb3WithMocks(ethModule, blockchain, retriever));
+        BlockResultDTO stubDto = mock(BlockResultDTO.class);
+        doReturn(stubDto).when(web3).getBlockResult(any(Block.class), anyBoolean());
+
+        BlockResultDTO result = web3.eth_getBlockByNumber(new BlockIdentifierParam(BlockTag.SAFE.getTag()), false);
+
+        assertSame(stubDto, result);
+        verify(web3).getBlockResult(eq(best), eq(false));
+        verify(blockchain, never()).getBlockFacFields(any());
+    }
+
+    @Test
+    void eth_getBalance_forkSafeTag_resolvesViaFacLastSafe() {
+        EthModule ethModule = mock(EthModule.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        Web3InformationRetriever retriever = mock(Web3InformationRetriever.class);
+
+        Keccak256 anchorHash = new Keccak256(HashUtil.keccak256("forkSafeAnchor".getBytes(StandardCharsets.UTF_8)));
+        Block anchor = mock(Block.class);
+        when(anchor.getHash()).thenReturn(anchorHash);
+        when(anchor.getNumber()).thenReturn(99L);
+        when(retriever.getBlock(BlockTag.FORK_SAFE.getTag())).thenReturn(Optional.of(anchor));
+
+        Keccak256 lastSafeHash = new Keccak256(HashUtil.keccak256("forkSafeHead".getBytes(StandardCharsets.UTF_8)));
+        Block safeBlock = mock(Block.class);
+        when(safeBlock.getNumber()).thenReturn(42L);
+        when(blockchain.getBlockFacFields(anchorHash)).thenReturn(new BlockFacFields(1, 1, lastSafeHash, 0, 0));
+        when(blockchain.getBlockByHash(any(byte[].class))).thenAnswer(invocation -> {
+            byte[] h = invocation.getArgument(0);
+            return Arrays.equals(h, lastSafeHash.getBytes()) ? safeBlock : null;
+        });
+
+        AccountInformationProvider provider = mock(AccountInformationProvider.class);
+        when(retriever.getInformationProvider("0x2a")).thenReturn(provider);
+        when(provider.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(1_000));
+
+        Web3Impl web3 = createWeb3WithMocks(ethModule, blockchain, retriever);
+        HexAddressParam address = new HexAddressParam("0x0000000000000000000000000000000000000001");
+
+        assertEquals("0x3e8", web3.eth_getBalance(address, new BlockRefParam(BlockTag.FORK_SAFE.getTag())));
+
+        verify(retriever).getInformationProvider("0x2a");
+        verify(blockchain).getBlockFacFields(anchorHash);
+    }
+
+    @Test
+    void eth_getBalance_requireForkSafeObject_resolvesViaFacLastSafe() {
+        EthModule ethModule = mock(EthModule.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        Web3InformationRetriever retriever = mock(Web3InformationRetriever.class);
+
+        Keccak256 anchorHash = new Keccak256(HashUtil.keccak256("anchor99".getBytes(StandardCharsets.UTF_8)));
+        Block anchor = mock(Block.class);
+        when(anchor.getHash()).thenReturn(anchorHash);
+        when(anchor.getNumber()).thenReturn(99L);
+        when(blockchain.getBlockByNumber(99L)).thenReturn(anchor);
+
+        Keccak256 lastSafeHash = new Keccak256(HashUtil.keccak256("safe42".getBytes(StandardCharsets.UTF_8)));
+        Block safeBlock = mock(Block.class);
+        when(safeBlock.getNumber()).thenReturn(42L);
+        when(blockchain.getBlockFacFields(anchorHash)).thenReturn(new BlockFacFields(1, 1, lastSafeHash, 0, 0));
+        when(blockchain.getBlockByHash(any(byte[].class))).thenAnswer(invocation -> {
+            byte[] h = invocation.getArgument(0);
+            return Arrays.equals(h, lastSafeHash.getBytes()) ? safeBlock : null;
+        });
+
+        AccountInformationProvider provider = mock(AccountInformationProvider.class);
+        when(retriever.getInformationProvider("0x2a")).thenReturn(provider);
+        when(provider.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(2_000));
+
+        Web3Impl web3 = createWeb3WithMocks(ethModule, blockchain, retriever);
+        HexAddressParam address = new HexAddressParam("0x0000000000000000000000000000000000000001");
+        Map<String, String> blockRef = Map.of("blockNumber", "0x63", "requireForkSafe", "true");
+
+        assertEquals("0x7d0", web3.eth_getBalance(address, new BlockRefParam(blockRef)));
+
+        verify(retriever).getInformationProvider("0x2a");
+        verify(blockchain).getBlockByNumber(99L);
+    }
+
+    @Test
+    void eth_call_forkSafeTag_resolvesViaFacLastSafe() {
+        EthModule ethModule = mock(EthModule.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        Web3InformationRetriever retriever = mock(Web3InformationRetriever.class);
+
+        Keccak256 anchorHash = new Keccak256(HashUtil.keccak256("callAnchor".getBytes(StandardCharsets.UTF_8)));
+        Block anchor = mock(Block.class);
+        when(anchor.getHash()).thenReturn(anchorHash);
+        when(retriever.getBlock(BlockTag.FORK_SAFE.getTag())).thenReturn(Optional.of(anchor));
+
+        Keccak256 lastSafeHash = new Keccak256(HashUtil.keccak256("callSafe".getBytes(StandardCharsets.UTF_8)));
+        Block safeBlock = mock(Block.class);
+        when(safeBlock.getNumber()).thenReturn(42L);
+        when(blockchain.getBlockFacFields(anchorHash)).thenReturn(new BlockFacFields(1, 1, lastSafeHash, 0, 0));
+        when(blockchain.getBlockByHash(any(byte[].class))).thenAnswer(invocation -> {
+            byte[] h = invocation.getArgument(0);
+            return Arrays.equals(h, lastSafeHash.getBytes()) ? safeBlock : null;
+        });
+
+        when(ethModule.call(any(), any(), any())).thenReturn("0xdeadbeef");
+
+        Web3Impl web3 = createWeb3WithMocks(ethModule, blockchain, retriever);
+        CallArgumentsParam args = new CallArgumentsParam(
+                null,
+                new HexAddressParam("0x0000000000000000000000000000000000000001"),
+                null, null, null, null, null, null, null, null);
+
+        assertEquals("0xdeadbeef", web3.eth_call(args, new BlockRefParam(BlockTag.FORK_SAFE.getTag())));
+
+        verify(ethModule).call(eq(args), argThat(p -> "0x2a".equals(p.getIdentifier())), eq(List.of()));
     }
 
     private BlockBuilder createBlockBuilder(World world) {

@@ -59,7 +59,38 @@ public class BlockIdentifierParamTest {
 
         assertThrows(RskJsonRpcRequestException.class, () -> new BlockIdentifierParam(invalidStringIdentifier));
         assertThrows(RskJsonRpcRequestException.class, () -> new BlockIdentifierParam(invalidHexIdentifier));
-        assertThrows(RskJsonRpcRequestException.class, () -> new BlockIdentifierParam(null));
+        assertThrows(RskJsonRpcRequestException.class, () -> new BlockIdentifierParam((String) null));
         assertThrows(RskJsonRpcRequestException.class, () -> new BlockIdentifierParam(""));
+    }
+
+    @Test
+    public void testSafeTagIdentifier() {
+        BlockIdentifierParam param = new BlockIdentifierParam(BlockTag.SAFE.getTag());
+        assertEquals(BlockTag.SAFE.getTag(), param.getIdentifier());
+        assertEquals(true, param.isSafeTag());
+        assertEquals(false, param.isForkSafeTag());
+        assertEquals(false, param.isRequireForkSafe());
+    }
+
+    @Test
+    public void testForkSafeTagIdentifier() {
+        BlockIdentifierParam param = new BlockIdentifierParam(BlockTag.FORK_SAFE.getTag());
+        assertEquals(BlockTag.FORK_SAFE.getTag(), param.getIdentifier());
+        assertEquals(true, param.isForkSafeTag());
+        assertEquals(false, param.isSafeTag());
+    }
+
+    @Test
+    public void testObjectWithRequireForkSafe() {
+        BlockIdentifierParam param = new BlockIdentifierParam(
+                java.util.Map.of("blockNumber", "0x10", "requireForkSafe", "true"));
+        assertEquals("0x10", param.getIdentifier());
+        assertEquals(true, param.isRequireForkSafe());
+    }
+
+    @Test
+    public void testObjectRejectsLegacyRequireSafeKey() {
+        assertThrows(RskJsonRpcRequestException.class, () -> new BlockIdentifierParam(
+                java.util.Map.of("blockNumber", "0x10", "requireSafe", "true")));
     }
 }

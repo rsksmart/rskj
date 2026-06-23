@@ -130,7 +130,7 @@ public class MinerClientImpl implements MinerClient {
         work = minerServer.getWork();
 
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
-        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
+        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = minerServer.buildBitcoinMergedMiningBlock(bitcoinNetworkParameters, work);
 
         BigInteger target = new BigInteger(1, HexUtils.stringHexToByteArray(work.getTarget()));
         boolean foundNonce = findNonce(bitcoinMergedMiningBlock, target);

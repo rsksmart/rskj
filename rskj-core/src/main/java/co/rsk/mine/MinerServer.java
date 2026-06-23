@@ -20,6 +20,7 @@ package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.InternalService;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -69,4 +70,10 @@ public interface MinerServer extends InternalService {
     Optional<Block> getLatestBlock();
     
     Map<Keccak256, Block> getBlocksWaitingForPoW();
+
+    /**
+     * Builds the Bitcoin merge-mining candidate block for the given work.
+     * Regtest clients use a chained synthetic parent so fork-balance proofs can reference the prior BTC tip.
+     */
+    BtcBlock buildBitcoinMergedMiningBlock(NetworkParameters params, MinerWork work);
 }

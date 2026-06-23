@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
+import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.Utils;
 
@@ -38,16 +39,22 @@ public class BlockRefParam implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private static final String REQUIRED_CANONICAL_KEY = "requireCanonical";
+    private static final String REQUIRE_FORK_SAFE_KEY = "requireForkSafe";
     private static final String BLOCK_HASH_KEY = "blockHash";
     private static final String BLOCK_NUMBER_KEY = "blockNumber";
     private static final List<String> BLOCK_INPUT_KEYS_TO_VALIDATE = Arrays.asList(BLOCK_HASH_KEY, BLOCK_NUMBER_KEY);
-    private static final List<String> IDENTIFIERS_TO_VALIDATE = Arrays.asList("earliest", "latest", "pending");
+    private static final List<String> IDENTIFIERS_TO_VALIDATE = Arrays.asList(
+            BlockTag.EARLIEST.getTag(),
+            BlockTag.LATEST.getTag(),
+            BlockTag.PENDING.getTag(),
+            BlockTag.SAFE.getTag(),
+            BlockTag.FORK_SAFE.getTag());
 
     private String identifier;
     private Map<String, String> inputs;
 
     public BlockRefParam(String identifier) {
-        if(!IDENTIFIERS_TO_VALIDATE.contains(identifier)
+        if (!IDENTIFIERS_TO_VALIDATE.contains(identifier)
                 && !Utils.isDecimalString(identifier)
                 && !Utils.isHexadecimalString(identifier)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid block identifier '" + identifier + "'");
@@ -57,7 +64,7 @@ public class BlockRefParam implements Serializable {
     }
 
     public BlockRefParam(Map<String, String> inputs) {
-        if(inputs.keySet().stream().noneMatch(BLOCK_INPUT_KEYS_TO_VALIDATE::contains)) {
+        if (inputs.keySet().stream().noneMatch(BLOCK_INPUT_KEYS_TO_VALIDATE::contains)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid block input");
         }
 
@@ -70,10 +77,13 @@ public class BlockRefParam implements Serializable {
         inputs.forEach((key, value) -> {
             switch (key) {
                 case REQUIRED_CANONICAL_KEY:
-                    if(!value.equalsIgnoreCase("true") && !value.equalsIgnoreCase("false")) {
+                    if (!value.equalsIgnoreCase("true") && !value.equalsIgnoreCase("false")) {
                         throw RskJsonRpcRequestException.invalidParamError(String
                                 .format("Invalid input: %s must be a String \"true\" or \"false\"", REQUIRED_CANONICAL_KEY));
                     }
+                    break;
+                case REQUIRE_FORK_SAFE_KEY:
+                    parseRequireForkSafe(value);
                     break;
                 case BLOCK_HASH_KEY:
                     new BlockHashParam(value);
@@ -81,8 +91,20 @@ public class BlockRefParam implements Serializable {
                 case BLOCK_NUMBER_KEY:
                     new HexNumberParam(value);
                     break;
+                default:
+                    throw RskJsonRpcRequestException.invalidParamError("Invalid block input key: " + key);
             }
         });
+    }
+
+    private static void parseRequireForkSafe(String value) {
+        if (value == null) {
+            return;
+        }
+        if (!value.equalsIgnoreCase("true") && !value.equalsIgnoreCase("false")) {
+            throw RskJsonRpcRequestException.invalidParamError(
+                    "Invalid input: requireForkSafe must be a String \"true\" or \"false\"");
+        }
     }
 
     public String getIdentifier() {
@@ -91,6 +113,23 @@ public class BlockRefParam implements Serializable {
 
     public Map<String, String> getInputs() {
         return inputs;
+    }
+
+    public boolean isRequireForkSafe() {
+        if (inputs == null) {
+            return false;
+        }
+        return Boolean.parseBoolean(inputs.get(REQUIRE_FORK_SAFE_KEY));
+    }
+
+    /** Ethereum-compatible {@code safe} tag (canonical best block), not FAC fork-safe. */
+    public boolean isSafeTag() {
+        return identifier != null && BlockTag.SAFE.tagEquals(identifier);
+    }
+
+    /** RSK FAC fork-safe head relative to the chain tip. */
+    public boolean isForkSafeTag() {
+        return identifier != null && BlockTag.FORK_SAFE.tagEquals(identifier);
     }
 
     public static class Deserializer extends StdDeserializer<BlockRefParam> {
@@ -106,9 +145,9 @@ public class BlockRefParam implements Serializable {
             JsonNode node = jp.getCodec().readTree(jp);
             JsonNodeType nodeType = node.getNodeType();
 
-            if(nodeType == JsonNodeType.STRING) {
+            if (nodeType == JsonNodeType.STRING) {
                 return new BlockRefParam(node.asText());
-            } else if(nodeType == JsonNodeType.OBJECT) {
+            } else if (nodeType == JsonNodeType.OBJECT) {
                 Map<String, String> inputs = mapper.convertValue(node, Map.class);
                 return new BlockRefParam(inputs);
             } else {

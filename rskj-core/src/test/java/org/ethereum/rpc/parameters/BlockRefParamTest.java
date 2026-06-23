@@ -17,6 +17,7 @@
  */
 package org.ethereum.rpc.parameters;
 
+import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
 
@@ -24,8 +25,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BlockRefParamTest {
     @Test
@@ -110,6 +113,43 @@ public class BlockRefParamTest {
             }
         };
 
+        assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(inputs));
+    }
+
+    @Test
+    public void testSafeTagIdentifier() {
+        BlockRefParam param = new BlockRefParam(BlockTag.SAFE.getTag());
+        assertEquals(BlockTag.SAFE.getTag(), param.getIdentifier());
+        assertTrue(param.isSafeTag());
+        assertFalse(param.isForkSafeTag());
+        assertFalse(param.isRequireForkSafe());
+    }
+
+    @Test
+    public void testForkSafeTagIdentifier() {
+        BlockRefParam param = new BlockRefParam(BlockTag.FORK_SAFE.getTag());
+        assertEquals(BlockTag.FORK_SAFE.getTag(), param.getIdentifier());
+        assertTrue(param.isForkSafeTag());
+        assertFalse(param.isSafeTag());
+    }
+
+    @Test
+    public void testObjectWithRequireForkSafe() {
+        Map<String, String> inputs = Map.of("blockNumber", "0x10", "requireForkSafe", "true");
+        BlockRefParam param = new BlockRefParam(inputs);
+        assertEquals(inputs, param.getInputs());
+        assertTrue(param.isRequireForkSafe());
+    }
+
+    @Test
+    public void testObjectRejectsUnknownKey() {
+        assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(
+                Map.of("blockNumber", "0x10", "requireSafe", "true")));
+    }
+
+    @Test
+    public void testInvalidInputsInvalidRequireForkSafe() {
+        Map<String, String> inputs = Map.of("blockNumber", "0x76c0", "requireForkSafe", "first");
         assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(inputs));
     }
 }
