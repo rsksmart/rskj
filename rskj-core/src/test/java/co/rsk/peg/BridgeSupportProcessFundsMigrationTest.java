@@ -109,7 +109,7 @@ class BridgeSupportProcessFundsMigrationTest {
         );
         private final Script flyoverOutputScript = PegUtils.getFlyoverFederationOutputScript(flyoverRedeemScript, retiringFederation.getFormatVersion());
         private final UTXO flyoverUtxo = UTXOBuilder.builder()
-            .withValue(Coin.COIN)
+            .withValue(BELOW_MTMU_UTXO_VALUE)
             .withScriptPubKey(flyoverOutputScript)
             .withTransactionHash(BTC_TX_HASH_FLYOVER_UTXO)
             .build();
@@ -513,10 +513,12 @@ class BridgeSupportProcessFundsMigrationTest {
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(BELOW_MTMU_UTXO_VALUE)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
-                .buildMany(MAX_INPUTS_PER_PEGOUT_TX_LEGACY + 1, i -> createHash(i + 1));
+                .buildMany(MAX_INPUTS_PER_PEGOUT_TX_LEGACY, i -> createHash(i + 1));
+            retiringUtxos.add(flyoverUtxo);
 
             long executionBlockNumber = duringMigrationBlockNumber();
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -537,13 +539,16 @@ class BridgeSupportProcessFundsMigrationTest {
         @Test
         void updateCollections_duringMigration_withMaxInputsPerPegoutTxUtxos_whenUtxosSumIsBelowMTMUThreshold_shouldCreateMigrationTx() throws IOException {
             // Arrange
+            int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX - 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(BELOW_MTMU_UTXO_VALUE)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
-                .buildMany(MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            retiringUtxos.add(flyoverUtxo);
 
             long executionBlockNumber = duringMigrationBlockNumber();
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -564,13 +569,16 @@ class BridgeSupportProcessFundsMigrationTest {
         @Test
         void updateCollections_duringMigration_withMaxInputsPerPegoutTxPlusOneUtxos_whenUtxosSumIsBelowMTMUThreshold_whenCalledRepeatedly_shouldCreateAMigrationTxEachTime() throws IOException {
             // Arrange
+            int numberOfUtxos = ABOVE_MAX_INPUTS_PER_PEGOUT_TX - 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(BELOW_MTMU_UTXO_VALUE)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
-                .buildMany(ABOVE_MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            retiringUtxos.add(flyoverUtxo);
 
             long executionBlockNumber = duringMigrationBlockNumber();
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act - call 1
@@ -607,14 +615,16 @@ class BridgeSupportProcessFundsMigrationTest {
         @Test
         void updateCollections_duringMigration_withTwoTimesMaxInputsPerPegoutTxUtxosPlusOneUtxos_whenEachUtxoSelectionSumIsBelowMTMUThreshold_whenCalledRepeatedly_shouldCreateAMigrationTxEachTime() throws IOException {
             // Arrange
-            int totalUtxos = 301;
+            int totalUtxos = MAX_INPUTS_PER_PEGOUT_TX * 2;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(BELOW_MTMU_UTXO_VALUE)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .buildMany(totalUtxos, i -> createHash(i + 1));
+            retiringUtxos.add(flyoverUtxo);
 
             long executionBlockNumber = duringMigrationBlockNumber();
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act — call 1: consumes 150 UTXOs
@@ -629,7 +639,8 @@ class BridgeSupportProcessFundsMigrationTest {
                 ALL_ACTIVATIONS
             );
             assertRetiringFederationStillPresent();
-            assertRetiringUtxosCount(totalUtxos - MAX_INPUTS_PER_PEGOUT_TX);
+            int numberOfRetiringUtxos = retiringUtxos.size();
+            assertRetiringUtxosCount(numberOfRetiringUtxos - MAX_INPUTS_PER_PEGOUT_TX);
 
             // Act — call 2: consumes 150 more UTXOs
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
@@ -644,7 +655,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 ALL_ACTIVATIONS
             );
             assertRetiringFederationStillPresent();
-            assertRetiringUtxosCount(totalUtxos - MAX_INPUTS_PER_PEGOUT_TX * 2);
+            assertRetiringUtxosCount(numberOfRetiringUtxos - MAX_INPUTS_PER_PEGOUT_TX * 2);
 
             // Act — call 3: consumes the final 1 UTXO
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 2);
@@ -656,7 +667,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 retiringFederation,
                 retiringUtxos,
                 threeMigrationTxsCount,
-                totalUtxos,
+                numberOfRetiringUtxos,
                 ALL_ACTIVATIONS
             );
             assertRetiringFederationStillPresent();
@@ -666,13 +677,16 @@ class BridgeSupportProcessFundsMigrationTest {
         @Test
         void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxUtxos_whenUtxosSumIsBelowMTMUThreshold_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
             // Arrange
+            int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX - 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(BELOW_MTMU_UTXO_VALUE)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
-                .buildMany(MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            retiringUtxos.add(flyoverUtxo);
 
             long executionBlockNumber = pastMigrationBlockNumber();
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -693,13 +707,16 @@ class BridgeSupportProcessFundsMigrationTest {
         @Test
         void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxPlusOneUtxos_whenUtxosSumIsBelowMTMUThreshold_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
             // Arrange
+            int numberOfUtxos = ABOVE_MAX_INPUTS_PER_PEGOUT_TX - 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(BELOW_MTMU_UTXO_VALUE)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
-                .buildMany(ABOVE_MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            retiringUtxos.add(flyoverUtxo);
 
             long executionBlockNumber = pastMigrationBlockNumber();
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -877,7 +894,7 @@ class BridgeSupportProcessFundsMigrationTest {
             // Arrange
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
-                .withValue(FUNDS_BELOW_MIGRATION_THRESHOLD)
+                .withValue(FUNDS_BELOW_MIGRATION_CREATION_THRESHOLD)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .build()
             );
@@ -1281,7 +1298,7 @@ class BridgeSupportProcessFundsMigrationTest {
             // Arrange
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
-                .withValue(FUNDS_BELOW_MIGRATION_THRESHOLD)
+                .withValue(FUNDS_BELOW_MIGRATION_CREATION_THRESHOLD)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .build()
             );
