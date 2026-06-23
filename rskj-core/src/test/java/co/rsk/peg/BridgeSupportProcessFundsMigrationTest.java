@@ -289,8 +289,13 @@ class BridgeSupportProcessFundsMigrationTest {
             Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
-            // Assert — second call consumed the 1 remaining UTXO
-            assertMigrationTxCountForVETIVER(TWO_MIGRATION_TXS_COUNT);
+            // Assert
+            assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpectedForVETIVER(
+                retiringFederation,
+                retiringUtxos,
+                TWO_MIGRATION_TXS_COUNT,
+                retiringUtxos.size()
+            );
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
         }
@@ -815,7 +820,6 @@ class BridgeSupportProcessFundsMigrationTest {
             assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                ONE_MIGRATION_TX_COUNT,
                 retiringUtxos.size()
             );
             assertRetiringFederationStillPresent();
@@ -844,7 +848,6 @@ class BridgeSupportProcessFundsMigrationTest {
             assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                ONE_MIGRATION_TX_COUNT,
                 retiringUtxos.size()
             );
             assertRetiringFederationStillPresent();
@@ -964,7 +967,6 @@ class BridgeSupportProcessFundsMigrationTest {
             assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                ONE_MIGRATION_TX_COUNT,
                 retiringUtxos.size()
             );
             assertRetiringFederationCleared();
@@ -993,7 +995,6 @@ class BridgeSupportProcessFundsMigrationTest {
             assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                ONE_MIGRATION_TX_COUNT,
                 retiringUtxos.size()
             );
             assertRetiringFederationCleared();
@@ -1119,10 +1120,9 @@ class BridgeSupportProcessFundsMigrationTest {
         private void assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos,
-            int expectedMigrationTxCount,
             int expectedTotalInputCount
         ) throws IOException {
-            assertMigrationTxCount(expectedMigrationTxCount);
+            assertMigrationTxCount(ONE_MIGRATION_TX_COUNT);
 
             List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount(ALL_ACTIVATIONS);
             List<UTXO> migratedUtxos = new ArrayList<>();
@@ -1245,7 +1245,6 @@ class BridgeSupportProcessFundsMigrationTest {
             assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                ONE_MIGRATION_TX_COUNT,
                 retiringUtxos.size()
             );
             assertRetiringFederationStillPresent();
@@ -1274,7 +1273,6 @@ class BridgeSupportProcessFundsMigrationTest {
             assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                ONE_MIGRATION_TX_COUNT,
                 retiringUtxos.size()
             );
             assertRetiringFederationStillPresent();
@@ -1419,7 +1417,6 @@ class BridgeSupportProcessFundsMigrationTest {
             assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                ONE_MIGRATION_TX_COUNT,
                 retiringUtxos.size()
             );
             assertRetiringFederationCleared();
@@ -1448,7 +1445,6 @@ class BridgeSupportProcessFundsMigrationTest {
             assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
-                ONE_MIGRATION_TX_COUNT,
                 retiringUtxos.size()
             );
             assertRetiringFederationCleared();
@@ -1613,10 +1609,9 @@ class BridgeSupportProcessFundsMigrationTest {
         private void assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos,
-            int expectedMigrationTxCount,
             int expectedTotalInputCount
         ) throws IOException {
-            assertMigrationTxCount(expectedMigrationTxCount);
+            assertMigrationTxCount(ONE_MIGRATION_TX_COUNT);
 
             List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount(ALL_ACTIVATIONS);
             List<UTXO> migratedUtxos = new ArrayList<>();
