@@ -1311,7 +1311,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .buildMany(ABOVE_MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
 
-            long executionBlockNumber = duringMigrationBlockNumberForIRIS();
+            long executionBlockNumber = duringMigrationBlockNumber(IRIS_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlockForIRIS(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
@@ -1445,7 +1445,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .buildMany(ABOVE_MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
 
-            long executionBlockNumber = pastMigrationBlockNumberForIRIS();
+            long executionBlockNumber = pastMigrationBlockNumber(IRIS_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlockForIRIS(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
@@ -1580,14 +1580,6 @@ class BridgeSupportProcessFundsMigrationTest {
             assertRetiringUtxosCount(retiringUtxos.size());
         }
 
-        private long duringMigrationBlockNumberForIRIS() {
-            return blockNumberBeforeMigrationBegins(IRIS_ACTIVATIONS) + 1;
-        }
-
-        private long pastMigrationBlockNumberForIRIS() {
-            return pastMigrationBlockNumber(IRIS_ACTIVATIONS);
-        }
-
         private void setUpBridgeAndFederationSupportForExecutionBlockForIRIS(long executionBlockNumber) {
             bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, IRIS_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, IRIS_ACTIVATIONS);
@@ -1649,7 +1641,7 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         private void assertOneMigrationTxCountForIRIS() throws IOException {
-            assertEquals(ONE_MIGRATION_TX_COUNT, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(IRIS_ACTIVATIONS).size());
+            assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, IRIS_ACTIVATIONS);
         }
 
         private BtcTransaction getMigrationTransactionForIRIS() throws IOException {
