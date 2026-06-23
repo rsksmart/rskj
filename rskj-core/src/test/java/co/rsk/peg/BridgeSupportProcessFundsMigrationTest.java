@@ -96,8 +96,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
         private static final Coin MTMU_THRESHOLD_VALUE = Coin.COIN.multiply(40);
         private static final Coin BELOW_MTMU_THRESHOLD_VALUE = MTMU_THRESHOLD_VALUE.subtract(Coin.SATOSHI);
-        // MAX_INPUTS_PER_PEGOUT_TX (currently 150) × 26,000,000 sat = 3,900,000,000 satoshis = 39 BTC < 40 BTC threshold
-        private static final Coin BELOW_MTMU_UTXO_VALUE = Coin.valueOf(26_000_000);
+        private static final Coin BELOW_MTMU_UTXO_VALUE = MTMU_THRESHOLD_VALUE.divide(MAX_INPUTS_PER_PEGOUT_TX).subtract(Coin.SATOSHI);
 
         private final Federation retiringFederation = P2shP2wshErpFederationBuilder.builder().build();
         private final Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
