@@ -1248,7 +1248,7 @@ public class BridgeSupport {
 
     private void processFundsMigration(Transaction rskTx) throws IOException {
         Optional<Wallet> retiringFederationWalletOptional = activations.isActive(RSKIP294) ?
-            getRetiringFederationWallet(true, bridgeConstants.getMaxInputsPerPegoutTransaction()) :
+            getRetiringFederationWallet(true, bridgeConstants.getMaxInputsPerPegoutTransaction(activations)) :
             getRetiringFederationWallet(true);
 
         if (retiringFederationWalletOptional.isEmpty()) {
