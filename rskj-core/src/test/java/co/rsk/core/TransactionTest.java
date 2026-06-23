@@ -40,7 +40,6 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionBuilder;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.db.BlockStoreDummy;
