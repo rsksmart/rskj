@@ -584,7 +584,7 @@ class BridgeSupportProcessFundsMigrationTest {
             // Act - call 1
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
-            // Assert — call 1: 150 inputs, 1 UTXO remaining
+            // Assert — call 1: MAX_INPUTS_PER_PEGOUT_TX inputs, 1 UTXO remaining
             assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
@@ -600,7 +600,7 @@ class BridgeSupportProcessFundsMigrationTest {
             Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
             bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
-            // Assert — call 2: cumulative 151 inputs across 2 txs, 0 UTXOs remain
+            // Assert — call 2: cumulative MAX_INPUTS_PER_PEGOUT_TX + 1 inputs across 2 txs, 0 UTXOs remain
             assertMigrationTransactionsBetweenP2shP2wshErpFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
@@ -627,7 +627,7 @@ class BridgeSupportProcessFundsMigrationTest {
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-            // Act — call 1: consumes 150 UTXOs
+            // Act — call 1: consumes MAX_INPUTS_PER_PEGOUT_TX UTXOs
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
             // Assert — call 1
@@ -642,7 +642,7 @@ class BridgeSupportProcessFundsMigrationTest {
             int numberOfRetiringUtxos = retiringUtxos.size();
             assertRetiringUtxosCount(numberOfRetiringUtxos - MAX_INPUTS_PER_PEGOUT_TX);
 
-            // Act — call 2: consumes 150 more UTXOs
+            // Act — call 2: consumes MAX_INPUTS_PER_PEGOUT_TX more UTXOs
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
             bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
 
