@@ -469,8 +469,8 @@ class BridgeSupportProcessFundsMigrationTest {
             assertRetiringUtxosCount(retiringUtxos.size());
         }
 
-    @Test
-    void updateCollections_duringMigration_withOneUtxo_whenUtxosSumIsBelowMTMUThreshold_shouldCreateMigrationTx() throws IOException {
+        @Test
+        void updateCollections_duringMigration_withOneUtxo_whenUtxosSumIsBelowMTMUThreshold_shouldCreateMigrationTx() throws IOException {
             // Arrange
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
