@@ -76,11 +76,12 @@ class BridgeSupportReleaseBtcTest {
     private Federation activeFederation;
     private Repository repository;
     private BridgeEventLogger eventLogger;
-    private BridgeStorageProvider provider;
+    private BridgeStorageProvider bridgeStorageProvider;
     private FederationStorageProvider federationStorageProvider;
     private BridgeSupport bridgeSupport;
     private Transaction releaseTx;
     private BridgeSupportBuilder bridgeSupportBuilder;
+    private FederationSupport federationSupport;
     private SignatureCache signatureCache;
     private FeePerKbSupport feePerKbSupport;
 
@@ -90,12 +91,34 @@ class BridgeSupportReleaseBtcTest {
         activeFederation = P2shErpFederationBuilder.builder().build();
         repository = spy(RskTestUtils.createRepository());
         eventLogger = mock(BridgeEventLogger.class);
-        provider = initProvider();
-        federationStorageProvider = initFederationStorageProvider();
+        bridgeStorageProvider = new BridgeStorageProvider(
+            repository,
+            NETWORK_PARAMETERS,
+            ACTIVATIONS_ALL
+        );
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+        federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        federationStorageProvider.setNewFederation(activeFederation);
+        setUpUTXOs();
+
+        federationSupport = FederationSupportBuilder.builder()
+            .withFederationConstants(FEDERATION_CONSTANTS)
+            .withFederationStorageProvider(federationStorageProvider)
+            .build();
+
         bridgeSupportBuilder = BridgeSupportBuilder.builder();
         feePerKbSupport = mock(FeePerKbSupportImpl.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.valueOf(5_000L));
-        bridgeSupport = spy(initBridgeSupport(eventLogger, ACTIVATIONS_ALL));
+        bridgeSupport = spy(bridgeSupportBuilder
+            .withBridgeConstants(BRIDGE_CONSTANTS)
+            .withProvider(bridgeStorageProvider)
+            .withRepository(repository)
+            .withEventLogger(eventLogger)
+            .withActivations(ACTIVATIONS_ALL)
+            .withSignatureCache(signatureCache)
+            .withFederationSupport(federationSupport)
+            .withFeePerKbSupport(feePerKbSupport)
+            .build());
         releaseTx = buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(Coin.COIN));
     }
 
@@ -174,8 +197,8 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         verify(repository, never()).transfer(any(), any(), any());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         verify(eventLogger, never()).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
         verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
@@ -194,8 +217,8 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         verify(repository, never()).transfer(any(), any(), any());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
         verify(eventLogger, times(1)).logReleaseBtcRequested(
             any(byte[].class),
             any(BtcTransaction.class),
@@ -218,15 +241,15 @@ class BridgeSupportReleaseBtcTest {
         assertTrue(value.isGreaterThan(BRIDGE_CONSTANTS.getMinimumPegoutTxValue()));
         bridgeSupport.releaseBtc(buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(value)));
 
-        assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         Transaction rskTx = buildUpdateTx();
         rskTx.sign(SENDER.getPrivKeyBytes());
         bridgeSupport.updateCollections(rskTx);
 
         verify(repository, never()).transfer(any(), any(), any());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(4, logInfo.size());
         verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
@@ -267,8 +290,8 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
 
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(4, logInfo.size());
         verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
@@ -308,8 +331,8 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
 
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(5, logInfo.size());
         verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
@@ -352,8 +375,8 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
 
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
         verify(bridgeEventLogger, never()).logReleaseBtcRequestRejected(any(), any(), any());
 
         assertEquals(1, logInfo.size());
@@ -383,8 +406,8 @@ class BridgeSupportReleaseBtcTest {
             argThat(a -> a.equals(co.rsk.core.Coin.fromBitcoin(Coin.ZERO)))
         );
 
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(2, logInfo.size());
         verify(bridgeEventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
@@ -423,8 +446,8 @@ class BridgeSupportReleaseBtcTest {
             any(), any(), any()
         );
 
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
         verify(bridgeEventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
         assertEquals(2, logInfo.size());
 
@@ -454,7 +477,7 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
 
-        assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
         verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
@@ -489,7 +512,7 @@ class BridgeSupportReleaseBtcTest {
         Transaction rskTx = buildUpdateTx();
         rskTx.sign(SENDER.getPrivKeyBytes());
 
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(0, logInfo.size());
         verify(bridgeEventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
@@ -515,7 +538,7 @@ class BridgeSupportReleaseBtcTest {
         Transaction rskTx = buildUpdateTx();
         rskTx.sign(SENDER.getPrivKeyBytes());
 
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(0, logInfo.size());
         verify(bridgeEventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
@@ -543,7 +566,7 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
 
-        assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
         verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
@@ -575,7 +598,7 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
 
-        assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
         verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
@@ -693,9 +716,9 @@ class BridgeSupportReleaseBtcTest {
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
 
-        provider = mock(BridgeStorageProvider.class);
-        when(provider.getReleaseRequestQueue()).thenReturn(pegoutRequests);
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(pegoutRequests);
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         Coin totalValue = pegoutRequests.getEntries()
             .stream()
@@ -710,20 +733,20 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = bridgeSupportBuilder
             .withActivations(ACTIVATIONS_ALL)
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .withEventLogger(eventLogger)
             .build();
 
         Transaction rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
 
-        BtcTransaction generatedTransaction = provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).iterator().next().getBtcTransaction();
+        BtcTransaction generatedTransaction = bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).iterator().next().getBtcTransaction();
 
-        verify(provider, times(1)).getNextPegoutHeight();
-        verify(provider, times(1)).setNextPegoutHeight(any(Long.class));
+        verify(bridgeStorageProvider, times(1)).getNextPegoutHeight();
+        verify(bridgeStorageProvider, times(1)).setNextPegoutHeight(any(Long.class));
 
         verify(eventLogger, times(1)).logBatchPegoutCreated(generatedTransaction.getHash(), rskHashesList);
         verify(eventLogger, times(1)).logReleaseBtcRequested(rskTx.getHash().getBytes(), generatedTransaction, totalValue);
@@ -736,17 +759,17 @@ class BridgeSupportReleaseBtcTest {
 
         long executionBlockNumber = executionBlock.getNumber();
 
-        provider = mock(BridgeStorageProvider.class);
-        when(provider.getNextPegoutHeight()).thenReturn(Optional.of(executionBlockNumber + BRIDGE_CONSTANTS.getNumberOfBlocksBetweenPegouts() - 1));
-        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getNextPegoutHeight()).thenReturn(Optional.of(executionBlockNumber + BRIDGE_CONSTANTS.getNumberOfBlocksBetweenPegouts() - 1));
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "one"), Coin.MILLICOIN),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "two"), Coin.MILLICOIN)
         )));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .withExecutionBlock(executionBlock)
             .withActivations(ACTIVATIONS_ALL)
             .build();
@@ -754,19 +777,19 @@ class BridgeSupportReleaseBtcTest {
         Transaction rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
-        verify(provider, times(1)).getNextPegoutHeight();
-        verify(provider, never()).setNextPegoutHeight(any(Long.class));
+        verify(bridgeStorageProvider, times(1)).getNextPegoutHeight();
+        verify(bridgeStorageProvider, never()).setNextPegoutHeight(any(Long.class));
 
-        assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(2, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
     void processPegoutsInBatch_hop_activation_no_requests_in_queue_updates_next_pegout_height() throws IOException {
-        provider = mock(BridgeStorageProvider.class);
-        when(provider.getNextPegoutHeight()).thenReturn(Optional.of(100L));
-        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getNextPegoutHeight()).thenReturn(Optional.of(100L));
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(100L);
@@ -774,7 +797,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = bridgeSupportBuilder
             .withActivations(ACTIVATIONS_ALL)
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .withExecutionBlock(executionBlock)
             .build();
 
@@ -783,8 +806,8 @@ class BridgeSupportReleaseBtcTest {
 
         long nextPegoutHeight = executionBlock.getNumber() + BRIDGE_CONSTANTS.getNumberOfBlocksBetweenPegouts();
 
-        verify(provider, times(1)).getNextPegoutHeight();
-        verify(provider, times(1)).setNextPegoutHeight(nextPegoutHeight);
+        verify(bridgeStorageProvider, times(1)).getNextPegoutHeight();
+        verify(bridgeStorageProvider, times(1)).setNextPegoutHeight(nextPegoutHeight);
     }
 
     @Test
@@ -802,20 +825,20 @@ class BridgeSupportReleaseBtcTest {
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
 
-        provider = mock(BridgeStorageProvider.class);
-        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "one"), Coin.COIN),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "two"), Coin.COIN),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "three"), Coin.COIN),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "four"), Coin.COIN),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "five"), Coin.COIN)
         )));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         bridgeSupport = bridgeSupportBuilder
             .withActivations(ACTIVATIONS_ALL)
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .build();
 
         Transaction rskTx = buildUpdateTx();
@@ -823,8 +846,8 @@ class BridgeSupportReleaseBtcTest {
 
         // Insufficient_Money i.e 4 BTC UTXO Available For 5 BTC Transaction.
         // Pegout requests can't be processed and remains in the queue
-        assertEquals(5, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(5, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -845,14 +868,14 @@ class BridgeSupportReleaseBtcTest {
             .withActivations(lovellActivations)
             .build();
 
-        provider = mock(BridgeStorageProvider.class);
-        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(PegTestUtils.createReleaseRequestQueueEntries(300)));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(PegTestUtils.createReleaseRequestQueueEntries(300)));
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         bridgeSupport = bridgeSupportBuilder
             .withActivations(lovellActivations)
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .withFederationSupport(federationSupport)
             .build();
 
@@ -860,15 +883,15 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         // First Half of the PegoutRequests 300 / 2 = 150 Is Batched For The First Time
-        assertEquals(150, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(lovellActivations).size());
+        assertEquals(150, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
 
         rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
         // The Rest PegoutRequests 300 / 2 = 150 Is Batched The 2nd Time updateCollections Is Called
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries(lovellActivations).size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(2, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -881,23 +904,23 @@ class BridgeSupportReleaseBtcTest {
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
 
-        provider = mock(BridgeStorageProvider.class);
-        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.singletonList(
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.singletonList(
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "one"), Coin.COIN.multiply(700))
         )));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         bridgeSupport = bridgeSupportBuilder
             .withActivations(ACTIVATIONS_ALL)
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .build();
 
         Transaction rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
-        assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(1, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -910,24 +933,24 @@ class BridgeSupportReleaseBtcTest {
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
 
-        provider = mock(BridgeStorageProvider.class);
-        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "one"), Coin.COIN.multiply(700)),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "two"), Coin.COIN.multiply(700))
         )));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         bridgeSupport = bridgeSupportBuilder
             .withActivations(ACTIVATIONS_ALL)
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .build();
 
         Transaction rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
-        assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(2, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -958,21 +981,21 @@ class BridgeSupportReleaseBtcTest {
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, irisActivations)).thenReturn(utxos);
 
-        provider = mock(BridgeStorageProvider.class);
-        when(provider.getReleaseRequestQueue()).thenReturn(pegoutRequests);
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(pegoutRequests);
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .withActivations(irisActivations)
             .build();
 
         Transaction rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
-        assertEquals(originalPegoutRequests, provider.getReleaseRequestQueue());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(originalPegoutRequests, bridgeStorageProvider.getReleaseRequestQueue());
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -1013,22 +1036,22 @@ class BridgeSupportReleaseBtcTest {
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, irisActivations)).thenReturn(utxos);
 
-        provider = mock(BridgeStorageProvider.class);
-        when(provider.getReleaseRequestQueue()).thenReturn(pegoutRequests);
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(pegoutRequests);
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .withActivations(irisActivations)
             .build();
 
         Transaction rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
-        assertNotEquals(originalPegoutRequests, provider.getReleaseRequestQueue());
-        assertEquals(expectedPegoutRequests, provider.getReleaseRequestQueue());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertNotEquals(originalPegoutRequests, bridgeStorageProvider.getReleaseRequestQueue());
+        assertEquals(expectedPegoutRequests, bridgeStorageProvider.getReleaseRequestQueue());
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -1047,17 +1070,17 @@ class BridgeSupportReleaseBtcTest {
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, irisActivations)).thenReturn(utxos);
 
-        provider = mock(BridgeStorageProvider.class);
-        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "one"), Coin.COIN.multiply(4)),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "two"), Coin.COIN.multiply(3)),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "three"), Coin.COIN.multiply(2))
         )));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .withActivations(irisActivations)
             .build();
 
@@ -1065,8 +1088,8 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         // 2 remains in queue, 1 is processed to the transaction set
-        assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(2, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -1087,17 +1110,17 @@ class BridgeSupportReleaseBtcTest {
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
 
-        provider = mock(BridgeStorageProvider.class);
-        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "one"), Coin.COIN.multiply(5)),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "two"), Coin.COIN.multiply(4)),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "three"), Coin.COIN.multiply(3))
         )));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .withActivations(ACTIVATIONS_ALL)
             .withEventLogger(eventLogger)
             .build();
@@ -1105,11 +1128,11 @@ class BridgeSupportReleaseBtcTest {
         Transaction rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
-        assertEquals(3, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(3, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
 
         verify(eventLogger, never()).logBatchPegoutCreated(any(), any());
-        verify(provider, never()).setNextPegoutHeight(any(Long.class));
+        verify(bridgeStorageProvider, never()).setNextPegoutHeight(any(Long.class));
     }
 
     @Test
@@ -1132,17 +1155,17 @@ class BridgeSupportReleaseBtcTest {
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
         when(federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, ACTIVATIONS_ALL)).thenReturn(activeFederation);
 
-        provider = mock(BridgeStorageProvider.class);
-        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "one"), Coin.COIN.multiply(5)),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "two"), Coin.COIN.multiply(4)),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "three"), Coin.COIN.multiply(3))
         )));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .withActivations(ACTIVATIONS_ALL)
             .withEventLogger(eventLogger)
             .build();
@@ -1151,11 +1174,11 @@ class BridgeSupportReleaseBtcTest {
         Transaction rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
-        assertEquals(3, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(3, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
 
         verify(eventLogger, never()).logBatchPegoutCreated(any(), any());
-        verify(provider, never()).setNextPegoutHeight(any(Long.class));
+        verify(bridgeStorageProvider, never()).setNextPegoutHeight(any(Long.class));
 
         UTXO utxo = UTXOBuilder.builder()
             .withScriptPubKey(outputScript)
@@ -1171,7 +1194,7 @@ class BridgeSupportReleaseBtcTest {
 
         bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .withActivations(ACTIVATIONS_ALL)
             .withEventLogger(eventLogger)
             .withFederationSupport(federationSupport)
@@ -1181,11 +1204,11 @@ class BridgeSupportReleaseBtcTest {
         Transaction rskTx2 = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx2);
 
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
 
         verify(eventLogger, times(1)).logBatchPegoutCreated(any(), any());
-        verify(provider, times(1)).setNextPegoutHeight(any(Long.class));
+        verify(bridgeStorageProvider, times(1)).setNextPegoutHeight(any(Long.class));
     }
 
     private void testPegoutMinimumWithFeeVerificationPass(Coin feePerKB, co.rsk.core.Coin pegoutRequestedValue) throws IOException {
@@ -1217,7 +1240,7 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
 
-        assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
         verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
@@ -1253,7 +1276,7 @@ class BridgeSupportReleaseBtcTest {
         RskAddress senderAddress = new RskAddress(SENDER.getAddress());
 
         verify(repository, times(1)).transfer(BRIDGE_ADDRESS, senderAddress, pegoutRequestValue);
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
         assertEquals(1, logInfo.size());
 
         verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
@@ -1300,7 +1323,7 @@ class BridgeSupportReleaseBtcTest {
             senderAddress,
             pegoutRequestValue
         );
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
         assertEquals(1, logInfo.size());
 
         verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
@@ -1345,7 +1368,7 @@ class BridgeSupportReleaseBtcTest {
             expectedRefundValue
         );
 
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
         verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
@@ -1389,7 +1412,7 @@ class BridgeSupportReleaseBtcTest {
             pegoutRequestValue
         );
 
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
         verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
@@ -1435,7 +1458,7 @@ class BridgeSupportReleaseBtcTest {
         // No refund is made to a contract
         verify(repository, never()).transfer(any(), any(), any());
 
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
         verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
@@ -1482,7 +1505,7 @@ class BridgeSupportReleaseBtcTest {
         // No refund is made to a contract
         verify(repository, never()).transfer(any(), any(), any());
 
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
         verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
@@ -1545,7 +1568,7 @@ class BridgeSupportReleaseBtcTest {
             expectedRefundValue
         );
 
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
         verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
@@ -1606,7 +1629,7 @@ class BridgeSupportReleaseBtcTest {
             pegoutRequestValue
         );
 
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
         verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
@@ -1680,14 +1703,14 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private BridgeSupport initBridgeSupport(BridgeEventLogger eventLogger, ActivationConfig.ForBlock activations) {
-        FederationSupport federationSupport = FederationSupportBuilder.builder()
+        federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(FEDERATION_CONSTANTS)
             .withFederationStorageProvider(federationStorageProvider)
             .build();
 
         return bridgeSupportBuilder
             .withBridgeConstants(BRIDGE_CONSTANTS)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .withRepository(repository)
             .withEventLogger(eventLogger)
             .withActivations(activations)
@@ -1697,25 +1720,12 @@ class BridgeSupportReleaseBtcTest {
             .build();
     }
 
-    private BridgeStorageProvider initProvider() {
-        return new BridgeStorageProvider(
-            repository,
-            NETWORK_PARAMETERS,
-            ACTIVATIONS_ALL
-        );
-    }
-
-    private FederationStorageProvider initFederationStorageProvider() {
+    private void setUpUTXOs() {
         UTXO utxo = UTXOBuilder.builder()
             .withValue(Coin.COIN.multiply(2))
             .withBlockHeight(1)
             .withScriptPubKey(activeFederation.getP2SHScript())
             .build();
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FederationStorageProvider storageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
-        storageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL).add(utxo);
-        storageProvider.setNewFederation(activeFederation);
-
-        return storageProvider;
+        federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL).add(utxo);
     }
 }
