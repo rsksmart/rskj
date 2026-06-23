@@ -32,13 +32,18 @@ import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
 
 /**
  * Unit tests for {@link AuthorizationListCodec} (RSKIP-545 / EIP-7702).
@@ -421,6 +426,153 @@ class AuthorizationListCodecTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> AuthorizationListCodec.encodeTuple(bad));
+    }
+
+    @Test
+    void decodeTuple_nullNonceField_defaultsToEmpty() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeElement(null));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(BigInteger.ZERO, new BigInteger(1, decoded.getNonce()));
+    }
+
+    @Test
+    void parseFromCallArguments_emptyChainId_decodesAsZero() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setChainId("0x");
+
+        SetCodeAuthorization auth = AuthorizationListCodec.parseFromCallArguments(List.of(entry)).get(0);
+
+        assertEquals(BigInteger.ZERO, auth.getChainId());
+    }
+
+    @Test
+    void parseFromCallArguments_decimalNonceZero_succeeds() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setNonce("0");
+
+        SetCodeAuthorization auth = AuthorizationListCodec.parseFromCallArguments(List.of(entry)).get(0);
+
+        assertEquals(BigInteger.ZERO, new BigInteger(1, auth.getNonce()));
+    }
+
+    @Test
+    void decodeListUnchecked_parsesWithoutRevalidation() {
+        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] encoded = AuthorizationListCodec.encodeList(List.of(auth));
+
+        List<SetCodeAuthorization> decoded = AuthorizationListCodec.decodeListUnchecked(encoded);
+
+        assertEquals(1, decoded.size());
+        assertEquals(auth, decoded.get(0));
+    }
+
+    @Test
+    void privateDecodeNonce_null_returnsZero() throws Exception {
+        java.lang.reflect.Method decodeNonce = AuthorizationListCodec.class.getDeclaredMethod(
+                "decodeNonce", byte[].class);
+        decodeNonce.setAccessible(true);
+
+        assertEquals(BigInteger.ZERO, decodeNonce.invoke(null, (Object) null));
+    }
+
+    @Test
+    void parseFromCallArguments_nullSignatureHex_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setR(null);
+
+        assertThrows(RskJsonRpcRequestException.class,
+                () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+    }
+
+    @Test
+    void parseCallArgumentsEntry_nullNonceBytes_defaultsToEmpty() throws Exception {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setNonce("0x0");
+
+        Method parseEntry = AuthorizationListCodec.class.getDeclaredMethod(
+                "parseCallArgumentsEntry", CallArguments.AuthorizationListEntry.class, int.class);
+        parseEntry.setAccessible(true);
+
+        try (MockedStatic<HexUtils> hex = Mockito.mockStatic(HexUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            hex.when(() -> HexUtils.strHexOrStrNumberToByteArray(eq("0x0"))).thenReturn(null);
+
+            SetCodeAuthorization auth = (SetCodeAuthorization) parseEntry.invoke(null, entry, 0);
+
+            assertEquals(BigInteger.ZERO, new BigInteger(1, auth.getNonce()));
+        }
+    }
+
+    @Test
+    void parseCallArgumentsEntry_nullSignatureBytes_throws() throws Exception {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        String rHex = entry.getR();
+
+        Method parseEntry = AuthorizationListCodec.class.getDeclaredMethod(
+                "parseCallArgumentsEntry", CallArguments.AuthorizationListEntry.class, int.class);
+        parseEntry.setAccessible(true);
+
+        try (MockedStatic<HexUtils> hex = Mockito.mockStatic(HexUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            hex.when(() -> HexUtils.stringHexToByteArray(eq(rHex))).thenReturn(null);
+
+            InvocationTargetException ex = assertThrows(InvocationTargetException.class,
+                    () -> parseEntry.invoke(null, entry, 0));
+            assertTrue(ex.getCause() instanceof RskJsonRpcRequestException);
+            assertTrue(ex.getCause().getMessage().contains("signature r/s must be hex"));
+        }
+    }
+
+    @Test
+    void decodeChainId_tooLarge_throws() throws Exception {
+        Method decodeChainId = AuthorizationListCodec.class.getDeclaredMethod("decodeChainId", byte[].class);
+        decodeChainId.setAccessible(true);
+        byte[] data = BigIntegers.asUnsignedByteArray(BigInteger.ONE.shiftLeft(256));
+
+        InvocationTargetException ex = assertThrows(InvocationTargetException.class,
+                () -> decodeChainId.invoke(null, (Object) data));
+        assertTrue(ex.getCause().getMessage().contains("chain_id"), ex.getCause().getMessage());
+    }
+
+    @Test
+    void validateAuthorization_chainIdTooLarge_throws() throws Exception {
+        Method validate = AuthorizationListCodec.class.getDeclaredMethod(
+                "validateAuthorization", SetCodeAuthorization.class);
+        validate.setAccessible(true);
+
+        SetCodeAuthorization auth = Mockito.mock(SetCodeAuthorization.class);
+        Mockito.when(auth.getChainId()).thenReturn(BigInteger.ONE.shiftLeft(256));
+        Mockito.when(auth.getNonce()).thenReturn(new byte[]{0x01});
+
+        InvocationTargetException ex = assertThrows(InvocationTargetException.class,
+                () -> validate.invoke(null, auth));
+        assertTrue(ex.getCause().getMessage().contains("chain_id"));
+    }
+
+    @Test
+    void validateAuthorization_signatureRTooLarge_throws() throws Exception {
+        Method validate = AuthorizationListCodec.class.getDeclaredMethod(
+                "validateAuthorization", SetCodeAuthorization.class);
+        validate.setAccessible(true);
+
+        SetCodeAuthorization auth = Mockito.mock(SetCodeAuthorization.class);
+        ECDSASignature signature = Mockito.mock(ECDSASignature.class);
+        Mockito.when(auth.getChainId()).thenReturn(BigInteger.ZERO);
+        Mockito.when(auth.getNonce()).thenReturn(new byte[]{0x01});
+        Mockito.when(auth.getSignature()).thenReturn(signature);
+        Mockito.when(signature.validateComponentsWithoutV()).thenReturn(true);
+        Mockito.when(signature.getR()).thenReturn(BigInteger.ONE.shiftLeft(256));
+        Mockito.when(signature.getS()).thenReturn(BigInteger.ONE);
+
+        InvocationTargetException ex = assertThrows(InvocationTargetException.class,
+                () -> validate.invoke(null, auth));
+        assertTrue(ex.getCause().getMessage().contains("2^256"), ex.getCause().getMessage());
     }
 
     @Test

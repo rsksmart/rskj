@@ -17,7 +17,12 @@
  */
 package org.ethereum.core;
 
+import org.ethereum.core.transaction.RskNamespaceTransaction;
+import org.ethereum.core.transaction.Transaction;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.Type0Transaction;
+import org.ethereum.core.transaction.Type1Transaction;
+import org.ethereum.core.transaction.Type2Transaction;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -157,5 +162,27 @@ class TransactionTypeTest {
     void hasRskNamespacePrefix_falseForSingleByte() {
         byte[] data = {TransactionType.RSK_NAMESPACE_PREFIX};
         assertFalse(TransactionType.hasRskNamespacePrefix(data));
+    }
+
+    // ========================================================================
+    // Sealed Transaction permit types (RSKIP-543)
+    // ========================================================================
+
+    @ParameterizedTest(name = "{0} is instantiable")
+    @MethodSource("sealedTransactionPermitTypes")
+    void sealedTransactionPermitTypes_areInstantiable(Class<? extends Transaction> type) throws Exception {
+        Transaction instance = type.getDeclaredConstructor().newInstance();
+
+        assertNotNull(instance);
+        assertTrue(Transaction.class.isInstance(instance));
+    }
+
+    private static Stream<Class<? extends Transaction>> sealedTransactionPermitTypes() {
+        return Stream.of(
+                Type0Transaction.class,
+                Type1Transaction.class,
+                Type2Transaction.class,
+                RskNamespaceTransaction.class
+        );
     }
 }

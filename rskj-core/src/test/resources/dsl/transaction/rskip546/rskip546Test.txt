@@ -3,7 +3,7 @@ comment
 // RSKIP-546 DSL Test: Type 1 and Type 2 Transaction Encoding in Rootstock
 //
 // Tests the full RSKIP-546 specification:
-//   1. Type 1 (EIP-2930) transactions execute correctly
+//   1. Type 1 (RSKIP546 / EIP-2930) transactions execute correctly
 //   2. Standard Type 2 (EIP-1559 format) transactions execute correctly
 //   3. Effective gas price = min(maxPriorityFeePerGas, maxFeePerGas) for Type 2
 //      - When maxPriority < maxFee, effectiveGasPrice == maxPriorityFeePerGas
@@ -25,7 +25,7 @@ account_new acc2 1000000
 account_new acc3 1000000
 
 # ============================================================================
-# Test 1: Basic Type 1 transaction (EIP-2930 format, empty access list)
+# Test 1: Basic Type 1 transaction (RSKIP546 / EIP-2930 format, empty access list)
 # ============================================================================
 # Type 1: 0x01 || rlp([chainId, nonce, gasPrice, gasLimit, to, value, data,
 #                       accessList, signatureYParity, signatureR, signatureS])

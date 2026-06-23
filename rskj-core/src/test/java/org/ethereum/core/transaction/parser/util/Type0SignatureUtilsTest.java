@@ -173,4 +173,18 @@ class Type0SignatureUtilsTest {
         assertInstanceOf(SignedSignature.class, state);
         assertEquals(33, ((SignedSignature) state).chainId() & 0xFF);
     }
+
+    // -------------------------------------------------------------------------
+    // UnsignedSignature
+    // -------------------------------------------------------------------------
+
+    @Test
+    void unsignedSignature_hasChainId_falseWhenNull() {
+        assertFalse(new UnsignedSignature(null).hasChainId());
+    }
+
+    @Test
+    void unsignedSignature_hasChainId_trueWhenPresent() {
+        assertTrue(new UnsignedSignature((byte) 33).hasChainId());
+    }
 }

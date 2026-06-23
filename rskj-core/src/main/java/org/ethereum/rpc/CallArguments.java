@@ -33,7 +33,7 @@ public class CallArguments {
     private String gas;
     private String gasLimit;
     private String gasPrice;
-    /** EIP-1559 (Type 2); optional hex quantity */
+    /** RSKIP546 / EIP-1559 (Type 2); optional hex quantity */
     private String maxPriorityFeePerGas;
     private String maxFeePerGas;
     private String value;
@@ -42,13 +42,13 @@ public class CallArguments {
     private String chainId;
     private String type; // This was ignored before (see https://github.com/rsksmart/rskj/pull/1601)
     private String rskSubtype;
-    /** EIP-2930 / EIP-1559 access list; null or empty means no access list entries */
+    /** RSKIP546 / EIP-2930 / EIP-1559 access list; null or empty means no access list entries */
     private List<AccessListEntry> accessList;
     /** RSKIP-545 / EIP-7702 authorization list */
     private List<AuthorizationListEntry> authorizationList;
 
     /**
-     * A single entry in an EIP-2930 / EIP-1559 access list.
+     * A single entry in an RSKIP546 / EIP-2930 / EIP-1559 access list.
      * {@code address} is a hex-encoded 20-byte Ethereum address.
      * {@code storageKeys} is a list of hex-encoded 32-byte storage slot keys.
      */

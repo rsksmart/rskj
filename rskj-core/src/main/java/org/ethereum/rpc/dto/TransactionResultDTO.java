@@ -217,7 +217,7 @@ public class TransactionResultDTO {
     }
 
     /**
-     * Represents a single entry in an EIP-2930 / EIP-1559 access list.
+     * Represents a single entry in an RSKIP546 / EIP-2930 / EIP-1559 access list.
      * Serializes as {@code {"address": "0x...", "storageKeys": ["0x...", ...]}} in JSON.
      */
     public static class AccessListEntryDTO {

@@ -23,10 +23,13 @@ import org.ethereum.core.Rskip546TestSupport;
 import org.ethereum.core.TransactionTypePrefix;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ParsedType1TransactionTest {
@@ -35,13 +38,32 @@ class ParsedType1TransactionTest {
             new RskAddress("0x1234567890123456789012345678901234567890");
 
     @Test
-    void equals_hashCode_toString_andAccept() {
+    void equals_hashCode_toString_andAccept() throws Exception {
+        ParsedType1Transaction left = sample();
+        ParsedType1Transaction right = sample();
+
+        assertEquals(left, right);
+        assertEquals(left.hashCode(), right.hashCode());
+        assertFalse(left.equals("other"));
+        assertNotEquals(left, withNonce(right, new byte[]{0x02}));
+        assertTrue(left.toString().contains("ParsedType1Transaction"));
+        assertEquals("type1", left.accept(visitorReturningLabels()));
+
+        Method toHex = ParsedType1Transaction.class.getDeclaredMethod("toHex", byte[].class);
+        toHex.setAccessible(true);
+        assertEquals("null", toHex.invoke(null, (Object) null));
+    }
+
+    @Test
+    void byteAccessors_returnDefensiveCopies() {
         ParsedType1Transaction parsed = sample();
 
-        assertEquals(parsed, parsed);
-        assertFalse(parsed.equals("other"));
-        assertTrue(parsed.toString().contains("ParsedType1Transaction"));
-        assertEquals("type1", parsed.accept(visitorReturningLabels()));
+        parsed.nonce()[0] ^= 0x01;
+        parsed.gasLimit()[0] ^= 0x01;
+        parsed.data()[0] ^= 0x01;
+
+        assertNotSame(parsed.accessListBytes(), parsed.accessListBytes());
+        assertEquals(sample(), parsed);
     }
 
     private static ParsedType1Transaction sample() {
@@ -52,9 +74,22 @@ class ParsedType1TransactionTest {
                 BigInteger.valueOf(21_000).toByteArray(),
                 RECEIVER,
                 Coin.ZERO,
-                new byte[0],
+                new byte[]{0x01},
                 new UnsignedSignature((byte) 33),
                 Rskip546TestSupport.EMPTY_ACCESS_LIST);
+    }
+
+    private static ParsedType1Transaction withNonce(ParsedType1Transaction base, byte[] nonce) {
+        return new ParsedType1Transaction(
+                base.typePrefix(),
+                nonce,
+                base.gasPrice(),
+                base.gasLimit(),
+                base.receiveAddress(),
+                base.value(),
+                base.data(),
+                base.signatureState(),
+                base.accessListBytes());
     }
 
     private static ParsedRawTransactionVisitor<String> visitorReturningLabels() {

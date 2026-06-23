@@ -20,14 +20,15 @@ package org.ethereum.core.transaction.parser;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.TransactionTypePrefix;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.signature.ECDSASignature;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ParsedType0TransactionTest {
@@ -36,13 +37,34 @@ class ParsedType0TransactionTest {
             new RskAddress("0x1234567890123456789012345678901234567890");
 
     @Test
-    void equals_hashCode_andToString_coverValueSemantics() {
-        ParsedType0Transaction parsed = sample();
+    void equals_hashCode_andToString_coverValueSemantics() throws Exception {
+        ParsedType0Transaction left = sample();
+        ParsedType0Transaction right = sample();
 
-        assertEquals(parsed, parsed);
-        assertEquals(parsed.hashCode(), parsed.hashCode());
-        assertFalse(parsed.equals("other"));
-        assertTrue(parsed.toString().contains("ParsedType0Transaction"));
+        assertEquals(left, right);
+        assertEquals(left.hashCode(), right.hashCode());
+        assertFalse(left.equals("other"));
+        assertNotEquals(left, withNonce(right, new byte[]{0x02}));
+        assertTrue(left.toString().contains("ParsedType0Transaction"));
+
+        Method toHex = ParsedType0Transaction.class.getDeclaredMethod("toHex", byte[].class);
+        toHex.setAccessible(true);
+        assertEquals("null", toHex.invoke(null, (Object) null));
+    }
+
+    @Test
+    void byteAccessors_returnDefensiveCopies() {
+        ParsedType0Transaction parsed = sample();
+        byte[] nonce = parsed.nonce();
+        byte[] gasLimit = parsed.gasLimit();
+        byte[] data = parsed.data();
+
+        nonce[0] ^= 0x01;
+        gasLimit[0] ^= 0x01;
+        data[0] ^= 0x01;
+
+        assertNotSame(nonce, parsed.nonce());
+        assertEquals(sample(), parsed);
     }
 
     @Test
@@ -78,12 +100,6 @@ class ParsedType0TransactionTest {
     }
 
     private static ParsedType0Transaction sample() {
-        ECKey.ECDSASignature sig = new ECKey().sign(new byte[32]);
-        ECDSASignature signature = ECDSASignature.fromComponents(
-                org.bouncycastle.util.BigIntegers.asUnsignedByteArray(sig.r),
-                org.bouncycastle.util.BigIntegers.asUnsignedByteArray(sig.s),
-                sig.v);
-
         return new ParsedType0Transaction(
                 TransactionTypePrefix.legacy(),
                 BigInteger.ONE.toByteArray(),
@@ -91,7 +107,19 @@ class ParsedType0TransactionTest {
                 BigInteger.valueOf(21_000).toByteArray(),
                 RECEIVER,
                 Coin.ZERO,
-                new byte[0],
-                new SignedSignature((byte) 33, signature));
+                new byte[]{0x01},
+                new UnsignedSignature((byte) 33));
+    }
+
+    private static ParsedType0Transaction withNonce(ParsedType0Transaction base, byte[] nonce) {
+        return new ParsedType0Transaction(
+                base.typePrefix(),
+                nonce,
+                base.gasPrice(),
+                base.gasLimit(),
+                base.receiveAddress(),
+                base.value(),
+                base.data(),
+                base.signatureState());
     }
 }

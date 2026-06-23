@@ -40,6 +40,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionBuilder;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.db.BlockStoreDummy;
@@ -565,5 +566,17 @@ class TransactionTest {
 
         assertNull(unsigned.getSignature());
         assertEquals((byte) 0, unsigned.getEncodedV());
+    }
+
+    @Test
+    void getEncodedV_signedLegacyWithoutChainId_returnsRawV() {
+        Transaction tx = CallTransaction.createCallTransaction(
+                0, 0, 100000000000000L,
+                new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
+                CallTransaction.Function.fromSignature("get"), (byte) 0);
+        tx.sign(new byte[]{});
+
+        assertEquals((byte) 0, tx.getChainId());
+        assertEquals(tx.getSignature().getV(), tx.getEncodedV());
     }
 }

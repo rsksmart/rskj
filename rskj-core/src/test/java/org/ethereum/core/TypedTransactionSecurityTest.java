@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *   <li>Chain ID truncation: crafted chainIds that map to RSK mainnet chain ID (30) via
  *       truncation must be rejected (S1)</li>
- *   <li>yParity bounds: only 0 and 1 are valid per EIP-2930/1559 (S2)</li>
+ *   <li>yParity bounds: only 0 and 1 are valid per RSKIP546 / EIP-2930/1559 (S2)</li>
  *   <li>Malformed access list RLP: invalid RLP must be rejected at decode time (S3)</li>
  *   <li>Chain ID zero rejected for typed transactions</li>
  *   <li>maxPriorityFeePerGas > maxFeePerGas rejected for Type 2</li>
@@ -290,7 +290,7 @@ class TypedTransactionSecurityTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> new ImmutableTransaction(rawTx),
-                "Type 1 with chainId=0 must be rejected (EIP-2930 requires chain ID)");
+                "Type 1 with chainId=0 must be rejected (RSKIP546 / EIP-2930 requires chain ID)");
     }
 
     @Test
@@ -299,7 +299,7 @@ class TypedTransactionSecurityTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> new ImmutableTransaction(rawTx),
-                "Type 2 with chainId=0 must be rejected (EIP-1559 requires chain ID)");
+                "Type 2 with chainId=0 must be rejected (RSKIP546 / EIP-1559 requires chain ID)");
     }
 
     @Test

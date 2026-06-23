@@ -26,11 +26,14 @@ import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -58,14 +61,35 @@ class ParsedType4TransactionTest {
     }
 
     @Test
-    void equals_hashCode_andToString_coverValueSemantics() {
+    void equals_hashCode_andToString_coverValueSemantics() throws Exception {
+        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization(CHAIN_ID);
+        ParsedType4Transaction left = newParsedType4(List.of(auth));
+        ParsedType4Transaction right = newParsedType4(List.of(auth));
+
+        assertEquals(left, right);
+        assertEquals(left.hashCode(), right.hashCode());
+        assertFalse(left.equals("other"));
+        assertNotEquals(left, withNonce(right, new byte[]{0x02}));
+        assertEquals(Coin.valueOf(10), left.maxPriorityFeePerGas());
+        assertEquals(Coin.valueOf(100), left.maxFeePerGas());
+        assertTrue(left.toString().contains("ParsedType4Transaction"));
+
+        Method toHex = ParsedType4Transaction.class.getDeclaredMethod("toHex", byte[].class);
+        toHex.setAccessible(true);
+        assertEquals("null", toHex.invoke(null, (Object) null));
+    }
+
+    @Test
+    void byteAccessors_returnDefensiveCopies() {
         SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization(CHAIN_ID);
         ParsedType4Transaction parsed = newParsedType4(List.of(auth));
 
-        assertEquals(parsed, parsed);
-        assertEquals(parsed.hashCode(), parsed.hashCode());
-        assertFalse(parsed.equals("other"));
-        assertTrue(parsed.toString().contains("ParsedType4Transaction"));
+        parsed.nonce()[0] ^= 0x01;
+        parsed.gasLimit()[0] ^= 0x01;
+        parsed.data()[0] ^= 0x01;
+
+        assertNotSame(parsed.nonce(), parsed.nonce());
+        assertEquals(newParsedType4(List.of(auth)), parsed);
     }
 
     @Test
@@ -104,6 +128,21 @@ class ParsedType4TransactionTest {
     // Helpers
     // -------------------------------------------------------------------------
 
+    private static ParsedType4Transaction withNonce(ParsedType4Transaction base, byte[] nonce) {
+        return new ParsedType4Transaction(
+                base.typePrefix(),
+                nonce,
+                base.gasLimit(),
+                base.receiveAddress(),
+                base.value(),
+                base.data(),
+                base.signatureState(),
+                base.accessListBytes(),
+                base.maxPriorityFeePerGas(),
+                base.maxFeePerGas(),
+                base.authorizationList());
+    }
+
     private static ParsedType4Transaction newParsedType4(List<SetCodeAuthorization> authorizationList) {
         return new ParsedType4Transaction(
                 TransactionTypePrefix.typed(TransactionType.TYPE_4),
@@ -111,7 +150,7 @@ class ParsedType4TransactionTest {
                 BigInteger.valueOf(21_000).toByteArray(),
                 RECEIVER,
                 Coin.ZERO,
-                new byte[0],
+                new byte[]{0x01},
                 new UnsignedSignature(CHAIN_ID),
                 RLP.encodeList(),
                 Coin.valueOf(10),

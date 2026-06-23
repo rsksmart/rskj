@@ -21,6 +21,8 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.exception.InvalidRskAddressException;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.parser.ParsedType2RSKTransaction;
+import org.ethereum.core.transaction.parser.UnsignedSignature;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
@@ -322,6 +324,27 @@ class RskNamespaceTransactionTest {
 
         byte[] encoded = type1.getEncoded();
         assertEquals(0x01, encoded[0]);
+    }
+
+    @Test
+    void fromParsed_type2Rsk_buildsRskNamespaceTransaction() {
+        ParsedType2RSKTransaction parsed = new ParsedType2RSKTransaction(
+                TransactionTypePrefix.rskNamespace((byte) 0x03),
+                TEST_NONCE,
+                TEST_GAS_PRICE,
+                TEST_GAS_LIMIT,
+                TEST_ADDRESS,
+                TEST_VALUE,
+                TEST_DATA,
+                TEST_CHAIN_ID,
+                new UnsignedSignature(TEST_CHAIN_ID));
+
+        Transaction tx = Transaction.fromParsed(parsed, false);
+
+        assertEquals(TransactionType.TYPE_2, tx.getType());
+        assertTrue(tx.isRskNamespaceTransaction());
+        assertEquals((byte) 0x03, tx.getRskSubtype());
+        assertEquals(TEST_CHAIN_ID, tx.getChainId());
     }
 
     // =========================================================================

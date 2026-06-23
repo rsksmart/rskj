@@ -31,16 +31,24 @@ import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Rskip546TestSupport;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.SetCodeAuthorization;
+import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
+import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 
 class TransactionResultDTOTest {
@@ -282,5 +290,154 @@ class TransactionResultDTOTest {
         Assertions.assertFalse(json.has("maxFeePerGas"), "maxFeePerGas must be omitted from JSON for legacy tx");
         Assertions.assertFalse(json.has("maxPriorityFeePerGas"),
                 "maxPriorityFeePerGas must be omitted from JSON for legacy tx");
+    }
+
+    @Test
+    void type1Transaction_decodesNonemptyAccessList() {
+        byte[] address = new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87").getBytes();
+        byte[] storageKey = new byte[32];
+        storageKey[31] = 0x01;
+        byte[] accessList = RLP.encodeList(
+                RLP.encodeList(
+                        RLP.encodeElement(address),
+                        RLP.encodeList(RLP.encodeElement(storageKey))
+                )
+        );
+        Transaction tx = Rskip546TestSupport.unsignedType1(
+                (byte) 33,
+                new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"),
+                Coin.valueOf(1_000_000_000L),
+                BigInteger.ONE.toByteArray(),
+                new byte[0],
+                accessList);
+        tx.sign(new byte[]{});
+
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 0, tx, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertEquals(1, dto.getAccessList().size());
+        TransactionResultDTO.AccessListEntryDTO entry = dto.getAccessList().get(0);
+        Assertions.assertTrue(entry.getAddress().startsWith("0x"));
+        Assertions.assertEquals(1, entry.getStorageKeys().size());
+        Assertions.assertTrue(entry.getStorageKeys().get(0).startsWith("0x"));
+    }
+
+    @Test
+    void type1Transaction_corruptAccessList_returnsEmptyList() {
+        Transaction signed = Rskip546TestSupport.unsignedType1(
+                (byte) 33,
+                new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"),
+                Coin.valueOf(1_000_000_000L),
+                BigInteger.ONE.toByteArray(),
+                new byte[0],
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
+        signed.sign(new byte[]{});
+        Transaction tx = new Transaction(
+                signed.getNonce(),
+                signed.getGasPrice(),
+                signed.getGasLimit(),
+                signed.getReceiveAddress(),
+                signed.getValue(),
+                signed.getData(),
+                signed.getChainId(),
+                false,
+                signed.getTypePrefix(),
+                new byte[]{(byte) 0xff, 0x01},
+                null,
+                null,
+                null);
+        tx.setSignature(signed.getSignature());
+
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 0, tx, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertNotNull(dto.getAccessList());
+        Assertions.assertTrue(dto.getAccessList().isEmpty());
+    }
+
+    @Test
+    void authorizationListEntryDto_exposesFields() {
+        TransactionResultDTO.AuthorizationListEntryDTO entry =
+                new TransactionResultDTO.AuthorizationListEntryDTO(
+                        "0x21", "0x02", "0x0", "0x0", "0x1", "0x2");
+
+        Assertions.assertEquals("0x21", entry.getChainId());
+        Assertions.assertEquals("0x02", entry.getAddress());
+        Assertions.assertEquals("0x0", entry.getNonce());
+        Assertions.assertEquals("0x0", entry.getYParity());
+        Assertions.assertEquals("0x1", entry.getR());
+        Assertions.assertEquals("0x2", entry.getS());
+    }
+
+    @Test
+    void encodeAuthorizationList_nullOrEmpty_returnsEmptyList() throws Exception {
+        Method encode = TransactionResultDTO.class.getDeclaredMethod(
+                "encodeAuthorizationList", List.class);
+        encode.setAccessible(true);
+
+        Assertions.assertEquals(Collections.emptyList(), encode.invoke(null, (Object) null));
+        Assertions.assertEquals(Collections.emptyList(), encode.invoke(null, List.of()));
+    }
+
+    @Test
+    void type1Transaction_nullAccessListBytes_returnsEmptyList() {
+        Transaction tx = Mockito.mock(Transaction.class);
+        Mockito.when(tx.getType()).thenReturn(TransactionType.TYPE_1);
+        Mockito.when(tx.getTypePrefix())
+                .thenReturn(TransactionTypePrefix.typed(TransactionType.TYPE_1));
+        Mockito.when(tx.getTypeAsHex()).thenReturn("0x1");
+        Mockito.when(tx.getHash()).thenReturn(new co.rsk.crypto.Keccak256(new byte[32]));
+        Mockito.when(tx.getNonce()).thenReturn(new byte[]{0x01});
+        Mockito.when(tx.getGasLimit()).thenReturn(BigInteger.valueOf(21_000).toByteArray());
+        Mockito.when(tx.getGasPrice()).thenReturn(Coin.valueOf(10));
+        Mockito.when(tx.getReceiveAddress())
+                .thenReturn(new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"));
+        Mockito.when(tx.getValue()).thenReturn(Coin.ZERO);
+        Mockito.when(tx.getData()).thenReturn(new byte[0]);
+        Mockito.when(tx.getSender(any()))
+                .thenReturn(new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"));
+        Mockito.when(tx.getSignature())
+                .thenReturn(ECDSASignature.fromComponents(new byte[32], new byte[32], (byte) 27));
+        Mockito.when(tx.getEncodedV()).thenReturn((byte) 0);
+        Mockito.when(tx.getChainId()).thenReturn((byte) 33);
+        Mockito.when(tx.getAccessListBytes()).thenReturn(null);
+
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 0, tx, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertNotNull(dto.getAccessList());
+        Assertions.assertTrue(dto.getAccessList().isEmpty());
+    }
+
+    @Test
+    void type2Transaction_omitsNullMaxFeeFieldsFromDto() {
+        Transaction tx = Mockito.mock(Transaction.class);
+        Mockito.when(tx.getType()).thenReturn(TransactionType.TYPE_2);
+        Mockito.when(tx.getTypePrefix())
+                .thenReturn(TransactionTypePrefix.typed(TransactionType.TYPE_2));
+        Mockito.when(tx.getTypeAsHex()).thenReturn("0x2");
+        Mockito.when(tx.getHash()).thenReturn(new co.rsk.crypto.Keccak256(new byte[32]));
+        Mockito.when(tx.getNonce()).thenReturn(new byte[]{0x01});
+        Mockito.when(tx.getGasLimit()).thenReturn(BigInteger.valueOf(21_000).toByteArray());
+        Mockito.when(tx.getGasPrice()).thenReturn(Coin.valueOf(10));
+        Mockito.when(tx.getReceiveAddress())
+                .thenReturn(new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"));
+        Mockito.when(tx.getValue()).thenReturn(Coin.ZERO);
+        Mockito.when(tx.getData()).thenReturn(new byte[0]);
+        Mockito.when(tx.getSender(any()))
+                .thenReturn(new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"));
+        Mockito.when(tx.getSignature())
+                .thenReturn(ECDSASignature.fromComponents(new byte[32], new byte[32], (byte) 27));
+        Mockito.when(tx.getEncodedV()).thenReturn((byte) 0);
+        Mockito.when(tx.getChainId()).thenReturn((byte) 33);
+        Mockito.when(tx.getAccessListBytes()).thenReturn(Rskip546TestSupport.EMPTY_ACCESS_LIST);
+        Mockito.when(tx.getMaxPriorityFeePerGas()).thenReturn(null);
+        Mockito.when(tx.getMaxFeePerGas()).thenReturn(null);
+
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 0, tx, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertNull(dto.getMaxFeePerGas());
+        Assertions.assertNull(dto.getMaxPriorityFeePerGas());
     }
 }
