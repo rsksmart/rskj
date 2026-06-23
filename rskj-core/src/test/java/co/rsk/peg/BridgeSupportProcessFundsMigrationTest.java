@@ -1806,16 +1806,12 @@ class BridgeSupportProcessFundsMigrationTest {
             .toList();
     }
 
-    private void assertMigrationTxCount(int expectedCount) throws IOException {
-        assertEquals(expectedCount, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ALL_ACTIVATIONS).size());
-    }
-
     private void assertMigrationTxCount(int expectedCount, ActivationConfig.ForBlock activations) throws IOException {
         assertEquals(expectedCount, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(activations).size());
     }
 
     private void assertNoMigrationTxCreated() throws IOException {
-        assertMigrationTxCount(0);
+        assertMigrationTxCount(0, ALL_ACTIVATIONS);
     }
 
     private void assertRetiringFederationStillPresent() {
