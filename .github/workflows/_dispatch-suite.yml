@@ -1,0 +1,135 @@
+name: Dispatch external test suite
+
+# Reusable building block for the RSKj Core Automated Tests umbrella
+# (rskj-core-automated-tests.yml). Mints a short-lived GitHub App token scoped to
+# one test repo, dispatches that repo's test workflow against an rskj ref, then
+# polls the created run to completion and returns its conclusion. The umbrella
+# calls this once per suite (JSON-RPC / Hardhat / K6); keeping the dispatch + poll
+# logic here means a fix lands in one place instead of three copies.
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        description: "Human-readable suite label, used in log lines."
+        type: string
+        required: true
+      repo:
+        description: "Test repo name under rsksmart/ (e.g. rskj-json-rpc-tests)."
+        type: string
+        required: true
+      workflow:
+        description: "workflow_dispatch file to trigger in that repo."
+        type: string
+        required: true
+      test_input:
+        description: "Name of the test-branch input that workflow expects (test_branch | hardhat_branch)."
+        type: string
+        required: true
+      rskj_ref:
+        description: "rskj branch the suite builds the node from."
+        type: string
+        required: true
+      test_ref:
+        description: "Branch of the test repo to run."
+        type: string
+        required: true
+    outputs:
+      conclusion:
+        description: "Conclusion of the downstream run (success/failure/timed_out/…)."
+        value: ${{ jobs.run.outputs.conclusion }}
+      run_url:
+        description: "HTML URL of the downstream run."
+        value: ${{ jobs.run.outputs.run_url }}
+    secrets:
+      app_id:
+        required: true
+      app_key:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: ${{ inputs.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    outputs:
+      conclusion: ${{ steps.run.outputs.conclusion }}
+      run_url: ${{ steps.run.outputs.run_url }}
+    steps:
+      # Fresh ~1h token, minted at job start so the full dispatch + poll fits inside it.
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.app_id }}
+          private-key: ${{ secrets.app_key }}
+          owner: rsksmart
+          repositories: ${{ inputs.repo }}
+      - name: Dispatch and wait
+        id: run
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NAME: ${{ inputs.name }}
+          REPO: rsksmart/${{ inputs.repo }}
+          WORKFLOW: ${{ inputs.workflow }}
+          TEST_INPUT: ${{ inputs.test_input }}
+          RSKJ_REF: ${{ inputs.rskj_ref }}
+          TEST_REF: ${{ inputs.test_ref }}
+        run: |
+          set -euo pipefail
+          INPUTS=$(jq -n --arg rskj "$RSKJ_REF" --arg k "$TEST_INPUT" --arg v "$TEST_REF" \
+            '{rskj_branch: $rskj, ($k): $v}')
+          BODY=$(jq -n --arg ref "$TEST_REF" --argjson inputs "$INPUTS" \
+            '{ref: $ref, inputs: $inputs, return_run_details: true}')
+          echo "Dispatching $WORKFLOW in $REPO on '$TEST_REF' (rskj_branch=$RSKJ_REF)"
+          if ! RESP=$(printf '%s' "$BODY" | gh api -X POST \
+              "repos/$REPO/actions/workflows/$WORKFLOW/dispatches" --input -); then
+            echo "::error::failed to dispatch $WORKFLOW in $REPO"
+            exit 1
+          fi
+          RUN_ID=$(jq -r '.workflow_run_id // empty' <<<"$RESP" 2>/dev/null || true)
+          RUN_URL=$(jq -r '.html_url // empty' <<<"$RESP" 2>/dev/null || true)
+          if [ -z "$RUN_ID" ]; then
+            echo "::error::dispatch did not return a run id; response: $RESP"
+            exit 1
+          fi
+          echo "run_url=$RUN_URL" >> "$GITHUB_OUTPUT"
+          echo "Triggered run $RUN_ID — $RUN_URL"
+          # If THIS job is cancelled (e.g. concurrency cancel-in-progress on a new
+          # push), cancel the downstream run too so it doesn't keep burning minutes
+          # orphaned. Best-effort: fires on the grace-period INT/TERM during the
+          # poll's sleep below; a hard kill may skip it.
+          cleanup() { gh api -X POST "repos/$REPO/actions/runs/$RUN_ID/cancel" >/dev/null 2>&1 || true; }
+          trap cleanup INT TERM
+          # Wait for completion by polling the run status (keyed on the id we
+          # already hold — deterministic, unlike `gh run watch`, which can race a
+          # just-created run). 100 * 30s = 50m of polling, kept under this job's
+          # timeout-minutes: 55 so a run finishing near the top of the window is
+          # still observed (not falsely marked timed_out) and the conclusion can be
+          # written to $GITHUB_OUTPUT before the job is killed mid-step. status and
+          # conclusion are read in one API call per tick. A downstream *test* failure
+          # is captured as the conclusion (not raised here) so the report job can
+          # gate centrally; a dispatch/infra error already exited non-zero above.
+          CONCLUSION=""
+          for _ in $(seq 1 100); do
+            # `|| true`: read returns non-zero on EOF-without-newline, which would
+            # otherwise abort the step under `set -e`. A transient API error makes
+            # the substitution empty, leaving STATUS unset → another tick.
+            STATUS=""; RUN_CONCLUSION=""
+            read -r STATUS RUN_CONCLUSION < <(gh api "repos/$REPO/actions/runs/$RUN_ID" \
+              --jq '"\(.status) \(.conclusion // "unknown")"' 2>/dev/null || echo " ") || true
+            # Require a non-empty conclusion too: a completed run always has one, so
+            # an empty value here means a partial/blipped read — keep polling rather
+            # than recording a spurious empty conclusion (which reports as a failure).
+            if [ "$STATUS" = "completed" ] && [ -n "$RUN_CONCLUSION" ]; then
+              CONCLUSION="$RUN_CONCLUSION"
+              break
+            fi
+            sleep 30
+          done
+          [ -n "$CONCLUSION" ] || CONCLUSION="timed_out"
+          echo "conclusion=$CONCLUSION" >> "$GITHUB_OUTPUT"
+          echo "$NAME suite concluded: $CONCLUSION"
