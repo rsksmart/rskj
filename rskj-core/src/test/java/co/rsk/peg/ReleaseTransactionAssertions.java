@@ -41,17 +41,35 @@ public class ReleaseTransactionAssertions {
         }
     }
 
-    public static void assertMigrationTxWithOnlyMigrationOutputs(
+    public static void assertMigrationTxWithMultipleOutputs(
         BtcTransaction migrationTransaction,
         Coin migratedAmount,
         Address destination,
-        NetworkParameters networkParameters
+        NetworkParameters networkParameters,
+        int expectedNumberOfOutputs
     ) {
-        int expectedNumberOfOutputs = 1;
         List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
         assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
         assertDestinationAddress(migrationTransactionOutputs, destination, networkParameters);
-        assertOutputsWithNoChange(migrationTransaction, migratedAmount);
+
+        if (migrationTransactionOutputs.size() == 1) {
+            assertOutputsWithNoChange(migrationTransaction, migratedAmount);
+        } else {
+            assertOutputsForMultipleUtxos(migrationTransaction, migratedAmount, expectedNumberOfOutputs);
+        }
+    }
+
+    private static void assertOutputsForMultipleUtxos(BtcTransaction migrationTransaction, Coin migratedAmount, int expectedNumberOfOutputs) {
+        List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
+        Coin perOutputAmount = Coin.COIN.multiply(20);
+        for (int i = 0; i < expectedNumberOfOutputs - 1; i++) {
+            assertEquals(perOutputAmount, migrationTransactionOutputs.get(i).getValue());
+        }
+        Coin expectedLastOutputBeforeFees = migratedAmount.subtract(
+            perOutputAmount.multiply(expectedNumberOfOutputs - 1)
+        );
+        Coin lastOutput = migrationTransactionOutputs.get(expectedNumberOfOutputs - 1).getValue();
+        assertEquals(expectedLastOutputBeforeFees, lastOutput.add(migrationTransaction.getFee()));
     }
 
     public static void assertInputIsFromFederationUTXOsWallet(TransactionInput input, List<UTXO> federationUtxos) {
