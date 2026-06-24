@@ -567,7 +567,7 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_duringMigration_withMaxInputsPerPegoutTxPlusOneUtxos_whenUtxosSumIsBelowMTMUThreshold_whenCalledRepeatedly_shouldCreateAMigrationTxEachTime() throws IOException {
+        void updateCollections_duringMigration_withMaxInputsPerPegoutTxPlusOneUtxos_whenEachUtxoSelectionSumIsBelowMTMUThreshold_whenCalledRepeatedly_shouldCreateAMigrationTxEachTime() throws IOException {
             // Arrange
             int numberOfUtxos = ABOVE_MAX_INPUTS_PER_PEGOUT_TX - 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
