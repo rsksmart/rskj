@@ -1806,6 +1806,50 @@ class BridgeSupportReleaseBtcTest {
             assertAmountBurnt(expectedBurntAmount);
         }
 
+        @Test
+        void processPegoutsInBatch_postRSKIP378_whenSplittingTotalRequests_withNonDustChange_shouldUseSplitPegoutRequestsValueRef_shouldNotBurn() throws IOException {
+            // arrange
+            setUp(ACTIVATIONS_ALL);
+            int pegoutRequests = 2;
+            Coin pegoutRequestValue = PEGOUT_REQUEST_VALUE.subtract(NON_DUST_CHANGE);
+            setupRequests(pegoutRequests, pegoutRequestValue, ACTIVATIONS_ALL);
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+
+            // assert
+            int expectedRemainingRequests = 1;
+            assertRemainingRequests(expectedRemainingRequests);
+
+            int pegoutRequestsProcessed = pegoutRequests - expectedRemainingRequests;
+            Coin expectedValueBeingPeggedOut = pegoutRequestValue.multiply(pegoutRequestsProcessed);
+            assertReleaseRequested(expectedValueBeingPeggedOut);
+
+            assertNoBurn();
+        }
+
+        @Test
+        void processPegoutsInBatch_postRSKIP378_whenSplittingTotalRequests_withAmountToBurn_shouldUseSplitPegoutRequestsValueRef_shouldBurn() throws IOException {
+            // arrange
+            setUp(ACTIVATIONS_ALL);
+            int pegoutRequests = 2;
+            Coin pegoutRequestValue = PEGOUT_REQUEST_VALUE.subtract(DUST_CHANGE);
+            setupRequests(pegoutRequests, pegoutRequestValue, ACTIVATIONS_ALL);
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+
+            // assert
+            int expectedRemainingRequests = 1;
+            assertRemainingRequests(expectedRemainingRequests);
+
+            int pegoutRequestsProcessed = pegoutRequests - expectedRemainingRequests;
+            Coin expectedValueBeingPeggedOut = pegoutRequestValue.multiply(pegoutRequestsProcessed);
+            assertReleaseRequested(expectedValueBeingPeggedOut);
+
+            assertAmountBurnt(DUST_BUMP);
+        }
+
         private void assertRemainingRequests(int expectedRemainingRequests) throws IOException {
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             int remainingRequests = releaseRequestQueue.getEntries().size();
