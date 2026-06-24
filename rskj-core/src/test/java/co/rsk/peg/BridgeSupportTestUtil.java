@@ -1,13 +1,33 @@
 package co.rsk.peg;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
-import static co.rsk.peg.BridgeEventsTestUtils.*;
+import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
+import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
 import static co.rsk.peg.BridgeEventsTestUtils.getLogsData;
+import static co.rsk.peg.BridgeEventsTestUtils.getLogsTopics;
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASES_OUTPOINTS_VALUES;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.RskTestUtils;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.PartialMerkleTree;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.StoredBlock;
+import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.TransactionWitness;
+import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.Utils;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
@@ -20,17 +40,23 @@ import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.utils.NonRefundablePeginReason;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
@@ -39,6 +65,22 @@ import org.ethereum.vm.PrecompiledContracts;
 
 public final class BridgeSupportTestUtil {
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
+
+    private BridgeSupportTestUtil() {}
+
+    public static void setUpFlyoverUtxoInStorage(UTXO flyoverUtxo, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider, Keccak256 flyoverDerivationHash) {
+        Sha256Hash flyoverTransactionHash = flyoverUtxo.getHash();
+        provider.markFlyoverDerivationHashAsUsed(flyoverTransactionHash, flyoverDerivationHash);
+
+        FlyoverFederationInformation flyoverFederationInformation =
+            new FlyoverFederationInformation(
+                flyoverDerivationHash,
+                federation.getP2SHScript().getPubKeyHash(),
+                flyoverOutputScript.getPubKeyHash()
+            );
+        provider.setFlyoverFederationInformation(flyoverFederationInformation);
+        provider.save();
+    }
 
     public static PartialMerkleTree createValidPmtForTransactions(List<BtcTransaction> btcTransactions, NetworkParameters networkParameters) {
         List<Sha256Hash> hashesToAdd = new ArrayList<>();
@@ -135,6 +177,23 @@ public final class BridgeSupportTestUtil {
         bridgeStorageProvider.save();
 
         return pmtWithTransactions;
+    }
+
+    public static Transaction buildUpdateCollectionsTransaction() {
+        return buildUpdateCollectionsTransaction(0);
+    }
+
+    public static Transaction buildUpdateCollectionsTransaction(long nonce) {
+        Transaction tx = Transaction
+            .builder()
+            .nonce(BigInteger.valueOf(nonce))
+            .destination(PrecompiledContracts.BRIDGE_ADDR)
+            .data(Bridge.UPDATE_COLLECTIONS.encode())
+            .chainId(Constants.MAINNET_CHAIN_ID)
+            .build();
+
+        tx.sign(RskTestUtils.getEcKeyFromSeed("sender").getPrivKeyBytes());
+        return tx;
     }
 
     public static DataWord getStorageKeyForReleaseOutpointsValues(Sha256Hash releaseTxHash) {
