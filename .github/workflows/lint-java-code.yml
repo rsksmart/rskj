@@ -87,7 +87,7 @@ jobs:
           curl -sSL https://secchannel.rsk.co/SUPPORT.asc | gpg2 --import -
           gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
 
-      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5
+      - uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 #v6.0.0
         name: Cache Gradle Wrapper
         if: steps.changed-files.outputs.changed_files_count > 0
         id: cache-gradle-wrapper
