@@ -16,6 +16,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.RskTestUtils;
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
@@ -222,7 +223,7 @@ public final class BridgeSupportTestUtil {
     ) {
         for (int i = 0; i < pegoutRequestCount; i++) {
             Address receiver = BitcoinTestUtils.createP2PKHAddress(networkParameters, "receiver" + i);
-            releaseRequestQueue.add(receiver, value, PegTestUtils.createHash3(i));
+            releaseRequestQueue.add(receiver, value, RskTestUtils.createHash(i));
         }
         return releaseRequestQueue;
     }
