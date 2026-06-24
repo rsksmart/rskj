@@ -1477,11 +1477,11 @@ public class BridgeSupport {
                 return false;
             }
 
-            BtcTransaction generatedTransaction = result.btcTx();
+            BtcTransaction pegoutTransaction = result.btcTx();
             Keccak256 pegoutCreationTxHash = pegoutRequest.getRskTxHash();
-            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, generatedTransaction, pegoutCreationTxHash, pegoutRequest.getAmount());
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, pegoutTransaction, pegoutCreationTxHash, pegoutRequest.getAmount());
 
-            adjustBalancesIfChangeOutputWasDust(generatedTransaction, pegoutRequest.getAmount(), wallet);
+            adjustBalancesIfChangeOutputWasDust(pegoutTransaction, pegoutRequest.getAmount(), wallet);
 
             return true;
         });
@@ -1659,26 +1659,26 @@ public class BridgeSupport {
     }
 
     /**
-     * If federation change output value had to be increased to be non-dust, the federation now has
-     * more BTC than it should. So, we burn some sBTC to make balances match.
+     * If federation change output value had to be increased to be non-dust, it will send less BTC
+     * than the received rBTC. So, we burn some rBTC to make balances match.
      *
-     * @param btcTx      The btc tx that was just completed
-     * @param sentByUser The number of sBTC originaly sent by the user
+     * @param pegoutTx      The pegout tx
+     * @param amountPeggedOut The pegged-out rBTC amount
      */
-    private void adjustBalancesIfChangeOutputWasDust(BtcTransaction btcTx, Coin sentByUser, Wallet wallet) {
-        if (btcTx.getOutputs().size() <= 1) {
+    private void adjustBalancesIfChangeOutputWasDust(BtcTransaction pegoutTx, Coin amountPeggedOut, Wallet wallet) {
+        if (pegoutTx.getOutputs().size() <= 1) {
             // If there is no change, do-nothing
             return;
         }
         Coin sumInputs = Coin.ZERO;
-        for (TransactionInput transactionInput : btcTx.getInputs()) {
+        for (TransactionInput transactionInput : pegoutTx.getInputs()) {
             sumInputs = sumInputs.add(transactionInput.getValue());
         }
 
-        Coin change = btcTx.getValueSentToMe(wallet);
+        Coin change = pegoutTx.getValueSentToMe(wallet);
         Coin spentByFederation = sumInputs.subtract(change);
-        if (spentByFederation.isLessThan(sentByUser)) {
-            Coin coinsToBurn = sentByUser.subtract(spentByFederation);
+        if (spentByFederation.isLessThan(amountPeggedOut)) {
+            Coin coinsToBurn = amountPeggedOut.subtract(spentByFederation);
             this.transferTo(BURN_ADDRESS, co.rsk.core.Coin.fromBitcoin(coinsToBurn));
         }
     }
