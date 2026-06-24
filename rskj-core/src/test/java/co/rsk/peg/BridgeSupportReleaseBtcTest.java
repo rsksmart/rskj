@@ -17,6 +17,8 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeSupportTestUtil.addPegoutRequestsToQueue;
+import static co.rsk.peg.BridgeSupportTestUtil.assertLogReleaseRequested;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,6 +46,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import co.rsk.test.builders.UTXOBuilder;
 import org.bouncycastle.util.encoders.Hex;
@@ -57,9 +60,9 @@ import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.Program;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class BridgeSupportReleaseBtcTest {
     private static final BigInteger NONCE = new BigInteger("0");
@@ -1645,6 +1648,194 @@ class BridgeSupportReleaseBtcTest {
 
         BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
         assertEquals(pegoutRequestValue.asBigInteger(), amount);
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class ProcessPegoutsInBatch {
+        // too many pegout requests can make the batched pegout exceed the max tx size.
+        // if this happens, it is split in half.
+        // pre-RSKIP378 the total pegout value is not recalculated after the split,
+        // so both the RELEASE_REQUESTED event and the RBTC burn
+        // use the value of ALL the original requests instead of only the batched ones.
+        //
+        // When the change will be dust (below 2700 sats), it is bumped up to reach a non-dust amount,
+        // so the federation keeps that 2700-change extra and that difference is burnt.
+        // The expected burnt amounts below are hardcoded to make tests deterministic, but derived as follows:
+        //   burnt = valuePeggedOut - spentByFederation
+        //     - valuePeggedOut    = full original total value (pre-RSKIP378) or actual batched value (post-RSKIP378)
+        //     - spentByFederation = sumInputs - change. Since recipients pay the fee, this equals the
+        //                           batched total when the change is NOT dust.
+        //   Hence:
+        //     - no split / no dust          -> burnt = 0
+        //     - split, change NOT dust      -> burnt = full - batched = total un-batched value (pre); 0 (post)
+        //     - split, change IS dust       -> add (2700 - real change) to the burn (pre and post)
+
+        private static final ActivationConfig.ForBlock VETIVER_ACTIVATIONS = ActivationConfigsForTest.vetiver900().forBlock(0L);
+
+        private static final Coin DUST_THRESHOLD = Coin.valueOf(2_700); // change outputs below this threshold are dust and get bumped up to it
+        private static final Coin DUST_CHANGE = DUST_THRESHOLD.subtract(Coin.SATOSHI);
+        private static final Coin NON_DUST_CHANGE = DUST_THRESHOLD.add(Coin.SATOSHI);
+        private static final Coin DUST_BUMP = DUST_THRESHOLD.subtract(DUST_CHANGE);
+        private static final Coin PEGOUT_REQUEST_VALUE = Coin.COIN.multiply(1_250);
+
+        private List<LogInfo> logs;
+        private Transaction rskTx;
+
+        void setUp(ActivationConfig.ForBlock activations) {
+            activeFederation = P2shP2wshErpFederationBuilder.builder().build();
+            repository = RskTestUtils.createRepository();
+
+            logs = new ArrayList<>();
+            rskTx = buildUpdateTx();
+
+            StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+            federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+            federationStorageProvider.setNewFederation(activeFederation);
+            federationSupport = FederationSupportBuilder.builder()
+                .withFederationConstants(FEDERATION_CONSTANTS)
+                .withFederationStorageProvider(federationStorageProvider)
+                .build();
+            feePerKbSupport = mock(FeePerKbSupportImpl.class);
+            when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.valueOf(5_000L));
+
+            eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, activations, logs);
+            bridgeStorageProvider = new BridgeStorageProvider(
+                repository,
+                NETWORK_PARAMETERS,
+                activations
+            );
+            bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(BRIDGE_CONSTANTS)
+                .withProvider(bridgeStorageProvider)
+                .withRepository(repository)
+                .withEventLogger(eventLogger)
+                .withActivations(activations)
+                .withSignatureCache(signatureCache)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .build();
+        }
+
+        private void setupRequests(int pegoutRequests, Coin pegoutRequestValue, ActivationConfig.ForBlock activations) throws IOException {
+            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
+            addPegoutRequestsToQueue(
+                releaseRequestQueue,
+                pegoutRequests,
+                pegoutRequestValue,
+                NETWORK_PARAMETERS
+            );
+
+            // 2500 * 1 btc = 2500 btc
+            int numberOfUtxos = 2500;
+            List<UTXO> utxos = UTXOBuilder.builder()
+                .withScriptPubKey(activeFederation.getP2SHScript())
+                .withValue(Coin.COIN)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+            federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, activations).addAll(utxos);
+        }
+
+        private static Stream<ActivationConfig.ForBlock> activationsArgs() {
+            return Stream.of(VETIVER_ACTIVATIONS, ACTIVATIONS_ALL);
+        }
+
+        @ParameterizedTest
+        @MethodSource("activationsArgs")
+        void processPegoutsInBatch_noSplitting_shouldUseTotalPegoutRequestsValueRef(ActivationConfig.ForBlock activations) throws IOException {
+            // arrange
+            setUp(activations);
+            int pegoutRequests = 10;
+            Coin pegoutRequestValue = Coin.COIN;
+            setupRequests(pegoutRequests, pegoutRequestValue, activations);
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+
+            // assert
+            int expectedRemainingRequests = 0;
+            assertRemainingRequests(expectedRemainingRequests);
+
+            Coin originalRequestsValue = pegoutRequestValue.multiply(pegoutRequests);
+            assertReleaseRequested(originalRequestsValue);
+
+            assertNoBurn();
+        }
+
+        @Test
+        void processPegoutsInBatch_preRSKIP378_whenSplittingTotalRequests_withNonDustChange_shouldUseOriginalTotalPegoutRequestsValueRef_shouldBurnRemainingValue() throws IOException {
+            // arrange
+            setUp(VETIVER_ACTIVATIONS);
+
+            int pegoutRequests = 2;
+            Coin pegoutRequestValue = PEGOUT_REQUEST_VALUE.subtract(NON_DUST_CHANGE);
+            setupRequests(pegoutRequests, pegoutRequestValue, VETIVER_ACTIVATIONS);
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+
+            // assert
+            int expectedRemainingRequests = 1;
+            assertRemainingRequests(expectedRemainingRequests);
+
+            Coin originalRequestsValue = pegoutRequestValue.multiply(pegoutRequests);
+            assertReleaseRequested(originalRequestsValue);
+
+            // pre-RSKIP378 burns the total value of the un-batched requests
+            Coin expectedBurntAmount = pegoutRequestValue.multiply(expectedRemainingRequests);
+            assertAmountBurnt(expectedBurntAmount);
+        }
+
+        @Test
+        void processPegoutsInBatch_preRSKIP378_whenSplittingTotalRequests_withDustChange_shouldUseOriginalTotalPegoutRequestsValueRef_shouldBurnRemainingValuePlusDustBump() throws IOException {
+            // arrange
+            setUp(VETIVER_ACTIVATIONS);
+            int pegoutRequests = 2;
+            Coin pegoutRequestValue = PEGOUT_REQUEST_VALUE.subtract(DUST_CHANGE);
+            setupRequests(pegoutRequests, pegoutRequestValue, VETIVER_ACTIVATIONS);
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+
+            // assert
+            int expectedRemainingRequests = 1;
+            assertRemainingRequests(expectedRemainingRequests);
+
+            Coin originalRequestsValue = pegoutRequestValue.multiply(pegoutRequests);
+            assertReleaseRequested(originalRequestsValue);
+
+            // pre-RSKIP378 burns the total value of the un-batched requests plus the dust bump the federation retained
+            Coin expectedBurntAmount = pegoutRequestValue.multiply(expectedRemainingRequests).add(DUST_BUMP);
+            assertAmountBurnt(expectedBurntAmount);
+        }
+
+        private void assertRemainingRequests(int expectedRemainingRequests) throws IOException {
+            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
+            int remainingRequests = releaseRequestQueue.getEntries().size();
+            assertEquals(expectedRemainingRequests, remainingRequests);
+        }
+
+        private void assertReleaseRequested(Coin expectedValue) throws IOException {
+            PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+            Collection<PegoutsWaitingForConfirmations.Entry> pegoutsWFCEntries = pegoutsWaitingForConfirmations.getEntries(VETIVER_ACTIVATIONS);
+            assertEquals(1, pegoutsWFCEntries.size());
+
+            BtcTransaction batchPegoutTransaction = pegoutsWFCEntries.iterator().next().getBtcTransaction();
+            assertLogReleaseRequested(
+                logs,
+                rskTx.getHash(),
+                batchPegoutTransaction.getHash(),
+                expectedValue
+            );
+        }
+
+        private void assertNoBurn() {
+            Coin expectedBurntAmount = Coin.valueOf(0L);
+            assertAmountBurnt(expectedBurntAmount);
+        }
+
+        private void assertAmountBurnt(Coin expectedBurntAmount) {
+            assertEquals(co.rsk.core.Coin.fromBitcoin(expectedBurntAmount), repository.getBalance(BridgeSupport.BURN_ADDRESS));
+        }
     }
 
     /**********************************
