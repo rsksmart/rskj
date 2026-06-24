@@ -1504,11 +1504,7 @@ public class BridgeSupport {
         }
 
         List<ReleaseRequestQueue.Entry> pegoutEntries = pegoutRequests.getEntries();
-        Coin totalPegoutRequestsValue = pegoutEntries
-            .stream()
-            .map(ReleaseRequestQueue.Entry::getAmount)
-            .reduce(Coin.ZERO, Coin::add);
-
+        Coin totalPegoutRequestsValue = sumPegoutValues(pegoutEntries);
         if (wallet.getBalance().isLessThan(totalPegoutRequestsValue)) {
             logger.warn(
                 "[processPegoutsInBatch] wallet balance {} is less than the totalPegoutValue {}",
@@ -1551,8 +1547,11 @@ public class BridgeSupport {
                 result.responseCode()
             );
 
+            Coin batchedPegoutRequestsValue = sumPegoutValues(pegoutEntries);
+            Coin pegoutValueToUse = activations.isActive(ConsensusRule.RSKIP378) ? batchedPegoutRequestsValue : totalPegoutRequestsValue;
+
             Keccak256 batchPegoutCreationTxHash = rskTx.getHash();
-            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, totalPegoutRequestsValue);
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, pegoutValueToUse);
 
             // Remove batched requests from the queue after successfully batching pegouts
             pegoutRequests.removeEntries(pegoutEntries);
@@ -1562,7 +1561,7 @@ public class BridgeSupport {
                 pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).toList()
             );
 
-            adjustBalancesIfChangeOutputWasDust(batchPegoutTransaction, totalPegoutRequestsValue, wallet);
+            adjustBalancesIfChangeOutputWasDust(batchPegoutTransaction, pegoutValueToUse, wallet);
         }
 
         // set the next pegout creation block number when there are no pending pegout requests to be processed,
@@ -1572,6 +1571,12 @@ public class BridgeSupport {
             provider.setNextPegoutHeight(nextPegoutHeight);
             logger.info("[processPegoutsInBatch] Next Pegout Height updated from {} to {}", currentBlockNumber, nextPegoutHeight);
         }
+    }
+
+    private static Coin sumPegoutValues(List<ReleaseRequestQueue.Entry> entries) {
+        return entries.stream()
+            .map(ReleaseRequestQueue.Entry::getAmount)
+            .reduce(Coin.ZERO, Coin::add);
     }
 
     /**
