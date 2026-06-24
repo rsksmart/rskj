@@ -88,6 +88,7 @@ public enum ConsensusRule {
     RSKIP375("rskip375"),
     RSKIP376("rskip376"),
     RSKIP377("rskip377"),
+    RSKIP378("rskip378"), // Recalculate pegout value used when the batch is split
     RSKIP379("rskip379"),
     RSKIP383("rskip383"),
     RSKIP385("rskip385"),
