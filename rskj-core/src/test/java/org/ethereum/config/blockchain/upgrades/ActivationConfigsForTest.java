@@ -218,7 +218,8 @@ public class ActivationConfigsForTest {
 
     private static List<ConsensusRule> getTbd1000Rskips() {
         return new ArrayList<>(List.of(
-            ConsensusRule.RSKIP559
+            ConsensusRule.RSKIP559,
+            ConsensusRule.RSKIP378
         ));
     }
 
