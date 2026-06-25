@@ -128,14 +128,16 @@ public class ReleaseTransactionBuilder {
         }, String.format("sending %s in svp fund transaction", svpFundTxOutputsValue));
     }
 
-    public BuildResult buildMigrationTransaction(Coin migrationValue, Address destinationAddress) {
+    public BuildResult buildMigrationTransaction(List<Coin> migrationValues, Address destinationAddress) {
         return buildWithConfiguration((SendRequest sr) -> {
             if (!activations.isActive(ConsensusRule.RSKIP376)){
                 sr.tx.setVersion(BTC_TX_VERSION_1);
             }
-            sr.tx.addOutput(migrationValue, destinationAddress);
+            for (Coin value : migrationValues) {
+                sr.tx.addOutput(value, destinationAddress);
+            }
             sr.changeAddress = destinationAddress;
-        }, String.format("sending %s in migration transaction", migrationValue));
+        }, String.format("sending %s in migration transaction", migrationValues));
     }
 
     public BuildResult buildEmptyWalletTo(Address to) {
