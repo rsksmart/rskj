@@ -691,7 +691,7 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxPlusOneUtxos_whenUtxosSumIsBelowMTMUThreshold_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
+        void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxPlusOneUtxos_whenFirstUtxosSelectionSumIsBelowMTMUThreshold_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
             // Arrange
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(BELOW_MTMU_UTXO_VALUE)
