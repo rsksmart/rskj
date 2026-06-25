@@ -263,7 +263,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             retiringUtxos.add(flyoverUtxo);
 
-            long executionBlockNumber = duringMigrationBlockNumberForVETIVER();
+            long executionBlockNumber = duringMigrationBlockNumber(VETIVER_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(executionBlockNumber);
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
@@ -371,7 +371,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             retiringUtxos.add(flyoverUtxo);
 
-            long executionBlockNumber = pastMigrationBlockNumberForVETIVER();
+            long executionBlockNumber = pastMigrationBlockNumber(VETIVER_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(executionBlockNumber);
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
@@ -922,7 +922,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             retiringUtxos.add(flyoverUtxo);
 
-            long executionBlockNumber = duringMigrationBlockNumberForVETIVER();
+            long executionBlockNumber = duringMigrationBlockNumber(VETIVER_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(executionBlockNumber);
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
@@ -1030,7 +1030,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             retiringUtxos.add(flyoverUtxo);
 
-            long executionBlockNumber = pastMigrationBlockNumberForVETIVER();
+            long executionBlockNumber = pastMigrationBlockNumber(VETIVER_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(executionBlockNumber);
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
@@ -1351,7 +1351,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             retiringUtxos.add(flyoverUtxo);
 
-            long executionBlockNumber = duringMigrationBlockNumberForVETIVER();
+            long executionBlockNumber = duringMigrationBlockNumber(VETIVER_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(executionBlockNumber);
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
@@ -1484,7 +1484,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
             retiringUtxos.add(flyoverUtxo);
 
-            long executionBlockNumber = pastMigrationBlockNumberForVETIVER();
+            long executionBlockNumber = pastMigrationBlockNumber(VETIVER_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(executionBlockNumber);
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
@@ -1781,20 +1781,12 @@ class BridgeSupportProcessFundsMigrationTest {
         return duringMigrationBlockNumber(ALL_ACTIVATIONS);
     }
 
-    private long duringMigrationBlockNumberForVETIVER() {
-        return duringMigrationBlockNumber(VETIVER_ACTIVATIONS);
-    }
-
     private long duringMigrationBlockNumber(ActivationConfig.ForBlock activations) {
         return blockNumberBeforeMigrationBegins(activations) + 1;
     }
 
     private long pastMigrationBlockNumber() {
         return pastMigrationBlockNumber(ALL_ACTIVATIONS);
-    }
-
-    private long pastMigrationBlockNumberForVETIVER() {
-        return pastMigrationBlockNumber(VETIVER_ACTIVATIONS);
     }
 
     private long pastMigrationBlockNumber(ActivationConfig.ForBlock activations) {
