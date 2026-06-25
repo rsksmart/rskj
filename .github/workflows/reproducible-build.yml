@@ -57,8 +57,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: reproducible-build-${{ github.ref }}
-  cancel-in-progress: true
+  # Key by the ref actually being built (inputs.ref for dispatch/call, the commit
+  # for push) so builds of different refs never share a group. Never cancel an
+  # in-flight build: same-ref re-triggers queue instead, and a release-tag build
+  # driven via workflow_call is never aborted out from under the PR workflow.
+  group: reproducible-build-${{ inputs.ref || github.sha }}
+  cancel-in-progress: false
 
 jobs:
   reproducible-build:
