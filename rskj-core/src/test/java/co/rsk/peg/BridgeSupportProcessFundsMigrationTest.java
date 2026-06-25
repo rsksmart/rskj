@@ -537,12 +537,10 @@ class BridgeSupportProcessFundsMigrationTest {
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(BELOW_MTMU_UTXO_VALUE)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
-                .buildMany(BELOW_MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
-            retiringUtxos.add(flyoverUtxo);
+                .buildMany(MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
 
             long executionBlockNumber = duringMigrationBlockNumber();
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
-            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
