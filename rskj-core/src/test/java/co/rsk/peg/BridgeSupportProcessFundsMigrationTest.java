@@ -476,7 +476,7 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_duringMigration_withOneUtxo_whenUtxosSumIsBelowMTMUThreshold_shouldCreateMigrationTx() throws IOException {
+        void updateCollections_duringMigration_withOneUtxoBelowMTMUThreshold_shouldCreateMigrationTx() throws IOException {
             // Arrange
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
