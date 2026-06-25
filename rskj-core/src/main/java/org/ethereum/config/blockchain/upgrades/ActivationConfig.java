@@ -28,21 +28,33 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.jspecify.annotations.NonNull;
+
 public class ActivationConfig {
+
     private static final String PROPERTY_ACTIVATION_HEIGHTS = "hardforkActivationHeights";
+
     private static final String PROPERTY_CONSENSUS_RULES = "consensusRules";
 
+    private final String networkName;
+
     private final Map<ConsensusRule, Long> activationHeights;
+
     private final Map<NetworkUpgrade, Long> networkUpgrades;
 
     @VisibleForTesting
     ActivationConfig(Map<ConsensusRule, Long> activationHeights) {
-        this(activationHeights, new HashMap<>());
+        this("unit_tests", activationHeights, new HashMap<>());
     }
 
-    public ActivationConfig(Map<ConsensusRule, Long> activationHeights, Map<NetworkUpgrade, Long> networkUpgrades) {
+    public ActivationConfig(
+        String networkName,
+        Map<ConsensusRule, Long> activationHeights,
+        Map<NetworkUpgrade, Long> networkUpgrades
+    ) {
         if (activationHeights.size() != ConsensusRule.values().length) {
             List<ConsensusRule> missing = new ArrayList<>(Arrays.asList(ConsensusRule.values()));
             missing.removeAll(activationHeights.keySet());
@@ -52,6 +64,7 @@ public class ActivationConfig {
             ));
         }
 
+        this.networkName = Objects.requireNonNull(networkName);
         this.activationHeights = activationHeights;
         this.networkUpgrades = networkUpgrades;
     }
@@ -73,7 +86,9 @@ public class ActivationConfig {
             activationHeights.put(consensusRule, activationHeight);
         }
 
-        return new ActivationConfig(activationHeights, networkUpgrades);
+        String networkName = config.getString("name");
+
+        return new ActivationConfig(networkName, activationHeights, networkUpgrades);
     }
 
     private static long parseActivationHeight(
@@ -132,6 +147,10 @@ public class ActivationConfig {
         return 0 <= activationHeight && activationHeight <= blockNumber;
     }
 
+    @NonNull
+    public String getNetworkName() {
+        return networkName;
+    }
 
     private boolean isActivating(ConsensusRule consensusRule, long blockNumber) {
         long activationHeight = activationHeights.get(consensusRule);
@@ -155,6 +174,11 @@ public class ActivationConfig {
 
         public boolean isActivating(ConsensusRule consensusRule) {
             return ActivationConfig.this.isActivating(consensusRule, blockNumber);
+        }
+
+        @NonNull
+        public String getNetworkName() {
+            return ActivationConfig.this.networkName;
         }
     }
 }

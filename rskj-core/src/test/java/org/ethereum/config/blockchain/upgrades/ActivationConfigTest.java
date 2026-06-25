@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 
 class ActivationConfigTest {
     private static final Config BASE_CONFIG = ConfigFactory.parseString(String.join("\n",
+        "name = unit_tests",
         "hardforkActivationHeights: {",
         "    genesis: 0",
         "    bahamas: 0",
