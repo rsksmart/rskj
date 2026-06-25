@@ -1794,7 +1794,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -1815,7 +1817,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -1850,7 +1854,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -1890,7 +1896,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -1911,7 +1919,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -1948,7 +1958,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -1956,8 +1968,8 @@ class ReleaseTransactionBuilderTest {
 
             /**
              * Tests an unrealistic scenario where the federation's balance differs from the value being migrated. Although
-             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(Coin, Address)} receives the
-             * value to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
+             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)} receives the
+             * values to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
              * no partial migration. Instead, all the UTXOs available for migration are migrated.
              */
             @Test
@@ -1976,7 +1988,7 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValueRequested,
+                    List.of(migrationValueRequested),
                     newFederationAddress
                 );
 
@@ -2008,7 +2020,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -2026,7 +2040,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
@@ -2044,7 +2060,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2114,7 +2132,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -2135,7 +2155,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2171,7 +2193,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2206,7 +2230,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2246,7 +2272,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -2267,7 +2295,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2304,7 +2334,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -2312,8 +2344,8 @@ class ReleaseTransactionBuilderTest {
 
             /**
              * Tests an unrealistic scenario where the federation's balance differs from the value being migrated. Although
-             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(Coin, Address)} receives the
-             * value to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
+             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)} receives the
+             * values to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
              * no partial migration. Instead, all the UTXOs available for migration are migrated.
              */
             @Test
@@ -2333,7 +2365,7 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValueRequested,
+                    List.of(migrationValueRequested),
                     newFederationAddress
                 );
 
@@ -2365,7 +2397,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -2383,7 +2417,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
@@ -2401,7 +2437,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2472,7 +2510,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -2493,7 +2533,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2528,7 +2570,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2568,7 +2612,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(DUSTY_SEND_REQUESTED, migrationTransactionResult);
@@ -2589,7 +2635,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertSuccessBuildResult(migrationTransactionResult);
@@ -2626,7 +2674,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -2634,8 +2684,8 @@ class ReleaseTransactionBuilderTest {
 
             /**
              * Tests an unrealistic scenario where the federation's balance differs from the value being migrated. Although
-             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(Coin, Address)} receives the
-             * value to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
+             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)} receives the
+             * values to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
              * no partial migration. Instead, all the UTXOs available for migration are migrated.
              */
             @Test
@@ -2655,7 +2705,7 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValueRequested,
+                    List.of(migrationValueRequested),
                     newFederationAddress
                 );
 
@@ -2687,7 +2737,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(COULD_NOT_ADJUST_DOWNWARDS, migrationTransactionResult);
@@ -2706,7 +2758,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
@@ -2724,7 +2778,9 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue, newFederationAddress);
+                    List.of(migrationValue),
+                    newFederationAddress
+                );
 
                 // Assert
                 assertFailedBuildResult(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
@@ -2743,7 +2799,7 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue,
+                    List.of(migrationValue),
                     newFederationAddress
                 );
 
@@ -2779,7 +2835,7 @@ class ReleaseTransactionBuilderTest {
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValue,
+                    List.of(migrationValue),
                     newFederationAddress
                 );
 
