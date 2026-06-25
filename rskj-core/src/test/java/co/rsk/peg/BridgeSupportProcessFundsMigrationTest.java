@@ -62,6 +62,7 @@ class BridgeSupportProcessFundsMigrationTest {
     private static final int MAX_INPUTS_PER_PEGOUT_TX = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction(ALL_ACTIVATIONS);
     private static final int MAX_INPUTS_PER_PEGOUT_TX_LEGACY = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction(VETIVER_ACTIVATIONS);
     private static final int ABOVE_MAX_INPUTS_PER_PEGOUT_TX = MAX_INPUTS_PER_PEGOUT_TX + 1;
+    private static final int BELOW_MAX_INPUTS_PER_PEGOUT_TX = MAX_INPUTS_PER_PEGOUT_TX - 1;
     private static final int ABOVE_MAX_INPUTS_PER_PEGOUT_TX_LEGACY = MAX_INPUTS_PER_PEGOUT_TX_LEGACY + 1;
     private static final Coin FEE_PER_KB = Coin.valueOf(8_000L);
     private static final Coin FUNDS_BELOW_MIGRATION_CREATION_THRESHOLD = FEE_PER_KB.divide(2);
@@ -533,11 +534,10 @@ class BridgeSupportProcessFundsMigrationTest {
         @Test
         void updateCollections_duringMigration_withMaxInputsPerPegoutTxUtxos_whenUtxosSumIsBelowMTMUThreshold_shouldCreateMigrationTx() throws IOException {
             // Arrange
-            int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX - 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(BELOW_MTMU_UTXO_VALUE)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                .buildMany(BELOW_MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
             retiringUtxos.add(flyoverUtxo);
 
             long executionBlockNumber = duringMigrationBlockNumber();
@@ -666,11 +666,10 @@ class BridgeSupportProcessFundsMigrationTest {
         @Test
         void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxUtxos_whenUtxosSumIsBelowMTMUThreshold_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
             // Arrange
-            int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX - 1;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(BELOW_MTMU_UTXO_VALUE)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
-                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                .buildMany(BELOW_MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
             retiringUtxos.add(flyoverUtxo);
 
             long executionBlockNumber = pastMigrationBlockNumber();
