@@ -22,19 +22,22 @@ public class UnionBridgeRegTestConstants extends UnionBridgeConstants {
         initialLockingCap = new Coin(oneRbtc);
         lockingCapIncrementsMultiplier = 2;
 
-        // seed: changeUnionBridgeContractAddressAuthorizer
+        // EOA authorizer (seed: changeUnionBridgeContractAddressAuthorizer) — calls the bridge directly.
         changeUnionBridgeContractAddressAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
             new RskAddress("6c9dfd950bf748bb26f893f7e5f693c7f60a8f85")
         );
 
-        // contract deployer seed: UnionBridgeAuthorizerDeployer
+        // Contract authorizer (deployer seed: UnionBridgeAuthorizerDeployer).
+        // Deployer is a deterministic EOA from that seed; authorizer is its first deployment (nonce 0).
+        // Address = last 20 bytes of keccak256(RLP([deployer, 0])) — standard CREATE addressing.
+        // Resulting regtest authorizer contract: 0xff6f4ff09c54561e1476203e56fcfc834911aa64
         changeLockingCapAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("377e67e16c13994A4d44791Daf0a4d4Cac445783")
+            new RskAddress("ff6f4ff09c54561e1476203e56fcfc834911aa64")
         );
 
-        // contract deployer seed: UnionBridgeAuthorizerDeployer
+        // Same authorizer as the locking cap authorizer above
         changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("377e67e16c13994A4d44791Daf0a4d4Cac445783")
+            new RskAddress("ff6f4ff09c54561e1476203e56fcfc834911aa64")
         );
     }
 
