@@ -1307,7 +1307,7 @@ public class BridgeSupport {
         logRetiringFederationBalance(retiringFederationWallet.getBalance());
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Address activeFederationAddress = getActiveFederationAddress();
-        ReleaseTransactionBuilder.BuildResult migrationTransactionResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
+        ReleaseTransactionBuilder.BuildResult migrationTransactionResult = createMigrationTransactionLegacy(retiringFederationWallet, activeFederationAddress);
         BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
         List<UTXO> selectedUTXOs = migrationTransactionResult.selectedUTXOs();
 
@@ -3083,7 +3083,7 @@ public class BridgeSupport {
         return manager.getCheckpointBefore(time);
     }
 
-    private ReleaseTransactionBuilder.BuildResult createMigrationTransaction(Wallet retiringFederationWallet, Address destinationAddress) {
+    private ReleaseTransactionBuilder.BuildResult createMigrationTransactionLegacy(Wallet retiringFederationWallet, Address destinationAddress) {
         Coin expectedMigrationValue = retiringFederationWallet.getBalance();
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
