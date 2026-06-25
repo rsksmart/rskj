@@ -365,7 +365,7 @@ class BridgeSupportProcessFundsMigrationTest {
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
                 .withValue(Coin.COIN)
                 .withScriptPubKey(retiringFederation.getP2SHScript())
-                .buildMany(MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
+                .buildMany(MAX_INPUTS_PER_PEGOUT_TX_LEGACY, i -> createHash(i + 1));
             retiringUtxos.add(flyoverUtxo);
 
             long executionBlockNumber = pastMigrationBlockNumber(VETIVER_ACTIVATIONS);
