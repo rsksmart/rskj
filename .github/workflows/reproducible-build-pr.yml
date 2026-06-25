@@ -1,0 +1,196 @@
+name: Reproducible build PR
+
+# Builds the canonical jars via the build-only `reproducible-build.yml`,
+# then open a PR against rsksmart/reproducible-builds adding the rskj/<version>-<modifier>
+# directory (Dockerfile + README with the hashes).
+#
+# Trust model: CI is the *first builder / PR author* only. The hashes it emits
+# are informational — merging the generated PR still REQUIRES an independent
+# rebuild confirming the same hashes. CI is intentionally not the sole witness.
+
+on:
+  # GA release tags look like NAME-1.2.3.
+  push:
+    tags:
+      - "*-[0-9]*.[0-9]*.[0-9]*"
+
+# Only read permission is needed. The cross-repo PR is opened with the
+# scoped App token, NOT GITHUB_TOKEN.
+permissions:
+  contents: read
+
+concurrency:
+  group: reproducible-build-pr-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # GA-only gate. push.tags globs match pre-release tags too, so re-check the
+  # tag here and skip (green, not red) anything that isn't a clean GA release.
+  guard:
+    runs-on: ubuntu-24.04
+    outputs:
+      is_ga: ${{ steps.check.outputs.is_ga }}
+    steps:
+      - name: Classify the pushed tag
+        id: check
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          is_ga=false
+          # All-caps release name + three-part numeric version, nothing trailing.
+          if printf '%s' "$TAG" | grep -Eq '^[A-Z]+-[0-9]+\.[0-9]+\.[0-9]+$'; then
+            is_ga=true
+          fi
+          # Belt-and-suspenders deny-list for pre-release markers (the regex above
+          # already excludes these; this makes the intent explicit and survives a
+          # future regex loosening).
+          case "$TAG" in
+            *PREVIEW*|*TESTNET*|*SNAPSHOT*|*-rc|*-rc[0-9]*|*-RC*|*-alpha*|*-beta*)
+              is_ga=false ;;
+          esac
+          echo "is_ga=$is_ga" >> "$GITHUB_OUTPUT"
+          if [ "$is_ga" = "true" ]; then
+            echo "Tag '$TAG' is a GA release — proceeding."
+          else
+            echo "::notice::Tag '$TAG' is not a GA release — skipping reproducible-build PR."
+          fi
+
+  # Build the canonical jars + hashes. NO `secrets:` passed → the build half can
+  # never see this workflow's App-token secrets. Runs only for GA tags.
+  build:
+    needs: guard
+    if: needs.guard.outputs.is_ga == 'true'
+    uses: ./.github/workflows/reproducible-build.yml
+    with:
+      ref: ${{ github.ref_name }}
+
+  # The only privileged job: mint the scoped App token and open the PR.
+  open-pr:
+    needs: [guard, build]
+    if: needs.guard.outputs.is_ga == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      TAG: ${{ github.ref_name }}
+      VERSION: ${{ needs.build.outputs.version }}
+      MODIFIER: ${{ needs.build.outputs.modifier }}
+      TARGET_REPO: rsksmart/reproducible-builds
+    steps:
+      - name: Checkout rskj at the tag (templates only)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.ref_name }}
+          sparse-checkout: |
+            .github/reproducible-build
+
+      - name: Download canonical build artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ needs.build.outputs.artifact_name }}
+          path: artifacts
+
+      - name: Render Dockerfile and README for the release directory
+        id: render
+        run: |
+          set -euo pipefail
+          # modifier_lc derivation lives HERE (the build half is modifier-case
+          # agnostic); the published dir + README use the lowercase form.
+          modifier_lc=$(printf '%s' "$MODIFIER" | tr '[:upper:]' '[:lower:]')
+          echo "modifier_lc=$modifier_lc" >> "$GITHUB_OUTPUT"
+
+          # Hashes come from the artifact's hashes.txt (authoritative copy the
+          # build job wrote), so README == artifact == a verifier's local check.
+          if [ ! -s artifacts/hashes.txt ]; then
+            echo "::error::artifacts/hashes.txt missing or empty"; exit 1
+          fi
+          hashes=$(cat artifacts/hashes.txt)
+
+          mkdir -p out
+          # Dockerfile pins the immutable tag as the build ref.
+          sed -e "s|__REF__|${TAG}|g" \
+              -e "s|__VERSION__|${VERSION}|g" \
+              -e "s|__MODIFIER__|${MODIFIER}|g" \
+              .github/reproducible-build/Dockerfile.tmpl > out/Dockerfile
+
+          # README: tag/version/modifier_lc via sed, then the multi-line hash
+          # block via awk (sed chokes on multi-line / slashed replacements).
+          sed -e "s|__TAG__|${TAG}|g" \
+              -e "s|__VERSION__|${VERSION}|g" \
+              -e "s|__MODIFIER_LC__|${modifier_lc}|g" \
+              .github/reproducible-build/README.md.tmpl > out/README.partial.md
+          awk -v hashes="$hashes" '{ gsub(/__HASHES__/, hashes); print }' \
+              out/README.partial.md > out/README.md
+
+      - name: Mint scoped GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: rsksmart
+          repositories: reproducible-builds
+
+      - name: Open the reproducible-builds PR
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TOKEN: ${{ steps.app-token.outputs.token }}
+          MODIFIER_LC: ${{ steps.render.outputs.modifier_lc }}
+        run: |
+          set -euo pipefail
+          rel_dir="rskj/${VERSION}-${MODIFIER_LC}"
+          branch="reproducible-build/${TAG}"
+
+          # Clone over x-access-token (devportal-update.yml pattern). The clone
+          # lands on the default branch — the reference for the existing-dir check.
+          git clone "https://x-access-token:${TOKEN}@github.com/${TARGET_REPO}.git" target
+          cd target
+          default_branch=$(git rev-parse --abbrev-ref HEAD)
+
+          # Fail-loud: never overwrite an already-published release directory.
+          if [ -e "$rel_dir" ]; then
+            echo "::error::${rel_dir} already exists in ${TARGET_REPO} — refusing to overwrite a published release."
+            exit 1
+          fi
+
+          # Dedicated per-tag branch; -B so a re-run resets cleanly off default.
+          git checkout -B "$branch"
+          mkdir -p "$rel_dir"
+          cp ../out/Dockerfile "$rel_dir/Dockerfile"
+          cp ../out/README.md  "$rel_dir/README.md"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$rel_dir"
+          git commit -m "Add reproducible build for ${TAG}"
+          # Force-push: the branch is ours alone (per-tag), so a re-run overwrites
+          # its own prior push rather than failing.
+          git push -u -f origin "$branch"
+
+          # gh (unlike peter-evans) won't reconcile an existing PR, so check first.
+          existing=$(gh pr list --repo "$TARGET_REPO" --head "$branch" --state open \
+            --json url -q '.[0].url' || true)
+          if [ -n "$existing" ]; then
+            echo "::notice::PR already open for ${branch}: ${existing}"
+            exit 0
+          fi
+
+          body=$(cat <<EOF
+          Automated reproducible build for rskj tag \`${TAG}\`, opened by the
+          \`Reproducible build PR\` workflow in rskj.
+
+          **Before merging:** independently rebuild and confirm the hashes match.
+          CI is the first builder only — it is not the sole witness, and this PR
+          must not be auto-merged.
+
+          \`\`\`
+          $(cat ../artifacts/hashes.txt)
+          \`\`\`
+          EOF
+          )
+          gh pr create \
+            --repo "$TARGET_REPO" \
+            --base "$default_branch" \
+            --head "$branch" \
+            --title "Add reproducible build for ${TAG}" \
+            --body "$body"
