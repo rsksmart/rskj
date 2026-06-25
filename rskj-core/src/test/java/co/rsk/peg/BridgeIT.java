@@ -200,7 +200,7 @@ class BridgeIT {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, regtestParameters, activationConfigAll);
 
-        provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L, PegTestUtils.createHash3(0));
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx1, 1L, PegTestUtils.createHash3(0)));
         provider0.save();
 
         track.commit();
@@ -248,9 +248,9 @@ class BridgeIT {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, regtestParameters, activationConfig.forBlock(0));
 
-        provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
-        provider0.getPegoutsWaitingForConfirmations().add(tx2, 2L);
-        provider0.getPegoutsWaitingForConfirmations().add(tx3, 3L);
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx1, 1L));
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx2, 2L));
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx3, 3L));
 
         provider0.save();
 
@@ -289,7 +289,7 @@ class BridgeIT {
         //Reusing same storage configuration as the height doesn't affect storage configurations for releases.
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, regtestParameters, activationConfigAll);
 
-        assertEquals(3, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(3, provider.getPegoutsWaitingForConfirmations().getEntries(activationConfigAll).size());
         assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
     }
 
@@ -304,9 +304,9 @@ class BridgeIT {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, regtestParameters, activationConfig.forBlock(0));
 
-        provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
-        provider0.getPegoutsWaitingForConfirmations().add(tx2, 2L);
-        provider0.getPegoutsWaitingForConfirmations().add(tx3, 3L);
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx1, 1L));
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx2, 2L));
+        provider0.getPegoutsWaitingForConfirmations().add(new PegoutsWaitingForConfirmations.Entry(tx3, 3L));
 
         provider0.save();
 
@@ -348,7 +348,7 @@ class BridgeIT {
         // reusing same storage configuration as the height doesn't affect storage configurations for releases.
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, regtestParameters, activationConfigAll);
 
-        assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries(activationConfigAll).size());
         assertEquals(1, provider.getPegoutsWaitingForSignatures().size());
     }
 
@@ -395,7 +395,7 @@ class BridgeIT {
         BridgeSupportFactory bridgeSupportFactory = mock(BridgeSupportFactory.class);
         BridgeSupport bridgeSupport = mock(BridgeSupport.class);
         when(bridgeSupportFactory.newInstance(any(), any(), any())).thenReturn(bridgeSupport);
-        when(bridgeSupport.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants()));
+        when(bridgeSupport.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederationLegacy(bridgeRegTestConstants.getFederationConstants()));
         Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -3451,7 +3451,7 @@ class BridgeIT {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getRetiringFederation()).thenReturn(Optional.empty());
-        when(bridgeSupportMock.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants()));
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederationLegacy(bridgeRegTestConstants.getFederationConstants()));
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
@@ -3488,7 +3488,7 @@ class BridgeIT {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getRetiringFederation()).thenReturn(Optional.empty());
-        when(bridgeSupportMock.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants()));
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederationLegacy(bridgeRegTestConstants.getFederationConstants()));
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 

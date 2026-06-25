@@ -17,8 +17,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BitcoinUtils {
+    public static final int BTC_TX_VERSION_1 = 1;
+    public static final int BTC_TX_VERSION_2 = 2;
+
     protected static final byte[] WITNESS_COMMITMENT_HEADER = Hex.decode("aa21a9ed");
     protected static final int WITNESS_COMMITMENT_LENGTH = WITNESS_COMMITMENT_HEADER.length + Sha256Hash.LENGTH;
+
     private static final int MINIMUM_WITNESS_COMMITMENT_SIZE = WITNESS_COMMITMENT_LENGTH + 2; // 1 extra byte for OP_RETURN and another one for data length
     private static final Logger logger = LoggerFactory.getLogger(BitcoinUtils.class);
     private static final int FIRST_INPUT_INDEX = 0;
@@ -65,8 +69,7 @@ public class BitcoinUtils {
     }
 
     /**
-     * Extracts the redeem script from the input's scriptSig, if it's a P2SH input.
-     *
+     * Extracts the redeem script from the input's scriptSig if it's a P2SH input.
      * For some P2PKH inputs, the scriptSig contains a public key as the last chunk of the scriptSig that is parsed as a redeem script.
      * This is a known issue, pending review for a permanent solution. In the meantime, always call `isSentToMultiSig()` on the returned redeem script
      *
@@ -159,6 +162,12 @@ public class BitcoinUtils {
         NetworkParameters networkParameters = transaction.getParams();
         BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the original tx
         removeSignaturesFromMultiSigTransaction(transactionCopy);
+
+        logger.trace(
+            "[getMultiSigTransactionWithoutSignatures] Original btc tx hash: {}. Hash without signatures: {}",
+            transaction.getHash(),
+            transactionCopy.getHash()
+        );
         return transactionCopy;
     }
 

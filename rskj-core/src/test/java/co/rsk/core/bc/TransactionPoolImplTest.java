@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
+import org.ethereum.config.Constants;
 import co.rsk.core.Coin;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.RepositoryLocator;
@@ -665,7 +666,7 @@ class TransactionPoolImplTest {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx = createSampleTransaction(1, 2, 1000, 0, BigInteger.valueOf(3000001));
-        Account receiver = createAccount(2);
+        createAccount(2);
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 
@@ -963,5 +964,35 @@ class TransactionPoolImplTest {
         Assertions.assertEquals(tx2, transactionPool.getPendingTransactions().get(1));
         Assertions.assertNotNull(signatureCache.getSender(tx1));
         Assertions.assertNotNull(signatureCache.getSender(tx2));
+    }
+
+    @Test
+    void addTransaction_withNonCanonicalNonce_isRejected() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Account sender = createAccount(1);
+        Account receiver = createAccount(2);
+
+        Transaction tx = Transaction.builder()
+                .nonce(new byte[9])
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(receiver.getAddress())
+                .value(BigInteger.valueOf(1000))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .build();
+        tx.sign(sender.getEcKey().getPrivKeyBytes());
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assertions.assertFalse(result.transactionsWereAdded());
+        Assertions.assertTrue(result.getErrorMessage().contains("nonce"));
+
+        List<Transaction> pending = transactionPool.getPendingTransactions();
+        Assertions.assertTrue(pending.isEmpty());
+
+        List<Transaction> queued = transactionPool.getQueuedTransactions();
+        Assertions.assertTrue(queued.isEmpty());
     }
 }

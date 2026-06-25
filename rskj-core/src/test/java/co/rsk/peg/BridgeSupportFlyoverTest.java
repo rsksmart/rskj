@@ -794,7 +794,7 @@ class BridgeSupportFlyoverTest {
         );
 
         if (result.longValue() == FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value() || result.longValue() == FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()){
-            List<BtcTransaction> pegoutsWaitingForConfirmationsEntries = provider.getPegoutsWaitingForConfirmations().getEntries()
+            List<BtcTransaction> pegoutsWaitingForConfirmationsEntries = provider.getPegoutsWaitingForConfirmations().getEntries(allActivations)
                 .stream()
                 .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
                 .toList();
@@ -3085,7 +3085,7 @@ class BridgeSupportFlyoverTest {
 
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(Coin.COIN));
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsRegtest);
         FederationSupport federationSupport = mock(FederationSupport.class);
         when(federationSupport.getLiveFederations()).thenReturn(Collections.singletonList(genesisFederation));
 
@@ -3168,7 +3168,7 @@ class BridgeSupportFlyoverTest {
 
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(Coin.COIN));
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsRegtest);
         FederationSupport federationSupport = mock(FederationSupport.class);
         when(federationSupport.getLiveFederations()).thenReturn(Collections.singletonList(genesisFederation));
 
@@ -3247,7 +3247,7 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         when(btcContext.getParams()).thenReturn(btcRegTestParams);
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsRegtest);
         FederationSupport federationSupport = mock(FederationSupport.class);
         when(federationSupport.getLiveFederations()).thenReturn(Collections.singletonList(genesisFederation));
 
@@ -3369,7 +3369,7 @@ class BridgeSupportFlyoverTest {
             signatureCache
         ));
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsRegtest);
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
@@ -3445,7 +3445,7 @@ class BridgeSupportFlyoverTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation activeFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsRegtest);
         FederationSupport federationSupport = mock(FederationSupport.class);
         when(federationSupport.getActiveFederation()).thenReturn(activeFederation);
 
@@ -3468,7 +3468,7 @@ class BridgeSupportFlyoverTest {
             signatureCache
         );
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsRegtest);
         Script federationRedeemScript = genesisFederation.getRedeemScript();
 
         Keccak256 flyoverDerivationHash = RskTestUtils.createHash(1);
@@ -3522,7 +3522,7 @@ class BridgeSupportFlyoverTest {
             signatureCache
         );
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsRegtest);
         Keccak256 derivationHash = PegTestUtils.createHash3(1);
 
         Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(

@@ -30,7 +30,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,7 +46,7 @@ class ConstantsTest {
         "0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09",
         "034844a99cd7028aa319476674cc381df006628be71bc5593b8b5fdb32bb42ef85",
         "032de868a99cf955cc1f9bfe9a869a611ec64707e8ea10709dee52dbfc688626eb" // public key derived from "random" word seed
-    ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+    ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
 
     private final ActivationConfig activationConfig = mock(ActivationConfig.class);
     private final ActivationConfig.ForBlock preRskip297Config = mock(ActivationConfig.ForBlock.class);

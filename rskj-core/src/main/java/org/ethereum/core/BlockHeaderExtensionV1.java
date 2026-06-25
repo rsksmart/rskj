@@ -39,7 +39,7 @@ public class BlockHeaderExtensionV1 implements BlockHeaderExtension {
     public static BlockHeaderExtensionV1 fromEncoded(byte[] encoded) {
         RLPList rlpExtension = RLP.decodeList(encoded);
         return new BlockHeaderExtensionV1(
-                rlpExtension.get(0).getRLPData(),
+                rlpExtension.get(0).getRLPRawData(),
                 rlpExtension.size() == 2 ? ByteUtil.rlpToShorts(rlpExtension.get(1).getRLPRawData()) : null
         );
     }

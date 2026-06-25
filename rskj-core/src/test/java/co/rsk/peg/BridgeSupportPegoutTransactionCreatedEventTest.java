@@ -121,9 +121,9 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
         // Assertions
         // Assert one pegout tx was added to pegoutsWaitingForConfirmations from the creation of a pegout batch
-        assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
+        assertEquals(1, pegoutsWaitingForConfirmations.getEntries(activations).size());
 
-        PegoutsWaitingForConfirmations.Entry pegoutEntry = pegoutsWaitingForConfirmations.getEntries().stream().findFirst().get();
+        PegoutsWaitingForConfirmations.Entry pegoutEntry = pegoutsWaitingForConfirmations.getEntries(activations).stream().findFirst().get();
         BtcTransaction pegoutBatchTransaction = pegoutEntry.getBtcTransaction();
         Sha256Hash pegoutTxHash = pegoutBatchTransaction.getHash();
         List<Coin> outpointValues = extractOutpointValues(pegoutBatchTransaction);
@@ -199,10 +199,10 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         // Assertions
 
         // Assert one migration tx was added to pegoutsWaitingForConfirmations from the creation of a pegout batch
-        assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
+        assertEquals(1, pegoutsWaitingForConfirmations.getEntries(activations).size());
 
         PegoutsWaitingForConfirmations.Entry pegoutEntry = pegoutsWaitingForConfirmations.
-            getEntries().
+            getEntries(activations).
             stream().
             findFirst().
             get();
@@ -290,7 +290,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         // Assertions
 
         // Assert two pegouts was added to pegoutsWaitingForConfirmations from the creation of each pegout batch for the migration and pegout
-        assertEquals(2, pegoutsWaitingForConfirmations.getEntries().size());
+        assertEquals(2, pegoutsWaitingForConfirmations.getEntries(activations).size());
 
         Optional<PegoutsWaitingForConfirmations.Entry> migrationEntry = Optional.empty();
         Optional<PegoutsWaitingForConfirmations.Entry> pegoutEntry = Optional.empty();
@@ -304,7 +304,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         );
 
         // If all outputs are sent to the active fed then it's the migration tx; if not, it's the peg-out batch
-        for (PegoutsWaitingForConfirmations.Entry entry : pegoutsWaitingForConfirmations.getEntries()) {
+        for (PegoutsWaitingForConfirmations.Entry entry : pegoutsWaitingForConfirmations.getEntries(activations)) {
             List<TransactionOutput> walletOutputs = entry.getBtcTransaction().getWalletOutputs(fedWallet);
             if (walletOutputs.size() == entry.getBtcTransaction().getOutputs().size()){
                 migrationEntry = Optional.of(entry);

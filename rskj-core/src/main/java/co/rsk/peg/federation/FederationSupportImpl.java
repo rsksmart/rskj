@@ -103,11 +103,29 @@ public class FederationSupportImpl implements FederationSupport {
 
     private Federation getGenesisFederation() {
         long genesisFederationCreationBlockNumber = 1L;
-        List<BtcECKey> genesisFederationPublicKeys = constants.getGenesisFederationPublicKeys();
-        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
-        Instant genesisFederationCreationTime = constants.getGenesisFederationCreationTime();
-        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreationTime, genesisFederationCreationBlockNumber, constants.getBtcParams());
-        return FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(
+            constants.getGenesisFederationPublicKeys()
+        );
+        FederationArgs federationArgs = new FederationArgs(
+            federationMembers,
+            constants.getGenesisFederationCreationTime(),
+            genesisFederationCreationBlockNumber,
+            constants.getBtcParams()
+        );
+
+        return switch (constants.getGenesisFederationType()) {
+            case P2SH_P2WSH_ERP_FEDERATION -> FederationFactory.buildP2shP2wshErpFederation(
+                federationArgs,
+                constants.getErpFedPubKeysList(),
+                constants.getErpFedActivationDelay()
+            );
+            case P2SH_ERP_FEDERATION -> FederationFactory.buildP2shErpFederation(
+                federationArgs,
+                constants.getErpFedPubKeysList(),
+                constants.getErpFedActivationDelay()
+            );
+            default -> FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        };
     }
 
     @Override

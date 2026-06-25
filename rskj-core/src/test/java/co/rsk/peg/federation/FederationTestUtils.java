@@ -19,9 +19,15 @@
 package co.rsk.peg.federation;
 
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.TransactionWitness;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -33,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -105,19 +110,50 @@ public final class FederationTestUtils {
         );
     }
 
-    public static Federation getGenesisFederation(FederationConstants federationConstants) {
+    /**
+     * @deprecated use {@link #getGenesisFederation(FederationConstants)} instead, which allows creating different types of federations based on the configuration
+     */
+    @Deprecated
+    public static Federation getGenesisFederationLegacy(FederationConstants federationConstants) {
         final long GENESIS_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
-        final List<BtcECKey> genesisFederationPublicKeys = federationConstants.getGenesisFederationPublicKeys();
-        final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
-        final Instant genesisFederationCreationTime = federationConstants.getGenesisFederationCreationTime();
+        final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(
+            federationConstants.getGenesisFederationPublicKeys()
+        );
         final FederationArgs federationArgs = new FederationArgs(
             federationMembers,
-            genesisFederationCreationTime,
+            federationConstants.getGenesisFederationCreationTime(),
             GENESIS_FEDERATION_CREATION_BLOCK_NUMBER,
             federationConstants.getBtcParams()
         );
 
         return FederationFactory.buildStandardMultiSigFederation(federationArgs);
+    }
+
+    public static Federation getGenesisFederation(FederationConstants federationConstants) {
+        final long GENESIS_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
+        final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(
+            federationConstants.getGenesisFederationPublicKeys()
+        );
+        final FederationArgs federationArgs = new FederationArgs(
+            federationMembers,
+            federationConstants.getGenesisFederationCreationTime(),
+            GENESIS_FEDERATION_CREATION_BLOCK_NUMBER,
+            federationConstants.getBtcParams()
+        );
+
+        return switch (federationConstants.getGenesisFederationType()) {
+            case P2SH_P2WSH_ERP_FEDERATION -> FederationFactory.buildP2shP2wshErpFederation(
+                federationArgs,
+                federationConstants.getErpFedPubKeysList(),
+                federationConstants.getErpFedActivationDelay()
+            );
+            case P2SH_ERP_FEDERATION -> FederationFactory.buildP2shErpFederation(
+                federationArgs,
+                federationConstants.getErpFedPubKeysList(),
+                federationConstants.getErpFedActivationDelay()
+            );
+            default -> FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        };
     }
 
     public static List<FederationMember> getFederationMembers(int memberCount) {
