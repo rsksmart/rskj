@@ -696,7 +696,7 @@ public class TransactionExecutor {
         // Accumulate refunds for suicides
         result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
 
-        // EIP-2200 allows call-frame refund counters to go negative, but the
+        // RSKIP555/EIP-2200 allows call-frame refund counters to go negative, but the
         // transaction-level refund applied to gas accounting cannot be negative.
         long futureRefund = Math.max(0, result.getFutureRefund());
         long gasRefund = Math.min(futureRefund, result.getGasUsed() / 2);

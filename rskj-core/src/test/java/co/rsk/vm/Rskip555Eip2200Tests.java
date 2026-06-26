@@ -98,11 +98,11 @@ class Rskip555Eip2200Tests extends AbstractEvmTester {
     }
 
     /**
-     * Contains same test cases as {@link slotSstoreWithinOneContract} but for cross
-     * smart contract calls.
+     * Contains same test cases as {@link #slotSstoreWithinOneContract}
+     * but for cross smart contract calls.
      *
-     * Gas price and refund values must be the same minus non test related
-     * instructions overhead
+     * Gas price and refund values must be the same
+     * minus non test related instructions overhead
      */
     @Test
     void slotSstoreCrossSmartContract() {
@@ -200,11 +200,11 @@ class Rskip555Eip2200Tests extends AbstractEvmTester {
     }
 
     /**
-     * Contains same test cases as {@link slotSstoreWithinOneContractBeforeRskip555}
+     * Contains same test cases as {@link #slotSstoreWithinOneContractBeforeRskip555}
      * but for cross smart contract calls.
      *
-     * Gas price and refund values must be the same minus non test related
-     * instructions overhead
+     * Gas price and refund values must be the same
+     * minus non test related instructions overhead
      */
     @Test
     void slotSstoreCrossSmartContractBeforeRskip555() {
@@ -272,7 +272,7 @@ class Rskip555Eip2200Tests extends AbstractEvmTester {
 
     /**
      * Per EIP-2200 each reverted call rolls back its SSTORE and discards its refund,
-     * and every call sees the slot at its transaction-startoriginal value (0),
+     * and every call sees the slot at its transaction-start original value (0),
      * so each update is charged as a fresh SET.
      */
     @Test
@@ -560,8 +560,8 @@ class Rskip555Eip2200Tests extends AbstractEvmTester {
     }
 
     /**
-     * Returns gas cost minus costs overhead for PUSH32 operations from
-     * {@link buildSstoreCode} output.
+     * Returns gas cost minus costs overhead for PUSH32 operations
+     * from {@link #buildSstoreCode} output.
      */
     private long deductSstoreGas(Program program, int sstoreOperations) {
         var perOpOverhead = GasCost.FASTESTSTEP * 2;

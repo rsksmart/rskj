@@ -45,6 +45,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP90;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP91;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP103;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP120;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP125;
@@ -58,8 +60,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP398;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP412;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP445;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP446;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP90;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP91;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP555;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.OpCode.CALL;
 
@@ -1403,7 +1404,7 @@ public class VM {
             }
             else if (currentValue != null && newValue.isZero()) {
                 // from non-zero to zero
-                // todo: GASREFUND counter policyn
+                // todo: GASREFUND counter policy
 
                 // refund step cost policy.
                 program.futureRefundGas(GasCost.SSTORE_CLEARS_SCHEDULE);

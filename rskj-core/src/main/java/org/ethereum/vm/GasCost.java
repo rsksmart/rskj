@@ -36,12 +36,6 @@ import java.math.BigInteger;
  * should always be used when calculating gas.
  */
 public class GasCost {
-    // EIP-2929
-    public static final long COLD_SLOAD_COST = 2100;
-    // EIP-2929
-    public static final long COLD_ACCOUNT_ACCESS_COST = 2600;
-    // EIP-2929
-    public static final long WARM_STORAGE_READ_COST = 100;
 
     /* backwards compatibility, remove eventually */
     public static final long STEP = 1;

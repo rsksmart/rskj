@@ -276,7 +276,7 @@ public class ProgramResult {
     // This is the maximum possible future Refund. This is NOT the actual amount
     // deducted, because this value is restricted by half of the consumed gas.
     public void addFutureRefund(long gasValue) {
-        // According to EIP-2200 negative future refund is possible
+        // According to RSKIP555/EIP-2200 negative future refund is possible
         futureRefund = GasCost.addSigned(futureRefund, gasValue);
     }
 
