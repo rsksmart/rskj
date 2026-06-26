@@ -148,6 +148,7 @@ public class ReleaseTransactionBuilder {
 
         try {
             completeTx(sr);
+            checkTxVSize(btcTx);
 
             // Disconnect input from output because we don't need the reference and it interferes serialization
             for (TransactionInput transactionInput : btcTx.getInputs()) {
@@ -164,7 +165,6 @@ public class ReleaseTransactionBuilder {
                 )
                 .toList();
 
-            checkTxVSize(btcTx);
             return new BuildResult(btcTx, selectedUTXOs, Response.SUCCESS);
         } catch (InsufficientMoneyException e) {
             String message = String.format("Not enough BTC in the wallet to complete %s", operationDescription);
