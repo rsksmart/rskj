@@ -36,12 +36,6 @@ import java.math.BigInteger;
  * should always be used when calculating gas.
  */
 public class GasCost {
-    // EIP-2929
-    public static final long COLD_SLOAD_COST = 2100;
-    // EIP-2929
-    public static final long COLD_ACCOUNT_ACCESS_COST = 2600;
-    // EIP-2929
-    public static final long WARM_STORAGE_READ_COST = 100;
 
     /* backwards compatibility, remove eventually */
     public static final long STEP = 1;
@@ -62,14 +56,14 @@ public class GasCost {
     private static final long BALANCE_RSKIP555 = 700;
     public static final long SHA3 = 30;
     public static final long SHA3_WORD = 6;
-    private static final long SLOAD = 200;
-    private static final long SLOAD_RSKIP555 = 800;
+    private static final long SLOAD = 200; // SLOAD_GAS
+    public static final long SLOAD_RSKIP555 = 800; // SLOAD_GAS
     public static final long STOP = 0;
     public static final long SUICIDE = 5000;
     public static final long CLEAR_SSTORE = 5000;
-    public static final long SET_SSTORE = 20000;
-    public static final long RESET_SSTORE = 5000;
-    public static final long REFUND_SSTORE = 15000;
+    public static final long SSTORE_SET_GAS = 20000; // Renamed from: SET_SSTORE
+    public static final long SSTORE_RESET_GAS = 5000; // Renamed from: RESET_SSTORE
+    public static final long SSTORE_CLEARS_SCHEDULE = 15000; // Renamed from: REFUND_SSTORE
     public static final long CREATE = 32000;
 
     public static final long TLOAD = 100;
@@ -201,6 +195,25 @@ public class GasCost {
             return Long.MAX_VALUE;
         }
         return result;
+    }
+
+    /**
+     * Adds two longs numbers representing gas, capping at max/min long values.
+     *
+     * Allows negative inputs.
+     *
+     * @param x some gas.
+     * @param y another gas.
+     * @return the sum of the two numbers, capped.
+     */
+    public static long addSigned(long x, long y) throws InvalidGasException {
+        if (y > 0 && x > Long.MAX_VALUE - y) {
+            return Long.MAX_VALUE;
+        }
+        if (y < 0 && x < Long.MIN_VALUE - y) {
+            return Long.MIN_VALUE;
+        }
+        return x + y;
     }
 
     /**

@@ -24,16 +24,15 @@ import co.rsk.core.RskAddress;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
 import org.ethereum.core.Repository;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 
 /**
  * @author Roman Mandeleil
@@ -41,17 +40,34 @@ import java.nio.charset.StandardCharsets;
  */
 public class ProgramInvokeMockImpl implements ProgramInvoke {
 
+    private static final String CONTRACT_CODE_DEFAULT = "385E60076000396000605f556014600054601e60"
+        + "205463abcddcba6040545b51602001600a525451"
+        + "6040016014525451606001601e52545160800160"
+        + "28525460a052546016604860003960166000f260"
+        + "00603f556103e75660005460005360200235";
+
+    public static final RskAddress CONTRACT_ADDRESS_DEFAULT = new RskAddress("471fd3ad3e9eeadeec4608b92d16ce6b500704cc");
+
+    public static final RskAddress CONTRACT_ADDRESS_NESTED_DEFAULT = new RskAddress("471fd3ad3e9eeadeec4608b92d16ce6b500704ff");
+
+    private RskAddress ownerAddress = new RskAddress("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+
     private byte[] msgData;
 
     private DataWord txindex;
 
     private Repository repository;
-    private RskAddress ownerAddress = new RskAddress("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
-    private final RskAddress defaultContractAddress = new RskAddress("471fd3ad3e9eeadeec4608b92d16ce6b500704cc");
 
     private RskAddress contractAddress;
+
+    private RskAddress nestedContractAddress;
+
     // default for most tests. This can be overwritten by the test
     private long gasLimit = 1000000;
+
+    public ProgramInvokeMockImpl() {
+        this(CONTRACT_CODE_DEFAULT, null);
+    }
 
     public ProgramInvokeMockImpl(byte[] msgDataRaw) {
         this();
@@ -63,16 +79,40 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     public ProgramInvokeMockImpl(byte[] contractCode, RskAddress contractAddress) {
+        this.txindex = DataWord.ZERO;
         this.repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         this.repository.createAccount(ownerAddress);
         this.repository.addBalance(ownerAddress, new Coin(BigInteger.valueOf(1000)));
-        //Defaults to defaultContractAddress constant defined in this mock
-        this.contractAddress = contractAddress!=null?contractAddress:this.defaultContractAddress;
-        this.repository.createAccount(this.contractAddress);
-        this.repository.setupContract(this.contractAddress);
-        this.repository.saveCode(this.contractAddress, contractCode);
-        this.txindex = DataWord.ZERO;
+
+        this.initDefaultContract(contractCode, contractAddress);
+    }
+
+    /**
+     * Set any arbitrary contract by arbitrary address.
+     */
+    public void setContract(@NonNull byte[] bytes, @NonNull RskAddress address) {
+        this.repository.createAccount(address);
+        this.repository.setupContract(address);
+        this.repository.saveCode(address, bytes);
+    }
+
+    /**
+     * Install default contract.
+     * Updates default contract address if `address` is not null.
+     */
+    public void initDefaultContract(@NonNull byte[] bytes, @Nullable RskAddress address) {
+        this.contractAddress = address == null ? CONTRACT_ADDRESS_DEFAULT : address;
+        setContract(bytes, this.contractAddress);
+    }
+
+    /**
+     * Install default nested contract.
+     * Updates nested contract address if `address` is not null.
+     */
+    public void initNestedContract(@NonNull byte[] bytes, @Nullable RskAddress address) {
+        this.nestedContractAddress = address != null ? address : CONTRACT_ADDRESS_NESTED_DEFAULT;
+        this.setContract(bytes, this.nestedContractAddress);
     }
 
     public void addAccount(RskAddress accountAddress,Coin balance) {
@@ -80,19 +120,12 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         this.repository.addBalance(accountAddress, balance);
     }
 
-    public ProgramInvokeMockImpl() {
-        this("385E60076000396000605f556014600054601e60"
-                + "205463abcddcba6040545b51602001600a525451"
-                + "6040016014525451606001601e52545160800160"
-                + "28525460a052546016604860003960166000f260"
-                + "00603f556103e75660005460005360200235", null);
-    }
-
     public RskAddress getContractAddress() {
         return this.contractAddress;
     }
 
-    public ProgramInvokeMockImpl(boolean defaults) {
+    public RskAddress getNestedContractAddress() {
+        return this.nestedContractAddress;
     }
 
     /*           ADDRESS op         */

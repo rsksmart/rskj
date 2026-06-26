@@ -147,11 +147,15 @@ public class TransactionExecutor {
             return false;
         }
 
-        this.execute();
-        this.go();
-        this.finalization();
+        try {
+            this.execute();
+            this.go();
+            this.finalization();
 
-        return true;
+            return true;
+        } finally {
+            this.cacheTrack.txFinalized();
+        }
     }
 
     /**
@@ -692,8 +696,10 @@ public class TransactionExecutor {
         // Accumulate refunds for suicides
         result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
 
-        // The actual gas subtracted is equal to half of the future refund
-        long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
+        // RSKIP555/EIP-2200 allows call-frame refund counters to go negative, but the
+        // transaction-level refund applied to gas accounting cannot be negative.
+        long futureRefund = Math.max(0, result.getFutureRefund());
+        long gasRefund = Math.min(futureRefund, result.getGasUsed() / 2);
         result.addDeductedRefund(gasRefund);
         result.setGasUsedBeforeRefunds(result.getGasUsed());
 
