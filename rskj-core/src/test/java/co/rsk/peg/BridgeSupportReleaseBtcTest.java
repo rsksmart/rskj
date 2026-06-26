@@ -19,6 +19,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeSupportTestUtil.addPegoutRequestsToQueue;
 import static co.rsk.peg.BridgeSupportTestUtil.assertLogReleaseRequested;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,7 +46,6 @@ import co.rsk.test.builders.FederationSupportBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import co.rsk.test.builders.UTXOBuilder;
@@ -675,7 +675,7 @@ class BridgeSupportReleaseBtcTest {
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, irisActivations)).thenReturn(utxos);
 
-        BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "one"), Coin.COIN),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "two"), Coin.COIN))
@@ -731,7 +731,7 @@ class BridgeSupportReleaseBtcTest {
         List<Keccak256> rskHashesList = pegoutRequests.getEntries()
             .stream()
             .map(ReleaseRequestQueue.Entry::getRskTxHash)
-            .collect(Collectors.toList());
+            .toList();
 
         bridgeSupport = bridgeSupportBuilder
             .withActivations(ACTIVATIONS_ALL)
@@ -865,7 +865,7 @@ class BridgeSupportReleaseBtcTest {
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, lovellActivations)).thenReturn(utxos);
         when(federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, lovellActivations)).thenReturn(activeFederation);
-        FederationSupport federationSupport = FederationSupportBuilder.builder()
+        federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(FEDERATION_CONSTANTS)
             .withFederationStorageProvider(federationStorageProvider)
             .withActivations(lovellActivations)
@@ -1189,7 +1189,7 @@ class BridgeSupportReleaseBtcTest {
 
         utxos.add(utxo);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
-        FederationSupport federationSupport = FederationSupportBuilder.builder()
+        federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(FEDERATION_CONSTANTS)
             .withFederationStorageProvider(federationStorageProvider)
             .withActivations(ACTIVATIONS_ALL)
@@ -1671,14 +1671,12 @@ class BridgeSupportReleaseBtcTest {
         //     - split, change NOT dust      -> burnt = full - batched = total un-batched value (pre); 0 (post)
         //     - split, change IS dust       -> add (2700 - real change) to the burn (pre and post)
 
-        private static final ActivationConfig.ForBlock VETIVER_ACTIVATIONS = ActivationConfigsForTest.vetiver900().forBlock(0L);
+        private final ActivationConfig.ForBlock VETIVER_ACTIVATIONS = ActivationConfigsForTest.vetiver900().forBlock(0L);
 
-        private static final Coin DUST_THRESHOLD = Coin.valueOf(2_700); // change outputs below this threshold are dust and get bumped up to it
-        private static final Coin DUST_CHANGE = DUST_THRESHOLD.subtract(Coin.SATOSHI);
-        private static final Coin NON_DUST_CHANGE = DUST_THRESHOLD.add(Coin.SATOSHI);
-        private static final Coin DUST_BUMP = DUST_THRESHOLD.subtract(DUST_CHANGE);
-        private static final Coin PEGOUT_REQUEST_BASE_VALUE = Coin.COIN.multiply(1_250); // we will subtract dust/non-dust value from it
-        private static final int INPUTS_EXCEEDING_MAX_TX_SIZE = 2500;
+        private final Coin DUST_CHANGE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(Coin.SATOSHI);
+        private final Coin NON_DUST_CHANGE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.add(Coin.SATOSHI);
+        private final Coin DUST_BUMP = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(DUST_CHANGE);
+        private final Coin PEGOUT_REQUEST_BASE_VALUE = Coin.COIN.multiply(1_250); // we will subtract dust/non-dust value from it
 
         private List<LogInfo> logs;
         private Transaction rskTx;
@@ -1727,14 +1725,15 @@ class BridgeSupportReleaseBtcTest {
                 NETWORK_PARAMETERS
             );
 
+            int inputsExceedingMaxTxSize = 2500;
             List<UTXO> utxos = UTXOBuilder.builder()
                 .withScriptPubKey(activeFederation.getP2SHScript())
                 .withValue(Coin.COIN)
-                .buildMany(INPUTS_EXCEEDING_MAX_TX_SIZE, i -> createHash(i + 1));
+                .buildMany(inputsExceedingMaxTxSize, i -> createHash(i + 1));
             federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, activations).addAll(utxos);
         }
 
-        private static Stream<ActivationConfig.ForBlock> activationsArgs() {
+        private Stream<ActivationConfig.ForBlock> activationsArgs() {
             return Stream.of(VETIVER_ACTIVATIONS, ACTIVATIONS_ALL);
         }
 
