@@ -46,7 +46,6 @@ import co.rsk.test.builders.FederationSupportBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import co.rsk.test.builders.UTXOBuilder;
@@ -676,7 +675,7 @@ class BridgeSupportReleaseBtcTest {
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, irisActivations)).thenReturn(utxos);
 
-        BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        bridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "one"), Coin.COIN),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(BRIDGE_CONSTANTS.getBtcParams(), "two"), Coin.COIN))
@@ -732,7 +731,7 @@ class BridgeSupportReleaseBtcTest {
         List<Keccak256> rskHashesList = pegoutRequests.getEntries()
             .stream()
             .map(ReleaseRequestQueue.Entry::getRskTxHash)
-            .collect(Collectors.toList());
+            .toList();
 
         bridgeSupport = bridgeSupportBuilder
             .withActivations(ACTIVATIONS_ALL)
@@ -866,7 +865,7 @@ class BridgeSupportReleaseBtcTest {
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, lovellActivations)).thenReturn(utxos);
         when(federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, lovellActivations)).thenReturn(activeFederation);
-        FederationSupport federationSupport = FederationSupportBuilder.builder()
+        federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(FEDERATION_CONSTANTS)
             .withFederationStorageProvider(federationStorageProvider)
             .withActivations(lovellActivations)
@@ -1190,7 +1189,7 @@ class BridgeSupportReleaseBtcTest {
 
         utxos.add(utxo);
         when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
-        FederationSupport federationSupport = FederationSupportBuilder.builder()
+        federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(FEDERATION_CONSTANTS)
             .withFederationStorageProvider(federationStorageProvider)
             .withActivations(ACTIVATIONS_ALL)
