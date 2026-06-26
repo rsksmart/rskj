@@ -19,6 +19,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeSupportTestUtil.addPegoutRequestsToQueue;
 import static co.rsk.peg.BridgeSupportTestUtil.assertLogReleaseRequested;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -1673,10 +1674,9 @@ class BridgeSupportReleaseBtcTest {
 
         private final ActivationConfig.ForBlock VETIVER_ACTIVATIONS = ActivationConfigsForTest.vetiver900().forBlock(0L);
 
-        private final Coin DUST_THRESHOLD = Coin.valueOf(2_700); // change outputs below this threshold are dust and get bumped up to it
-        private final Coin DUST_CHANGE = DUST_THRESHOLD.subtract(Coin.SATOSHI);
-        private final Coin NON_DUST_CHANGE = DUST_THRESHOLD.add(Coin.SATOSHI);
-        private final Coin DUST_BUMP = DUST_THRESHOLD.subtract(DUST_CHANGE);
+        private final Coin DUST_CHANGE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(Coin.SATOSHI);
+        private final Coin NON_DUST_CHANGE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.add(Coin.SATOSHI);
+        private final Coin DUST_BUMP = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(DUST_CHANGE);
         private final Coin PEGOUT_REQUEST_BASE_VALUE = Coin.COIN.multiply(1_250); // we will subtract dust/non-dust value from it
 
         private List<LogInfo> logs;
@@ -1726,11 +1726,11 @@ class BridgeSupportReleaseBtcTest {
                 NETWORK_PARAMETERS
             );
 
-            int INPUTS_EXCEEDING_MAX_TX_SIZE = 2500;
+            int inputsExceedingMaxTxSize = 2500;
             List<UTXO> utxos = UTXOBuilder.builder()
                 .withScriptPubKey(activeFederation.getP2SHScript())
                 .withValue(Coin.COIN)
-                .buildMany(INPUTS_EXCEEDING_MAX_TX_SIZE, i -> createHash(i + 1));
+                .buildMany(inputsExceedingMaxTxSize, i -> createHash(i + 1));
             federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, activations).addAll(utxos);
         }
 
