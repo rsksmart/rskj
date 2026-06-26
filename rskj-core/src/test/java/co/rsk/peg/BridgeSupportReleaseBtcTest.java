@@ -854,19 +854,40 @@ class BridgeSupportReleaseBtcTest {
             .withFederationSupport(federationSupport)
             .build();
 
+        // first call will split requests twice, so
+        // first quarter of the requests 300 / 4 = 75 is batched
         Transaction rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
-        // First Half of the PegoutRequests 300 / 2 = 150 Is Batched For The First Time
-        assertEquals(150, provider.getReleaseRequestQueue().getEntries().size());
+        int remainingRequests = 225; // 300 - 75 = 225
+        assertEquals(remainingRequests, provider.getReleaseRequestQueue().getEntries().size());
         assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
 
+        // second call will also split requests twice, so
+        // first quarter of remaining requests 225 / 4 = 56 is batched
         rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
-        // The Rest PegoutRequests 300 / 2 = 150 Is Batched The 2nd Time updateCollections Is Called
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        remainingRequests = 169; // 225 - 56 = 169
+        assertEquals(remainingRequests, provider.getReleaseRequestQueue().getEntries().size());
         assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+
+        // third call will split requests once, so
+        // first half of remaining requests 169 / 2 = 84 is batched
+        rskTx = buildUpdateTx();
+        bridgeSupport.updateCollections(rskTx);
+
+        remainingRequests = 85; // 169 - 84 = 85
+        assertEquals(remainingRequests, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(3, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+
+        // fourth (and last) call will process all the remaining requests
+        rskTx = buildUpdateTx();
+        bridgeSupport.updateCollections(rskTx);
+
+        remainingRequests = 0;
+        assertEquals(remainingRequests, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(4, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
