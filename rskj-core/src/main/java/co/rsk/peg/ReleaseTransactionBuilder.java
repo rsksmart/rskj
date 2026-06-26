@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import static co.rsk.bitcoinj.core.BtcTransaction.MAX_STANDARD_TX_SIZE;
 import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -205,7 +206,7 @@ public class ReleaseTransactionBuilder {
             inputsCount,
             outputsCount
         );
-        if (btcTxVSize > MAX_TX_VSIZE_ALLOWED) {
+        if (btcTxVSize > MAX_STANDARD_TX_SIZE) {
             throw new Wallet.ExceededMaxTransactionSize();
         }
     }
