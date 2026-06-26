@@ -24,7 +24,9 @@ import co.rsk.core.RskAddress;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.trie.Trie;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.WarmAccess;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.math.BigInteger;
 
@@ -155,6 +157,12 @@ public interface Repository extends RepositorySnapshot, TransientRepository {
     void rollback();
 
     /**
+     * Configure root TX context with additional data.
+     * This data expected to be cleared on {@link #txFinalized()}
+     */
+    void txInitialized(@Nullable WarmAccess warmAccess);
+
+    /**
      * Complete repository bookkeeping for TX scope.
      *
      * RSKIP555 requires to have TX scoped cache for dynamic gas calculations.
@@ -164,6 +172,11 @@ public interface Repository extends RepositorySnapshot, TransientRepository {
     void txFinalized();
 
     void save();
+
+    /**
+     * Return warm resources tracker in the context of root TX.
+     */
+    WarmAccess getWarmAccess();
 
     void updateAccountState(RskAddress addr, AccountState accountState);
 
