@@ -205,7 +205,7 @@ public class ReleaseTransactionBuilder {
             inputsCount,
             outputsCount
         );
-        if (btcTxVSize > MAX_TX_SIZE_ALLOWED) {
+        if (btcTxVSize > MAX_TX_VSIZE_ALLOWED) {
             throw new Wallet.ExceededMaxTransactionSize();
         }
     }
