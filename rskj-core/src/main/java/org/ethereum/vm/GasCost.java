@@ -58,6 +58,11 @@ public class GasCost {
     public static final long SHA3_WORD = 6;
     private static final long SLOAD = 200; // SLOAD_GAS
     public static final long SLOAD_RSKIP555 = 800; // SLOAD_GAS
+
+    public static final long COLD_SLOAD_COST = 2100; // RSKIP555/EIP-2929
+    public static final long COLD_ACCOUNT_ACCESS_COST = 2600; // RSKIP555/EIP-2929
+    public static final long WARM_STORAGE_READ_COST = 100; // RSKIP555/EIP-2929
+
     public static final long STOP = 0;
     public static final long SUICIDE = 5000;
     public static final long CLEAR_SSTORE = 5000;
@@ -72,7 +77,7 @@ public class GasCost {
     public static final long JUMPDEST = 1;
     public static final long CREATE_DATA_BYTE = 5;
     public static final long CALL = 700;
-    public static final long STIPEND_CALL = 2300; // For transferring coins in CALL, this is always passed to child
+    public static final long STIPEND_CALL = 2300; // For transferring coins in CALL, this is ahways passed to child
     public static final long VT_CALL = 9000;  //value transfer call
     public static final long NEW_ACCT_CALL = 25000;  //new account call
     public static final long MEMORY = 3; // TODO: Memory in V0 is more expensive than V1: This MUST be modified before release

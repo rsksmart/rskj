@@ -148,6 +148,7 @@ public class TransactionExecutor {
         }
 
         try {
+            this.cacheTrack.txInitialized(this.setupWarmAccess());
             this.execute();
             this.go();
             this.finalization();
@@ -156,6 +157,27 @@ public class TransactionExecutor {
         } finally {
             this.cacheTrack.txFinalized();
         }
+    }
+
+    /**
+     * Initialize warm resource for this transaction according to EIP-2929.
+     */
+    private WarmAccess setupWarmAccess() {
+        // This is the place to merge Type 1 transaction with EIP-2930.
+
+        var addrs = new HashSet<RskAddress>();
+        addrs.add(tx.getSender(signatureCache));
+
+        if (tx.isContractCreation()) {
+            addrs.add(tx.getContractAddress());
+        } else {
+            addrs.add(tx.getReceiveAddress());
+        }
+
+        var precompiled = precompiledContracts.getPreCompiledContracts(activations);
+        addrs.addAll(precompiled);
+
+        return new WarmAccess(addrs);
     }
 
     /**

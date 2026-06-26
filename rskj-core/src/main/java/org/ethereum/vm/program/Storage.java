@@ -26,6 +26,7 @@ import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.WarmAccess;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.listener.ProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
@@ -222,8 +223,18 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public void txInitialized(@Nullable WarmAccess warmAccess) {
+        repository.txInitialized(warmAccess);
+    }
+
+    @Override
     public void txFinalized() {
         repository.txFinalized();
+    }
+
+    @Override
+    public WarmAccess getWarmAccess() {
+        return repository.getWarmAccess();
     }
 
     @Override

@@ -38,6 +38,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.WarmAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +52,7 @@ import java.util.Optional;
 import java.util.Set;
 
 public class MutableRepository implements Repository {
+
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
@@ -75,6 +77,15 @@ public class MutableRepository implements Repository {
      */
     private final HashMap<ByteArrayWrapper, DataWord> originalValues;
 
+    /**
+     * Tracks warm resource access according to EIP-2929 inside root TX context.
+     */
+    private WarmAccess warmAccess;
+
+    private static MutableTrieImpl aInMemoryMutableTrie() {
+        return new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie());
+    }
+
     public MutableRepository(TrieStore trieStore, Trie trie) {
         this(new MutableTrieImpl(trieStore, trie), aInMemoryMutableTrie());
     }
@@ -85,10 +96,6 @@ public class MutableRepository implements Repository {
 
     public MutableRepository(MutableTrie mutableTrie, IReadWrittenKeysTracker tracker) {
         this(mutableTrie, aInMemoryMutableTrie(), tracker);
-    }
-
-    private static MutableTrieImpl aInMemoryMutableTrie() {
-        return new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie());
     }
 
     public MutableRepository(MutableTrie mutableTrie, MutableTrie transientTrie) {
@@ -120,6 +127,11 @@ public class MutableRepository implements Repository {
     @Override
     public Trie getTrie() {
         return mutableTrie.getTrie();
+    }
+
+    @Override
+    public WarmAccess getWarmAccess() {
+        return warmAccess;
     }
 
     @Override
@@ -430,8 +442,14 @@ public class MutableRepository implements Repository {
     }
 
     @Override
+    public void txInitialized(@Nullable WarmAccess warmAccess) {
+        this.warmAccess = warmAccess;
+    }
+
+    @Override
     public synchronized void txFinalized() {
         originalValues.clear();
+        warmAccess = null;
     }
 
     @Override
