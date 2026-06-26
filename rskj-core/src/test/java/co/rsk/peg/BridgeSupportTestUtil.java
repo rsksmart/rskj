@@ -223,7 +223,7 @@ public final class BridgeSupportTestUtil {
     ) {
         for (int i = 0; i < pegoutRequestCount; i++) {
             Address receiver = BitcoinTestUtils.createP2PKHAddress(networkParameters, "receiver" + i);
-            releaseRequestQueue.add(receiver, value, PegTestUtils.createHash3(i));
+            releaseRequestQueue.add(receiver, value, RskTestUtils.createHash(i));
         }
         return releaseRequestQueue;
     }
