@@ -1671,14 +1671,13 @@ class BridgeSupportReleaseBtcTest {
         //     - split, change NOT dust      -> burnt = full - batched = total un-batched value (pre); 0 (post)
         //     - split, change IS dust       -> add (2700 - real change) to the burn (pre and post)
 
-        private static final ActivationConfig.ForBlock VETIVER_ACTIVATIONS = ActivationConfigsForTest.vetiver900().forBlock(0L);
+        private final ActivationConfig.ForBlock VETIVER_ACTIVATIONS = ActivationConfigsForTest.vetiver900().forBlock(0L);
 
-        private static final Coin DUST_THRESHOLD = Coin.valueOf(2_700); // change outputs below this threshold are dust and get bumped up to it
-        private static final Coin DUST_CHANGE = DUST_THRESHOLD.subtract(Coin.SATOSHI);
-        private static final Coin NON_DUST_CHANGE = DUST_THRESHOLD.add(Coin.SATOSHI);
-        private static final Coin DUST_BUMP = DUST_THRESHOLD.subtract(DUST_CHANGE);
-        private static final Coin PEGOUT_REQUEST_BASE_VALUE = Coin.COIN.multiply(1_250); // we will subtract dust/non-dust value from it
-        private static final int INPUTS_EXCEEDING_MAX_TX_SIZE = 2500;
+        private final Coin DUST_THRESHOLD = Coin.valueOf(2_700); // change outputs below this threshold are dust and get bumped up to it
+        private final Coin DUST_CHANGE = DUST_THRESHOLD.subtract(Coin.SATOSHI);
+        private final Coin NON_DUST_CHANGE = DUST_THRESHOLD.add(Coin.SATOSHI);
+        private final Coin DUST_BUMP = DUST_THRESHOLD.subtract(DUST_CHANGE);
+        private final Coin PEGOUT_REQUEST_BASE_VALUE = Coin.COIN.multiply(1_250); // we will subtract dust/non-dust value from it
 
         private List<LogInfo> logs;
         private Transaction rskTx;
@@ -1727,6 +1726,7 @@ class BridgeSupportReleaseBtcTest {
                 NETWORK_PARAMETERS
             );
 
+            int INPUTS_EXCEEDING_MAX_TX_SIZE = 2500;
             List<UTXO> utxos = UTXOBuilder.builder()
                 .withScriptPubKey(activeFederation.getP2SHScript())
                 .withValue(Coin.COIN)
@@ -1734,7 +1734,7 @@ class BridgeSupportReleaseBtcTest {
             federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, activations).addAll(utxos);
         }
 
-        private static Stream<ActivationConfig.ForBlock> activationsArgs() {
+        private Stream<ActivationConfig.ForBlock> activationsArgs() {
             return Stream.of(VETIVER_ACTIVATIONS, ACTIVATIONS_ALL);
         }
 
