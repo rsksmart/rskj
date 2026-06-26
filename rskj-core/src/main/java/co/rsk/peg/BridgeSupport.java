@@ -1506,7 +1506,7 @@ public class BridgeSupport {
         Coin totalPegoutRequestsValue = sumPegoutValues(pegoutEntries);
         if (wallet.getBalance().isLessThan(totalPegoutRequestsValue)) {
             logger.warn(
-                "[processPegoutsInBatch] wallet balance {} is less than the totalPegoutValue {}",
+                "[processPegoutsInBatch] Wallet balance {} is less than the total pegout requests value {}",
                 wallet.getBalance(),
                 totalPegoutRequestsValue
             );
@@ -1541,7 +1541,7 @@ public class BridgeSupport {
             BtcTransaction batchPegoutTransaction = result.btcTx();
             Sha256Hash batchPegoutTxHash = batchPegoutTransaction.getHash();
             logger.info(
-                "[processPegoutsInBatch] pegouts processed with btcTx hash {} and response code {}",
+                "[processPegoutsInBatch] Pegouts processed with btcTx hash {} and response code {}",
                 batchPegoutTxHash,
                 result.responseCode()
             );
@@ -1665,10 +1665,10 @@ public class BridgeSupport {
 
     /**
      * If federation change output value had to be increased to be non-dust, it will send less BTC
-     * than the received rBTC. So, we burn some rBTC to make balances match.
+     * than the received RBTC. So, we burn some RBTC to make balances match.
      *
      * @param pegoutTx      The pegout tx
-     * @param amountPeggedOut The pegged-out rBTC amount
+     * @param amountPeggedOut The pegged-out RBTC amount
      */
     private void adjustBalancesIfChangeOutputWasDust(BtcTransaction pegoutTx, Coin amountPeggedOut, Wallet wallet) {
         if (pegoutTx.getOutputs().size() <= 1) {
