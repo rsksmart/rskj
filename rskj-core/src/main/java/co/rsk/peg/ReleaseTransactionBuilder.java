@@ -189,8 +189,7 @@ public class ReleaseTransactionBuilder {
     }
 
     private void checkTxVSize(BtcTransaction btcTx) {
-        // TODO replace this one with correct rskip (378). Using 559 since is part of the same hf
-        if (!activations.isActive(ConsensusRule.RSKIP559)) {
+        if (!activations.isActive(ConsensusRule.RSKIP378)) {
             return;
         }
 
