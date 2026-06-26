@@ -99,6 +99,9 @@ public class BridgeSupport {
     public static final Integer RECEIVE_HEADER_BLOCK_PREVIOUSLY_SAVED = -4;
     public static final Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
 
+    public static final Coin MIGRATION_OUTPUT_VALUE = Coin.COIN.multiply(20);
+    public static final Coin MULTIPLE_OUTPUTS_THRESHOLD = MIGRATION_OUTPUT_VALUE.multiply(2);
+
     // Enough depth to be able to search backwards one month worth of blocks
     // (6 blocks/hour, 24 hours/day, 30 days/month)
     public static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
@@ -1307,7 +1310,7 @@ public class BridgeSupport {
         logRetiringFederationBalance(retiringFederationWallet.getBalance());
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Address activeFederationAddress = getActiveFederationAddress();
-        ReleaseTransactionBuilder.BuildResult migrationTransactionResult = activations.isActive(RSKIP455)?
+        ReleaseTransactionBuilder.BuildResult migrationTransactionResult = activations.isActive(RSKIP455) ?
             createMigrationTransaction(retiringFederationWallet, activeFederationAddress) :
             createMigrationTransactionLegacy(retiringFederationWallet, activeFederationAddress);
 
@@ -3117,7 +3120,10 @@ public class BridgeSupport {
                 getFeePerKb(),
                 activations
             );
-            ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(List.of(expectedMigrationValue), destinationAddress);
+
+            List<Coin> outputs = getMigrationOutputs(expectedMigrationValue);
+
+            ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(outputs, destinationAddress);
 
             switch (result.responseCode()) {
                 case SUCCESS -> {
@@ -3134,6 +3140,27 @@ public class BridgeSupport {
                     expectedMigrationValue = expectedMigrationValue.divide(2);
             }
         }
+    }
+
+    private static List<Coin> getMigrationOutputs(Coin expectedMigrationValue) {
+        return expectedMigrationValue.isLessThan(MULTIPLE_OUTPUTS_THRESHOLD) ?
+            List.of(expectedMigrationValue) :
+            getMultipleOutputs(expectedMigrationValue);
+    }
+
+    private static List<Coin> getMultipleOutputs(Coin expectedMigrationValue) {
+        List<Coin> outputs = new ArrayList<>();
+        Coin remaining = expectedMigrationValue;
+        while (!remaining.isLessThan(MIGRATION_OUTPUT_VALUE)) {
+            outputs.add(MIGRATION_OUTPUT_VALUE);
+            remaining = remaining.subtract(MIGRATION_OUTPUT_VALUE);
+        }
+        if (remaining.isPositive()) {
+            int lastOutputIndex = outputs.size() - 1;
+            Coin lastOutput = outputs.get(lastOutputIndex);
+            outputs.set(lastOutputIndex, lastOutput.add(remaining));
+        }
+        return outputs;
     }
 
     // Make sure the local bitcoin blockchain is instantiated
