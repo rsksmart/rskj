@@ -99,8 +99,8 @@ public class BridgeSupport {
     public static final Integer RECEIVE_HEADER_BLOCK_PREVIOUSLY_SAVED = -4;
     public static final Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
 
-    public static final Coin MIGRATION_OUTPUT_VALUE = Coin.COIN.multiply(20);
-    public static final Coin MULTIPLE_OUTPUTS_THRESHOLD = MIGRATION_OUTPUT_VALUE.multiply(2);
+    public static final Coin MIGRATION_OUTPUT_BTC_VALUE = Coin.COIN.multiply(20);
+    public static final Coin MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE = MIGRATION_OUTPUT_BTC_VALUE.multiply(2);
 
     // Enough depth to be able to search backwards one month worth of blocks
     // (6 blocks/hour, 24 hours/day, 30 days/month)
@@ -3095,7 +3095,7 @@ public class BridgeSupport {
     /**
      * @deprecated Use {@link #createMigrationTransaction(Wallet, Address)} instead.
      */
-    @Deprecated
+    @Deprecated(since="TBD1000")
     private ReleaseTransactionBuilder.BuildResult createMigrationTransactionLegacy(Wallet retiringFederationWallet, Address destinationAddress) {
         Coin expectedMigrationValue = retiringFederationWallet.getBalance();
         logger.debug("[createMigrationTransactionLegacy] Balance to migrate: {}", expectedMigrationValue);
@@ -3131,50 +3131,37 @@ public class BridgeSupport {
     private ReleaseTransactionBuilder.BuildResult createMigrationTransaction(Wallet retiringFederationWallet, Address destinationAddress) {
         Coin expectedMigrationValue = retiringFederationWallet.getBalance();
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
-        for(;;) {
-            Federation retiringFederation = getRetiringFederation().orElseThrow(() -> new IllegalStateException("No retiring federation is present"));
-            ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
-                networkParameters,
-                retiringFederationWallet,
-                retiringFederation,
-                destinationAddress,
-                getFeePerKb(),
-                activations
-            );
+        Federation retiringFederation = getRetiringFederation().orElseThrow(() -> new IllegalStateException("No retiring federation is present"));
+        ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
+            networkParameters,
+            retiringFederationWallet,
+            retiringFederation,
+            destinationAddress,
+            getFeePerKb(),
+            activations
+        );
 
-            List<Coin> outputs = getMigrationOutputs(expectedMigrationValue);
+        List<Coin> outputs = getMigrationOutputs(expectedMigrationValue);
 
-            ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(outputs, destinationAddress);
-
-            switch (result.responseCode()) {
-                case SUCCESS -> {
-                    return result;
-                }
-
-                case UTXO_PROVIDER_EXCEPTION ->
-                    throw new RuntimeException("[createMigrationTransaction] Unexpected UTXO provider error");
-
-                case DUSTY_SEND_REQUESTED ->
-                    throw new IllegalStateException("[createMigrationTransaction] Retiring federation wallet cannot be emptied");
-
-                case INSUFFICIENT_MONEY, EXCEED_MAX_TRANSACTION_SIZE, COULD_NOT_ADJUST_DOWNWARDS ->
-                    expectedMigrationValue = expectedMigrationValue.divide(2);
-            }
+        ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(outputs, destinationAddress);
+        if (result.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
+            throw new IllegalStateException("[createMigrationTransaction] Retiring federation wallet cannot be emptied. Response: " + result.responseCode());
         }
+        return result;
     }
 
-    private static List<Coin> getMigrationOutputs(Coin expectedMigrationValue) {
-        return expectedMigrationValue.isLessThan(MULTIPLE_OUTPUTS_THRESHOLD) ?
+    private List<Coin> getMigrationOutputs(Coin expectedMigrationValue) {
+        return expectedMigrationValue.isLessThan(MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE) ?
             List.of(expectedMigrationValue) :
             getMultipleOutputs(expectedMigrationValue);
     }
 
-    private static List<Coin> getMultipleOutputs(Coin expectedMigrationValue) {
+    private List<Coin> getMultipleOutputs(Coin expectedMigrationValue) {
         List<Coin> outputs = new ArrayList<>();
         Coin remaining = expectedMigrationValue;
-        while (!remaining.isLessThan(MIGRATION_OUTPUT_VALUE)) {
-            outputs.add(MIGRATION_OUTPUT_VALUE);
-            remaining = remaining.subtract(MIGRATION_OUTPUT_VALUE);
+        while (!remaining.isLessThan(MIGRATION_OUTPUT_BTC_VALUE)) {
+            outputs.add(MIGRATION_OUTPUT_BTC_VALUE);
+            remaining = remaining.subtract(MIGRATION_OUTPUT_BTC_VALUE);
         }
         if (remaining.isPositive()) {
             int lastOutputIndex = outputs.size() - 1;
