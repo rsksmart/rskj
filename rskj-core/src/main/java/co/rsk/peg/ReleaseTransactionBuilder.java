@@ -123,7 +123,7 @@ public class ReleaseTransactionBuilder {
 
     public BuildResult buildMigrationTransaction(List<Coin> migrationValues, Address destinationAddress) {
         return buildWithConfiguration((SendRequest sr) -> {
-            if (!activations.isActive(ConsensusRule.RSKIP376)){
+            if (!activations.isActive(ConsensusRule.RSKIP376)) {
                 sr.tx.setVersion(BTC_TX_VERSION_1);
             }
             for (Coin value : migrationValues) {
