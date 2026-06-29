@@ -17,6 +17,7 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeSupport.MAX_OUTPUTS_NUMBER;
 import static co.rsk.peg.bitcoin.BitcoinUtils.inputHasWitness;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
@@ -170,15 +171,25 @@ public final class BridgeUtils {
         Coin migrationValueForMultipleOutputs = bridgeConstants.getMigrationValueForMultipleOutputsInBtc();
         return expectedMigrationValue.isLessThan(multipleOutputsThresholdBtcValue) ?
             List.of(expectedMigrationValue) :
-            calculateMigrationTransactionOutputsValues(expectedMigrationValue, migrationValueForMultipleOutputs);
+            calculateMigrationTransactionOutputsValues(expectedMigrationValue, migrationValueForMultipleOutputs, bridgeConstants);
     }
 
     private static List<Coin> calculateMigrationTransactionOutputsValues(Coin expectedMigrationValue,
-                                                                         Coin migrationValueForMultipleOutputs) {
+                                                                         Coin migrationValueForMultipleOutputs,
+                                                                         BridgeConstants bridgeConstants) {
         if (expectedMigrationValue.isLessThan(migrationValueForMultipleOutputs)) {
             return List.of(expectedMigrationValue);
         }
 
+        Coin largeMultipleOutputsThresholdBtcValue = getLargeMultipleOutputsThresholdBtcValue(bridgeConstants);
+        if (!expectedMigrationValue.isLessThan(largeMultipleOutputsThresholdBtcValue)) {
+            return getEvenlyDistributedOutputs(expectedMigrationValue);
+        }
+
+        return getFixedValueOutputs(expectedMigrationValue, migrationValueForMultipleOutputs);
+    }
+
+    private static List<Coin> getFixedValueOutputs(Coin expectedMigrationValue, Coin migrationValueForMultipleOutputs) {
         Coin remaining = expectedMigrationValue;
         List<Coin> outputs = new ArrayList<>();
         while (!remaining.isLessThan(migrationValueForMultipleOutputs)) {
@@ -193,8 +204,24 @@ public final class BridgeUtils {
         return outputs;
     }
 
+    private static List<Coin> getEvenlyDistributedOutputs(Coin totalValue) {
+        Coin[] outputDistribution = totalValue.divideAndRemainder(MAX_OUTPUTS_NUMBER);
+        Coin valuePerOutput = outputDistribution[0];
+        Coin remainder = outputDistribution[1];
+        List<Coin> outputs = new ArrayList<>();
+        for (int i = 0; i < MAX_OUTPUTS_NUMBER - 1; i++) {
+            outputs.add(valuePerOutput);
+        }
+        outputs.add(valuePerOutput.add(remainder));
+        return outputs;
+    }
+
     static Coin getMultipleOutputsThresholdBtcValue(BridgeConstants bridgeConstants) {
         return bridgeConstants.getMigrationValueForMultipleOutputsInBtc().multiply(2);
+    }
+
+    static Coin getLargeMultipleOutputsThresholdBtcValue(BridgeConstants bridgeConstants) {
+        return bridgeConstants.getMigrationValueForMultipleOutputsInBtc().multiply(MAX_OUTPUTS_NUMBER);
     }
 
     /**

@@ -22,10 +22,11 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertBtcTxVersionIs1;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertBtcTxVersionIs2;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertDestinationAddress;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertEvenlyDistributedMigrationTxOutputs;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertFixedValueMigrationTxOutputs;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsP2shErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsP2shP2wshErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsStandardMultisig;
-import static co.rsk.peg.ReleaseTransactionAssertions.assertMultipleMigrationTxOutputs;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertOneMigrationTxOutput;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertOutputsWithNoChange;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shErp;
@@ -2612,12 +2613,61 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertMultipleMigrationTxOutputs(
+                assertFixedValueMigrationTxOutputs(
                     migrationTransaction,
                     migrationValues,
                     newFederationAddress,
                     BTC_MAINNET_PARAMS
                 );
+            }
+
+            @Test
+            void buildMigrationTransaction_withP2shP2wshErpFederation_with150UtxosAboveLargeMTMUThreshold_shouldBuildTxWith50Outputs() {
+                // Arrange
+                int numberOfUtxos = 150;
+                Coin utxoValue = Coin.COIN.multiply(7);
+                retiringFederationUTXOs = UTXOBuilder.builder()
+                    .withScriptPubKey(retiringFederationOutputScript)
+                    .withValue(utxoValue)
+                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+                ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
+
+                Coin totalValue = utxoValue.multiply(numberOfUtxos);
+                Coin[] parts = totalValue.divideAndRemainder(50);
+                List<Coin> migrationValues = new ArrayList<>(Collections.nCopies(49, parts[0]));
+                migrationValues.add(parts[0].add(parts[1]));
+
+                // Act
+                BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
+                    migrationValues,
+                    newFederationAddress
+                );
+
+                // Assert
+                assertSuccessBuildResult(migrationTransactionResult);
+                BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
+                assertBtcTxVersionIs2(migrationTransaction);
+
+                assertMigrationReleaseTxInputsP2shP2wshErp(
+                    migrationTransaction,
+                    retiringFederationRedeemScript,
+                    retiringFederationUTXOs,
+                    migrationTransactionResult.selectedUTXOs()
+                );
+                assertEvenlyDistributedMigrationTxOutputs(
+                    migrationTransaction,
+                    totalValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
+                int migrationTransactionSize = BridgeUtils.simulatePegoutTxSize(
+                    ALL_ACTIVATIONS,
+                    retiringFederation,
+                    migrationTransaction.getInputs().size(),
+                    migrationTransaction.getOutputs().size()
+                );
+                assertTrue(migrationTransactionSize <= BtcTransaction.MAX_STANDARD_TX_SIZE);
             }
 
             /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; the minimum UTXO the Federation
