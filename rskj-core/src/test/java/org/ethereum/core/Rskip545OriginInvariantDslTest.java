@@ -28,7 +28,6 @@ import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.Account;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.DataWord;
