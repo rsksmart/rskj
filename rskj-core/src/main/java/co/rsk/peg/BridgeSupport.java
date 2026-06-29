@@ -3092,7 +3092,7 @@ public class BridgeSupport {
     /**
      * @deprecated Use {@link #createMigrationTransaction(Wallet, Address)} instead.
      */
-    @Deprecated
+    @Deprecated(since="TBD1000")
     private ReleaseTransactionBuilder.BuildResult createMigrationTransactionLegacy(Wallet retiringFederationWallet, Address destinationAddress) {
         Coin expectedMigrationValue = retiringFederationWallet.getBalance();
         logger.debug("[createMigrationTransactionLegacy] Balance to migrate: {}", expectedMigrationValue);
