@@ -964,4 +964,119 @@ class TransactionPoolImplTest {
         Assertions.assertNotNull(signatureCache.getSender(tx1));
         Assertions.assertNotNull(signatureCache.getSender(tx2));
     }
+
+    @Test
+    void delegatedAccount_addFirstPendingTransactionAccepted() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        makeAccountDelegated(1, 2);
+
+        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assertions.assertTrue(result.transactionsWereAdded());
+        Assertions.assertTrue(result.pendingTransactionsWereAdded());
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void delegatedAccount_addTransactionWithNonceGapRejected() {
+        createTestAccounts(2, Coin.valueOf(1000000));
+        makeAccountDelegated(1, 2);
+
+        Transaction tx = createSampleTransaction(1, 2, 1000, 1);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assertions.assertFalse(result.transactionsWereAdded());
+        Assertions.assertEquals("gapped-nonce transaction from delegated account", result.getErrorMessage());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void delegatedAccount_addSecondTransactionRejectedWhenFirstIsPending() {
+        createTestAccounts(2,  Coin.valueOf(1000000));
+
+        makeAccountDelegated(1, 2);
+
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
+        Transaction tx2 = createSampleTransaction(1, 2, 1000, 1);
+
+        TransactionPoolAddResult result1 = transactionPool.addTransaction(tx1);
+        TransactionPoolAddResult result2 = transactionPool.addTransaction(tx2);
+
+        Assertions.assertTrue(result1.transactionsWereAdded());
+        Assertions.assertFalse(result2.transactionsWereAdded());
+        Assertions.assertEquals("delegated account already has a transaction in the pool", result2.getErrorMessage());
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx1));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void delegatedAccount_replacementTransactionRejectedWhenAlreadyHasPendingTransaction() {
+        createTestAccounts(2,  Coin.valueOf(1000000));
+        makeAccountDelegated(1,2);
+
+        Transaction tx1 = createSampleTransactionWithGasPrice(1, 2, 1000, 0, 1);
+        Transaction tx2 = createSampleTransactionWithGasPrice(1, 2, 2000, 0, 2);
+
+        Assertions.assertTrue(transactionPool.addTransaction(tx1).transactionsWereAdded());
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx2);
+
+        Assertions.assertFalse(result.transactionsWereAdded());
+        Assertions.assertEquals("delegated account already has a transaction in the pool", result.getErrorMessage());
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx1));
+        Assertions.assertEquals(0, transactionPool.getQueuedTransactions().size());
+    }
+
+    @Test
+    void delegatedAccounts_eachAccountCanHaveOneTransaction() {
+        createTestAccounts(3, Coin.valueOf(1000000));
+
+        makeAccountDelegated(1, 3);
+        makeAccountDelegated(2, 3);
+
+        Transaction tx1 = createSampleTransaction(1, 3, 1000, 0);
+        Transaction tx2 = createSampleTransaction(2, 3, 1000, 0);
+
+        Assertions.assertTrue(transactionPool.addTransaction(tx1).transactionsWereAdded());
+        Assertions.assertTrue(transactionPool.addTransaction(tx2).transactionsWereAdded());
+
+        Assertions.assertEquals(2, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx1));
+        Assertions.assertTrue(transactionPool.getPendingTransactions().contains(tx2));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void nonDelegatedAccount_addTransactionWithNonceGapAcceptedAsQueued() {
+        createTestAccounts(2,  Coin.valueOf(1000000));
+
+        Transaction tx = createSampleTransaction(1, 2, 1000, 1);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assertions.assertTrue(result.transactionsWereAdded());
+        Assertions.assertTrue(result.queuedTransactionsWereAdded());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+        Assertions.assertEquals(1, transactionPool.getQueuedTransactions().size());
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().contains(tx));
+    }
+
+    private void makeAccountDelegated(int senderAccountId, int delegateAccountId) {
+        Account sender = createAccount(senderAccountId);
+        Account delegate = createAccount(delegateAccountId);
+
+        repository.saveCode(
+                sender.getAddress(),
+                DelegationCodeResolver.createDelegatedCode(delegate.getAddress())
+        );
+    }
+
 }

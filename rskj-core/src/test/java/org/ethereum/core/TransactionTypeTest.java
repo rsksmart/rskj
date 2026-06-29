@@ -17,6 +17,12 @@
  */
 package org.ethereum.core;
 
+import org.ethereum.core.transaction.RskNamespaceTransaction;
+import org.ethereum.core.transaction.Transaction;
+import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.Type0Transaction;
+import org.ethereum.core.transaction.Type1Transaction;
+import org.ethereum.core.transaction.Type2Transaction;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -100,10 +106,10 @@ class TransactionTypeTest {
     private static Stream<Arguments> typeNameProvider() {
         return Stream.of(
             Arguments.of(TransactionType.LEGACY, "Legacy"),
-            Arguments.of(TransactionType.TYPE_1, "RSKIP546 (EIP-2930 Access List)"),
-            Arguments.of(TransactionType.TYPE_2, "RSKIP546 (EIP-1559 Dynamic Fee)"),
-            Arguments.of(TransactionType.TYPE_3, "RSKIP000 (Blob)"),
-            Arguments.of(TransactionType.TYPE_4, "RSKIP545 (EIP-7702 Set Code)")
+            Arguments.of(TransactionType.TYPE_1, "RSKIP546 (EIP-2930)"),
+            Arguments.of(TransactionType.TYPE_2, "RSKIP546 (EIP-1559)"),
+            Arguments.of(TransactionType.TYPE_3, "RSKIP558 (EIP-4844)"),
+            Arguments.of(TransactionType.TYPE_4, "RSKIP545 (EIP-7702)")
         );
     }
 
@@ -156,5 +162,27 @@ class TransactionTypeTest {
     void hasRskNamespacePrefix_falseForSingleByte() {
         byte[] data = {TransactionType.RSK_NAMESPACE_PREFIX};
         assertFalse(TransactionType.hasRskNamespacePrefix(data));
+    }
+
+    // ========================================================================
+    // Sealed Transaction permit types (RSKIP-543)
+    // ========================================================================
+
+    @ParameterizedTest(name = "{0} is instantiable")
+    @MethodSource("sealedTransactionPermitTypes")
+    void sealedTransactionPermitTypes_areInstantiable(Class<? extends Transaction> type) throws Exception {
+        Transaction instance = type.getDeclaredConstructor().newInstance();
+
+        assertNotNull(instance);
+        assertTrue(Transaction.class.isInstance(instance));
+    }
+
+    private static Stream<Class<? extends Transaction>> sealedTransactionPermitTypes() {
+        return Stream.of(
+                Type0Transaction.class,
+                Type1Transaction.class,
+                Type2Transaction.class,
+                RskNamespaceTransaction.class
+        );
     }
 }
