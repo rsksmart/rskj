@@ -58,6 +58,9 @@ public class ReleaseTransactionBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(ReleaseTransactionBuilder.class);
 
+    private static final int MAX_STANDARD_TX_SIZE_SAFETY_MARGIN = 10_000;
+    private static final int MAX_STANDARD_TX_SIZE_ALLOWED = MAX_STANDARD_TX_SIZE - MAX_STANDARD_TX_SIZE_SAFETY_MARGIN;
+
     private final NetworkParameters params;
     private final Wallet wallet;
     private final Federation federation;
@@ -206,7 +209,7 @@ public class ReleaseTransactionBuilder {
             inputsCount,
             outputsCount
         );
-        if (btcTxVSize > MAX_STANDARD_TX_SIZE) {
+        if (btcTxVSize > MAX_STANDARD_TX_SIZE_ALLOWED) {
             throw new Wallet.ExceededMaxTransactionSize();
         }
     }
