@@ -151,7 +151,7 @@ public class ReleaseTransactionBuilder {
 
         try {
             completeTx(sr);
-            checkTxVSize(btcTx);
+            validateTx(btcTx);
 
             // Disconnect input from output because we don't need the reference and it interferes serialization
             for (TransactionInput transactionInput : btcTx.getInputs()) {
@@ -192,22 +192,16 @@ public class ReleaseTransactionBuilder {
         }
     }
 
-    private void checkTxVSize(BtcTransaction btcTx) {
+    private void validateTx(BtcTransaction btcTx) {
         if (!activations.isActive(ConsensusRule.RSKIP378)) {
-            return;
-        }
-
-        int inputsCount = btcTx.getInputs().size();
-        int outputsCount = btcTx.getOutputs().size();
-        if (inputsCount == 0 || outputsCount == 0) {
             return;
         }
 
         int btcTxVSize = BridgeUtils.calculatePegoutTxSize(
             activations,
             federation,
-            inputsCount,
-            outputsCount
+            btcTx.getInputs().size(),
+            btcTx.getOutputs().size()
         );
         if (btcTxVSize > MAX_STANDARD_TX_SIZE_ALLOWED) {
             throw new Wallet.ExceededMaxTransactionSize();
