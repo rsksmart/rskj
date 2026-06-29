@@ -931,7 +931,7 @@ class ReleaseTransactionBuilderTest {
                 federationArgs,
                 BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getErpFedPubKeysList(),
                 BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getErpFedActivationDelay(),
-                ALL_ACTIVATIONS
+                hopActivations
             );
 
             int numberOfUtxos = 2;
@@ -954,7 +954,7 @@ class ReleaseTransactionBuilderTest {
                 nonStandardErpFederation,
                 nonStandardErpFederationAddress,
                 FEE_PER_KB_1000_SATOSHIS,
-                ALL_ACTIVATIONS
+                hopActivations
             );
 
             Address pegoutRecipient = BitcoinTestUtils.createP2PKHAddress(BTC_MAINNET_PARAMS, "destinationAddress");
