@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeSupport.MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat;
@@ -47,7 +48,7 @@ public class ReleaseTransactionAssertions {
         assertOutputsWithNoChange(migrationTransaction, migratedAmount);
     }
 
-    public static void assertMultipleMigrationTxOutputs(
+    public static void assertFixedValueMigrationTxOutputs(
         BtcTransaction migrationTransaction,
         List<Coin> expectedOutputsValues,
         Address destination,
@@ -58,10 +59,10 @@ public class ReleaseTransactionAssertions {
         assertDestinationAddress(migrationTransactionOutputs, destination, networkParameters);
         Coin expectedMigratedAmount = expectedOutputsValues.stream().reduce(Coin.ZERO, Coin::add);
         assertOutputsWithNoChange(migrationTransaction, expectedMigratedAmount);
-        assertEachOutputValueForMultipleOutputs(migrationTransaction, expectedOutputsValues);
+        assertEachOutputValueForFixedValueOutputs(migrationTransaction, expectedOutputsValues);
     }
 
-    private static void assertEachOutputValueForMultipleOutputs(
+    private static void assertEachOutputValueForFixedValueOutputs(
         BtcTransaction migrationTransaction,
         List<Coin> expectedOutputsValues
     ) {
@@ -80,6 +81,46 @@ public class ReleaseTransactionAssertions {
             Coin outputValue = outputs.get(i).getValue().add(feePerOutput);
             assertEquals(expectedOutputsValues.get(i), outputValue);
         }
+    }
+
+    public static void assertEvenlyDistributedMigrationTxOutputs(
+        BtcTransaction migrationTransaction,
+        Coin migratedAmount,
+        Address destination,
+        NetworkParameters networkParameters
+    ) {
+        List<TransactionOutput> outputs = migrationTransaction.getOutputs();
+        assertEquals(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX, outputs.size());
+        assertDestinationAddress(outputs, destination, networkParameters);
+        assertOutputsWithNoChange(migrationTransaction, migratedAmount);
+        assertEachOutputValueEvenlyDistributed(migrationTransaction, migratedAmount);
+    }
+
+    private static void assertEachOutputValueEvenlyDistributed(
+        BtcTransaction migrationTransaction,
+        Coin migratedAmount
+    ) {
+        List<TransactionOutput> outputs = migrationTransaction.getOutputs();
+
+        Coin fees = migrationTransaction.getFee();
+        Coin[] feeDistribution = fees.divideAndRemainder(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX);
+        Coin feePerOutput = feeDistribution[0];
+        Coin feeRemainder = feeDistribution[1];
+
+        Coin[] valueDistribution = migratedAmount.divideAndRemainder(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX);
+        Coin valuePerOutput = valueDistribution[0];
+        Coin valueRemainder = valueDistribution[1];
+
+        assertEquals(valuePerOutput, outputs.get(0).getValue().add(feePerOutput).add(feeRemainder));
+
+        for (int i = 1; i < MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX - 1; i++) {
+            assertEquals(valuePerOutput, outputs.get(i).getValue().add(feePerOutput));
+        }
+
+        assertEquals(
+            valuePerOutput.add(valueRemainder),
+            outputs.get(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX - 1).getValue().add(feePerOutput)
+        );
     }
 
     public static void assertDestinationAddress(List<TransactionOutput> outputs, Address expectedDestinationAddress, NetworkParameters networkParams) {
