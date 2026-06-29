@@ -105,6 +105,7 @@ public enum ConsensusRule {
     RSKIP446("rskip446"), // Transient storage opcodes addition implementing EIP-1153
     RSKIP453("rskip453"),
     RSKIP454("rskip454"),
+    RSKIP455("rskip455"), // Migration transaction with multiple UTXOs (MTMU)
     RSKIP459("rskip459"),
     RSKIP460("rskip460"),
     RSKIP502("rskip502"), // PowPeg and Union Bridge integration
