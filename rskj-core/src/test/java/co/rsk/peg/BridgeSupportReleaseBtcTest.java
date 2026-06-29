@@ -45,7 +45,6 @@ import co.rsk.test.builders.FederationSupportBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Stream;
 
 import co.rsk.test.builders.UTXOBuilder;
 import org.bouncycastle.util.encoders.Hex;
@@ -60,8 +59,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.Program;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 class BridgeSupportReleaseBtcTest {
     private static final BigInteger NONCE = new BigInteger("0");
@@ -886,14 +883,14 @@ class BridgeSupportReleaseBtcTest {
 
         // First Half of the PegoutRequests 300 / 2 = 150 Is Batched For The First Time
         assertEquals(150, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(lovellActivations).size());
 
         rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
         // The Rest PegoutRequests 300 / 2 = 150 Is Batched The 2nd Time updateCollections Is Called
         assertEquals(0, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(2, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(2, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(lovellActivations).size());
     }
 
     @Test
