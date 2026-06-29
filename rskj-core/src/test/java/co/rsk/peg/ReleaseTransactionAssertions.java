@@ -1,6 +1,6 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeSupport.MIGRATION_OUTPUT_VALUE;
+import static co.rsk.peg.BridgeSupport.MIGRATION_OUTPUT_BTC_VALUE;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat;
@@ -74,13 +74,13 @@ public class ReleaseTransactionAssertions {
         Coin feeRemainder = feeDistribution[1];
 
         Coin firstOutputFee = feePerOutput.add(feeRemainder);
-        assertEquals(MIGRATION_OUTPUT_VALUE, outputs.get(0).getValue().add(firstOutputFee));
+        assertEquals(MIGRATION_OUTPUT_BTC_VALUE, outputs.get(0).getValue().add(firstOutputFee));
 
         for (int i = 1; i < expectedNumberOfOutputs - 1; i++) {
-            assertEquals(MIGRATION_OUTPUT_VALUE, outputs.get(i).getValue().add(feePerOutput));
+            assertEquals(MIGRATION_OUTPUT_BTC_VALUE, outputs.get(i).getValue().add(feePerOutput));
         }
 
-        Coin accumulatedValue = MIGRATION_OUTPUT_VALUE.multiply(expectedNumberOfOutputs - 1);
+        Coin accumulatedValue = MIGRATION_OUTPUT_BTC_VALUE.multiply(expectedNumberOfOutputs - 1);
         Coin expectedValueInLastOutput = migratedAmount.subtract(accumulatedValue);
         Coin lastOutput = outputs.get(expectedNumberOfOutputs - 1).getValue();
         assertEquals(expectedValueInLastOutput, lastOutput.add(feePerOutput));
