@@ -1,7 +1,6 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.BridgeSupport.MIGRATION_OUTPUT_VALUE;
 import static co.rsk.peg.BridgeSupport.MULTIPLE_OUTPUTS_THRESHOLD;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
