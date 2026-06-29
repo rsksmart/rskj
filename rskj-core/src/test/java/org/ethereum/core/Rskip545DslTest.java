@@ -66,8 +66,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>Block encode/decode preserves Type 4 transactions</li>
  * </ul>
  *
- * <p>See also {@link Rskip545DeepDslTest}, {@link Rskip545HardforkTest},
- * and {@link Rskip545DelegatedOpcodeTest}.
+ * <p>See also {@link Rskip545DeepDslTest}, {@link Rskip545OriginInvariantDslTest},
+ * {@link Rskip545HardforkTest}, and {@link Rskip545DelegatedOpcodeTest}.
  */
 class Rskip545DslTest {
 
