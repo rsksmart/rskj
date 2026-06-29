@@ -3187,8 +3187,9 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildBatchedPegouts_whenNoPegoutRequests_returnsAnEmptyTransaction() {
+            void buildBatchedPegouts_preRSKIP378_whenNoPegoutRequests_returnsAnEmptyTransaction() {
                 // Arrange
+                activations = ActivationConfigsForTest.vetiver900().forBlock(0L);
                 ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
 
                 // Act & Assert
@@ -3198,6 +3199,15 @@ class ReleaseTransactionBuilderTest {
                 BtcTransaction batchedPegoutsTx = batchedPegoutsResult.btcTx();
                 assertTrue(batchedPegoutsTx.getOutputs().isEmpty());
                 assertTrue(batchedPegoutsTx.getInputs().isEmpty());
+            }
+
+            @Test
+            void buildBatchedPegouts_whenNoPegoutRequests_throwsIllegalArgumentException() {
+                // Arrange
+                ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
+
+                // Act & Assert
+                assertThrows(IllegalArgumentException.class, () -> releaseTransactionBuilder.buildBatchedPegouts(NO_PEGOUT_REQUESTS));
             }
 
             @Test
