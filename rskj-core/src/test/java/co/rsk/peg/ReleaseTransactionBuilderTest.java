@@ -113,7 +113,7 @@ class ReleaseTransactionBuilderTest {
     private static final int STANDARD_MULTISIG_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
     private static final int P2SH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE = 196;
     private static final int P2SH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = P2SH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
-    private static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE = 227;
+    private static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE = 204;
     private static final int P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
 
     private static final Keccak256 FLYOVER_DERIVATION_HASH = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
@@ -3500,9 +3500,9 @@ class ReleaseTransactionBuilderTest {
 
             @ParameterizedTest
             @CsvSource({
-                "224, 29",
-                "225, 15",
-                "226, 2",
+                "201, 34",
+                "202, 21",
+                "203, 7",
             })
             void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSize_shouldCreateBatchedPegoutsTx(
                 int expectedNumberOfUtxos,
