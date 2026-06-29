@@ -65,6 +65,16 @@ import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 
 public final class BridgeSupportTestUtil {
+
+    public static final int STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE = 277;
+    public static final int STANDARD_MULTISIG_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
+    public static final int P2SH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE = 196;
+    public static final int P2SH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = P2SH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
+    public static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER = 2438;
+    public static final int P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE_VETIVER = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER - 1;
+    public static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE = 204;
+    public static final int P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
+
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
 
     private BridgeSupportTestUtil() {}
