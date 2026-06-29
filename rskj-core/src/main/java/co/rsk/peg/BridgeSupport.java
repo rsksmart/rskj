@@ -3124,7 +3124,7 @@ public class BridgeSupport {
 
         ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(outputs, destinationAddress);
         if (result.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
-            throw new IllegalStateException("[createMigrationTransaction] Retiring federation wallet cannot be emptied");
+            throw new IllegalStateException("[createMigrationTransaction] Retiring federation wallet cannot be emptied. Response: " + result.responseCode());
         }
         return result;
     }
