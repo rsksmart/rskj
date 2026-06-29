@@ -828,7 +828,7 @@ class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    void processPegoutsInBatch_after_hop_divide_transaction_when_max_size_exceeded() throws IOException {
+    void processPegoutsInBatch_whenMaxTxSizeExceeded_lovellActivations_dividesRequestsTwice() throws IOException {
         ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
 
         int numberOfUtxos = 310;
