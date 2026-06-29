@@ -767,7 +767,9 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertRetiringUtxosCount(remainingUtxos);
 
                 // Act — second call: picks up the remaining 1 UTXO whose sum is below MTMU threshold
-                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
+                Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+                bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
                 // Assert — second migration tx has 1 output
                 assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -815,7 +817,9 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertRetiringUtxosCount(remainingUtxos);
 
                 // Act - second call: next MAX_INPUTS_PER_PEGOUT_TX UTXOs above MTMU threshold, 2 outputs
-                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
+                Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+                bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
 
                 // Assert - second call
                 assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -830,7 +834,9 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertRetiringUtxosCount(remainingUtxos);
 
                 // Act - third call: 1 remaining UTXO, 1 output
-                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 2);
+                Transaction thirdUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(2);
+                bridgeSupport.updateCollections(thirdUpdateCollectionsTransaction);
 
                 // Assert - third call
                 assertMigrationTxCount(THREE_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
