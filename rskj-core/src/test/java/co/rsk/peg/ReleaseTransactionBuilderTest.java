@@ -19,7 +19,7 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
+import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertBtcTxVersionIs1;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertBtcTxVersionIs2;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertDestinationAddress;
@@ -76,6 +76,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
@@ -92,7 +93,8 @@ class ReleaseTransactionBuilderTest {
     private static final Context BTC_MAINNET_CONTEXT = new Context(BTC_MAINNET_PARAMS);
 
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0);
-    private static final ActivationConfig.ForBlock LOVELL_ACTIVATIONS = ActivationConfigsForTest.lovell700().forBlock(0L);
+    private static final ActivationConfig.ForBlock VETIVER_ACTIVATIONS = ActivationConfigsForTest.vetiver900().forBlock(0);
+    private static final ActivationConfig.ForBlock LOVELL_ACTIVATIONS = ActivationConfigsForTest.lovell700().forBlock(0);
     private static final ActivationConfig.ForBlock FINGERROOT_ACTIVATIONS = ActivationConfigsForTest.fingerroot500().forBlock(0);
     private static final ActivationConfig.ForBlock IRIS_ACTIVATIONS = ActivationConfigsForTest.iris300().forBlock(0);
     private static final ActivationConfig.ForBlock PAPYRUS_ACTIVATIONS = ActivationConfigsForTest.papyrus200().forBlock(0);
@@ -113,6 +115,8 @@ class ReleaseTransactionBuilderTest {
     private static final int STANDARD_MULTISIG_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
     private static final int P2SH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE = 196;
     private static final int P2SH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = P2SH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
+    private static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER = 2438;
+    private static final int P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE_VETIVER = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER - 1;
     private static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE = 204;
     private static final int P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
 
@@ -139,6 +143,11 @@ class ReleaseTransactionBuilderTest {
         for (UTXO flyoverUtxo : flyoverUtxos) {
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, provider, FLYOVER_DERIVATION_HASH);
         }
+    }
+
+    @BeforeEach
+    void setUpDefaultFeePerKb() {
+        setUpFeePerKb(BtcTransaction.DEFAULT_TX_FEE);
     }
 
     /**
@@ -551,9 +560,12 @@ class ReleaseTransactionBuilderTest {
         private UTXO flyoverUtxo;
 
         @BeforeEach
-        void setup() {
-            setUpActivations(IRIS_ACTIVATIONS);
-            setUpFeePerKb(BtcTransaction.DEFAULT_TX_FEE);
+        void setUp() {
+            setUp(IRIS_ACTIVATIONS);
+        }
+
+        void setUp(ActivationConfig.ForBlock activations) {
+            setUpActivations(activations);
             federation = StandardMultiSigFederationBuilder.builder().build();
             federationAddress = federation.getAddress();
             federationOutputScript = federation.getP2SHScript();
@@ -594,7 +606,7 @@ class ReleaseTransactionBuilderTest {
         @Test
         void buildAmountTo_whenRSKIP201IsNotActive_shouldCreatePegoutTxWithBtcVersion1() {
             // Arrange
-            setUpActivations(PAPYRUS_ACTIVATIONS);
+            setUp(PAPYRUS_ACTIVATIONS);
             int numberOfUtxos = 10;
             Coin minimumPeginTxValue = BRIDGE_MAINNET_CONSTANTS.getMinimumPeginTxValue(PAPYRUS_ACTIVATIONS);
             federationUTXOs = UTXOBuilder.builder()
@@ -1122,7 +1134,6 @@ class ReleaseTransactionBuilderTest {
         private static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX = 2438;
 
         private Federation federation;
-        private int federationFormatVersion;
         private Address federationAddress;
         private List<UTXO> federationUTXOs;
         private Script federationOutputScript;
@@ -1130,19 +1141,17 @@ class ReleaseTransactionBuilderTest {
         private Wallet wallet;
         private BridgeStorageProvider bridgeStorageProvider;
 
-        @BeforeEach
-        void setUp() {
-            setUpActivations(ALL_ACTIVATIONS);
-            setUpFeePerKb(BtcTransaction.DEFAULT_TX_FEE);
-        }
-
         @Nested
         class StandardMultiSigFederationTest {
 
             @BeforeEach
-            void setup() {
+            void setUp() {
+                setUp(IRIS_ACTIVATIONS);
+            }
+
+            void setUp(ActivationConfig.ForBlock activations) {
+                setUpActivations(activations);
                 federation = StandardMultiSigFederationBuilder.builder().build();
-                federationFormatVersion = federation.getFormatVersion();
                 federationAddress = federation.getAddress();
                 federationOutputScript = federation.getP2SHScript();
                 federationRedeemScript = federation.getRedeemScript();
@@ -1183,7 +1192,7 @@ class ReleaseTransactionBuilderTest {
             @Test
             void buildEmptyWalletTo_whenRSKIP201IsNotActive_shouldCreateRefundTxWithBtcVersion1() {
                 // Arrange
-                setUpActivations(PAPYRUS_ACTIVATIONS);
+                setUp(PAPYRUS_ACTIVATIONS);
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
 
                 // Act
@@ -1331,9 +1340,9 @@ class ReleaseTransactionBuilderTest {
         class P2shFederationTest {
 
             @BeforeEach
-            void setup() {
+            void setUp() {
+                setUpActivations(LOVELL_ACTIVATIONS);
                 federation = P2shErpFederationBuilder.builder().build();
-                federationFormatVersion = federation.getFormatVersion();
                 federationAddress = federation.getAddress();
                 federationOutputScript = federation.getP2SHScript();
                 federationRedeemScript = federation.getRedeemScript();
@@ -1498,9 +1507,9 @@ class ReleaseTransactionBuilderTest {
         class P2shP2wshFederationTest {
 
             @BeforeEach
-            void setup() {
+            void setUp() {
+                setUpActivations(ALL_ACTIVATIONS);
                 federation = P2shP2wshErpFederationBuilder.builder().build();
-                federationFormatVersion = federation.getFormatVersion();
                 federationAddress = federation.getAddress();
                 federationOutputScript = federation.getP2SHScript();
                 federationRedeemScript = federation.getRedeemScript();
@@ -1736,18 +1745,13 @@ class ReleaseTransactionBuilderTest {
         private Script retiringFederationRedeemScript;
         protected Wallet wallet;
 
-        private Coin feePerKb;
         private Address newFederationAddress;
         private BridgeStorageProvider bridgeStorageProvider;
         private UTXO flyoverUtxo;
 
-        @BeforeEach
-        void setUp() {
-            setUpFeePerKb(BtcTransaction.DEFAULT_TX_FEE);
-        }
-
         @Nested
         class StandardMultiSigFederationTests {
+
             @BeforeEach
             void setUp() {
                 setUpActivations(IRIS_ACTIVATIONS);
@@ -2059,9 +2063,14 @@ class ReleaseTransactionBuilderTest {
 
         @Nested
         class P2shErpFederationTests {
+
             @BeforeEach
             void setUp() {
-                setUpActivations(LOVELL_ACTIVATIONS);
+                setUp(LOVELL_ACTIVATIONS);
+            }
+
+            void setUp(ActivationConfig.ForBlock activations) {
+                setUpActivations(activations);
                 retiringFederation = P2shErpFederationBuilder.builder().build();
                 retiringFederationFormatVersion = retiringFederation.getFormatVersion();
                 retiringFederationAddress = retiringFederation.getAddress();
@@ -2109,7 +2118,7 @@ class ReleaseTransactionBuilderTest {
             @Test
             void buildMigrationTransaction_whenRSKIP376IsNotActive_shouldCreateMigrationTxWithBtcVersion1() {
                 // Arrange
-                setUpActivations(FINGERROOT_ACTIVATIONS);
+                setUp(FINGERROOT_ACTIVATIONS);
                 int numberOfUtxos = 10;
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
@@ -2406,9 +2415,14 @@ class ReleaseTransactionBuilderTest {
 
         @Nested
         class P2shP2wshErpFederationTests {
+
             @BeforeEach
             void setUp() {
-                setUpActivations(ALL_ACTIVATIONS);
+                setUp(ALL_ACTIVATIONS);
+            }
+
+            void setUp(ActivationConfig.ForBlock activations) {
+                setUpActivations(activations);
                 retiringFederation = P2shP2wshErpFederationBuilder.builder().build();
                 retiringFederationFormatVersion = retiringFederation.getFormatVersion();
                 retiringFederationAddress = retiringFederation.getAddress();
@@ -2667,6 +2681,25 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
+            void buildMigrationTransaction_whenTxExceedMaxTxSize_preRSKIP378_shouldReturnExceedMaxTransactionSize() {
+                // Arrange
+                setUp(VETIVER_ACTIVATIONS);
+                retiringFederationUTXOs = UTXOBuilder.builder()
+                    .withScriptPubKey(retiringFederationOutputScript)
+                    .withValue(Coin.COIN)
+                    .buildMany(P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER, i -> createHash(i + 1));
+                ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
+                Coin migrationValue = wallet.getBalance();
+
+                // Act
+                BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
+                    migrationValue, newFederationAddress);
+
+                // Assert
+                assertFailedBuildResult(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
+            }
+
+            @Test
             void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
                 retiringFederationUTXOs = UTXOBuilder.builder()
@@ -2682,6 +2715,42 @@ class ReleaseTransactionBuilderTest {
 
                 // Assert
                 assertFailedBuildResult(EXCEED_MAX_TRANSACTION_SIZE, migrationTransactionResult);
+            }
+
+            @Test
+            void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_preRSKIP378_shouldCreateMigrationTx() {
+                // Arrange
+                setUp(VETIVER_ACTIVATIONS);
+                retiringFederationUTXOs = UTXOBuilder.builder()
+                    .withScriptPubKey(retiringFederationOutputScript)
+                    .withValue(Coin.COIN)
+                    .buildMany(P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE_VETIVER, i -> createHash(i + 1));
+                ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
+                Coin migrationValue = wallet.getBalance();
+
+                // Act
+                BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
+                    migrationValue,
+                    newFederationAddress
+                );
+
+                // Assert
+                assertSuccessBuildResult(migrationTransactionResult);
+                BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
+                assertBtcTxVersionIs2(migrationTransaction);
+
+                assertMigrationReleaseTxInputsP2shP2wshErp(
+                    migrationTransaction,
+                    retiringFederationRedeemScript,
+                    retiringFederationUTXOs,
+                    migrationTransactionResult.selectedUTXOs());
+
+                assertMigrationTxWithOnlyMigrationOutputs(
+                    migrationTransaction,
+                    migrationValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
             }
 
             @Test
@@ -2736,10 +2805,6 @@ class ReleaseTransactionBuilderTest {
             assertMigrationTransactionIsMigratingMoreThanRequestedValue(migrationValueRequested, migrationTransaction);
         }
 
-        private void setUpFeePerKb(Coin transactionFeePerKb) {
-            this.feePerKb = transactionFeePerKb;
-        }
-
         private static void assertMigrationTransactionIsMigratingMoreThanRequestedValue(Coin migrationValueRequested, BtcTransaction migrationTransaction) {
             Coin migratedValue = getMigrationTransactionValueSent(migrationTransaction);
             Coin fee = migrationTransaction.getFee();
@@ -2787,16 +2852,11 @@ class ReleaseTransactionBuilderTest {
         private Script federationRedeemScript;
         private BridgeStorageProvider bridgeStorageProvider;
 
-        @BeforeEach
-        void setUp() {
-            setUpActivations(ALL_ACTIVATIONS);
-            setUpFeePerKb(BtcTransaction.DEFAULT_TX_FEE);
-        }
-
         @Nested
         class P2shErpFederationTests {
+
             @BeforeEach
-            void setup() {
+            void setUp() {
                 setUpActivations(LOVELL_ACTIVATIONS);
                 federation = P2shErpFederationBuilder.builder().build();
                 federationFormatVersion = federation.getFormatVersion();
@@ -3165,7 +3225,12 @@ class ReleaseTransactionBuilderTest {
         class P2shP2wshErpFederationTests {
 
             @BeforeEach
-            void setup() {
+            void setUp() {
+                setUp(ALL_ACTIVATIONS);
+            }
+
+            void setUp(ActivationConfig.ForBlock activations) {
+                setUpActivations(activations);
                 federation = P2shP2wshErpFederationBuilder.builder().build();
                 federationFormatVersion = federation.getFormatVersion();
                 federationAddress = federation.getAddress();
@@ -3189,7 +3254,7 @@ class ReleaseTransactionBuilderTest {
             @Test
             void buildBatchedPegouts_preRSKIP378_whenNoPegoutRequests_returnsAnEmptyTransaction() {
                 // Arrange
-                activations = ActivationConfigsForTest.vetiver900().forBlock(0L);
+                setUp(VETIVER_ACTIVATIONS);
                 ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
 
                 // Act & Assert
@@ -3484,9 +3549,35 @@ class ReleaseTransactionBuilderTest {
 
             @ParameterizedTest
             @CsvSource({
-                "224, 30",
-                "225, 16",
-                "226, 3"
+                "2438, 1",
+                "2437, 2",
+                "2436, 3"
+            })
+            void buildBatchedPegouts_whenTxExceedsMaxTxSize_preRSKIP378_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
+                // Arrange
+                setUp(VETIVER_ACTIVATIONS);
+                federationUTXOs = UTXOBuilder.builder()
+                    .withScriptPubKey(federationOutputScript)
+                    .withValue(Coin.COIN)
+                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+                ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+                Coin utxosTotalAmount = Coin.COIN.multiply(numberOfUtxos);
+                Coin pegoutRequestAmount = utxosTotalAmount.divide(numberOfPegoutRequests).subtract(THOUSAND_SATOSHIS);
+                List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(numberOfPegoutRequests, pegoutRequestAmount);
+
+                // Act
+                BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(pegoutRequests);
+
+                // Assert
+                assertFailedBuildResult(EXCEED_MAX_TRANSACTION_SIZE, batchedPegoutsResult);
+            }
+
+            @ParameterizedTest
+            @CsvSource({
+                "202, 22",
+                "203, 8",
+                "204, 1"
             })
             void buildBatchedPegouts_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
                 // Arrange
@@ -3506,6 +3597,47 @@ class ReleaseTransactionBuilderTest {
 
                 // Assert
                 assertFailedBuildResult(EXCEED_MAX_TRANSACTION_SIZE, batchedPegoutsResult);
+            }
+
+            @ParameterizedTest
+            @CsvSource({
+                "2437, 1",
+                "2436, 2",
+                "2435, 3"
+            })
+            void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSize_preRSKIP378_shouldCreateBatchedPegoutsTx(
+                int expectedNumberOfUtxos,
+                int numberOfPegoutRequests
+            ) {
+                // Arrange
+                setUp(VETIVER_ACTIVATIONS);
+                federationUTXOs = UTXOBuilder.builder()
+                    .withScriptPubKey(federationOutputScript)
+                    .withValue(Coin.COIN)
+                    .buildMany(expectedNumberOfUtxos, i -> createHash(i + 1));
+                ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(federationUTXOs);
+
+                Coin utxosTotalAmount = Coin.COIN.multiply(expectedNumberOfUtxos);
+                Coin pegoutRequestAmount = utxosTotalAmount.divide(numberOfPegoutRequests).subtract(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT);
+
+                List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(numberOfPegoutRequests, pegoutRequestAmount);
+
+                // Act
+                BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(pegoutRequests);
+
+                // Assert
+                assertSuccessBuildResult(batchedPegoutsResult);
+                BtcTransaction batchedPegoutsTransaction = batchedPegoutsResult.btcTx();
+
+                assertBtcTxVersionIs2(batchedPegoutsTransaction);
+                assertReleaseTxInputsP2shP2wshErp(
+                    batchedPegoutsTransaction,
+                    federationRedeemScript,
+                    federationUTXOs,
+                    batchedPegoutsResult.selectedUTXOs(),
+                    expectedNumberOfUtxos
+                );
+                assertOutputsWithNonDustChange(batchedPegoutsTransaction, pegoutRequests);
             }
 
             @ParameterizedTest
