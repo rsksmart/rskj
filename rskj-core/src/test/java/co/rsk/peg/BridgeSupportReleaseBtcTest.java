@@ -17,8 +17,7 @@
  */
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeSupportTestUtil.addPegoutRequestsToQueue;
-import static co.rsk.peg.BridgeSupportTestUtil.assertLogReleaseRequested;
+import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static org.junit.jupiter.api.Assertions.*;
@@ -1676,7 +1675,13 @@ class BridgeSupportReleaseBtcTest {
         private final Coin DUST_CHANGE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(Coin.SATOSHI);
         private final Coin NON_DUST_CHANGE = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.add(Coin.SATOSHI);
         private final Coin DUST_BUMP = MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT.subtract(DUST_CHANGE);
-        private final Coin PEGOUT_REQUEST_BASE_VALUE = Coin.COIN.multiply(1_250); // we will subtract dust/non-dust value from it
+        private final int PEGOUT_REQUESTS_BASE_COUNT = 2;
+        private final Coin PEGOUT_REQUEST_BASE_VALUE_VETIVER = Coin.COIN
+            .multiply(P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER)
+            .div(PEGOUT_REQUESTS_BASE_COUNT); // we will subtract dust/non-dust value from it
+        private final Coin PEGOUT_REQUEST_BASE_VALUE = Coin.COIN
+            .multiply(P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE)
+            .div(PEGOUT_REQUESTS_BASE_COUNT); // we will subtract dust/non-dust value from it
 
         private List<LogInfo> logs;
         private Transaction rskTx;
@@ -1716,7 +1721,10 @@ class BridgeSupportReleaseBtcTest {
                 .build();
         }
 
-        private void setupRequests(int pegoutRequests, Coin pegoutRequestValue, ActivationConfig.ForBlock activations) throws IOException {
+        private void setupRequestsPreRSKIP378(
+            int pegoutRequests,
+            Coin pegoutRequestValue
+        ) throws IOException {
             ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
             addPegoutRequestsToQueue(
                 releaseRequestQueue,
@@ -1725,26 +1733,39 @@ class BridgeSupportReleaseBtcTest {
                 NETWORK_PARAMETERS
             );
 
-            int inputsExceedingMaxTxSize = 2500;
             List<UTXO> utxos = UTXOBuilder.builder()
                 .withScriptPubKey(activeFederation.getP2SHScript())
                 .withValue(Coin.COIN)
-                .buildMany(inputsExceedingMaxTxSize, i -> createHash(i + 1));
-            federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, activations).addAll(utxos);
+                .buildMany(P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER, i -> createHash(i + 1));
+            federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, VETIVER_ACTIVATIONS).addAll(utxos);
         }
 
-        private Stream<ActivationConfig.ForBlock> activationsArgs() {
-            return Stream.of(VETIVER_ACTIVATIONS, ACTIVATIONS_ALL);
+        private void setupRequests(
+            int pegoutRequests,
+            Coin pegoutRequestValue
+        ) throws IOException {
+            ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
+            addPegoutRequestsToQueue(
+                releaseRequestQueue,
+                pegoutRequests,
+                pegoutRequestValue,
+                NETWORK_PARAMETERS
+            );
+
+            List<UTXO> utxos = UTXOBuilder.builder()
+                .withScriptPubKey(activeFederation.getP2SHScript())
+                .withValue(Coin.COIN)
+                .buildMany(P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE, i -> createHash(i + 1));
+            federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL).addAll(utxos);
         }
 
-        @ParameterizedTest
-        @MethodSource("activationsArgs")
-        void processPegoutsInBatch_noSplitting_withNonDustChange_shouldLogTotalPegoutRequestsValue_shouldNotBurn(ActivationConfig.ForBlock activations) throws IOException {
+        @Test
+        void processPegoutsInBatch_noSplitting_preRSKIP378_withNonDustChange_shouldLogTotalPegoutRequestsValue_shouldNotBurn() throws IOException {
             // arrange
-            setUp(activations);
+            setUp(VETIVER_ACTIVATIONS);
             int pegoutRequests = 1;
-            Coin pegoutRequestValue = PEGOUT_REQUEST_BASE_VALUE.subtract(NON_DUST_CHANGE);
-            setupRequests(pegoutRequests, pegoutRequestValue, activations);
+            Coin pegoutRequestValue = PEGOUT_REQUEST_BASE_VALUE_VETIVER.subtract(NON_DUST_CHANGE);
+            setupRequestsPreRSKIP378(pegoutRequests, pegoutRequestValue);
 
             // act
             bridgeSupport.updateCollections(rskTx);
@@ -1754,19 +1775,18 @@ class BridgeSupportReleaseBtcTest {
             assertRemainingRequests(expectedRemainingRequests);
 
             Coin totalRequestsValue = pegoutRequestValue.multiply(pegoutRequests);
-            assertReleaseRequested(totalRequestsValue, activations);
+            assertReleaseRequested(totalRequestsValue, VETIVER_ACTIVATIONS);
 
             assertNoBurn();
         }
 
-        @ParameterizedTest
-        @MethodSource("activationsArgs")
-        void processPegoutsInBatch_noSplitting_withDustChange_shouldLogTotalPegoutRequestsValue_shouldBurnDustBump(ActivationConfig.ForBlock activations) throws IOException {
+        @Test
+        void processPegoutsInBatch_noSplitting_withNonDustChange_shouldLogTotalPegoutRequestsValue_shouldNotBurn() throws IOException {
             // arrange
-            setUp(activations);
+            setUp(ACTIVATIONS_ALL);
             int pegoutRequests = 1;
-            Coin pegoutRequestValue = PEGOUT_REQUEST_BASE_VALUE.subtract(DUST_CHANGE);
-            setupRequests(pegoutRequests, pegoutRequestValue, activations);
+            Coin pegoutRequestValue = PEGOUT_REQUEST_BASE_VALUE.subtract(NON_DUST_CHANGE);
+            setupRequests(pegoutRequests, pegoutRequestValue);
 
             // act
             bridgeSupport.updateCollections(rskTx);
@@ -1776,7 +1796,49 @@ class BridgeSupportReleaseBtcTest {
             assertRemainingRequests(expectedRemainingRequests);
 
             Coin totalRequestsValue = pegoutRequestValue.multiply(pegoutRequests);
-            assertReleaseRequested(totalRequestsValue, activations);
+            assertReleaseRequested(totalRequestsValue, ACTIVATIONS_ALL);
+
+            assertNoBurn();
+        }
+
+        @Test
+        void processPegoutsInBatch_noSplitting_preRSKIP378_withDustChange_shouldLogTotalPegoutRequestsValue_shouldBurnDustBump() throws IOException {
+            // arrange
+            setUp(VETIVER_ACTIVATIONS);
+            int pegoutRequests = 1;
+            Coin pegoutRequestValue = PEGOUT_REQUEST_BASE_VALUE_VETIVER.subtract(DUST_CHANGE);
+            setupRequestsPreRSKIP378(pegoutRequests, pegoutRequestValue);
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+
+            // assert
+            int expectedRemainingRequests = 0;
+            assertRemainingRequests(expectedRemainingRequests);
+
+            Coin totalRequestsValue = pegoutRequestValue.multiply(pegoutRequests);
+            assertReleaseRequested(totalRequestsValue, VETIVER_ACTIVATIONS);
+
+            assertAmountBurnt(DUST_BUMP);
+        }
+
+        @Test
+        void processPegoutsInBatch_noSplitting_withDustChange_shouldLogTotalPegoutRequestsValue_shouldBurnDustBump() throws IOException {
+            // arrange
+            setUp(ACTIVATIONS_ALL);
+            int pegoutRequests = 1;
+            Coin pegoutRequestValue = PEGOUT_REQUEST_BASE_VALUE.subtract(DUST_CHANGE);
+            setupRequests(pegoutRequests, pegoutRequestValue);
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+
+            // assert
+            int expectedRemainingRequests = 0;
+            assertRemainingRequests(expectedRemainingRequests);
+
+            Coin totalRequestsValue = pegoutRequestValue.multiply(pegoutRequests);
+            assertReleaseRequested(totalRequestsValue, ACTIVATIONS_ALL);
 
             assertAmountBurnt(DUST_BUMP);
         }
@@ -1785,10 +1847,9 @@ class BridgeSupportReleaseBtcTest {
         void processPegoutsInBatch_preRSKIP378_whenSplittingTotalRequests_withNonDustChange_shouldLogOriginalTotalPegoutRequestsValue_shouldBurnRemainingValue() throws IOException {
             // arrange
             setUp(VETIVER_ACTIVATIONS);
-
             int pegoutRequests = 2;
-            Coin pegoutRequestValue = PEGOUT_REQUEST_BASE_VALUE.subtract(NON_DUST_CHANGE);
-            setupRequests(pegoutRequests, pegoutRequestValue, VETIVER_ACTIVATIONS);
+            Coin pegoutRequestValue = PEGOUT_REQUEST_BASE_VALUE_VETIVER.subtract(NON_DUST_CHANGE);
+            setupRequestsPreRSKIP378(pegoutRequests, pegoutRequestValue);
 
             // act
             bridgeSupport.updateCollections(rskTx);
@@ -1809,9 +1870,8 @@ class BridgeSupportReleaseBtcTest {
         void processPegoutsInBatch_preRSKIP378_whenSplittingTotalRequests_withDustChange_shouldLogOriginalTotalPegoutRequestsValue_shouldBurnRemainingValuePlusDustBump() throws IOException {
             // arrange
             setUp(VETIVER_ACTIVATIONS);
-            int pegoutRequests = 2;
-            Coin pegoutRequestValue = PEGOUT_REQUEST_BASE_VALUE.subtract(DUST_CHANGE);
-            setupRequests(pegoutRequests, pegoutRequestValue, VETIVER_ACTIVATIONS);
+            Coin pegoutRequestValue = PEGOUT_REQUEST_BASE_VALUE_VETIVER.subtract(DUST_CHANGE);
+            setupRequestsPreRSKIP378(PEGOUT_REQUESTS_BASE_COUNT, pegoutRequestValue);
 
             // act
             bridgeSupport.updateCollections(rskTx);
@@ -1820,7 +1880,7 @@ class BridgeSupportReleaseBtcTest {
             int expectedRemainingRequests = 1;
             assertRemainingRequests(expectedRemainingRequests);
 
-            Coin totalRequestsValue = pegoutRequestValue.multiply(pegoutRequests);
+            Coin totalRequestsValue = pegoutRequestValue.multiply(PEGOUT_REQUESTS_BASE_COUNT);
             assertReleaseRequested(totalRequestsValue, VETIVER_ACTIVATIONS);
 
             // pre-RSKIP378 burns the total value of the un-batched requests plus the dust bump the federation retained
@@ -1829,12 +1889,11 @@ class BridgeSupportReleaseBtcTest {
         }
 
         @Test
-        void processPegoutsInBatch_postRSKIP378_whenSplittingTotalRequests_withNonDustChange_shouldLogSplitPegoutRequestsValue_shouldNotBurn() throws IOException {
+        void processPegoutsInBatch_whenSplittingTotalRequests_withNonDustChange_shouldLogSplitPegoutRequestsValue_shouldNotBurn() throws IOException {
             // arrange
             setUp(ACTIVATIONS_ALL);
-            int pegoutRequests = 2;
             Coin pegoutRequestValue = PEGOUT_REQUEST_BASE_VALUE.subtract(NON_DUST_CHANGE);
-            setupRequests(pegoutRequests, pegoutRequestValue, ACTIVATIONS_ALL);
+            setupRequests(PEGOUT_REQUESTS_BASE_COUNT, pegoutRequestValue);
 
             // act
             bridgeSupport.updateCollections(rskTx);
@@ -1843,7 +1902,7 @@ class BridgeSupportReleaseBtcTest {
             int expectedRemainingRequests = 1;
             assertRemainingRequests(expectedRemainingRequests);
 
-            int pegoutRequestsProcessed = pegoutRequests - expectedRemainingRequests;
+            int pegoutRequestsProcessed = PEGOUT_REQUESTS_BASE_COUNT - expectedRemainingRequests;
             Coin expectedValueBeingPeggedOut = pegoutRequestValue.multiply(pegoutRequestsProcessed);
             assertReleaseRequested(expectedValueBeingPeggedOut, ACTIVATIONS_ALL);
 
@@ -1851,12 +1910,11 @@ class BridgeSupportReleaseBtcTest {
         }
 
         @Test
-        void processPegoutsInBatch_postRSKIP378_whenSplittingTotalRequests_withDustChange_shouldLogSplitPegoutRequestsValue_shouldBurnDustBump() throws IOException {
+        void processPegoutsInBatch_whenSplittingTotalRequests_withDustChange_shouldLogSplitPegoutRequestsValue_shouldBurnDustBump() throws IOException {
             // arrange
             setUp(ACTIVATIONS_ALL);
-            int pegoutRequests = 2;
             Coin pegoutRequestValue = PEGOUT_REQUEST_BASE_VALUE.subtract(DUST_CHANGE);
-            setupRequests(pegoutRequests, pegoutRequestValue, ACTIVATIONS_ALL);
+            setupRequests(PEGOUT_REQUESTS_BASE_COUNT, pegoutRequestValue);
 
             // act
             bridgeSupport.updateCollections(rskTx);
@@ -1865,7 +1923,7 @@ class BridgeSupportReleaseBtcTest {
             int expectedRemainingRequests = 1;
             assertRemainingRequests(expectedRemainingRequests);
 
-            int pegoutRequestsProcessed = pegoutRequests - expectedRemainingRequests;
+            int pegoutRequestsProcessed = PEGOUT_REQUESTS_BASE_COUNT - expectedRemainingRequests;
             Coin expectedValueBeingPeggedOut = pegoutRequestValue.multiply(pegoutRequestsProcessed);
             assertReleaseRequested(expectedValueBeingPeggedOut, ACTIVATIONS_ALL);
 
