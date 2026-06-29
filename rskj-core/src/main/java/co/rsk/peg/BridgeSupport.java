@@ -101,6 +101,8 @@ public class BridgeSupport {
     public static final Integer RECEIVE_HEADER_BLOCK_PREVIOUSLY_SAVED = -4;
     public static final Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
 
+    public static final int MAX_OUTPUTS_NUMBER = 50;
+
     // Enough depth to be able to search backwards one month worth of blocks
     // (6 blocks/hour, 24 hours/day, 30 days/month)
     public static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
