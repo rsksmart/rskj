@@ -29,7 +29,7 @@ import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shE
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shP2wshErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsStandardMultisig;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxNumberOfOutputs;
-import static co.rsk.peg.BridgeSupport.MIGRATION_OUTPUT_VALUE;
+import static co.rsk.peg.BridgeSupport.MIGRATION_OUTPUT_BTC_VALUE;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
 import static co.rsk.peg.ReleaseTransactionAssertions.*;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
@@ -2587,10 +2587,10 @@ class ReleaseTransactionBuilderTest {
                 int numberOfUtxos = 3;
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
-                    .withValue(MIGRATION_OUTPUT_VALUE)
+                    .withValue(MIGRATION_OUTPUT_BTC_VALUE)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
-                List<Coin> migrationValues = List.of(MIGRATION_OUTPUT_VALUE, MIGRATION_OUTPUT_VALUE, MIGRATION_OUTPUT_VALUE);
+                List<Coin> migrationValues = List.of(MIGRATION_OUTPUT_BTC_VALUE, MIGRATION_OUTPUT_BTC_VALUE, MIGRATION_OUTPUT_BTC_VALUE);
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
