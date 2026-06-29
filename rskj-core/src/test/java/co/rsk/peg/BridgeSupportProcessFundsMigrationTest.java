@@ -1,7 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.BridgeSupport.MULTIPLE_OUTPUTS_THRESHOLD;
+import static co.rsk.peg.BridgeSupport.MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
 import static co.rsk.peg.ReleaseTransactionAssertions.*;
@@ -355,10 +355,10 @@ class BridgeSupportProcessFundsMigrationTest {
         class WithUtxosSumBelowMTMUThreshold {
 
             private static final int BELOW_MAX_INPUTS_PER_PEGOUT_TX = MAX_INPUTS_PER_PEGOUT_TX - 1;
-            private static final Coin BELOW_MTMU_THRESHOLD_VALUE = MULTIPLE_OUTPUTS_THRESHOLD.subtract(Coin.SATOSHI);
-            private static final Coin BELOW_MTMU_UTXO_VALUE = MULTIPLE_OUTPUTS_THRESHOLD.divide(MAX_INPUTS_PER_PEGOUT_TX);
+            private static final Coin BELOW_MTMU_THRESHOLD_BTC_VALUE = MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE.subtract(Coin.SATOSHI);
+            private static final Coin BELOW_MTMU_UTXO_BTC_VALUE = MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE.divide(MAX_INPUTS_PER_PEGOUT_TX);
             private final UTXO flyoverUtxo = UTXOBuilder.builder()
-                .withValue(BELOW_MTMU_UTXO_VALUE)
+                .withValue(BELOW_MTMU_UTXO_BTC_VALUE)
                 .withScriptPubKey(flyoverOutputScript)
                 .withTransactionHash(BTC_TX_HASH_FLYOVER_UTXO)
                 .build();
@@ -368,7 +368,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 // Arrange
                 List<UTXO> retiringUtxos = List.of(
                     UTXOBuilder.builder()
-                        .withValue(BELOW_MTMU_THRESHOLD_VALUE)
+                        .withValue(BELOW_MTMU_THRESHOLD_BTC_VALUE)
                         .withScriptPubKey(retiringFederation.getP2SHScript())
                         .build()
                 );
@@ -396,7 +396,7 @@ class BridgeSupportProcessFundsMigrationTest {
             void updateCollections_duringMigration_withLegacyMaxInputsPlusOneUtxos_shouldCreateMigrationTx() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
-                    .withValue(BELOW_MTMU_UTXO_VALUE)
+                    .withValue(BELOW_MTMU_UTXO_BTC_VALUE)
                     .withScriptPubKey(retiringFederation.getP2SHScript())
                     .buildMany(ABOVE_MAX_INPUTS_PER_PEGOUT_TX_LEGACY, i -> createHash(i + 1));
 
@@ -423,7 +423,7 @@ class BridgeSupportProcessFundsMigrationTest {
             void updateCollections_duringMigration_withMaxInputsPerPegoutTxUtxos_shouldCreateMigrationTx() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
-                    .withValue(BELOW_MTMU_UTXO_VALUE)
+                    .withValue(BELOW_MTMU_UTXO_BTC_VALUE)
                     .withScriptPubKey(retiringFederation.getP2SHScript())
                     .buildMany(MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
 
@@ -450,7 +450,7 @@ class BridgeSupportProcessFundsMigrationTest {
             void updateCollections_duringMigration_withMaxInputsPerPegoutTxPlusOneUtxos_shouldCreateAMigrationTxEachTime() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
-                    .withValue(BELOW_MTMU_UTXO_VALUE)
+                    .withValue(BELOW_MTMU_UTXO_BTC_VALUE)
                     .withScriptPubKey(retiringFederation.getP2SHScript())
                     .buildMany(ABOVE_MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
 
@@ -493,7 +493,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 // Arrange
                 int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX * 2 + 1;
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
-                    .withValue(BELOW_MTMU_UTXO_VALUE)
+                    .withValue(BELOW_MTMU_UTXO_BTC_VALUE)
                     .withScriptPubKey(retiringFederation.getP2SHScript())
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
@@ -553,7 +553,7 @@ class BridgeSupportProcessFundsMigrationTest {
             void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxUtxos_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
-                    .withValue(BELOW_MTMU_UTXO_VALUE)
+                    .withValue(BELOW_MTMU_UTXO_BTC_VALUE)
                     .withScriptPubKey(retiringFederation.getP2SHScript())
                     .buildMany(BELOW_MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
                 retiringUtxos.add(flyoverUtxo);
@@ -582,7 +582,7 @@ class BridgeSupportProcessFundsMigrationTest {
             void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxPlusOneUtxos_whenFirstUtxosSelectionSumIsBelowMTMUThreshold_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
-                    .withValue(BELOW_MTMU_UTXO_VALUE)
+                    .withValue(BELOW_MTMU_UTXO_BTC_VALUE)
                     .withScriptPubKey(retiringFederation.getP2SHScript())
                     .buildMany(ABOVE_MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
 
@@ -609,13 +609,13 @@ class BridgeSupportProcessFundsMigrationTest {
         @Nested
         class WithUtxosSumAboveMTMUThreshold {
 
-            private static final Coin ABOVE_MTMU_THRESHOLD_VALUE = MULTIPLE_OUTPUTS_THRESHOLD.add(Coin.SATOSHI);
-            private static final Coin ABOVE_MTMU_UTXO_VALUE = ABOVE_MTMU_THRESHOLD_VALUE.divide(MAX_INPUTS_PER_PEGOUT_TX).add(Coin.SATOSHI);
-            private static final Coin ABOVE_MTMU_UTXO_VALUE_LEGACY = ABOVE_MTMU_THRESHOLD_VALUE.divide(MAX_INPUTS_PER_PEGOUT_TX_LEGACY);
+            private static final Coin ABOVE_MTMU_THRESHOLD_BTC_VALUE = MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE.add(Coin.SATOSHI);
+            private static final Coin ABOVE_MTMU_UTXO_BTC_VALUE = ABOVE_MTMU_THRESHOLD_BTC_VALUE.divide(MAX_INPUTS_PER_PEGOUT_TX).add(Coin.SATOSHI);
+            private static final Coin ABOVE_MTMU_UTXO_BTC_VALUE_LEGACY = ABOVE_MTMU_THRESHOLD_BTC_VALUE.divide(MAX_INPUTS_PER_PEGOUT_TX_LEGACY);
             private static final int EXPECTED_MULTIPLE_OUTPUT_COUNT = 2;
 
             private final UTXO flyoverUtxo = UTXOBuilder.builder()
-                .withValue(ABOVE_MTMU_UTXO_VALUE)
+                .withValue(ABOVE_MTMU_UTXO_BTC_VALUE)
                 .withScriptPubKey(flyoverOutputScript)
                 .withTransactionHash(BTC_TX_HASH_FLYOVER_UTXO)
                 .build();
@@ -625,7 +625,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 // Arrange
                 List<UTXO> retiringUtxos = List.of(
                     UTXOBuilder.builder()
-                        .withValue(MULTIPLE_OUTPUTS_THRESHOLD)
+                        .withValue(MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE)
                         .withScriptPubKey(retiringFederation.getP2SHScript())
                         .build()
                 );
@@ -653,7 +653,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 // Arrange
                 List<UTXO> retiringUtxos = List.of(
                     UTXOBuilder.builder()
-                        .withValue(ABOVE_MTMU_THRESHOLD_VALUE)
+                        .withValue(ABOVE_MTMU_THRESHOLD_BTC_VALUE)
                         .withScriptPubKey(retiringFederation.getP2SHScript())
                         .build()
                 );
@@ -681,7 +681,7 @@ class BridgeSupportProcessFundsMigrationTest {
             void updateCollections_duringMigration_withLegacyMaxInputsPlusOneUtxos_shouldCreateMigrationTxWithMultipleOutputs() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
-                    .withValue(ABOVE_MTMU_UTXO_VALUE_LEGACY)
+                    .withValue(ABOVE_MTMU_UTXO_BTC_VALUE_LEGACY)
                     .withScriptPubKey(retiringFederation.getP2SHScript())
                     .buildMany(MAX_INPUTS_PER_PEGOUT_TX_LEGACY, i -> createHash(i + 1));
                 retiringUtxos.add(flyoverUtxo);
@@ -711,7 +711,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 // Arrange
                 int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX - 1;
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
-                    .withValue(ABOVE_MTMU_UTXO_VALUE)
+                    .withValue(ABOVE_MTMU_UTXO_BTC_VALUE)
                     .withScriptPubKey(retiringFederation.getP2SHScript())
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
                 retiringUtxos.add(flyoverUtxo);
@@ -740,7 +740,7 @@ class BridgeSupportProcessFundsMigrationTest {
             void updateCollections_duringMigration_withMaxInputsPerPegoutTxPlusOneUtxos_whenFirstBatchSumIsAboveMTMUThreshold_shouldCreateAMigrationTxEachTime() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
-                    .withValue(ABOVE_MTMU_UTXO_VALUE)
+                    .withValue(ABOVE_MTMU_UTXO_BTC_VALUE)
                     .withScriptPubKey(retiringFederation.getP2SHScript())
                     .buildMany(MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
                 retiringUtxos.add(flyoverUtxo);
@@ -788,7 +788,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 // the single leftover (~0.267 BTC) is below the threshold (1 output)
                 int numberOfUtxos = MAX_INPUTS_PER_PEGOUT_TX * 2;
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
-                    .withValue(ABOVE_MTMU_UTXO_VALUE)
+                    .withValue(ABOVE_MTMU_UTXO_BTC_VALUE)
                     .withScriptPubKey(retiringFederation.getP2SHScript())
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
                 retiringUtxos.add(flyoverUtxo);
@@ -848,7 +848,7 @@ class BridgeSupportProcessFundsMigrationTest {
             void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxUtxos_shouldCreateMigrationTxWithMultipleOutputsAndClearRetiringFed() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
-                    .withValue(ABOVE_MTMU_UTXO_VALUE)
+                    .withValue(ABOVE_MTMU_UTXO_BTC_VALUE)
                     .withScriptPubKey(retiringFederation.getP2SHScript())
                     .buildMany(MAX_INPUTS_PER_PEGOUT_TX - 1, i -> createHash(i + 1));
                 retiringUtxos.add(flyoverUtxo);
@@ -877,7 +877,7 @@ class BridgeSupportProcessFundsMigrationTest {
             void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxPlusOneUtxos_whenFirstBatchSumIsAboveMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputsAndClearRetiringFed() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
-                    .withValue(ABOVE_MTMU_UTXO_VALUE)
+                    .withValue(ABOVE_MTMU_UTXO_BTC_VALUE)
                     .withScriptPubKey(retiringFederation.getP2SHScript())
                     .buildMany(MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
                 retiringUtxos.add(flyoverUtxo);
