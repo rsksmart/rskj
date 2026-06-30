@@ -5,27 +5,49 @@ import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.RskTestUtils;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.ReleaseRequestQueue.Entry;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.federation.*;
+import co.rsk.peg.federation.ErpFederation;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationArgs;
+import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.FederationStorageProvider;
+import co.rsk.peg.federation.FederationSupport;
+import co.rsk.peg.federation.FederationSupportImpl;
+import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
-import co.rsk.peg.feeperkb.*;
+import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
+import co.rsk.test.builders.UTXOBuilder;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.TreeMap;
 import java.util.stream.Stream;
-
-import co.rsk.test.builders.UTXOBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -76,7 +98,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         when(federationStorageProvider.getNewFederationBtcUTXOs(any(), any())).thenReturn(fedUTXOs);
         when(federationStorageProvider.getNewFederation(any(), any())).thenReturn(ERP_FEDERATION);
 
-        pegoutCreationRskTxHash = PegTestUtils.createHash3(1);
+        pegoutCreationRskTxHash = RskTestUtils.createHash(1);
         executionRskTx = mock(Transaction.class);
         when(executionRskTx.getHash()).thenReturn(pegoutCreationRskTxHash);
 
@@ -127,7 +149,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         BtcTransaction pegoutBatchTransaction = pegoutEntry.getBtcTransaction();
         Sha256Hash pegoutTxHash = pegoutBatchTransaction.getHash();
         List<Coin> outpointValues = extractOutpointValues(pegoutBatchTransaction);
-        List<Keccak256> pegoutRequestRskTxHashes = pegoutRequests.stream().map(Entry::getRskTxHash).collect(Collectors.toList());
+        List<Keccak256> pegoutRequestRskTxHashes = pegoutRequests.stream().map(Entry::getRskTxHash).toList();
         Coin totalTransactionAmount = pegoutRequests.stream().map(Entry::getAmount).reduce(Coin.ZERO, Coin::add);
 
         verify(eventLogger, times(1)).logBatchPegoutCreated(pegoutTxHash, pegoutRequestRskTxHashes);
@@ -282,7 +304,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
             .build();
 
         Transaction rskTx = mock(Transaction.class);
-        when(rskTx.getHash()).thenReturn(PegTestUtils.createHash3(1));
+        when(rskTx.getHash()).thenReturn(RskTestUtils.createHash(1));
 
         // Act
         bridgeSupport.updateCollections(rskTx);
@@ -322,7 +344,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         Coin pegoutBatchTotalAmount = pegoutRequests.stream().map(Entry::getAmount).reduce(Coin.ZERO, Coin::add);
         List<Coin> pegoutBatchTxOutpointValues = extractOutpointValues(pegoutBatchTx);
 
-        List<Keccak256> pegoutRequestRskTxHashes = pegoutRequests.stream().map(Entry::getRskTxHash).collect(Collectors.toList());
+        List<Keccak256> pegoutRequestRskTxHashes = pegoutRequests.stream().map(Entry::getRskTxHash).toList();
 
         verify(eventLogger, times(1)).logBatchPegoutCreated(pegoutBatchBtcTxHash, pegoutRequestRskTxHashes);
         verify(eventLogger, times(1)).logReleaseBtcRequested(pegoutBatchCreationRskTxHash.getBytes(), pegoutBatchTx, pegoutBatchTotalAmount);

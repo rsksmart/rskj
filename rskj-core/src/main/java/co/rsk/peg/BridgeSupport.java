@@ -1477,11 +1477,11 @@ public class BridgeSupport {
                 return false;
             }
 
-            BtcTransaction generatedTransaction = result.btcTx();
+            BtcTransaction pegoutTransaction = result.btcTx();
             Keccak256 pegoutCreationTxHash = pegoutRequest.getRskTxHash();
-            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, generatedTransaction, pegoutCreationTxHash, pegoutRequest.getAmount());
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, pegoutTransaction, pegoutCreationTxHash, pegoutRequest.getAmount());
 
-            adjustBalancesIfChangeOutputWasDust(generatedTransaction, pegoutRequest.getAmount(), wallet);
+            adjustBalancesIfChangeOutputWasDust(pegoutTransaction, pegoutRequest.getAmount(), wallet);
 
             return true;
         });
@@ -1503,18 +1503,22 @@ public class BridgeSupport {
         }
 
         List<ReleaseRequestQueue.Entry> pegoutEntries = pegoutRequests.getEntries();
-        Coin totalPegoutValue = pegoutEntries
-            .stream()
-            .map(ReleaseRequestQueue.Entry::getAmount)
-            .reduce(Coin.ZERO, Coin::add);
-
-        if (wallet.getBalance().isLessThan(totalPegoutValue)) {
-            logger.warn("[processPegoutsInBatch] wallet balance {} is less than the totalPegoutValue {}", wallet.getBalance(), totalPegoutValue);
+        Coin totalPegoutRequestsValue = sumPegoutValues(pegoutEntries);
+        if (wallet.getBalance().isLessThan(totalPegoutRequestsValue)) {
+            logger.warn(
+                "[processPegoutsInBatch] Wallet balance {} is less than the total pegout requests value {}",
+                wallet.getBalance(),
+                totalPegoutRequestsValue
+            );
             return;
         }
 
         if (!pegoutEntries.isEmpty()) {
-            logger.info("[processPegoutsInBatch] going to create a batched pegout transaction for {} requests, total amount {}", pegoutEntries.size(), totalPegoutValue);
+            logger.info(
+                "[processPegoutsInBatch] Going to create a batched pegout transaction for {} requests, total amount {}",
+                pegoutEntries.size(),
+                totalPegoutRequestsValue
+            );
             ReleaseTransactionBuilder.BuildResult result = txBuilder.buildBatchedPegouts(pegoutEntries);
 
             while (pegoutEntries.size() > 1 && result.responseCode() == ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE) {
@@ -1528,35 +1532,50 @@ public class BridgeSupport {
                 logger.warn(
                     "Couldn't build a pegout BTC tx for {} pending requests (total amount: {}), Reason: {}",
                     pegoutRequests.getEntries().size(),
-                    totalPegoutValue,
-                    result.responseCode());
+                    totalPegoutRequestsValue,
+                    result.responseCode()
+                );
                 return;
             }
 
-            logger.info(
-                "[processPegoutsInBatch] pegouts processed with btcTx hash {} and response code {}",
-                result.btcTx().getHash(), result.responseCode());
-
             BtcTransaction batchPegoutTransaction = result.btcTx();
-            Keccak256 batchPegoutCreationTxHash = rskTx.getHash();
+            Sha256Hash batchPegoutTxHash = batchPegoutTransaction.getHash();
+            logger.info(
+                "[processPegoutsInBatch] Pegouts processed with btcTx hash {} and response code {}",
+                batchPegoutTxHash,
+                result.responseCode()
+            );
 
-            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, totalPegoutValue);
+            Coin batchedPegoutRequestsValue = sumPegoutValues(pegoutEntries);
+            Coin pegoutValueToUse = activations.isActive(ConsensusRule.RSKIP378) ? batchedPegoutRequestsValue : totalPegoutRequestsValue;
+
+            Keccak256 batchPegoutCreationTxHash = rskTx.getHash();
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, pegoutValueToUse);
 
             // Remove batched requests from the queue after successfully batching pegouts
             pegoutRequests.removeEntries(pegoutEntries);
 
-            eventLogger.logBatchPegoutCreated(batchPegoutTransaction.getHash(),
-                pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).toList());
+            eventLogger.logBatchPegoutCreated(
+                batchPegoutTxHash,
+                pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).toList()
+            );
 
-            adjustBalancesIfChangeOutputWasDust(batchPegoutTransaction, totalPegoutValue, wallet);
+            adjustBalancesIfChangeOutputWasDust(batchPegoutTransaction, pegoutValueToUse, wallet);
         }
 
-        // set the next pegout creation block number when there are no pending pegout requests to be processed or they have been already processed
+        // set the next pegout creation block number when there are no pending pegout requests to be processed,
+        // or they have been already processed
         if (pegoutRequests.getEntries().isEmpty()) {
             long nextPegoutHeight = currentBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts();
             provider.setNextPegoutHeight(nextPegoutHeight);
             logger.info("[processPegoutsInBatch] Next Pegout Height updated from {} to {}", currentBlockNumber, nextPegoutHeight);
         }
+    }
+
+    private static Coin sumPegoutValues(List<ReleaseRequestQueue.Entry> entries) {
+        return entries.stream()
+            .map(ReleaseRequestQueue.Entry::getAmount)
+            .reduce(Coin.ZERO, Coin::add);
     }
 
     /**
@@ -1645,26 +1664,26 @@ public class BridgeSupport {
     }
 
     /**
-     * If federation change output value had to be increased to be non-dust, the federation now has
-     * more BTC than it should. So, we burn some sBTC to make balances match.
+     * If federation change output value had to be increased to be non-dust, it will send less BTC
+     * than the received RBTC. So, we burn some RBTC to make balances match.
      *
-     * @param btcTx      The btc tx that was just completed
-     * @param sentByUser The number of sBTC originaly sent by the user
+     * @param pegoutTx      The pegout tx
+     * @param amountPeggedOut The pegged-out RBTC amount
      */
-    private void adjustBalancesIfChangeOutputWasDust(BtcTransaction btcTx, Coin sentByUser, Wallet wallet) {
-        if (btcTx.getOutputs().size() <= 1) {
+    private void adjustBalancesIfChangeOutputWasDust(BtcTransaction pegoutTx, Coin amountPeggedOut, Wallet wallet) {
+        if (pegoutTx.getOutputs().size() <= 1) {
             // If there is no change, do-nothing
             return;
         }
         Coin sumInputs = Coin.ZERO;
-        for (TransactionInput transactionInput : btcTx.getInputs()) {
+        for (TransactionInput transactionInput : pegoutTx.getInputs()) {
             sumInputs = sumInputs.add(transactionInput.getValue());
         }
 
-        Coin change = btcTx.getValueSentToMe(wallet);
+        Coin change = pegoutTx.getValueSentToMe(wallet);
         Coin spentByFederation = sumInputs.subtract(change);
-        if (spentByFederation.isLessThan(sentByUser)) {
-            Coin coinsToBurn = sentByUser.subtract(spentByFederation);
+        if (spentByFederation.isLessThan(amountPeggedOut)) {
+            Coin coinsToBurn = amountPeggedOut.subtract(spentByFederation);
             this.transferTo(BURN_ADDRESS, co.rsk.core.Coin.fromBitcoin(coinsToBurn));
         }
     }
@@ -2694,7 +2713,7 @@ public class BridgeSupport {
 
         ReleaseTransactionBuilder.BuildResult buildResult = txBuilder.buildBatchedPegouts(releaseRequestListCopy);
 
-        if(buildResult.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
+        if (buildResult.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
             logger.debug(
                 "[getEstimatedFeesFromPegoutTransactionSimulation] Simulated pegout btc transaction failed to be created with response code: {}.",
                 buildResult.responseCode()
