@@ -69,21 +69,10 @@ public final class BridgeSupportTestUtil {
     private BridgeSupportTestUtil() {}
 
     public static void setUpFlyoverUtxoInStorage(UTXO flyoverUtxo, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider, Keccak256 flyoverDerivationHash) {
-        setFlyoverValuesInStorage(flyoverUtxo, flyoverOutputScript, federation, provider, flyoverDerivationHash);
-        provider.save();
+        setUpFlyoverUtxosInStorage(List.of(flyoverUtxo), flyoverOutputScript, federation, provider, flyoverDerivationHash);
     }
 
     public static void setUpFlyoverUtxosInStorage(List<UTXO> flyoverUtxos, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider, Keccak256 flyoverDerivationHash) {
-        for (UTXO flyoverUtxo : flyoverUtxos) {
-            setFlyoverValuesInStorage(flyoverUtxo, flyoverOutputScript, federation, provider, flyoverDerivationHash);
-        }
-        provider.save();
-    }
-
-    private static void setFlyoverValuesInStorage(UTXO flyoverUtxo, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider, Keccak256 flyoverDerivationHash) {
-        Sha256Hash flyoverTransactionHash = flyoverUtxo.getHash();
-        provider.markFlyoverDerivationHashAsUsed(flyoverTransactionHash, flyoverDerivationHash);
-
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
                 flyoverDerivationHash,
@@ -91,6 +80,11 @@ public final class BridgeSupportTestUtil {
                 flyoverOutputScript.getPubKeyHash()
             );
         provider.setFlyoverFederationInformation(flyoverFederationInformation);
+        for (UTXO flyoverUtxo : flyoverUtxos) {
+            Sha256Hash flyoverTransactionHash = flyoverUtxo.getHash();
+            provider.markFlyoverDerivationHashAsUsed(flyoverTransactionHash, flyoverDerivationHash);
+        }
+        provider.save();
     }
 
     public static PartialMerkleTree createValidPmtForTransactions(List<BtcTransaction> btcTransactions, NetworkParameters networkParameters) {
