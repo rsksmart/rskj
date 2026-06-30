@@ -350,6 +350,28 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
+        void updateCollections_pastMigrationAge_preRSKIP455_withManyMinNonDustRetiringUtxo_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
+            // Arrange
+            int numberOfUtxos = 5;
+            List<UTXO> retiringUtxos = UTXOBuilder.builder()
+                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+            long executionBlockNumber = pastMigrationBlockNumber(VETIVER_ACTIVATIONS);
+            setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(executionBlockNumber);
+            setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
+
+            // Act
+            bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+            // Assert
+            assertNoMigrationTxCreated();
+            assertRetiringFederationCleared();
+            assertRetiringUtxosCount(retiringUtxos.size());
+        }
+
+        @Test
         void updateCollections_pastMigrationAge_withHighFees_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
             // Arrange
             setUpHighFeePerKb();
