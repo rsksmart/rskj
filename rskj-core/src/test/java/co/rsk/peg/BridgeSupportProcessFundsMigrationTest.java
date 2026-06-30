@@ -18,7 +18,6 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
-import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.Federation;
