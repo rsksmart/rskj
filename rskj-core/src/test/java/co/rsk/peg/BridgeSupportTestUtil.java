@@ -69,6 +69,18 @@ public final class BridgeSupportTestUtil {
     private BridgeSupportTestUtil() {}
 
     public static void setUpFlyoverUtxoInStorage(UTXO flyoverUtxo, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider, Keccak256 flyoverDerivationHash) {
+        setFlyoverValuesInStorage(flyoverUtxo, flyoverOutputScript, federation, provider, flyoverDerivationHash);
+        provider.save();
+    }
+
+    public static void setUpFlyoverUtxosInStorage(List<UTXO> flyoverUtxos, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider, Keccak256 flyoverDerivationHash) {
+        for (UTXO flyoverUtxo : flyoverUtxos) {
+            setFlyoverValuesInStorage(flyoverUtxo, flyoverOutputScript, federation, provider, flyoverDerivationHash);
+        }
+        provider.save();
+    }
+
+    private static void setFlyoverValuesInStorage(UTXO flyoverUtxo, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider, Keccak256 flyoverDerivationHash) {
         Sha256Hash flyoverTransactionHash = flyoverUtxo.getHash();
         provider.markFlyoverDerivationHashAsUsed(flyoverTransactionHash, flyoverDerivationHash);
 
@@ -79,13 +91,6 @@ public final class BridgeSupportTestUtil {
                 flyoverOutputScript.getPubKeyHash()
             );
         provider.setFlyoverFederationInformation(flyoverFederationInformation);
-        provider.save();
-    }
-
-    public static void setUpFlyoverUtxosInStorage(List<UTXO> flyoverUtxos, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider, Keccak256 flyoverDerivationHash) {
-        for (UTXO flyoverUtxo : flyoverUtxos) {
-            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, provider, flyoverDerivationHash);
-        }
     }
 
     public static PartialMerkleTree createValidPmtForTransactions(List<BtcTransaction> btcTransactions, NetworkParameters networkParameters) {
