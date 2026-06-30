@@ -51,6 +51,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -2203,5 +2204,123 @@ class BridgeUtilsTest {
         );
 
         Assertions.assertTrue(foundUTXOs.isEmpty());
+    }
+
+    @Nested
+    class GetMultipleOutputsToMigrateTest {
+
+        Coin migrationValuePerOutput;
+
+        @BeforeEach
+        void setUp() {
+            migrationValuePerOutput = bridgeConstantsMainnet.getMigrationValueForMultipleOutputsInBtc();
+        }
+
+        @Test
+        void withMigrationValueForMultipleOutputs_shouldReturnTheOutputsCorrectly() {
+            // Act
+            List<Coin> outputs = BridgeUtils.getMultipleOutputsToMigrate(migrationValuePerOutput, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(1, outputs.size());
+            assertEquals(migrationValuePerOutput, outputs.get(0));
+        }
+
+        @Test
+        void withMigrationValueForMultipleOutputsPlusOneSatoshi_shouldReturnTheOutputsCorrectly() {
+            // Arrange
+            Coin value = migrationValuePerOutput.add(Coin.SATOSHI);
+
+            // Act
+            List<Coin> outputs = BridgeUtils.getMultipleOutputsToMigrate(value, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(1, outputs.size());
+            assertEquals(migrationValuePerOutput.add(Coin.SATOSHI), outputs.get(0));
+        }
+
+        @Test
+        void withValueBelowTwoTimesMigrationValueForMultipleOutputs_shouldReturnTheOutputsCorrectly() {
+            // Arrange
+            Coin value = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
+
+            // Act
+            List<Coin> outputs = BridgeUtils.getMultipleOutputsToMigrate(value, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(1, outputs.size());
+            assertEquals(value, outputs.get(0));
+        }
+
+        @Test
+        void withTwoTimesMigrationValueForMultipleOutputs_shouldReturnTheOutputsCorrectly() {
+            // Arrange
+            Coin value = migrationValuePerOutput.multiply(2);
+
+            // Act
+            List<Coin> outputs = BridgeUtils.getMultipleOutputsToMigrate(value, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(2, outputs.size());
+            assertEquals(migrationValuePerOutput, outputs.get(0));
+            assertEquals(migrationValuePerOutput, outputs.get(1));
+        }
+
+        @Test
+        void withTwoTimesMigrationValueForMultipleOutputsPlusOneSatoshi_shouldReturnTheOutputsCorrectly() {
+            // Arrange
+            Coin value = migrationValuePerOutput.multiply(2).add(Coin.SATOSHI);
+
+            // Act
+            List<Coin> outputs = BridgeUtils.getMultipleOutputsToMigrate(value, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(2, outputs.size());
+            assertEquals(migrationValuePerOutput, outputs.get(0));
+            assertEquals(migrationValuePerOutput.add(Coin.SATOSHI), outputs.get(1));
+        }
+
+        @Test
+        void withValueBelowThreeTimesMigrationValueForMultipleOutputs_shouldReturnTheOutputsCorrectly() {
+            // Arrange
+            Coin value = migrationValuePerOutput.multiply(3).subtract(Coin.SATOSHI);
+
+            // Act
+            List<Coin> outputs = BridgeUtils.getMultipleOutputsToMigrate(value, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(2, outputs.size());
+            assertEquals(migrationValuePerOutput, outputs.get(0));
+            Coin expectedLastOutputValue = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
+            assertEquals(expectedLastOutputValue, outputs.get(1));
+        }
+
+        @Test
+        void withThreeTimesMigrationValueForMultipleOutputs_shouldReturnTheOutputsCorrectly() {
+            // Arrange
+            Coin value = migrationValuePerOutput.multiply(3);
+
+            // Act
+            List<Coin> outputs = BridgeUtils.getMultipleOutputsToMigrate(value, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(3, outputs.size());
+            outputs.forEach(output -> assertEquals(migrationValuePerOutput, output));
+        }
+
+        @Test
+        void withThreeMigrationUnitsPlusOneSatoshi_shouldReturnTheOutputsCorrectly() {
+            // Arrange
+            Coin value = migrationValuePerOutput.multiply(3).add(Coin.SATOSHI);
+
+            // Act
+            List<Coin> outputs = BridgeUtils.getMultipleOutputsToMigrate(value, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(3, outputs.size());
+            assertEquals(migrationValuePerOutput, outputs.get(0));
+            assertEquals(migrationValuePerOutput, outputs.get(1));
+            assertEquals(migrationValuePerOutput.add(Coin.SATOSHI), outputs.get(2));
+        }
     }
 }
