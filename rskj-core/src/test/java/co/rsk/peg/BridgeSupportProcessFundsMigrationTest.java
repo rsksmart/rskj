@@ -150,7 +150,28 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_duringMigration_withManyMinNonDustRetiringUtxos_shouldThrowIllegalStateException() throws IOException {
+        void updateCollections_duringMigration_preRSKIP455_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldThrowIllegalStateException() throws IOException {
+            // Arrange
+            int numberOfUtxos = 5;
+            List<UTXO> retiringUtxos = UTXOBuilder.builder()
+                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+            long executionBlockNumber = duringMigrationBlockNumber();
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, VETIVER_ACTIVATIONS);
+            setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
+
+            // Act & Assert
+            assertThrows(IllegalStateException.class,
+                () -> bridgeSupport.updateCollections(updateCollectionsTransaction));
+            assertNoMigrationTxCreated();
+            assertRetiringFederationStillPresent();
+            assertRetiringUtxosCount(retiringUtxos.size());
+        }
+
+        @Test
+        void updateCollections_duringMigration_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
             int numberOfUtxos = 5;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
@@ -162,9 +183,10 @@ class BridgeSupportProcessFundsMigrationTest {
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-            // Act & Assert
-            assertThrows(IllegalStateException.class,
-                () -> bridgeSupport.updateCollections(updateCollectionsTransaction));
+            // Act
+            bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+            // Assert
             assertNoMigrationTxCreated();
             assertRetiringFederationStillPresent();
             assertRetiringUtxosCount(retiringUtxos.size());
@@ -1052,7 +1074,28 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_duringMigration_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldThrowIllegalStateException() throws IOException {
+        void updateCollections_duringMigration_preRSKIP455_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldThrowIllegalStateException() throws IOException {
+            // Arrange
+            int numberOfUtxos = 5;
+            List<UTXO> retiringUtxos = UTXOBuilder.builder()
+                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+            long executionBlockNumber = duringMigrationBlockNumber();
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, VETIVER_ACTIVATIONS);
+            setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
+
+            // Act & Assert
+            assertThrows(IllegalStateException.class,
+                () -> bridgeSupport.updateCollections(updateCollectionsTransaction));
+            assertNoMigrationTxCreated();
+            assertRetiringFederationStillPresent();
+            assertRetiringUtxosCount(retiringUtxos.size());
+        }
+
+        @Test
+        void updateCollections_duringMigration_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
             int numberOfUtxos = 5;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
@@ -1064,9 +1107,10 @@ class BridgeSupportProcessFundsMigrationTest {
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-            // Act & Assert
-            assertThrows(IllegalStateException.class,
-                () -> bridgeSupport.updateCollections(updateCollectionsTransaction));
+            // Act
+            bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+            // Assert
             assertNoMigrationTxCreated();
             assertRetiringFederationStillPresent();
             assertRetiringUtxosCount(retiringUtxos.size());
@@ -1454,7 +1498,28 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_duringMigration_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldThrowIllegalStateException() throws IOException {
+        void updateCollections_duringMigration_preRSKIP455_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldThrowIllegalStateException() throws IOException {
+            // Arrange
+            int numberOfUtxos = 5;
+            List<UTXO> retiringUtxos = UTXOBuilder.builder()
+                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
+                .withScriptPubKey(retiringFederation.getP2SHScript())
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+            long executionBlockNumber = duringMigrationBlockNumber();
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, VETIVER_ACTIVATIONS);
+            setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
+
+            // Act & Assert
+            assertThrows(IllegalStateException.class,
+                () -> bridgeSupport.updateCollections(updateCollectionsTransaction));
+            assertNoMigrationTxCreated();
+            assertRetiringFederationStillPresent();
+            assertRetiringUtxosCount(retiringUtxos.size());
+        }
+
+        @Test
+        void updateCollections_duringMigration_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
             int numberOfUtxos = 5;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
@@ -1466,9 +1531,10 @@ class BridgeSupportProcessFundsMigrationTest {
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-            // Act & Assert
-            assertThrows(IllegalStateException.class,
-                () -> bridgeSupport.updateCollections(updateCollectionsTransaction));
+            // Act
+            bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+            // Assert
             assertNoMigrationTxCreated();
             assertRetiringFederationStillPresent();
             assertRetiringUtxosCount(retiringUtxos.size());

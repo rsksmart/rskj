@@ -1313,6 +1313,14 @@ public class BridgeSupport {
             createMigrationTransaction(retiringFederationWallet, activeFederationAddress) :
             createMigrationTransactionLegacy(retiringFederationWallet, activeFederationAddress);
 
+        if (migrationTransactionResult.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
+            logger.warn(
+                "[migrateFunds] Unable to create migration transaction. Response code: {}",
+                migrationTransactionResult.responseCode()
+            );
+            return;
+        }
+
         BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
         List<UTXO> selectedUTXOs = migrationTransactionResult.selectedUTXOs();
 
@@ -3118,14 +3126,8 @@ public class BridgeSupport {
             getFeePerKb(),
             activations
         );
-
         List<Coin> outputs = getMigrationOutputs(expectedMigrationValue);
-
-        ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(outputs, destinationAddress);
-        if (result.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
-            throw new IllegalStateException("[createMigrationTransaction] Retiring federation wallet cannot be emptied. Response: " + result.responseCode());
-        }
-        return result;
+        return txBuilder.buildMigrationTransaction(outputs, destinationAddress);
     }
 
     private List<Coin> getMigrationOutputs(Coin expectedMigrationValue) {
