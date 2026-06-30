@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.BridgeSupport.MAX_OUTPUTS_NUMBER;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
 import static co.rsk.peg.ReleaseTransactionAssertions.*;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
@@ -2649,9 +2650,13 @@ class ReleaseTransactionBuilderTest {
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
 
                 Coin totalValue = utxoValue.multiply(numberOfUtxos);
-                Coin[] parts = totalValue.divideAndRemainder(50);
-                List<Coin> migrationValues = new ArrayList<>(Collections.nCopies(49, parts[0]));
-                migrationValues.add(parts[0].add(parts[1]));
+                Coin[] parts = totalValue.divideAndRemainder(MAX_OUTPUTS_NUMBER);
+                List<Coin> migrationValues = new ArrayList<>(MAX_OUTPUTS_NUMBER);
+                for (int i = 0; i < MAX_OUTPUTS_NUMBER - 1; i++) {
+                    migrationValues.add(parts[0]);
+                }
+                Coin lastOutputValue = parts[0].add(parts[1]);
+                migrationValues.add(lastOutputValue);
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
