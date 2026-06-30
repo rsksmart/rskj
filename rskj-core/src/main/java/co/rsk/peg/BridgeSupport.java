@@ -3129,13 +3129,13 @@ public class BridgeSupport {
         return result;
     }
 
-    private static List<Coin> getMigrationOutputs(Coin expectedMigrationValue) {
+    private List<Coin> getMigrationOutputs(Coin expectedMigrationValue) {
         return expectedMigrationValue.isLessThan(MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE) ?
             List.of(expectedMigrationValue) :
             getMultipleOutputs(expectedMigrationValue);
     }
 
-    private static List<Coin> getMultipleOutputs(Coin expectedMigrationValue) {
+    private List<Coin> getMultipleOutputs(Coin expectedMigrationValue) {
         List<Coin> outputs = new ArrayList<>();
         Coin remaining = expectedMigrationValue;
         while (!remaining.isLessThan(MIGRATION_OUTPUT_BTC_VALUE)) {
