@@ -1,6 +1,5 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeSupport.MIGRATION_OUTPUT_BTC_VALUE;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat;
@@ -19,6 +18,7 @@ import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.core.TransactionWitness;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.peg.constants.BridgeConstants;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -53,19 +53,26 @@ public class ReleaseTransactionAssertions {
         Coin migratedAmount,
         Address destination,
         NetworkParameters networkParameters,
-        int expectedNumberOfOutputs
+        int expectedNumberOfOutputs,
+        BridgeConstants bridgeConstants
     ) {
         List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
         assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
         assertDestinationAddress(migrationTransactionOutputs, destination, networkParameters);
         assertOutputsWithNoChange(migrationTransaction, migratedAmount);
-        assertEachOutputValueForMultipleOutputs(migrationTransaction, migratedAmount, expectedNumberOfOutputs);
+        assertEachOutputValueForMultipleOutputs(
+            migrationTransaction,
+            migratedAmount,
+            expectedNumberOfOutputs,
+            bridgeConstants
+        );
     }
 
     private static void assertEachOutputValueForMultipleOutputs(
         BtcTransaction migrationTransaction,
         Coin migratedAmount,
-        int expectedNumberOfOutputs
+        int expectedNumberOfOutputs,
+        BridgeConstants bridgeConstants
     ) {
         List<TransactionOutput> outputs = migrationTransaction.getOutputs();
         Coin fees = migrationTransaction.getFee();
@@ -73,14 +80,15 @@ public class ReleaseTransactionAssertions {
         Coin feePerOutput = feeDistribution[0];
         Coin feeRemainder = feeDistribution[1];
 
+        Coin migrationOutputValue = bridgeConstants.getMigrationValueForMultipleOutputsInBtc();
         Coin firstOutputFee = feePerOutput.add(feeRemainder);
-        assertEquals(MIGRATION_OUTPUT_BTC_VALUE, outputs.get(0).getValue().add(firstOutputFee));
+        assertEquals(migrationOutputValue, outputs.get(0).getValue().add(firstOutputFee));
 
         for (int i = 1; i < expectedNumberOfOutputs - 1; i++) {
-            assertEquals(MIGRATION_OUTPUT_BTC_VALUE, outputs.get(i).getValue().add(feePerOutput));
+            assertEquals(migrationOutputValue, outputs.get(i).getValue().add(feePerOutput));
         }
 
-        Coin accumulatedValue = MIGRATION_OUTPUT_BTC_VALUE.multiply(expectedNumberOfOutputs - 1);
+        Coin accumulatedValue = migrationOutputValue.multiply(expectedNumberOfOutputs - 1);
         Coin expectedValueInLastOutput = migratedAmount.subtract(accumulatedValue);
         Coin lastOutput = outputs.get(expectedNumberOfOutputs - 1).getValue();
         assertEquals(expectedValueInLastOutput, lastOutput.add(feePerOutput));
