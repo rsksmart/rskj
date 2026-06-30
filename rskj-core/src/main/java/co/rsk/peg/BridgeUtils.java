@@ -17,7 +17,7 @@
  */
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeSupport.MAX_OUTPUTS_NUMBER;
+import static co.rsk.peg.BridgeSupport.MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX;
 import static co.rsk.peg.bitcoin.BitcoinUtils.inputHasWitness;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
@@ -192,11 +192,11 @@ public final class BridgeUtils {
     }
 
     private static List<Coin> getEvenlyDistributedOutputs(Coin totalValue) {
-        Coin[] outputDistribution = totalValue.divideAndRemainder(MAX_OUTPUTS_NUMBER);
+        Coin[] outputDistribution = totalValue.divideAndRemainder(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX);
         Coin valuePerOutput = outputDistribution[0];
         Coin remainder = outputDistribution[1];
-        List<Coin> outputs = new ArrayList<>(MAX_OUTPUTS_NUMBER);
-        for (int i = 0; i < MAX_OUTPUTS_NUMBER - 1; i++) {
+        List<Coin> outputs = new ArrayList<>(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX);
+        for (int i = 0; i < MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX - 1; i++) {
             outputs.add(valuePerOutput);
         }
         outputs.add(valuePerOutput.add(remainder));

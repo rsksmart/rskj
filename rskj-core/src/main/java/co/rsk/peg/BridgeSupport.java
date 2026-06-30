@@ -101,7 +101,7 @@ public class BridgeSupport {
     public static final Integer RECEIVE_HEADER_BLOCK_PREVIOUSLY_SAVED = -4;
     public static final Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
 
-    public static final int MAX_OUTPUTS_NUMBER = 50;
+    public static final int MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX = 50;
 
     // Enough depth to be able to search backwards one month worth of blocks
     // (6 blocks/hour, 24 hours/day, 30 days/month)
