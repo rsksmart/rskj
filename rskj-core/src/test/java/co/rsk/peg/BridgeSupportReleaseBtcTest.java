@@ -828,19 +828,21 @@ class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    void processPegoutsInBatch_after_hop_divide_transaction_when_max_size_exceeded() throws IOException {
+    void processPegoutsInBatch_whenMaxTxSizeExceeded_lovellActivations_dividesRequestsTwice() throws IOException {
+        ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
+
         int numberOfUtxos = 310;
         List<UTXO> utxos = UTXOBuilder.builder()
             .withScriptPubKey(activeFederation.getP2SHScript())
             .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
         federationStorageProvider = mock(FederationStorageProvider.class);
-        when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, ACTIVATIONS_ALL)).thenReturn(utxos);
-        when(federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, ACTIVATIONS_ALL)).thenReturn(activeFederation);
+        when(federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, lovellActivations)).thenReturn(utxos);
+        when(federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, lovellActivations)).thenReturn(activeFederation);
         FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(FEDERATION_CONSTANTS)
             .withFederationStorageProvider(federationStorageProvider)
-            .withActivations(ACTIVATIONS_ALL)
+            .withActivations(lovellActivations)
             .build();
 
         provider = mock(BridgeStorageProvider.class);
@@ -848,7 +850,7 @@ class BridgeSupportReleaseBtcTest {
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         bridgeSupport = bridgeSupportBuilder
-            .withActivations(ACTIVATIONS_ALL)
+            .withActivations(lovellActivations)
             .withBridgeConstants(BRIDGE_CONSTANTS)
             .withProvider(provider)
             .withFederationSupport(federationSupport)
@@ -859,14 +861,14 @@ class BridgeSupportReleaseBtcTest {
 
         // First Half of the PegoutRequests 300 / 2 = 150 Is Batched For The First Time
         assertEquals(150, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(lovellActivations).size());
 
         rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
         // The Rest PegoutRequests 300 / 2 = 150 Is Batched The 2nd Time updateCollections Is Called
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries(lovellActivations).size());
     }
 
     @Test
