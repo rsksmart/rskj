@@ -100,6 +100,14 @@ class BridgeConstantsTest {
         assertEquals(expectedProposedFederationFlyoverPrefix, bridgeConstants.getProposedFederationFlyoverPrefix());
     }
 
+    @ParameterizedTest()
+    @MethodSource("bridgeConstantsArgProvider")
+    void getMigrationOutputValueInBtc(BridgeConstants bridgeConstants) {
+        Coin expectedMigrationOutputValueInBtc = Coin.COIN.multiply(20);
+
+        assertEquals(expectedMigrationOutputValueInBtc, bridgeConstants.getMigrationValueForMultipleOutputsInBtc());
+    }
+
     private static Stream<Arguments> getBtcHeightWhenPegoutTxIndexActivatesArgProvider() {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), 837589),

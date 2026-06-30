@@ -19,6 +19,8 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeUtils.simulatePegoutTxSize;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
+import static co.rsk.peg.BridgeUtils.getMultipleOutputsToMigrate;
+import static co.rsk.peg.BridgeUtils.getMultipleOutputsThresholdBtcValue;
 import static co.rsk.peg.PegUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
@@ -98,9 +100,6 @@ public class BridgeSupport {
     public static final Integer RECEIVE_HEADER_CANT_FOUND_PREVIOUS_BLOCK = -3;
     public static final Integer RECEIVE_HEADER_BLOCK_PREVIOUSLY_SAVED = -4;
     public static final Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
-
-    public static final Coin MIGRATION_OUTPUT_BTC_VALUE = Coin.COIN.multiply(20);
-    public static final Coin MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE = MIGRATION_OUTPUT_BTC_VALUE.multiply(2);
 
     // Enough depth to be able to search backwards one month worth of blocks
     // (6 blocks/hour, 24 hours/day, 30 days/month)
@@ -3148,24 +3147,10 @@ public class BridgeSupport {
     }
 
     private List<Coin> getMigrationOutputs(Coin expectedMigrationValue) {
-        return expectedMigrationValue.isLessThan(MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE) ?
+        Coin multipleOutputsThresholdBtcValue = getMultipleOutputsThresholdBtcValue(bridgeConstants);
+        return expectedMigrationValue.isLessThan(multipleOutputsThresholdBtcValue) ?
             List.of(expectedMigrationValue) :
-            getMultipleOutputs(expectedMigrationValue);
-    }
-
-    private List<Coin> getMultipleOutputs(Coin expectedMigrationValue) {
-        List<Coin> outputs = new ArrayList<>();
-        Coin remaining = expectedMigrationValue;
-        while (!remaining.isLessThan(MIGRATION_OUTPUT_BTC_VALUE)) {
-            outputs.add(MIGRATION_OUTPUT_BTC_VALUE);
-            remaining = remaining.subtract(MIGRATION_OUTPUT_BTC_VALUE);
-        }
-        if (remaining.isPositive()) {
-            int lastOutputIndex = outputs.size() - 1;
-            Coin lastOutput = outputs.get(lastOutputIndex);
-            outputs.set(lastOutputIndex, lastOutput.add(remaining));
-        }
-        return outputs;
+            getMultipleOutputsToMigrate(expectedMigrationValue, bridgeConstants);
     }
 
     // Make sure the local bitcoin blockchain is instantiated
