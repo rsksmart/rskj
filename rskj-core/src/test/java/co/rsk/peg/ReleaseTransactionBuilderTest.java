@@ -1098,7 +1098,7 @@ class ReleaseTransactionBuilderTest {
             List<TransactionOutput> pegoutTransactionOutputs = pegoutTransaction.getOutputs();
             assertDestinationAddress(pegoutTransactionOutputs, RECIPIENT_ADDRESS, BTC_MAINNET_PARAMS);
 
-            ReleaseTransactionAssertions.assertOutputValue(pegoutTransaction, requestedAmount);
+            ReleaseTransactionAssertions.assertOutputsWithNoChange(pegoutTransaction, requestedAmount);
         }
 
         private List<TransactionOutput> getUserOutputs(BtcTransaction pegoutTransaction) {
@@ -1723,7 +1723,7 @@ class ReleaseTransactionBuilderTest {
             int expectedNumberOfChangeOutputs = 0;
             assertEquals(expectedNumberOfChangeOutputs, changeOutputs.size());
 
-            assertOutputValue(refundTransaction, refundTransaction.getInputSum());
+            assertOutputsWithNoChange(refundTransaction, refundTransaction.getInputSum());
         }
 
         private boolean isFederationOutput(TransactionOutput output) {
@@ -3950,7 +3950,7 @@ class ReleaseTransactionBuilderTest {
 
             assertPegoutRequestsAreIncludedInBatchedPegoutsTx(batchedPegoutsTransaction, pegoutRequests);
             Coin totalPegoutRequestsAmount = getTotalPegoutRequestsAmount(pegoutRequests);
-            ReleaseTransactionAssertions.assertOutputValue(batchedPegoutsTransaction, totalPegoutRequestsAmount);
+            ReleaseTransactionAssertions.assertOutputsWithNoChange(batchedPegoutsTransaction, totalPegoutRequestsAmount);
         }
     }
 
