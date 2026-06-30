@@ -27,7 +27,7 @@ public class ReleaseTransactionAssertions {
     private ReleaseTransactionAssertions() {
     }
 
-    public static void assertOutputValue(BtcTransaction btcTransaction, Coin expectedSentAmount) {
+    public static void assertOutputsWithNoChange(BtcTransaction btcTransaction, Coin expectedSentAmount) {
         Coin outputsAmount = btcTransaction.getOutputSum();
         Coin fees = btcTransaction.getFee();
         Coin totalAmountSent = fees.add(outputsAmount);
@@ -45,7 +45,7 @@ public class ReleaseTransactionAssertions {
         List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
         assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
         assertDestinationAddress(migrationTransactionOutputs, destination, networkParameters);
-        assertOutputValue(migrationTransaction, migratedAmount);
+        assertOutputsWithNoChange(migrationTransaction, migratedAmount);
     }
 
     public static void assertMultipleMigrationTxOutputs(
@@ -58,7 +58,7 @@ public class ReleaseTransactionAssertions {
         List<TransactionOutput> migrationTransactionOutputs = migrationTransaction.getOutputs();
         assertEquals(expectedNumberOfOutputs, migrationTransactionOutputs.size());
         assertDestinationAddress(migrationTransactionOutputs, destination, networkParameters);
-        assertOutputValue(migrationTransaction, migratedAmount);
+        assertOutputsWithNoChange(migrationTransaction, migratedAmount);
         assertEachOutputValueForMultipleOutputs(migrationTransaction, migratedAmount, expectedNumberOfOutputs);
     }
 
