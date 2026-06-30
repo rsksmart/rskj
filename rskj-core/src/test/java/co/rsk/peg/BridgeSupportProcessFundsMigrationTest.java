@@ -4,6 +4,7 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.BridgeSupport.MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
+import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxosInStorage;
 import static co.rsk.peg.ReleaseTransactionAssertions.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
@@ -1057,6 +1058,42 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 long executionBlockNumber = duringMigrationBlockNumber();
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
+                setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
+
+                // Act
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+                // Assert
+                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+                assertLastMigrationTxAddedWithEvenlyDistributedOutputsWasBuiltAsExpected(
+                    retiringFederation,
+                    retiringUtxos,
+                    retiringUtxos.size()
+                );
+                assertRetiringFederationStillPresent();
+                assertNoRemainingRetiringUtxos();
+
+                BtcTransaction migrationTransaction = getLastMigrationTxAdded(ALL_ACTIVATIONS);
+                int migrationTransactionSize = BridgeUtils.calculatePegoutTxSize(
+                    ALL_ACTIVATIONS,
+                    retiringFederation,
+                    migrationTransaction.getInputs().size(),
+                    migrationTransaction.getOutputs().size()
+                );
+                assertTrue(migrationTransactionSize <= BtcTransaction.MAX_STANDARD_TX_SIZE);
+            }
+
+            @Test
+            void updateCollections_duringMigration_withMaxInputsPerPegoutTxUtxos_allFlyover_shouldCreateMigrationTxWithMaxOutputs() throws IOException {
+                // Arrange
+                List<UTXO> retiringUtxos = UTXOBuilder.builder()
+                    .withValue(ABOVE_LARGE_MTMU_UTXO_VALUE)
+                    .withScriptPubKey(flyoverOutputScript)
+                    .buildMany(MAX_INPUTS_PER_PEGOUT_TX, i -> createHash(i + 1));
+
+                long executionBlockNumber = duringMigrationBlockNumber();
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
+                setUpFlyoverUtxosInStorage(retiringUtxos, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
                 // Act

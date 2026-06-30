@@ -21,6 +21,7 @@ package co.rsk.peg;
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.BridgeSupport.MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
+import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxosInStorage;
 import static co.rsk.peg.ReleaseTransactionAssertions.*;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
@@ -119,12 +120,6 @@ class ReleaseTransactionBuilderTest {
     private static Address recipientAddressFromPrivateKeyOffset(int keyOffset) {
         BigInteger seed = BigInteger.valueOf(keyOffset);
         return BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
-    }
-
-    private static void setUpFlyoverUtxosInStorage(List<UTXO> flyoverUtxos, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider) {
-        for (UTXO flyoverUtxo : flyoverUtxos) {
-            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, provider, FLYOVER_DERIVATION_HASH);
-        }
     }
 
     /**
@@ -1242,7 +1237,7 @@ class ReleaseTransactionBuilderTest {
                     .withScriptPubKey(flyoverOutputScript)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
-                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider);
+                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
 
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(flyoverUtxos);
 
@@ -1409,7 +1404,7 @@ class ReleaseTransactionBuilderTest {
                     .withValue(Coin.COIN)
                     .withScriptPubKey(flyoverOutputScript)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
-                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider);
+                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
 
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(flyoverUtxos);
 
@@ -1576,7 +1571,7 @@ class ReleaseTransactionBuilderTest {
                     .withValue(Coin.COIN)
                     .withScriptPubKey(flyoverOutputScript)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
-                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider);
+                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
 
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(flyoverUtxos);
 

@@ -82,6 +82,12 @@ public final class BridgeSupportTestUtil {
         provider.save();
     }
 
+    public static void setUpFlyoverUtxosInStorage(List<UTXO> flyoverUtxos, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider, Keccak256 flyoverDerivationHash) {
+        for (UTXO flyoverUtxo : flyoverUtxos) {
+            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, provider, flyoverDerivationHash);
+        }
+    }
+
     public static PartialMerkleTree createValidPmtForTransactions(List<BtcTransaction> btcTransactions, NetworkParameters networkParameters) {
         List<Sha256Hash> hashesToAdd = new ArrayList<>();
         for (BtcTransaction transaction : btcTransactions) {
