@@ -64,6 +64,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
         legacyMinimumPegoutTxValue = Coin.valueOf(500_000);
         minimumPegoutTxValue = Coin.valueOf(250_000);
 
+        migrationValueForMultipleOutputsInBtc = Coin.COIN.multiply(20);
+
         minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
 
         maxDepthBlockchainAccepted = 25;
