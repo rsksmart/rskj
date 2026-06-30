@@ -95,18 +95,6 @@ public class CallArgumentsToByteArray {
         return new RskAddress(HexUtils.strHexOrStrNumberToByteArray(args.getFrom()));
     }
 
-    public byte[] gasLimitForGasEstimation(long gasCap) {
-        long gasLimit = ByteUtil.byteArrayToLong(this.getGasLimit());
-
-        if(gasLimit > gasCap) {
-            LOGGER.warn("provided gasLimit ({}) exceeds the estimation cap," +
-                    " using the estimation cap ({})", gasLimit, gasCap);
-            return ByteUtil.longToBytes(gasCap);
-        }
-
-        return this.getGasLimit();
-    }
-
     public byte[] gasLimitForCall(long gasCap) {
         byte[] gasLimitBytes = this.getGasLimit();
         long gasLimit = ByteUtil.byteArrayToLong(gasLimitBytes);
