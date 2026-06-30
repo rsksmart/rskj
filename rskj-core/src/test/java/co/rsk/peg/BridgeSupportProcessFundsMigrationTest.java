@@ -1,7 +1,6 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.BridgeSupport.MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
 import static co.rsk.peg.ReleaseTransactionAssertions.*;
@@ -19,6 +18,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
+import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.Federation;
@@ -62,6 +62,7 @@ class BridgeSupportProcessFundsMigrationTest {
     private static final int ABOVE_MAX_INPUTS_PER_PEGOUT_TX = MAX_INPUTS_PER_PEGOUT_TX + 1;
     private static final int MAX_INPUTS_PER_PEGOUT_TX_LEGACY = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction(VETIVER_ACTIVATIONS);
     private static final int ABOVE_MAX_INPUTS_PER_PEGOUT_TX_LEGACY = MAX_INPUTS_PER_PEGOUT_TX_LEGACY + 1;
+    private static final Coin MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE = BridgeUtils.getMultipleOutputsThresholdBtcValue(BRIDGE_CONSTANTS);
     private static final int ONE_MIGRATION_TX_COUNT = 1;
     private static final int TWO_MIGRATION_TXS_COUNT = 2;
     private static final Coin FEE_PER_KB = Coin.valueOf(8_000L);
@@ -1894,7 +1895,8 @@ class BridgeSupportProcessFundsMigrationTest {
             migratedAmount,
             federationSupport.getActiveFederationAddress(),
             NETWORK_PARAMETERS,
-            expectedOutputCount
+            expectedOutputCount,
+            BRIDGE_CONSTANTS
         );
     }
 

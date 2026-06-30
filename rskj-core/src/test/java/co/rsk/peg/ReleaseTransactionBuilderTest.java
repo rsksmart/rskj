@@ -19,7 +19,6 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.BridgeSupport.MIGRATION_OUTPUT_BTC_VALUE;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
 import static co.rsk.peg.ReleaseTransactionAssertions.*;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
@@ -2599,13 +2598,14 @@ class ReleaseTransactionBuilderTest {
             @Test
             void buildMigrationTransaction_whenUTXOsAboveMTMU_shouldCreateMigrationTxWithMultipleOutputs() {
                 // Arrange
+                Coin migrationOutputBtcValue = BRIDGE_MAINNET_CONSTANTS.getMigrationValueForMultipleOutputsInBtc();
                 int numberOfUtxos = 3;
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
-                    .withValue(MIGRATION_OUTPUT_BTC_VALUE)
+                    .withValue(migrationOutputBtcValue)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
-                List<Coin> migrationValues = List.of(MIGRATION_OUTPUT_BTC_VALUE, MIGRATION_OUTPUT_BTC_VALUE, MIGRATION_OUTPUT_BTC_VALUE);
+                List<Coin> migrationValues = List.of(migrationOutputBtcValue, migrationOutputBtcValue, migrationOutputBtcValue);
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
@@ -2624,7 +2624,14 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
                 Coin migratedValue = migrationValues.stream().reduce(Coin.ZERO, Coin::add);
-                assertMultipleMigrationTxOutputs(migrationTransaction, migratedValue, newFederationAddress, BTC_MAINNET_PARAMS, numberOfUtxos);
+                assertMultipleMigrationTxOutputs(
+                    migrationTransaction,
+                    migratedValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS,
+                    numberOfUtxos,
+                    BRIDGE_MAINNET_CONSTANTS
+                );
             }
 
             /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; the minimum UTXO the Federation
