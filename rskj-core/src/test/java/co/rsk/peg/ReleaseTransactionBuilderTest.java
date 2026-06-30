@@ -1986,9 +1986,9 @@ class ReleaseTransactionBuilderTest {
             /**
              * Tests an unrealistic scenario post RSKIP455 where the federation's balance differs from the value being migrated.
              * Although unrealistic post RSKIP455, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)}
-             * receives the UTXOs to migrate as a parameter and permits their total value to differ from the federation's balance.
+             * receives the migration outputs as a parameter and permits their total value to differ from the federation's balance.
              * Before RSKIP455, this was realistic — the method could receive a value to migrate different from the federation's total UTXO value.
-             * After RSKIP455, the method always receives all UTXOs available for migration.
+             * After RSKIP455, the method always receives migration output values computed from the full balance available for migration.
              */
             @Test
             void buildMigrationTransaction_whenFederationBalanceDiffersWithValueMigrated_shouldCreateMigrationTxWithTwoOutputs() {
@@ -2354,9 +2354,9 @@ class ReleaseTransactionBuilderTest {
             /**
              * Tests an unrealistic scenario post RSKIP455 where the federation's balance differs from the value being migrated.
              * Although unrealistic post RSKIP455, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)}
-             * receives the UTXOs to migrate as a parameter and permits their total value to differ from the federation's balance.
+             * receives the migration outputs as a parameter and permits their total value to differ from the federation's balance.
              * Before RSKIP455, this was realistic — the method could receive a value to migrate different from the federation's total UTXO value.
-             * After RSKIP455, the method always receives all UTXOs available for migration.
+             * After RSKIP455, the method always receives migration output values computed from the full balance available for migration.
              */
             @Test
             void buildMigrationTransaction_whenFederationBalanceDiffersWithValueMigrated_shouldCreateMigrationTxWithTwoOutputs() {
@@ -2727,9 +2727,9 @@ class ReleaseTransactionBuilderTest {
             /**
              * Tests an unrealistic scenario post RSKIP455 where the federation's balance differs from the value being migrated.
              * Although unrealistic post RSKIP455, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)}
-             * receives the UTXOs to migrate as a parameter and permits their total value to differ from the federation's balance.
+             * receives the migration outputs as a parameter and permits their total value to differ from the federation's balance.
              * Before RSKIP455, this was realistic — the method could receive a value to migrate different from the federation's total UTXO value.
-             * After RSKIP455, the method always receives all UTXOs available for migration.
+             * After RSKIP455, the method always receives migration output values computed from the full balance available for migration.
              */
             @Test
             void buildMigrationTransaction_whenFederationBalanceDiffersWithValueMigrated_shouldCreateMigrationTxWithTwoOutputs() {
