@@ -82,6 +82,7 @@ public abstract class SystemProperties {
     public static final String PROPERTY_BASE_PATH = "database.dir";
     public static final String PROPERTY_DB_RESET = "database.reset";
     public static final String PROPERTY_DB_IMPORT = "database.import.enabled";
+    public static final String PROPERTY_DB_ROCKSDB_COMPRESSION_TYPE = "database.rocksdb.compressionType";
     // TODO review rpc properties
     public static final String PROPERTY_RPC_CORS = "rpc.providers.web.cors";
     public static final String PROPERTY_RPC_HTTP_SERVER_MAX_AGGREGATED_FRAME_SIZE = "rpc.providers.web.http.max_aggregated_frame_size";
@@ -360,6 +361,10 @@ public abstract class SystemProperties {
         return databaseDir == null ? configFromFiles.getString(PROPERTY_BASE_PATH) : databaseDir;
     }
 
+
+    public String databaseRocksDbCompressionType() {
+        return getString(PROPERTY_DB_ROCKSDB_COMPRESSION_TYPE, "no_compression");
+    }
     public Path getLastKnewPeersFilePath() {
         return Paths.get(databaseDir(), LAST_KNEW_PEERS_FILE);
     }
