@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.BridgeSupport.MAX_OUTPUTS_NUMBER;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
 import static co.rsk.peg.ReleaseTransactionAssertions.*;
@@ -972,13 +973,12 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
                 // Assert
-                int expectedOutputCount = 49;
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithFixedValueOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    expectedOutputCount
+                    MAX_OUTPUTS_NUMBER - 1
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
