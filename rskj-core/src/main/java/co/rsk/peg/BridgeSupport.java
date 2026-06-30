@@ -1156,7 +1156,7 @@ public class BridgeSupport {
         ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
             btcContext.getParams(),
             activeFederationWallet,
-            activeFederation.getFormatVersion(),
+            activeFederation,
             activeFederation.getAddress(),
             getFeePerKb(),
             activations
@@ -1359,11 +1359,10 @@ public class BridgeSupport {
         }
 
         // Pegouts are attempted using the currently active federation.
-        int activeFederationFormatVersion = getActiveFederation().getFormatVersion();
         final ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
                 btcContext.getParams(),
                 activeFederationWallet,
-                activeFederationFormatVersion,
+                getActiveFederation(),
                 getActiveFederationAddress(),
                 getFeePerKb(),
                 activations
@@ -2687,7 +2686,7 @@ public class BridgeSupport {
         ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
             btcContext.getParams(),
             activeFederationWallet,
-            activeFederation.getFormatVersion(),
+            activeFederation,
             activeFederation.getAddress(),
             getFeePerKb(),
             activations
@@ -3073,7 +3072,7 @@ public class BridgeSupport {
             ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
                 networkParameters,
                 retiringFederationWallet,
-                retiringFederation.getFormatVersion(),
+                retiringFederation,
                 destinationAddress,
                 getFeePerKb(),
                 activations
@@ -3239,7 +3238,7 @@ public class BridgeSupport {
         ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
             btcContext.getParams(),
             wallet,
-            federation.getFormatVersion(),
+            federation,
             btcRefundAddress,
             getFeePerKb(),
             activations
