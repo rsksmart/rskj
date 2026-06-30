@@ -1984,10 +1984,11 @@ class ReleaseTransactionBuilderTest {
             }
 
             /**
-             * Tests an unrealistic scenario where the federation's balance differs from the value being migrated. Although
-             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)} receives the
-             * values to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
-             * no partial migration. Instead, all the UTXOs available for migration are migrated.
+             * Tests an unrealistic scenario post RSKIP455 where the federation's balance differs from the value being migrated.
+             * Although unrealistic post RSKIP455, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)}
+             * receives the UTXOs to migrate as a parameter and permits their total value to differ from the federation's balance.
+             * Before RSKIP455, this was realistic — the method could receive a value to migrate different from the federation's total UTXO value.
+             * After RSKIP455, the method always receives all UTXOs available for migration.
              */
             @Test
             void buildMigrationTransaction_whenFederationBalanceDiffersWithValueMigrated_shouldCreateMigrationTxWithTwoOutputs() {
@@ -2351,10 +2352,11 @@ class ReleaseTransactionBuilderTest {
             }
 
             /**
-             * Tests an unrealistic scenario where the federation's balance differs from the value being migrated. Although
-             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)} receives the
-             * values to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
-             * no partial migration. Instead, all the UTXOs available for migration are migrated.
+             * Tests an unrealistic scenario post RSKIP455 where the federation's balance differs from the value being migrated.
+             * Although unrealistic post RSKIP455, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)}
+             * receives the UTXOs to migrate as a parameter and permits their total value to differ from the federation's balance.
+             * Before RSKIP455, this was realistic — the method could receive a value to migrate different from the federation's total UTXO value.
+             * After RSKIP455, the method always receives all UTXOs available for migration.
              */
             @Test
             void buildMigrationTransaction_whenFederationBalanceDiffersWithValueMigrated_shouldCreateMigrationTxWithTwoOutputs() {
@@ -2723,10 +2725,11 @@ class ReleaseTransactionBuilderTest {
             }
 
             /**
-             * Tests an unrealistic scenario where the federation's balance differs from the value being migrated. Although
-             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)} receives the
-             * values to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
-             * no partial migration. Instead, all the UTXOs available for migration are migrated.
+             * Tests an unrealistic scenario post RSKIP455 where the federation's balance differs from the value being migrated.
+             * Although unrealistic post RSKIP455, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)}
+             * receives the UTXOs to migrate as a parameter and permits their total value to differ from the federation's balance.
+             * Before RSKIP455, this was realistic — the method could receive a value to migrate different from the federation's total UTXO value.
+             * After RSKIP455, the method always receives all UTXOs available for migration.
              */
             @Test
             void buildMigrationTransaction_whenFederationBalanceDiffersWithValueMigrated_shouldCreateMigrationTxWithTwoOutputs() {
