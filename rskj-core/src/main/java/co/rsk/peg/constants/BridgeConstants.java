@@ -48,6 +48,8 @@ public abstract class BridgeConstants {
     protected Coin legacyMinimumPegoutTxValue;
     protected Coin minimumPegoutTxValue;
 
+    protected Coin migrationValueForMultipleOutputsInBtc;
+
     protected int btcHeightWhenBlockIndexActivates;
     protected int maxDepthToSearchBlocksBelowIndexActivation;
     protected long minSecondsBetweenCallsReceiveHeader;
@@ -120,6 +122,8 @@ public abstract class BridgeConstants {
     public int getMinimumPegoutValuePercentageToReceiveAfterFee() {
         return minimumPegoutValuePercentageToReceiveAfterFee;
     }
+
+    public Coin getMigrationValueForMultipleOutputsInBtc() { return migrationValueForMultipleOutputsInBtc; }
 
     public int getMaxInputsPerPegoutTransaction(ActivationConfig.ForBlock activations) {
         return !activations.isActive(ConsensusRule.RSKIP455) ? legacyMaxInputsPerPegoutTransaction : maxInputsPerPegoutTransaction;
