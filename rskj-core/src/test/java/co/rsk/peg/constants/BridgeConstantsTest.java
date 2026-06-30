@@ -34,7 +34,7 @@ class BridgeConstantsTest {
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("minimumPeginTxValueArgProvider")
     void getMinimumPeginTxValue(BridgeConstants bridgeConstants, boolean isRSKIP219Active){
         // Arrange
@@ -60,7 +60,7 @@ class BridgeConstantsTest {
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("minimumPegoutTxValueArgProvider")
     void getMinimumPegoutTxValue(BridgeConstants bridgeConstants, Coin expectedMinimumPegoutTxValue) {
         Coin minimumPegoutTxValue = bridgeConstants.getMinimumPegoutTxValue();
@@ -78,7 +78,7 @@ class BridgeConstantsTest {
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("svpFundTxOutputsValueArgProvider")
     void getSvpFundTxOutputsValue(BridgeConstants bridgeConstants, Coin expectedSvpFundTxOutputsValue) {
         assertEquals(expectedSvpFundTxOutputsValue, bridgeConstants.getSvpFundTxOutputsValue());
@@ -92,7 +92,7 @@ class BridgeConstantsTest {
         return Stream.of(bridgeMainnetConstants, bridgeTestnetConstants, bridgeRegtestConstants);
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("bridgeConstantsArgProvider")
     void getProposedFederationFlyoverPrefix(BridgeConstants bridgeConstants) {
         Keccak256 expectedProposedFederationFlyoverPrefix = new Keccak256("0000000000000000000000000000000000000000000000000000000000000001");
@@ -100,7 +100,7 @@ class BridgeConstantsTest {
         assertEquals(expectedProposedFederationFlyoverPrefix, bridgeConstants.getProposedFederationFlyoverPrefix());
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("bridgeConstantsArgProvider")
     void getMigrationOutputValueInBtc(BridgeConstants bridgeConstants) {
         Coin expectedMigrationOutputValueInBtc = Coin.COIN.multiply(20);
@@ -116,7 +116,7 @@ class BridgeConstantsTest {
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("getBtcHeightWhenPegoutTxIndexActivatesArgProvider")
     void getBtcHeightWhenPegoutTxIndexActivates(BridgeConstants bridgeConstants, int expectedValue){
         // Act
@@ -134,7 +134,7 @@ class BridgeConstantsTest {
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("getPegoutTxIndexGracePeriodInBtcBlocksArgProvider")
     void getPegoutTxIndexGracePeriodInBtcBlocks(BridgeConstants bridgeConstants, int expectedValue){
         // Act
@@ -144,7 +144,7 @@ class BridgeConstantsTest {
         assertEquals(expectedValue, pegoutTxIndexGracePeriodInBtcBlocks);
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("getFeePerKbConstantsProvider")
     void getFeePerKbConstants(BridgeConstants bridgeConstants, FeePerKbConstants expectedValue) {
         // Act
@@ -162,7 +162,7 @@ class BridgeConstantsTest {
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("getWhitelistConstantsProvider")
     void getWhitelistConstants(BridgeConstants bridgeConstants, WhitelistConstants expectedValue) {
         // Act
@@ -180,7 +180,7 @@ class BridgeConstantsTest {
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("getFederationConstantsProvider")
     void getFederationConstants(BridgeConstants bridgeConstants, FederationConstants expectedValue) {
         // Act
@@ -200,7 +200,7 @@ class BridgeConstantsTest {
         );
     }
 
-    @ParameterizedTest()
+    @ParameterizedTest
     @MethodSource("getLockingCapConstantsProvider")
     void getLockingCapConstants(BridgeConstants bridgeConstants, LockingCapConstants expectedValue){
         // Act
