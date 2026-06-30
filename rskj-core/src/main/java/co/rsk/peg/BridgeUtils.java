@@ -195,7 +195,7 @@ public final class BridgeUtils {
         Coin[] outputDistribution = totalValue.divideAndRemainder(MAX_OUTPUTS_NUMBER);
         Coin valuePerOutput = outputDistribution[0];
         Coin remainder = outputDistribution[1];
-        List<Coin> outputs = new ArrayList<>();
+        List<Coin> outputs = new ArrayList<>(MAX_OUTPUTS_NUMBER);
         for (int i = 0; i < MAX_OUTPUTS_NUMBER - 1; i++) {
             outputs.add(valuePerOutput);
         }
