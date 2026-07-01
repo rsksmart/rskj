@@ -27,7 +27,7 @@ public class BridgeUtilsLegacy {
         int outputsCount
     ) {
         if (inputsCount < 1 || outputsCount < 1) {
-            throw new IllegalArgumentException("Inputs and outputs should be at least than 1");
+            throw new IllegalArgumentException("Inputs and outputs should be at least 1");
         }
 
         if (activations.isActive(ConsensusRule.RSKIP378)) {
