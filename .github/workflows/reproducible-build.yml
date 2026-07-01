@@ -1,0 +1,200 @@
+name: Reproducible build
+
+# Hermetic build of an rskj git ref + the sha256 hashes of the produced jars.
+#
+# Triggers:
+#   - push to master / *-rc          -> build that commit, publish canonical hashes
+#   - workflow_dispatch (ref input)  -> build an arbitrary ref on demand
+#   - workflow_call (ref input)      -> building block for the release workflow
+#                                       (.github/workflows/reproducible-build-pr.yml),
+#                                       which opens the reproducible-builds PR
+#
+# What it does: checks out the ref for its templates + version.properties, renders
+# the pinned hermetic Dockerfile, builds it (the Dockerfile git-fetches the ref
+# itself from canonical upstream — the runner checkout is only for the templates),
+# extracts the jars, hashes them, and uploads jars + hashes.txt as a run artifact.
+#
+# Trust model: this workflow is the *first builder* only. The hashes it emits are
+# informational — NOT an authoritative attestation. A release must still be
+# independently rebuilt to confirm the same hashes; CI is not the sole witness.
+# On a non-tag push there is moreover no published release to compare against:
+# the run is a hermetic build + canonical-hash record, not a reproducibility check.
+#
+# This workflow holds no secrets and only `contents: read`. All privileged,
+# cross-repo work (App token, opening the reproducible-builds PR) lives solely in
+# .github/workflows/reproducible-build-pr.yml.
+
+on:
+  push:
+    branches: ["master", "*-rc"]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'git ref to build (branch / tag / SHA; default: this commit)'
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      ref:
+        description: 'git ref to build (branch / tag / SHA)'
+        required: true
+        type: string
+    outputs:
+      hashes:
+        description: 'sha256sum block of the canonical jars (informational)'
+        value: ${{ jobs.reproducible-build.outputs.hashes }}
+      artifact_name:
+        description: 'name of the uploaded run artifact (jars + hashes.txt)'
+        value: ${{ jobs.reproducible-build.outputs.artifact_name }}
+      version:
+        description: 'versionNumber resolved from version.properties at the ref'
+        value: ${{ jobs.reproducible-build.outputs.version }}
+      modifier:
+        description: 'modifier resolved from version.properties at the ref'
+        value: ${{ jobs.reproducible-build.outputs.modifier }}
+
+permissions:
+  contents: read
+
+concurrency:
+  # Key by the ref actually being built (inputs.ref for dispatch/call, the commit
+  # for push) so builds of different refs never share a group. Never cancel an
+  # in-flight build: same-ref re-triggers queue instead, and a release-tag build
+  # driven via workflow_call is never aborted out from under the PR workflow.
+  group: reproducible-build-${{ inputs.ref || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  reproducible-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    outputs:
+      hashes: ${{ steps.hashes.outputs.hashes }}
+      artifact_name: ${{ steps.meta.outputs.artifact_name }}
+      version: ${{ steps.meta.outputs.version }}
+      modifier: ${{ steps.meta.outputs.modifier }}
+    steps:
+      - name: Checkout the ref (templates + version.properties live here)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          # The job only reads the templates and version.properties; skip the
+          # rest of the tree.
+          sparse-checkout: |
+            .github/reproducible-build
+            rskj-core/src/main/resources
+
+      - name: Resolve ref, version and modifier
+        id: meta
+        env:
+          REF: ${{ inputs.ref || github.sha }}
+        run: |
+          set -euo pipefail
+          # Validate REF before it flows into a sed `s|__REF__|...|` delimiter and
+          # the Dockerfile's git refspec. Same gate style as
+          # .github/workflows/rskj-core-automated-tests.yml.
+          case "$REF" in
+            ""|*..*) echo "::error::invalid ref (empty or contains '..'): '$REF'"; exit 1;;
+            *[!A-Za-z0-9._/-]*) echo "::error::ref has disallowed characters: '$REF'"; exit 1;;
+          esac
+
+          # Read from the checked-out tree at REF (the Dockerfile's runner stage
+          # needs version+modifier for the *.module COPY and the -all.jar CMD).
+          props=rskj-core/src/main/resources/version.properties
+          version=$(sed -n "s/^versionNumber=['\"]\(.*\)['\"].*/\1/p" "$props")
+          modifier=$(sed -n "s/^modifier=['\"]\(.*\)['\"].*/\1/p" "$props")
+          if [ -z "$version" ] || [ -z "$modifier" ]; then
+            echo "::error::could not parse version.properties at ${REF}"; exit 1
+          fi
+          {
+            echo "version=$version"
+            echo "modifier=$modifier"
+            echo "artifact_name=rskj-repro-artifacts"
+          } >> "$GITHUB_OUTPUT"
+          echo "Resolved ${REF} -> version=$version modifier=$modifier"
+
+      - name: Render Dockerfile from template
+        env:
+          REF: ${{ inputs.ref || github.sha }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          MODIFIER: ${{ steps.meta.outputs.modifier }}
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          sed -e "s|__REF__|${REF}|g" \
+              -e "s|__VERSION__|${VERSION}|g" \
+              -e "s|__MODIFIER__|${MODIFIER}|g" \
+              .github/reproducible-build/Dockerfile.tmpl > out/Dockerfile
+
+      - name: Build the reproducible image
+        run: |
+          set -euo pipefail
+          # The Dockerfile is fully hermetic (it git-fetches the ref itself), so
+          # the build context is irrelevant — send an empty one to keep it fast.
+          # --no-cache guarantees nothing is reused from a previous run.
+          mkdir -p ctx
+          docker build --no-cache -t rskj-repro:build -f out/Dockerfile ctx
+
+      - name: Extract built artifacts
+        run: |
+          set -euo pipefail
+          # The artifacts live inside the image (runner stage WORKDIR /home/rsk).
+          # Use a created (not run) container so the node ENTRYPOINT never starts.
+          cid=$(docker create rskj-repro:build)
+          mkdir -p artifacts
+          docker cp "$cid":/home/rsk/. artifacts/
+          docker rm "$cid" >/dev/null
+          ls -l artifacts
+
+      - name: Compute artifact hashes
+        id: hashes
+        run: |
+          set -euo pipefail
+          # Same command a verifier runs locally, so the artifact's hashes.txt and
+          # any downstream README match byte for byte.
+          hashes=$(docker run --rm rskj-repro:build sh -c 'sha256sum * | grep -v javadoc.jar')
+          printf '%s\n' "$hashes"
+          # Ship the hashes alongside the jars so the release workflow (and a human)
+          # has an authoritative copy in the artifact.
+          printf '%s\n' "$hashes" > artifacts/hashes.txt
+          {
+            echo "hashes<<REPRO_EOF"
+            printf '%s\n' "$hashes"
+            echo "REPRO_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Write job summary
+        env:
+          REF: ${{ inputs.ref || github.sha }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          MODIFIER: ${{ steps.meta.outputs.modifier }}
+          HASHES: ${{ steps.hashes.outputs.hashes }}
+        run: |
+          set -euo pipefail
+          {
+            echo "## Reproducible build — \`${REF}\`"
+            echo ""
+            echo "Resolved version: \`${VERSION}-${MODIFIER}\`"
+            echo "Jars + \`hashes.txt\` attached to this run as artifact: \`rskj-repro-artifacts\`"
+            echo ""
+            echo "> Hashes are informational (first-builder only), not an attestation."
+            echo ""
+            echo "### Artifact hashes"
+            echo '```'
+            printf '%s\n' "$HASHES"
+            echo '```'
+            echo ""
+            echo "<details><summary>Generated Dockerfile</summary>"
+            echo ""
+            echo '```dockerfile'
+            cat out/Dockerfile
+            echo '```'
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rskj-repro-artifacts
+          path: artifacts/
+          if-no-files-found: error
