@@ -739,7 +739,11 @@ public class Trie {
     }
 
     protected Trie retrieveNode(byte implicitByte) {
-        return getNodeReference(implicitByte).getNode().orElse(null);
+        return retrieveNode(implicitByte, true);
+    }
+
+    protected Trie retrieveNode(byte implicitByte, boolean shouldCache) {
+        return getNodeReference(implicitByte).getNode(shouldCache).orElse(null);
     }
 
     public NodeReference getNodeReference(byte implicitByte) {
@@ -1038,6 +1042,18 @@ public class Trie {
 
     public Iterator<IterationElement> getInOrderIterator() {
         return new InOrderIterator(this);
+    }
+
+    /**
+     * In-order iterator with control over node caching.
+     *
+     * @param shouldCache when {@code false}, traversed nodes are not memoized in their parent
+     *                    {@link NodeReference}, so memory stays bounded to the active path instead
+     *                    of retaining the whole visited trie via the held root. Use {@code false}
+     *                    for one-pass, memory-sensitive walks such as the bootstrap state export.
+     */
+    public Iterator<IterationElement> getInOrderIterator(boolean shouldCache) {
+        return new InOrderIterator(this, shouldCache);
     }
 
     public Iterator<IterationElement> getPreOrderIterator() {

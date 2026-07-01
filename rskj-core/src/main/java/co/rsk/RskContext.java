@@ -301,6 +301,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockStore(),
                     getTrieStore(),
                     blockFactory,
+                    getDbKind(systemProperties.databaseDir()),
                     new BootstrapDataProvider(
                             new BootstrapDataVerifier(),
                             new BootstrapFileHandler(bootstrapUrlProvider, new Unzipper()),

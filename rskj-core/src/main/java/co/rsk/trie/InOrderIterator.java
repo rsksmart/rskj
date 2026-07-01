@@ -27,8 +27,20 @@ public class InOrderIterator implements Iterator<IterationElement> {
 
     private final Deque<IterationElement> visiting;
 
+    /**
+     * When {@code false}, child nodes are loaded without being memoized in their parent
+     * {@link NodeReference}. This keeps the retained set bounded to the current path (the visiting
+     * stack) instead of pinning the whole visited trie via the caller-held root.
+     */
+    private final boolean shouldCache;
+
     public InOrderIterator(Trie root) {
+        this(root, true);
+    }
+
+    public InOrderIterator(Trie root, boolean shouldCache) {
         Objects.requireNonNull(root);
+        this.shouldCache = shouldCache;
         TrieKeySlice traversedPath = root.getSharedPath();
         this.visiting = new LinkedList<>();
         // find the leftmost node, pushing all the intermediate nodes onto the visiting stack
@@ -46,7 +58,7 @@ public class InOrderIterator implements Iterator<IterationElement> {
         IterationElement visitingElement = visiting.pop();
         Trie node = visitingElement.getNode();
         // if the node has a right child, its leftmost node is next
-        Trie rightNode = node.retrieveNode((byte) 0x01);
+        Trie rightNode = node.retrieveNode((byte) 0x01, shouldCache);
         if (rightNode != null) {
             TrieKeySlice rightNodeKey = visitingElement.getNodeKey().rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
             visiting.push(new IterationElement(rightNodeKey, rightNode)); // push the right node
@@ -71,7 +83,7 @@ public class InOrderIterator implements Iterator<IterationElement> {
      */
     private void pushLeftmostNode(TrieKeySlice nodeKey, Trie node) {
         // find the leftmost node
-        Trie leftNode = node.retrieveNode((byte) 0x00);
+        Trie leftNode = node.retrieveNode((byte) 0x00, shouldCache);
         if (leftNode != null) {
             TrieKeySlice leftNodeKey = nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
             visiting.push(new IterationElement(leftNodeKey, leftNode)); // push the left node
