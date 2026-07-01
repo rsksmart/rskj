@@ -17,7 +17,7 @@
  */
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeUtils.calculatePegoutTxSize;
+import static co.rsk.peg.BridgeUtils.simulatePegoutTxSize;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.PegUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
@@ -1225,7 +1225,7 @@ public class BridgeSupport {
     }
 
     private Coin calculateSvpSpendTxFees(Federation proposedFederation) {
-        int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1);
+        int svpSpendTransactionSize = simulatePegoutTxSize(activations, proposedFederation, 2, 1);
         long svpSpendTransactionBackedUpSize = svpSpendTransactionSize * 12L / 10L; // just to be sure the fees sent will be enough
 
         return feePerKbSupport.getFeePerKb()
@@ -2629,20 +2629,21 @@ public class BridgeSupport {
     public Coin getEstimatedFeesForNextPegOutEvent() throws IOException {
         //  This method returns the fees of a peg-out transaction containing (N+2) outputs and 2 inputs,
         //  where N is the number of peg-outs requests waiting in the queue.
-
-        int pegoutRequestsCount = getQueuedPegoutsCount();
-
-        if (!activations.isActive(ConsensusRule.RSKIP385) &&
-            (!activations.isActive(ConsensusRule.RSKIP271) || pegoutRequestsCount == 0)) {
+        if (shouldReturnZeroEstimatedFees()) {
             return Coin.ZERO;
         }
 
-        if(!activations.isActive(RSKIP305)) {
+        if (!activations.isActive(RSKIP305)) {
             return getEstimatedFeesFromInputsAndOutputsCount();
         }
 
         return getEstimatedFeesFromPegoutTransactionSimulation();
+    }
 
+    private boolean shouldReturnZeroEstimatedFees() throws IOException {
+        int pegoutRequestsCount = getQueuedPegoutsCount();
+        return !activations.isActive(ConsensusRule.RSKIP385) &&
+            (!activations.isActive(ConsensusRule.RSKIP271) || pegoutRequestsCount == 0);
     }
 
     public Coin getEstimatedFeesForPegOutAmount(co.rsk.core.Coin pegoutAmountInWeis) throws IOException, BridgeIllegalArgumentException {
@@ -2658,11 +2659,10 @@ public class BridgeSupport {
     }
 
     private Coin getEstimatedFeesFromInputsAndOutputsCount() throws IOException {
-
         int outputsCount = getQueuedPegoutsCount() + 2;
         int inputsCount = 2;
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, getActiveFederation(), inputsCount, outputsCount);
+        int pegoutTxSize = simulatePegoutTxSize(activations, getActiveFederation(), inputsCount, outputsCount);
 
         Coin feePerKB = getFeePerKb();
 
