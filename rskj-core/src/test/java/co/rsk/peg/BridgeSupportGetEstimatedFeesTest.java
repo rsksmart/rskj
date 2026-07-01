@@ -45,6 +45,7 @@ class BridgeSupportGetEstimatedFeesTest {
     private static final ActivationConfig.ForBlock HOP400_ACTIVATIONS = ActivationConfigsForTest.hop400().forBlock(0L);
     private static final ActivationConfig.ForBlock FINGERROOT_ACTIVATIONS = ActivationConfigsForTest.fingerroot500().forBlock(0L);
     private static final ActivationConfig.ForBlock REED_ACTIVATIONS = ActivationConfigsForTest.reed800().forBlock(0L);
+    private static final ActivationConfig.ForBlock VETIVER_ACTIVATIONS = ActivationConfigsForTest.vetiver900().forBlock(0L);
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0L);
 
     private static final Federation STANDARD_MULTISIG_FEDERATION = StandardMultiSigFederationBuilder.builder()
@@ -103,7 +104,7 @@ class BridgeSupportGetEstimatedFeesTest {
     private BridgeSupport bridgeSupport;
 
     @Nested
-    class PreHop400Activation {
+    class PreHop400Activations {
 
         @BeforeEach
         void setUp() {
@@ -429,26 +430,12 @@ class BridgeSupportGetEstimatedFeesTest {
     }
 
     @Nested
-    class PostVetiverActivation {
+    class PostVetiverPreTBD100Activations {
 
         @BeforeEach
         void setUp() {
-            setUpBridgeAndFederationSupport(ALL_ACTIVATIONS, FEE_PER_KB);
-            // After Reed activation, which is before Vetiver, the federation is P2SH-P2WSH ERP.
-            // Therefore, after Vetiver the federation is P2SH-P2WSH ERP.
+            setUpBridgeAndFederationSupport(VETIVER_ACTIVATIONS, FEE_PER_KB);
             federationStorageProvider.setNewFederation(P2SH_P2WSH_ERP_FEDERATION);
-        }
-
-        @Test
-        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withNoPegoutRequests_shouldEstimateFeesFromTransactionSimulation() throws IOException {
-            // Arrange
-            addUtxosToActiveFederation(TWO_P2SH_P2WSH_UTXOS_OF_EIGHT_BTCS);
-
-            // Act
-            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
-
-            // Assert
-            assertEquals(Coin.valueOf(4_536L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -470,6 +457,61 @@ class BridgeSupportGetEstimatedFeesTest {
 
             // Assert
             assertEquals(Coin.valueOf(7_920L), estimatedFeesForNextPegout);
+        }
+
+        @Test
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederationHavingOneBTCAndMinPegoutValue_withPegoutRequestGreaterThanOneBtc_shouldFallBackToEstimateFeesFromInputAndOutputCount() throws IOException {
+            // Arrange
+            addUtxosToActiveFederation(TWO_P2SH_P2WSH_UTXOS_OF_ONE_BTC_AND_MIN_PEGOUT_VALUE);
+            addPegoutRequests(1, Coin.COIN.add(Coin.SATOSHI));
+
+            // Act
+            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
+
+            // Assert
+            assertEquals(Coin.valueOf(7_920L), estimatedFeesForNextPegout);
+        }
+    }
+
+    @Nested
+    class PostTBD100Activations {
+        @BeforeEach
+        void setUp() {
+            setUpBridgeAndFederationSupport(ALL_ACTIVATIONS, FEE_PER_KB);
+            federationStorageProvider.setNewFederation(P2SH_P2WSH_ERP_FEDERATION);
+        }
+
+        @Test
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withNoPegoutRequests_shouldEstimateFeesFromTransactionSimulation() throws IOException {
+            // Arrange
+            addUtxosToActiveFederation(TWO_P2SH_P2WSH_UTXOS_OF_EIGHT_BTCS);
+
+            // Act
+            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
+
+            // Assert
+            assertEquals(Coin.valueOf(4_536L), estimatedFeesForNextPegout);
+        }
+
+        @Test
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withNoUtxos_withNoPegoutRequests_shouldFallBackToEstimateFeesFromInputAndOutputCount() throws IOException {
+            // Act
+            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
+
+            // Assert
+            assertEquals(Coin.valueOf(8_384L), estimatedFeesForNextPegout);
+        }
+
+        @Test
+        void getEstimatedFeesForNextPegOutEvent_withP2shP2wshErpFederation_withNoUtxos_withOnePegoutRequest_shouldFallBackToEstimateFeesFromInputAndOutputCount() throws IOException {
+            // Arrange
+            addPegoutRequests(1, Coin.COIN);
+
+            // Act
+            Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
+
+            // Assert
+            assertEquals(Coin.valueOf(8_640L), estimatedFeesForNextPegout);
         }
 
         @ParameterizedTest
@@ -540,7 +582,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(7_920L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(8_640L), estimatedFeesForNextPegout);
         }
 
         @Test

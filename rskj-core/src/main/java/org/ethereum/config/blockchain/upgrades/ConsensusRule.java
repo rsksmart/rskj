@@ -88,6 +88,7 @@ public enum ConsensusRule {
     RSKIP375("rskip375"),
     RSKIP376("rskip376"),
     RSKIP377("rskip377"),
+    RSKIP378("rskip378"), // Recalculate pegout value used when the batch is split
     RSKIP379("rskip379"),
     RSKIP383("rskip383"),
     RSKIP385("rskip385"),
@@ -105,6 +106,7 @@ public enum ConsensusRule {
     RSKIP446("rskip446"), // Transient storage opcodes addition implementing EIP-1153
     RSKIP453("rskip453"),
     RSKIP454("rskip454"),
+    RSKIP455("rskip455"), // Migration transaction with multiple UTXOs (MTMU)
     RSKIP459("rskip459"),
     RSKIP460("rskip460"),
     RSKIP502("rskip502"), // PowPeg and Union Bridge integration

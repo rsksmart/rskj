@@ -13,6 +13,7 @@ import co.rsk.peg.federation.FederationMember;
 import co.rsk.test.builders.UTXOBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -466,7 +467,7 @@ class BridgeUtilsLegacyTest {
     }
 
     @Test
-    void calculatePegoutTxSize_before_rskip_271() {
+    void simulatePegoutTxSize_before_rskip_271() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
         NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
@@ -475,7 +476,7 @@ class BridgeUtilsLegacyTest {
             Instant.now(), 0, btcParams);
         Federation federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
-        int pegoutTxSize = BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2);
+        int pegoutTxSize = BridgeUtilsLegacy.simulatePegoutTxSize(activations, federation, 2, 2);
 
         // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
         int origTxSize = 2076; // Data for 2 inputs, 2 outputs From https://www.blockchain.com/btc/tx/e92cab54ecf738a00083fd8990515247aa3404df4f76ec358d9fe87d95102ae4
@@ -486,8 +487,8 @@ class BridgeUtilsLegacyTest {
     }
 
     @Test
-    void calculatePegoutTxSize_after_rskip_271() {
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+    void simulatePegoutTxSize_afterRSKIP378() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
         NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
@@ -496,11 +497,11 @@ class BridgeUtilsLegacyTest {
             Instant.now(), 0, btcParams);
         Federation federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2));
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> BridgeUtilsLegacy.simulatePegoutTxSize(activations, federation, 2, 2));
     }
 
     @Test
-    void calculatePegoutTxSize_ZeroInput_ZeroOutput() {
+    void simulatePegoutTxSize_ZeroInput_ZeroOutput() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
         NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
@@ -509,7 +510,7 @@ class BridgeUtilsLegacyTest {
             Instant.now(), 0, btcParams);
         Federation federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 0, 0));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtilsLegacy.simulatePegoutTxSize(activations, federation, 0, 0));
     }
 
     private class SimpleBtcTransaction {
