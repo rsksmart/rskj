@@ -242,6 +242,34 @@ In this example, the current database will be migrated from leveldb to rocksdb.
 
 :::
 
+#### CompactRocksDb
+
+The `CompactRocksDb` command compacts every RocksDB data source under `database.dir`.
+
+**Usage:**
+
+`java -cp rsk.jar co.rsk.cli.tools.CompactRocksDb`
+
+**Options:**
+
+- `-c, --compressionType`: Compression type used for the compaction output files (`lz4`, `lz4hc`, `no_compression`, etc.). If omitted, it uses `database.rocksdb.compressionType`.
+
+**Example output:**
+
+```shell
+  INFO [clitool] [main]  CompactRocksDb started
+  INFO [clitool] [main]  Compacting RocksDB data source blocks
+  INFO [clitool] [main]  Compacting RocksDB data source stateRoots
+  INFO [clitool] [main]  Compaction completed for 6 data source(s)
+  INFO [clitool] [main]  CompactRocksDb finished
+```
+
+:::tip[Tip]
+
+This command only supports RocksDB. If your node is configured with another backend, the command exits with an error.
+
+:::
+
 ## Dev-related commands
 
 #### ShowStateInfo
