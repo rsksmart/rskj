@@ -40,7 +40,6 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationFormatVersion;
 import java.util.List;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
@@ -61,7 +60,6 @@ public class ReleaseTransactionBuilder {
     private static final Logger logger = LoggerFactory.getLogger(ReleaseTransactionBuilder.class);
 
     private static final int MAX_STANDARD_TX_SIZE_SAFETY_MARGIN = 10_000;
-    @VisibleForTesting
     protected static final int MAX_STANDARD_TX_SIZE_ALLOWED = MAX_STANDARD_TX_SIZE - MAX_STANDARD_TX_SIZE_SAFETY_MARGIN;
 
     private final NetworkParameters params;
