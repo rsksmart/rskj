@@ -18,12 +18,7 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -48,6 +43,8 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+
+import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
 
 public final class PegTestUtils {
 
@@ -330,5 +327,33 @@ public final class PegTestUtils {
             valuesToSend,
             address
         );
+    }
+
+    public static BtcTransaction createUnsignedPegOutTx(
+        NetworkParameters networkParameters,
+        int inputsCount,
+        int outputsCount,
+        Federation federation
+    ) {
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+
+        // Add inputs
+        Script redeemScript = federation.getRedeemScript();
+        for (int i = 0; i < inputsCount; i++) {
+            btcTx.addInput(
+                Sha256Hash.ZERO_HASH,
+                i,
+                new Script(new byte[]{})
+            );
+            addSpendingFederationBaseScript(btcTx, i, redeemScript, federation.getFormatVersion());
+        }
+
+        // Add outputs
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        for (int i = 0; i < outputsCount; i++) {
+            btcTx.addOutput(Coin.COIN, randomAddress);
+        }
+
+        return btcTx;
     }
 }
