@@ -111,6 +111,14 @@ class ReleaseTransactionBuilderTest {
     private static final Coin THOUSAND_SATOSHIS = Coin.valueOf(1000);
 
     private static final int EXPECTED_NUMBER_OF_CHANGE_OUTPUTS = 1;
+    private static final int STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE = 277;
+    private static final int STANDARD_MULTISIG_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
+    private static final int P2SH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE = 196;
+    private static final int P2SH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = P2SH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
+    private static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER = 2438;
+    private static final int P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE_VETIVER = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER - 1;
+    private static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_WHEN_ONE_OUTPUT = 186;
+    private static final int P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE_WHEN_ONE_OUTPUT = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_WHEN_ONE_OUTPUT - 1;
 
     private static final Keccak256 FLYOVER_DERIVATION_HASH = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
     private static final Sha256Hash BTC_TX_HASH_FLYOVER_UTXO = createHash(10_000);
@@ -872,7 +880,7 @@ class ReleaseTransactionBuilderTest {
         }
 
         @Test
-        void buildAmountTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
+        void buildAmountTo_whenTxExceedsMaxTxSizeAllowed_shouldReturnExceedMaxTransactionSize() {
             // Arrange
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -889,7 +897,7 @@ class ReleaseTransactionBuilderTest {
         }
 
         @Test
-        void buildAmountTo_whenTxIsAlmostExceedingMaxTxSize_shouldCreatePegoutTx() {
+        void buildAmountTo_whenTxIsAlmostExceedingMaxTxSizeAllowed_shouldCreatePegoutTx() {
             // Arrange
             federationUTXOs = UTXOBuilder.builder()
                 .withScriptPubKey(federationOutputScript)
@@ -1272,7 +1280,7 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildEmptyWalletTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
+            void buildEmptyWalletTo_whenTxExceedsMaxTxSizeAllowed_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -1439,7 +1447,7 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildEmptyWalletTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
+            void buildEmptyWalletTo_whenTxExceedsMaxTxSizeAllowed_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -1606,7 +1614,7 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildEmptyWalletTo_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize() {
+            void buildEmptyWalletTo_whenTxExceedsMaxTxSizeAllowed_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -2003,7 +2011,7 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize() {
+            void buildMigrationTransaction_whenTxExceedMaxTxSizeAllowed_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
@@ -2021,7 +2029,7 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_shouldCreateMigrationTx() {
+            void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSizeAllowed_shouldCreateMigrationTx() {
                 // Arrange
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
@@ -2355,7 +2363,7 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize() {
+            void buildMigrationTransaction_whenTxExceedMaxTxSizeAllowed_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
@@ -2373,7 +2381,7 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_shouldCreateMigrationTx() {
+            void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSizeAllowed_shouldCreateMigrationTx() {
                 // Arrange
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
@@ -2673,7 +2681,7 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildMigrationTransaction_whenTxExceedMaxTxSize_preRSKIP378_shouldReturnExceedMaxTransactionSize() {
+            void buildMigrationTransaction_whenTxExceedMaxTxSizeAllowed_preRSKIP378_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
                 setUp(VETIVER_ACTIVATIONS);
                 retiringFederationUTXOs = UTXOBuilder.builder()
@@ -2692,12 +2700,12 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildMigrationTransaction_whenTxExceedMaxTxSize_shouldReturnExceedMaxTransactionSize() {
+            void buildMigrationTransaction_whenTxExceedMaxTxSizeAllowed_shouldReturnExceedMaxTransactionSize() {
                 // Arrange
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
                     .withValue(Coin.COIN)
-                    .buildMany(P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE, i -> createHash(i + 1));
+                    .buildMany(P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_WHEN_ONE_OUTPUT, i -> createHash(i + 1));
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
                 Coin migrationValue = wallet.getBalance();
 
@@ -2710,7 +2718,7 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_preRSKIP378_shouldCreateMigrationTx() {
+            void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSizeAllowed_preRSKIP378_shouldCreateMigrationTx() {
                 // Arrange
                 setUp(VETIVER_ACTIVATIONS);
                 retiringFederationUTXOs = UTXOBuilder.builder()
@@ -2746,12 +2754,12 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSize_shouldCreateMigrationTx() {
+            void buildMigrationTransaction_whenTxIsAlmostExceedingMaxTxSizeAllowed_shouldCreateMigrationTx() {
                 // Arrange
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
                     .withValue(Coin.COIN)
-                    .buildMany(P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE, i -> createHash(i + 1));
+                    .buildMany(P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE_WHEN_ONE_OUTPUT, i -> createHash(i + 1));
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
                 Coin migrationValue = wallet.getBalance();
 
@@ -3155,7 +3163,7 @@ class ReleaseTransactionBuilderTest {
                 "196, 1",
                 "195, 15",
             })
-            void buildBatchedPegouts_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
+            void buildBatchedPegouts_whenTxExceedsMaxTxSizeAllowed_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
                 // Arrange
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -3181,7 +3189,7 @@ class ReleaseTransactionBuilderTest {
                 "195, 14",
                 "194, 15",
             })
-            void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSize_shouldCreateBatchedPegoutsTx(int expectedNumberOfUtxos, int numberOfPegoutRequests) {
+            void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSizeAllowed_shouldCreateBatchedPegoutsTx(int expectedNumberOfUtxos, int numberOfPegoutRequests) {
                 // Arrange
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -3244,27 +3252,12 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildBatchedPegouts_preRSKIP378_whenNoPegoutRequests_returnsAnEmptyTransaction() {
-                // Arrange
-                setUp(VETIVER_ACTIVATIONS);
-                ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
-
-                // Act & Assert
-                BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(NO_PEGOUT_REQUESTS);
-                assertSuccessBuildResult(batchedPegoutsResult);
-
-                BtcTransaction batchedPegoutsTx = batchedPegoutsResult.btcTx();
-                assertTrue(batchedPegoutsTx.getOutputs().isEmpty());
-                assertTrue(batchedPegoutsTx.getInputs().isEmpty());
-            }
-
-            @Test
-            void buildBatchedPegouts_whenNoPegoutRequests_throwsIllegalArgumentException() {
+            void buildBatchedPegouts_whenNoPegoutRequests_throwsIllegalStateException() {
                 // Arrange
                 ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
 
                 // Act & Assert
-                assertThrows(IllegalArgumentException.class, () -> releaseTransactionBuilder.buildBatchedPegouts(NO_PEGOUT_REQUESTS));
+                assertThrows(IllegalStateException.class, () -> releaseTransactionBuilder.buildBatchedPegouts(NO_PEGOUT_REQUESTS));
             }
 
             @Test
@@ -3545,7 +3538,7 @@ class ReleaseTransactionBuilderTest {
                 "2437, 2",
                 "2436, 3"
             })
-            void buildBatchedPegouts_whenTxExceedsMaxTxSize_preRSKIP378_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
+            void buildBatchedPegouts_whenTxExceedsMaxTxSizeAllowed_preRSKIP378_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
                 // Arrange
                 setUp(VETIVER_ACTIVATIONS);
                 federationUTXOs = UTXOBuilder.builder()
@@ -3567,11 +3560,13 @@ class ReleaseTransactionBuilderTest {
 
             @ParameterizedTest
             @CsvSource({
-                "202, 22",
-                "203, 8",
-                "204, 1"
+                "185, 1",
+                "184, 15",
+                "183, 29",
+                "182, 43",
+                "181, 58"
             })
-            void buildBatchedPegouts_whenTxExceedsMaxTxSize_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
+            void buildBatchedPegouts_whenTxExceedsMaxTxSizeAllowed_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
                 // Arrange
                 federationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(federationOutputScript)
@@ -3597,7 +3592,7 @@ class ReleaseTransactionBuilderTest {
                 "2436, 2",
                 "2435, 3"
             })
-            void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSize_preRSKIP378_shouldCreateBatchedPegoutsTx(
+            void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSizeAllowed_preRSKIP378_shouldCreateBatchedPegoutsTx(
                 int expectedNumberOfUtxos,
                 int numberOfPegoutRequests
             ) {
@@ -3634,11 +3629,12 @@ class ReleaseTransactionBuilderTest {
 
             @ParameterizedTest
             @CsvSource({
-                "201, 34",
-                "202, 21",
-                "203, 7",
+                "184, 14",
+                "183, 28",
+                "182, 42",
+                "181, 57"
             })
-            void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSize_shouldCreateBatchedPegoutsTx(
+            void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSizeAllowed_shouldCreateBatchedPegoutsTx(
                 int expectedNumberOfUtxos,
                 int numberOfPegoutRequests
             ) {
