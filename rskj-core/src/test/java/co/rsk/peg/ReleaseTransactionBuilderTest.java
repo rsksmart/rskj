@@ -19,7 +19,9 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.BridgeSupport.MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
+import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxosInStorage;
 import static co.rsk.peg.ReleaseTransactionAssertions.*;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
@@ -118,12 +120,6 @@ class ReleaseTransactionBuilderTest {
     private static Address recipientAddressFromPrivateKeyOffset(int keyOffset) {
         BigInteger seed = BigInteger.valueOf(keyOffset);
         return BtcECKey.fromPrivate(seed).toAddress(BTC_MAINNET_PARAMS);
-    }
-
-    private static void setUpFlyoverUtxosInStorage(List<UTXO> flyoverUtxos, Script flyoverOutputScript, Federation federation, BridgeStorageProvider provider) {
-        for (UTXO flyoverUtxo : flyoverUtxos) {
-            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, federation, provider, FLYOVER_DERIVATION_HASH);
-        }
     }
 
     /**
@@ -1241,7 +1237,7 @@ class ReleaseTransactionBuilderTest {
                     .withScriptPubKey(flyoverOutputScript)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
-                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider);
+                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
 
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(flyoverUtxos);
 
@@ -1408,7 +1404,7 @@ class ReleaseTransactionBuilderTest {
                     .withValue(Coin.COIN)
                     .withScriptPubKey(flyoverOutputScript)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
-                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider);
+                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
 
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(flyoverUtxos);
 
@@ -1575,7 +1571,7 @@ class ReleaseTransactionBuilderTest {
                     .withValue(Coin.COIN)
                     .withScriptPubKey(flyoverOutputScript)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
-                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider);
+                setUpFlyoverUtxosInStorage(flyoverUtxos, flyoverOutputScript, federation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
 
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(flyoverUtxos);
 
@@ -1984,10 +1980,11 @@ class ReleaseTransactionBuilderTest {
             }
 
             /**
-             * Tests an unrealistic scenario where the federation's balance differs from the value being migrated. Although
-             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)} receives the
-             * values to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
-             * no partial migration. Instead, all the UTXOs available for migration are migrated.
+             * Tests an unrealistic scenario post RSKIP455 where the federation's balance differs from the value being migrated.
+             * Although unrealistic post RSKIP455, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)}
+             * receives the migration outputs as a parameter and permits their total value to differ from the federation's balance.
+             * Before RSKIP455, this was realistic — the method could receive a value to migrate different from the federation's total UTXO value.
+             * After RSKIP455, the method always receives migration output values computed from the full balance available for migration.
              */
             @Test
             void buildMigrationTransaction_whenFederationBalanceDiffersWithValueMigrated_shouldCreateMigrationTxWithTwoOutputs() {
@@ -2351,10 +2348,11 @@ class ReleaseTransactionBuilderTest {
             }
 
             /**
-             * Tests an unrealistic scenario where the federation's balance differs from the value being migrated. Although
-             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)} receives the
-             * values to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
-             * no partial migration. Instead, all the UTXOs available for migration are migrated.
+             * Tests an unrealistic scenario post RSKIP455 where the federation's balance differs from the value being migrated.
+             * Although unrealistic post RSKIP455, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)}
+             * receives the migration outputs as a parameter and permits their total value to differ from the federation's balance.
+             * Before RSKIP455, this was realistic — the method could receive a value to migrate different from the federation's total UTXO value.
+             * After RSKIP455, the method always receives migration output values computed from the full balance available for migration.
              */
             @Test
             void buildMigrationTransaction_whenFederationBalanceDiffersWithValueMigrated_shouldCreateMigrationTxWithTwoOutputs() {
@@ -2624,7 +2622,7 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
                 Coin migratedValue = migrationValues.stream().reduce(Coin.ZERO, Coin::add);
-                assertMultipleMigrationTxOutputs(
+                assertFixedValueMigrationTxOutputs(
                     migrationTransaction,
                     migratedValue,
                     newFederationAddress,
@@ -2632,6 +2630,59 @@ class ReleaseTransactionBuilderTest {
                     numberOfUtxos,
                     BRIDGE_MAINNET_CONSTANTS
                 );
+            }
+
+            @Test
+            void buildMigrationTransaction_withP2shP2wshErpFederation_with150UtxosAboveLargeMTMUThreshold_shouldBuildTxWith50Outputs() {
+                // Arrange
+                int numberOfUtxos = 150;
+                Coin utxoValue = Coin.COIN.multiply(7);
+                retiringFederationUTXOs = UTXOBuilder.builder()
+                    .withScriptPubKey(retiringFederationOutputScript)
+                    .withValue(utxoValue)
+                    .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+                ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
+
+                Coin totalValue = utxoValue.multiply(numberOfUtxos);
+                Coin[] parts = totalValue.divideAndRemainder(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX);
+                List<Coin> migrationValues = new ArrayList<>(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX);
+                for (int i = 0; i < MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX - 1; i++) {
+                    migrationValues.add(parts[0]);
+                }
+                Coin lastOutputValue = parts[0].add(parts[1]);
+                migrationValues.add(lastOutputValue);
+
+                // Act
+                BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
+                    migrationValues,
+                    newFederationAddress
+                );
+
+                // Assert
+                assertSuccessBuildResult(migrationTransactionResult);
+                BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
+                assertBtcTxVersionIs2(migrationTransaction);
+
+                assertMigrationReleaseTxInputsP2shP2wshErp(
+                    migrationTransaction,
+                    retiringFederationRedeemScript,
+                    retiringFederationUTXOs,
+                    migrationTransactionResult.selectedUTXOs()
+                );
+                assertEvenlyDistributedMigrationTxOutputs(
+                    migrationTransaction,
+                    totalValue,
+                    newFederationAddress,
+                    BTC_MAINNET_PARAMS
+                );
+                int migrationTransactionSize = BridgeUtils.calculatePegoutTxSize(
+                    ALL_ACTIVATIONS,
+                    retiringFederation,
+                    migrationTransaction.getInputs().size(),
+                    migrationTransaction.getOutputs().size()
+                );
+                assertTrue(migrationTransactionSize <= BtcTransaction.MAX_STANDARD_TX_SIZE);
             }
 
             /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; the minimum UTXO the Federation
@@ -2723,10 +2774,11 @@ class ReleaseTransactionBuilderTest {
             }
 
             /**
-             * Tests an unrealistic scenario where the federation's balance differs from the value being migrated. Although
-             * unreal, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)} receives the
-             * values to migrate as a parameter, and permits it to be less than the federation's balance. In reality, there's
-             * no partial migration. Instead, all the UTXOs available for migration are migrated.
+             * Tests an unrealistic scenario post RSKIP455 where the federation's balance differs from the value being migrated.
+             * Although unrealistic post RSKIP455, the method {@link ReleaseTransactionBuilder#buildMigrationTransaction(List, Address)}
+             * receives the migration outputs as a parameter and permits their total value to differ from the federation's balance.
+             * Before RSKIP455, this was realistic — the method could receive a value to migrate different from the federation's total UTXO value.
+             * After RSKIP455, the method always receives migration output values computed from the full balance available for migration.
              */
             @Test
             void buildMigrationTransaction_whenFederationBalanceDiffersWithValueMigrated_shouldCreateMigrationTxWithTwoOutputs() {
