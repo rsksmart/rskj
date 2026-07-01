@@ -5,7 +5,7 @@ import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
-import static co.rsk.peg.BridgeUtils.calculatePegoutTxSize;
+import static co.rsk.peg.BridgeUtils.simulatePegoutTxSize;
 import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
 import static co.rsk.peg.PegUtils.getFlyoverFederationRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
@@ -807,7 +807,7 @@ class BridgeSupportSvpTest {
             List<TransactionOutput> outputs = svpSpendTransaction.getOutputs();
             assertEquals(1, outputs.size());
 
-            long calculatedTransactionSize = calculatePegoutTxSize(allActivations, proposedFederation, 2, 1);
+            long calculatedTransactionSize = simulatePegoutTxSize(allActivations, proposedFederation, 2, 1);
             Coin fees = feePerKb
                 .multiply(calculatedTransactionSize * 12L / 10L) // back up calculation
                 .divide(1000);
