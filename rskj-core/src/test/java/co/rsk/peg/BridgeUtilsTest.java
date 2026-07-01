@@ -1223,7 +1223,7 @@ class BridgeUtilsTest {
         "182, 42",
         "181, 57"
     })
-    void calculatePegoutTxSize_forRecreatedTx_almostExceedingMaxTxSizeAllowed_shouldReturnLessThanMaximumAllowed(int inputsCount, int outputsCount) {
+    void estimateUnsignedSegwitTxVSize_forRecreatedTx_almostExceedingMaxTxSizeAllowed_shouldReturnLessThanMaximumAllowed(int inputsCount, int outputsCount) {
         // arrange
         Federation federation = P2shP2wshErpFederationBuilder.builder().build();
 
@@ -1240,7 +1240,7 @@ class BridgeUtilsTest {
     }
 
     @Test
-    void calculatePegoutTxSize_forRealTx_200inputs50outputs() {
+    void estimateUnsignedSegwitTxVSize_forRealTx_200inputs50outputs() {
         // https://mempool.space/testnet/tx/ada9a76e0da39a2ad49c07dfaf9bab51fe696a92c95177f54cc7b68ad50fb7cb
         // arrange
         int realVSize = 98690;

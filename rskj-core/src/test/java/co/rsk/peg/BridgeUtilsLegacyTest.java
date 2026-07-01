@@ -467,7 +467,7 @@ class BridgeUtilsLegacyTest {
     }
 
     @Test
-    void calculatePegoutTxSize_before_rskip_271() {
+    void simulatePegoutTxSize_before_rskip_271() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
         NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
@@ -487,7 +487,7 @@ class BridgeUtilsLegacyTest {
     }
 
     @Test
-    void calculatePegoutTxSize_afterRSKIP378() {
+    void simulatePegoutTxSize_afterRSKIP378() {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
         NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
@@ -501,7 +501,7 @@ class BridgeUtilsLegacyTest {
     }
 
     @Test
-    void calculatePegoutTxSize_ZeroInput_ZeroOutput() {
+    void simulatePegoutTxSize_ZeroInput_ZeroOutput() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
         NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
