@@ -613,7 +613,7 @@ class BridgeSupportReleaseBtcTest {
     @Test
     void release_verify_fee_below_fee_is_rejected() throws IOException {
         Coin value = BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.SATOSHI);
-        testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(Coin.COIN, co.rsk.core.Coin.fromBitcoin(value));
+        testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(Coin.COIN, co.rsk.core.Coin.fromBitcoin(value), ACTIVATIONS_ALL);
     }
 
     @Test
@@ -626,7 +626,7 @@ class BridgeSupportReleaseBtcTest {
             federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, irisActivations)
         );
         Coin value = feePerKB.div(1000).times(pegoutSize);
-        testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(feePerKB, co.rsk.core.Coin.fromBitcoin(value));
+        testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(feePerKB, co.rsk.core.Coin.fromBitcoin(value), irisActivations);
     }
 
     @Test
@@ -638,7 +638,7 @@ class BridgeSupportReleaseBtcTest {
             federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, ACTIVATIONS_ALL)
         );
         Coin value = feePerKB.div(1000).times(pegoutSize);
-        testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(feePerKB, co.rsk.core.Coin.fromBitcoin(value));
+        testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(feePerKB, co.rsk.core.Coin.fromBitcoin(value), ACTIVATIONS_ALL);
     }
 
     @Test
@@ -1288,20 +1288,21 @@ class BridgeSupportReleaseBtcTest {
 
     private void testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(
         Coin feePerKB,
-        co.rsk.core.Coin pegoutRequestValue
+        co.rsk.core.Coin pegoutRequestValue,
+        ActivationConfig.ForBlock activations
     ) throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
-            ACTIVATIONS_ALL,
+            activations,
             logInfo
         ));
-        bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
+        bridgeSupport = initBridgeSupport(eventLogger, activations);
         when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKB);
 
         int pegoutSize = BridgeUtils.getRegularPegoutTxSize(
-            ACTIVATIONS_ALL,
-            federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, ACTIVATIONS_ALL)
+            activations,
+            federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, activations)
         );
         Coin minValueAccordingToFee = feePerKbSupport.getFeePerKb().div(1000).times(pegoutSize);
         Coin minValueWithGapAboveFee = minValueAccordingToFee.add(minValueAccordingToFee.times(

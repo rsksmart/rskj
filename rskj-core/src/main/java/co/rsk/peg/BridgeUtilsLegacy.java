@@ -1,12 +1,8 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFormatVersion;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
@@ -24,21 +20,30 @@ public class BridgeUtilsLegacy {
     }
 
     @Deprecated
-    protected static int calculatePegoutTxSize(ActivationConfig.ForBlock activations,
-                                               Federation federation,
-                                               int inputs,
-                                               int outputs) {
-
-        if (inputs < 1 || outputs < 1) {
-            throw new IllegalArgumentException("Inputs or outputs should be more than 1");
+    protected static int simulatePegoutTxSize(
+        ActivationConfig.ForBlock activations,
+        Federation federation,
+        int inputsCount,
+        int outputsCount
+    ) {
+        if (inputsCount < 1 || outputsCount < 1) {
+            throw new IllegalArgumentException("Inputs and outputs should be at least 1");
         }
 
-        if (activations.isActive(ConsensusRule.RSKIP271)) {
+        if (activations.isActive(ConsensusRule.RSKIP378)) {
             throw new DeprecatedMethodCallException(
-                "Calling BridgeUtilsLegacy.calculatePegoutTxSize method after RSKIP271 activation"
+                "Calling BridgeUtilsLegacy.simulatePegoutTxSize method after RSKIP378 activation"
             );
         }
 
+        if (!activations.isActive(ConsensusRule.RSKIP271)) {
+            return simulatePegoutTxSizePreHOP(federation, inputsCount, outputsCount);
+        }
+
+        return simulatePegoutTxSizePreTBD100(federation, inputsCount, outputsCount);
+    }
+
+    private static int simulatePegoutTxSizePreHOP(Federation federation, int inputsCount, int outputsCount) {
         final int SIGNATURE_MULTIPLIER = 71;
         final int OUTPUT_SIZE = 25;
         // This data accounts for txid+vout+sequence
@@ -51,8 +56,65 @@ public class BridgeUtilsLegacy {
         final int scriptSigChunk = federation.getNumberOfSignaturesRequired() * (SIGNATURE_MULTIPLIER + 1) +
             federation.getRedeemScript().getProgram().length + 1;
         return TX_ADDITIONAL_DATA_SIZE +
-            (scriptSigChunk + INPUT_ADDITIONAL_DATA_SIZE) * inputs +
-            (OUTPUT_SIZE + 1 + OUTPUT_ADDITIONAL_DATA_SIZE) * outputs;
+            (scriptSigChunk + INPUT_ADDITIONAL_DATA_SIZE) * inputsCount +
+            (OUTPUT_SIZE + 1 + OUTPUT_ADDITIONAL_DATA_SIZE) * outputsCount;
+    }
+
+    private static int simulatePegoutTxSizePreTBD100(Federation federation, int inputsCount, int outputsCount) {
+        boolean isLegacyFed = federation.getFormatVersion() != FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion();
+
+        return isLegacyFed
+            ? simulateLegacyTxSizePreTBD100(federation, inputsCount, outputsCount)
+            : simulateSegwitTxSizePreTBD100(federation, inputsCount, outputsCount);
+    }
+
+    private static int simulateLegacyTxSizePreTBD100(Federation federation, int inputsCount, int outputsCount) {
+        BtcTransaction tx = new BtcTransaction(federation.getBtcParams());
+
+        for (int i = 0; i < inputsCount; i++) {
+            tx.addInput(Sha256Hash.ZERO_HASH, 0, federation.getRedeemScript());
+        }
+
+        for (int i = 0; i < outputsCount; i++) {
+            tx.addOutput(Coin.ZERO, federation.getAddress());
+        }
+
+        int baseSize = calculateTxBaseSize(tx, inputsCount, false);
+        int signingSize = getSigningSize(federation.getNumberOfSignaturesRequired(), inputsCount);
+        return baseSize + signingSize;
+    }
+
+    // this old calculation had a bug: it wasn't adding inputs to simulate the size,
+    // and in calculateTxBaseSize we were just adding the bytes from the script sig
+    private static int simulateSegwitTxSizePreTBD100(Federation federation, int inputsCount, int outputsCount) {
+        BtcTransaction tx = new BtcTransaction(federation.getBtcParams());
+
+        for (int i = 0; i < outputsCount; i++) {
+            tx.addOutput(Coin.ZERO, federation.getAddress());
+        }
+
+        int baseSize = calculateTxBaseSize(tx, inputsCount, true);
+        int signingSize = getSigningSize(federation.getNumberOfSignaturesRequired(), inputsCount);
+        int totalSize = baseSize + signingSize + (inputsCount * federation.getRedeemScript().getProgram().length);
+        // As described in BIP141
+        int txWeight = totalSize + (3 * baseSize);
+        return txWeight / 4;
+    }
+
+    private static int calculateTxBaseSize(BtcTransaction tx, int inputsCount, boolean isSegwit) {
+        int baseSize = tx.bitcoinSerialize().length;
+
+        if (isSegwit) {
+            final int SEGWIT_COMPATIBLE_SCRIPT_SIG_SIZE = 36;
+            baseSize += inputsCount * SEGWIT_COMPATIBLE_SCRIPT_SIG_SIZE;
+        }
+
+        return baseSize;
+    }
+
+    private static int getSigningSize(int numberOfSignaturesRequired, int inputsCount) {
+        int signatureSize = 72;
+        return numberOfSignaturesRequired * inputsCount * signatureSize;
     }
 
     @Deprecated

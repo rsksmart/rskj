@@ -39,6 +39,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationFormatVersion;
 import java.util.List;
+
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
@@ -59,7 +60,7 @@ public class ReleaseTransactionBuilder {
     private static final Logger logger = LoggerFactory.getLogger(ReleaseTransactionBuilder.class);
 
     private static final int MAX_STANDARD_TX_SIZE_SAFETY_MARGIN = 10_000;
-    private static final int MAX_STANDARD_TX_SIZE_ALLOWED = MAX_STANDARD_TX_SIZE - MAX_STANDARD_TX_SIZE_SAFETY_MARGIN;
+    protected static final int MAX_STANDARD_TX_SIZE_ALLOWED = MAX_STANDARD_TX_SIZE - MAX_STANDARD_TX_SIZE_SAFETY_MARGIN;
 
     private final NetworkParameters params;
     private final Wallet wallet;
@@ -102,6 +103,10 @@ public class ReleaseTransactionBuilder {
     }
 
     public BuildResult buildBatchedPegouts(List<ReleaseRequestQueue.Entry> entries) {
+        if (entries.isEmpty()) {
+            throw new IllegalArgumentException("cannot create batched pegouts tx when no existing requests");
+        }
+
         return buildWithConfiguration((SendRequest sr) -> {
             for (ReleaseRequestQueue.Entry entry : entries) {
                 sr.tx.addOutput(entry.getAmount(), entry.getDestination());
@@ -197,12 +202,7 @@ public class ReleaseTransactionBuilder {
             return;
         }
 
-        int btcTxVSize = BridgeUtils.calculatePegoutTxSize(
-            activations,
-            federation,
-            btcTx.getInputs().size(),
-            btcTx.getOutputs().size()
-        );
+        int btcTxVSize = BridgeUtils.estimateUnsignedSegwitTxVSize(btcTx, federation);
         if (btcTxVSize > MAX_STANDARD_TX_SIZE_ALLOWED) {
             throw new Wallet.ExceededMaxTransactionSize();
         }
@@ -247,10 +247,10 @@ public class ReleaseTransactionBuilder {
             return;
         }
 
-        signSegwitTxInputs(sr.tx);
+        addBaseScriptForSegwitTxInputs(sr.tx);
     }
 
-    private void signSegwitTxInputs(BtcTransaction tx) {
+    private void addBaseScriptForSegwitTxInputs(BtcTransaction tx) {
         for (int i = 0; i < tx.getInputs().size(); i++) {
             TransactionInput txInput = tx.getInput(i);
             RedeemData redeemData = txInput.getConnectedRedeemData(wallet);

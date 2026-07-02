@@ -30,7 +30,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationFormatVersion;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
@@ -630,7 +629,7 @@ public final class BridgeUtils {
         final int INPUT_MULTIPLIER = 2;
         final int OUTPUT_MULTIPLIER = 2;
 
-        return calculatePegoutTxSize(
+        return simulatePegoutTxSize(
             activations,
             federation,
             INPUT_MULTIPLIER,
@@ -638,68 +637,78 @@ public final class BridgeUtils {
         );
     }
 
-    public static int calculatePegoutTxSize(ActivationConfig.ForBlock activations, Federation federation, int inputsCount, int outputsCount) {
-
+    public static int simulatePegoutTxSize(
+        ActivationConfig.ForBlock activations, 
+        Federation federation, 
+        int inputsCount, 
+        int outputsCount
+    ) {
         if (inputsCount < 1 || outputsCount < 1) {
-            throw new IllegalArgumentException("Inputs or outputs should be more than 1");
+            throw new IllegalArgumentException("Inputs and outputs should be at least 1");
         }
 
-        if (!activations.isActive(ConsensusRule.RSKIP271)) {
-            return BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, inputsCount, outputsCount);
+        if (!activations.isActive(ConsensusRule.RSKIP378)) {
+            return BridgeUtilsLegacy.simulatePegoutTxSize(activations, federation, inputsCount, outputsCount);
         }
 
-        boolean isSegwit = federation.getFormatVersion() == FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion();
-
-        return isSegwit
-            ? calculateSegwitTxSize(federation, inputsCount, outputsCount)
-            : calculateLegacyTxSize(federation, inputsCount, outputsCount);
+        return simulateSegwitPegoutVSize(federation, inputsCount, outputsCount);
     }
 
-    private static int calculateLegacyTxSize(Federation federation, int inputsCount, int outputsCount) {
+    private static int simulateSegwitPegoutVSize(Federation federation, int inputsCount, int outputsCount) {
         BtcTransaction tx = new BtcTransaction(federation.getBtcParams());
 
+        // add representative inputs to simulate calculation
+        Sha256Hash prevTxHash = Sha256Hash.ZERO_HASH;
+        int outputIndex = 0;
+        int segwitCompatibleScriptSigSize = 36;
+        Script segwitCompatibleScriptSig = new Script(new byte[segwitCompatibleScriptSigSize]);
         for (int i = 0; i < inputsCount; i++) {
-            tx.addInput(Sha256Hash.ZERO_HASH, 0, federation.getRedeemScript());
+            tx.addInput(prevTxHash, outputIndex, segwitCompatibleScriptSig);
         }
-
+        // add representative outputs to simulate calculation
         for (int i = 0; i < outputsCount; i++) {
             tx.addOutput(Coin.ZERO, federation.getAddress());
         }
 
-        int baseSize = calculateTxBaseSize(tx, inputsCount, false);
-        int signingSize = getSigningSize(federation.getNumberOfSignaturesRequired(), inputsCount);
-        return baseSize + signingSize;
+        return estimateUnsignedSegwitTxVSize(tx, federation);
     }
 
-    private static int calculateSegwitTxSize(Federation federation, int inputsCount, int outputsCount) {
-        BtcTransaction tx = new BtcTransaction(federation.getBtcParams());
-
-        for (int i = 0; i < outputsCount; i++) {
-            tx.addOutput(Coin.ZERO, federation.getAddress());
-        }
-
-        int baseSize = calculateTxBaseSize(tx, inputsCount, true);
-        int signingSize = getSigningSize(federation.getNumberOfSignaturesRequired(), inputsCount);
-        int totalSize = baseSize + signingSize + (inputsCount * federation.getRedeemScript().getProgram().length);
-        // As described in BIP141
-        int txWeight = totalSize + (3 * baseSize);
+    public static int estimateUnsignedSegwitTxVSize(BtcTransaction tx, Federation federation) {
+        int txWeight = estimateUnsignedSegwitTxWeight(tx, federation);
         return txWeight / 4;
     }
 
-    private static int getSigningSize(int numberOfSignaturesRequired, int inputsCount) {
-        int signatureSize = 72;
-        return numberOfSignaturesRequired * inputsCount * signatureSize;
+    private static int estimateUnsignedSegwitTxWeight(BtcTransaction tx, Federation federation) {
+        int inputsCount = tx.getInputs().size();
+        int numberOfSignaturesRequired = federation.getNumberOfSignaturesRequired();
+        int signingSize = estimateSigningSize(numberOfSignaturesRequired, inputsCount);
+        int redeemScriptProgramLength = federation.getRedeemScript().getProgram().length;
+
+        int extraBytes = calculateFramingBytes(numberOfSignaturesRequired, redeemScriptProgramLength);
+        int witnessData = inputsCount * (redeemScriptProgramLength + extraBytes);
+        int baseSize = BitcoinUtils.getTransactionWithoutWitness(tx).bitcoinSerialize().length;
+        int totalSize = baseSize + signingSize + witnessData;
+        // As described in BIP141
+        return totalSize + (3 * baseSize);
     }
 
-    private static int calculateTxBaseSize(BtcTransaction tx, int inputsCount, boolean isSegwit) {
-        int baseSize = tx.bitcoinSerialize().length;
-
-        if (isSegwit) {
-            final int SEGWIT_COMPATIBLE_SCRIPT_SIG_SIZE = 36;
-            baseSize += inputsCount * SEGWIT_COMPATIBLE_SCRIPT_SIG_SIZE;
-        }
-
-        return baseSize;
+    private static int calculateFramingBytes(int numberOfSignaturesRequired, int redeemScriptProgramLength) {
+        // signature pushes are counted in estimateSigningSize,
+        // here we add the framing bytes from the following stack:
+        // [OP_0]
+        // [signature 1]
+        // ...
+        // [signature N]
+        // [OP_NOTIF]
+        // [redeemScript]
+        int stackItemCount = new VarInt(1 + numberOfSignaturesRequired + 1 + 1).getSizeInBytes(); // OP_0 + N sigs + OP_NOTIF + rs
+        int redeemScriptProgramPrefixSize = new VarInt(redeemScriptProgramLength).getSizeInBytes();
+        int opcodesCount = 2;
+        return stackItemCount + opcodesCount + redeemScriptProgramPrefixSize;
     }
 
+    private static int estimateSigningSize(int numberOfSignaturesRequired, int inputsCount) {
+        int signatureSize = 73; // 72b upper bound signature length + 1b push-length prefix
+        return inputsCount * (numberOfSignaturesRequired * signatureSize);
+    }
 }
