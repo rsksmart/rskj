@@ -194,7 +194,7 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_duringMigration_withBalanceBelowMigrationCreationThreshold_shouldNotCreateMigrationTx() throws IOException {
+        void updateCollections_duringMigration_preRSKIP455_withBalanceBelowMigrationCreationThreshold_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
@@ -203,8 +203,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     .build()
             );
 
-            long executionBlockNumber = duringMigrationBlockNumber();
-            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
+            long executionBlockNumber = duringMigrationBlockNumber(VETIVER_ACTIVATIONS);
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, VETIVER_ACTIVATIONS);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -217,7 +217,7 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_duringMigration_preRSKIP455_withBalanceBelowMigrationCreationThreshold_shouldNotCreateMigrationTx() throws IOException {
+        void updateCollections_duringMigration_postRSKIP455_withBalanceBelowMigrationCreationThreshold_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
@@ -226,8 +226,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     .build()
             );
 
-            long executionBlockNumber = duringMigrationBlockNumber(VETIVER_ACTIVATIONS);
-            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, VETIVER_ACTIVATIONS);
+            long executionBlockNumber = duringMigrationBlockNumber();
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
