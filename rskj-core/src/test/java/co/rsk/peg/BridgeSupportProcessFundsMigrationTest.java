@@ -355,7 +355,7 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_pastMigrationAge_withManyMinNonDustRetiringUtxo_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
+        void updateCollections_pastMigrationAge_preRSKIP455_withManyMinNonDustRetiringUtxo_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
             // Arrange
             int numberOfUtxos = 5;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
@@ -363,8 +363,8 @@ class BridgeSupportProcessFundsMigrationTest {
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
-            long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
+            long executionBlockNumber = pastMigrationBlockNumber(VETIVER_ACTIVATIONS);
+            setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
@@ -377,7 +377,7 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_pastMigrationAge_preRSKIP455_withManyMinNonDustRetiringUtxo_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
+        void updateCollections_pastMigrationAge_postRSKIP455_withManyMinNonDustRetiringUtxo_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
             // Arrange
             int numberOfUtxos = 5;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
@@ -385,8 +385,8 @@ class BridgeSupportProcessFundsMigrationTest {
                 .withScriptPubKey(retiringFederation.getP2SHScript())
                 .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
-            long executionBlockNumber = pastMigrationBlockNumber(VETIVER_ACTIVATIONS);
-            setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(executionBlockNumber);
+            long executionBlockNumber = pastMigrationBlockNumber();
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
