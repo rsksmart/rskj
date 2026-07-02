@@ -194,13 +194,36 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_duringMigration_withBalanceBelowMigrationCreationThreshold_shouldNotCreateMigrationTx() throws IOException {
+        void updateCollections_duringMigration_preRSKIP455_withBalanceBelowMigrationCreationThreshold_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
-                .withValue(FUNDS_BELOW_MIGRATION_CREATION_THRESHOLD)
-                .withScriptPubKey(retiringFederation.getP2SHScript())
-                .build()
+                    .withValue(FUNDS_BELOW_MIGRATION_CREATION_THRESHOLD)
+                    .withScriptPubKey(retiringFederation.getP2SHScript())
+                    .build()
+            );
+
+            long executionBlockNumber = duringMigrationBlockNumber(VETIVER_ACTIVATIONS);
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber, VETIVER_ACTIVATIONS);
+            setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
+
+            // Act
+            bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+            // Assert
+            assertNoMigrationTxCreated();
+            assertRetiringFederationStillPresent();
+            assertRetiringUtxosCount(retiringUtxos.size());
+        }
+
+        @Test
+        void updateCollections_duringMigration_postRSKIP455_withBalanceBelowMigrationCreationThreshold_shouldNotCreateMigrationTx() throws IOException {
+            // Arrange
+            List<UTXO> retiringUtxos = List.of(
+                UTXOBuilder.builder()
+                    .withValue(FUNDS_BELOW_MIGRATION_CREATION_THRESHOLD)
+                    .withScriptPubKey(retiringFederation.getP2SHScript())
+                    .build()
             );
 
             long executionBlockNumber = duringMigrationBlockNumber();
