@@ -1314,7 +1314,8 @@ public class BridgeSupport {
 
         if (migrationTransactionResult.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
             logger.warn(
-                "[migrateFunds] Unable to create migration transaction. Response code: {}",
+                "[migrateFunds] Unable to create migration transaction for rskTxHash {}. Response code: {}",
+                rskTxHash,
                 migrationTransactionResult.responseCode()
             );
             return;
