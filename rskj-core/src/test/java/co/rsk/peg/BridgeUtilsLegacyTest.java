@@ -488,7 +488,7 @@ class BridgeUtilsLegacyTest {
 
     @Test
     void simulatePegoutTxSize_afterRSKIP378() {
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
+        activations = ActivationConfigsForTest.all().forBlock(0L);
         NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
