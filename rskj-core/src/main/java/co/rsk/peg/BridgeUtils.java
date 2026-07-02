@@ -680,24 +680,44 @@ public final class BridgeUtils {
 
     private static int estimateUnsignedSegwitTxWeight(BtcTransaction tx, Federation federation) {
         int inputsCount = tx.getInputs().size();
-        int signingSize = estimateSigningSize(federation.getNumberOfSignaturesRequired(), inputsCount);
-
-        // extra bytes per input: stack-item count (1b)
-        // + OP_0 (1b)
-        // + OP_NOTIF (1b)
-        // + redeemScript push-length prefix (~3b)
-        int extraBytes = 6;
-        int redeemScriptProgramLength = federation.getRedeemScript().getProgram().length;
-        int witnessData = inputsCount * (redeemScriptProgramLength + extraBytes);
+        int signingSizePerInput = estimateSigningSizePerInput(federation);
+        int witnessData = inputsCount * signingSizePerInput;
 
         int baseSize = BitcoinUtils.getTransactionWithoutWitness(tx).bitcoinSerialize().length;
-        int totalSize = baseSize + signingSize + witnessData;
+        int totalSize = baseSize + witnessData;
         // As described in BIP141
         return totalSize + (3 * baseSize);
     }
 
-    private static int estimateSigningSize(int numberOfSignaturesRequired, int inputsCount) {
-        int signatureSize = 73; // 72b upper bound signature length + 1b push-length prefix
-        return inputsCount * (numberOfSignaturesRequired * signatureSize);
+    private static int estimateSigningSizePerInput(Federation federation) {
+        int numberOfSignaturesRequired = federation.getNumberOfSignaturesRequired();
+        // estimate the bytes of pushing the following stack in each input:
+        // [stack item count]
+        // [OP_0]
+        // [signature 1]
+        // ...
+        // [signature N]
+        // [OP_NOTIF]
+        // [redeem script]
+        long stackItemCount = 1L + numberOfSignaturesRequired + 1L + 1L; // OP_0 + N sigs pushes + OP_NOTIF + rs push
+        int stackItemCountSize = new VarInt(stackItemCount).getSizeInBytes();
+
+        int op0Size = 1;
+
+        int signatureLength = 72; // 72b is the upper bound signature length
+        int signaturePushPrefixSize = new VarInt(signatureLength).getSizeInBytes();
+        int signaturePushSize = signaturePushPrefixSize + signatureLength;
+
+        int opNotifSize = 1;
+
+        int redeemScriptLength = federation.getRedeemScript().getProgram().length;
+        int redeemScriptPushPrefixSize = new VarInt(redeemScriptLength).getSizeInBytes();
+        int redeemScriptPushSize = redeemScriptPushPrefixSize + redeemScriptLength;
+
+        return stackItemCountSize
+            + op0Size
+            + (signaturePushSize * numberOfSignaturesRequired)
+            + opNotifSize
+            + redeemScriptPushSize;
     }
 }
