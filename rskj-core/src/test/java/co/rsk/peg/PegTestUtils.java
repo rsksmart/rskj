@@ -328,32 +328,4 @@ public final class PegTestUtils {
             address
         );
     }
-
-    public static BtcTransaction createUnsignedPegOutTx(
-        NetworkParameters networkParameters,
-        int inputsCount,
-        int outputsCount,
-        Federation federation
-    ) {
-        BtcTransaction btcTx = new BtcTransaction(networkParameters);
-
-        // Add inputs
-        Script redeemScript = federation.getRedeemScript();
-        for (int i = 0; i < inputsCount; i++) {
-            btcTx.addInput(
-                Sha256Hash.ZERO_HASH,
-                i,
-                new Script(new byte[]{})
-            );
-            addSpendingFederationBaseScript(btcTx, i, redeemScript, federation.getFormatVersion());
-        }
-
-        // Add outputs
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        for (int i = 0; i < outputsCount; i++) {
-            btcTx.addOutput(Coin.COIN, randomAddress);
-        }
-
-        return btcTx;
-    }
 }
