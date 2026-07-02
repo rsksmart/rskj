@@ -17,10 +17,9 @@
  */
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeUtils.simulatePegoutTxSize;
+import static co.rsk.peg.BridgeUtils.getMigrationTransactionsOutputsValues;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
-import static co.rsk.peg.BridgeUtils.getMigrationTransactionOutputsValues;
-import static co.rsk.peg.BridgeUtils.getMultipleOutputsThresholdBtcValue;
+import static co.rsk.peg.BridgeUtils.simulatePegoutTxSize;
 import static co.rsk.peg.PegUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
@@ -3137,20 +3136,12 @@ public class BridgeSupport {
             activations
         );
 
-        List<Coin> outputs = getMigrationOutputs(expectedMigrationValue);
-
+        List<Coin> outputs = getMigrationTransactionsOutputsValues(expectedMigrationValue, bridgeConstants);
         ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(outputs, destinationAddress);
         if (result.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
             throw new IllegalStateException("[createMigrationTransaction] Retiring federation wallet cannot be emptied. Response: " + result.responseCode());
         }
         return result;
-    }
-
-    private List<Coin> getMigrationOutputs(Coin expectedMigrationValue) {
-        Coin multipleOutputsThresholdBtcValue = getMultipleOutputsThresholdBtcValue(bridgeConstants);
-        return expectedMigrationValue.isLessThan(multipleOutputsThresholdBtcValue) ?
-            List.of(expectedMigrationValue) :
-            getMigrationTransactionOutputsValues(expectedMigrationValue, bridgeConstants);
     }
 
     // Make sure the local bitcoin blockchain is instantiated
