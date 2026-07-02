@@ -19,7 +19,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeUtils.simulatePegoutTxSize;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
-import static co.rsk.peg.BridgeUtils.getMultipleOutputsToMigrate;
+import static co.rsk.peg.BridgeUtils.getMigrationTransactionOutputsValues;
 import static co.rsk.peg.BridgeUtils.getMultipleOutputsThresholdBtcValue;
 import static co.rsk.peg.PegUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
@@ -3150,7 +3150,7 @@ public class BridgeSupport {
         Coin multipleOutputsThresholdBtcValue = getMultipleOutputsThresholdBtcValue(bridgeConstants);
         return expectedMigrationValue.isLessThan(multipleOutputsThresholdBtcValue) ?
             List.of(expectedMigrationValue) :
-            getMultipleOutputsToMigrate(expectedMigrationValue, bridgeConstants);
+            getMigrationTransactionOutputsValues(expectedMigrationValue, bridgeConstants);
     }
 
     // Make sure the local bitcoin blockchain is instantiated
