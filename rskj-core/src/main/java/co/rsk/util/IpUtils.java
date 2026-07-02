@@ -53,6 +53,10 @@ public class IpUtils {
     }
 
     private static InetSocketAddress parseMatch(Matcher matcher) {
-        return new InetSocketAddress(matcher.group(1), Integer.valueOf(matcher.group(2)));
+        try {
+            return new InetSocketAddress(matcher.group(1), Integer.valueOf(matcher.group(2)));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

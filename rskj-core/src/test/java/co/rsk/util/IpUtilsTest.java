@@ -56,6 +56,18 @@ class IpUtilsTest {
     }
 
     @Test
+    void parsePortAboveMaximum() {
+        InetSocketAddress result = IpUtils.parseAddress("localhost:65536");
+        Assertions.assertNull(result);
+    }
+
+    @Test
+    void parsePortLargerThanInteger() {
+        InetSocketAddress result = IpUtils.parseAddress("localhost:999999999999999999999");
+        Assertions.assertNull(result);
+    }
+
+    @Test
     void parseAddresses() {
         List<String> addresses = new ArrayList<>();
         addresses.add(IPV6_WITH_PORT);
