@@ -175,6 +175,10 @@ public final class BridgeUtils {
 
     private static List<Coin> calculateMigrationTransactionOutputsValues(Coin expectedMigrationValue,
                                                                          Coin migrationValueForMultipleOutputs) {
+        if (expectedMigrationValue.isLessThan(migrationValueForMultipleOutputs)) {
+            return List.of(expectedMigrationValue);
+        }
+
         Coin remaining = expectedMigrationValue;
         List<Coin> outputs = new ArrayList<>();
         while (!remaining.isLessThan(migrationValueForMultipleOutputs)) {
