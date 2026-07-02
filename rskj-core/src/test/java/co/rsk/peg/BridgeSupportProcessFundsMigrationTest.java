@@ -53,6 +53,7 @@ import org.junit.jupiter.api.Test;
 class BridgeSupportProcessFundsMigrationTest {
 
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
+    private static final Coin MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE = BRIDGE_CONSTANTS.getMigrationValueForMultipleOutputsInBtc();
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
     private static final NetworkParameters NETWORK_PARAMETERS = BRIDGE_CONSTANTS.getBtcParams();
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0L);
@@ -612,7 +613,12 @@ class BridgeSupportProcessFundsMigrationTest {
             private static final Coin ABOVE_MTMU_THRESHOLD_BTC_VALUE = MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE.add(Coin.SATOSHI);
             private static final Coin ABOVE_MTMU_UTXO_BTC_VALUE = ABOVE_MTMU_THRESHOLD_BTC_VALUE.divide(MAX_INPUTS_PER_PEGOUT_TX).add(Coin.SATOSHI);
             private static final Coin ABOVE_MTMU_UTXO_BTC_VALUE_LEGACY = ABOVE_MTMU_THRESHOLD_BTC_VALUE.divide(MAX_INPUTS_PER_PEGOUT_TX_LEGACY);
-            private static final int EXPECTED_MULTIPLE_OUTPUT_COUNT = 2;
+            private static final Coin TOTAL_MTMU_MIGRATED_BTC_VALUE = ABOVE_MTMU_UTXO_BTC_VALUE.multiply(MAX_INPUTS_PER_PEGOUT_TX);
+            private static final Coin LAST_MIGRATION_OUTPUT_BTC_VALUE = TOTAL_MTMU_MIGRATED_BTC_VALUE.subtract(MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE);
+            private static final List<Coin> EXPECTED_OUTPUT_VALUES_FOR_MIGRATION = List.of(
+                MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE,
+                LAST_MIGRATION_OUTPUT_BTC_VALUE
+            );
 
             private final UTXO flyoverUtxo = UTXOBuilder.builder()
                 .withValue(ABOVE_MTMU_UTXO_BTC_VALUE)
@@ -639,11 +645,15 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+                List<Coin> expectedOutputValues = List.of(
+                    MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE,
+                    MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE
+                );
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    EXPECTED_MULTIPLE_OUTPUT_COUNT
+                    expectedOutputValues
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -667,11 +677,16 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+                Coin lastMigrationOutputValue = MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE.add(Coin.SATOSHI);
+                List<Coin> expectedOutputValues = List.of(
+                    MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE,
+                    lastMigrationOutputValue
+                );
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    EXPECTED_MULTIPLE_OUTPUT_COUNT
+                    expectedOutputValues
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -696,11 +711,18 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+
+                Coin migratedAmount = getTotalValue(retiringUtxos);
+                Coin lastMigrationOutputValue = migratedAmount.subtract(MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE);
+                List<Coin> expectedOutputValues = List.of(
+                    MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE,
+                    lastMigrationOutputValue
+                );
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    EXPECTED_MULTIPLE_OUTPUT_COUNT
+                    expectedOutputValues
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -730,7 +752,7 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    EXPECTED_MULTIPLE_OUTPUT_COUNT
+                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -759,7 +781,7 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    EXPECTED_MULTIPLE_OUTPUT_COUNT
+                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
                 );
                 assertRetiringFederationStillPresent();
 
@@ -809,7 +831,7 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    EXPECTED_MULTIPLE_OUTPUT_COUNT
+                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
                 );
                 assertRetiringFederationStillPresent();
 
@@ -827,7 +849,7 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    EXPECTED_MULTIPLE_OUTPUT_COUNT
+                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
                 );
                 assertRetiringFederationStillPresent();
                 remainingUtxos -= MAX_INPUTS_PER_PEGOUT_TX;
@@ -873,7 +895,7 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    EXPECTED_MULTIPLE_OUTPUT_COUNT
+                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
                 );
                 assertRetiringFederationCleared();
                 assertNoRemainingRetiringUtxos();
@@ -902,7 +924,7 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    EXPECTED_MULTIPLE_OUTPUT_COUNT
+                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
                 );
                 assertRetiringFederationCleared();
                 assertRetiringUtxosCount(retiringUtxos.size() - MAX_INPUTS_PER_PEGOUT_TX);
@@ -933,7 +955,7 @@ class BridgeSupportProcessFundsMigrationTest {
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos,
             int expectedInputCount,
-            int expectedOutputCount
+            List<Coin> expectedOutputValues
         ) throws IOException {
             List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount(ALL_ACTIVATIONS);
             BtcTransaction migrationTransaction = migrationTransactions.get(migrationTransactions.size() - 1);
@@ -946,7 +968,12 @@ class BridgeSupportProcessFundsMigrationTest {
                 selectedUtxos,
                 expectedInputCount
             );
-            assertMigrationTxWithMultipleOutputs(migrationTransaction, selectedUtxos, expectedOutputCount);
+            assertMultipleMigrationTxOutputs(
+                migrationTransaction,
+                expectedOutputValues,
+                federationSupport.getActiveFederationAddress(),
+                NETWORK_PARAMETERS
+            );
         }
     }
 
@@ -1878,24 +1905,12 @@ class BridgeSupportProcessFundsMigrationTest {
     }
 
     private void assertMigrationTxWithOneOutput(BtcTransaction migrationTransaction, List<UTXO> migratedUtxos) {
-        Coin migrationValue = getTotalValue(migratedUtxos);
-        ReleaseTransactionAssertions.assertOneMigrationTxOutput(
-            migrationTransaction,
-            migrationValue,
-            federationSupport.getActiveFederationAddress(),
-            NETWORK_PARAMETERS
-        );
-    }
-
-    private void assertMigrationTxWithMultipleOutputs(BtcTransaction migrationTransaction, List<UTXO> migratedUtxos, int expectedOutputCount) {
         Coin migratedAmount = getTotalValue(migratedUtxos);
-        ReleaseTransactionAssertions.assertMultipleMigrationTxOutputs(
+        ReleaseTransactionAssertions.assertOneMigrationTxOutput(
             migrationTransaction,
             migratedAmount,
             federationSupport.getActiveFederationAddress(),
-            NETWORK_PARAMETERS,
-            expectedOutputCount,
-            BRIDGE_CONSTANTS
+            NETWORK_PARAMETERS
         );
     }
 
