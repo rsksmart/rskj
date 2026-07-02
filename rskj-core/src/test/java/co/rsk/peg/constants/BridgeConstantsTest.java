@@ -108,6 +108,14 @@ class BridgeConstantsTest {
         assertEquals(expectedMigrationOutputValueInBtc, bridgeConstants.getMigrationValueForMultipleOutputsInBtc());
     }
 
+    @ParameterizedTest
+    @MethodSource("bridgeConstantsArgProvider")
+    void getMaxOutputsPerMigrationTransaction(BridgeConstants bridgeConstants) {
+        int expectedMaxOutputsPerMigrationTransaction = 50;
+
+        assertEquals(expectedMaxOutputsPerMigrationTransaction, bridgeConstants.getMaxOutputsPerMigrationTransaction());
+    }
+
     private static Stream<Arguments> getBtcHeightWhenPegoutTxIndexActivatesArgProvider() {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), 837589),

@@ -22,8 +22,7 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertBtcTxVersionIs1;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertBtcTxVersionIs2;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertDestinationAddress;
-import static co.rsk.peg.ReleaseTransactionAssertions.assertEvenlyDistributedMigrationTxOutputs;
-import static co.rsk.peg.ReleaseTransactionAssertions.assertFixedValueMigrationTxOutputs;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationTxWithMultipleOutputs;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsP2shErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsP2shP2wshErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsStandardMultisig;
@@ -33,7 +32,6 @@ import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shE
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shP2wshErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsStandardMultisig;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxNumberOfOutputs;
-import static co.rsk.peg.BridgeSupport.MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
@@ -2587,7 +2585,7 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildMigrationTransaction_whenUTXOsAboveMTMU_shouldCreateMigrationTxWithMultipleOutputs() {
+            void buildMigrationTransaction_withUtxosSumBetweenMTMUAndLargeMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputs() {
                 // Arrange
                 Coin migrationOutputBtcValue = BRIDGE_MAINNET_CONSTANTS.getMigrationValueForMultipleOutputsInBtc();
                 int numberOfUtxos = 3;
@@ -2596,11 +2594,11 @@ class ReleaseTransactionBuilderTest {
                     .withValue(migrationOutputBtcValue)
                     .buildMany(numberOfUtxos, i -> createHash(i + 1));
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
-                List<Coin> migrationValues = List.of(migrationOutputBtcValue, migrationOutputBtcValue, migrationOutputBtcValue);
+                List<Coin> expectedMigrationOutputsValues = List.of(migrationOutputBtcValue, migrationOutputBtcValue, migrationOutputBtcValue);
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValues,
+                    expectedMigrationOutputsValues,
                     newFederationAddress
                 );
 
@@ -2614,16 +2612,16 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                assertFixedValueMigrationTxOutputs(
+                assertMigrationTxWithMultipleOutputs(
                     migrationTransaction,
-                    migrationValues,
+                    expectedMigrationOutputsValues,
                     newFederationAddress,
                     BTC_MAINNET_PARAMS
                 );
             }
 
             @Test
-            void buildMigrationTransaction_withP2shP2wshErpFederation_with150UtxosAboveLargeMTMUThreshold_shouldBuildTxWith50Outputs() {
+            void buildMigrationTransaction_withMaxInputsSizeUtxosSumAboveLargeMTMUThreshold_shouldBuildTxWith50Outputs() {
                 // Arrange
                 int numberOfUtxos = 150;
                 Coin utxoValue = Coin.COIN.multiply(7);
@@ -2634,18 +2632,19 @@ class ReleaseTransactionBuilderTest {
 
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
 
+                int maxOutputsPerMigrationTransaction = BRIDGE_MAINNET_CONSTANTS.getMaxOutputsPerMigrationTransaction();
                 Coin totalValue = utxoValue.multiply(numberOfUtxos);
-                Coin[] parts = totalValue.divideAndRemainder(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX);
-                List<Coin> migrationValues = new ArrayList<>(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX);
-                for (int i = 0; i < MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX - 1; i++) {
-                    migrationValues.add(parts[0]);
+                Coin[] parts = totalValue.divideAndRemainder(maxOutputsPerMigrationTransaction);
+                List<Coin> expectedMigrationOutputsValues = new ArrayList<>(maxOutputsPerMigrationTransaction);
+                for (int i = 0; i < maxOutputsPerMigrationTransaction - 1; i++) {
+                    expectedMigrationOutputsValues.add(parts[0]);
                 }
                 Coin lastOutputValue = parts[0].add(parts[1]);
-                migrationValues.add(lastOutputValue);
+                expectedMigrationOutputsValues.add(lastOutputValue);
 
                 // Act
                 BuildResult migrationTransactionResult = releaseTransactionBuilder.buildMigrationTransaction(
-                    migrationValues,
+                    expectedMigrationOutputsValues,
                     newFederationAddress
                 );
 
@@ -2660,9 +2659,9 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs()
                 );
-                assertEvenlyDistributedMigrationTxOutputs(
+                assertMigrationTxWithMultipleOutputs(
                     migrationTransaction,
-                    totalValue,
+                    expectedMigrationOutputsValues,
                     newFederationAddress,
                     BTC_MAINNET_PARAMS
                 );

@@ -17,7 +17,6 @@
  */
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeSupport.MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX;
 import static co.rsk.peg.bitcoin.BitcoinUtils.inputHasWitness;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
@@ -183,7 +182,8 @@ public final class BridgeUtils {
 
         Coin largeMultipleOutputsThresholdBtcValue = getLargeMultipleOutputsThresholdBtcValue(bridgeConstants);
         if (!expectedMigrationValue.isLessThan(largeMultipleOutputsThresholdBtcValue)) {
-            return getEvenlyDistributedOutputs(expectedMigrationValue);
+            int maxOutputsPerMigrationTransaction = bridgeConstants.getMaxOutputsPerMigrationTransaction();
+            return getEvenlyDistributedOutputs(expectedMigrationValue, maxOutputsPerMigrationTransaction);
         }
 
         return getFixedValueOutputs(expectedMigrationValue, migrationValueForMultipleOutputs);
@@ -204,12 +204,12 @@ public final class BridgeUtils {
         return outputs;
     }
 
-    private static List<Coin> getEvenlyDistributedOutputs(Coin totalValue) {
-        Coin[] outputDistribution = totalValue.divideAndRemainder(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX);
+    private static List<Coin> getEvenlyDistributedOutputs(Coin totalValue, int maxOutputsPerMigrationTransaction) {
+        Coin[] outputDistribution = totalValue.divideAndRemainder(maxOutputsPerMigrationTransaction);
         Coin valuePerOutput = outputDistribution[0];
         Coin remainder = outputDistribution[1];
-        List<Coin> outputs = new ArrayList<>(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX);
-        for (int i = 0; i < MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX - 1; i++) {
+        List<Coin> outputs = new ArrayList<>(maxOutputsPerMigrationTransaction);
+        for (int i = 0; i < maxOutputsPerMigrationTransaction - 1; i++) {
             outputs.add(valuePerOutput);
         }
         outputs.add(valuePerOutput.add(remainder));
@@ -221,7 +221,8 @@ public final class BridgeUtils {
     }
 
     static Coin getLargeMultipleOutputsThresholdBtcValue(BridgeConstants bridgeConstants) {
-        return bridgeConstants.getMigrationValueForMultipleOutputsInBtc().multiply(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX);
+        int maxOutputsPerMigrationTransaction = bridgeConstants.getMaxOutputsPerMigrationTransaction();
+        return bridgeConstants.getMigrationValueForMultipleOutputsInBtc().multiply(maxOutputsPerMigrationTransaction);
     }
 
     /**
