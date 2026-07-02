@@ -165,6 +165,34 @@ public final class BridgeUtils {
         }
     }
 
+    public static List<Coin> getMigrationTransactionsOutputsValues(Coin expectedMigrationValue, BridgeConstants bridgeConstants) {
+        Coin multipleOutputsThresholdBtcValue = getMultipleOutputsThresholdBtcValue(bridgeConstants);
+        Coin migrationValueForMultipleOutputs = bridgeConstants.getMigrationValueForMultipleOutputsInBtc();
+        return expectedMigrationValue.isLessThan(multipleOutputsThresholdBtcValue) ?
+            List.of(expectedMigrationValue) :
+            calculateMigrationTransactionOutputsValues(expectedMigrationValue, migrationValueForMultipleOutputs);
+    }
+
+    private static List<Coin> calculateMigrationTransactionOutputsValues(Coin expectedMigrationValue,
+                                                                         Coin migrationValueForMultipleOutputs) {
+        Coin remaining = expectedMigrationValue;
+        List<Coin> outputs = new ArrayList<>();
+        while (!remaining.isLessThan(migrationValueForMultipleOutputs)) {
+            outputs.add(migrationValueForMultipleOutputs);
+            remaining = remaining.subtract(migrationValueForMultipleOutputs);
+        }
+        if (remaining.isPositive()) {
+            int lastOutputIndex = outputs.size() - 1;
+            Coin lastOutput = outputs.get(lastOutputIndex);
+            outputs.set(lastOutputIndex, lastOutput.add(remaining));
+        }
+        return outputs;
+    }
+
+    static Coin getMultipleOutputsThresholdBtcValue(BridgeConstants bridgeConstants) {
+        return bridgeConstants.getMigrationValueForMultipleOutputsInBtc().multiply(2);
+    }
+
     /**
      * @param activations
      * @param bridgeConstants

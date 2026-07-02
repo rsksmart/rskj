@@ -51,6 +51,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -64,6 +65,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.BridgeUtils.getMigrationTransactionsOutputsValues;
 import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
 import static co.rsk.peg.ReleaseTransactionBuilder.MAX_STANDARD_TX_SIZE_ALLOWED;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateSignerEncodedSignatures;
@@ -2203,5 +2205,120 @@ class BridgeUtilsTest {
         );
 
         Assertions.assertTrue(foundUTXOs.isEmpty());
+    }
+
+    @Nested
+    class GetMigrationTransactionsOutputsValuesTest {
+
+        Coin migrationValuePerOutput;
+
+        @BeforeEach
+        void setUp() {
+            migrationValuePerOutput = bridgeConstantsMainnet.getMigrationValueForMultipleOutputsInBtc();
+        }
+
+        @Test
+        void belowMigrationValueForMultipleOutputs_shouldReturnOneOutputWithTheTotalValue() {
+            // Act
+            Coin migrationValueForOneOutput = migrationValuePerOutput.subtract(Coin.SATOSHI);
+            List<Coin> outputs = getMigrationTransactionsOutputsValues(migrationValueForOneOutput, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(1, outputs.size());
+            assertEquals(migrationValueForOneOutput, outputs.get(0));
+        }
+
+        @Test
+        void withMigrationValueForMultipleOutputs_shouldReturnOneOutputWithTheTotalValue() {
+            // Act
+            List<Coin> outputs = getMigrationTransactionsOutputsValues(migrationValuePerOutput, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(1, outputs.size());
+            assertEquals(migrationValuePerOutput, outputs.get(0));
+        }
+        @Test
+        void withValueBelowTwoTimesMigrationValueForMultipleOutputs_shouldReturnOneOutputWithTheTotalValue() {
+            // Arrange
+            Coin value = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
+
+            // Act
+            List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(1, outputs.size());
+            assertEquals(value, outputs.get(0));
+        }
+
+        @Test
+        void withTwoTimesMigrationValueForMultipleOutputs_shouldReturnTwoOutputsEachWithMigrationValuePerOutput() {
+            // Arrange
+            Coin value = migrationValuePerOutput.multiply(2);
+
+            // Act
+            List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(2, outputs.size());
+            assertEquals(migrationValuePerOutput, outputs.get(0));
+            assertEquals(migrationValuePerOutput, outputs.get(1));
+        }
+
+        @Test
+        void withTwoTimesMigrationValueForMultipleOutputsPlusOneSatoshi_shouldReturnTwoOutputsWithTheRemainderInTheLastOne() {
+            // Arrange
+            Coin value = migrationValuePerOutput.multiply(2).add(Coin.SATOSHI);
+
+            // Act
+            List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(2, outputs.size());
+            assertEquals(migrationValuePerOutput, outputs.get(0));
+            assertEquals(migrationValuePerOutput.add(Coin.SATOSHI), outputs.get(1));
+        }
+
+        @Test
+        void withValueBelowThreeTimesMigrationValueForMultipleOutputs_shouldReturnTwoOutputsWithTheRemainderInTheLastOne() {
+            // Arrange
+            Coin value = migrationValuePerOutput.multiply(3).subtract(Coin.SATOSHI);
+
+            // Act
+            List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(2, outputs.size());
+            assertEquals(migrationValuePerOutput, outputs.get(0));
+            Coin expectedLastOutputValue = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
+            assertEquals(expectedLastOutputValue, outputs.get(1));
+        }
+
+        @Test
+        void withThreeTimesMigrationValueForMultipleOutputs_shouldReturnThreeOutputsEachWithMigrationValuePerOutput() {
+            // Arrange
+            Coin value = migrationValuePerOutput.multiply(3);
+
+            // Act
+            List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(3, outputs.size());
+            outputs.forEach(output -> assertEquals(migrationValuePerOutput, output));
+        }
+
+        @Test
+        void withThreeTimesMigrationValueForMultipleOutputsPlusOneSatoshi_shouldReturnThreeOutputsWithTheRemainderInTheLastOne() {
+            // Arrange
+            Coin value = migrationValuePerOutput.multiply(3).add(Coin.SATOSHI);
+
+            // Act
+            List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+            // Assert
+            assertEquals(3, outputs.size());
+            assertEquals(migrationValuePerOutput, outputs.get(0));
+            assertEquals(migrationValuePerOutput, outputs.get(1));
+            assertEquals(migrationValuePerOutput.add(Coin.SATOSHI), outputs.get(2));
+        }
     }
 }
