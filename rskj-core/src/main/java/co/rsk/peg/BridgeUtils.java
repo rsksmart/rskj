@@ -680,20 +680,31 @@ public final class BridgeUtils {
 
     private static int estimateUnsignedSegwitTxWeight(BtcTransaction tx, Federation federation) {
         int inputsCount = tx.getInputs().size();
-        int signingSize = estimateSigningSize(federation.getNumberOfSignaturesRequired(), inputsCount);
-
-        // extra bytes per input: stack-item count (1b)
-        // + OP_0 (1b)
-        // + OP_NOTIF (1b)
-        // + redeemScript push-length prefix (~3b)
-        int extraBytes = 6;
+        int numberOfSignaturesRequired = federation.getNumberOfSignaturesRequired();
+        int signingSize = estimateSigningSize(numberOfSignaturesRequired, inputsCount);
         int redeemScriptProgramLength = federation.getRedeemScript().getProgram().length;
-        int witnessData = inputsCount * (redeemScriptProgramLength + extraBytes);
 
+        int extraBytes = calculateFramingBytes(numberOfSignaturesRequired, redeemScriptProgramLength);
+        int witnessData = inputsCount * (redeemScriptProgramLength + extraBytes);
         int baseSize = BitcoinUtils.getTransactionWithoutWitness(tx).bitcoinSerialize().length;
         int totalSize = baseSize + signingSize + witnessData;
         // As described in BIP141
         return totalSize + (3 * baseSize);
+    }
+
+    private static int calculateFramingBytes(int numberOfSignaturesRequired, int redeemScriptProgramLength) {
+        // signature pushes are counted in estimateSigningSize,
+        // here we add the framing bytes from the following stack:
+        // [OP_0]
+        // [signature 1]
+        // ...
+        // [signature N]
+        // [OP_NOTIF]
+        // [redeemScript]
+        int stackItemCount = new VarInt(1 + numberOfSignaturesRequired + 1 + 1).getSizeInBytes(); // OP_0 + N sigs + OP_NOTIF + rs
+        int redeemScriptProgramPrefixSize = new VarInt(redeemScriptProgramLength).getSizeInBytes();
+        int opcodesCount = 2;
+        return stackItemCount + opcodesCount + redeemScriptProgramPrefixSize;
     }
 
     private static int estimateSigningSize(int numberOfSignaturesRequired, int inputsCount) {
