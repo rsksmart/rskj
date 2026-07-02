@@ -165,8 +165,16 @@ public final class BridgeUtils {
         }
     }
 
-    public static List<Coin> getMigrationTransactionOutputsValues(Coin expectedMigrationValue, BridgeConstants bridgeConstants) {
+    public static List<Coin> getMigrationTransactionsOutputsValues(Coin expectedMigrationValue, BridgeConstants bridgeConstants) {
+        Coin multipleOutputsThresholdBtcValue = getMultipleOutputsThresholdBtcValue(bridgeConstants);
         Coin migrationValueForMultipleOutputs = bridgeConstants.getMigrationValueForMultipleOutputsInBtc();
+        return expectedMigrationValue.isLessThan(multipleOutputsThresholdBtcValue) ?
+            List.of(expectedMigrationValue) :
+            calculateMigrationTransactionOutputsValues(expectedMigrationValue, migrationValueForMultipleOutputs);
+    }
+
+    private static List<Coin> calculateMigrationTransactionOutputsValues(Coin expectedMigrationValue,
+                                                                         Coin migrationValueForMultipleOutputs) {
         Coin remaining = expectedMigrationValue;
         List<Coin> outputs = new ArrayList<>();
         while (!remaining.isLessThan(migrationValueForMultipleOutputs)) {
