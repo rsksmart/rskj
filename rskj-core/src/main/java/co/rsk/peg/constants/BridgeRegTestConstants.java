@@ -63,6 +63,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
         minimumPegoutTxValue = Coin.valueOf(250_000);
 
         migrationValueForMultipleOutputsInBtc = Coin.COIN.multiply(20);
+        maxOutputsPerMigrationTransaction = 50;
 
         minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
 

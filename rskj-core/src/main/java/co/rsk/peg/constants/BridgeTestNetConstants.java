@@ -48,6 +48,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
         minimumPegoutTxValue = Coin.valueOf(250_000);
 
         migrationValueForMultipleOutputsInBtc = Coin.COIN.multiply(20);
+        maxOutputsPerMigrationTransaction = 50;
 
         btcHeightWhenBlockIndexActivates = 2_039_594;
         maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)

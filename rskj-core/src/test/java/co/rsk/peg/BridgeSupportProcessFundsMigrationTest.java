@@ -1,7 +1,6 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.BridgeSupport.MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxosInStorage;
@@ -1428,11 +1427,13 @@ class BridgeSupportProcessFundsMigrationTest {
                 expectedInputCount
             );
             Coin migratedAmount = getTotalValue(selectedUtxos);
+            int maxOutputsPerMigrationTransaction = BRIDGE_CONSTANTS.getMaxOutputsPerMigrationTransaction();
             assertEvenlyDistributedMigrationTxOutputs(
                 migrationTransaction,
                 migratedAmount,
                 federationSupport.getActiveFederationAddress(),
-                NETWORK_PARAMETERS
+                NETWORK_PARAMETERS,
+                maxOutputsPerMigrationTransaction
             );
         }
 

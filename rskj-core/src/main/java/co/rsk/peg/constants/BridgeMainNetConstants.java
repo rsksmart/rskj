@@ -30,6 +30,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         minimumPegoutTxValue = Coin.valueOf(400_000);
 
         migrationValueForMultipleOutputsInBtc = Coin.COIN.multiply(20);
+        maxOutputsPerMigrationTransaction = 50;
 
         btcHeightWhenBlockIndexActivates = 696_022;
         maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
