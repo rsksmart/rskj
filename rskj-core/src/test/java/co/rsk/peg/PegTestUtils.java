@@ -44,8 +44,6 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 
-import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
-
 public final class PegTestUtils {
 
     private static int nhash = 0;
