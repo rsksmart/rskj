@@ -680,35 +680,44 @@ public final class BridgeUtils {
 
     private static int estimateUnsignedSegwitTxWeight(BtcTransaction tx, Federation federation) {
         int inputsCount = tx.getInputs().size();
-        int numberOfSignaturesRequired = federation.getNumberOfSignaturesRequired();
-        int signingSize = estimateSigningSize(numberOfSignaturesRequired, inputsCount);
-        int redeemScriptProgramLength = federation.getRedeemScript().getProgram().length;
+        int signingSizePerInput = estimateSigningSizePerInput(federation);
+        int witnessData = inputsCount * signingSizePerInput;
 
-        int extraBytes = calculateFramingBytes(numberOfSignaturesRequired, redeemScriptProgramLength);
-        int witnessData = inputsCount * (redeemScriptProgramLength + extraBytes);
         int baseSize = BitcoinUtils.getTransactionWithoutWitness(tx).bitcoinSerialize().length;
-        int totalSize = baseSize + signingSize + witnessData;
+        int totalSize = baseSize + witnessData;
         // As described in BIP141
         return totalSize + (3 * baseSize);
     }
 
-    private static int calculateFramingBytes(int numberOfSignaturesRequired, int redeemScriptProgramLength) {
-        // signature pushes are counted in estimateSigningSize,
-        // here we add the framing bytes from the following stack:
+    private static int estimateSigningSizePerInput(Federation federation) {
+        int numberOfSignaturesRequired = federation.getNumberOfSignaturesRequired();
+        // estimate the bytes of pushing the following stack in each input:
+        // [stack item count]
         // [OP_0]
         // [signature 1]
         // ...
         // [signature N]
         // [OP_NOTIF]
-        // [redeemScript]
-        int stackItemCount = new VarInt(1 + numberOfSignaturesRequired + 1 + 1).getSizeInBytes(); // OP_0 + N sigs + OP_NOTIF + rs
-        int redeemScriptProgramPrefixSize = new VarInt(redeemScriptProgramLength).getSizeInBytes();
-        int opcodesCount = 2;
-        return stackItemCount + opcodesCount + redeemScriptProgramPrefixSize;
-    }
+        // [redeem script]
+        long stackItemCount = 1L + numberOfSignaturesRequired + 1L + 1L; // OP_0 + N sigs pushes + OP_NOTIF + rs push
+        int stackItemCountSize = new VarInt(stackItemCount).getSizeInBytes();
 
-    private static int estimateSigningSize(int numberOfSignaturesRequired, int inputsCount) {
-        int signatureSize = 73; // 72b upper bound signature length + 1b push-length prefix
-        return inputsCount * (numberOfSignaturesRequired * signatureSize);
+        int op0Size = 1;
+
+        int signatureLength = 72; // 72b is the upper bound signature length
+        int signaturePushPrefixSize = new VarInt(signatureLength).getSizeInBytes();
+        int signaturePushSize = signaturePushPrefixSize + signatureLength;
+
+        int opNotifSize = 1;
+
+        int redeemScriptLength = federation.getRedeemScript().getProgram().length;
+        int redeemScriptPushPrefixSize = new VarInt(redeemScriptLength).getSizeInBytes();
+        int redeemScriptPushSize = redeemScriptPushPrefixSize + redeemScriptLength;
+
+        return stackItemCountSize
+            + op0Size
+            + (signaturePushSize * numberOfSignaturesRequired)
+            + opNotifSize
+            + redeemScriptPushSize;
     }
 }
