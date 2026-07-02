@@ -172,7 +172,7 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_duringMigration_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldNotCreateMigrationTx() throws IOException {
+        void updateCollections_duringMigration_postRSKIP455_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
             int numberOfUtxos = 5;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
@@ -1144,7 +1144,7 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_duringMigration_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldNotCreateMigrationTx() throws IOException {
+        void updateCollections_duringMigration_postRSKIP455_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
             int numberOfUtxos = 5;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
@@ -1568,7 +1568,7 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_duringMigration_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldNotCreateMigrationTx() throws IOException {
+        void updateCollections_duringMigration_postRSKIP455_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldNotCreateMigrationTx() throws IOException {
             // Arrange
             int numberOfUtxos = 5;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
