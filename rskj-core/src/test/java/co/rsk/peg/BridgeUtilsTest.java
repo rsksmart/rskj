@@ -1264,7 +1264,7 @@ class BridgeUtilsTest {
         // we expect calculated size to be greater than real one
         assertTrue(calculatedPegoutTxSize > realVSize);
         double diff = calculatedPegoutTxSize - realVSize;
-        // and the diff to be very small
+        // and the diff to be less than 1%
         assertTrue(diff < realVSize * 0.01);
     }
 
