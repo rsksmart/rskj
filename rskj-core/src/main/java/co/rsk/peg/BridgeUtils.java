@@ -165,7 +165,7 @@ public final class BridgeUtils {
         }
     }
 
-    public static List<Coin> getMultipleOutputsToMigrate(Coin expectedMigrationValue, BridgeConstants bridgeConstants) {
+    public static List<Coin> getMigrationTransactionOutputsValues(Coin expectedMigrationValue, BridgeConstants bridgeConstants) {
         Coin migrationValueForMultipleOutputs = bridgeConstants.getMigrationValueForMultipleOutputsInBtc();
         Coin remaining = expectedMigrationValue;
         List<Coin> outputs = new ArrayList<>();
