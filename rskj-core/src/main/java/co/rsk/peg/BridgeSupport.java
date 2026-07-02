@@ -1294,7 +1294,18 @@ public class BridgeSupport {
         }
     }
 
+    /**
+     * @deprecated Post RSKIP455, if the retiring federation does not have enough funds to pay
+     * for fees is handled by ReleaseTransactionBuilder instead of relying on this pre-check.
+     * In the future, we are performing tests to see whether any migration transactions ever hit
+     * that federation's balance <= feePerKb/2. If not, this guard can be removed entirely.
+     */
+    @Deprecated(since="TBD1000")
     private boolean hasMinimumFundsToMigrate(Wallet retiringFederationWallet) {
+        if (activations.isActive(RSKIP455)) {
+            return true;
+        }
+
         // This value is set according to the average 500 bytes transaction size
         Coin minimumFundsToMigrate = getFeePerKb().divide(2);
         return retiringFederationWallet.getBalance().isGreaterThan(minimumFundsToMigrate);
