@@ -84,6 +84,8 @@ public class BridgeUtilsLegacy {
         return baseSize + signingSize;
     }
 
+    // this old calculation had a bug: it wasn't adding inputs to simulate the size,
+    // and in calculateTxBaseSize we were just adding the bytes from the script sig
     private static int simulateSegwitTxSizePreTBD100(Federation federation, int inputsCount, int outputsCount) {
         BtcTransaction tx = new BtcTransaction(federation.getBtcParams());
 
