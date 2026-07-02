@@ -2879,13 +2879,13 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildBatchedPegouts_whenNoPegoutRequests_shouldThrowIllegalStateException() {
+            void buildBatchedPegouts_whenNoPegoutRequests_shouldThrowIllegalArgumentException() {
                 // Arrange
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(
                     federationUTXOs);
 
                 // Act & Assert
-                assertThrows(IllegalStateException.class,
+                assertThrows(IllegalArgumentException.class,
                     () -> releaseTransactionBuilder.buildBatchedPegouts(NO_PEGOUT_REQUESTS));
             }
 
@@ -3252,12 +3252,12 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildBatchedPegouts_whenNoPegoutRequests_throwsIllegalStateException() {
+            void buildBatchedPegouts_whenNoPegoutRequests_throwsIllegalArgumentException() {
                 // Arrange
                 ReleaseTransactionBuilder releaseTransactionBuilder = createReleaseTransactionBuilder();
 
                 // Act & Assert
-                assertThrows(IllegalStateException.class, () -> releaseTransactionBuilder.buildBatchedPegouts(NO_PEGOUT_REQUESTS));
+                assertThrows(IllegalArgumentException.class, () -> releaseTransactionBuilder.buildBatchedPegouts(NO_PEGOUT_REQUESTS));
             }
 
             @Test

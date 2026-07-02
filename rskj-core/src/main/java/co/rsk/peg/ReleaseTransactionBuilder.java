@@ -104,7 +104,7 @@ public class ReleaseTransactionBuilder {
 
     public BuildResult buildBatchedPegouts(List<ReleaseRequestQueue.Entry> entries) {
         if (entries.isEmpty()) {
-            throw new IllegalStateException("cannot create batched pegouts tx when no existing requests");
+            throw new IllegalArgumentException("cannot create batched pegouts tx when no existing requests");
         }
 
         return buildWithConfiguration((SendRequest sr) -> {
