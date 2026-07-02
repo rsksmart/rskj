@@ -943,6 +943,39 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             @Test
+            void updateCollections_duringMigration_withOneUtxoJustBelowLargeMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputs() throws IOException {
+                // Arrange
+                Coin utxoValueBelowLargeMTMUThreshold = LARGE_MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE.subtract(Coin.SATOSHI);
+                List<UTXO> retiringUtxos = List.of(
+                    UTXOBuilder.builder()
+                        .withValue(utxoValueBelowLargeMTMUThreshold)
+                        .withScriptPubKey(retiringFederation.getP2SHScript())
+                        .build()
+                );
+
+                long executionBlockNumber = duringMigrationBlockNumber();
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
+                setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
+
+                // Act
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+                // Assert
+                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+
+                List<Coin> expectedOutputValues = getExpectedOutputValuesForOneUtxoJustBelowLargeMTMUThreshold();
+
+                assertLastMigrationTxAddedWithFixedValueOutputsWasBuiltAsExpected(
+                    retiringFederation,
+                    retiringUtxos,
+                    retiringUtxos.size(),
+                    expectedOutputValues
+                );
+                assertRetiringFederationStillPresent();
+                assertNoRemainingRetiringUtxos();
+            }
+
+            @Test
             void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxUtxos_shouldCreateMigrationTxWithMultipleOutputsAndClearRetiringFed() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
@@ -1001,7 +1034,7 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             @Test
-            void updateCollections_duringMigration_withOneUtxoJustBelowLargeMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputs() throws IOException {
+            void updateCollections_pastMigration_withOneUtxoJustBelowLargeMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputsAndClearRetiringFed() throws IOException {
                 // Arrange
                 Coin utxoValueBelowLargeMTMUThreshold = LARGE_MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE.subtract(Coin.SATOSHI);
                 List<UTXO> retiringUtxos = List.of(
@@ -1011,7 +1044,7 @@ class BridgeSupportProcessFundsMigrationTest {
                         .build()
                 );
 
-                long executionBlockNumber = duringMigrationBlockNumber();
+                long executionBlockNumber = pastMigrationBlockNumber();
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
@@ -1029,7 +1062,7 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringUtxos.size(),
                     expectedOutputValues
                 );
-                assertRetiringFederationStillPresent();
+                assertRetiringFederationCleared();
                 assertNoRemainingRetiringUtxos();
             }
 
