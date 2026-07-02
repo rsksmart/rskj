@@ -2610,14 +2610,11 @@ class ReleaseTransactionBuilderTest {
                     retiringFederationRedeemScript,
                     retiringFederationUTXOs,
                     migrationTransactionResult.selectedUTXOs());
-                Coin migratedValue = migrationValues.stream().reduce(Coin.ZERO, Coin::add);
                 assertMultipleMigrationTxOutputs(
                     migrationTransaction,
-                    migratedValue,
+                    migrationValues,
                     newFederationAddress,
-                    BTC_MAINNET_PARAMS,
-                    numberOfUtxos,
-                    BRIDGE_MAINNET_CONSTANTS
+                    BTC_MAINNET_PARAMS
                 );
             }
 
