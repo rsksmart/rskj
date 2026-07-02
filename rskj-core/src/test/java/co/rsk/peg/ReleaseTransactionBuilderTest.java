@@ -33,7 +33,6 @@ import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shE
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shP2wshErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsStandardMultisig;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxNumberOfOutputs;
-import static co.rsk.peg.BridgeSupport.MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS;
 import static co.rsk.peg.ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
@@ -2634,10 +2633,11 @@ class ReleaseTransactionBuilderTest {
 
                 ReleaseTransactionBuilder releaseTransactionBuilder = setupWalletAndCreateReleaseTransactionBuilder(retiringFederationUTXOs);
 
+                int maxOutputsPerMigrationTransaction = BRIDGE_MAINNET_CONSTANTS.getMaxOutputsPerMigrationTransaction();
                 Coin totalValue = utxoValue.multiply(numberOfUtxos);
-                Coin[] parts = totalValue.divideAndRemainder(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX);
-                List<Coin> migrationValues = new ArrayList<>(MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX);
-                for (int i = 0; i < MAX_OUTPUTS_NUMBER_IN_MIGRATION_TX - 1; i++) {
+                Coin[] parts = totalValue.divideAndRemainder(maxOutputsPerMigrationTransaction);
+                List<Coin> migrationValues = new ArrayList<>(maxOutputsPerMigrationTransaction);
+                for (int i = 0; i < maxOutputsPerMigrationTransaction - 1; i++) {
                     migrationValues.add(parts[0]);
                 }
                 Coin lastOutputValue = parts[0].add(parts[1]);
@@ -2664,7 +2664,8 @@ class ReleaseTransactionBuilderTest {
                     migrationTransaction,
                     totalValue,
                     newFederationAddress,
-                    BTC_MAINNET_PARAMS
+                    BTC_MAINNET_PARAMS,
+                    maxOutputsPerMigrationTransaction
                 );
                 int migrationTransactionSize = BridgeUtils.simulatePegoutTxSize(
                     ALL_ACTIVATIONS,
