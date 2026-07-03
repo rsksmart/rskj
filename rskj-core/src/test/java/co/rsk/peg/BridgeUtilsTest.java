@@ -2234,114 +2234,210 @@ class BridgeUtilsTest {
     class GetMigrationTransactionsOutputsValuesTest {
 
         Coin migrationValuePerOutput;
+        int maxOutputsPerMigrationTransaction;
+        Coin largeMultipleOutputsThreshold;
 
         @BeforeEach
         void setUp() {
             migrationValuePerOutput = bridgeConstantsMainnet.getMigrationValueForMultipleOutputsInBtc();
+            maxOutputsPerMigrationTransaction = bridgeConstantsMainnet.getMaxOutputsPerMigrationTransaction();
+            largeMultipleOutputsThreshold = BridgeUtils.getLargeMultipleOutputsThresholdBtcValue(bridgeConstantsMainnet);
         }
 
-        @Test
-        void belowMigrationValueForMultipleOutputs_shouldReturnOneOutputWithTheTotalValue() {
-            // Act
-            Coin migrationValueForOneOutput = migrationValuePerOutput.subtract(Coin.SATOSHI);
-            List<Coin> outputs = getMigrationTransactionsOutputsValues(migrationValueForOneOutput, bridgeConstantsMainnet);
+        @Nested
+        class WithValueBelowMTMUThreshold {
 
-            // Assert
-            assertEquals(1, outputs.size());
-            assertEquals(migrationValueForOneOutput, outputs.get(0));
+            @Test
+            void withValueJustBelowMigrationValueForMultipleOutputs_shouldReturnOneOutputWithTheTotalValue() {
+                // Arrange
+                Coin value = migrationValuePerOutput.subtract(Coin.SATOSHI);
+
+                // Act
+                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+                // Assert
+                assertEquals(1, outputs.size());
+                assertEquals(value, outputs.get(0));
+            }
+
+            @Test
+            void withValueAtMigrationValueForMultipleOutputs_shouldReturnOneOutputWithTheTotalValue() {
+                // Act
+                List<Coin> outputs = getMigrationTransactionsOutputsValues(migrationValuePerOutput, bridgeConstantsMainnet);
+
+                // Assert
+                assertEquals(1, outputs.size());
+                assertEquals(migrationValuePerOutput, outputs.get(0));
+            }
+
+            @Test
+            void withValueJustBelowTwoTimesMigrationValueForMultipleOutputs_shouldReturnOneOutputWithTheTotalValue() {
+                // Arrange
+                Coin value = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
+
+                // Act
+                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+                // Assert
+                assertEquals(1, outputs.size());
+                assertEquals(value, outputs.get(0));
+            }
         }
 
-        @Test
-        void withMigrationValueForMultipleOutputs_shouldReturnOneOutputWithTheTotalValue() {
-            // Act
-            List<Coin> outputs = getMigrationTransactionsOutputsValues(migrationValuePerOutput, bridgeConstantsMainnet);
+        @Nested
+        class WithValueBetweenMTMUAndLargeMTMUThreshold {
 
-            // Assert
-            assertEquals(1, outputs.size());
-            assertEquals(migrationValuePerOutput, outputs.get(0));
+            @Test
+            void withValueAtTwoTimesMigrationValueForMultipleOutputs_shouldReturnTwoOutputsEachWithMigrationValuePerOutput() {
+                // Arrange
+                Coin value = migrationValuePerOutput.multiply(2);
+
+                // Act
+                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+                // Assert
+                assertEquals(2, outputs.size());
+                assertEquals(migrationValuePerOutput, outputs.get(0));
+                assertEquals(migrationValuePerOutput, outputs.get(1));
+            }
+
+            @Test
+            void withValueAtTwoTimesMigrationValueForMultipleOutputsPlusOneSatoshi_shouldReturnTwoOutputsWithTheRemainderInTheLastOne() {
+                // Arrange
+                Coin value = migrationValuePerOutput.multiply(2).add(Coin.SATOSHI);
+
+                // Act
+                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+                // Assert
+                assertEquals(2, outputs.size());
+                assertEquals(migrationValuePerOutput, outputs.get(0));
+                assertEquals(migrationValuePerOutput.add(Coin.SATOSHI), outputs.get(1));
+            }
+
+            @Test
+            void withValueJustBelowThreeTimesMigrationValueForMultipleOutputs_shouldReturnTwoOutputsWithTheRemainderInTheLastOne() {
+                // Arrange
+                Coin value = migrationValuePerOutput.multiply(3).subtract(Coin.SATOSHI);
+
+                // Act
+                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+                // Assert
+                assertEquals(2, outputs.size());
+                assertEquals(migrationValuePerOutput, outputs.get(0));
+                Coin expectedLastOutputValue = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
+                assertEquals(expectedLastOutputValue, outputs.get(1));
+            }
+
+            @Test
+            void withValueAtThreeTimesMigrationValueForMultipleOutputs_shouldReturnThreeOutputsEachWithMigrationValuePerOutput() {
+                // Arrange
+                Coin value = migrationValuePerOutput.multiply(3);
+
+                // Act
+                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+                // Assert
+                assertEquals(3, outputs.size());
+                outputs.forEach(output -> assertEquals(migrationValuePerOutput, output));
+            }
+
+            @Test
+            void withValueAtThreeTimesMigrationValueForMultipleOutputsPlusOneSatoshi_shouldReturnThreeOutputsWithTheRemainderInTheLastOne() {
+                // Arrange
+                Coin value = migrationValuePerOutput.multiply(3).add(Coin.SATOSHI);
+
+                // Act
+                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+                // Assert
+                assertEquals(3, outputs.size());
+                assertEquals(migrationValuePerOutput, outputs.get(0));
+                assertEquals(migrationValuePerOutput, outputs.get(1));
+                assertEquals(migrationValuePerOutput.add(Coin.SATOSHI), outputs.get(2));
+            }
+
+            @Test
+            void withValueJustBelowLargeMultipleOutputsThreshold_shouldReturnMaxOutputsMinusOneOutputsWithTheRemainderInTheLastOne() {
+                // Arrange
+                Coin value = largeMultipleOutputsThreshold.subtract(Coin.SATOSHI);
+
+                // Act
+                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+
+                // Assert
+                int expectedNumberOfOutputs = maxOutputsPerMigrationTransaction - 1;
+                assertEquals(expectedNumberOfOutputs, outputs.size());
+                for (int i = 0; i < expectedNumberOfOutputs - 1; i++) {
+                    assertEquals(migrationValuePerOutput, outputs.get(i));
+                }
+                Coin expectedLastOutputValue = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
+                assertEquals(expectedLastOutputValue, outputs.get(expectedNumberOfOutputs - 1));
+            }
         }
-        @Test
-        void withValueBelowTwoTimesMigrationValueForMultipleOutputs_shouldReturnOneOutputWithTheTotalValue() {
-            // Arrange
-            Coin value = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
 
-            // Act
-            List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+        @Nested
+        class WithValueAboveLargeMTMUThreshold {
 
-            // Assert
-            assertEquals(1, outputs.size());
-            assertEquals(value, outputs.get(0));
-        }
+            @Test
+            void withValueAtLargeMultipleOutputsThreshold_shouldReturnValueSplitInFiftyOutputs() {
+                // Act
+                List<Coin> outputs = getMigrationTransactionsOutputsValues(largeMultipleOutputsThreshold, bridgeConstantsMainnet);
 
-        @Test
-        void withTwoTimesMigrationValueForMultipleOutputs_shouldReturnTwoOutputsEachWithMigrationValuePerOutput() {
-            // Arrange
-            Coin value = migrationValuePerOutput.multiply(2);
+                // Assert
+                assertEquals(maxOutputsPerMigrationTransaction, outputs.size());
+                outputs.forEach(output -> assertEquals(migrationValuePerOutput, output));
+            }
 
-            // Act
-            List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+            @Test
+            void withValueAtLargeMultipleOutputsThresholdPlusOneSatoshi_shouldReturnValueSplitInFiftyOutputsWithTheRemainderInTheLastOne() {
+                // Arrange
+                Coin value = largeMultipleOutputsThreshold.add(Coin.SATOSHI);
 
-            // Assert
-            assertEquals(2, outputs.size());
-            assertEquals(migrationValuePerOutput, outputs.get(0));
-            assertEquals(migrationValuePerOutput, outputs.get(1));
-        }
+                // Act
+                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
-        @Test
-        void withTwoTimesMigrationValueForMultipleOutputsPlusOneSatoshi_shouldReturnTwoOutputsWithTheRemainderInTheLastOne() {
-            // Arrange
-            Coin value = migrationValuePerOutput.multiply(2).add(Coin.SATOSHI);
+                // Assert
+                assertEquals(maxOutputsPerMigrationTransaction, outputs.size());
+                for (int i = 0; i < maxOutputsPerMigrationTransaction - 1; i++) {
+                    assertEquals(migrationValuePerOutput, outputs.get(i));
+                }
+                Coin expectedLastOutputValue = migrationValuePerOutput.add(Coin.SATOSHI);
+                assertEquals(expectedLastOutputValue, outputs.get(maxOutputsPerMigrationTransaction - 1));
+            }
 
-            // Act
-            List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+            @Test
+            void withValueAtTwoTimesLargeMultipleOutputsThreshold_shouldReturnValueSplitInFiftyOutputs() {
+                // Arrange
+                Coin value = largeMultipleOutputsThreshold.multiply(2);
 
-            // Assert
-            assertEquals(2, outputs.size());
-            assertEquals(migrationValuePerOutput, outputs.get(0));
-            assertEquals(migrationValuePerOutput.add(Coin.SATOSHI), outputs.get(1));
-        }
+                // Act
+                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
-        @Test
-        void withValueBelowThreeTimesMigrationValueForMultipleOutputs_shouldReturnTwoOutputsWithTheRemainderInTheLastOne() {
-            // Arrange
-            Coin value = migrationValuePerOutput.multiply(3).subtract(Coin.SATOSHI);
+                // Assert
+                assertEquals(maxOutputsPerMigrationTransaction, outputs.size());
+                Coin expectedValuePerOutput = migrationValuePerOutput.multiply(2);
+                outputs.forEach(output -> assertEquals(expectedValuePerOutput, output));
+            }
 
-            // Act
-            List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+            @Test
+            void withValueAtTwoTimesLargeMultipleOutputsThresholdPlusOneSatoshi_shouldReturnValueSplitInFiftyOutputsWithTheRemainderInTheLastOne() {
+                // Arrange
+                Coin value = largeMultipleOutputsThreshold.multiply(2).add(Coin.SATOSHI);
 
-            // Assert
-            assertEquals(2, outputs.size());
-            assertEquals(migrationValuePerOutput, outputs.get(0));
-            Coin expectedLastOutputValue = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
-            assertEquals(expectedLastOutputValue, outputs.get(1));
-        }
+                // Act
+                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
-        @Test
-        void withThreeTimesMigrationValueForMultipleOutputs_shouldReturnThreeOutputsEachWithMigrationValuePerOutput() {
-            // Arrange
-            Coin value = migrationValuePerOutput.multiply(3);
-
-            // Act
-            List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
-
-            // Assert
-            assertEquals(3, outputs.size());
-            outputs.forEach(output -> assertEquals(migrationValuePerOutput, output));
-        }
-
-        @Test
-        void withThreeTimesMigrationValueForMultipleOutputsPlusOneSatoshi_shouldReturnThreeOutputsWithTheRemainderInTheLastOne() {
-            // Arrange
-            Coin value = migrationValuePerOutput.multiply(3).add(Coin.SATOSHI);
-
-            // Act
-            List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
-
-            // Assert
-            assertEquals(3, outputs.size());
-            assertEquals(migrationValuePerOutput, outputs.get(0));
-            assertEquals(migrationValuePerOutput, outputs.get(1));
-            assertEquals(migrationValuePerOutput.add(Coin.SATOSHI), outputs.get(2));
+                // Assert
+                assertEquals(maxOutputsPerMigrationTransaction, outputs.size());
+                Coin expectedValuePerOutput = migrationValuePerOutput.multiply(2);
+                for (int i = 0; i < maxOutputsPerMigrationTransaction - 1; i++) {
+                    assertEquals(expectedValuePerOutput, outputs.get(i));
+                }
+                Coin expectedLastOutputValue = expectedValuePerOutput.add(Coin.SATOSHI);
+                assertEquals(expectedLastOutputValue, outputs.get(maxOutputsPerMigrationTransaction - 1));
+            }
         }
     }
 }
