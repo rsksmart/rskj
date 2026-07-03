@@ -2256,8 +2256,11 @@ class BridgeUtilsTest {
                 List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
-                assertEquals(1, outputs.size());
-                assertEquals(value, outputs.get(0));
+                assertOutputsValues(
+                    outputs,
+                    1,
+                    value
+                );
             }
 
             @Test
@@ -2266,8 +2269,11 @@ class BridgeUtilsTest {
                 List<Coin> outputs = getMigrationTransactionsOutputsValues(migrationValuePerOutput, bridgeConstantsMainnet);
 
                 // Assert
-                assertEquals(1, outputs.size());
-                assertEquals(migrationValuePerOutput, outputs.get(0));
+                assertOutputsValues(
+                    outputs,
+                    1,
+                    migrationValuePerOutput
+                );
             }
 
             @Test
@@ -2279,8 +2285,11 @@ class BridgeUtilsTest {
                 List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
-                assertEquals(1, outputs.size());
-                assertEquals(value, outputs.get(0));
+                assertOutputsValues(
+                    outputs,
+                    1,
+                    value
+                );
             }
         }
 
@@ -2296,9 +2305,11 @@ class BridgeUtilsTest {
                 List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
-                assertEquals(2, outputs.size());
-                assertEquals(migrationValuePerOutput, outputs.get(0));
-                assertEquals(migrationValuePerOutput, outputs.get(1));
+                assertOutputsValues(
+                    outputs,
+                    2,
+                    migrationValuePerOutput
+                );
             }
 
             @Test
@@ -2310,9 +2321,12 @@ class BridgeUtilsTest {
                 List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
-                assertEquals(2, outputs.size());
-                assertEquals(migrationValuePerOutput, outputs.get(0));
-                assertEquals(migrationValuePerOutput.add(Coin.SATOSHI), outputs.get(1));
+                assertOutputsValuesWithTheRemainderInTheLastOne(
+                    outputs,
+                    2,
+                    migrationValuePerOutput,
+                    migrationValuePerOutput.add(Coin.SATOSHI)
+                );
             }
 
             @Test
@@ -2324,10 +2338,13 @@ class BridgeUtilsTest {
                 List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
-                assertEquals(2, outputs.size());
-                assertEquals(migrationValuePerOutput, outputs.get(0));
                 Coin expectedLastOutputValue = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
-                assertEquals(expectedLastOutputValue, outputs.get(1));
+                assertOutputsValuesWithTheRemainderInTheLastOne(
+                    outputs,
+                    2,
+                    migrationValuePerOutput,
+                    expectedLastOutputValue
+                );
             }
 
             @Test
@@ -2339,8 +2356,11 @@ class BridgeUtilsTest {
                 List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
-                assertEquals(3, outputs.size());
-                outputs.forEach(output -> assertEquals(migrationValuePerOutput, output));
+                assertOutputsValues(
+                    outputs,
+                    3,
+                    migrationValuePerOutput
+                );
             }
 
             @Test
@@ -2352,10 +2372,12 @@ class BridgeUtilsTest {
                 List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
-                assertEquals(3, outputs.size());
-                assertEquals(migrationValuePerOutput, outputs.get(0));
-                assertEquals(migrationValuePerOutput, outputs.get(1));
-                assertEquals(migrationValuePerOutput.add(Coin.SATOSHI), outputs.get(2));
+                assertOutputsValuesWithTheRemainderInTheLastOne(
+                    outputs,
+                    3,
+                    migrationValuePerOutput,
+                    migrationValuePerOutput.add(Coin.SATOSHI)
+                );
             }
 
             @Test
@@ -2367,13 +2389,13 @@ class BridgeUtilsTest {
                 List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
-                int expectedNumberOfOutputs = maxOutputsPerMigrationTransaction - 1;
-                assertEquals(expectedNumberOfOutputs, outputs.size());
-                for (int i = 0; i < expectedNumberOfOutputs - 1; i++) {
-                    assertEquals(migrationValuePerOutput, outputs.get(i));
-                }
                 Coin expectedLastOutputValue = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
-                assertEquals(expectedLastOutputValue, outputs.get(expectedNumberOfOutputs - 1));
+                assertOutputsValuesWithTheRemainderInTheLastOne(
+                    outputs,
+                    maxOutputsPerMigrationTransaction - 1,
+                    migrationValuePerOutput,
+                    expectedLastOutputValue
+                );
             }
         }
 
@@ -2386,8 +2408,11 @@ class BridgeUtilsTest {
                 List<Coin> outputs = getMigrationTransactionsOutputsValues(largeMultipleOutputsThreshold, bridgeConstantsMainnet);
 
                 // Assert
-                assertEquals(maxOutputsPerMigrationTransaction, outputs.size());
-                outputs.forEach(output -> assertEquals(migrationValuePerOutput, output));
+                assertOutputsValues(
+                    outputs,
+                    maxOutputsPerMigrationTransaction,
+                    migrationValuePerOutput
+                );
             }
 
             @Test
@@ -2399,12 +2424,12 @@ class BridgeUtilsTest {
                 List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
-                assertEquals(maxOutputsPerMigrationTransaction, outputs.size());
-                for (int i = 0; i < maxOutputsPerMigrationTransaction - 1; i++) {
-                    assertEquals(migrationValuePerOutput, outputs.get(i));
-                }
-                Coin expectedLastOutputValue = migrationValuePerOutput.add(Coin.SATOSHI);
-                assertEquals(expectedLastOutputValue, outputs.get(maxOutputsPerMigrationTransaction - 1));
+                assertOutputsValuesWithTheRemainderInTheLastOne(
+                    outputs,
+                    maxOutputsPerMigrationTransaction,
+                    migrationValuePerOutput,
+                    migrationValuePerOutput.add(Coin.SATOSHI)
+                );
             }
 
             @Test
@@ -2416,9 +2441,12 @@ class BridgeUtilsTest {
                 List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
-                assertEquals(maxOutputsPerMigrationTransaction, outputs.size());
                 Coin expectedValuePerOutput = migrationValuePerOutput.multiply(2);
-                outputs.forEach(output -> assertEquals(expectedValuePerOutput, output));
+                assertOutputsValues(
+                    outputs,
+                    maxOutputsPerMigrationTransaction,
+                    expectedValuePerOutput
+                );
             }
 
             @Test
@@ -2430,14 +2458,37 @@ class BridgeUtilsTest {
                 List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
-                assertEquals(maxOutputsPerMigrationTransaction, outputs.size());
                 Coin expectedValuePerOutput = migrationValuePerOutput.multiply(2);
-                for (int i = 0; i < maxOutputsPerMigrationTransaction - 1; i++) {
-                    assertEquals(expectedValuePerOutput, outputs.get(i));
-                }
                 Coin expectedLastOutputValue = expectedValuePerOutput.add(Coin.SATOSHI);
-                assertEquals(expectedLastOutputValue, outputs.get(maxOutputsPerMigrationTransaction - 1));
+                assertOutputsValuesWithTheRemainderInTheLastOne(
+                    outputs,
+                    maxOutputsPerMigrationTransaction,
+                    expectedValuePerOutput,
+                    expectedLastOutputValue
+                );
             }
+        }
+
+        private void assertOutputsValues(
+            List<Coin> outputs,
+            int expectedOutputsCount,
+            Coin expectedValuePerOutput
+        ) {
+            assertEquals(expectedOutputsCount, outputs.size());
+            outputs.forEach(output -> assertEquals(expectedValuePerOutput, output));
+        }
+
+        private void assertOutputsValuesWithTheRemainderInTheLastOne(
+            List<Coin> outputs,
+            int expectedOutputsCount,
+            Coin expectedValuePerOutput,
+            Coin expectedLastOutputValue
+        ) {
+            assertEquals(expectedOutputsCount, outputs.size());
+            for (int i = 0; i < expectedOutputsCount - 1; i++) {
+                assertEquals(expectedValuePerOutput, outputs.get(i));
+            }
+            assertEquals(expectedLastOutputValue, outputs.get(expectedOutputsCount - 1));
         }
     }
 }
