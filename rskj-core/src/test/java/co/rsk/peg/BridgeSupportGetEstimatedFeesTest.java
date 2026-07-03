@@ -499,7 +499,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(8_384L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(8_432L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -511,7 +511,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(8_640L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(8_688L), estimatedFeesForNextPegout);
         }
 
         @ParameterizedTest
@@ -582,7 +582,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(8_640L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(8_688L), estimatedFeesForNextPegout);
         }
 
         @Test

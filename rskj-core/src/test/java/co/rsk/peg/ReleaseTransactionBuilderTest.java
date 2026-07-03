@@ -117,7 +117,7 @@ class ReleaseTransactionBuilderTest {
     private static final int P2SH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = P2SH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
     private static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER = 2438;
     private static final int P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE_VETIVER = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER - 1;
-    private static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_WHEN_ONE_OUTPUT = 186;
+    private static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_WHEN_ONE_OUTPUT = 184;
     private static final int P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE_WHEN_ONE_OUTPUT = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_WHEN_ONE_OUTPUT - 1;
 
     private static final Keccak256 FLYOVER_DERIVATION_HASH = BRIDGE_MAINNET_CONSTANTS.getProposedFederationFlyoverPrefix();
@@ -3560,11 +3560,11 @@ class ReleaseTransactionBuilderTest {
 
             @ParameterizedTest
             @CsvSource({
-                "185, 1",
-                "184, 15",
-                "183, 29",
-                "182, 43",
-                "181, 58"
+                "184, 1",
+                "183, 14",
+                "182, 29",
+                "181, 43",
+                "180, 58"
             })
             void buildBatchedPegouts_whenTxExceedsMaxTxSizeAllowed_shouldReturnExceedMaxTransactionSize(int numberOfUtxos, int numberOfPegoutRequests) {
                 // Arrange
@@ -3629,10 +3629,10 @@ class ReleaseTransactionBuilderTest {
 
             @ParameterizedTest
             @CsvSource({
-                "184, 14",
-                "183, 28",
-                "182, 42",
-                "181, 57"
+                "183, 13",
+                "182, 28",
+                "181, 42",
+                "180, 57"
             })
             void buildBatchedPegouts_whenTxIsAlmostExceedingMaxTxSizeAllowed_shouldCreateBatchedPegoutsTx(
                 int expectedNumberOfUtxos,
@@ -3651,8 +3651,7 @@ class ReleaseTransactionBuilderTest {
                 List<ReleaseRequestQueue.Entry> pegoutRequests = createPegoutRequests(numberOfPegoutRequests, pegoutRequestAmount);
 
                 // Act
-                BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(
-                    pegoutRequests);
+                BuildResult batchedPegoutsResult = releaseTransactionBuilder.buildBatchedPegouts(pegoutRequests);
 
                 // Assert
                 assertSuccessBuildResult(batchedPegoutsResult);
