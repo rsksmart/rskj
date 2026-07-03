@@ -691,7 +691,7 @@ public final class BridgeUtils {
 
     private static int estimateSigningSizePerInput(Federation federation) {
         int numberOfSignaturesRequired = federation.getNumberOfSignaturesRequired();
-        // estimate the bytes of pushing the following stack in each input:
+        // the following stack will be pushed in each input:
         // [stack item count]
         // [OP_0]
         // [signature 1]
@@ -699,16 +699,20 @@ public final class BridgeUtils {
         // [signature N]
         // [OP_NOTIF]
         // [redeem script]
+        // witness stack per input (BIP144): item-count varint, then length-prefixed byte vectors.
+        // 1B empty (OP_CHECKMULTISIG) + N sig pushes + 1B empty (OP_NOTIF selector) + redeemScript push,
+        // so "op0"/"opNotif" are the empty elements' roles in script exec
+
         long stackItemCount = 1L + numberOfSignaturesRequired + 1L + 1L; // OP_0 + N sigs pushes + OP_NOTIF + rs push
         int stackItemCountSize = new VarInt(stackItemCount).getSizeInBytes();
 
-        int op0Size = 1;
+        int op0Size = 1; // empty element = single 0x00 length prefix
 
-        int signatureLength = 72; // 72b is the upper bound signature length
+        int signatureLength = 73; // 73b is the upper bound signature length -without low S, r and s each up to 33 bytes-
         int signaturePushPrefixSize = new VarInt(signatureLength).getSizeInBytes();
         int signaturePushSize = signaturePushPrefixSize + signatureLength;
 
-        int opNotifSize = 1;
+        int opNotifSize = 1; // empty element = single 0x00 length prefix
 
         int redeemScriptLength = federation.getRedeemScript().getProgram().length;
         int redeemScriptPushPrefixSize = new VarInt(redeemScriptLength).getSizeInBytes();

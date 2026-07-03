@@ -430,7 +430,7 @@ class BridgeSupportGetEstimatedFeesTest {
     }
 
     @Nested
-    class PostVetiverPreTBD100Activations {
+    class PostVetiverPreTBD1000Activations {
 
         @BeforeEach
         void setUp() {
@@ -474,7 +474,7 @@ class BridgeSupportGetEstimatedFeesTest {
     }
 
     @Nested
-    class PostTBD100Activations {
+    class PostTBD1000Activations {
         @BeforeEach
         void setUp() {
             setUpBridgeAndFederationSupport(ALL_ACTIVATIONS, FEE_PER_KB);
@@ -499,7 +499,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(8_384L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(8_432L), estimatedFeesForNextPegout);
         }
 
         @Test
@@ -511,7 +511,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(8_640L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(8_688L), estimatedFeesForNextPegout);
         }
 
         @ParameterizedTest
@@ -582,7 +582,7 @@ class BridgeSupportGetEstimatedFeesTest {
             Coin estimatedFeesForNextPegout = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
 
             // Assert
-            assertEquals(Coin.valueOf(8_640L), estimatedFeesForNextPegout);
+            assertEquals(Coin.valueOf(8_688L), estimatedFeesForNextPegout);
         }
 
         @Test
