@@ -176,20 +176,20 @@ public final class BridgeUtils {
     private static List<Coin> calculateMigrationTransactionOutputsValues(Coin expectedMigrationValue,
                                                                          Coin migrationValueForMultipleOutputs,
                                                                          BridgeConstants bridgeConstants) {
+        Coin largeMultipleOutputsThresholdBtcValue = getLargeMultipleOutputsThresholdBtcValue(bridgeConstants);
+        if (!expectedMigrationValue.isLessThan(largeMultipleOutputsThresholdBtcValue)) {
+            int maxOutputsPerMigrationTransaction = bridgeConstants.getMaxOutputsPerMigrationTransaction();
+            return getEvenlyDistributedMigrationTransactionOutputs(expectedMigrationValue, maxOutputsPerMigrationTransaction);
+        }
+
+        return getFixedValueMigrationTransactionOutputs(expectedMigrationValue, migrationValueForMultipleOutputs);
+    }
+
+    private static List<Coin> getFixedValueMigrationTransactionOutputs(Coin expectedMigrationValue, Coin migrationValueForMultipleOutputs) {
         if (expectedMigrationValue.isLessThan(migrationValueForMultipleOutputs)) {
             return List.of(expectedMigrationValue);
         }
 
-        Coin largeMultipleOutputsThresholdBtcValue = getLargeMultipleOutputsThresholdBtcValue(bridgeConstants);
-        if (!expectedMigrationValue.isLessThan(largeMultipleOutputsThresholdBtcValue)) {
-            int maxOutputsPerMigrationTransaction = bridgeConstants.getMaxOutputsPerMigrationTransaction();
-            return getEvenlyDistributedOutputs(expectedMigrationValue, maxOutputsPerMigrationTransaction);
-        }
-
-        return getFixedValueOutputs(expectedMigrationValue, migrationValueForMultipleOutputs);
-    }
-
-    private static List<Coin> getFixedValueOutputs(Coin expectedMigrationValue, Coin migrationValueForMultipleOutputs) {
         Coin remaining = expectedMigrationValue;
         List<Coin> outputs = new ArrayList<>();
         while (!remaining.isLessThan(migrationValueForMultipleOutputs)) {
@@ -204,7 +204,7 @@ public final class BridgeUtils {
         return outputs;
     }
 
-    private static List<Coin> getEvenlyDistributedOutputs(Coin totalValue, int maxOutputsPerMigrationTransaction) {
+    private static List<Coin> getEvenlyDistributedMigrationTransactionOutputs(Coin totalValue, int maxOutputsPerMigrationTransaction) {
         Coin[] outputDistribution = totalValue.divideAndRemainder(maxOutputsPerMigrationTransaction);
         Coin valuePerOutput = outputDistribution[0];
         Coin remainder = outputDistribution[1];
