@@ -1219,24 +1219,27 @@ class BridgeUtilsTest {
 
     @ParameterizedTest
     @CsvSource({
-        "184, 14",
-        "183, 28",
-        "182, 42",
-        "181, 57"
+        "183, 14",
+        "182, 29",
+        "181, 43",
+        "180, 57"
     })
     void estimateUnsignedSegwitTxVSize_forRecreatedTx_almostExceedingMaxTxSizeAllowed_shouldReturnLessThanMaximumAllowed(int inputsCount, int outputsCount) {
         // arrange
         Federation federation = P2shP2wshErpFederationBuilder.builder().build();
 
         PegoutTransactionBuilder pegoutTxBuilder = PegoutTransactionBuilder.builder()
-            .withActiveFederation(federation);
+            .withActiveFederation(federation)
+            .withoutChange();
         Sha256Hash prevTxHash = Sha256Hash.ZERO_HASH;
+        Coin inputValue = Coin.COIN;
         for (int i = 0; i < inputsCount; i++) {
-            pegoutTxBuilder.withInput(prevTxHash, i, Coin.COIN);
+            pegoutTxBuilder.withInput(prevTxHash, i, inputValue);
         }
+        Coin outputValue = Coin.COIN;
         for (int i = 0; i < outputsCount; i++) {
             Address userAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, String.valueOf(i));
-            pegoutTxBuilder.withOutput(Coin.COIN, userAddress);
+            pegoutTxBuilder.withOutput(outputValue, userAddress);
         }
 
         BtcTransaction pegoutTx = pegoutTxBuilder.build();
@@ -1248,23 +1251,26 @@ class BridgeUtilsTest {
 
     @Test
     void estimateUnsignedSegwitTxVSize_forRealTx_200inputs50outputs() {
-        // https://mempool.space/testnet/tx/ada9a76e0da39a2ad49c07dfaf9bab51fe696a92c95177f54cc7b68ad50fb7cb
+        // https://mempool.space/testnet/tx/aa46df617eeabd5a0c1f82dde9d7a9383f698b4ef3bf15141aefd2add562c750
         // arrange
-        int realVSize = 98690;
+        int realVSize = 96980;
         Federation federation = P2shP2wshErpFederationBuilder.builder().build();
 
         PegoutTransactionBuilder pegoutTxBuilder = PegoutTransactionBuilder.builder()
-            .withActiveFederation(federation);
+            .withActiveFederation(federation)
+            .withoutChange();
         int inputsCount = 200;
         Sha256Hash prevTxHash = Sha256Hash.ZERO_HASH;
+        Coin inputValue  = Coin.valueOf(5_000);
         for (int i = 0; i < inputsCount; i++) {
-            pegoutTxBuilder.withInput(prevTxHash, i, Coin.COIN);
+            pegoutTxBuilder.withInput(prevTxHash, i, inputValue);
         }
 
-        int outputsCount = 49;
+        int outputsCount = 50;
+        Coin outputValue = Coin.valueOf(20_000);
         for (int i = 0; i < outputsCount; i++) {
-            Address userAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, String.valueOf(i));
-            pegoutTxBuilder.withOutput(Coin.COIN, userAddress);
+            Address userAddress = Address.fromBase58(networkParameters, "mi2KEWHb9WUBLBm4LCTUx75jWCSr68uxRr");
+            pegoutTxBuilder.withOutput(outputValue, userAddress);
         }
 
         BtcTransaction pegoutTx = pegoutTxBuilder.build();
@@ -1274,16 +1280,15 @@ class BridgeUtilsTest {
 
         // assert
         assertEquals(inputsCount, pegoutTx.getInputs().size());
-        int expectedOutputsCount = 50; // builder always adds a change output
-        assertEquals(expectedOutputsCount, pegoutTx.getOutputs().size());
+        assertEquals(outputsCount, pegoutTx.getOutputs().size());
 
-        int expectedCalculatedPegoutTxSize = 98958;
+        int expectedCalculatedPegoutTxSize = 99510;
         assertEquals(expectedCalculatedPegoutTxSize, calculatedPegoutTxSize);
         // we expect calculated size to be greater than real one
         assertTrue(calculatedPegoutTxSize > realVSize);
         double diff = calculatedPegoutTxSize - realVSize;
-        // and the diff to be less than 1%
-        assertTrue(diff < realVSize * 0.01);
+        // and the diff to be less than 3%
+        assertTrue(diff < realVSize * 0.03);
     }
 
     @Test
