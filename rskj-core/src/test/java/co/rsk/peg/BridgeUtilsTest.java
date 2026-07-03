@@ -66,7 +66,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static co.rsk.RskTestUtils.createRepository;
-import static co.rsk.peg.BridgeUtils.getMigrationTransactionsOutputsValues;
+import static co.rsk.peg.BridgeUtils.getMigrationTransactionOutputsValues;
 import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
 import static co.rsk.peg.ReleaseTransactionBuilder.MAX_STANDARD_TX_SIZE_ALLOWED;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateSignerEncodedSignatures;
@@ -2253,7 +2253,7 @@ class BridgeUtilsTest {
                 Coin value = migrationValuePerOutput.subtract(Coin.SATOSHI);
 
                 // Act
-                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+                List<Coin> outputs = getMigrationTransactionOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
                 assertOutputsValues(
@@ -2266,7 +2266,7 @@ class BridgeUtilsTest {
             @Test
             void withValueAtMigrationValueForMultipleOutputs_shouldReturnOneOutputWithTheTotalValue() {
                 // Act
-                List<Coin> outputs = getMigrationTransactionsOutputsValues(migrationValuePerOutput, bridgeConstantsMainnet);
+                List<Coin> outputs = getMigrationTransactionOutputsValues(migrationValuePerOutput, bridgeConstantsMainnet);
 
                 // Assert
                 assertOutputsValues(
@@ -2282,7 +2282,7 @@ class BridgeUtilsTest {
                 Coin value = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
 
                 // Act
-                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+                List<Coin> outputs = getMigrationTransactionOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
                 assertOutputsValues(
@@ -2302,7 +2302,7 @@ class BridgeUtilsTest {
                 Coin value = migrationValuePerOutput.multiply(2);
 
                 // Act
-                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+                List<Coin> outputs = getMigrationTransactionOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
                 assertOutputsValues(
@@ -2318,7 +2318,7 @@ class BridgeUtilsTest {
                 Coin value = migrationValuePerOutput.multiply(2).add(Coin.SATOSHI);
 
                 // Act
-                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+                List<Coin> outputs = getMigrationTransactionOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
                 assertOutputsValuesWithTheRemainderInTheLastOne(
@@ -2335,7 +2335,7 @@ class BridgeUtilsTest {
                 Coin value = migrationValuePerOutput.multiply(3).subtract(Coin.SATOSHI);
 
                 // Act
-                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+                List<Coin> outputs = getMigrationTransactionOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
                 Coin expectedLastOutputValue = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
@@ -2353,7 +2353,7 @@ class BridgeUtilsTest {
                 Coin value = migrationValuePerOutput.multiply(3);
 
                 // Act
-                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+                List<Coin> outputs = getMigrationTransactionOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
                 assertOutputsValues(
@@ -2369,7 +2369,7 @@ class BridgeUtilsTest {
                 Coin value = migrationValuePerOutput.multiply(3).add(Coin.SATOSHI);
 
                 // Act
-                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+                List<Coin> outputs = getMigrationTransactionOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
                 assertOutputsValuesWithTheRemainderInTheLastOne(
@@ -2386,7 +2386,7 @@ class BridgeUtilsTest {
                 Coin value = largeMultipleOutputsThreshold.subtract(Coin.SATOSHI);
 
                 // Act
-                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+                List<Coin> outputs = getMigrationTransactionOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
                 Coin expectedLastOutputValue = migrationValuePerOutput.multiply(2).subtract(Coin.SATOSHI);
@@ -2405,7 +2405,7 @@ class BridgeUtilsTest {
             @Test
             void withValueAtLargeMultipleOutputsThreshold_shouldReturnValueSplitInFiftyOutputs() {
                 // Act
-                List<Coin> outputs = getMigrationTransactionsOutputsValues(largeMultipleOutputsThreshold, bridgeConstantsMainnet);
+                List<Coin> outputs = getMigrationTransactionOutputsValues(largeMultipleOutputsThreshold, bridgeConstantsMainnet);
 
                 // Assert
                 assertOutputsValues(
@@ -2421,7 +2421,7 @@ class BridgeUtilsTest {
                 Coin value = largeMultipleOutputsThreshold.add(Coin.SATOSHI);
 
                 // Act
-                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+                List<Coin> outputs = getMigrationTransactionOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
                 assertOutputsValuesWithTheRemainderInTheLastOne(
@@ -2438,7 +2438,7 @@ class BridgeUtilsTest {
                 Coin value = largeMultipleOutputsThreshold.multiply(2);
 
                 // Act
-                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+                List<Coin> outputs = getMigrationTransactionOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
                 Coin expectedValuePerOutput = migrationValuePerOutput.multiply(2);
@@ -2455,7 +2455,7 @@ class BridgeUtilsTest {
                 Coin value = largeMultipleOutputsThreshold.multiply(2).add(Coin.SATOSHI);
 
                 // Act
-                List<Coin> outputs = getMigrationTransactionsOutputsValues(value, bridgeConstantsMainnet);
+                List<Coin> outputs = getMigrationTransactionOutputsValues(value, bridgeConstantsMainnet);
 
                 // Assert
                 Coin expectedValuePerOutput = migrationValuePerOutput.multiply(2);
