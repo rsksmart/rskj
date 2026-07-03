@@ -2231,7 +2231,7 @@ class BridgeUtilsTest {
     }
 
     @Nested
-    class GetMigrationTransactionsOutputsValuesTest {
+    class GetMigrationTransactionOutputsValuesTest {
 
         Coin migrationValuePerOutput;
         int maxOutputsPerMigrationTransaction;
