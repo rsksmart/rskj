@@ -165,7 +165,7 @@ public final class BridgeUtils {
         }
     }
 
-    public static List<Coin> getMigrationTransactionsOutputsValues(Coin expectedMigrationValue, BridgeConstants bridgeConstants) {
+    public static List<Coin> getMigrationTransactionOutputsValues(Coin expectedMigrationValue, BridgeConstants bridgeConstants) {
         Coin multipleOutputsThresholdBtcValue = getMultipleOutputsThresholdBtcValue(bridgeConstants);
         Coin migrationValueForMultipleOutputs = bridgeConstants.getMigrationValueForMultipleOutputsInBtc();
         return expectedMigrationValue.isLessThan(multipleOutputsThresholdBtcValue) ?

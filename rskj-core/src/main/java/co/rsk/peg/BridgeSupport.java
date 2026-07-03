@@ -17,7 +17,7 @@
  */
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeUtils.getMigrationTransactionsOutputsValues;
+import static co.rsk.peg.BridgeUtils.getMigrationTransactionOutputsValues;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.BridgeUtils.simulatePegoutTxSize;
 import static co.rsk.peg.PegUtils.*;
@@ -3159,7 +3159,7 @@ public class BridgeSupport {
             activations
         );
 
-        List<Coin> outputs = getMigrationTransactionsOutputsValues(expectedMigrationValue, bridgeConstants);
+        List<Coin> outputs = getMigrationTransactionOutputsValues(expectedMigrationValue, bridgeConstants);
         return txBuilder.buildMigrationTransaction(outputs, destinationAddress);
     }
 
