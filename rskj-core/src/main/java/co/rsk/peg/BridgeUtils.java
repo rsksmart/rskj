@@ -704,7 +704,7 @@ public final class BridgeUtils {
 
         int op0Size = 1;
 
-        int signatureLength = 72; // 72b is the upper bound signature length
+        int signatureLength = 73; // 73b is the upper bound signature length -without low S, r and s each up to 33 bytes-
         int signaturePushPrefixSize = new VarInt(signatureLength).getSizeInBytes();
         int signaturePushSize = signaturePushPrefixSize + signatureLength;
 
