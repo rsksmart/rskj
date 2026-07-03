@@ -434,7 +434,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 .build();
 
             @Test
-            void updateCollections_duringMigration_withOneUtxo_shouldCreateMigrationTx() throws IOException {
+            void updateCollections_duringMigration_withOneUtxoBelowMTMUThresholdValue_shouldCreateMigrationTx() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = List.of(
                     UTXOBuilder.builder()
@@ -517,7 +517,7 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             @Test
-            void updateCollections_duringMigration_withMaxInputsPerPegoutTxPlusOneUtxos_shouldCreateAMigrationTxEachTime() throws IOException {
+            void updateCollections_duringMigration_aboveMaxInputsPerPegoutTx_shouldCreateAMigrationTxEachTime() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
                     .withValue(BELOW_MTMU_UTXO_BTC_VALUE)
@@ -649,7 +649,7 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             @Test
-            void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxPlusOneUtxos_whenFirstUtxosSelectionSumIsBelowMTMUThreshold_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
+            void updateCollections_pastMigrationAge_aboveMaxInputsPerPegoutTx_whenFirstUtxosSelectionSumIsBelowMTMUThreshold_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
                     .withValue(BELOW_MTMU_UTXO_BTC_VALUE)
@@ -728,7 +728,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertNoRemainingRetiringUtxos();
             }
             @Test
-            void updateCollections_duringMigration_withOneUtxo_shouldCreateMigrationTxWithMultipleOutputs() throws IOException {
+            void updateCollections_duringMigration_withOneUtxoAboveMTMUThresholdValue_shouldCreateMigrationTxWithMultipleOutputs() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = List.of(
                     UTXOBuilder.builder()
@@ -828,7 +828,7 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             @Test
-            void updateCollections_duringMigration_withMaxInputsPerPegoutTxPlusOneUtxos_whenFirstBatchSumIsAboveMTMUThreshold_shouldCreateAMigrationTxEachTime() throws IOException {
+            void updateCollections_duringMigration_aboveMaxInputsPerPegoutTx_whenFirstBatchSumIsAboveMTMUThreshold_shouldCreateAMigrationTxEachTime() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
                     .withValue(ABOVE_MTMU_UTXO_BTC_VALUE)
@@ -1004,7 +1004,7 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             @Test
-            void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxPlusOneUtxos_whenFirstBatchSumIsAboveMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputsAndClearRetiringFed() throws IOException {
+            void updateCollections_pastMigrationAge_aboveMaxInputsPerPegoutTx_whenFirstBatchSumIsAboveMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputsAndClearRetiringFed() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
                     .withValue(ABOVE_MTMU_UTXO_BTC_VALUE)
@@ -1119,7 +1119,7 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             @Test
-            void updateCollections_duringMigration_withOneUtxo_shouldCreateMigrationTxWithMaxOutputs() throws IOException {
+            void updateCollections_duringMigration_withOneUtxoAboveLargeMTMUThresholdValue_shouldCreateMigrationTxWithMaxOutputs() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = List.of(
                     UTXOBuilder.builder()
@@ -1227,7 +1227,7 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             @Test
-            void updateCollections_duringMigration_withMaxInputsPerPegoutTxPlusOneUtxos_whenFirstBatchSumIsAboveLargeMTMUThreshold_shouldCreateAMigrationTxEachTime() throws IOException {
+            void updateCollections_duringMigration_aboveMaxInputsPerPegoutTx_whenFirstBatchSumIsAboveLargeMTMUThreshold_shouldCreateAMigrationTxEachTime() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
                     .withValue(ABOVE_LARGE_MTMU_UTXO_BTC_VALUE)
@@ -1363,7 +1363,7 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             @Test
-            void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxPlusOneUtxos_whenFirstBatchSumIsAboveLargeMTMUThreshold_shouldCreateMigrationTxWithMaxOutputsAndClearRetiringFed() throws IOException {
+            void updateCollections_pastMigrationAge_aboveMaxInputsPerPegoutTx_whenFirstBatchSumIsAboveLargeMTMUThreshold_shouldCreateMigrationTxWithMaxOutputsAndClearRetiringFed() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
                     .withValue(ABOVE_LARGE_MTMU_UTXO_BTC_VALUE)
