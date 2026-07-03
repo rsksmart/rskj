@@ -173,9 +173,11 @@ public final class BridgeUtils {
             calculateMigrationTransactionOutputsValues(expectedMigrationValue, migrationValueForMultipleOutputs, bridgeConstants);
     }
 
-    private static List<Coin> calculateMigrationTransactionOutputsValues(Coin expectedMigrationValue,
-                                                                         Coin migrationValueForMultipleOutputs,
-                                                                         BridgeConstants bridgeConstants) {
+    private static List<Coin> calculateMigrationTransactionOutputsValues(
+        Coin expectedMigrationValue,
+        Coin migrationValueForMultipleOutputs,
+        BridgeConstants bridgeConstants
+    ) {
         Coin largeMultipleOutputsThresholdBtcValue = getLargeMultipleOutputsThresholdBtcValue(bridgeConstants);
         if (!expectedMigrationValue.isLessThan(largeMultipleOutputsThresholdBtcValue)) {
             int maxOutputsPerMigrationTransaction = bridgeConstants.getMaxOutputsPerMigrationTransaction();
