@@ -2623,7 +2623,7 @@ class ReleaseTransactionBuilderTest {
             @Test
             void buildMigrationTransaction_withMaxInputsSizeUtxosSumAboveLargeMTMUThreshold_shouldBuildTxWith50Outputs() {
                 // Arrange
-                int numberOfUtxos = 150;
+                int numberOfUtxos = BRIDGE_MAINNET_CONSTANTS.getMaxInputsPerPegoutTransaction(ALL_ACTIVATIONS);
                 Coin utxoValue = Coin.COIN.multiply(7);
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
