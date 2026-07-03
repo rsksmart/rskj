@@ -1066,7 +1066,7 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             private List<Coin> getExpectedOutputValuesForOneUtxoJustBelowLargeMTMUThreshold() {
-                int expectedOutputCount = 49;
+                int expectedOutputCount = BRIDGE_CONSTANTS.getMaxOutputsPerMigrationTransaction() - 1;
                 List<Coin> expectedOutputValues = new ArrayList<>();
                 for (int i = 0; i < expectedOutputCount - 1; i++) {
                     expectedOutputValues.add(MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE);
