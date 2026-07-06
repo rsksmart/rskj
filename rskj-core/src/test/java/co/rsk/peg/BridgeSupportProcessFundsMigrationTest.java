@@ -680,6 +680,7 @@ class BridgeSupportProcessFundsMigrationTest {
         @Nested
         class WithUtxosSumBetweenMTMUAndLargeMTMUThreshold {
 
+            private static final Coin UTXO_VALUE_BELOW_LARGE_MTMU_THRESHOLD = LARGE_MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE.subtract(Coin.SATOSHI);
             private static final Coin ABOVE_MTMU_THRESHOLD_BTC_VALUE = MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE.add(Coin.SATOSHI);
             private static final Coin ABOVE_MTMU_UTXO_BTC_VALUE = ABOVE_MTMU_THRESHOLD_BTC_VALUE.divide(MAX_INPUTS_PER_PEGOUT_TX).add(Coin.SATOSHI);
             private static final Coin ABOVE_MTMU_UTXO_BTC_VALUE_LEGACY = ABOVE_MTMU_THRESHOLD_BTC_VALUE.divide(MAX_INPUTS_PER_PEGOUT_TX_LEGACY);
@@ -945,10 +946,9 @@ class BridgeSupportProcessFundsMigrationTest {
             @Test
             void updateCollections_duringMigration_withOneUtxoJustBelowLargeMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputs() throws IOException {
                 // Arrange
-                Coin utxoValueBelowLargeMTMUThreshold = LARGE_MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE.subtract(Coin.SATOSHI);
                 List<UTXO> retiringUtxos = List.of(
                     UTXOBuilder.builder()
-                        .withValue(utxoValueBelowLargeMTMUThreshold)
+                        .withValue(UTXO_VALUE_BELOW_LARGE_MTMU_THRESHOLD)
                         .withScriptPubKey(retiringFederation.getP2SHScript())
                         .build()
                 );
