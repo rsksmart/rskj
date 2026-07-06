@@ -434,7 +434,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 .build();
 
             @Test
-            void updateCollections_duringMigration_withOneUtxo_shouldCreateMigrationTx() throws IOException {
+            void updateCollections_duringMigration_withOneUtxoBelowMTMUThresholdValue_shouldCreateMigrationTx() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = List.of(
                     UTXOBuilder.builder()
@@ -728,7 +728,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertNoRemainingRetiringUtxos();
             }
             @Test
-            void updateCollections_duringMigration_withOneUtxo_shouldCreateMigrationTxWithMultipleOutputs() throws IOException {
+            void updateCollections_duringMigration_withOneUtxoAboveMTMUThresholdValue_shouldCreateMigrationTxWithMultipleOutputs() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = List.of(
                     UTXOBuilder.builder()
@@ -1119,7 +1119,7 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             @Test
-            void updateCollections_duringMigration_withOneUtxo_shouldCreateMigrationTxWithMaxOutputs() throws IOException {
+            void updateCollections_duringMigration_withOneUtxoAboveLargeMTMUThresholdValue_shouldCreateMigrationTxWithMaxOutputs() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = List.of(
                     UTXOBuilder.builder()
