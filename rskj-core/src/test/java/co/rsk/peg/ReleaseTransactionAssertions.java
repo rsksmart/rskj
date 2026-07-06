@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.ReleaseTransactionBuilder.MAX_STANDARD_TX_SIZE_ALLOWED;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertP2shP2wshWitnessWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromP2shErpWithoutSignaturesHasProperFormat;
 import static co.rsk.peg.bitcoin.BitcoinTestAssertions.assertScriptSigFromStandardMultisigWithoutSignaturesHasProperFormat;
@@ -18,12 +19,29 @@ import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.core.TransactionWitness;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.peg.federation.Federation;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+
 import java.util.List;
 import java.util.function.Predicate;
 
 public class ReleaseTransactionAssertions {
 
     private ReleaseTransactionAssertions() {
+    }
+
+    public static void assertMigrationReleaseTxSizeIsBelowStandardSizeAllowed(
+        Federation federation,
+        BtcTransaction migrationTransaction,
+        ActivationConfig.ForBlock activations
+    ) {
+        int migrationTransactionSize = BridgeUtils.simulatePegoutTxSize(
+            activations,
+            federation,
+            migrationTransaction.getInputs().size(),
+            migrationTransaction.getOutputs().size()
+        );
+        assertTrue(migrationTransactionSize <= MAX_STANDARD_TX_SIZE_ALLOWED);
     }
 
     public static void assertOutputsWithNoChange(BtcTransaction btcTransaction, Coin expectedSentAmount) {
