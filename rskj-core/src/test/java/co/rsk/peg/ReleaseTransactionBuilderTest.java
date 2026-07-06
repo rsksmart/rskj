@@ -26,6 +26,7 @@ import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationTxWithMulti
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsP2shErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsP2shP2wshErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsStandardMultisig;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxSizeIsBelowStandardSizeAllowed;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertOneMigrationTxOutput;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertOutputsWithNoChange;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shErp;
@@ -2621,10 +2622,11 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildMigrationTransaction_withMaxInputsSizeUtxosSumAboveLargeMTMUThreshold_shouldBuildTxWith50Outputs() {
+            void buildMigrationTransaction_withMaxInputsSizeUtxosSumAboveLargeMTMUThreshold_shouldBuildTxWithMaxOutputs() {
                 // Arrange
                 int numberOfUtxos = BRIDGE_MAINNET_CONSTANTS.getMaxInputsPerPegoutTransaction(ALL_ACTIVATIONS);
-                Coin utxoValue = Coin.COIN.multiply(7);
+                Coin largeMultipleOutputsThresholdBtcValue = BridgeUtils.getLargeMultipleOutputsThresholdBtcValue(BRIDGE_MAINNET_CONSTANTS);
+                Coin utxoValue = largeMultipleOutputsThresholdBtcValue.div(numberOfUtxos).add(Coin.SATOSHI);
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
                     .withValue(utxoValue)
@@ -2665,13 +2667,7 @@ class ReleaseTransactionBuilderTest {
                     newFederationAddress,
                     BTC_MAINNET_PARAMS
                 );
-                int migrationTransactionSize = BridgeUtils.simulatePegoutTxSize(
-                    ALL_ACTIVATIONS,
-                    retiringFederation,
-                    migrationTransaction.getInputs().size(),
-                    migrationTransaction.getOutputs().size()
-                );
-                assertTrue(migrationTransactionSize <= BtcTransaction.MAX_STANDARD_TX_SIZE);
+                assertMigrationReleaseTxSizeIsBelowStandardSizeAllowed(retiringFederation, migrationTransaction, ALL_ACTIVATIONS);
             }
 
             /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; the minimum UTXO the Federation
