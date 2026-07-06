@@ -518,9 +518,13 @@ class FederationChangeIT {
 
         advanceBlockchainTo(currentBlock);
 
-        // The first update collections after the migration finished should get rid of the retiring powpeg
-        bridgeSupport.updateCollections(UPDATE_COLLECTIONS_TX);
-        bridgeSupport.save();
+        // The first update collections after the migration finished should migrate the remaining funds
+        callUpdateCollections();
+
+        // The next update collections, having no funds left to migrate, should get rid of the retiring powpeg
+        currentBlock = createRskBlock(blockNumber + 1);
+        advanceBlockchainTo(currentBlock);
+        callUpdateCollections();
     }
 
     private void callUpdateCollections() throws Exception {
