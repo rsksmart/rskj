@@ -179,7 +179,8 @@ public final class BridgeUtils {
         BridgeConstants bridgeConstants
     ) {
         Coin largeMultipleOutputsThresholdBtcValue = getLargeMultipleOutputsThresholdBtcValue(bridgeConstants);
-        if (!expectedMigrationValue.isLessThan(largeMultipleOutputsThresholdBtcValue)) {
+        boolean migrationValueExceedsLargeOutputThreshold = !expectedMigrationValue.isLessThan(largeMultipleOutputsThresholdBtcValue);
+        if (migrationValueExceedsLargeOutputThreshold) {
             int maxOutputsPerMigrationTransaction = bridgeConstants.getMaxOutputsPerMigrationTransaction();
             return getEvenlyDistributedMigrationTransactionOutputs(expectedMigrationValue, maxOutputsPerMigrationTransaction);
         }
