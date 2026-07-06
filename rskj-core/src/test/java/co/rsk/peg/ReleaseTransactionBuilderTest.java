@@ -2622,10 +2622,11 @@ class ReleaseTransactionBuilderTest {
             }
 
             @Test
-            void buildMigrationTransaction_withMaxInputsSizeUtxosSumAboveLargeMTMUThreshold_shouldBuildTxWith50Outputs() {
+            void buildMigrationTransaction_withMaxInputsSizeUtxosSumAboveLargeMTMUThreshold_shouldBuildTxWithMaxOutputs() {
                 // Arrange
                 int numberOfUtxos = BRIDGE_MAINNET_CONSTANTS.getMaxInputsPerPegoutTransaction(ALL_ACTIVATIONS);
-                Coin utxoValue = Coin.COIN.multiply(7);
+                Coin largeMultipleOutputsThresholdBtcValue = BridgeUtils.getLargeMultipleOutputsThresholdBtcValue(BRIDGE_MAINNET_CONSTANTS);
+                Coin utxoValue = largeMultipleOutputsThresholdBtcValue.div(numberOfUtxos).add(Coin.SATOSHI);
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
                     .withValue(utxoValue)
