@@ -679,7 +679,6 @@ class BridgeSupportProcessFundsMigrationTest {
 
         @Nested
         class WithUtxosSumBetweenMTMUAndLargeMTMUThreshold {
-
             private static final Coin UTXO_VALUE_BELOW_LARGE_MTMU_THRESHOLD = LARGE_MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE.subtract(Coin.SATOSHI);
             private static final Coin ABOVE_MTMU_THRESHOLD_BTC_VALUE = MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE.add(Coin.SATOSHI);
             private static final Coin ABOVE_MTMU_UTXO_BTC_VALUE = ABOVE_MTMU_THRESHOLD_BTC_VALUE.divide(MAX_INPUTS_PER_PEGOUT_TX).add(Coin.SATOSHI);
@@ -690,6 +689,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE,
                 LAST_MIGRATION_OUTPUT_BTC_VALUE
             );
+            // Maximum value for the last output in a fixed-value migration transaction.
+            // If the remaining value exceeds this by even 1 satoshi, it will be split into 2 outputs.
+            private static final Coin MAX_LAST_OUTPUT_VALUE_FOR_FIXED_VALUE_MIGRATION = MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE
+                .multiply(2)
+                .subtract(Coin.SATOSHI);
 
             private final UTXO flyoverUtxo = UTXOBuilder.builder()
                 .withValue(ABOVE_MTMU_UTXO_BTC_VALUE)
@@ -1073,10 +1077,7 @@ class BridgeSupportProcessFundsMigrationTest {
                     expectedOutputValues.add(MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE);
                 }
 
-                Coin lastMigrationOutputValue = MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE
-                    .multiply(2)
-                    .subtract(Coin.SATOSHI);
-                expectedOutputValues.add(lastMigrationOutputValue);
+                expectedOutputValues.add(MAX_LAST_OUTPUT_VALUE_FOR_FIXED_VALUE_MIGRATION);
                 return expectedOutputValues;
             }
         }
