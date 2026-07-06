@@ -153,6 +153,23 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
+        void updateCollections_duringMigration_withZeroBalance_shouldNotCreateMigrationTx() throws IOException {
+            // Arrange
+            List<UTXO> retiringUtxos = List.of();
+            long executionBlockNumber = duringMigrationBlockNumber();
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
+            setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
+
+            // Act
+            bridgeSupport.updateCollections(updateCollectionsTransaction);
+
+            // Assert
+            assertNoMigrationTxCreated();
+            assertRetiringFederationStillPresent();
+            assertNoRemainingRetiringUtxos();
+        }
+
+        @Test
         void updateCollections_duringMigration_preRSKIP455_withManyMinNonDustRetiringUtxos_whenMigrationBuildFails_shouldThrowIllegalStateException() throws IOException {
             // Arrange
             int numberOfUtxos = 5;
