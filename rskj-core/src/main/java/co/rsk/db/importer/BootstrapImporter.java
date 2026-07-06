@@ -23,6 +23,7 @@ import co.rsk.db.importer.provider.BootstrapDataProvider;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import com.google.common.io.CountingInputStream;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.crypto.Keccak256Helper;
@@ -34,14 +35,34 @@ import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.Set;
+
+import static co.rsk.db.importer.BootstrapV2Format.MAGIC;
+import static co.rsk.db.importer.BootstrapV2Format.TAG_BLOCKS;
+import static co.rsk.db.importer.BootstrapV2Format.TAG_END;
+import static co.rsk.db.importer.BootstrapV2Format.TAG_NODES;
+import static co.rsk.db.importer.BootstrapV2Format.TAG_VALUES;
+import static co.rsk.db.importer.BootstrapV2Format.VERSION;
 
 public class BootstrapImporter {
 
     private static final Logger logger = LoggerFactory.getLogger(BootstrapImporter.class);
+
+    private static final int READ_BUFFER_SIZE = 64 * 1024;
+    // A chunk is read into a single byte[], so it must fit a Java array. CHUNK_MAX is the exporter's
+    // soft cap, but a single oversized element may exceed it; this is the hard ceiling either way.
+    private static final long MAX_CHUNK_BYTES = (long) Integer.MAX_VALUE - 8;
 
     private final BootstrapDataProvider bootstrapDataProvider;
     private final BlockStore blockStore;
@@ -51,7 +72,8 @@ public class BootstrapImporter {
     public BootstrapImporter(
             BlockStore blockStore,
             TrieStore trieStore,
-            BlockFactory blockFactory, BootstrapDataProvider bootstrapDataProvider) {
+            BlockFactory blockFactory,
+            BootstrapDataProvider bootstrapDataProvider) {
         this.blockStore = blockStore;
         this.trieStore = trieStore;
         this.blockFactory = blockFactory;
@@ -69,11 +91,24 @@ public class BootstrapImporter {
     }
 
     private void updateDatabase() {
-        Queue<RLPElement> rlpElementQueue = decodeQueue(bootstrapDataProvider.getBootstrapData());
+        Path dataPath = bootstrapDataProvider.getBootstrapDataPath();
+        if (isV2(dataPath)) {
+            logger.info("Detected bootstrap-data v2 (chunked) format");
+            updateDatabaseV2(dataPath);
+        } else {
+            logger.info("Detected bootstrap-data v1 (legacy) format");
+            updateDatabaseV1(bootstrapDataProvider.getBootstrapData());
+        }
+    }
+
+    // --- v1 (legacy) path: whole-payload in-memory decode. Kept for already-published snapshots. ---
+
+    private void updateDatabaseV1(byte[] bootstrapData) {
+        Queue<RLPElement> rlpElementQueue = decodeQueue(bootstrapData);
 
         long start = System.currentTimeMillis();
         logger.debug("Inserting blocks...");
-        insertBlocks(blockStore, blockFactory, Objects.requireNonNull(rlpElementQueue.poll()));
+        insertBlocks(Objects.requireNonNull(rlpElementQueue.poll()));
         logger.debug("Blocks have been inserted in {} mills", System.currentTimeMillis() - start);
 
         HashMapDB hashMapDB = new HashMapDB();
@@ -93,18 +128,14 @@ public class BootstrapImporter {
         logger.debug("State has been inserted in {} mills", System.currentTimeMillis() - start);
     }
 
-    private static void insertBlocks(BlockStore blockStore,
-                                     BlockFactory blockFactory,
-                                     RLPElement encodedTuples) {
+    private void insertBlocks(RLPElement encodedTuples) {
         RLPList blocksData = RLP.decodeList(encodedTuples.getRLPData());
 
         for (int k = 0; k < blocksData.size(); k++) {
             RLPElement element = blocksData.get(k);
             RLPList blockData = RLP.decodeList(element.getRLPData());
             RLPList tuple = RLP.decodeList(blockData.getRLPData());
-            Block block = blockFactory.decodeBlock(Objects.requireNonNull(tuple.get(0).getRLPData(), "block data is missing"));
-            BlockDifficulty blockDifficulty = new BlockDifficulty(new BigInteger(Objects.requireNonNull(tuple.get(1).getRLPData(), "block difficulty data is missing")));
-            blockStore.saveBlock(block, blockDifficulty, true);
+            saveBlockFromTuple(tuple);
         }
 
         blockStore.flush();
@@ -159,5 +190,188 @@ public class BootstrapImporter {
         }
 
         return result;
+    }
+
+    // --- v2 (chunked, streaming) path: bounded memory, size-uncapped. See BootstrapV2Format. ---
+
+    private void updateDatabaseV2(Path dataPath) {
+        // Long values are co-located ahead of the nodes that reference them: the exporter writes the
+        // values section before the nodes section, so a single streaming pass suffices. Each value is
+        // written straight to the destination store; every node then resolves its long value from that
+        // same store at save time (including embedded long-value children reached via parent recursion).
+        // No separate value-staging store and no second file scan are needed.
+        long start = System.currentTimeMillis();
+        logger.debug("Inserting blocks and state...");
+        // counts[0] = blocks saved, counts[1] = nodes saved. v1 implicitly required both the blocks and
+        // the nodes section to be present (it polled them off a queue); v2 dispatches by tag, so we assert
+        // non-empty results here to fail fast on a file missing either section rather than "succeeding"
+        // with no state and only crashing later at first state access.
+        long[] counts = new long[2];
+        scanSections(dataPath, Set.of(TAG_BLOCKS, TAG_VALUES, TAG_NODES), (tag, chunk) -> {
+            if (tag == TAG_BLOCKS) {
+                for (RLPElement element : RLP.decode2(chunk)) {
+                    saveBlockFromTuple(RLP.decodeList(element.getRLPData()));
+                    counts[0]++;
+                }
+            } else if (tag == TAG_VALUES) {
+                for (RLPElement element : RLP.decode2(chunk)) {
+                    trieStore.saveValue(element.getRLPData());
+                }
+            } else if (tag == TAG_NODES) {
+                for (RLPElement element : RLP.decode2(chunk)) {
+                    Trie trie = Trie.fromMessage(element.getRLPData(), trieStore);
+                    saveNode(trie);
+                    counts[1]++;
+                }
+            }
+        });
+        if (counts[0] == 0) {
+            throw new BootstrapImportException("Bootstrap-data v2 has no blocks section (or it is empty); refusing to import incomplete data");
+        }
+        if (counts[1] == 0) {
+            throw new BootstrapImportException("Bootstrap-data v2 has no state-nodes section (or it is empty); refusing to import a stateless snapshot");
+        }
+        blockStore.flush();
+        trieStore.flush();
+        logger.debug("Blocks and state inserted in {} mills", System.currentTimeMillis() - start);
+    }
+
+    /**
+     * Saves a single state node. A node's long value is resolved lazily from the destination store (where
+     * the preceding values section already wrote it), so a value missing (or length-inconsistent) there
+     * surfaces deep inside {@code save} as a generic {@link IllegalArgumentException}; we translate it into
+     * an actionable import error that points at the real cause (incomplete/corrupt bootstrap data) instead
+     * of letting the opaque exception escape.
+     */
+    private void saveNode(Trie trie) {
+        try {
+            trieStore.save(trie);
+        } catch (IllegalArgumentException e) {
+            throw new BootstrapImportException(
+                    "Failed to save a state node during bootstrap import: a referenced long value is missing "
+                            + "or inconsistent in the values section (incomplete or corrupt bootstrap data)", e);
+        }
+    }
+
+    /**
+     * Streams the v2 file, invoking {@code processor} once per chunk that belongs to a section in
+     * {@code tagsOfInterest}, in file order. Sections are dispatched by tag; the v2 import reads every
+     * section in a single pass (the exporter co-locates values before the nodes that reference them, so
+     * value/block/node chunks are processed as they stream past). Chunks for tags outside
+     * {@code tagsOfInterest} are skipped without being read into memory or decoded — including tags this
+     * reader does not recognize, so a newer exporter can add optional sections (e.g. a metadata manifest)
+     * without breaking an older reader. Each wanted chunk is read into a bounded {@code byte[]}, handed
+     * off, then discarded. The full structural scan (header, chunk-length and end-of-section sentinels,
+     * end-of-sections marker) is validated regardless of which tags are of interest.
+     */
+    private void scanSections(Path dataPath, Set<Integer> tagsOfInterest, ChunkProcessor processor) {
+        long fileSize;
+        try {
+            fileSize = Files.size(dataPath);
+        } catch (IOException e) {
+            throw new BootstrapImportException("Error reading bootstrap-data v2 from " + dataPath, e);
+        }
+        // counts every byte handed to the DataInputStream (reads and skips alike), so a declared chunk
+        // length can be bounded against the bytes actually left in the file before any byte[] is allocated.
+        try (CountingInputStream counter = new CountingInputStream(
+                new BufferedInputStream(Files.newInputStream(dataPath), READ_BUFFER_SIZE));
+             DataInputStream in = new DataInputStream(counter)) {
+            readAndVerifyHeader(in);
+
+            int tag = in.read();
+            while (tag != -1 && tag != TAG_END) {
+                // Unknown/unwanted section tags are skipped (their chunks are still length-validated), so
+                // an older reader tolerates optional sections a newer exporter may add.
+                boolean wanted = tagsOfInterest.contains(tag);
+                for (long len = in.readLong(); len != 0L; len = in.readLong()) {
+                    if (len < 0 || len > MAX_CHUNK_BYTES) {
+                        throw new BootstrapImportException("Bootstrap-data v2 chunk length out of range: " + len);
+                    }
+                    long remaining = fileSize - counter.getCount();
+                    if (len > remaining) {
+                        throw new BootstrapImportException("Bootstrap-data v2 chunk length " + len
+                                + " exceeds the " + remaining + " bytes remaining in the file; "
+                                + "the file is truncated or its length field is corrupt");
+                    }
+                    if (wanted) {
+                        byte[] chunk = new byte[(int) len];
+                        in.readFully(chunk);
+                        processor.process(tag, chunk);
+                    } else {
+                        skipFully(in, len);
+                    }
+                }
+                tag = in.read();
+            }
+            if (tag == -1) {
+                throw new BootstrapImportException("Truncated bootstrap-data v2: missing end-of-sections marker");
+            }
+        } catch (IOException e) {
+            throw new BootstrapImportException("Error reading bootstrap-data v2 from " + dataPath, e);
+        }
+    }
+
+    /**
+     * Skips exactly {@code n} bytes, falling back to reading-and-discarding when the underlying stream's
+     * {@code skip} cannot make progress, and detecting a chunk truncated below its declared length.
+     */
+    private static void skipFully(DataInputStream in, long n) throws IOException {
+        long remaining = n;
+        byte[] scratch = null;
+        while (remaining > 0) {
+            long skipped = in.skip(remaining);
+            if (skipped > 0) {
+                remaining -= skipped;
+                continue;
+            }
+            if (scratch == null) {
+                scratch = new byte[(int) Math.min(remaining, READ_BUFFER_SIZE)];
+            }
+            int read = in.read(scratch, 0, (int) Math.min(remaining, scratch.length));
+            if (read < 0) {
+                throw new BootstrapImportException(
+                        "Truncated bootstrap-data v2: section chunk shorter than its declared length");
+            }
+            remaining -= read;
+        }
+    }
+
+    private static void readAndVerifyHeader(DataInputStream in) throws IOException {
+        byte[] magic = new byte[MAGIC.length];
+        in.readFully(magic);
+        if (!Arrays.equals(magic, MAGIC)) {
+            throw new BootstrapImportException("Invalid bootstrap-data v2 magic");
+        }
+        int version = in.read();
+        if (version != (VERSION & 0xFF)) {
+            throw new BootstrapImportException("Unsupported bootstrap-data v2 version: " + version);
+        }
+    }
+
+    private boolean isV2(Path dataPath) {
+        try (InputStream in = Files.newInputStream(dataPath)) {
+            int firstByte = in.read();
+            if (firstByte == -1) {
+                throw new BootstrapImportException("Empty bootstrap data file: " + dataPath);
+            }
+            return BootstrapV2Format.isV2(firstByte);
+        } catch (IOException e) {
+            throw new BootstrapImportException("Error reading bootstrap data from " + dataPath, e);
+        }
+    }
+
+    // --- shared leaf decoding (identical between v1 and v2; only the container framing differs) ---
+
+    private void saveBlockFromTuple(RLPList tuple) {
+        Block block = blockFactory.decodeBlock(
+                Objects.requireNonNull(tuple.get(0).getRLPData(), "block data is missing"));
+        BlockDifficulty blockDifficulty = new BlockDifficulty(
+                new BigInteger(Objects.requireNonNull(tuple.get(1).getRLPData(), "block difficulty data is missing")));
+        blockStore.saveBlock(block, blockDifficulty, true);
+    }
+
+    @FunctionalInterface
+    private interface ChunkProcessor {
+        void process(int tag, byte[] chunk) throws IOException;
     }
 }
