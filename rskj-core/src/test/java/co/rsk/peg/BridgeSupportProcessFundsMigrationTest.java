@@ -5,6 +5,7 @@ import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxosInStorage;
 import static co.rsk.peg.ReleaseTransactionAssertions.*;
+import static co.rsk.peg.ReleaseTransactionBuilder.MAX_STANDARD_TX_SIZE_ALLOWED;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.getBtcEcKeysFromSeeds;
@@ -1176,15 +1177,6 @@ class BridgeSupportProcessFundsMigrationTest {
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
-
-                BtcTransaction migrationTransaction = getLastMigrationTxAdded(ALL_ACTIVATIONS);
-                int migrationTransactionSize = BridgeUtils.simulatePegoutTxSize(
-                    ALL_ACTIVATIONS,
-                    retiringFederation,
-                    migrationTransaction.getInputs().size(),
-                    migrationTransaction.getOutputs().size()
-                );
-                assertTrue(migrationTransactionSize <= BtcTransaction.MAX_STANDARD_TX_SIZE);
             }
 
             @Test
@@ -1215,15 +1207,6 @@ class BridgeSupportProcessFundsMigrationTest {
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
-
-                BtcTransaction migrationTransaction = getLastMigrationTxAdded(ALL_ACTIVATIONS);
-                int migrationTransactionSize = BridgeUtils.simulatePegoutTxSize(
-                    ALL_ACTIVATIONS,
-                    retiringFederation,
-                    migrationTransaction.getInputs().size(),
-                    migrationTransaction.getOutputs().size()
-                );
-                assertTrue(migrationTransactionSize <= BtcTransaction.MAX_STANDARD_TX_SIZE);
             }
 
             @Test
@@ -1408,6 +1391,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 expectedInputCount
             );
             assertMigrationTxWithOneOutput(migrationTransaction, selectedUtxos);
+            assertMigrationTransactionSizeIsBelowStandardSizeAllowed(retiringFederation, migrationTransaction);
         }
 
         private void assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
@@ -1432,6 +1416,17 @@ class BridgeSupportProcessFundsMigrationTest {
                 federationSupport.getActiveFederationAddress(),
                 NETWORK_PARAMETERS
             );
+            assertMigrationTransactionSizeIsBelowStandardSizeAllowed(retiringFederation, migrationTransaction);
+        }
+
+        private void assertMigrationTransactionSizeIsBelowStandardSizeAllowed(Federation retiringFederation, BtcTransaction migrationTransaction) {
+            int migrationTransactionSize = BridgeUtils.simulatePegoutTxSize(
+                ALL_ACTIVATIONS,
+                retiringFederation,
+                migrationTransaction.getInputs().size(),
+                migrationTransaction.getOutputs().size()
+            );
+            assertTrue(migrationTransactionSize <= MAX_STANDARD_TX_SIZE_ALLOWED);
         }
 
         private List<Coin> buildEvenlyDistributedExpectedOutputValues(Coin migratedAmount) {
