@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -43,6 +44,17 @@ class TrieStoreImplTest {
     void setUp() {
         this.map = spy(new HashMapDB());
         this.store = new TrieStoreImpl(map);
+    }
+
+    @Test
+    void saveValue_persistsValueRetrievableByItsHash() {
+        byte[] value = "a-long-value-over-thirty-two-bytes-xx".getBytes(StandardCharsets.UTF_8);
+        byte[] valueHash = Keccak256Helper.keccak256(value);
+
+        store.saveValue(value);
+
+        verify(map, times(1)).put(valueHash, value);
+        assertArrayEquals(value, store.retrieveValue(valueHash));
     }
 
     @Test

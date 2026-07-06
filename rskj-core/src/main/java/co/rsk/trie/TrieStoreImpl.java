@@ -218,6 +218,11 @@ public class TrieStoreImpl implements TrieStore {
     }
 
     @Override
+    public void saveValue(byte[] value) {
+        this.store.put(getValueHash(value), value);
+    }
+
+    @Override
     public void dispose() {
         store.close();
     }
