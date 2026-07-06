@@ -26,6 +26,7 @@ import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationTxWithMulti
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsP2shErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsP2shP2wshErp;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxInputsStandardMultisig;
+import static co.rsk.peg.ReleaseTransactionAssertions.assertMigrationReleaseTxSizeIsBelowStandardSizeAllowed;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertOneMigrationTxOutput;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertOutputsWithNoChange;
 import static co.rsk.peg.ReleaseTransactionAssertions.assertReleaseTxInputsP2shErp;
@@ -2665,13 +2666,7 @@ class ReleaseTransactionBuilderTest {
                     newFederationAddress,
                     BTC_MAINNET_PARAMS
                 );
-                int migrationTransactionSize = BridgeUtils.simulatePegoutTxSize(
-                    ALL_ACTIVATIONS,
-                    retiringFederation,
-                    migrationTransaction.getInputs().size(),
-                    migrationTransaction.getOutputs().size()
-                );
-                assertTrue(migrationTransactionSize <= BtcTransaction.MAX_STANDARD_TX_SIZE);
+                assertMigrationReleaseTxSizeIsBelowStandardSizeAllowed(retiringFederation, migrationTransaction, ALL_ACTIVATIONS);
             }
 
             /** DUSTY_AMOUNT_SEND_REQUESTED is unrealistic; the minimum UTXO the Federation
