@@ -1278,13 +1278,13 @@ public class BridgeSupport {
     }
 
     private void processFundsMigrationPastMigrationAge(Keccak256 rskTxHash, Wallet retiringFederationWallet, List<UTXO> availableUTXOs) {
-        boolean isMigrationTransactionCreated = false;
+        boolean migrationTransactionCreated = false;
         boolean hasBalance = retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO);
         if (hasBalance) {
             try {
                 ReleaseTransactionBuilder.BuildResult migrationTransactionResult = buildMigrationTransaction(rskTxHash, retiringFederationWallet);
-                isMigrationTransactionCreated = isMigrationTransactionCreated(migrationTransactionResult);
-                if (isMigrationTransactionCreated) {
+                migrationTransactionCreated = isMigrationTransactionCreated(migrationTransactionResult);
+                if (migrationTransactionCreated) {
                     settleMigrationTransaction(migrationTransactionResult, rskTxHash, availableUTXOs);
                 }
             } catch (Exception e) {
@@ -1297,7 +1297,7 @@ public class BridgeSupport {
             }
         }
 
-        if (shouldClearRetiredFederation(isMigrationTransactionCreated)) {
+        if (shouldClearRetiredFederation(migrationTransactionCreated)) {
             logger.info(
                 "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
                 availableUTXOs.size()
