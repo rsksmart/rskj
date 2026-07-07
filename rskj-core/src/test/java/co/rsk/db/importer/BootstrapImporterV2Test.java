@@ -232,9 +232,9 @@ class BootstrapImporterV2Test {
 
     @Test
     void rejectsChunkLengthExceedingFileSizeBeforeAllocating() throws IOException {
-        // A chunk whose declared length is far larger than the whole file, yet still under the ~2 GiB
-        // array ceiling (MAX_CHUNK_BYTES). It must be rejected against the bytes actually remaining in the
-        // file instead of being eagerly allocated as a multi-hundred-MB/GB byte[].
+        // A chunk whose declared length is far larger than the whole file, yet still under the per-chunk
+        // ceiling (MAX_CHUNK_BYTES). It must be rejected against the bytes actually remaining in the
+        // file instead of being eagerly allocated as a multi-hundred-MB byte[].
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream out = new DataOutputStream(bos);
         out.write(BootstrapV2Format.MAGIC);

@@ -60,9 +60,11 @@ public class BootstrapImporter {
     private static final Logger logger = LoggerFactory.getLogger(BootstrapImporter.class);
 
     private static final int READ_BUFFER_SIZE = 64 * 1024;
-    // A chunk is read into a single byte[], so it must fit a Java array. CHUNK_MAX is the exporter's
-    // soft cap, but a single oversized element may exceed it; this is the hard ceiling either way.
-    private static final long MAX_CHUNK_BYTES = (long) Integer.MAX_VALUE - 8;
+    // A chunk is read into a single byte[], so per-chunk memory must stay bounded. The exporter flushes
+    // once its buffer crosses CHUNK_MAX on an element boundary, so a well-formed chunk is at most
+    // CHUNK_MAX plus one element; 2x CHUNK_MAX gives ample headroom while rejecting a corrupt length that
+    // would otherwise allocate up to a ~2 GiB byte[].
+    private static final long MAX_CHUNK_BYTES = 2 * BootstrapV2Format.CHUNK_MAX;
 
     private final BootstrapDataProvider bootstrapDataProvider;
     private final BlockStore blockStore;
