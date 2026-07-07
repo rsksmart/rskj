@@ -348,29 +348,6 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_pastMigrationAge_withMinNonDustRetiringUtxo_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
-            // Arrange
-            List<UTXO> retiringUtxos = List.of(
-                UTXOBuilder.builder()
-                .withValue(MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT)
-                .withScriptPubKey(retiringFederation.getP2SHScript())
-                .build()
-            );
-
-            long executionBlockNumber = pastMigrationBlockNumber();
-            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
-            setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
-
-            // Act
-            bridgeSupport.updateCollections(updateCollectionsTransaction);
-
-            // Assert
-            assertNoMigrationTxCreated();
-            assertRetiringFederationCleared();
-            assertRetiringUtxosCount(retiringUtxos.size());
-        }
-
-        @Test
         void updateCollections_pastMigrationAge_preRSKIP455_withManyMinNonDustRetiringUtxo_shouldClearRetiringFedWithoutMigrationTx() throws IOException {
             // Arrange
             int numberOfUtxos = 5;
@@ -637,7 +614,7 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             @Test
-            void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxUtxos_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
+            void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxUtxos_shouldCreateMigrationTxAndClearRetiringFedOnceAllSpendableFundsAreMigrated() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
                     .withValue(BELOW_MTMU_UTXO_BTC_VALUE)
@@ -650,10 +627,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-                // Act
+                // Act - first call: migrates all UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
-                // Assert
+                // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
@@ -661,12 +638,20 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringUtxos.size(),
                     ALL_ACTIVATIONS
                 );
-                assertRetiringFederationCleared();
+                assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
+
+                // Act - second call: no funds left to migrate
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
+                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+
+                // Assert - second call
+                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+                assertRetiringFederationCleared();
             }
 
             @Test
-            void updateCollections_pastMigrationAge_aboveMaxInputsPerPegoutTx_whenFirstUtxosSelectionSumIsBelowMTMUThreshold_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
+            void updateCollections_pastMigrationAge_aboveMaxInputsPerPegoutTx_whenFirstUtxosSelectionSumIsBelowMTMUThreshold_shouldCreateAMigrationTxEachTimeAndClearRetiringFedOnceAllSpendableFundsAreMigrated() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
                     .withValue(BELOW_MTMU_UTXO_BTC_VALUE)
@@ -677,10 +662,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-                // Act
+                // Act - first call: consumes MAX_INPUTS_PER_PEGOUT_TX UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
-                // Assert
+                // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
@@ -688,8 +673,33 @@ class BridgeSupportProcessFundsMigrationTest {
                     MAX_INPUTS_PER_PEGOUT_TX,
                     ALL_ACTIVATIONS
                 );
+                assertRetiringFederationStillPresent();
+
+                int remainingUtxosCount = retiringUtxos.size() - MAX_INPUTS_PER_PEGOUT_TX;
+                assertRetiringUtxosCount(remainingUtxosCount);
+
+                // Act - second call: consumes the remaining UTXO
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
+                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+
+                // Assert - second call
+                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
+                assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
+                    retiringFederation,
+                    retiringUtxos,
+                    remainingUtxosCount,
+                    ALL_ACTIVATIONS
+                );
+                assertRetiringFederationStillPresent();
+                assertNoRemainingRetiringUtxos();
+
+                // Act - third call: no funds left to migrate
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 2);
+                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(2));
+
+                // Assert - third call
+                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertRetiringFederationCleared();
-                assertRetiringUtxosCount(retiringUtxos.size() - MAX_INPUTS_PER_PEGOUT_TX);
             }
         }
 
@@ -996,7 +1006,7 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             @Test
-            void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxUtxos_shouldCreateMigrationTxWithMultipleOutputsAndClearRetiringFed() throws IOException {
+            void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxUtxos_shouldCreateMigrationTxWithMultipleOutputsAndClearRetiringFedOnceAllSpendableFundsAreMigrated() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
                     .withValue(ABOVE_MTMU_UTXO_BTC_VALUE)
@@ -1009,10 +1019,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-                // Act
+                // Act - first call: migrates all UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
-                // Assert
+                // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
@@ -1020,12 +1030,20 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringUtxos.size(),
                     EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
                 );
-                assertRetiringFederationCleared();
+                assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
+
+                // Act - second call: no funds left to migrate
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
+                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+
+                // Assert - second call
+                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+                assertRetiringFederationCleared();
             }
 
             @Test
-            void updateCollections_pastMigrationAge_aboveMaxInputsPerPegoutTx_whenFirstBatchSumIsAboveMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputsAndClearRetiringFed() throws IOException {
+            void updateCollections_pastMigrationAge_aboveMaxInputsPerPegoutTx_whenFirstBatchSumIsAboveMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputsAndClearRetiringFedOnceAllSpendableFundsAreMigrated() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
                     .withValue(ABOVE_MTMU_UTXO_BTC_VALUE)
@@ -1038,10 +1056,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-                // Act
+                // Act - first call: consumes MAX_INPUTS_PER_PEGOUT_TX UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
-                // Assert
+                // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
@@ -1049,12 +1067,37 @@ class BridgeSupportProcessFundsMigrationTest {
                     MAX_INPUTS_PER_PEGOUT_TX,
                     EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
                 );
+                assertRetiringFederationStillPresent();
+
+                int remainingUtxosCount = retiringUtxos.size() - MAX_INPUTS_PER_PEGOUT_TX;
+                assertRetiringUtxosCount(remainingUtxosCount);
+
+                // Act - second call: consumes the remaining UTXO, whose value is below the MTMU threshold
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
+                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+
+                // Assert - second call
+                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
+                assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
+                    retiringFederation,
+                    retiringUtxos,
+                    remainingUtxosCount,
+                    ALL_ACTIVATIONS
+                );
+                assertRetiringFederationStillPresent();
+                assertNoRemainingRetiringUtxos();
+
+                // Act - third call: no funds left to migrate
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 2);
+                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(2));
+
+                // Assert - third call
+                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertRetiringFederationCleared();
-                assertRetiringUtxosCount(retiringUtxos.size() - MAX_INPUTS_PER_PEGOUT_TX);
             }
 
             @Test
-            void updateCollections_pastMigration_withOneUtxoJustBelowLargeMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputsAndClearRetiringFed() throws IOException {
+            void updateCollections_pastMigration_withOneUtxoJustBelowLargeMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputsAndClearRetiringFedOnceAllFundsAreMigrated() throws IOException {
                 // Arrange
                 Coin utxoValueBelowLargeMTMUThreshold = LARGE_MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE.subtract(Coin.SATOSHI);
                 List<UTXO> retiringUtxos = List.of(
@@ -1068,10 +1111,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-                // Act
+                // Act - first call: migrates all UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
-                // Assert
+                // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
 
                 List<Coin> expectedOutputValues = getExpectedOutputValuesForOneUtxoJustBelowLargeMTMUThreshold();
@@ -1082,8 +1125,16 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringUtxos.size(),
                     expectedOutputValues
                 );
-                assertRetiringFederationCleared();
+                assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
+
+                // Act - second call: no funds left to migrate
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
+                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+
+                // Assert - second call
+                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+                assertRetiringFederationCleared();
             }
 
             private List<Coin> getExpectedOutputValuesForOneUtxoJustBelowLargeMTMUThreshold() {
@@ -1334,7 +1385,7 @@ class BridgeSupportProcessFundsMigrationTest {
             }
 
             @Test
-            void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxUtxos_shouldCreateMigrationTxWithMaxOutputsAndClearRetiringFed() throws IOException {
+            void updateCollections_pastMigrationAge_withMaxInputsPerPegoutTxUtxos_shouldCreateMigrationTxWithMaxOutputsAndClearRetiringFedOnceAllSpendableFundsAreMigrated() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
                     .withValue(ABOVE_LARGE_MTMU_UTXO_BTC_VALUE)
@@ -1345,10 +1396,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-                // Act
+                // Act - first call: migrates all UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
-                // Assert
+                // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 Coin migratedAmount = getTotalValue(retiringUtxos);
                 List<Coin> expectedOutputValues = buildEvenlyDistributedExpectedOutputValues(migratedAmount);
@@ -1358,12 +1409,20 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringUtxos.size(),
                     expectedOutputValues
                 );
-                assertRetiringFederationCleared();
+                assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
+
+                // Act - second call: no funds left to migrate
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
+                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+
+                // Assert - second call
+                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+                assertRetiringFederationCleared();
             }
 
             @Test
-            void updateCollections_pastMigrationAge_aboveMaxInputsPerPegoutTx_whenFirstBatchSumIsAboveLargeMTMUThreshold_shouldCreateMigrationTxWithMaxOutputsAndClearRetiringFed() throws IOException {
+            void updateCollections_pastMigrationAge_aboveMaxInputsPerPegoutTx_whenFirstBatchSumIsAboveLargeMTMUThreshold_shouldCreateMigrationTxWithMaxOutputsAndClearRetiringFedOnceAllSpendableFundsAreMigrated() throws IOException {
                 // Arrange
                 List<UTXO> retiringUtxos = UTXOBuilder.builder()
                     .withValue(ABOVE_LARGE_MTMU_UTXO_BTC_VALUE)
@@ -1374,10 +1433,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-                // Act
+                // Act - first call: consumes MAX_INPUTS_PER_PEGOUT_TX UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
 
-                // Assert
+                // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 List<Coin> expectedOutputValues = buildEvenlyDistributedExpectedOutputValues(MIGRATED_VALUE_FOR_MAX_INPUTS_IN_BTC);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
@@ -1386,8 +1445,33 @@ class BridgeSupportProcessFundsMigrationTest {
                     MAX_INPUTS_PER_PEGOUT_TX,
                     expectedOutputValues
                 );
+                assertRetiringFederationStillPresent();
+
+                int remainingUtxosCount = retiringUtxos.size() - MAX_INPUTS_PER_PEGOUT_TX;
+                assertRetiringUtxosCount(remainingUtxosCount);
+
+                // Act - second call: consumes the remaining UTXO, whose value is below the MTMU threshold
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
+                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+
+                // Assert - second call
+                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
+                assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
+                    retiringFederation,
+                    retiringUtxos,
+                    remainingUtxosCount,
+                    ALL_ACTIVATIONS
+                );
+                assertRetiringFederationStillPresent();
+                assertNoRemainingRetiringUtxos();
+
+                // Act - third call: no funds left to migrate
+                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 2);
+                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(2));
+
+                // Assert - third call
+                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertRetiringFederationCleared();
-                assertRetiringUtxosCount(retiringUtxos.size() - MAX_INPUTS_PER_PEGOUT_TX);
             }
         }
 
@@ -1672,7 +1756,7 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_pastMigrationAge_withOneSpendableRetiringUtxo_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
+        void updateCollections_pastMigrationAge_withOneSpendableRetiringUtxo_shouldCreateMigrationTxAndClearRetiringFedOnceAllFundsAreMigrated() throws IOException {
             // Arrange
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
@@ -1685,10 +1769,10 @@ class BridgeSupportProcessFundsMigrationTest {
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-            // Act
+            // Act - first call: migrates all UTXOs
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
-            // Assert
+            // Assert - first call
             assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
@@ -1696,12 +1780,20 @@ class BridgeSupportProcessFundsMigrationTest {
                 retiringUtxos.size(),
                 ALL_ACTIVATIONS
             );
-            assertRetiringFederationCleared();
+            assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
+
+            // Act - second call: no funds left to migrate
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
+            bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+
+            // Assert - second call
+            assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+            assertRetiringFederationCleared();
         }
 
         @Test
-        void updateCollections_pastMigrationAge_withManySpendableRetiringUtxos_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
+        void updateCollections_pastMigrationAge_withManySpendableRetiringUtxos_shouldCreateMigrationTxAndClearRetiringFedOnceAllFundsAreMigrated() throws IOException {
             // Arrange
             int numberOfUtxos = 2;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
@@ -1715,10 +1807,10 @@ class BridgeSupportProcessFundsMigrationTest {
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-            // Act
+            // Act - first call: migrates all UTXOs
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
-            // Assert
+            // Assert - first call
             assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
@@ -1726,8 +1818,16 @@ class BridgeSupportProcessFundsMigrationTest {
                 retiringUtxos.size(),
                 ALL_ACTIVATIONS
             );
-            assertRetiringFederationCleared();
+            assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
+
+            // Act - second call: no funds left to migrate
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
+            bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+
+            // Assert - second call
+            assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+            assertRetiringFederationCleared();
         }
 
         @Test
@@ -2121,7 +2221,7 @@ class BridgeSupportProcessFundsMigrationTest {
         }
 
         @Test
-        void updateCollections_pastMigrationAge_withOneSpendableRetiringUtxo_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
+        void updateCollections_pastMigrationAge_withOneSpendableRetiringUtxo_shouldCreateMigrationTxAndClearRetiringFedOnceAllFundsAreMigrated() throws IOException {
             // Arrange
             List<UTXO> retiringUtxos = List.of(
                 UTXOBuilder.builder()
@@ -2134,10 +2234,10 @@ class BridgeSupportProcessFundsMigrationTest {
             setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-            // Act
+            // Act - first call: migrates all UTXOs
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
-            // Assert
+            // Assert - first call
             assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
@@ -2145,12 +2245,20 @@ class BridgeSupportProcessFundsMigrationTest {
                 retiringUtxos.size(),
                 ALL_ACTIVATIONS
             );
-            assertRetiringFederationCleared();
+            assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
+
+            // Act - second call: no funds left to migrate
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
+            bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+
+            // Assert - second call
+            assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+            assertRetiringFederationCleared();
         }
 
         @Test
-        void updateCollections_pastMigrationAge_withManySpendableRetiringUtxos_shouldCreateMigrationTxAndClearRetiringFed() throws IOException {
+        void updateCollections_pastMigrationAge_withManySpendableRetiringUtxos_shouldCreateMigrationTxAndClearRetiringFedOnceAllFundsAreMigrated() throws IOException {
             // Arrange
             int numberOfUtxos = 2;
             List<UTXO> retiringUtxos = UTXOBuilder.builder()
@@ -2164,10 +2272,10 @@ class BridgeSupportProcessFundsMigrationTest {
             setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
-            // Act
+            // Act - first call: migrates all UTXOs
             bridgeSupport.updateCollections(updateCollectionsTransaction);
 
-            // Assert
+            // Assert - first call
             assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
@@ -2175,8 +2283,16 @@ class BridgeSupportProcessFundsMigrationTest {
                 retiringUtxos.size(),
                 ALL_ACTIVATIONS
             );
-            assertRetiringFederationCleared();
+            assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
+
+            // Act - second call: no funds left to migrate
+            setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
+            bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+
+            // Assert - second call
+            assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
+            assertRetiringFederationCleared();
         }
 
         @Test
