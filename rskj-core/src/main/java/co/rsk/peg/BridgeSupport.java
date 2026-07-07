@@ -1269,9 +1269,10 @@ public class BridgeSupport {
 
         if (federationSupport.isActiveFederationPastMigrationAge()) {
             boolean hasBalance = retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO);
+            boolean migrationTransactionCreated = false;
             if (hasBalance) {
                 try {
-                    migrateFunds(
+                    migrationTransactionCreated = migrateRemainingFunds(
                         rskTx.getHash(),
                         retiringFederationWallet,
                         availableUTXOs
@@ -1286,12 +1287,22 @@ public class BridgeSupport {
                 }
             }
 
-            logger.info(
-                "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
-                availableUTXOs.size()
-            );
-            federationSupport.clearRetiredFederation();
+            if (shouldClearRetiredFederation(migrationTransactionCreated)) {
+                logger.info(
+                    "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
+                    availableUTXOs.size()
+                );
+                federationSupport.clearRetiredFederation();
+            }
         }
+    }
+
+    private boolean shouldClearRetiredFederation(boolean migrationTransactionCreated) {
+        if (!activations.isActive(RSKIP455)) {
+            return true;
+        }
+
+        return !migrationTransactionCreated;
     }
 
     /**
@@ -1316,27 +1327,64 @@ public class BridgeSupport {
         Wallet retiringFederationWallet,
         List<UTXO> utxosToUse
     ) throws IOException {
+        ReleaseTransactionBuilder.BuildResult migrationTransactionResult = buildMigrationTransaction(rskTxHash, retiringFederationWallet);
+        if (migrationTransactionCreationFailed(migrationTransactionResult)) {
+            return;
+        }
+
+        settleMigrationTransaction(migrationTransactionResult, rskTxHash, utxosToUse);
+    }
+
+    private boolean migrateRemainingFunds(
+        Keccak256 rskTxHash,
+        Wallet retiringFederationWallet,
+        List<UTXO> utxosToUse
+    ) throws IOException {
+        ReleaseTransactionBuilder.BuildResult migrationTransactionResult = buildMigrationTransaction(rskTxHash, retiringFederationWallet);
+        if (migrationTransactionCreationFailed(migrationTransactionResult)) {
+            return false;
+        }
+
+        settleMigrationTransaction(migrationTransactionResult, rskTxHash, utxosToUse);
+        return true;
+    }
+
+    private ReleaseTransactionBuilder.BuildResult buildMigrationTransaction(
+        Keccak256 rskTxHash,
+        Wallet retiringFederationWallet
+    ) {
         logRetiringFederationBalance(retiringFederationWallet.getBalance());
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Address activeFederationAddress = getActiveFederationAddress();
         ReleaseTransactionBuilder.BuildResult migrationTransactionResult = activations.isActive(RSKIP455) ?
             createMigrationTransaction(retiringFederationWallet, activeFederationAddress) :
             createMigrationTransactionLegacy(retiringFederationWallet, activeFederationAddress);
 
-        if (migrationTransactionResult.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
+        if (migrationTransactionCreationFailed(migrationTransactionResult)) {
             logger.warn(
-                "[migrateFunds] Unable to create migration transaction for rskTxHash {}. Response code: {}",
+                "[buildMigrationTransaction] Unable to create migration transaction for rskTxHash {}. Response code: {}",
                 rskTxHash,
                 migrationTransactionResult.responseCode()
             );
-            return;
         }
 
+        return migrationTransactionResult;
+    }
+
+    private boolean migrationTransactionCreationFailed(ReleaseTransactionBuilder.BuildResult migrationTransactionResult) {
+        return migrationTransactionResult.responseCode() != ReleaseTransactionBuilder.Response.SUCCESS;
+    }
+
+    private void settleMigrationTransaction(
+        ReleaseTransactionBuilder.BuildResult migrationTransactionResult,
+        Keccak256 rskTxHash,
+        List<UTXO> utxosToUse
+    ) throws IOException {
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         BtcTransaction migrationTransaction = migrationTransactionResult.btcTx();
         List<UTXO> selectedUTXOs = migrationTransactionResult.selectedUTXOs();
 
         logger.debug(
-            "[migrateFunds] consumed {} UTXOs.",
+            "[settleMigrationTransaction] consumed {} UTXOs.",
             selectedUTXOs.size()
         );
 
@@ -1350,7 +1398,7 @@ public class BridgeSupport {
     private void logRetiringFederationBalance(Coin retiringFederationBalance) {
         String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
         logger.info(
-            "[migrateFunds] Retiring federation has funds to migrate: {}.",
+            "[logRetiringFederationBalance] Retiring federation has funds to migrate: {}.",
             retiringFederationBalanceInFriendlyFormat
         );
     }
