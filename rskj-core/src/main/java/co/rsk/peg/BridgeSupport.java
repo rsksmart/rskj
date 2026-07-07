@@ -1271,20 +1271,20 @@ public class BridgeSupport {
 
     private void processFundsMigrationInMigrationAge(Keccak256 rskTxHash, Wallet retiringFederationWallet, List<UTXO> availableUTXOs) throws IOException {
         ReleaseTransactionBuilder.BuildResult migrationTransactionResult = buildMigrationTransaction(rskTxHash, retiringFederationWallet);
-        boolean migrationTransactionCreated = migrationTransactionCreated(migrationTransactionResult);
+        boolean migrationTransactionCreated = isMigrationTransactionCreated(migrationTransactionResult);
         if (migrationTransactionCreated) {
             settleMigrationTransaction(migrationTransactionResult, rskTxHash, availableUTXOs);
         }
     }
 
     private void processFundsMigrationPastMigrationAge(Keccak256 rskTxHash, Wallet retiringFederationWallet, List<UTXO> availableUTXOs) {
-        boolean migrationTransactionCreated = false;
+        boolean isMigrationTransactionCreated = false;
         boolean hasBalance = retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO);
         if (hasBalance) {
             try {
                 ReleaseTransactionBuilder.BuildResult migrationTransactionResult = buildMigrationTransaction(rskTxHash, retiringFederationWallet);
-                migrationTransactionCreated = migrationTransactionCreated(migrationTransactionResult);
-                if (migrationTransactionCreated) {
+                isMigrationTransactionCreated = isMigrationTransactionCreated(migrationTransactionResult);
+                if (isMigrationTransactionCreated) {
                     settleMigrationTransaction(migrationTransactionResult, rskTxHash, availableUTXOs);
                 }
             } catch (Exception e) {
@@ -1297,7 +1297,7 @@ public class BridgeSupport {
             }
         }
 
-        if (shouldClearRetiredFederation(migrationTransactionCreated)) {
+        if (shouldClearRetiredFederation(isMigrationTransactionCreated)) {
             logger.info(
                 "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
                 availableUTXOs.size()
@@ -1341,7 +1341,7 @@ public class BridgeSupport {
             createMigrationTransaction(retiringFederationWallet, activeFederationAddress) :
             createMigrationTransactionLegacy(retiringFederationWallet, activeFederationAddress);
 
-        if (!migrationTransactionCreated(migrationTransactionResult)) {
+        if (!isMigrationTransactionCreated(migrationTransactionResult)) {
             logger.warn(
                 "[buildMigrationTransaction] Unable to create migration transaction for rskTxHash {}. Response code: {}",
                 rskTxHash,
@@ -1352,7 +1352,7 @@ public class BridgeSupport {
         return migrationTransactionResult;
     }
 
-    private boolean migrationTransactionCreated(ReleaseTransactionBuilder.BuildResult migrationTransactionResult) {
+    private boolean isMigrationTransactionCreated(ReleaseTransactionBuilder.BuildResult migrationTransactionResult) {
         return migrationTransactionResult.responseCode() == ReleaseTransactionBuilder.Response.SUCCESS;
     }
 
