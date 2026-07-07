@@ -2,14 +2,23 @@ name: Reproducible build PR
 
 # Builds the canonical jars via the build-only `reproducible-build.yml`,
 # then open a PR against rsksmart/reproducible-builds adding the rskj/<version>-<modifier>
-# directory (Dockerfile + README with the hashes).
+# directory (Dockerfile + README with the hashes), and pushes a sibling
+# `rskj_<tag>` tag onto reproducible-builds pointing at the PR branch HEAD.
+#
+# Scope: GA release tags (NAME-1.2.3) AND release-candidate tags
+# (NAME-1.2.3-rc / -rcN / -RC). Both build, open a PR, and push the sibling
+# tag; the sibling tag pins the build-recipe commit the platform team's
+# Maven-publish pipeline rebuilds jars from. rc builds as SNAPSHOT (intended,
+# read from version.properties) and its PR is not meant to be merged — it
+# exists only to create the commit the tag pins.
 #
 # Trust model: CI is the *first builder / PR author* only. The hashes it emits
 # are informational — merging the generated PR still REQUIRES an independent
 # rebuild confirming the same hashes. CI is intentionally not the sole witness.
 
 on:
-  # GA release tags look like NAME-1.2.3.
+  # GA release tags look like NAME-1.2.3; the glob also admits pre-release tags
+  # (e.g. NAME-1.2.3-rc), which the guard job then classifies.
   push:
     tags:
       - "*-[0-9]*.[0-9]*.[0-9]*"
@@ -24,12 +33,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # GA-only gate. push.tags globs match pre-release tags too, so re-check the
-  # tag here and skip (green, not red) anything that isn't a clean GA release.
+  # Release gate. push.tags globs match every pre-release tag too, so re-check
+  # the tag here and skip (green, not red) anything that is neither a clean GA
+  # release nor a release candidate. Emits is_ga / is_rc / is_release.
   guard:
     runs-on: ubuntu-24.04
     outputs:
       is_ga: ${{ steps.check.outputs.is_ga }}
+      is_rc: ${{ steps.check.outputs.is_rc }}
+      is_release: ${{ steps.check.outputs.is_release }}
     steps:
       - name: Classify the pushed tag
         id: check
@@ -38,43 +50,60 @@ jobs:
         run: |
           set -euo pipefail
           is_ga=false
+          is_rc=false
           # All-caps release name + three-part numeric version, nothing trailing.
           if printf '%s' "$TAG" | grep -Eq '^[A-Z]+-[0-9]+\.[0-9]+\.[0-9]+$'; then
             is_ga=true
           fi
-          # Belt-and-suspenders deny-list for pre-release markers (the regex above
-          # already excludes these; this makes the intent explicit and survives a
-          # future regex loosening).
+          # Same shape with an -rc / -rcN / -RC suffix (release candidate).
+          if printf '%s' "$TAG" | grep -Eq '^[A-Z]+-[0-9]+\.[0-9]+\.[0-9]+-(rc|RC)[0-9]*$'; then
+            is_rc=true
+          fi
+          # Belt-and-suspenders deny-list for pre-release markers that are NOT
+          # release candidates. The regexes above already exclude these; this
+          # makes the intent explicit and survives a future regex loosening.
+          # (-rc/-RC are deliberately absent — they are now an accepted class.)
           case "$TAG" in
-            *PREVIEW*|*TESTNET*|*SNAPSHOT*|*-rc|*-rc[0-9]*|*-RC*|*-alpha*|*-beta*)
-              is_ga=false ;;
+            *PREVIEW*|*TESTNET*|*SNAPSHOT*|*-alpha*|*-beta*)
+              is_ga=false; is_rc=false ;;
           esac
+          is_release=false
+          if [ "$is_ga" = "true" ] || [ "$is_rc" = "true" ]; then
+            is_release=true
+          fi
           echo "is_ga=$is_ga" >> "$GITHUB_OUTPUT"
+          echo "is_rc=$is_rc" >> "$GITHUB_OUTPUT"
+          echo "is_release=$is_release" >> "$GITHUB_OUTPUT"
           if [ "$is_ga" = "true" ]; then
             echo "Tag '$TAG' is a GA release — proceeding."
+          elif [ "$is_rc" = "true" ]; then
+            echo "Tag '$TAG' is a release candidate — proceeding."
           else
-            echo "::notice::Tag '$TAG' is not a GA release — skipping reproducible-build PR."
+            echo "::notice::Tag '$TAG' is neither a GA release nor an rc — skipping reproducible-build PR."
           fi
 
   # Build the canonical jars + hashes. NO `secrets:` passed → the build half can
-  # never see this workflow's App-token secrets. Runs only for GA tags.
+  # never see this workflow's App-token secrets. Runs for GA and rc tags; rc
+  # yields <version>-snapshot because version.properties carries modifier=SNAPSHOT.
   build:
     needs: guard
-    if: needs.guard.outputs.is_ga == 'true'
+    if: needs.guard.outputs.is_release == 'true'
     uses: ./.github/workflows/reproducible-build.yml
     with:
       ref: ${{ github.ref_name }}
 
-  # The only privileged job: mint the scoped App token and open the PR.
+  # The only privileged job: mint the scoped App token, open the PR, and push
+  # the sibling tag. Runs for GA and rc tags.
   open-pr:
     needs: [guard, build]
-    if: needs.guard.outputs.is_ga == 'true'
+    if: needs.guard.outputs.is_release == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       TAG: ${{ github.ref_name }}
       VERSION: ${{ needs.build.outputs.version }}
       MODIFIER: ${{ needs.build.outputs.modifier }}
+      IS_GA: ${{ needs.guard.outputs.is_ga }}
       TARGET_REPO: rsksmart/reproducible-builds
     steps:
       - name: Checkout rskj at the tag (templates only)
@@ -98,6 +127,17 @@ jobs:
           # agnostic); the published dir + README use the lowercase form.
           modifier_lc=$(printf '%s' "$MODIFIER" | tr '[:upper:]' '[:lower:]')
           echo "modifier_lc=$modifier_lc" >> "$GITHUB_OUTPUT"
+
+          # GA-only sanity check: a GA tag must NOT build as a pre-release
+          # modifier (a mis-cut GA built as SNAPSHOT would publish under the
+          # wrong dir). rc is EXPECTED to be SNAPSHOT, so this is GA-scoped only.
+          if [ "${IS_GA}" = "true" ]; then
+            case "$modifier_lc" in
+              snapshot|preview|testnet|*alpha*|*beta*|*rc*)
+                echo "::error::GA tag '${TAG}' derived a pre-release modifier '${MODIFIER}' — refusing to publish."
+                exit 1 ;;
+            esac
+          fi
 
           # Hashes come from the artifact's hashes.txt (authoritative copy the
           # build job wrote), so README == artifact == a verifier's local check.
@@ -194,3 +234,35 @@ jobs:
             --head "$branch" \
             --title "Add reproducible build for ${TAG}" \
             --body "$body"
+
+      - name: Push sibling tag onto reproducible-builds
+        env:
+          TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          # The sibling tag pins the PR branch HEAD — the commit that added the
+          # release dir — so the Maven-publish pipeline rebuilds jars from the
+          # build recipe on that exact commit. Naming: rskj tag with rskj_ prefix.
+          sibling="rskj_${TAG}"
+          branch="reproducible-build/${TAG}"
+
+          # Reuse the clone the previous step left on disk; it is checked out on
+          # $branch at the commit we just pushed.
+          cd target
+
+          if [ "${IS_GA}" = "true" ]; then
+            # GA sibling tags are immutable: skip if one already exists remotely.
+            if git ls-remote --tags origin "refs/tags/$sibling" | grep -q .; then
+              echo "::notice::Sibling tag '${sibling}' already exists on ${TARGET_REPO} — leaving it untouched (GA tags are immutable)."
+              exit 0
+            fi
+            # -f: a clone fetches remote tags, so overwrite any stale local ref.
+            git tag -f "$sibling"
+            git push origin "refs/tags/$sibling"
+            echo "Pushed sibling tag '${sibling}' → ${branch} HEAD."
+          else
+            # rc is re-cut: force-move the sibling tag to the new PR branch HEAD.
+            git tag -f "$sibling"
+            git push -f origin "refs/tags/$sibling"
+            echo "Force-moved sibling tag '${sibling}' → ${branch} HEAD (rc)."
+          fi
