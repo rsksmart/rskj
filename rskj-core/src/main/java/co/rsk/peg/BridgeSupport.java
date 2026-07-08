@@ -1280,32 +1280,45 @@ public class BridgeSupport {
     private void processFundsMigrationPastMigrationAge(Keccak256 rskTxHash, Wallet retiringFederationWallet, List<UTXO> availableUTXOs) {
         boolean migrationTransactionCreated = false;
         boolean hasBalance = retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO);
-        if (hasBalance) {
-            try {
-                ReleaseTransactionBuilder.BuildResult migrationTransactionResult = buildMigrationTransaction(rskTxHash, retiringFederationWallet);
-                migrationTransactionCreated = isMigrationTransactionCreated(migrationTransactionResult);
-                if (migrationTransactionCreated) {
-                    settleMigrationTransaction(migrationTransactionResult, rskTxHash, availableUTXOs);
-                }
-            } catch (Exception e) {
-                logger.error(
-                    "[processFundsMigration] Unable to complete retiring federation migration. Balance left: {} in {}",
-                    retiringFederationWallet.getBalance().toFriendlyString(),
-                    retiringFederationWallet.getWatchedAddresses()
-                );
-                panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
+        if (!hasBalance) {
+            logger.info("[processFundsMigrationPastMigrationAge] Retiring federation wallet has no balance, clearing retiring federation");
+            clearRetiringFederation(availableUTXOs);
+            return;
+        }
+
+        try {
+            ReleaseTransactionBuilder.BuildResult migrationTransactionResult = buildMigrationTransaction(rskTxHash, retiringFederationWallet);
+            migrationTransactionCreated = isMigrationTransactionCreated(migrationTransactionResult);
+            if (migrationTransactionCreated) {
+                settleMigrationTransaction(migrationTransactionResult, rskTxHash, availableUTXOs);
             }
+        } catch (Exception e) {
+            logger.error(
+                "[processFundsMigration] Unable to complete retiring federation migration. Balance left: {} in {}",
+                retiringFederationWallet.getBalance().toFriendlyString(),
+                retiringFederationWallet.getWatchedAddresses()
+            );
         }
 
         if (shouldClearRetiredFederation(migrationTransactionCreated)) {
-            logger.info(
-                "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
-                availableUTXOs.size()
-            );
-            federationSupport.clearRetiredFederation();
+            clearRetiringFederation(availableUTXOs);
         }
     }
 
+    private void clearRetiringFederation(List<UTXO> availableUTXOs) {
+        logger.info(
+            "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
+            availableUTXOs.size()
+        );
+        federationSupport.clearRetiredFederation();
+    }
+
+    /**
+     * Pre-RSKIP455 always clears once past migration age.
+     * Post-RSKIP455: clears only when a migration tx was not created (builder did not return SUCCESS).
+     * This could be due to only having dust UTXOs left to migrate. If the migration tx can't be created
+     * and migration age has passed, then just clear the retiring federation.
+     */
     private boolean shouldClearRetiredFederation(boolean migrationTransactionCreated) {
         if (!activations.isActive(RSKIP455)) {
             return true;
