@@ -22,6 +22,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLP;
+import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -53,7 +54,7 @@ public class SetCodeAuthorization {
         return address;
     }
 
-    public byte[] getNonce() {
+    public byte[] getNonceBytes() {
         return  nonce.clone();
     }
 
@@ -76,13 +77,13 @@ public class SetCodeAuthorization {
     }
 
     public void verifyNonceRange() {
-        if (nonce.length == 0) {
-            throw new IllegalStateException("Nonce is empty");
-        }
-        BigInteger nonceValue = new BigInteger(1, nonce);
-        if (nonceValue.compareTo(MAX_NONCE) >= 0) {
+        if (getNonceAsInteger().compareTo(MAX_NONCE) >= 0) {
             throw new IllegalStateException("Nonce must be < 2^64 - 1");
         }
+    }
+
+    public BigInteger getNonceAsInteger() {
+        return BigIntegers.fromUnsignedByteArray(nonce);
     }
 
     public void verifyLowS() {

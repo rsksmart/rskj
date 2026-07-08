@@ -167,7 +167,7 @@ public class TransactionResultDTO {
             result.add(new AuthorizationListEntryDTO(
                     HexUtils.toQuantityJsonHex(auth.getChainId()),
                     auth.getAddress().toJsonString(),
-                    HexUtils.toQuantityJsonHex(auth.getNonce()),
+                    HexUtils.toQuantityJsonHex(auth.getNonceBytes()),
                     HexUtils.toQuantityJsonHex((long) signature.getV() - Transaction.LOWER_REAL_V),
                     HexUtils.toQuantityJsonHex(signature.getR()),
                     HexUtils.toQuantityJsonHex(signature.getS())
