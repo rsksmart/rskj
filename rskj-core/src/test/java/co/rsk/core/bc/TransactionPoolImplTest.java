@@ -1186,6 +1186,63 @@ class TransactionPoolImplTest {
         );
     }
 
+    @Test
+    void addTransaction_doesNotCheckQuotaAgainWhenQueuedTransactionIsPromoted() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(1, balance);
+
+        Transaction tx0 = createSampleTransaction(1, 2, 1000, 0);
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
+
+        when(quotaChecker.acceptTx(any(), any(), any())).thenReturn(true);
+
+        TransactionPoolAddResult queuedResult = transactionPool.addTransaction(tx1);
+
+        Assertions.assertTrue(queuedResult.queuedTransactionsWereAdded());
+        Assertions.assertEquals(1, transactionPool.getQueuedTransactions().size());
+        verify(quotaChecker, times(1)).acceptTx(eq(tx1), any(), any());
+
+        TransactionPoolAddResult pendingResult = transactionPool.addTransaction(tx0);
+
+        Assertions.assertTrue(pendingResult.pendingTransactionsWereAdded());
+        Assertions.assertEquals(2, pendingResult.getPendingTransactionsAdded().size());
+        Assertions.assertTrue(pendingResult.getPendingTransactionsAdded().contains(tx0));
+        Assertions.assertTrue(pendingResult.getPendingTransactionsAdded().contains(tx1));
+
+        Assertions.assertEquals(2, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+
+        verify(quotaChecker, times(1)).acceptTx(eq(tx0), any(), any());
+        verify(quotaChecker, times(1)).acceptTx(eq(tx1), any(), any());
+    }
+
+    @Test
+    void addTransaction_promotesQueuedTransactionEvenIfQuotaWouldRejectSecondCheck() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(1, balance);
+
+        Transaction tx0 = createSampleTransaction(1, 2, 1000, 0);
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
+
+        when(quotaChecker.acceptTx(eq(tx1), any(), any()))
+                .thenReturn(true)
+                .thenReturn(false);
+        when(quotaChecker.acceptTx(eq(tx0), any(), any())).thenReturn(true);
+
+        TransactionPoolAddResult queuedResult = transactionPool.addTransaction(tx1);
+
+        Assertions.assertTrue(queuedResult.queuedTransactionsWereAdded());
+        Assertions.assertEquals(1, transactionPool.getQueuedTransactions().size());
+
+        TransactionPoolAddResult pendingResult = transactionPool.addTransaction(tx0);
+
+        Assertions.assertTrue(pendingResult.pendingTransactionsWereAdded());
+        Assertions.assertTrue(pendingResult.getPendingTransactionsAdded().contains(tx1));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+
+        verify(quotaChecker, times(1)).acceptTx(eq(tx1), any(), any());
+    }
+
 
     private TransactionPoolImpl buildTransactionPool(
             RskSystemProperties config,

@@ -215,7 +215,7 @@ public class TransactionPoolImpl implements TransactionPool {
      */
     @Override
     public synchronized TransactionPoolAddResult addTransaction(final Transaction tx) {
-        TransactionPoolAddResult result = addTransactionToPoolIfValid(tx);
+        TransactionPoolAddResult result = addTransactionToPoolIfValid(tx, true);
 
         if (!result.transactionsWereAdded()) {
             return result;
@@ -272,7 +272,7 @@ public class TransactionPoolImpl implements TransactionPool {
             Transaction nextTx = nextTxOpt.get();
             queuedTransactions.removeTransactionByHash(nextTx.getHash());
 
-            TransactionPoolAddResult result = addTransactionToPoolIfValid(nextTx);
+            TransactionPoolAddResult result = addTransactionToPoolIfValid(nextTx, false);
 
             if (!result.hasPendingTransactions()) {
                 break;
@@ -321,14 +321,15 @@ public class TransactionPoolImpl implements TransactionPool {
      * - Otherwise, they are added to the pending set
      *
      * @param tx the transaction to process
+     * @param checkQuota whether quota should be checked
      * @return the result of the admission attempt
      */
-    private TransactionPoolAddResult addTransactionToPoolIfValid(final Transaction tx) {
+    private TransactionPoolAddResult addTransactionToPoolIfValid(final Transaction tx,  boolean checkQuota) {
         var repository = getRepositoryAtBestBlock();
         var sender = tx.getSender(signatureCache);
         var pendingState = getPendingState(repository);
 
-        Optional<TransactionPoolAddResult> rejection =  validateTransactionBeforeAddingToPool(tx, sender, repository, pendingState);
+        Optional<TransactionPoolAddResult> rejection =  validateTransactionBeforeAddingToPool(tx, sender, repository, pendingState, checkQuota);
         if (rejection.isPresent()) {
             return rejection.get();
         }
@@ -385,7 +386,8 @@ public class TransactionPoolImpl implements TransactionPool {
             Transaction tx,
             RskAddress sender,
             RepositorySnapshot repository,
-            PendingState pendingState
+            PendingState pendingState,
+            boolean checkQuota
     ) {
         Optional<TransactionPoolAddResult> duplicateResult = transactionPoolValidator.rejectIfTransactionAlreadyKnown(tx, pendingTransactions, queuedTransactions);
 
@@ -409,7 +411,7 @@ public class TransactionPoolImpl implements TransactionPool {
             return Optional.of(TransactionPoolAddResult.withError(ERROR_MESSAGE_INSUFFICIENT_GAS_PRICE_BUMP));
         }
 
-        if (isAccountQuotaExceeded(tx, existingTx, repository, pendingState)) {
+        if (checkQuota && isAccountQuotaExceeded(tx, existingTx, repository, pendingState)) {
             return Optional.of(TransactionPoolAddResult.withError(ERROR_MESSAGE_ACCOUNT_EXCEEDS_QUOTA));
         }
 
