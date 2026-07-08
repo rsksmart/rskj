@@ -44,6 +44,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.ethereum.util.TransactionFactoryHelper.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -1055,4 +1057,155 @@ class TransactionPoolImplTest {
                 queuedTransactions::clear
         );
     }
+
+    @Test
+    void start_doesNotScheduleCleaner_whenOutdatedTimeoutIsDisabled() {
+        RskSystemProperties config = spy(rskTestContext.getRskSystemProperties());
+        when(config.isAccountTxRateLimitEnabled()).thenReturn(false);
+
+        TransactionPoolImpl pool = buildTransactionPool(config, -1, null);
+
+        ScheduledExecutorService cleanerTimer = mock(ScheduledExecutorService.class);
+        ScheduledExecutorService accountCleanerTimer = mock(ScheduledExecutorService.class);
+
+        TestUtils.setInternalState(pool, "cleanerTimer", cleanerTimer);
+        TestUtils.setInternalState(pool, "accountTxRateLimitCleanerTimer", accountCleanerTimer);
+
+        pool.start();
+        pool.stop();
+
+        verify(cleanerTimer, never()).scheduleAtFixedRate(any(), anyLong(), anyLong(), any());
+        verify(accountCleanerTimer, never()).scheduleAtFixedRate(any(), anyLong(), anyLong(), any());
+    }
+
+    @Test
+    void start_schedulesCleaner_whenOutdatedTimeoutIsEnabled() {
+        RskSystemProperties config = spy(rskTestContext.getRskSystemProperties());
+        when(config.isAccountTxRateLimitEnabled()).thenReturn(false);
+
+        TransactionPoolImpl pool = buildTransactionPool(config, 100, null);
+
+        ScheduledExecutorService cleanerTimer = mock(ScheduledExecutorService.class);
+        TestUtils.setInternalState(pool, "cleanerTimer", cleanerTimer);
+
+        pool.start();
+        pool.stop();
+
+        verify(cleanerTimer).scheduleAtFixedRate(
+                any(),
+                eq(100L),
+                eq(100L),
+                eq(TimeUnit.SECONDS)
+        );
+    }
+
+    @Test
+    void constructor_doesNotFailWithDisabledRateLimitAndDisabledCleanerPeriod() {
+        RskSystemProperties config = spy(rskTestContext.getRskSystemProperties());
+        when(config.isAccountTxRateLimitEnabled()).thenReturn(false);
+        when(config.accountTxRateLimitCleanerPeriod()).thenReturn(-1);
+
+        Assertions.assertDoesNotThrow(()->{
+           TransactionPoolImpl pool = buildTransactionPool(config, 100, null);
+            pool.start();
+            pool.stop();
+
+        });
+    }
+
+    @Test
+    void constructor_succeedsWhenRateLimitEnabledAndCleanerPeriodIsValid() {
+        RskSystemProperties config = spy(rskTestContext.getRskSystemProperties());
+        when(config.isAccountTxRateLimitEnabled()).thenReturn(true);
+        when(config.accountTxRateLimitCleanerPeriod()).thenReturn(1);
+
+        Assertions.assertDoesNotThrow(() ->
+                buildTransactionPool(config, 100, mock(TxQuotaCheckerImpl.class))
+        );
+    }
+
+    @Test
+    void constructor_throwsWhenRateLimitEnabledAndTxQuotaCheckerIsNull() {
+        RskSystemProperties config = spy(rskTestContext.getRskSystemProperties());
+        when(config.isAccountTxRateLimitEnabled()).thenReturn(true);
+        when(config.accountTxRateLimitCleanerPeriod()).thenReturn(1);
+
+        IllegalArgumentException exception = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> buildTransactionPool(config, 100, null)
+        );
+
+        Assertions.assertEquals(
+                "txQuotaChecker must not be null when account tx rate limit is enabled",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void constructor_throwsWhenRateLimitEnabledAndCleanerPeriodIsNotPositive() {
+        RskSystemProperties config = spy(rskTestContext.getRskSystemProperties());
+        when(config.isAccountTxRateLimitEnabled()).thenReturn(true);
+        when(config.accountTxRateLimitCleanerPeriod()).thenReturn(0);
+
+        IllegalArgumentException exception = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> buildTransactionPool(config, 100, mock(TxQuotaCheckerImpl.class))
+        );
+
+        Assertions.assertEquals(
+                "AccountTxRateLimitCleanerPeriod must be > 0 when account tx rate limit is enabled",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void constructor_doesNotValidateQuotaCheckerOrCleanerPeriodWhenRateLimitIsDisabled() {
+        RskSystemProperties config = spy(rskTestContext.getRskSystemProperties());
+        when(config.isAccountTxRateLimitEnabled()).thenReturn(false);
+        when(config.accountTxRateLimitCleanerPeriod()).thenReturn(-1);
+
+        Assertions.assertDoesNotThrow(
+                () -> buildTransactionPool(config, 100, null)
+        );
+    }
+
+    @Test
+    void constructor_throwsWhenRateLimitEnabledAndCleanerPeriodIsMinusOne() {
+        RskSystemProperties config = spy(rskTestContext.getRskSystemProperties());
+        when(config.isAccountTxRateLimitEnabled()).thenReturn(true);
+        when(config.accountTxRateLimitCleanerPeriod()).thenReturn(-1);
+
+        IllegalArgumentException exception = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> buildTransactionPool(config, 100, mock(TxQuotaCheckerImpl.class))
+        );
+
+        Assertions.assertEquals(
+                "AccountTxRateLimitCleanerPeriod must be > 0 when account tx rate limit is enabled",
+                exception.getMessage()
+        );
+    }
+
+
+    private TransactionPoolImpl buildTransactionPool(
+            RskSystemProperties config,
+            int outdatedTimeout,
+            TxQuotaCheckerImpl txQuotaChecker
+    ) {
+        return new TransactionPoolImpl(
+                config,
+                rskTestContext.getRepositoryLocator(),
+                rskTestContext.getBlockStore(),
+                rskTestContext.getBlockFactory(),
+                rskTestContext.getCompositeEthereumListener(),
+                rskTestContext.getTransactionExecutorFactory(),
+                signatureCache,
+                outdatedThreshold,
+                outdatedTimeout,
+                txQuotaChecker,
+                mock(GasPriceTracker.class)
+        );
+    }
+
+
 }

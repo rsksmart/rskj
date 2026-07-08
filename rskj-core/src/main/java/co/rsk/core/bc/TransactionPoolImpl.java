@@ -105,19 +105,18 @@ public class TransactionPoolImpl implements TransactionPool {
         this.transactionExecutorFactory = Objects.requireNonNull(transactionExecutorFactory, "transactionExecutorFactory must not be null");
         this.signatureCache = Objects.requireNonNull(signatureCache, "signatureCache must not be null");
         this.gasPriceTracker = Objects.requireNonNull(gasPriceTracker, "gasPriceTracker must not be null");
-        if (outdatedThreshold <0) {
+        if (outdatedThreshold < 0) {
             throw new IllegalArgumentException("outdatedThreshold must be >= 0");
         }
-        if (outdatedTimeout <= 0) {
-            throw new IllegalArgumentException("outdatedTimeout must be > 0");
-        }
-        if (config.isAccountTxRateLimitEnabled() && txQuotaChecker == null) {
-            throw new IllegalArgumentException("txQuotaChecker must not be null when account tx rate limit is enabled");
-        }
-        if (this.config.accountTxRateLimitCleanerPeriod() <= 0 ) {
-            throw new IllegalArgumentException("AccountTxRateLimitCleanerPeriod must be > 0");
-        }
+        if (config.isAccountTxRateLimitEnabled()) {
+            if (txQuotaChecker == null) {
+                throw new IllegalArgumentException("txQuotaChecker must not be null when account tx rate limit is enabled");
+            }
 
+            if (this.config.accountTxRateLimitCleanerPeriod() <= 0) {
+                throw new IllegalArgumentException("AccountTxRateLimitCleanerPeriod must be > 0 when account tx rate limit is enabled");
+            }
+        }
         this.listener = listener != null ? listener :  NoOpEthereumListener.INSTANCE;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
@@ -135,7 +134,9 @@ public class TransactionPoolImpl implements TransactionPool {
     @Override
     public void start() {
         processBest(blockStore.getBestBlock());
-        this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
+        if (outdatedTimeout > 0) {
+            this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
+        }
         if (isAccountTxRateLimitCleanerEnabled()) {
             this.accountTxRateLimitCleanerTimer.scheduleAtFixedRate(this.quotaChecker::cleanMaxQuotas, this.config.accountTxRateLimitCleanerPeriod(), this.config.accountTxRateLimitCleanerPeriod(), TimeUnit.MINUTES);
         }
@@ -143,7 +144,9 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public void stop() {
-        cleanerTimer.shutdown();
+        if (outdatedTimeout > 0) {
+            cleanerTimer.shutdown();
+        }
         accountTxRateLimitCleanerTimer.shutdown();
     }
 
