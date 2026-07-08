@@ -54,6 +54,8 @@ import java.nio.charset.StandardCharsets;
  * long value {@code RLP.encodeElement(value)}, each block {@code LIST[ELEMENT(block), ELEMENT(td)]});
  * only the container framing changes. This holder is shared by the rskj-core importer and is mirrored
  * by the bootstrap-exporter writer (separate repo, so the constants are restated there).
+ *
+ * <p>See {@code bootstrap-data-format.md} in this package for the full narrative specification (v1 + v2).
  */
 public final class BootstrapV2Format {
 
