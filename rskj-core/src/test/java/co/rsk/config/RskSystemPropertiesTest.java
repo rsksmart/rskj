@@ -420,21 +420,6 @@ class RskSystemPropertiesTest {
     }
 
     @Test
-    void whenNetNameIsDevnet_shouldUseBitcoinjTestnet2NetworkParams() {
-        RskCli rskCli = new RskCli();
-        String[] snapNodesArgs = {"--devnet"};
-        rskCli.load(snapNodesArgs);
-
-        RskSystemProperties rskSystemProperties = new RskSystemProperties(
-                new ConfigLoader(
-                        rskCli.getCliArgs()
-                )
-        );
-
-        Assertions.assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), TestNet2Params.get());
-    }
-
-    @Test
     void whenNetNameIsRegtest_shouldUseBitcoinjRegtestNetworkParams() {
         RskCli rskCli = new RskCli();
         String[] snapNodesArgs = {"--regtest"};

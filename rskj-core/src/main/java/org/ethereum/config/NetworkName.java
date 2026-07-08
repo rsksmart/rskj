@@ -5,10 +5,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public enum NetworkName {
-    MAINNET("main"), TESTNET("testnet"), TESTNET2("testnet2"), DEVNET("devnet"), REGTEST("regtest");
+    MAINNET("main"), TESTNET("testnet"), TESTNET2("testnet2"), REGTEST("regtest");
 
-    private final String name;
     private static final Map<String, NetworkName> NETWORK_NAME_MAP = buildNetworkNameMap();
+    private final String name;
 
     NetworkName(String name) {
         this.name = name;

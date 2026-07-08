@@ -87,7 +87,7 @@ The workflow and templates under `.github/reproducible-build/` exist to **mirror
 
 ## Project layout
 
-- `rskj-core/` — the only published module. Production code under `src/main/java/`. Resources under `src/main/resources/` include `reference.conf`, `expected.conf`, and per-network configs `config/{main,testnet,testnet2,devnet,regtest}.conf`. Test roots: `src/test/java`, `src/integrationTest/java`, JMH benchmarks in `src/jmh/java`.
+- `rskj-core/` — the only published module. Production code under `src/main/java/`. Resources under `src/main/resources/` include `reference.conf`, `expected.conf`, and per-network configs `config/{main,testnet,testnet2,regtest}.conf`. Test roots: `src/test/java`, `src/integrationTest/java`, JMH benchmarks in `src/jmh/java`.
 - Top-level packages under `co.rsk.*` and their role:
   - `co.rsk.core` — blocks, transactions, accounts, chain state.
   - `co.rsk.net` — P2P networking and peer management.
@@ -101,7 +101,7 @@ The workflow and templates under `.github/reproducible-build/` exist to **mirror
   - `co.rsk.rpc`, `co.rsk.jsonrpc` — JSON-RPC API surface.
   - `co.rsk.config`, `co.rsk.db`, `co.rsk.crypto`, `co.rsk.scoring`, `co.rsk.metrics`, `co.rsk.util`, `co.rsk.panic`, `co.rsk.logfilter` — configuration, storage, crypto, and supporting subsystems.
   - `co.rsk.cli.tools.*` — standalone CLI utilities (`ImportBlocks`, `ExportBlocks`, `ConnectBlocks`, `RewindBlocks`, `ExecuteBlocks`, `ImportState`, `ExportState`, `DbMigrate`, `IndexBlooms`, `ShowStateInfo`, `StartBootstrap`, `ValidateBtcHeaders`, `GenerateOpenRpcDoc`).
-- `org.ethereum.*` — Ethereum compatibility layer inherited from the EthereumJ ancestry. The actual per-network activation **heights** live in the config resources (`rskj-core/src/main/resources/config/{main,testnet,testnet2,devnet,regtest}.conf`, under `hardforkActivationHeights` / `consensusRules`). The `org.ethereum.config.blockchain.upgrades` package (`ActivationConfig`, `ConsensusRule`, `NetworkUpgrade`) defines the RSKIP / hard-fork identifiers and the loader (`ActivationConfig.read`) that parses those heights — not the height values themselves. Treat both the config values and this package as consensus-critical.
+- `org.ethereum.*` — Ethereum compatibility layer inherited from the EthereumJ ancestry. The actual per-network activation **heights** live in the config resources (`rskj-core/src/main/resources/config/{main,testnet,testnet2,regtest}.conf`, under `hardforkActivationHeights` / `consensusRules`). The `org.ethereum.config.blockchain.upgrades` package (`ActivationConfig`, `ConsensusRule`, `NetworkUpgrade`) defines the RSKIP / hard-fork identifiers and the loader (`ActivationConfig.read`) that parses those heights — not the height values themselves. Treat both the config values and this package as consensus-critical.
 - `.github/CODEOWNERS` — `@rsksmart/rsk-core` owns mining-related code; `@rsksmart/rsk-fed` owns peg/bridge. Treat changes to activation heights in config resources as requiring review from both groups, even if current CODEOWNERS path coverage does not enforce that automatically.
 
 ## Sensitive areas (extra scrutiny)

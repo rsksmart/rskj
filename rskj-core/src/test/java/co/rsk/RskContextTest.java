@@ -62,7 +62,7 @@ class RskContextTest {
     private RskContext rskContext;
 
     @BeforeEach
-    void setUp(@TempDir Path tempDir) throws IOException {
+    void setUp(@TempDir Path tempDir) {
         databaseDir = tempDir.resolve("database");
 
         testProperties = spy(new TestSystemProperties());
@@ -76,10 +76,10 @@ class RskContextTest {
 
     @Test
     void getCliArgsSmokeTest() {
-        RskTestContext devnetContext = new RskTestContext(databaseDir, "--devnet");
-        MatcherAssert.assertThat(devnetContext.getCliArgs(), notNullValue());
-        MatcherAssert.assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
-        devnetContext.close();
+        RskTestContext testnetContext = new RskTestContext(databaseDir, "--testnet");
+        MatcherAssert.assertThat(testnetContext.getCliArgs(), notNullValue());
+        MatcherAssert.assertThat(testnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_TESTNET));
+        testnetContext.close();
     }
 
     @Test
@@ -238,7 +238,7 @@ class RskContextTest {
 
         rskContext.close();
 
-        Set<String> methodsToSkip = new HashSet<String>() {{
+        Set<String> methodsToSkip = new HashSet<>() {{
             add("getCliArgs");
             add("resolveCacheSnapshotPath");
             add("isClosed");

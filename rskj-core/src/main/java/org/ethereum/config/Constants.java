@@ -22,7 +22,6 @@ package org.ethereum.config;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeDevNetConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
@@ -41,7 +40,6 @@ import java.util.List;
 public class Constants {
     public static final byte MAINNET_CHAIN_ID = (byte) 30;
     public static final byte TESTNET_CHAIN_ID = (byte) 31;
-    public static final byte DEVNET_CHAIN_ID = (byte) 32;
     public static final byte REGTEST_CHAIN_ID = (byte) 33;
     public static final byte TESTNET2_CHAIN_ID = (byte) 34;
 
@@ -64,7 +62,7 @@ public class Constants {
     private static final long MIN_SEQUENTIAL_SET_GAS_LIMIT = 10_000_000L;
     private static final long MIN_SEQUENTIAL_SET_GAS_LIMIT_SPLIT_FOR_PTE = 6_800_000L;
     private static final int MINIMUM_DIFFICULTY = 131072;
-    private static final int TESTNET_AND_DEVNET_DURATION_LIMIT = 14;
+    private static final int TESTNET_DURATION_LIMIT = 14;
     private static final int REGTEST_DURATION_LIMIT = 10;
 
     private final byte chainId;
@@ -266,7 +264,7 @@ public class Constants {
         return new Constants(
                 MAINNET_CHAIN_ID,
                 false,
-                TESTNET_AND_DEVNET_DURATION_LIMIT,
+            TESTNET_DURATION_LIMIT,
                 new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY / 2)),
                 new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
                 DIFFICULTY_BOUND_DIVISOR,
@@ -277,26 +275,11 @@ public class Constants {
         );
     }
 
-    public static Constants devnetWithFederation() {
-        return new Constants(
-                DEVNET_CHAIN_ID,
-                false,
-                TESTNET_AND_DEVNET_DURATION_LIMIT,
-                new BlockDifficulty(BigInteger.valueOf(MINIMUM_DIFFICULTY)),
-                new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
-                DIFFICULTY_BOUND_DIVISOR,
-                NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
-                new BridgeDevNetConstants(),
-                new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT
-        );
-    }
-
     public static Constants testnet(ActivationConfig activationConfig) {
         return new Constants(
                 TESTNET_CHAIN_ID,
                 false,
-                TESTNET_AND_DEVNET_DURATION_LIMIT,
+            TESTNET_DURATION_LIMIT,
                 new BlockDifficulty(BigInteger.valueOf(MINIMUM_DIFFICULTY)),
                 new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
                 DIFFICULTY_BOUND_DIVISOR,
@@ -312,7 +295,7 @@ public class Constants {
         return new Constants(
                 TESTNET2_CHAIN_ID,
                 false,
-                TESTNET_AND_DEVNET_DURATION_LIMIT,
+            TESTNET_DURATION_LIMIT,
                 new BlockDifficulty(BigInteger.valueOf(MINIMUM_DIFFICULTY)),
                 new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
                 DIFFICULTY_BOUND_DIVISOR,
