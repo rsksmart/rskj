@@ -1296,7 +1296,6 @@ public class BridgeSupport {
                 retiringFederationWallet.getBalance().toFriendlyString(),
                 retiringFederationWallet.getWatchedAddresses()
             );
-            panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
         }
 
         if (shouldClearRetiredFederation(migrationTransactionCreated)) {
