@@ -28,6 +28,7 @@ import co.rsk.test.builders.BlockBuilder;
 import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +39,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration tests for typed transactions (RSKIP-543/546) covering transport encoding,
@@ -209,6 +214,38 @@ class TypedTransactionIntegrationTest {
                 "Standard Type 2 must NOT be RSK namespace");
         assertArrayEquals(type2.getHash().getBytes(), decodedTx.getHash().getBytes(),
                 "Type 2 tx hash must be identical after TransactionsMessage encode/decode");
+    }
+
+    @Test
+    void type2CanonicalZeroFees_decodesViaTransactionsMessageP2pPath() {
+        byte[][] fields = new byte[][] {
+                RLP.encodeByte(CHAIN_ID),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null),
+                RLP.encodeElement(org.bouncycastle.util.BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21_000))),
+                RLP.encodeElement(receiver.getAddress().getBytes()),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                Rskip546TestSupport.EMPTY_ACCESS_LIST,
+                RLP.encodeByte((byte) 0),
+                RLP.encodeElement(new byte[32]),
+                RLP.encodeElement(new byte[32])
+        };
+        byte[] raw = ByteUtil.merge(
+                new byte[] { TransactionType.TYPE_2.getByteCode() },
+                RLP.encodeList(fields)
+        );
+
+        TransactionsMessage original = new TransactionsMessage(List.of(new ImmutableTransaction(raw)));
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+        RLPList paramsList = (RLPList) RLP.decode2(original.getEncoded()).get(0);
+        TransactionsMessage decoded = (TransactionsMessage) Message.create(blockFactory, paramsList);
+
+        assertEquals(1, decoded.getTransactions().size());
+        Transaction decodedTx = decoded.getTransactions().get(0);
+        assertEquals(Coin.ZERO, decodedTx.getMaxPriorityFeePerGas());
+        assertEquals(Coin.ZERO, decodedTx.getMaxFeePerGas());
     }
 
     @Test
