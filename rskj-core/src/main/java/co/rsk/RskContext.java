@@ -1194,8 +1194,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (blockParentDependantValidationRule == null) {
             Constants commonConstants = getRskSystemProperties().getNetworkConstants();
+            byte chainId = commonConstants.getChainId();
             blockParentDependantValidationRule = new BlockParentCompositeRule(
-                    new BlockTxsFieldsValidationRule(getBlockTxSignatureCache()),
+                    new BlockTxsFieldsValidationRule(getBlockTxSignatureCache(), chainId),
                     new BlockTxsValidationRule(getRepositoryLocator(), getBlockTxSignatureCache()),
                     new PrevMinGasPriceRule(),
                     new BlockParentNumberRule(),
@@ -1212,8 +1213,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (snapBlockParentDependantValidationRule == null) {
             Constants commonConstants = getRskSystemProperties().getNetworkConstants();
+            byte chainId = commonConstants.getChainId();
             snapBlockParentDependantValidationRule = new BlockParentCompositeRule(
-                    new BlockTxsFieldsValidationRule(getBlockTxSignatureCache()),
+                    new BlockTxsFieldsValidationRule(getBlockTxSignatureCache(), chainId),
                     new PrevMinGasPriceRule(),
                     new BlockParentNumberRule(),
                     new BlockDifficultyRule(getDifficultyCalculator()),
