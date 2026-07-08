@@ -62,6 +62,7 @@ public class Constants {
     private static final long MIN_SEQUENTIAL_SET_GAS_LIMIT = 10_000_000L;
     private static final long MIN_SEQUENTIAL_SET_GAS_LIMIT_SPLIT_FOR_PTE = 6_800_000L;
     private static final int MINIMUM_DIFFICULTY = 131072;
+    private static final int MAINNET_DURATION_LIMIT = 14;
     private static final int TESTNET_DURATION_LIMIT = 14;
     private static final int REGTEST_DURATION_LIMIT = 10;
 
@@ -262,78 +263,78 @@ public class Constants {
 
     public static Constants mainnet() {
         return new Constants(
-                MAINNET_CHAIN_ID,
-                false,
-            TESTNET_DURATION_LIMIT,
-                new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY / 2)),
-                new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
-                DIFFICULTY_BOUND_DIVISOR,
-                60,
-                BridgeMainNetConstants.getInstance(),
-                new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT
+            MAINNET_CHAIN_ID,
+            false,
+            MAINNET_DURATION_LIMIT,
+            new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY / 2)),
+            new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
+            DIFFICULTY_BOUND_DIVISOR,
+            60,
+            BridgeMainNetConstants.getInstance(),
+            new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
+            MIN_SEQUENTIAL_SET_GAS_LIMIT
         );
     }
 
     public static Constants testnet(ActivationConfig activationConfig) {
         return new Constants(
-                TESTNET_CHAIN_ID,
-                false,
+            TESTNET_CHAIN_ID,
+            false,
             TESTNET_DURATION_LIMIT,
-                new BlockDifficulty(BigInteger.valueOf(MINIMUM_DIFFICULTY)),
-                new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
-                DIFFICULTY_BOUND_DIVISOR,
-                NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
-                BridgeTestNetConstants.getInstance(),
-                activationConfig,
-                new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT
+            new BlockDifficulty(BigInteger.valueOf(MINIMUM_DIFFICULTY)),
+            new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
+            DIFFICULTY_BOUND_DIVISOR,
+            NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
+            BridgeTestNetConstants.getInstance(),
+            activationConfig,
+            new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
+            MIN_SEQUENTIAL_SET_GAS_LIMIT
         );
     }
 
     public static Constants testnet2(ActivationConfig activationConfig) {
         return new Constants(
-                TESTNET2_CHAIN_ID,
-                false,
+            TESTNET2_CHAIN_ID,
+            false,
             TESTNET_DURATION_LIMIT,
-                new BlockDifficulty(BigInteger.valueOf(MINIMUM_DIFFICULTY)),
-                new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
-                DIFFICULTY_BOUND_DIVISOR,
-                NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
-                BridgeTestNetConstants.getInstance(),
-                activationConfig,
-                new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT
+            new BlockDifficulty(BigInteger.valueOf(MINIMUM_DIFFICULTY)),
+            new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
+            DIFFICULTY_BOUND_DIVISOR,
+            NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
+            BridgeTestNetConstants.getInstance(),
+            activationConfig,
+            new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
+            MIN_SEQUENTIAL_SET_GAS_LIMIT
         );
     }
 
     public static Constants regtest() {
         return new Constants(
-                REGTEST_CHAIN_ID,
-                true,
-                REGTEST_DURATION_LIMIT,
-                new BlockDifficulty(BigInteger.ONE),
-                BlockDifficulty.ZERO,
-                BigInteger.valueOf(2048),
-                0,
-                new BridgeRegTestConstants(),
-                new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT_SPLIT_FOR_PTE
+            REGTEST_CHAIN_ID,
+            true,
+            REGTEST_DURATION_LIMIT,
+            new BlockDifficulty(BigInteger.ONE),
+            BlockDifficulty.ZERO,
+            BigInteger.valueOf(2048),
+            0,
+            new BridgeRegTestConstants(),
+            new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
+            MIN_SEQUENTIAL_SET_GAS_LIMIT_SPLIT_FOR_PTE
         );
     }
 
     public static Constants regtestWithFederation(List<BtcECKey> federationPublicKeys) {
         return new Constants(
-                REGTEST_CHAIN_ID,
-                true,
-                REGTEST_DURATION_LIMIT,
-                new BlockDifficulty(BigInteger.ONE),
-                BlockDifficulty.ZERO,
-                BigInteger.valueOf(2048),
-                0,
-                new BridgeRegTestConstants(federationPublicKeys),
-                new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT_SPLIT_FOR_PTE
+            REGTEST_CHAIN_ID,
+            true,
+            REGTEST_DURATION_LIMIT,
+            new BlockDifficulty(BigInteger.ONE),
+            BlockDifficulty.ZERO,
+            BigInteger.valueOf(2048),
+            0,
+            new BridgeRegTestConstants(federationPublicKeys),
+            new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
+            MIN_SEQUENTIAL_SET_GAS_LIMIT_SPLIT_FOR_PTE
         );
     }
 }
