@@ -1314,9 +1314,10 @@ public class BridgeSupport {
     }
 
     /**
-     * Pre-RSKIP455 always clears once past migration age. Post-RSKIP455 clears only when
-     * ReleaseTransactionBuilder fails to create the migration tx (migrationTransactionCreated = false)
-     * or when there's nothing left to migrate (hasBalance = false).
+     * Pre-RSKIP455 always clears once past migration age.
+     * Post-RSKIP455: clears only when a migration tx was not created (builder did not return SUCCESS).
+     * This could be due to only having dust UTXOs left to migrate. If the migration tx can't be created
+     * and migration age has passed, then just clear the retiring federation.
      */
     private boolean shouldClearRetiredFederation(boolean migrationTransactionCreated) {
         if (!activations.isActive(RSKIP455)) {
