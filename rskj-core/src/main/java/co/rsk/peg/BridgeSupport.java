@@ -1281,7 +1281,9 @@ public class BridgeSupport {
         boolean migrationTransactionCreated = false;
         boolean hasBalance = retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO);
         if (!hasBalance) {
+            logger.info("[processFundsMigrationPastMigrationAge] Retiring federation wallet has no balance, clearing retiring federation");
             clearRetiringFederation(availableUTXOs);
+            return;
         }
 
         try {
