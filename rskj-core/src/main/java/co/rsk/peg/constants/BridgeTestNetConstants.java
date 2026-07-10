@@ -58,8 +58,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
 
-        legacyMaxInputsPerPegoutTransaction = 50;
-        maxInputsPerPegoutTransaction = 150;
+        legacyMaxInputsPerMigrationTransaction = 50;
+        maxInputsPerMigrationTransaction = 150;
 
         numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
 
