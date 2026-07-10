@@ -54,7 +54,7 @@ import org.junit.jupiter.api.Test;
 class BridgeSupportProcessFundsMigrationTest {
 
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
-    private static final Coin MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE = BRIDGE_CONSTANTS.getMigrationValueForMultipleOutputsInBtc();
+    private static final Coin MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE = BRIDGE_CONSTANTS.getMigrationValueForMultipleOutputs();
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
     private static final NetworkParameters NETWORK_PARAMETERS = BRIDGE_CONSTANTS.getBtcParams();
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0L);
