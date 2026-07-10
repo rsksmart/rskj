@@ -102,6 +102,13 @@ jobs:
             # via a `test-suite:full` tag in the PR description (e.g. before merging into master).
             TEST_SUITE=$(get_branch_from_description test-suite)
             : ${TEST_SUITE:=short}
+          elif [ "$github_event_name" = push ]; then
+            # A push targets a specific branch (master or a *-rc release branch), so test
+            # against that branch rather than defaulting to master.
+            RSKJ_BRANCH=$github_ref_name
+            POWPEG_BRANCH=$default_powpeg_branch
+            RIT_BRANCH=$default_rit_branch
+            TEST_SUITE=$default_test_suite
           else
             RSKJ_BRANCH=$default_rskj_branch
             POWPEG_BRANCH=$default_powpeg_branch
@@ -145,12 +152,12 @@ jobs:
         id: set-notification-context
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          GITHUB_EVENT_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_EVENT_PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
-          GITHUB_EVENT_PULL_REQUEST_HTML_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_EVENT_HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-          GITHUB_EVENT_HEAD_COMMIT_URL: ${{ github.event.head_commit.url }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_EVENT_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number || '' }}
+          GITHUB_EVENT_PULL_REQUEST_TITLE: ${{ github.event.pull_request.title || '' }}
+          GITHUB_EVENT_PULL_REQUEST_HTML_URL: ${{ github.event.pull_request.html_url || '' }}
+          GITHUB_EVENT_HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message || '' }}
+          GITHUB_EVENT_HEAD_COMMIT_URL: ${{ github.event.head_commit.url || '' }}
+          GITHUB_REF_NAME: ${{ github.ref_name || '' }}
           RUN_URL: ${{ env.BUILD_URL }}
         run: |
           # Delete non-alphanumeric characters and limit to 75 chars, which is the branch title limit in GitHub
