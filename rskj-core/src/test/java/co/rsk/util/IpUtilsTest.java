@@ -68,6 +68,53 @@ class IpUtilsTest {
     }
 
     @Test
+    void parsePortAtIntegerMax() {
+        // 2147483647 fits in an int but is far above the valid 0-65535 port range
+        InetSocketAddress result = IpUtils.parseAddress("localhost:2147483647");
+        Assertions.assertNull(result);
+    }
+
+    @Test
+    void parsePortJustAboveIntegerMax() {
+        // 2147483648 = Integer.MAX_VALUE + 1, overflows Integer.valueOf
+        InetSocketAddress result = IpUtils.parseAddress("localhost:2147483648");
+        Assertions.assertNull(result);
+    }
+
+    @Test
+    void parseNegativePort() {
+        InetSocketAddress result = IpUtils.parseAddress("localhost:-1");
+        Assertions.assertNull(result);
+    }
+
+    @Test
+    void parsePortZero() {
+        InetSocketAddress result = IpUtils.parseAddress(IPV4_NO_PORT + ":0");
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(0, result.getPort());
+    }
+
+    @Test
+    void parseMaxValidPort() {
+        InetSocketAddress result = IpUtils.parseAddress(IPV4_NO_PORT + ":65535");
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(65535, result.getPort());
+    }
+
+    @Test
+    void parseAddressesSkipsInvalidEntriesWithoutFailing() {
+        // A single malformed entry must not abort parsing of the whole list
+        List<String> addresses = new ArrayList<>();
+        addresses.add(IPV4_WITH_PORT);                    // good
+        addresses.add("localhost:65536");                 // port out of range -> skipped
+        addresses.add(IPV6_WITH_PORT);                    // good
+        addresses.add("localhost:999999999999999999999"); // int overflow -> skipped
+        addresses.add("garbage-no-colon");                // malformed -> skipped
+        List<InetSocketAddress> result = IpUtils.parseAddresses(addresses);
+        Assertions.assertEquals(2, result.size());
+    }
+
+    @Test
     void parseAddresses() {
         List<String> addresses = new ArrayList<>();
         addresses.add(IPV6_WITH_PORT);
