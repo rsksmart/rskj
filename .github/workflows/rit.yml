@@ -30,6 +30,13 @@ on:
 # Declare default permissions as read only.
 permissions: read-all
 
+# Cancel a still-running PR run when a new commit lands on the same PR, so a superseded commit
+# doesn't keep occupying a runner. Push/schedule/workflow_dispatch runs are only serialized (queued),
+# not cancelled, since those represent completed states worth validating to completion.
+concurrency:
+  group: rit-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   rootstock-integration-tests:
     name: Rootstock Integration Tests
