@@ -167,7 +167,7 @@ public final class BridgeUtils {
 
     public static List<Coin> calculateMigrationTransactionOutputsValues(Coin expectedMigrationValue, BridgeConstants bridgeConstants) {
         Coin multipleOutputsThresholdBtcValue = getMultipleOutputsThresholdBtcValue(bridgeConstants);
-        Coin migrationValueForMultipleOutputs = bridgeConstants.getMigrationValueForMultipleOutputsInBtc();
+        Coin migrationValueForMultipleOutputs = bridgeConstants.getMigrationValueForMultipleOutputs();
         return expectedMigrationValue.isLessThan(multipleOutputsThresholdBtcValue) ?
             List.of(expectedMigrationValue) :
             calculateMigrationTransactionMultipleOutputsValues(expectedMigrationValue, migrationValueForMultipleOutputs, bridgeConstants);
@@ -220,12 +220,12 @@ public final class BridgeUtils {
     }
 
     static Coin getMultipleOutputsThresholdBtcValue(BridgeConstants bridgeConstants) {
-        return bridgeConstants.getMigrationValueForMultipleOutputsInBtc().multiply(2);
+        return bridgeConstants.getMigrationValueForMultipleOutputs().multiply(2);
     }
 
     static Coin getLargeMultipleOutputsThresholdBtcValue(BridgeConstants bridgeConstants) {
         int maxOutputsPerMigrationTransaction = bridgeConstants.getMaxOutputsPerMigrationTransaction();
-        return bridgeConstants.getMigrationValueForMultipleOutputsInBtc().multiply(maxOutputsPerMigrationTransaction);
+        return bridgeConstants.getMigrationValueForMultipleOutputs().multiply(maxOutputsPerMigrationTransaction);
     }
 
     /**

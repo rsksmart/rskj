@@ -105,7 +105,7 @@ class BridgeConstantsTest {
     void getMigrationValueForMultipleOutputsInBtc(BridgeConstants bridgeConstants) {
         Coin expectedMigrationOutputValueInBtc = Coin.COIN.multiply(20);
 
-        assertEquals(expectedMigrationOutputValueInBtc, bridgeConstants.getMigrationValueForMultipleOutputsInBtc());
+        assertEquals(expectedMigrationOutputValueInBtc, bridgeConstants.getMigrationValueForMultipleOutputs());
     }
 
     @ParameterizedTest

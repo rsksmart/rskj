@@ -38,18 +38,20 @@ public abstract class BridgeConstants {
     protected LockingCapConstants lockingCapConstants;
     protected UnionBridgeConstants unionBridgeConstants;
 
+    protected int updateBridgeExecutionPeriod;
+
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int rsk2BtcMinimumAcceptableConfirmations;
-
-    protected int updateBridgeExecutionPeriod;
 
     protected Coin legacyMinimumPeginTxValue;
     protected Coin minimumPeginTxValue;
     protected Coin legacyMinimumPegoutTxValue;
     protected Coin minimumPegoutTxValue;
 
-    protected Coin migrationValueForMultipleOutputsInBtc;
+    protected int legacyMaxInputsPerMigrationTransaction;
+    protected int maxInputsPerMigrationTransaction;
     protected int maxOutputsPerMigrationTransaction;
+    protected Coin migrationValueForMultipleOutputs;
 
     protected int btcHeightWhenBlockIndexActivates;
     protected int maxDepthToSearchBlocksBelowIndexActivation;
@@ -59,9 +61,6 @@ public abstract class BridgeConstants {
 
     protected int minimumPegoutValuePercentageToReceiveAfterFee;
 
-    protected int legacyMaxInputsPerMigrationTransaction;
-    protected int maxInputsPerMigrationTransaction;
-
     protected int numberOfBlocksBetweenPegouts;
 
     protected int btcHeightWhenPegoutTxIndexActivates;
@@ -70,6 +69,10 @@ public abstract class BridgeConstants {
 
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
+    }
+
+    public String getBtcParamsString() {
+        return btcParamsString;
     }
 
     public FeePerKbConstants getFeePerKbConstants() { return feePerKbConstants; }
@@ -84,9 +87,7 @@ public abstract class BridgeConstants {
         return unionBridgeConstants;
     }
 
-    public String getBtcParamsString() {
-        return btcParamsString;
-    }
+    public int getUpdateBridgeExecutionPeriod() { return updateBridgeExecutionPeriod; }
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
         return btc2RskMinimumAcceptableConfirmations;
@@ -95,8 +96,6 @@ public abstract class BridgeConstants {
     public int getRsk2BtcMinimumAcceptableConfirmations() {
         return rsk2BtcMinimumAcceptableConfirmations;
     }
-
-    public int getUpdateBridgeExecutionPeriod() { return updateBridgeExecutionPeriod; }
 
     public Coin getMinimumPeginTxValue(ActivationConfig.ForBlock activations) {
         return activations.isActive(ConsensusRule.RSKIP219) ? minimumPeginTxValue : legacyMinimumPeginTxValue;
@@ -110,6 +109,15 @@ public abstract class BridgeConstants {
 
     public Keccak256 getProposedFederationFlyoverPrefix() { return new Keccak256("0000000000000000000000000000000000000000000000000000000000000001"); }
 
+    public int getMaxInputsPerMigrationTransaction(ActivationConfig.ForBlock activations) {
+        return !activations.isActive(ConsensusRule.RSKIP455) ? legacyMaxInputsPerMigrationTransaction
+            : maxInputsPerMigrationTransaction;
+    }
+
+    public int getMaxOutputsPerMigrationTransaction() { return maxOutputsPerMigrationTransaction; }
+
+    public Coin getMigrationValueForMultipleOutputs() { return migrationValueForMultipleOutputs; }
+
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 
     public int getBtcHeightWhenBlockIndexActivates() { return btcHeightWhenBlockIndexActivates; }
@@ -122,15 +130,6 @@ public abstract class BridgeConstants {
 
     public int getMinimumPegoutValuePercentageToReceiveAfterFee() {
         return minimumPegoutValuePercentageToReceiveAfterFee;
-    }
-
-    public Coin getMigrationValueForMultipleOutputsInBtc() { return migrationValueForMultipleOutputsInBtc; }
-
-    public int getMaxOutputsPerMigrationTransaction() { return maxOutputsPerMigrationTransaction; }
-
-    public int getMaxInputsPerMigrationTransaction(ActivationConfig.ForBlock activations) {
-        return !activations.isActive(ConsensusRule.RSKIP455) ? legacyMaxInputsPerMigrationTransaction
-            : maxInputsPerMigrationTransaction;
     }
 
     public int getNumberOfBlocksBetweenPegouts() {

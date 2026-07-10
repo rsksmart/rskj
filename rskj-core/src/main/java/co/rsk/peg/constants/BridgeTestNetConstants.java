@@ -37,18 +37,20 @@ public class BridgeTestNetConstants extends BridgeConstants {
         lockingCapConstants = LockingCapTestNetConstants.getInstance();
         unionBridgeConstants = UnionBridgeTestNetConstants.getInstance();
 
+        updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
+
         btc2RskMinimumAcceptableConfirmations = 10;
         rsk2BtcMinimumAcceptableConfirmations = 10;
-
-        updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
 
         legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
         minimumPeginTxValue = Coin.valueOf(500_000);
         legacyMinimumPegoutTxValue = Coin.valueOf(500_000);
         minimumPegoutTxValue = Coin.valueOf(250_000);
 
-        migrationValueForMultipleOutputsInBtc = Coin.COIN.multiply(20);
+        legacyMaxInputsPerMigrationTransaction = 50;
+        maxInputsPerMigrationTransaction = 150;
         maxOutputsPerMigrationTransaction = 50;
+        migrationValueForMultipleOutputs = Coin.COIN.multiply(20);
 
         btcHeightWhenBlockIndexActivates = 2_039_594;
         maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
@@ -57,9 +59,6 @@ public class BridgeTestNetConstants extends BridgeConstants {
         maxDepthBlockchainAccepted = 25;
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
-
-        legacyMaxInputsPerMigrationTransaction = 50;
-        maxInputsPerMigrationTransaction = 150;
 
         numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
 
