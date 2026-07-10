@@ -59,9 +59,9 @@ class BridgeSupportProcessFundsMigrationTest {
     private static final NetworkParameters NETWORK_PARAMETERS = BRIDGE_CONSTANTS.getBtcParams();
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0L);
     private static final ActivationConfig.ForBlock VETIVER_ACTIVATIONS = ActivationConfigsForTest.vetiver900().forBlock(0L);
-    private static final int MAX_INPUTS_PER_PEGOUT_TX = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction(ALL_ACTIVATIONS);
+    private static final int MAX_INPUTS_PER_PEGOUT_TX = BRIDGE_CONSTANTS.getMaxInputsPerMigrationTransaction(ALL_ACTIVATIONS);
     private static final int ABOVE_MAX_INPUTS_PER_PEGOUT_TX = MAX_INPUTS_PER_PEGOUT_TX + 1;
-    private static final int MAX_INPUTS_PER_PEGOUT_TX_LEGACY = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction(VETIVER_ACTIVATIONS);
+    private static final int MAX_INPUTS_PER_PEGOUT_TX_LEGACY = BRIDGE_CONSTANTS.getMaxInputsPerMigrationTransaction(VETIVER_ACTIVATIONS);
     private static final int ABOVE_MAX_INPUTS_PER_PEGOUT_TX_LEGACY = MAX_INPUTS_PER_PEGOUT_TX_LEGACY + 1;
     private static final Coin MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE = BridgeUtils.getMultipleOutputsThresholdBtcValue(BRIDGE_CONSTANTS);
     private static final Coin LARGE_MULTIPLE_OUTPUTS_THRESHOLD_BTC_VALUE = BridgeUtils.getLargeMultipleOutputsThresholdBtcValue(BRIDGE_CONSTANTS);
@@ -2514,7 +2514,7 @@ class BridgeSupportProcessFundsMigrationTest {
     }
 
     private static int getExpectedInputCountInTx(int remainingExpectedInputs, ActivationConfig.ForBlock activations) {
-        int maxInputsPerPegoutTx = BRIDGE_CONSTANTS.getMaxInputsPerPegoutTransaction(activations);
+        int maxInputsPerPegoutTx = BRIDGE_CONSTANTS.getMaxInputsPerMigrationTransaction(activations);
         return Math.min(maxInputsPerPegoutTx, remainingExpectedInputs);
     }
 
