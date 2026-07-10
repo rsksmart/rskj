@@ -20,6 +20,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
 
         updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
+        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
 
         btc2RskMinimumAcceptableConfirmations = 100;
         rsk2BtcMinimumAcceptableConfirmations = 4000;
@@ -37,7 +38,6 @@ public class BridgeMainNetConstants extends BridgeConstants {
         btcHeightWhenBlockIndexActivates = 696_022;
         maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
 
-        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
         maxDepthBlockchainAccepted = 25;
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;

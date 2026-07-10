@@ -39,6 +39,7 @@ public abstract class BridgeConstants {
     protected UnionBridgeConstants unionBridgeConstants;
 
     protected int updateBridgeExecutionPeriod;
+    protected long minSecondsBetweenCallsReceiveHeader;
 
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int rsk2BtcMinimumAcceptableConfirmations;
@@ -55,7 +56,6 @@ public abstract class BridgeConstants {
 
     protected int btcHeightWhenBlockIndexActivates;
     protected int maxDepthToSearchBlocksBelowIndexActivation;
-    protected long minSecondsBetweenCallsReceiveHeader;
 
     protected int maxDepthBlockchainAccepted;
 
@@ -88,6 +88,8 @@ public abstract class BridgeConstants {
     }
 
     public int getUpdateBridgeExecutionPeriod() { return updateBridgeExecutionPeriod; }
+
+    public long getMinSecondsBetweenCallsToReceiveHeader() { return minSecondsBetweenCallsReceiveHeader; }
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
         return btc2RskMinimumAcceptableConfirmations;
@@ -123,8 +125,6 @@ public abstract class BridgeConstants {
     public int getBtcHeightWhenBlockIndexActivates() { return btcHeightWhenBlockIndexActivates; }
 
     public int getMaxDepthToSearchBlocksBelowIndexActivation() { return maxDepthToSearchBlocksBelowIndexActivation; }
-
-    public long getMinSecondsBetweenCallsToReceiveHeader() { return minSecondsBetweenCallsReceiveHeader; }
 
     public int getMaxDepthBlockchainAccepted() { return maxDepthBlockchainAccepted; }
 

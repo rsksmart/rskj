@@ -53,6 +53,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
         unionBridgeConstants = UnionBridgeRegTestConstants.getInstance();
 
         updateBridgeExecutionPeriod = 15_000; //15 seconds in millis
+        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
 
         btc2RskMinimumAcceptableConfirmations = 3;
         rsk2BtcMinimumAcceptableConfirmations = 3;
@@ -66,8 +67,6 @@ public class BridgeRegTestConstants extends BridgeConstants {
         maxInputsPerMigrationTransaction = 150;
         maxOutputsPerMigrationTransaction = 50;
         migrationValueForMultipleOutputs = Coin.COIN.multiply(20);
-
-        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
 
         maxDepthBlockchainAccepted = 25;
 
