@@ -2239,7 +2239,7 @@ class BridgeUtilsTest {
 
         @BeforeEach
         void setUp() {
-            migrationValuePerOutput = bridgeConstantsMainnet.getMigrationValueForMultipleOutputsInBtc();
+            migrationValuePerOutput = bridgeConstantsMainnet.getMigrationValueForMultipleOutputs();
             maxOutputsPerMigrationTransaction = bridgeConstantsMainnet.getMaxOutputsPerMigrationTransaction();
             largeMultipleOutputsThreshold = BridgeUtils.getLargeMultipleOutputsThresholdBtcValue(bridgeConstantsMainnet);
         }
