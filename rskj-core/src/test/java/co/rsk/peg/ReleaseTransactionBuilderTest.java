@@ -2588,7 +2588,7 @@ class ReleaseTransactionBuilderTest {
             @Test
             void buildMigrationTransaction_withUtxosSumBetweenMTMUAndLargeMTMUThreshold_shouldCreateMigrationTxWithMultipleOutputs() {
                 // Arrange
-                Coin migrationOutputBtcValue = BRIDGE_MAINNET_CONSTANTS.getMigrationValueForMultipleOutputsInBtc();
+                Coin migrationOutputBtcValue = BRIDGE_MAINNET_CONSTANTS.getMigrationValueForMultipleOutputs();
                 int numberOfUtxos = 3;
                 retiringFederationUTXOs = UTXOBuilder.builder()
                     .withScriptPubKey(retiringFederationOutputScript)
