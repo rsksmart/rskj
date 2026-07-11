@@ -19,9 +19,6 @@
 package org.ethereum.config.blockchain.upgrades;
 
 import com.typesafe.config.ConfigFactory;
-import org.ethereum.config.SystemProperties;
-
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import org.ethereum.config.SystemProperties;
 
 @SuppressWarnings({"squid:S2187"}) // used from another class
 public class ActivationConfigsForTest {
@@ -214,6 +213,12 @@ public class ActivationConfigsForTest {
             ConsensusRule.RSKIP544,
             ConsensusRule.RSKIP551,
             ConsensusRule.RSKIP552
+        ));
+    }
+
+    private static List<ConsensusRule> getTbd1000Rskips() {
+        return new ArrayList<>(List.of(
+            ConsensusRule.RSKIP559
         ));
     }
 
@@ -462,6 +467,10 @@ public class ActivationConfigsForTest {
     }
 
     public static ActivationConfig vetiver900(List<ConsensusRule> except) {
+        return enableTheseDisableThose(vetiver900AllRskips(), except);
+    }
+
+    public static List<ConsensusRule> vetiver900AllRskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(getPaidBridgeTxsRskip());
         rskips.addAll(getOrchidRskips());
@@ -480,8 +489,21 @@ public class ActivationConfigsForTest {
         rskips.addAll(getReed800Rskips());
         rskips.addAll(getReed810Rskips());
         rskips.addAll(getVetiverRskips());
+        return rskips;
+    }
 
-        return enableTheseDisableThose(rskips, except);
+    public static List<ConsensusRule> tbd1000AllRskips() {
+        var rskips = vetiver900AllRskips();
+        rskips.addAll(getTbd1000Rskips());
+        return rskips;
+    }
+
+    public static ActivationConfig tbd1000() {
+        return tbd1000(Collections.emptyList());
+    }
+
+    public static ActivationConfig tbd1000(List<ConsensusRule> except) {
+        return enableTheseDisableThose(tbd1000AllRskips(), except);
     }
 
     public static ActivationConfig regtest() {

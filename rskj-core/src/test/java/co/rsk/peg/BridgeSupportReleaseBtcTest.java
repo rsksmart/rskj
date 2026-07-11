@@ -174,7 +174,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         verify(repository, never()).transfer(any(), any(), any());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         verify(eventLogger, never()).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
@@ -194,7 +194,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         verify(repository, never()).transfer(any(), any(), any());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         verify(eventLogger, times(1)).logReleaseBtcRequested(
             any(byte[].class),
@@ -225,7 +225,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         verify(repository, never()).transfer(any(), any(), any());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(4, logInfo.size());
@@ -267,7 +267,7 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
 
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(4, logInfo.size());
@@ -308,7 +308,7 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
 
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(5, logInfo.size());
@@ -352,7 +352,7 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
 
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         verify(bridgeEventLogger, never()).logReleaseBtcRequestRejected(any(), any(), any());
 
@@ -383,7 +383,7 @@ class BridgeSupportReleaseBtcTest {
             argThat(a -> a.equals(co.rsk.core.Coin.fromBitcoin(Coin.ZERO)))
         );
 
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(2, logInfo.size());
@@ -423,7 +423,7 @@ class BridgeSupportReleaseBtcTest {
             any(), any(), any()
         );
 
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         verify(bridgeEventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
         assertEquals(2, logInfo.size());
@@ -667,7 +667,7 @@ class BridgeSupportReleaseBtcTest {
 
         // assert pegouts were not batched
         assertEquals(1, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
 
         verify(bridgeStorageProvider, never()).getNextPegoutHeight();
         verify(bridgeStorageProvider, never()).setNextPegoutHeight(any(Long.class));
@@ -718,9 +718,9 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
 
-        BtcTransaction generatedTransaction = provider.getPegoutsWaitingForConfirmations().getEntries().iterator().next().getBtcTransaction();
+        BtcTransaction generatedTransaction = provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).iterator().next().getBtcTransaction();
 
         verify(provider, times(1)).getNextPegoutHeight();
         verify(provider, times(1)).setNextPegoutHeight(any(Long.class));
@@ -758,7 +758,7 @@ class BridgeSupportReleaseBtcTest {
         verify(provider, never()).setNextPegoutHeight(any(Long.class));
 
         assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -824,7 +824,7 @@ class BridgeSupportReleaseBtcTest {
         // Insufficient_Money i.e 4 BTC UTXO Available For 5 BTC Transaction.
         // Pegout requests can't be processed and remains in the queue
         assertEquals(5, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -859,14 +859,14 @@ class BridgeSupportReleaseBtcTest {
 
         // First Half of the PegoutRequests 300 / 2 = 150 Is Batched For The First Time
         assertEquals(150, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
 
         rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
         // The Rest PegoutRequests 300 / 2 = 150 Is Batched The 2nd Time updateCollections Is Called
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -895,7 +895,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -925,7 +925,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -970,7 +970,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         assertEquals(originalPegoutRequests, provider.getReleaseRequestQueue());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -1026,7 +1026,7 @@ class BridgeSupportReleaseBtcTest {
 
         assertNotEquals(originalPegoutRequests, provider.getReleaseRequestQueue());
         assertEquals(expectedPegoutRequests, provider.getReleaseRequestQueue());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -1064,7 +1064,7 @@ class BridgeSupportReleaseBtcTest {
 
         // 2 remains in queue, 1 is processed to the transaction set
         assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -1104,7 +1104,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         assertEquals(3, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
 
         verify(eventLogger, never()).logBatchPegoutCreated(any(), any());
         verify(provider, never()).setNextPegoutHeight(any(Long.class));
@@ -1150,7 +1150,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         assertEquals(3, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
 
         verify(eventLogger, never()).logBatchPegoutCreated(any(), any());
         verify(provider, never()).setNextPegoutHeight(any(Long.class));
@@ -1180,7 +1180,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx2);
 
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS_ALL).size());
 
         verify(eventLogger, times(1)).logBatchPegoutCreated(any(), any());
         verify(provider, times(1)).setNextPegoutHeight(any(Long.class));

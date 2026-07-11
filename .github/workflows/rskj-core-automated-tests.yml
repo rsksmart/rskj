@@ -1,0 +1,369 @@
+name: RSKj Core Automated Tests
+
+# Umbrella check: on an rskj PR (or manual dispatch), trigger the three external
+# test suites against this rskj change in parallel, wait for all of them, and
+# surface a single concise pass/fail report.
+#
+#   JSON-RPC  -> rsksmart/rskj-json-rpc-tests   (rskj-json-rpc-tests.yml,     test_branch)
+#   Hardhat   -> rsksmart/rskj-hardhat-tests     (rskj-smart-contract-tests.yml, hardhat_branch)
+#   K6        -> rsksmart/rskj-k6-tests           (rskj-k6-tests.yml,           test_branch)
+#
+# gh / gh api / jq are all preinstalled on the runner. Cross-repo auth uses a
+# short-lived GitHub App installation token, minted per suite via
+# actions/create-github-app-token (pinned by SHA) from the GH_APP_ID /
+# GH_APP_PRIVATE_KEY secrets. The App is installed on the three test repos with
+# Actions: read+write and Contents: read. Each token lasts ~1h, which comfortably
+# covers a job's dispatch + poll-to-completion (all suites finish well under that,
+# and timeout-minutes keeps every job inside the token's lifetime). The dispatch
+# endpoint returns the created run id directly via return_run_details=true
+# (GitHub, 2026-02-19), so there is no poll-to-correlate step.
+#
+# The per-suite dispatch + poll logic lives once in the reusable workflow
+# .github/workflows/_dispatch-suite.yml; the three suite jobs below are thin
+# callers that pass per-suite parameters and expose its conclusion / run_url
+# outputs to the report job.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: ["master", "*-rc"]
+  workflow_dispatch:
+    inputs:
+      rskj_branch:
+        description: "rskj branch the suites build the node from (default: this ref)"
+        type: string
+        required: false
+      jsonrpc_branch:
+        description: "rskj-json-rpc-tests branch (default: auto-match, else main)"
+        type: string
+        required: false
+      hardhat_branch:
+        description: "rskj-hardhat-tests branch (default: auto-match, else main)"
+        type: string
+        required: false
+      k6_branch:
+        description: "rskj-k6-tests branch (default: auto-match, else main)"
+        type: string
+        required: false
+
+# Least privilege at the top level; the only job that needs a write scope
+# (pull-requests: write, for the sticky PR comment) declares it itself.
+permissions:
+  contents: read
+
+concurrency:
+  group: rskj-core-automated-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  resolve:
+    name: Resolve refs
+    runs-on: ubuntu-latest
+    outputs:
+      has_token: ${{ steps.token.outputs.has_token }}
+      rskj_ref: ${{ steps.refs.outputs.rskj_ref }}
+      jsonrpc_ref: ${{ steps.refs.outputs.jsonrpc_ref }}
+      hardhat_ref: ${{ steps.refs.outputs.hardhat_ref }}
+      k6_ref: ${{ steps.refs.outputs.k6_ref }}
+    steps:
+      # App secrets are withheld from fork pull_request runs (GitHub does not expose
+      # secrets to runs triggered by forks). An empty private key is our fork-PR
+      # signal: detect it here so the rest of the workflow degrades gracefully
+      # (skip + stay green) instead of failing token mint / every gh call.
+      - name: Check cross-repo App credentials
+        id: token
+        env:
+          APP_ID: ${{ secrets.GH_APP_ID }}
+          APP_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          # Only a PR whose head is a fork has secrets withheld by GitHub. Same-repo
+          # PRs and workflow_dispatch always have them (head.repo.fork is empty on
+          # dispatch → treated as non-fork).
+          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+        run: |
+          # Require BOTH secrets: a present key with a missing/misconfigured id
+          # would still fail token mint later, in a less obvious way.
+          if [ -n "$APP_ID" ] && [ -n "$APP_KEY" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          elif [ "$IS_FORK" = "true" ]; then
+            # Fork PR: secrets are legitimately unavailable. Skip + stay green —
+            # the PR cannot supply them, so we do not block it.
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::GH_APP_ID / GH_APP_PRIVATE_KEY unavailable (fork PR — secrets are withheld); downstream suites will be skipped."
+          else
+            # Non-fork run with missing secrets means they were removed or
+            # misconfigured on this repo. Fail loudly rather than silently
+            # skipping, which would defeat this check's required-gate purpose.
+            echo "::error::GH_APP_ID / GH_APP_PRIVATE_KEY are missing on a non-fork run; configure the GitHub App secrets so the cross-repo suites can be dispatched."
+            exit 1
+          fi
+
+      # Mint a short-lived (~1h) installation token scoped to the three test repos.
+      - name: Generate GitHub App token
+        id: app-token
+        if: steps.token.outputs.has_token == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: rsksmart
+          # Comma-separated single line: this action version does not split a
+          # multi-line block into a list (it took the whole newline-joined string
+          # as one repo name and 404'd looking up its installation).
+          repositories: rskj-json-rpc-tests,rskj-hardhat-tests,rskj-k6-tests
+
+      - name: Resolve rskj + per-suite test refs
+        id: refs
+        if: steps.token.outputs.has_token == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          EVENT: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          REF_NAME: ${{ github.ref_name }}
+          IN_RSKJ: ${{ inputs.rskj_branch }}
+          IN_JSONRPC: ${{ inputs.jsonrpc_branch }}
+          IN_HARDHAT: ${{ inputs.hardhat_branch }}
+          IN_K6: ${{ inputs.k6_branch }}
+        run: |
+          set -euo pipefail
+
+          # rskj ref: PR head branch on PRs; the dispatch input (or the dispatched
+          # ref) on manual runs. The three suites build the node from this.
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            RSKJ_REF="${IN_RSKJ:-$REF_NAME}"
+          else
+            RSKJ_REF="$HEAD_REF"
+          fi
+
+          # Validate the ref before it is ever interpolated, unencoded, into a
+          # gh api REST path below (resolve_ref's "repos/<repo>/branches/$RSKJ_REF").
+          # github.head_ref and the workflow_dispatch inputs are caller-controlled
+          # and the dispatch inputs are not constrained to real ref syntax, so a
+          # crafted value containing ".." or path/control characters could redirect
+          # the call. Restrict to safe git-ref characters and reject any "..".
+          case "$RSKJ_REF" in
+            ""|*..*) echo "::error::invalid rskj ref (empty or contains '..'): '$RSKJ_REF'"; exit 1;;
+            *[!A-Za-z0-9._/-]*) echo "::error::rskj ref has disallowed characters: '$RSKJ_REF'"; exit 1;;
+          esac
+
+          echo "rskj_ref=$RSKJ_REF" >> "$GITHUB_OUTPUT"
+          echo "rskj ref: $RSKJ_REF"
+
+          # Matching-branch convention: if a branch named "$RSKJ_REF" exists in a
+          # test repo, run that branch there (so companion test/workflow changes on
+          # a same-named branch are exercised); otherwise fall back to main. An
+          # explicit dispatch input always wins.
+          #
+          # Only a genuine 404 (branch absent) may fall back to main. Any OTHER API
+          # failure (rate limit, auth, transient outage) must fail the job loudly:
+          # silently treating it as "branch missing" would exercise the wrong test
+          # branch and could produce a false-green run. Result is returned in
+          # RESOLVED so the non-404 error path can `return 1` and trip `set -e` in
+          # the caller (an `exit` inside $(...) would only leave the subshell).
+          resolve_ref() {
+            repo="$1"; override="$2"
+            if [ -n "$override" ]; then
+              RESOLVED="$override"; return 0
+            fi
+            if err=$(gh api "repos/$repo/branches/$RSKJ_REF" 2>&1 >/dev/null); then
+              RESOLVED="$RSKJ_REF"; return 0
+            fi
+            case "$err" in
+              *"HTTP 404"*) RESOLVED="main"; return 0;;
+              *) echo "::error::could not check for branch '$RSKJ_REF' in $repo (non-404 API error; refusing to fall back to main): $err"; return 1;;
+            esac
+          }
+
+          resolve_ref rsksmart/rskj-json-rpc-tests "$IN_JSONRPC"; JSONRPC_REF="$RESOLVED"
+          resolve_ref rsksmart/rskj-hardhat-tests "$IN_HARDHAT"; HARDHAT_REF="$RESOLVED"
+          resolve_ref rsksmart/rskj-k6-tests "$IN_K6"; K6_REF="$RESOLVED"
+
+          {
+            echo "jsonrpc_ref=$JSONRPC_REF"
+            echo "hardhat_ref=$HARDHAT_REF"
+            echo "k6_ref=$K6_REF"
+          } >> "$GITHUB_OUTPUT"
+          echo "json-rpc ref: $JSONRPC_REF | hardhat ref: $HARDHAT_REF | k6 ref: $K6_REF"
+
+  # Each suite is dispatched + polled by the shared reusable workflow
+  # (_dispatch-suite.yml); these jobs only supply the per-suite parameters. Their
+  # named outputs (conclusion / run_url) are consumed by the report job below.
+  json_rpc:
+    name: JSON-RPC suite
+    needs: resolve
+    if: needs.resolve.outputs.has_token == 'true'
+    uses: ./.github/workflows/_dispatch-suite.yml
+    with:
+      name: JSON-RPC
+      repo: rskj-json-rpc-tests
+      workflow: rskj-json-rpc-tests.yml
+      test_input: test_branch
+      rskj_ref: ${{ needs.resolve.outputs.rskj_ref }}
+      test_ref: ${{ needs.resolve.outputs.jsonrpc_ref }}
+    secrets:
+      app_id: ${{ secrets.GH_APP_ID }}
+      app_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+  hardhat:
+    name: Hardhat suite
+    needs: resolve
+    if: needs.resolve.outputs.has_token == 'true'
+    uses: ./.github/workflows/_dispatch-suite.yml
+    with:
+      name: Hardhat
+      repo: rskj-hardhat-tests
+      workflow: rskj-smart-contract-tests.yml
+      test_input: hardhat_branch
+      rskj_ref: ${{ needs.resolve.outputs.rskj_ref }}
+      test_ref: ${{ needs.resolve.outputs.hardhat_ref }}
+    secrets:
+      app_id: ${{ secrets.GH_APP_ID }}
+      app_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+  k6:
+    name: K6 suite
+    needs: resolve
+    if: needs.resolve.outputs.has_token == 'true'
+    uses: ./.github/workflows/_dispatch-suite.yml
+    with:
+      name: K6
+      repo: rskj-k6-tests
+      workflow: rskj-k6-tests.yml
+      test_input: test_branch
+      rskj_ref: ${{ needs.resolve.outputs.rskj_ref }}
+      test_ref: ${{ needs.resolve.outputs.k6_ref }}
+    secrets:
+      app_id: ${{ secrets.GH_APP_ID }}
+      app_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+  # This is the authoritative gate: it always runs (if: always()), consolidates
+  # the three suite conclusions, and exits non-zero on any failure. Pin THIS check
+  # (name: "Automated Regression Report") as the required status check in branch
+  # protection — never the per-suite checks, whose names change if the suites are
+  # refactored (e.g. the reusable-workflow extraction renamed them to
+  # "<suite> suite / <suite>"). Its name is intentionally stable for that reason.
+  report:
+    name: Automated Regression Report
+    needs: [resolve, json_rpc, hardhat, k6]
+    if: always()
+    runs-on: ubuntu-latest
+    # Only this job writes with GITHUB_TOKEN (the sticky PR comment). The other
+    # jobs use the App token, so they keep the top-level contents: read default.
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Build report, comment and gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HAS_TOKEN: ${{ needs.resolve.outputs.has_token }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RSKJ_REF: ${{ needs.resolve.outputs.rskj_ref }}
+          JSONRPC_CONCLUSION: ${{ needs.json_rpc.outputs.conclusion }}
+          JSONRPC_RESULT: ${{ needs.json_rpc.result }}
+          JSONRPC_URL: ${{ needs.json_rpc.outputs.run_url }}
+          JSONRPC_REF: ${{ needs.resolve.outputs.jsonrpc_ref }}
+          HARDHAT_CONCLUSION: ${{ needs.hardhat.outputs.conclusion }}
+          HARDHAT_RESULT: ${{ needs.hardhat.result }}
+          HARDHAT_URL: ${{ needs.hardhat.outputs.run_url }}
+          HARDHAT_REF: ${{ needs.resolve.outputs.hardhat_ref }}
+          K6_CONCLUSION: ${{ needs.k6.outputs.conclusion }}
+          K6_RESULT: ${{ needs.k6.result }}
+          K6_URL: ${{ needs.k6.outputs.run_url }}
+          K6_REF: ${{ needs.resolve.outputs.k6_ref }}
+        run: |
+          set -euo pipefail
+
+          # Fork PR (has_token == "false"): the App credentials were legitimately
+          # unavailable, so no token could be minted and nothing was dispatched.
+          # Report the skip and stay green — the PR cannot supply the secret, so we
+          # do not block it. A missing-secret failure on a non-fork run is a
+          # different case: resolve exits non-zero there, leaving has_token empty,
+          # which falls through to the normal report below and gates the PR red.
+          if [ "$HAS_TOKEN" = "false" ]; then
+            {
+              echo "### RSKj Core Automated Tests — ⏭️ skipped"
+              echo ""
+              echo "GitHub App credentials (\`GH_APP_ID\` / \`GH_APP_PRIVATE_KEY\`) were"
+              echo "unavailable (expected on fork PRs, where secrets are withheld). The"
+              echo "JSON-RPC / Hardhat / K6 suites were not dispatched."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # A suite that failed at the infrastructure level (token mint, dispatch,
+          # runner death, job timeout) never wrote its `conclusion` output, so it
+          # arrives here empty. Fall back to the job's own result (failure /
+          # cancelled / skipped) so the table and gate report the real outcome
+          # instead of a blank "no result" cell. The gate already fails closed on a
+          # non-success value either way; this only makes the report honest.
+          JSONRPC_CONCLUSION="${JSONRPC_CONCLUSION:-$JSONRPC_RESULT}"
+          HARDHAT_CONCLUSION="${HARDHAT_CONCLUSION:-$HARDHAT_RESULT}"
+          K6_CONCLUSION="${K6_CONCLUSION:-$K6_RESULT}"
+
+          emoji() {
+            case "$1" in
+              success) echo "✅";;
+              failure) echo "❌";;
+              cancelled) echo "🚫";;
+              timed_out) echo "⏱️";;
+              skipped) echo "⏭️";;
+              "") echo "⚠️";;
+              *) echo "❓";;
+            esac
+          }
+
+          row() { # name conclusion ref url
+            # shellcheck disable=SC2016  # the backticks are literal markdown, not command substitution
+            printf '| %s | %s %s | `%s` | [run](%s) |\n' \
+              "$1" "$(emoji "$2")" "${2:-no result}" "${3:-?}" "${4:-#}"
+          }
+
+          # Header + table, reused for the summary and the PR comment.
+          REPORT_FILE="$(mktemp)"
+          {
+            echo "### RSKj Core Automated Tests"
+            echo ""
+            echo "rskj node built from \`${RSKJ_REF}\`."
+            echo ""
+            echo "| Suite | Result | Branch tested | Run |"
+            echo "| --- | --- | --- | --- |"
+            row "JSON-RPC" "$JSONRPC_CONCLUSION" "$JSONRPC_REF" "$JSONRPC_URL"
+            row "Hardhat"  "$HARDHAT_CONCLUSION" "$HARDHAT_REF" "$HARDHAT_URL"
+            row "K6"       "$K6_CONCLUSION"      "$K6_REF"      "$K6_URL"
+          } > "$REPORT_FILE"
+
+          cat "$REPORT_FILE" >> "$GITHUB_STEP_SUMMARY"
+
+          # Determine overall result up front (drives the final gate).
+          OVERALL=success
+          for c in "$JSONRPC_CONCLUSION" "$HARDHAT_CONCLUSION" "$K6_CONCLUSION"; do
+            [ "$c" = "success" ] || OVERALL=failure
+          done
+
+          # Sticky PR comment: upsert by a hidden marker so each push updates the
+          # same comment instead of stacking new ones. Uses the built-in token.
+          if [ "$EVENT" = "pull_request" ] && [ -n "${PR_NUMBER:-}" ]; then
+            MARKER="<!-- rskj-core-automated-tests -->"
+            BODY_FILE="$(mktemp)"
+            { printf '%s\n' "$MARKER"; cat "$REPORT_FILE"; } > "$BODY_FILE"
+            CID=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate \
+              --jq "map(select(.body | startswith(\"$MARKER\"))) | .[0].id // empty" 2>/dev/null \
+              | head -n1 || true)
+            if [ -n "$CID" ]; then
+              gh api -X PATCH "repos/$REPO/issues/comments/$CID" \
+                -f body="$(cat "$BODY_FILE")" >/dev/null
+              echo "Updated sticky PR comment $CID"
+            else
+              gh api -X POST "repos/$REPO/issues/$PR_NUMBER/comments" \
+                -f body="$(cat "$BODY_FILE")" >/dev/null
+              echo "Created sticky PR comment"
+            fi
+          fi
+
+          # Authoritative gate.
+          if [ "$OVERALL" != "success" ]; then
+            echo "::error::one or more downstream suites did not succeed (JSON-RPC=$JSONRPC_CONCLUSION, Hardhat=$HARDHAT_CONCLUSION, K6=$K6_CONCLUSION)"
+            exit 1
+          fi
+          echo "All downstream suites passed."

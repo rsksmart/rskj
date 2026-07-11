@@ -141,7 +141,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
             BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
         );
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
+        Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(bridgeRegTestConstants.getFederationConstants());
         List<FederationMember> federationMembers = genesisFederation.getMembers();
         Instant federationCreationTime = genesisFederation.getCreationTime();
         NetworkParameters networkParameters = genesisFederation.getBtcParams();

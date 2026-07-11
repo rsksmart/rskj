@@ -127,7 +127,7 @@ class ActiveFederationTest extends BridgePerformanceTestCase {
                 // TODO: This logic needs to be adjusted to use the new FederationStorageProvider class
 //                provider.setNewFederation(federation);
             } else {
-                federation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
+                federation = FederationTestUtils.getGenesisFederationLegacy(bridgeConstants.getFederationConstants());
             }
         };
     }

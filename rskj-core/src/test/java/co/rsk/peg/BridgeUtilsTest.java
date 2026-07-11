@@ -916,7 +916,7 @@ class BridgeUtilsTest {
     }
 
     @Test
-    void deserializeBtcAddressWithVersion_p2sh_mainnet_wrong_network() throws BridgeIllegalArgumentException {
+    void deserializeBtcAddressWithVersion_p2sh_mainnet_wrong_network() {
         String addressVersionHex = "05"; // Mainnet script hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
@@ -1596,7 +1596,7 @@ class BridgeUtilsTest {
     }
 
     private ErpFederation createNonStandardErpFederation() {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest.getFederationConstants());
+        Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(bridgeConstantsRegtest.getFederationConstants());
         FederationArgs genesisFederationArgs = genesisFederation.getArgs();
         List<BtcECKey> erpPubKeys = bridgeConstantsRegtest.getFederationConstants().getErpFedPubKeysList();
         long activationDelay = bridgeConstantsRegtest.getFederationConstants().getErpFedActivationDelay();
@@ -1615,7 +1615,7 @@ class BridgeUtilsTest {
         byte[] program;
 
         if (federation == null) {
-            federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest.getFederationConstants());
+            federation = FederationTestUtils.getGenesisFederationLegacy(bridgeConstantsRegtest.getFederationConstants());
         }
 
         if (isFlyover) {

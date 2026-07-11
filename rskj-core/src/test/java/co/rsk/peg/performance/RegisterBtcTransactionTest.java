@@ -145,7 +145,7 @@ class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                         Optional<Long> height = provider.getHeightIfBtcTxhashIsAlreadyProcessed(txToLock.getHash());
                         Assertions.assertTrue(height.isPresent());
 
-                        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+                        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries(activationConfig.forBlock(0)).size());
                     } catch (IOException e) {
                         Assertions.fail();
                     }
@@ -178,7 +178,7 @@ class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                         Optional<Long> height = provider.getHeightIfBtcTxhashIsAlreadyProcessed(txToLock.getHash());
                         Assertions.assertTrue(height.isPresent());
 
-                        Assertions.assertTrue(provider.getPegoutsWaitingForConfirmations().getEntries().size() > 0);
+                        Assertions.assertTrue(provider.getPegoutsWaitingForConfirmations().getEntries(activationConfig.forBlock(0)).size() > 0);
                     } catch (IOException e) {
                         Assertions.fail();
                     }
@@ -241,7 +241,7 @@ class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
             BtcTransaction inputTx = new BtcTransaction(networkParameters);
             inputTx.addOutput(fromAmount, fromAddress);
 
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
+            Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(bridgeConstants.getFederationConstants());
             Address federationAddress = genesisFederation.getAddress();
 
             // Lock tx that uses the input tx
