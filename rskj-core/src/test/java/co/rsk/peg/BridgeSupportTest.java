@@ -7980,7 +7980,7 @@ class BridgeSupportTest {
 
         @ParameterizedTest
         @MethodSource("federationArgs")
-        void migration_fromLegacyRetiring_toLegacyActiveFed(Federation retiringFederation, Federation activeFederation) throws IOException {
+        void migration_fromRetiring_toActiveFed(Federation retiringFederation, Federation activeFederation) throws IOException {
             // arrange
             setUp(retiringFederation, activeFederation);
 
