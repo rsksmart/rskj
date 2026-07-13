@@ -24,7 +24,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLP;
 
-
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Objects;
