@@ -88,4 +88,9 @@ public final class BootstrapV2Format {
     public static boolean isV2(int firstByte) {
         return firstByte == (MAGIC[0] & 0xFF);
     }
+
+    /** Whether {@code firstByte} marks a legacy v1 file (a single top-level RLP list, prefix {@code 0xc0}+). */
+    public static boolean isV1(int firstByte) {
+        return firstByte >= 0xc0 && firstByte <= 0xff;
+    }
 }

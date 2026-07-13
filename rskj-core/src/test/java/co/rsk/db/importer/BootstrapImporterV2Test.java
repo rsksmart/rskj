@@ -135,7 +135,8 @@ class BootstrapImporterV2Test {
         out.write(BootstrapV2Format.MAGIC);
         out.writeByte(BootstrapV2Format.VERSION);
         // a section tag this reader does not handle (reserved for a future manifest); must be skipped
-        writeSection(out, BootstrapV2Format.TAG_MANIFEST, List.of(RLP.encodeElement("future".getBytes())), 1024);
+        writeSection(out, BootstrapV2Format.TAG_MANIFEST,
+                List.of(RLP.encodeElement("future".getBytes(StandardCharsets.UTF_8))), 1024);
         writeSection(out, BootstrapV2Format.TAG_BLOCKS, blocks, 1024);
         writeSection(out, BootstrapV2Format.TAG_VALUES, values, 1024);
         writeSection(out, BootstrapV2Format.TAG_NODES, nodes, 1024);
@@ -294,6 +295,50 @@ class BootstrapImporterV2Test {
 
         BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
         assertTrue(ex.getMessage().toLowerCase().contains("order"), ex.getMessage());
+    }
+
+    @Test
+    void failsWithActionableErrorWhenValueElementIsEmpty() throws IOException {
+        // RLPElement#getRLPData() returns null for an empty element; a corrupt values section carrying one
+        // would otherwise NPE deep inside saveValue. It must surface as an actionable import error.
+        StateFixture fixture = buildState();
+        List<byte[]> values = new ArrayList<>();
+        values.add(RLP.encodeElement(new byte[0])); // empty value element -> getRLPData() == null
+        byte[] v2 = assembleV2(1024,
+                syntheticBlockElements(), collectNodeElements(fixture.store, fixture.stateRoot), values);
+
+        BootstrapImporter importer = newImporter(v2, "empty-value.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("value"), ex.getMessage());
+    }
+
+    @Test
+    void failsWithActionableErrorWhenNodeElementIsEmpty() throws IOException {
+        // A corrupt nodes section carrying an empty element (getRLPData() == null) would otherwise pass null
+        // into Trie.fromMessage and surface as an unhelpful NPE/IAE. It must be an actionable import error.
+        StateFixture fixture = buildState();
+        List<byte[]> nodes = new ArrayList<>();
+        nodes.add(RLP.encodeElement(new byte[0])); // empty node element -> getRLPData() == null
+        byte[] v2 = assembleV2(1024,
+                syntheticBlockElements(), nodes, collectValueElements(fixture.store, fixture.stateRoot));
+
+        BootstrapImporter importer = newImporter(v2, "empty-node.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("empty"), ex.getMessage());
+    }
+
+    @Test
+    void rejectsUnrecognizedFirstByteAsNeitherV1NorV2() throws IOException {
+        // First byte is neither the v2 magic ('R') nor a v1 RLP list prefix (0xc0+): a corrupt or wrong file
+        // must be rejected up front with a clear error, not sent down the v1 path to fail with an opaque
+        // RLP error later.
+        byte[] bogus = new byte[]{0x42, 0x00, 0x01}; // 'B', not v2 magic and not a v1 list prefix
+        BootstrapImporter importer = newImporter(bogus, "bogus-format.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("unrecognized"), ex.getMessage());
     }
 
     @Test

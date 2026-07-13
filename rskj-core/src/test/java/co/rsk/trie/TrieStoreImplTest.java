@@ -58,6 +58,14 @@ class TrieStoreImplTest {
     }
 
     @Test
+    void saveValue_rejectsNull() {
+        // new public API: a null value would NPE deep inside hashing; fail fast with a clear message.
+        NullPointerException ex = Assertions.assertThrows(NullPointerException.class, () -> store.saveValue(null));
+        assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("value"),
+                String.valueOf(ex.getMessage()));
+    }
+
+    @Test
     void saveTrieNode() {
         Trie trie = new Trie(store).put("foo", "bar".getBytes());
 

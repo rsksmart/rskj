@@ -217,12 +217,22 @@ public class BootstrapImporter {
                 }
             } else if (tag == TAG_VALUES) {
                 for (RLPElement element : RLP.decode2(chunk)) {
-                    trieStore.saveValue(element.getRLPData());
+                    byte[] value = element.getRLPData();
+                    if (value == null) {
+                        throw new BootstrapImportException("Bootstrap-data v2 values section contains an empty "
+                                + "element (a long value cannot be empty); the file is corrupt");
+                    }
+                    trieStore.saveValue(value);
                     counts.values++;
                 }
             } else if (tag == TAG_NODES) {
                 for (RLPElement element : RLP.decode2(chunk)) {
-                    Trie trie = Trie.fromMessage(element.getRLPData(), trieStore);
+                    byte[] message = element.getRLPData();
+                    if (message == null) {
+                        throw new BootstrapImportException("Bootstrap-data v2 nodes section contains an empty "
+                                + "element (a state node cannot be empty); the file is corrupt");
+                    }
+                    Trie trie = Trie.fromMessage(message, trieStore);
                     saveNode(trie);
                     counts.nodes++;
                 }
@@ -381,7 +391,15 @@ public class BootstrapImporter {
             if (firstByte == -1) {
                 throw new BootstrapImportException("Empty bootstrap data file: " + dataPath);
             }
-            return BootstrapV2Format.isV2(firstByte);
+            if (BootstrapV2Format.isV2(firstByte)) {
+                return true;
+            }
+            if (BootstrapV2Format.isV1(firstByte)) {
+                return false;
+            }
+            throw new BootstrapImportException(String.format(
+                    "Unrecognized bootstrap-data format in %s: first byte 0x%02X is neither the v2 magic "
+                            + "('R') nor a v1 RLP list prefix (0xc0+)", dataPath, firstByte));
         } catch (IOException e) {
             throw new BootstrapImportException("Error reading bootstrap data from " + dataPath, e);
         }
