@@ -144,6 +144,7 @@ public class TransactionResultDTO {
             }
         } else if (txType == TransactionType.TYPE_4) {
             chainId = HexUtils.toQuantityJsonHex(tx.getChainId() & 0xFF);
+            accessList = decodeAccessList(tx.getAccessListBytes());
             yParity = HexUtils.toQuantityJsonHex(tx.getEncodedV() & 0xFF);
             Coin maxP = tx.getMaxPriorityFeePerGas();
             Coin maxF = tx.getMaxFeePerGas();
