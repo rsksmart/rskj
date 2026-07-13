@@ -973,7 +973,7 @@ public class Web3Impl implements Web3 {
     }
 
     /**
-     * {@code true} when transaction index {@code txIndex} is the first transaction of an
+     * {@code true} when transaction index {@code txIndex} (greater than 0) is the first transaction of an
      * RSKIP-144 execution sublist. An edge value {@code e} means the transaction at index
      * {@code e} starts a new sublist. {@code null} or empty edges mean a single sequential list.
      */
