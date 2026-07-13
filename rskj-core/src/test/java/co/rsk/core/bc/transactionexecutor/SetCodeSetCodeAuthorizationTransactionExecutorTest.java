@@ -378,10 +378,10 @@ import static org.mockito.Mockito.when;
         byte[] authorizationNonce = new byte[]{0x02};
 
         var tuple = createValidAuthorizationTuple(
-                 RskAddress.ZERO_ADDRESS,
-                 authorizationNonce,
-                 ZERO_CHAIN_ID,
-                 authorityKey
+                RskAddress.ZERO_ADDRESS,
+                authorizationNonce,
+                ZERO_CHAIN_ID,
+                authorityKey
         );
 
         when(repository.getCode(authority)).thenReturn(null);
