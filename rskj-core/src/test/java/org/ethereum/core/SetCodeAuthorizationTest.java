@@ -67,7 +67,7 @@ class SetCodeAuthorizationTest {
     }
 
     @Test
-     void verifyNonceRangeShouldAcceptValidNonce() {
+    void verifyNonceRangeShouldAcceptValidNonce() {
         SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[] {0x01}, validSignature());
         authorization.verifyNonceRange();
     }
