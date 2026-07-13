@@ -50,6 +50,7 @@ import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
@@ -238,11 +239,17 @@ public class EthModule
         try {
             CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args.toCallArguments());
 
+            // RSKCORE-5410-a: ignore the caller-provided `gas` for the
+            // simulation budget. Honoring it caused the simulation to OOG
+            // silently when the hint was below the true minimum, after which
+            // gasUsed=budget was returned as the "estimate" without surfacing
+            // the OutOfGasException. Always run the simulation at the cap so
+            // it has enough headroom to reach the true minimum gas.
             TransactionExecutor executor = reversibleTransactionExecutor.estimateGas(
                     block,
                     block.getCoinbase(),
                     hexArgs.getGasPrice(),
-                    hexArgs.gasLimitForGasEstimation(gasEstimationCap),
+                    ByteUtil.longToBytes(gasEstimationCap),
                     hexArgs.getToAddress(),
                     hexArgs.getValue(),
                     hexArgs.getData(),
