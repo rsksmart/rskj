@@ -142,7 +142,7 @@ class SetCodeAuthorizationTest {
     }
 
     @Test
-     void equalsShouldReturnTrueForSameValues() {
+    void equalsShouldReturnTrueForSameValues() {
         ECDSASignature signature = validSignature();
 
         SetCodeAuthorization first = new SetCodeAuthorization(CHAIN_ID, ADDRESS, NONCE, signature);
