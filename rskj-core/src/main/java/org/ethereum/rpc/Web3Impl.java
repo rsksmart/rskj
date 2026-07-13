@@ -940,8 +940,12 @@ public class Web3Impl implements Web3 {
             if (derivedGasUsed.isPresent()) {
                 overrideGasUsed = derivedGasUsed.get();
             } else {
+                // Four-field receipts carry no per-tx gasUsed on disk, so falling back to the raw
+                // receipt value would emit 0x0. Fall back to the sublist cumulative instead
+                // (equivalent to prevCumulative=0) so a mined tx never reports 0x0 gasUsed.
+                overrideGasUsed = cumulativeGas;
                 logger.warn("eth_getTransactionReceipt: non-positive gasUsed derived for tx {} " +
-                        "(cumulative={}, prevCumulative={}) — falling back to raw receipt value",
+                        "(cumulative={}, prevCumulative={}) — falling back to sublist cumulative gas",
                         transactionHash, cumulativeGas, prevCumulativeGas);
             }
         }

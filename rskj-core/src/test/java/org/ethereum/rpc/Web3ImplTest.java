@@ -3607,6 +3607,81 @@ class Web3ImplTest {
         assertFalse("0x0".equals(dto.getGasUsed()));
     }
 
+    @Test
+    void eth_getTransactionReceipt_nonPositiveDerivedGasUsed_fallsBackToSublistCumulativeNotZero() {
+        long prevCumulative = 42_000L;
+        long inconsistentCumulative = 21_000L;
+        Keccak256 hash0 = new Keccak256(TestUtils.generateBytes("typed-nonpos-tx0", 32));
+        Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("typed-nonpos-tx1", 32));
+        byte[] blockHash = TestUtils.generateBytes("typed-nonpos-block", 32);
+
+        Transaction tx0 = mock(Transaction.class);
+        Transaction tx1 = mock(Transaction.class);
+        when(tx0.getHash()).thenReturn(hash0);
+        when(tx1.getHash()).thenReturn(hash1);
+        when(tx0.getTypePrefix()).thenReturn(TransactionTypePrefix.typed(TransactionType.TYPE_1));
+        when(tx1.getTypePrefix()).thenReturn(TransactionTypePrefix.typed(TransactionType.TYPE_1));
+        when(tx0.getTypeAsHex()).thenReturn("0x1");
+        when(tx1.getTypeAsHex()).thenReturn("0x1");
+        when(tx0.getSender(any(SignatureCache.class))).thenReturn(RskAddress.nullAddress());
+        when(tx1.getSender(any(SignatureCache.class))).thenReturn(RskAddress.nullAddress());
+        when(tx0.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
+        when(tx1.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
+        when(tx0.getGasPrice()).thenReturn(Coin.valueOf(1));
+        when(tx1.getGasPrice()).thenReturn(Coin.valueOf(1));
+        when(tx0.getContractAddress()).thenReturn(null);
+        when(tx1.getContractAddress()).thenReturn(null);
+
+        TransactionReceipt receipt0 = new TransactionReceipt();
+        receipt0.setStatus(new byte[]{0x01});
+        receipt0.setCumulativeGas(prevCumulative);
+        receipt0.setGasUsed(new byte[0]);
+        receipt0.setLogInfoList(Collections.emptyList());
+        receipt0.setTransaction(tx0);
+
+        TransactionReceipt receipt1 = new TransactionReceipt();
+        receipt1.setStatus(new byte[]{0x01});
+        receipt1.setCumulativeGas(inconsistentCumulative);
+        receipt1.setGasUsed(new byte[0]);
+        receipt1.setLogInfoList(Collections.emptyList());
+        receipt1.setTransaction(tx1);
+
+        BlockHeader header = mock(BlockHeader.class);
+        when(header.getTxExecutionSublistsEdges()).thenReturn(new short[0]);
+
+        Block block = mock(Block.class);
+        when(block.getHash()).thenReturn(new Keccak256(blockHash));
+        when(block.getNumber()).thenReturn(1L);
+        when(block.getHeader()).thenReturn(header);
+        when(block.getTransactionsList()).thenReturn(Arrays.asList(tx0, tx1));
+
+        org.ethereum.db.TransactionInfo info0 = new org.ethereum.db.TransactionInfo(receipt0, blockHash, 0);
+        org.ethereum.db.TransactionInfo info1 = new org.ethereum.db.TransactionInfo(receipt1, blockHash, 1);
+
+        Blockchain blockchain = mock(Blockchain.class);
+        when(blockchain.getTransactionInfoByBlock(tx0, blockHash)).thenReturn(info0);
+        when(blockchain.getTransactionInfoByBlock(tx1, blockHash)).thenReturn(info1);
+
+        BlockStore blockStore = mock(BlockStore.class);
+        when(blockStore.getBlockByHash(blockHash)).thenReturn(block);
+
+        ReceiptStore receiptStore = mock(ReceiptStore.class);
+        when(receiptStore.getInMainChain(hash1.getBytes(), blockStore)).thenReturn(java.util.Optional.of(info1));
+
+        Web3Impl web3 = createWeb3ForReceiptGasUsedTest(blockchain, blockStore, receiptStore);
+
+        TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(
+                new TxHashParam(hash1.toHexString()));
+
+        assertNotNull(dto);
+        assertFalse(dto.getGasUsed().startsWith("0xffffffff"),
+                "non-positive derivation must not emit two's-complement garbage hex");
+        assertFalse("0x0".equals(dto.getGasUsed()),
+                "four-field receipt must not fall back to 0x0 gasUsed for a mined tx");
+        assertEquals(HexUtils.toQuantityJsonHex(inconsistentCumulative), dto.getGasUsed(),
+                "non-positive derivation must fall back to the sublist cumulative (prevCumulative=0)");
+    }
+
     private Web3Impl createWeb3ForReceiptGasUsedTest(
             Blockchain blockchain, BlockStore blockStore, ReceiptStore receiptStore) {
         Ethereum eth = mock(Ethereum.class);
