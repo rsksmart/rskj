@@ -48,7 +48,7 @@ class SetCodeAuthorizationTest {
     }
 
     @Test
-     void getSigningHashShouldReturnExpectedHash() {
+    void getSigningHashShouldReturnExpectedHash() {
         SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, NONCE, validSignature());
 
         byte[] rlpEncoded = RLP.encodeList(
