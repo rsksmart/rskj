@@ -387,8 +387,8 @@ import static org.mockito.Mockito.when;
         when(repository.getCode(authority)).thenReturn(null);
         when(repository.getNonce(authority)).thenReturn(ONE);
         IllegalStateException ex = assertThrows(
-                 IllegalStateException.class,
-                 () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
+                IllegalStateException.class,
+                () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
         );
 
         assertEquals("Authority nonce mismatch", ex.getMessage());

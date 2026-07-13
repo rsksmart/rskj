@@ -1,21 +1,20 @@
 package org.ethereum.core;
 
-import co.rsk.core.RskAddress;
-import org.ethereum.core.transaction.SetCodeAuthorization;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.RLP;
-import org.junit.jupiter.api.Test;
-import java.math.BigInteger;
-
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.config.Constants;
+import org.ethereum.core.transaction.SetCodeAuthorization;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.util.RLP;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigInteger;
 
 class SetCodeAuthorizationTest {
 
