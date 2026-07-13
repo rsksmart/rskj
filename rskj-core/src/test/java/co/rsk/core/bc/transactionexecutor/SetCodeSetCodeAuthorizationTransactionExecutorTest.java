@@ -370,32 +370,31 @@ import static org.mockito.Mockito.when;
         verify(repository).increaseNonce(authority);
     }
 
-     @Test
-     void processAuthorizationTuple_shouldRejectMismatchedNonce() {
-         ECKey authorityKey = new ECKey();
-         RskAddress authority = new RskAddress(authorityKey.getAddress());
+    @Test
+    void processAuthorizationTuple_shouldRejectMismatchedNonce() {
+        ECKey authorityKey = new ECKey();
+        RskAddress authority = new RskAddress(authorityKey.getAddress());
 
-         byte[] authorizationNonce = new byte[]{0x02};
+        byte[] authorizationNonce = new byte[]{0x02};
 
-         var tuple = createValidAuthorizationTuple(
+        var tuple = createValidAuthorizationTuple(
                  RskAddress.ZERO_ADDRESS,
                  authorizationNonce,
                  ZERO_CHAIN_ID,
                  authorityKey
-         );
+        );
 
-         when(repository.getCode(authority)).thenReturn(null);
-         when(repository.getNonce(authority)).thenReturn(ONE);
-
-         IllegalStateException ex = assertThrows(
+        when(repository.getCode(authority)).thenReturn(null);
+        when(repository.getNonce(authority)).thenReturn(ONE);
+        IllegalStateException ex = assertThrows(
                  IllegalStateException.class,
                  () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
-         );
+        );
 
-         assertEquals("Authority nonce mismatch", ex.getMessage());
-         verify(repository, never()).saveCode(any(), any());
-         verify(repository, never()).increaseNonce(any());
-     }
+        assertEquals("Authority nonce mismatch", ex.getMessage());
+        verify(repository, never()).saveCode(any(), any());
+        verify(repository, never()).increaseNonce(any());
+    }
 
     @Test
     void processAuthorizationTuple_shouldClearCode_whenDelegatedAddressIsNullAddress() {
@@ -544,94 +543,94 @@ import static org.mockito.Mockito.when;
         verify(repository).increaseNonce(eq(authority));
     }
 
-     @Test
-     void verifyAuthorityNonceShouldAcceptSameNumericNonceWithDifferentByteRepresentations() {
-         BigInteger expectedNonce = new BigInteger(1, new byte[] {(byte) 0x80});
-         ECKey authorityKey = new ECKey();
-         RskAddress authority = new RskAddress(authorityKey.getAddress());
-         RskAddress delegated = randomAddress();
+    @Test
+    void verifyAuthorityNonceShouldAcceptSameNumericNonceWithDifferentByteRepresentations() {
+        BigInteger expectedNonce = new BigInteger(1, new byte[] {(byte) 0x80});
+        ECKey authorityKey = new ECKey();
+        RskAddress authority = new RskAddress(authorityKey.getAddress());
+        RskAddress delegated = randomAddress();
 
-         var tuple = createValidAuthorizationTuple(delegated, new byte[] {0x00, (byte) 0x80}, ZERO_CHAIN_ID, authorityKey);
+        var tuple = createValidAuthorizationTuple(delegated, new byte[] {0x00, (byte) 0x80}, ZERO_CHAIN_ID, authorityKey);
 
-         when(repository.getCode(authority)).thenReturn(null);
-         when(repository.getNonce(authority)).thenReturn(expectedNonce);
+        when(repository.getCode(authority)).thenReturn(null);
+        when(repository.getNonce(authority)).thenReturn(expectedNonce);
 
-         executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
-         verify(repository).saveCode(eq(authority), aryEq(createDelegatedCode(delegated)));
-         verify(repository).increaseNonce(eq(authority));
+        executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
+        verify(repository).saveCode(eq(authority), aryEq(createDelegatedCode(delegated)));
+        verify(repository).increaseNonce(eq(authority));
      }
 
      @Test
      void processAuthorizationTuple_shouldAcceptFreshAuthorityWithEmptyNonceAsZero() {
-         ECKey authorityKey = new ECKey();
-         RskAddress authority = new RskAddress(authorityKey.getAddress());
-         RskAddress delegated = randomAddress();
+        ECKey authorityKey = new ECKey();
+        RskAddress authority = new RskAddress(authorityKey.getAddress());
+        RskAddress delegated = randomAddress();
 
-         var tuple = createValidAuthorizationTuple(
+        var tuple = createValidAuthorizationTuple(
                  delegated,
                  new byte[0],
                  ZERO_CHAIN_ID,
                  authorityKey
          );
 
-         when(repository.getCode(authority)).thenReturn(null);
-         when(repository.getNonce(authority)).thenReturn(ZERO);
+        when(repository.getCode(authority)).thenReturn(null);
+        when(repository.getNonce(authority)).thenReturn(ZERO);
 
-         long refund = executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
+        long refund = executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
 
-         assertEquals(0L, refund);
-         verify(repository).saveCode(eq(authority), aryEq(createDelegatedCode(delegated)));
-         verify(repository).increaseNonce(authority);
+        assertEquals(0L, refund);
+        verify(repository).saveCode(eq(authority), aryEq(createDelegatedCode(delegated)));
+        verify(repository).increaseNonce(authority);
      }
 
      @Test
      void processAuthorizationTuple_shouldAcceptNonce128WhenAuthorizationUsesMinimalUnsignedBytes() {
-         ECKey authorityKey = new ECKey();
-         RskAddress authority = new RskAddress(authorityKey.getAddress());
-         RskAddress delegated = randomAddress();
+        ECKey authorityKey = new ECKey();
+        RskAddress authority = new RskAddress(authorityKey.getAddress());
+        RskAddress delegated = randomAddress();
 
-         byte[] authorizationNonce = new byte[] {(byte) 0x80};
+        byte[] authorizationNonce = new byte[] {(byte) 0x80};
 
-         var tuple = createValidAuthorizationTuple(
+        var tuple = createValidAuthorizationTuple(
                  delegated,
                  authorizationNonce,
                  ZERO_CHAIN_ID,
                  authorityKey
          );
 
-         when(repository.getCode(authority)).thenReturn(null);
-         when(repository.getNonce(authority)).thenReturn(BigInteger.valueOf(128));
+        when(repository.getCode(authority)).thenReturn(null);
+        when(repository.getNonce(authority)).thenReturn(BigInteger.valueOf(128));
 
-         long refund = executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
+        long refund = executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
 
-         assertEquals(0L, refund);
-         verify(repository).saveCode(eq(authority), aryEq(createDelegatedCode(delegated)));
-         verify(repository).increaseNonce(authority);
+        assertEquals(0L, refund);
+        verify(repository).saveCode(eq(authority), aryEq(createDelegatedCode(delegated)));
+        verify(repository).increaseNonce(authority);
      }
 
      @Test
      void processAuthorizationTuple_shouldAcceptNonce255WhenAuthorizationUsesMinimalUnsignedBytes() {
-         ECKey authorityKey = new ECKey();
-         RskAddress authority = new RskAddress(authorityKey.getAddress());
-         RskAddress delegated = randomAddress();
+        ECKey authorityKey = new ECKey();
+        RskAddress authority = new RskAddress(authorityKey.getAddress());
+        RskAddress delegated = randomAddress();
 
-         byte[] authorizationNonce = new byte[] {(byte) 0xff};
+        byte[] authorizationNonce = new byte[] {(byte) 0xff};
 
-         var tuple = createValidAuthorizationTuple(
+        var tuple = createValidAuthorizationTuple(
                  delegated,
                  authorizationNonce,
                  ZERO_CHAIN_ID,
                  authorityKey
-         );
+        );
 
-         when(repository.getCode(authority)).thenReturn(null);
-         when(repository.getNonce(authority)).thenReturn(BigInteger.valueOf(255));
+        when(repository.getCode(authority)).thenReturn(null);
+        when(repository.getNonce(authority)).thenReturn(BigInteger.valueOf(255));
 
-         long refund = executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
+        long refund = executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
 
-         assertEquals(0L, refund);
-         verify(repository).saveCode(eq(authority), aryEq(createDelegatedCode(delegated)));
-         verify(repository).increaseNonce(authority);
+        assertEquals(0L, refund);
+        verify(repository).saveCode(eq(authority), aryEq(createDelegatedCode(delegated)));
+        verify(repository).increaseNonce(authority);
      }
 
     private SetCodeAuthorization createValidAuthorizationTuple(

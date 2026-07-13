@@ -18,11 +18,12 @@
 package org.ethereum.core.transaction;
 
 import co.rsk.core.RskAddress;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLP;
-import org.spongycastle.util.BigIntegers;
+
 
 import java.math.BigInteger;
 import java.util.Arrays;

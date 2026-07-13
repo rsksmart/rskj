@@ -32,7 +32,7 @@ class SetCodeAuthorizationTest {
     }
 
     @Test
-     void getNonceShouldReturnDefensiveCopy() {
+    void getNonceShouldReturnDefensiveCopy() {
         SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, NONCE, validSignature());
         byte[] returnedNonce = authorization.getNonceBytes();
         returnedNonce[0] = 0x02;
