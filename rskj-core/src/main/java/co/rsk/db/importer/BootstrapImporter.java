@@ -204,38 +204,40 @@ public class BootstrapImporter {
         // No separate value-staging store and no second file scan are needed.
         long start = System.currentTimeMillis();
         logger.debug("Inserting blocks and state...");
-        // counts[0] = blocks saved, counts[1] = nodes saved. v1 implicitly required both the blocks and
-        // the nodes section to be present (it polled them off a queue); v2 dispatches by tag, so we assert
-        // non-empty results here to fail fast on a file missing either section rather than "succeeding"
-        // with no state and only crashing later at first state access.
-        long[] counts = new long[2];
+        // v1 implicitly required both the blocks and the nodes section to be present (it polled them off a
+        // queue); v2 dispatches by tag, so we tally each section and assert non-empty blocks/nodes below to
+        // fail fast on a file missing either section rather than "succeeding" with no state and only
+        // crashing later at first state access.
+        SectionCounts counts = new SectionCounts();
         scanSections(dataPath, Set.of(TAG_BLOCKS, TAG_VALUES, TAG_NODES), (tag, chunk) -> {
             if (tag == TAG_BLOCKS) {
                 for (RLPElement element : RLP.decode2(chunk)) {
                     saveBlockFromTuple(RLP.decodeList(element.getRLPData()));
-                    counts[0]++;
+                    counts.blocks++;
                 }
             } else if (tag == TAG_VALUES) {
                 for (RLPElement element : RLP.decode2(chunk)) {
                     trieStore.saveValue(element.getRLPData());
+                    counts.values++;
                 }
             } else if (tag == TAG_NODES) {
                 for (RLPElement element : RLP.decode2(chunk)) {
                     Trie trie = Trie.fromMessage(element.getRLPData(), trieStore);
                     saveNode(trie);
-                    counts[1]++;
+                    counts.nodes++;
                 }
             }
         });
-        if (counts[0] == 0) {
+        if (counts.blocks == 0) {
             throw new BootstrapImportException("Bootstrap-data v2 has no blocks section (or it is empty); refusing to import incomplete data");
         }
-        if (counts[1] == 0) {
+        if (counts.nodes == 0) {
             throw new BootstrapImportException("Bootstrap-data v2 has no state-nodes section (or it is empty); refusing to import a stateless snapshot");
         }
         blockStore.flush();
         trieStore.flush();
-        logger.debug("Blocks and state inserted in {} mills", System.currentTimeMillis() - start);
+        logger.info("Bootstrap-data v2 imported {} blocks, {} long values and {} state nodes in {} ms",
+                counts.blocks, counts.values, counts.nodes, System.currentTimeMillis() - start);
     }
 
     /**
@@ -259,7 +261,8 @@ public class BootstrapImporter {
      * Streams the v2 file, invoking {@code processor} once per chunk that belongs to a section in
      * {@code tagsOfInterest}, in file order. Sections are dispatched by tag; the v2 import reads every
      * section in a single pass (the exporter co-locates values before the nodes that reference them, so
-     * value/block/node chunks are processed as they stream past). Chunks for tags outside
+     * value/block/node chunks are processed as they stream past). That ordering is enforced structurally:
+     * a nodes section appearing before the values section is rejected up front. Chunks for tags outside
      * {@code tagsOfInterest} are skipped without being read into memory or decoded — including tags this
      * reader does not recognize, so a newer exporter can add optional sections (e.g. a metadata manifest)
      * without breaking an older reader. Each wanted chunk is read into a bounded {@code byte[]}, handed
@@ -280,8 +283,22 @@ public class BootstrapImporter {
              DataInputStream in = new DataInputStream(counter)) {
             readAndVerifyHeader(in);
 
+            boolean valuesSectionSeen = false;
             int tag = in.read();
             while (tag != -1 && tag != TAG_END) {
+                // The nodes section resolves each long value from the destination store at save time, so the
+                // values section must be co-located ahead of it (see BootstrapV2Format). Enforce that order
+                // structurally here — before any node is processed — so a mis-ordered file is rejected up
+                // front and deterministically, rather than failing later (and only) on the first node that
+                // happens to reference a long value. The check sees empty sections too (the tag byte is read
+                // even when a section carries no chunks), so an all-short-values snapshot still passes.
+                if (tag == TAG_VALUES) {
+                    valuesSectionSeen = true;
+                } else if (tag == TAG_NODES && !valuesSectionSeen) {
+                    throw new BootstrapImportException("Bootstrap-data v2 sections are out of order: the nodes "
+                            + "section appears before the values section, but long values must be co-located "
+                            + "before the nodes that reference them");
+                }
                 // Unknown/unwanted section tags are skipped (their chunks are still length-validated), so
                 // an older reader tolerates optional sections a newer exporter may add.
                 boolean wanted = tagsOfInterest.contains(tag);
@@ -375,5 +392,12 @@ public class BootstrapImporter {
     @FunctionalInterface
     private interface ChunkProcessor {
         void process(int tag, byte[] chunk) throws IOException;
+    }
+
+    /** Per-section element tallies gathered during a v2 import (mutated from the streaming callback). */
+    private static final class SectionCounts {
+        long blocks;
+        long values;
+        long nodes;
     }
 }

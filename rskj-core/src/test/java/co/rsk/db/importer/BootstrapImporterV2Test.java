@@ -266,6 +266,35 @@ class BootstrapImporterV2Test {
         assertTrue(ex.getMessage().toLowerCase().contains("long value"), ex.getMessage());
     }
 
+    @Test
+    void rejectsV2WithNodesSectionBeforeValuesSection() throws IOException {
+        // A structurally malformed v2 file whose nodes section precedes its values section, violating the
+        // co-location invariant (values must come before the nodes that reference them). Node saving would
+        // otherwise fail deep inside the trie only for nodes that happen to reference a long value; the
+        // section-order guard rejects the mis-ordered file up front, deterministically, regardless of which
+        // nodes reference long values.
+        StateFixture fixture = buildState();
+        List<byte[]> blocks = syntheticBlockElements();
+        List<byte[]> values = collectValueElements(fixture.store, fixture.stateRoot);
+        List<byte[]> nodes = collectNodeElements(fixture.store, fixture.stateRoot);
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(bos);
+        out.write(BootstrapV2Format.MAGIC);
+        out.writeByte(BootstrapV2Format.VERSION);
+        writeSection(out, BootstrapV2Format.TAG_BLOCKS, blocks, 1024);
+        // deliberately mis-ordered: nodes written BEFORE values
+        writeSection(out, BootstrapV2Format.TAG_NODES, nodes, 1024);
+        writeSection(out, BootstrapV2Format.TAG_VALUES, values, 1024);
+        out.writeByte(BootstrapV2Format.TAG_END);
+        out.flush();
+
+        BootstrapImporter importer = newImporter(bos.toByteArray(), "nodes-before-values.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("order"), ex.getMessage());
+    }
+
     /** An origin store plus the hash of a saved state trie that mixes short and long values. */
     private static final class StateFixture {
         final TrieStore store;
