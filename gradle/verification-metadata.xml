@@ -6,6 +6,8 @@
       <trusted-artifacts>
          <trust file=".*-javadoc[.]jar" regex="true"/>
          <trust file=".*-sources[.]jar" regex="true"/>
+         <!-- Bitcoin testnet4 support; replace with a checksummed component entry once bitcoinj-thin 0.14.4-rsk-19 is published. -->
+         <trust group="co.rsk.bitcoinj" name="bitcoinj-thin" version="0.14.4-rsk-19"/>
       </trusted-artifacts>
    </configuration>
    <components>
