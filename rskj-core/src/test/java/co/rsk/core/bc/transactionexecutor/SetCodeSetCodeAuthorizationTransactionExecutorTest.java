@@ -558,10 +558,10 @@ import static org.mockito.Mockito.when;
         executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple);
         verify(repository).saveCode(eq(authority), aryEq(createDelegatedCode(delegated)));
         verify(repository).increaseNonce(eq(authority));
-     }
+    }
 
-     @Test
-     void processAuthorizationTuple_shouldAcceptFreshAuthorityWithEmptyNonceAsZero() {
+    @Test
+    void processAuthorizationTuple_shouldAcceptFreshAuthorityWithEmptyNonceAsZero() {
         ECKey authorityKey = new ECKey();
         RskAddress authority = new RskAddress(authorityKey.getAddress());
         RskAddress delegated = randomAddress();
