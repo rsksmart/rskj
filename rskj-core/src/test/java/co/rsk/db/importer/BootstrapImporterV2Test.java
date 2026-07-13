@@ -38,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -293,6 +294,22 @@ class BootstrapImporterV2Test {
 
         BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
         assertTrue(ex.getMessage().toLowerCase().contains("order"), ex.getMessage());
+    }
+
+    @Test
+    void rejectsV2WithTrailingBytesAfterEndMarker() throws IOException {
+        // A structurally complete v2 file with a stray byte appended after the end-of-sections marker. The
+        // v2 format is canonical — nothing may follow TAG_END — so trailing bytes (a tampered, truncated,
+        // or accidentally concatenated file) must be rejected, not silently ignored.
+        StateFixture fixture = buildState();
+        byte[] wellFormed = writeV2(fixture.store, fixture.stateRoot, 1024);
+        byte[] withTrailing = Arrays.copyOf(wellFormed, wellFormed.length + 1);
+        withTrailing[wellFormed.length] = 0x42; // stray trailing byte after TAG_END
+
+        BootstrapImporter importer = newImporter(withTrailing, "trailing-bytes.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("trailing"), ex.getMessage());
     }
 
     /** An origin store plus the hash of a saved state trie that mixes short and long values. */

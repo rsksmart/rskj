@@ -267,7 +267,8 @@ public class BootstrapImporter {
      * reader does not recognize, so a newer exporter can add optional sections (e.g. a metadata manifest)
      * without breaking an older reader. Each wanted chunk is read into a bounded {@code byte[]}, handed
      * off, then discarded. The full structural scan (header, chunk-length and end-of-section sentinels,
-     * end-of-sections marker) is validated regardless of which tags are of interest.
+     * end-of-sections marker) is validated regardless of which tags are of interest, and the file must end
+     * exactly at the end-of-sections marker — trailing bytes are rejected as non-canonical.
      */
     private void scanSections(Path dataPath, Set<Integer> tagsOfInterest, ChunkProcessor processor) {
         long fileSize;
@@ -324,6 +325,13 @@ public class BootstrapImporter {
             }
             if (tag == -1) {
                 throw new BootstrapImportException("Truncated bootstrap-data v2: missing end-of-sections marker");
+            }
+            // tag == TAG_END here. The v2 format is canonical: nothing may follow the end-of-sections
+            // marker. Reject trailing bytes (a tampered, truncated, or concatenated file) rather than
+            // silently ignoring them, matching the v1 path's whole-payload decode.
+            if (in.read() != -1) {
+                throw new BootstrapImportException("Bootstrap-data v2 has trailing bytes after the "
+                        + "end-of-sections marker; the file is corrupt or not canonical");
             }
         } catch (IOException e) {
             throw new BootstrapImportException("Error reading bootstrap-data v2 from " + dataPath, e);
