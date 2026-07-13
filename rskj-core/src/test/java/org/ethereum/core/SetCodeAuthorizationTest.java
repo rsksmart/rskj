@@ -260,9 +260,6 @@ class SetCodeAuthorizationTest {
         assertEquals(BigInteger.ONE, authorization.getNonceAsInteger());
     }
 
-
-
-
     private static ECDSASignature validSignature() {
         return signatureWithS(BigInteger.ONE);
     }
