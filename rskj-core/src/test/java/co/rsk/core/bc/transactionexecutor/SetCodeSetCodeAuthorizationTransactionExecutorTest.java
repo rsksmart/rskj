@@ -608,8 +608,8 @@ import static org.mockito.Mockito.when;
         verify(repository).increaseNonce(authority);
      }
 
-     @Test
-     void processAuthorizationTuple_shouldAcceptNonce255WhenAuthorizationUsesMinimalUnsignedBytes() {
+    @Test
+    void processAuthorizationTuple_shouldAcceptNonce255WhenAuthorizationUsesMinimalUnsignedBytes() {
         ECKey authorityKey = new ECKey();
         RskAddress authority = new RskAddress(authorityKey.getAddress());
         RskAddress delegated = randomAddress();
