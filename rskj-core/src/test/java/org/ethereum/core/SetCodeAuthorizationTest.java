@@ -40,7 +40,7 @@ class SetCodeAuthorizationTest {
     }
 
     @Test
-     void constructorShouldDefensivelyCopyNonce() {
+    void constructorShouldDefensivelyCopyNonce() {
         byte[] nonce = new byte[] {0x01};
         SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, nonce, validSignature());
         nonce[0] = 0x02;
