@@ -204,6 +204,7 @@ public class ReleaseTransactionBuilder {
 
         int btcTxVSize = BridgeUtils.estimateUnsignedSegwitTxVSize(btcTx, federation);
         if (btcTxVSize > MAX_STANDARD_TX_SIZE_ALLOWED) {
+            logger.warn("Btc tx {} vSize is {} which exceeds the max tx size allowed of {} vbytes", btcTx.getHash(), btcTxVSize, MAX_STANDARD_TX_SIZE_ALLOWED);
             throw new Wallet.ExceededMaxTransactionSize();
         }
     }
