@@ -1525,6 +1525,7 @@ public class BridgeSupport {
                 logger.info("[processPegoutsInBatch] Max size exceeded, going to divide {} requests in half", pegoutEntries.size());
                 int firstHalfSize = pegoutEntries.size() / 2;
                 pegoutEntries = pegoutEntries.subList(0, firstHalfSize);
+                logger.info("[processPegoutsInBatch] Trying to process {} requests", pegoutEntries.size());
                 result = txBuilder.buildBatchedPegouts(pegoutEntries);
             }
 
@@ -1540,14 +1541,16 @@ public class BridgeSupport {
 
             BtcTransaction batchPegoutTransaction = result.btcTx();
             Sha256Hash batchPegoutTxHash = batchPegoutTransaction.getHash();
-            logger.info(
-                "[processPegoutsInBatch] Pegouts processed with btcTx hash {} and response code {}",
-                batchPegoutTxHash,
-                result.responseCode()
-            );
 
             Coin batchedPegoutRequestsValue = sumPegoutValues(pegoutEntries);
             Coin pegoutValueToUse = activations.isActive(ConsensusRule.RSKIP378) ? batchedPegoutRequestsValue : totalPegoutRequestsValue;
+
+            logger.info(
+                "[processPegoutsInBatch] Processing {} across {} requests in btcTx {}",
+                pegoutValueToUse.getValue(),
+                pegoutEntries.size(),
+                batchPegoutTxHash
+            );
 
             Keccak256 batchPegoutCreationTxHash = rskTx.getHash();
             settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, pegoutValueToUse);
