@@ -48,7 +48,6 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
-import static co.rsk.db.importer.BootstrapV2Format.MAGIC;
 import static co.rsk.db.importer.BootstrapV2Format.TAG_BLOCKS;
 import static co.rsk.db.importer.BootstrapV2Format.TAG_END;
 import static co.rsk.db.importer.BootstrapV2Format.TAG_NODES;
@@ -211,31 +210,11 @@ public class BootstrapImporter {
         SectionCounts counts = new SectionCounts();
         scanSections(dataPath, Set.of(TAG_BLOCKS, TAG_VALUES, TAG_NODES), (tag, chunk) -> {
             if (tag == TAG_BLOCKS) {
-                for (RLPElement element : RLP.decode2(chunk)) {
-                    saveBlockFromTuple(RLP.decodeList(element.getRLPData()));
-                    counts.blocks++;
-                }
+                counts.blocks += importBlocks(chunk);
             } else if (tag == TAG_VALUES) {
-                for (RLPElement element : RLP.decode2(chunk)) {
-                    byte[] value = element.getRLPData();
-                    if (value == null) {
-                        throw new BootstrapImportException("Bootstrap-data v2 values section contains an empty "
-                                + "element (a long value cannot be empty); the file is corrupt");
-                    }
-                    trieStore.saveValue(value);
-                    counts.values++;
-                }
+                counts.values += importValues(chunk);
             } else if (tag == TAG_NODES) {
-                for (RLPElement element : RLP.decode2(chunk)) {
-                    byte[] message = element.getRLPData();
-                    if (message == null) {
-                        throw new BootstrapImportException("Bootstrap-data v2 nodes section contains an empty "
-                                + "element (a state node cannot be empty); the file is corrupt");
-                    }
-                    Trie trie = Trie.fromMessage(message, trieStore);
-                    saveNode(trie);
-                    counts.nodes++;
-                }
+                counts.nodes += importNodes(chunk);
             }
         });
         if (counts.blocks == 0) {
@@ -248,6 +227,50 @@ public class BootstrapImporter {
         trieStore.flush();
         logger.info("Bootstrap-data v2 imported {} blocks, {} long values and {} state nodes in {} ms",
                 counts.blocks, counts.values, counts.nodes, System.currentTimeMillis() - start);
+    }
+
+    /** Decodes and saves every block tuple in a blocks-section chunk; returns how many were saved. */
+    private long importBlocks(byte[] chunk) {
+        long imported = 0;
+        for (RLPElement element : RLP.decode2(chunk)) {
+            saveBlockFromTuple(RLP.decodeList(element.getRLPData()));
+            imported++;
+        }
+        return imported;
+    }
+
+    /** Saves every long value in a values-section chunk into the destination store; returns how many. */
+    private long importValues(byte[] chunk) {
+        long imported = 0;
+        for (RLPElement element : RLP.decode2(chunk)) {
+            trieStore.saveValue(requireNonEmptyElement(element, "values"));
+            imported++;
+        }
+        return imported;
+    }
+
+    /** Reconstructs and saves every state node in a nodes-section chunk; returns how many were saved. */
+    private long importNodes(byte[] chunk) {
+        long imported = 0;
+        for (RLPElement element : RLP.decode2(chunk)) {
+            saveNode(Trie.fromMessage(requireNonEmptyElement(element, "nodes"), trieStore));
+            imported++;
+        }
+        return imported;
+    }
+
+    /**
+     * Returns the element's RLP data, rejecting an empty element. {@link RLPElement#getRLPData()} is
+     * {@code null} for an empty element; a value or node cannot be empty, so a {@code null} here means a
+     * corrupt section — surfaced as an actionable import error instead of a downstream NPE.
+     */
+    private static byte[] requireNonEmptyElement(RLPElement element, String section) {
+        byte[] data = element.getRLPData();
+        if (data == null) {
+            throw new BootstrapImportException("Bootstrap-data v2 " + section
+                    + " section contains an empty element; the file is corrupt");
+        }
+        return data;
     }
 
     /**
@@ -297,40 +320,11 @@ public class BootstrapImporter {
             boolean valuesSectionSeen = false;
             int tag = in.read();
             while (tag != -1 && tag != TAG_END) {
-                // The nodes section resolves each long value from the destination store at save time, so the
-                // values section must be co-located ahead of it (see BootstrapV2Format). Enforce that order
-                // structurally here — before any node is processed — so a mis-ordered file is rejected up
-                // front and deterministically, rather than failing later (and only) on the first node that
-                // happens to reference a long value. The check sees empty sections too (the tag byte is read
-                // even when a section carries no chunks), so an all-short-values snapshot still passes.
-                if (tag == TAG_VALUES) {
-                    valuesSectionSeen = true;
-                } else if (tag == TAG_NODES && !valuesSectionSeen) {
-                    throw new BootstrapImportException("Bootstrap-data v2 sections are out of order: the nodes "
-                            + "section appears before the values section, but long values must be co-located "
-                            + "before the nodes that reference them");
-                }
+                valuesSectionSeen = checkSectionOrder(tag, valuesSectionSeen);
                 // Unknown/unwanted section tags are skipped (their chunks are still length-validated), so
                 // an older reader tolerates optional sections a newer exporter may add.
                 boolean wanted = tagsOfInterest.contains(tag);
-                for (long len = in.readLong(); len != 0L; len = in.readLong()) {
-                    if (len < 0 || len > MAX_CHUNK_BYTES) {
-                        throw new BootstrapImportException("Bootstrap-data v2 chunk length out of range: " + len);
-                    }
-                    long remaining = fileSize - counter.getCount();
-                    if (len > remaining) {
-                        throw new BootstrapImportException("Bootstrap-data v2 chunk length " + len
-                                + " exceeds the " + remaining + " bytes remaining in the file; "
-                                + "the file is truncated or its length field is corrupt");
-                    }
-                    if (wanted) {
-                        byte[] chunk = new byte[(int) len];
-                        in.readFully(chunk);
-                        processor.process(tag, chunk);
-                    } else {
-                        skipFully(in, len);
-                    }
-                }
+                readSectionChunks(in, counter, fileSize, tag, wanted, processor);
                 tag = in.read();
             }
             if (tag == -1) {
@@ -345,6 +339,60 @@ public class BootstrapImporter {
             }
         } catch (IOException e) {
             throw new BootstrapImportException("Error reading bootstrap-data v2 from " + dataPath, e);
+        }
+    }
+
+    /**
+     * Enforces v2 section ordering: the values section must be co-located ahead of the nodes section, since
+     * each node resolves its long values from the destination store at save time. Rejecting a mis-ordered
+     * file here — at the section-tag level, before any node is processed — makes the failure deterministic
+     * rather than surfacing later only on the first node that references a long value. The check sees empty
+     * sections too (the tag byte is read even when a section carries no chunks), so an all-short-values
+     * snapshot still passes. Returns the updated "values section seen" flag.
+     */
+    private static boolean checkSectionOrder(int tag, boolean valuesSectionSeen) {
+        if (tag == TAG_VALUES) {
+            return true;
+        }
+        if (tag == TAG_NODES && !valuesSectionSeen) {
+            throw new BootstrapImportException("Bootstrap-data v2 sections are out of order: the nodes "
+                    + "section appears before the values section, but long values must be co-located "
+                    + "before the nodes that reference them");
+        }
+        return valuesSectionSeen;
+    }
+
+    /**
+     * Reads one section's chunks up to its end-of-section sentinel, handing each wanted chunk to
+     * {@code processor} and skipping the rest without allocating. Each declared length is bounded before
+     * any {@code byte[]} is allocated.
+     */
+    private void readSectionChunks(DataInputStream in, CountingInputStream counter, long fileSize,
+                                   int tag, boolean wanted, ChunkProcessor processor) throws IOException {
+        for (long len = in.readLong(); len != 0L; len = in.readLong()) {
+            validateChunkLength(len, fileSize - counter.getCount());
+            if (wanted) {
+                byte[] chunk = new byte[(int) len];
+                in.readFully(chunk);
+                processor.process(tag, chunk);
+            } else {
+                skipFully(in, len);
+            }
+        }
+    }
+
+    /**
+     * Bounds a declared chunk length against the per-chunk ceiling ({@code MAX_CHUNK_BYTES}) and the bytes
+     * actually remaining in the file, so a corrupt or oversized length is rejected before allocation.
+     */
+    private static void validateChunkLength(long len, long remaining) {
+        if (len < 0 || len > MAX_CHUNK_BYTES) {
+            throw new BootstrapImportException("Bootstrap-data v2 chunk length out of range: " + len);
+        }
+        if (len > remaining) {
+            throw new BootstrapImportException("Bootstrap-data v2 chunk length " + len
+                    + " exceeds the " + remaining + " bytes remaining in the file; "
+                    + "the file is truncated or its length field is corrupt");
         }
     }
 
@@ -374,9 +422,10 @@ public class BootstrapImporter {
     }
 
     private static void readAndVerifyHeader(DataInputStream in) throws IOException {
-        byte[] magic = new byte[MAGIC.length];
+        byte[] expectedMagic = BootstrapV2Format.magic();
+        byte[] magic = new byte[expectedMagic.length];
         in.readFully(magic);
-        if (!Arrays.equals(magic, MAGIC)) {
+        if (!Arrays.equals(magic, expectedMagic)) {
             throw new BootstrapImportException("Invalid bootstrap-data v2 magic");
         }
         int version = in.read();
@@ -422,8 +471,8 @@ public class BootstrapImporter {
 
     /** Per-section element tallies gathered during a v2 import (mutated from the streaming callback). */
     private static final class SectionCounts {
-        long blocks;
-        long values;
-        long nodes;
+        private long blocks;
+        private long values;
+        private long nodes;
     }
 }

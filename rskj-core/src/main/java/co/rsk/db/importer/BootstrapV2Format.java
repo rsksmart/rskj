@@ -59,8 +59,14 @@ import java.nio.charset.StandardCharsets;
  */
 public final class BootstrapV2Format {
 
-    /** First bytes of a v2 {@code bootstrap-data.bin}; the leading {@code 'R'} disambiguates from v1. */
-    public static final byte[] MAGIC = "RSKBOOT\n".getBytes(StandardCharsets.US_ASCII);
+    // First bytes of a v2 bootstrap-data.bin; the leading 'R' disambiguates from v1. Kept private (a
+    // mutable array must not be exposed as a public constant); callers use magic() for a fresh copy.
+    private static final byte[] MAGIC = "RSKBOOT\n".getBytes(StandardCharsets.US_ASCII);
+
+    /** The v2 file magic bytes (a fresh copy each call, so the internal array cannot be mutated). */
+    public static byte[] magic() {
+        return MAGIC.clone();
+    }
 
     public static final byte VERSION = 0x02;
 

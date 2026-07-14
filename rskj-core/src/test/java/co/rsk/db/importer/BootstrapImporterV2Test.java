@@ -132,7 +132,7 @@ class BootstrapImporterV2Test {
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream out = new DataOutputStream(bos);
-        out.write(BootstrapV2Format.MAGIC);
+        out.write(BootstrapV2Format.magic());
         out.writeByte(BootstrapV2Format.VERSION);
         // a section tag this reader does not handle (reserved for a future manifest); must be skipped
         writeSection(out, BootstrapV2Format.TAG_MANIFEST,
@@ -239,7 +239,7 @@ class BootstrapImporterV2Test {
         // file instead of being eagerly allocated as a multi-hundred-MB byte[].
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream out = new DataOutputStream(bos);
-        out.write(BootstrapV2Format.MAGIC);
+        out.write(BootstrapV2Format.magic());
         out.writeByte(BootstrapV2Format.VERSION);
         out.writeByte(BootstrapV2Format.TAG_BLOCKS);
         out.writeLong(10_000_000L); // corrupt length; no payload follows — the file ends here
@@ -282,7 +282,7 @@ class BootstrapImporterV2Test {
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream out = new DataOutputStream(bos);
-        out.write(BootstrapV2Format.MAGIC);
+        out.write(BootstrapV2Format.magic());
         out.writeByte(BootstrapV2Format.VERSION);
         writeSection(out, BootstrapV2Format.TAG_BLOCKS, blocks, 1024);
         // deliberately mis-ordered: nodes written BEFORE values
@@ -421,7 +421,7 @@ class BootstrapImporterV2Test {
             throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream out = new DataOutputStream(bos);
-        out.write(BootstrapV2Format.MAGIC);
+        out.write(BootstrapV2Format.magic());
         out.writeByte(BootstrapV2Format.VERSION);
         if (blocks != null) {
             writeSection(out, BootstrapV2Format.TAG_BLOCKS, blocks, chunkMax);
