@@ -298,6 +298,24 @@ class BootstrapImporterV2Test {
     }
 
     @Test
+    void failsWithActionableErrorWhenBlockElementIsEmpty() throws IOException {
+        // A corrupt blocks section carrying an empty element (getRLPData() == null) would otherwise surface
+        // as an IllegalArgumentException from RLP.decodeList. It must be an actionable import error, like the
+        // values and nodes sections.
+        StateFixture fixture = buildState();
+        List<byte[]> blocks = new ArrayList<>();
+        blocks.add(RLP.encodeElement(new byte[0])); // empty block element -> getRLPData() == null
+        byte[] v2 = assembleV2(1024, blocks,
+                collectNodeElements(fixture.store, fixture.stateRoot),
+                collectValueElements(fixture.store, fixture.stateRoot));
+
+        BootstrapImporter importer = newImporter(v2, "empty-block.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("blocks"), ex.getMessage());
+    }
+
+    @Test
     void failsWithActionableErrorWhenValueElementIsEmpty() throws IOException {
         // RLPElement#getRLPData() returns null for an empty element; a corrupt values section carrying one
         // would otherwise NPE deep inside saveValue. It must surface as an actionable import error.

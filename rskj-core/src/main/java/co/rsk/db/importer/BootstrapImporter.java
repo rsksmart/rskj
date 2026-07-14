@@ -62,8 +62,10 @@ public class BootstrapImporter {
     // A chunk is read into a single byte[], so per-chunk memory must stay bounded. The exporter flushes
     // once its buffer crosses CHUNK_MAX on an element boundary, so a well-formed chunk is at most
     // CHUNK_MAX plus one element; 2x CHUNK_MAX gives ample headroom while rejecting a corrupt length that
-    // would otherwise allocate up to a ~2 GiB byte[].
-    private static final long MAX_CHUNK_BYTES = 2 * BootstrapV2Format.CHUNK_MAX;
+    // would otherwise allocate up to a ~2 GiB byte[]. Held as an int (via toIntExact) so a validated length
+    // always fits the new byte[(int) len] allocation by construction; CHUNK_MAX is a documented tuning
+    // knob, and raising it past ~1 GiB fails fast at class-load here rather than overflowing the cast.
+    private static final int MAX_CHUNK_BYTES = Math.toIntExact(2 * BootstrapV2Format.CHUNK_MAX);
 
     private final BootstrapDataProvider bootstrapDataProvider;
     private final BlockStore blockStore;
@@ -233,7 +235,7 @@ public class BootstrapImporter {
     private long importBlocks(byte[] chunk) {
         long imported = 0;
         for (RLPElement element : RLP.decode2(chunk)) {
-            saveBlockFromTuple(RLP.decodeList(element.getRLPData()));
+            saveBlockFromTuple(RLP.decodeList(requireNonEmptyElement(element, "blocks")));
             imported++;
         }
         return imported;
