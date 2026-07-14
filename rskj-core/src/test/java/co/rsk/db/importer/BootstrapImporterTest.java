@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -30,7 +31,7 @@ class BootstrapImporterTest {
         // (https://stackoverflow.com/questions/38887853/java-nio-file-invalidpathexception-with-getpath/38888561)
         Path path = Paths.get(getClass().getClassLoader().getResource("import/bootstrap-data.bin").toURI());
         when(bootstrapDataProvider.getBootstrapDataPath()).thenReturn(path);
-        when(bootstrapDataProvider.getBootstrapData()).thenReturn(java.nio.file.Files.readAllBytes(path));
+        when(bootstrapDataProvider.getBootstrapData()).thenReturn(Files.readAllBytes(path));
         when(bootstrapDataProvider.getSelectedHeight()).thenReturn(1L);
 
         BootstrapImporter bootstrapImporter = new BootstrapImporter(blockStore, trieStore,

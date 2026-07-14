@@ -23,6 +23,7 @@ import co.rsk.db.importer.provider.BootstrapDataProvider;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingInputStream;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -47,6 +48,7 @@ import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static co.rsk.db.importer.BootstrapV2Format.TAG_BLOCKS;
 import static co.rsk.db.importer.BootstrapV2Format.TAG_END;
@@ -66,6 +68,10 @@ public class BootstrapImporter {
     // always fits the new byte[(int) len] allocation by construction; CHUNK_MAX is a documented tuning
     // knob, and raising it past ~1 GiB fails fast at class-load here rather than overflowing the cast.
     private static final int MAX_CHUNK_BYTES = Math.toIntExact(2 * BootstrapV2Format.CHUNK_MAX);
+
+    // The sections the v2 import consumes. Any other tag (e.g. a future manifest a newer exporter adds) is
+    // skipped without being read into memory, so an older reader tolerates optional sections.
+    private static final Set<Integer> DATA_TAGS = Set.of(TAG_BLOCKS, TAG_VALUES, TAG_NODES);
 
     private final BootstrapDataProvider bootstrapDataProvider;
     private final BlockStore blockStore;
@@ -210,13 +216,13 @@ public class BootstrapImporter {
         // fail fast on a file missing either section rather than "succeeding" with no state and only
         // crashing later at first state access.
         SectionCounts counts = new SectionCounts();
-        scanSections(dataPath, Set.of(TAG_BLOCKS, TAG_VALUES, TAG_NODES), (tag, chunk) -> {
+        scanSections(dataPath, (tag, chunk) -> {
             if (tag == TAG_BLOCKS) {
-                counts.blocks += importBlocks(chunk);
+                counts.blocks += importElements(chunk, "blocks", d -> saveBlockFromTuple(RLP.decodeList(d)));
             } else if (tag == TAG_VALUES) {
-                counts.values += importValues(chunk);
+                counts.values += importElements(chunk, "values", trieStore::saveValue);
             } else if (tag == TAG_NODES) {
-                counts.nodes += importNodes(chunk);
+                counts.nodes += importElements(chunk, "nodes", d -> saveNode(Trie.fromMessage(d, trieStore)));
             }
         });
         if (counts.blocks == 0) {
@@ -231,31 +237,15 @@ public class BootstrapImporter {
                 counts.blocks, counts.values, counts.nodes, System.currentTimeMillis() - start);
     }
 
-    /** Decodes and saves every block tuple in a blocks-section chunk; returns how many were saved. */
-    private long importBlocks(byte[] chunk) {
+    /**
+     * Applies {@code action} to every element of a section chunk (after rejecting empty elements) and
+     * returns how many were processed. The decode/count/empty-check invariant lives here for all sections;
+     * only the per-element action differs (save a block, a long value, or a state node).
+     */
+    private long importElements(byte[] chunk, String section, Consumer<byte[]> action) {
         long imported = 0;
         for (RLPElement element : RLP.decode2(chunk)) {
-            saveBlockFromTuple(RLP.decodeList(requireNonEmptyElement(element, "blocks")));
-            imported++;
-        }
-        return imported;
-    }
-
-    /** Saves every long value in a values-section chunk into the destination store; returns how many. */
-    private long importValues(byte[] chunk) {
-        long imported = 0;
-        for (RLPElement element : RLP.decode2(chunk)) {
-            trieStore.saveValue(requireNonEmptyElement(element, "values"));
-            imported++;
-        }
-        return imported;
-    }
-
-    /** Reconstructs and saves every state node in a nodes-section chunk; returns how many were saved. */
-    private long importNodes(byte[] chunk) {
-        long imported = 0;
-        for (RLPElement element : RLP.decode2(chunk)) {
-            saveNode(Trie.fromMessage(requireNonEmptyElement(element, "nodes"), trieStore));
+            action.accept(requireNonEmptyElement(element, section));
             imported++;
         }
         return imported;
@@ -293,19 +283,19 @@ public class BootstrapImporter {
     }
 
     /**
-     * Streams the v2 file, invoking {@code processor} once per chunk that belongs to a section in
-     * {@code tagsOfInterest}, in file order. Sections are dispatched by tag; the v2 import reads every
-     * section in a single pass (the exporter co-locates values before the nodes that reference them, so
-     * value/block/node chunks are processed as they stream past). That ordering is enforced structurally:
-     * a nodes section appearing before the values section is rejected up front. Chunks for tags outside
-     * {@code tagsOfInterest} are skipped without being read into memory or decoded — including tags this
-     * reader does not recognize, so a newer exporter can add optional sections (e.g. a metadata manifest)
-     * without breaking an older reader. Each wanted chunk is read into a bounded {@code byte[]}, handed
-     * off, then discarded. The full structural scan (header, chunk-length and end-of-section sentinels,
-     * end-of-sections marker) is validated regardless of which tags are of interest, and the file must end
-     * exactly at the end-of-sections marker — trailing bytes are rejected as non-canonical.
+     * Streams the v2 file, invoking {@code processor} once per chunk that belongs to a {@link #DATA_TAGS}
+     * section, in file order. Sections are dispatched by tag; the v2 import reads every section in a single
+     * pass (the exporter co-locates values before the nodes that reference them, so value/block/node chunks
+     * are processed as they stream past). That ordering is enforced structurally: a nodes section appearing
+     * before the values section is rejected up front. Chunks for tags outside {@link #DATA_TAGS} are skipped
+     * without being read into memory or decoded — including tags this reader does not recognize, so a newer
+     * exporter can add optional sections (e.g. a metadata manifest) without breaking an older reader. Each
+     * wanted chunk is read into a bounded {@code byte[]}, handed off, then discarded. The full structural
+     * scan (header, chunk-length and end-of-section sentinels, end-of-sections marker) is validated
+     * regardless of which tags are of interest, and the file must end exactly at the end-of-sections
+     * marker — trailing bytes are rejected as non-canonical.
      */
-    private void scanSections(Path dataPath, Set<Integer> tagsOfInterest, ChunkProcessor processor) {
+    private void scanSections(Path dataPath, ChunkProcessor processor) {
         long fileSize;
         try {
             fileSize = Files.size(dataPath);
@@ -325,7 +315,7 @@ public class BootstrapImporter {
                 valuesSectionSeen = checkSectionOrder(tag, valuesSectionSeen);
                 // Unknown/unwanted section tags are skipped (their chunks are still length-validated), so
                 // an older reader tolerates optional sections a newer exporter may add.
-                boolean wanted = tagsOfInterest.contains(tag);
+                boolean wanted = DATA_TAGS.contains(tag);
                 readSectionChunks(in, counter, fileSize, tag, wanted, processor);
                 tag = in.read();
             }
@@ -378,7 +368,8 @@ public class BootstrapImporter {
                 in.readFully(chunk);
                 processor.process(tag, chunk);
             } else {
-                skipFully(in, len);
+                // truncation surfaces as EOFException (an IOException), caught and wrapped by scanSections
+                ByteStreams.skipFully(in, len);
             }
         }
     }
@@ -395,31 +386,6 @@ public class BootstrapImporter {
             throw new BootstrapImportException("Bootstrap-data v2 chunk length " + len
                     + " exceeds the " + remaining + " bytes remaining in the file; "
                     + "the file is truncated or its length field is corrupt");
-        }
-    }
-
-    /**
-     * Skips exactly {@code n} bytes, falling back to reading-and-discarding when the underlying stream's
-     * {@code skip} cannot make progress, and detecting a chunk truncated below its declared length.
-     */
-    private static void skipFully(DataInputStream in, long n) throws IOException {
-        long remaining = n;
-        byte[] scratch = null;
-        while (remaining > 0) {
-            long skipped = in.skip(remaining);
-            if (skipped > 0) {
-                remaining -= skipped;
-                continue;
-            }
-            if (scratch == null) {
-                scratch = new byte[(int) Math.min(remaining, READ_BUFFER_SIZE)];
-            }
-            int read = in.read(scratch, 0, (int) Math.min(remaining, scratch.length));
-            if (read < 0) {
-                throw new BootstrapImportException(
-                        "Truncated bootstrap-data v2: section chunk shorter than its declared length");
-            }
-            remaining -= read;
         }
     }
 

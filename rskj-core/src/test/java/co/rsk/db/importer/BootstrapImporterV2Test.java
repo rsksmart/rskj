@@ -90,29 +90,17 @@ class BootstrapImporterV2Test {
 
         // tiny chunk size to force multi-chunk sections (chunk-spanning read path)
         byte[] v2 = writeV2(originStore, stateRoot, 96);
-        Path binPath = tempDir.resolve("bootstrap-data.bin");
-        Files.write(binPath, v2);
 
         // destination: real trie store (state assertions), mocked block plumbing (block decode/save).
-        TrieStore destinationStore = new TrieStoreImpl(new HashMapDB());
-        BlockStore blockStore = mock(BlockStore.class);
-        BlockFactory blockFactory = mock(BlockFactory.class);
-        when(blockFactory.decodeBlock(any())).thenReturn(mock(Block.class));
-
-        BootstrapDataProvider provider = mock(BootstrapDataProvider.class);
-        when(provider.getBootstrapDataPath()).thenReturn(binPath);
-
-        BootstrapImporter importer = new BootstrapImporter(
-                blockStore, destinationStore, blockFactory, provider);
-
-        importer.importData();
+        Wired wired = wire(v2, "bootstrap-data.bin");
+        wired.importer().importData();
 
         // blocks were decoded and saved
-        verify(blockFactory, atLeastOnce()).decodeBlock(any());
-        verify(blockStore, atLeastOnce()).saveBlock(any(), any(), anyBoolean());
+        verify(wired.blockFactory(), atLeastOnce()).decodeBlock(any());
+        verify(wired.blockStore(), atLeastOnce()).saveBlock(any(), any(), anyBoolean());
 
         // the state root is retrievable and every key/value round-trips intact
-        Trie reconstructed = destinationStore.retrieve(stateRoot)
+        Trie reconstructed = wired.destinationStore().retrieve(stateRoot)
                 .orElseThrow(() -> new AssertionError("state root missing after import"));
         assertArrayEquals(stateRoot, reconstructed.getHash().getBytes(), "state root mismatch");
         for (Map.Entry<byte[], byte[]> e : expected.entrySet()) {
@@ -143,19 +131,10 @@ class BootstrapImporterV2Test {
         out.writeByte(BootstrapV2Format.TAG_END);
         out.flush();
 
-        Path binPath = tempDir.resolve("with-unknown-section.bin");
-        Files.write(binPath, bos.toByteArray());
+        Wired wired = wire(bos.toByteArray(), "with-unknown-section.bin");
+        wired.importer().importData();
 
-        TrieStore destinationStore = new TrieStoreImpl(new HashMapDB());
-        BlockStore blockStore = mock(BlockStore.class);
-        BlockFactory blockFactory = mock(BlockFactory.class);
-        when(blockFactory.decodeBlock(any())).thenReturn(mock(Block.class));
-        BootstrapDataProvider provider = mock(BootstrapDataProvider.class);
-        when(provider.getBootstrapDataPath()).thenReturn(binPath);
-
-        new BootstrapImporter(blockStore, destinationStore, blockFactory, provider).importData();
-
-        Trie reconstructed = destinationStore.retrieve(fixture.stateRoot)
+        Trie reconstructed = wired.destinationStore().retrieve(fixture.stateRoot)
                 .orElseThrow(() -> new AssertionError("state root missing after import"));
         assertArrayEquals(fixture.stateRoot, reconstructed.getHash().getBytes());
     }
@@ -178,20 +157,11 @@ class BootstrapImporterV2Test {
         byte[] v2 = writeV2(originStore, stateRoot, 1024);
         // sanity: no long values were emitted
         assertTrue(collectValueElements(originStore, stateRoot).isEmpty(), "expected no long values");
-        Path binPath = tempDir.resolve("bootstrap-empty-values.bin");
-        Files.write(binPath, v2);
 
-        TrieStore destinationStore = new TrieStoreImpl(new HashMapDB());
-        BlockStore blockStore = mock(BlockStore.class);
-        BlockFactory blockFactory = mock(BlockFactory.class);
-        when(blockFactory.decodeBlock(any())).thenReturn(mock(Block.class));
-        BootstrapDataProvider provider = mock(BootstrapDataProvider.class);
-        when(provider.getBootstrapDataPath()).thenReturn(binPath);
+        Wired wired = wire(v2, "bootstrap-empty-values.bin");
+        wired.importer().importData();
 
-        new BootstrapImporter(blockStore, destinationStore, blockFactory, provider)
-                .importData();
-
-        Trie reconstructed = destinationStore.retrieve(stateRoot)
+        Trie reconstructed = wired.destinationStore().retrieve(stateRoot)
                 .orElseThrow(() -> new AssertionError("state root missing after import"));
         for (Map.Entry<byte[], byte[]> e : expected.entrySet()) {
             assertArrayEquals(e.getValue(), reconstructed.get(e.getKey()));
@@ -398,8 +368,13 @@ class BootstrapImporterV2Test {
         return new StateFixture(store, trie.getHash().getBytes());
     }
 
+    /** An importer wired over a temp v2 file, exposing the mocks/store the state-asserting tests inspect. */
+    private record Wired(BootstrapImporter importer, TrieStore destinationStore,
+                         BlockStore blockStore, BlockFactory blockFactory) {
+    }
+
     /** Writes {@code v2} to a temp file and wires an importer with mocked block plumbing over it. */
-    private BootstrapImporter newImporter(byte[] v2, String fileName) throws IOException {
+    private Wired wire(byte[] v2, String fileName) throws IOException {
         Path binPath = tempDir.resolve(fileName);
         Files.write(binPath, v2);
 
@@ -410,8 +385,14 @@ class BootstrapImporterV2Test {
         BootstrapDataProvider provider = mock(BootstrapDataProvider.class);
         when(provider.getBootstrapDataPath()).thenReturn(binPath);
 
-        return new BootstrapImporter(
+        BootstrapImporter importer = new BootstrapImporter(
                 blockStore, destinationStore, blockFactory, provider);
+        return new Wired(importer, destinationStore, blockStore, blockFactory);
+    }
+
+    /** Convenience for the fail-fast tests that only need the importer, not the wired store/mocks. */
+    private BootstrapImporter newImporter(byte[] v2, String fileName) throws IOException {
+        return wire(v2, fileName).importer();
     }
 
     private static byte[] longValue(int seed) {
