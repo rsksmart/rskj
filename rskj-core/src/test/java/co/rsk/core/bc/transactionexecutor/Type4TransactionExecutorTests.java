@@ -1401,4 +1401,196 @@ class Type4TransactionExecutorTests extends Type4TransactionExecutorHelperTest {
         verify(authorizationTracker, never()).commit();
     }
 
+    @Test
+    void type4TransactionCapsCombinedVmAndAuthorizationRefundAtHalfGasUsed() {
+        long expectedAuthorizationRefund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST;
+        long expectedVmRefund = GasCost.SUICIDE_REFUND;
+
+        byte[] delegatedCode = DelegationCodeResolver.createDelegatedCode(createRandomAddress());
+        MutableRepository cacheTracker = mock(MutableRepository.class);
+        MutableRepository authorizationTracker = mock(MutableRepository.class);
+
+        when(tracker.startTracking())
+                .thenReturn(cacheTracker, authorizationTracker);
+
+        mockAccountWithBalanceAndNonce(tracker, sender, 1_000_000, ONE_NONCE);
+        mockAccountWithBalanceAndNonce(cacheTracker, receiver, 1_000_000, ONE_NONCE);
+        mockAuthorizationAccount(authorizationTracker, authorityAddress, ZERO_NONCE, delegatedCode);
+        mockFreeBridgeTxFalse();
+
+
+        var authorization = createValidAuthorizationTuple(
+                delegatedAddress,
+                ZERO_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        var tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ONE_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                0,
+                EMPTY_DATA,
+                authorization
+        );
+
+        mockReceiver(receiver, selfdestructTo(sender));
+        mockSuccessfulProgramInvoke(tx, cacheTracker);
+
+        var txExecutor = newExecutor(tx);
+
+        assertTrue(txExecutor.executeTransaction());
+
+        long gasUsedBeforeRefunds = txExecutor.getResult().getGasUsedBeforeRefunds();
+        long maxRefund = gasUsedBeforeRefunds / 2;
+        long deductedRefund = txExecutor.getResult().getDeductedRefund();
+        assertEquals(expectedVmRefund + expectedAuthorizationRefund, deductedRefund);
+        assertTrue(deductedRefund <= maxRefund);
+    }
+
+    @Test
+    void type4TransactionAppliesAuthorizationRefundWhenTotalRefundIsBelowCap() {
+        byte[] delegatedCode = DelegationCodeResolver.createDelegatedCode(createRandomAddress());
+        MutableRepository cacheTracker = mock(MutableRepository.class);
+        MutableRepository authorizationTracker = mock(MutableRepository.class);
+        when(tracker.startTracking()).thenReturn(cacheTracker, authorizationTracker);
+
+        mockAccountWithBalanceAndNonce(tracker, sender, 1_000_000, ONE_NONCE);
+        mockReceiver(receiver, EMPTY_CODE);
+        mockFreeBridgeTxFalse();
+
+        mockAuthorizationAccount(authorizationTracker, authorityAddress, ZERO_NONCE, delegatedCode);
+
+        var authorization = createValidAuthorizationTuple(
+                delegatedAddress,
+                ZERO_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        var tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ONE_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                0,
+                EMPTY_DATA,
+                authorization
+        );
+
+        var txExecutor = newExecutor(tx);
+        assertTrue(txExecutor.executeTransaction());
+
+        long authorizationRefund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST;
+
+        assertTrue(authorizationRefund < txExecutor.getResult().getGasUsedBeforeRefunds() / 2);
+        assertEquals(authorizationRefund, txExecutor.getResult().getDeductedRefund());
+    }
+
+    @Test
+    void type4TransactionDoesNotApplyAuthorizationRefundForInvalidAuthorization() {
+        byte[] delegatedCode = DelegationCodeResolver.createDelegatedCode(createRandomAddress());
+        MutableRepository cacheTracker = mock(MutableRepository.class);
+        MutableRepository authorizationTracker = mock(MutableRepository.class);
+        when(tracker.startTracking()).thenReturn(cacheTracker, authorizationTracker);
+
+        mockAccountWithBalanceAndNonce(tracker, sender, 1_000_000, ONE_NONCE);
+        mockReceiver(receiver, EMPTY_CODE);
+        mockFreeBridgeTxFalse();
+
+        mockAuthorizationAccount(authorizationTracker, authorityAddress, ONE_NONCE, delegatedCode);
+
+        var invalidAuthorization = createValidAuthorizationTuple(
+                delegatedAddress,
+                ZERO_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        var tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ONE_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                0,
+                EMPTY_DATA,
+                invalidAuthorization
+        );
+
+        var txExecutor = newExecutor(tx);
+
+        assertTrue(txExecutor.executeTransaction());
+
+        assertEquals(0, txExecutor.getResult().getDeductedRefund());
+        verify(authorizationTracker).rollback();
+    }
+
+    @Test
+    void type4TransactionAppliesOnlyVmRefundWhenThereIsNoAuthorizationRefund() {
+
+        MutableRepository cacheTracker = mock(MutableRepository.class);
+        MutableRepository authorizationTracker = mock(MutableRepository.class);
+        when(tracker.startTracking()).thenReturn(cacheTracker, authorizationTracker);
+
+        mockAccountWithBalanceAndNonce(tracker, sender, 1_000_000, ONE_NONCE);
+        mockFreeBridgeTxFalse();
+
+        mockAuthorizationAccount(authorizationTracker, authorityAddress, ZERO_NONCE, EMPTY_CODE);
+        mockAccountWithBalanceAndNonce(cacheTracker, receiver, 1_000_000, ONE_NONCE);
+        mockReceiver(receiver, selfdestructTo(sender));
+
+        var authorization = createValidAuthorizationTuple(
+                delegatedAddress,
+                ZERO_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        var tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ONE_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                0,
+                EMPTY_DATA,
+                authorization
+        );
+
+        mockSuccessfulProgramInvoke(tx, cacheTracker);
+        var txExecutor = newExecutor(tx);
+
+        assertTrue(txExecutor.executeTransaction());
+
+        long gasUsedBeforeRefunds = txExecutor.getResult().getGasUsedBeforeRefunds();
+        long maxRefund = gasUsedBeforeRefunds / 2;
+        long deductedRefund = txExecutor.getResult().getDeductedRefund();
+        assertEquals(GasCost.SUICIDE_REFUND , deductedRefund);
+        assertTrue(deductedRefund <= maxRefund);
+
+    }
+
+    private static byte[] selfdestructTo(RskAddress beneficiary) {
+        byte[] code = new byte[22];
+
+        code[0] = 0x73; // PUSH20
+        System.arraycopy(beneficiary.getBytes(), 0, code, 1, 20);
+        code[21] = (byte) 0xff; // SELFDESTRUCT
+
+        return code;
+    }
+
 }
