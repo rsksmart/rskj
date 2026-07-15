@@ -30,7 +30,10 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * Fork-balance proof encoding and validation helpers (header v3).
- * Wire format: RLP {@code [proofType, parentBtcHeader, coinbaseHash, coinbaseProof, coinbaseLastBytes, midstateProof]}.
+ * Wire format: RLP {@code [parentBtcHeader, coinbaseHash, coinbaseProof, coinbaseLastBytes, midstateProof]}.
+ * <p>
+ * Proof type (0 / 1 / 2) is <strong>not</strong> on the wire; validating nodes derive it from
+ * {@code coinbaseLastBytes} against the local FAC MM-hash cache after the cryptographic proof checks pass.
  */
 public final class ForkBalanceProofUtils {
 
@@ -85,11 +88,10 @@ public final class ForkBalanceProofUtils {
     }
 
     /**
-     * Default proof for v3 headers built before merge-mining data exists: {@code proofType = 2}, empty payloads.
+     * Default proof for v3 headers built before merge-mining data exists: empty payloads over an 80-byte zero parent header.
      */
     public static byte[] defaultForkBalanceProofSkeletonBytes() {
         return encodeForkBalanceProofSkeleton(
-                (byte) 2,
                 new byte[80],
                 new byte[0],
                 new byte[0],
@@ -98,9 +100,8 @@ public final class ForkBalanceProofUtils {
     }
 
     /**
-     * Encodes the fork-balance proof as an RLP list of six elements (spec order).
+     * Encodes the fork-balance proof as an RLP list of five elements (spec order).
      *
-     * @param proofType         {@link #proofTypeIdentificationFromCoinbaseSuffix}
      * @param parentBtcHeader   parent Bitcoin block header on the wire, exactly 80 bytes
      * @param coinbaseHash      double-SHA256 id of the parent coinbase (32 bytes)
      * @param coinbaseProof     partial Merkle proof for the parent BTC block's coinbase
@@ -108,7 +109,6 @@ public final class ForkBalanceProofUtils {
      * @param midstateProof     SHA-256 midstate for the parent coinbase
      */
     public static byte[] encodeForkBalanceProofSkeleton(
-            byte proofType,
             byte[] parentBtcHeader,
             byte[] coinbaseHash,
             byte[] coinbaseProof,
@@ -133,10 +133,7 @@ public final class ForkBalanceProofUtils {
         if (mid.length != 0 && !ForkBalanceParentCoinbaseProof.isValidMidstateWireBytes(mid)) {
             throw new IllegalArgumentException("midstateProof is not a valid SHA-256 encoded midstate");
         }
-        // Use encodeElement for the type byte so proofType 0 is a single 0x00 item; RLP.encodeByte(0) is 0x80 and
-        // decodes to an empty payload, which breaks decodeForkBalanceProof / FAC evidence for type 0.
         return RLP.encodeList(
-                RLP.encodeElement(new byte[]{proofType}),
                 RLP.encodeElement(parentBtcHeader),
                 RLP.encodeElement(hash),
                 RLP.encodeElement(mp),
@@ -154,7 +151,6 @@ public final class ForkBalanceProofUtils {
      *                            {@link MinerUtils#buildMerkleProof} with {@link MerkleProofBuilder#buildFromBlock} on the parent)
      */
     public static byte[] buildForkBalanceProofSkeleton(
-            List<Keccak256> rskHashesForProofType,
             BtcBlock mergedMinedBtcBlock,
             BtcBlock btcParentBlock,
             byte[] coinbaseMerkleProof) {
@@ -164,8 +160,6 @@ public final class ForkBalanceProofUtils {
         ForkBalanceParentCoinbaseProof.CompactFields parentCoinbase =
                 ForkBalanceParentCoinbaseProof.fromCoinbase(btcParentBlock.getTransactions().get(0));
         return buildForkBalanceProofSkeleton(
-                rskHashesForProofType,
-                mergedMinedBtcBlock,
                 btcHeaderWireBytes(btcParentBlock),
                 parentCoinbase,
                 coinbaseMerkleProof);
@@ -175,7 +169,6 @@ public final class ForkBalanceProofUtils {
      * Builds fork-balance proof bytes using a cached parent entry (header, coinbase, and merkle proof).
      */
     public static byte[] buildForkBalanceProofSkeleton(
-            List<Keccak256> rskHashesForProofType,
             BtcBlock mergedMinedBtcBlock,
             CachedBtcBlockForFac cachedParent) {
         Objects.requireNonNull(cachedParent, "cachedParent");
@@ -186,24 +179,16 @@ public final class ForkBalanceProofUtils {
         ForkBalanceParentCoinbaseProof.CompactFields parentCoinbase =
                 ForkBalanceParentCoinbaseProof.fromSerialized(cachedParent.getCoinbaseSerialized());
         return buildForkBalanceProofSkeleton(
-                rskHashesForProofType,
-                mergedMinedBtcBlock,
                 cachedParent.getHeader80(),
                 parentCoinbase,
                 cachedParent.getCoinbaseMerkleProof());
     }
 
     private static byte[] buildForkBalanceProofSkeleton(
-            List<Keccak256> rskHashesForProofType,
-            BtcBlock mergedMinedBtcBlock,
             byte[] parentBtcHeader,
             ForkBalanceParentCoinbaseProof.CompactFields parentCoinbase,
             byte[] coinbaseMerkleProof) {
-        byte proofType = proofTypeIdentificationFromCoinbaseSuffix(
-                parentCoinbase.getCoinbaseLastBytes(),
-                rskHashesForProofType);
         return encodeForkBalanceProofSkeleton(
-                proofType,
                 parentBtcHeader,
                 parentCoinbase.getCoinbaseHash(),
                 coinbaseMerkleProof,
@@ -243,10 +228,9 @@ public final class ForkBalanceProofUtils {
     }
 
     /**
-     * Decoded {@code forkBalanceProof} RLP payload (six elements).
+     * Decoded {@code forkBalanceProof} RLP payload (five elements).
      */
     public static final class ForkBalanceProofDecoded {
-        private final byte proofType;
         private final byte[] parentBtcHeader;
         private final byte[] coinbaseHash;
         private final byte[] coinbaseProof;
@@ -254,22 +238,16 @@ public final class ForkBalanceProofUtils {
         private final byte[] midstateProof;
 
         ForkBalanceProofDecoded(
-                byte proofType,
                 byte[] parentBtcHeader,
                 byte[] coinbaseHash,
                 byte[] coinbaseProof,
                 byte[] coinbaseLastBytes,
                 byte[] midstateProof) {
-            this.proofType = proofType;
             this.parentBtcHeader = parentBtcHeader;
             this.coinbaseHash = coinbaseHash;
             this.coinbaseProof = coinbaseProof;
             this.coinbaseLastBytes = coinbaseLastBytes;
             this.midstateProof = midstateProof;
-        }
-
-        public byte getProofType() {
-            return proofType;
         }
 
         public byte[] getParentBtcHeader() {
@@ -288,20 +266,8 @@ public final class ForkBalanceProofUtils {
             return coinbaseLastBytes;
         }
 
-        /** @deprecated use {@link #getCoinbaseLastBytes()} */
-        @Deprecated
-        public byte[] getLastCoinbaseBytes() {
-            return getCoinbaseLastBytes();
-        }
-
         public byte[] getMidStateProof() {
             return midstateProof;
-        }
-
-        /** @deprecated use {@link #getMidStateProof()} */
-        @Deprecated
-        public byte[] getMidstateProof() {
-            return getMidStateProof();
         }
     }
 
@@ -315,34 +281,25 @@ public final class ForkBalanceProofUtils {
             throw new IllegalArgumentException("forkBalanceProof is null or empty");
         }
         RLPList list = RLP.decodeList(encoded);
-        if (list.size() != 6) {
-            throw new IllegalArgumentException("forkBalanceProof must be an RLP list of 6 elements");
+        if (list.size() != 5) {
+            throw new IllegalArgumentException("forkBalanceProof must be an RLP list of 5 elements");
         }
-        byte[] proofTypeRaw = list.get(0).getRLPData();
-        if (proofTypeRaw == null || proofTypeRaw.length != 1) {
-            throw new IllegalArgumentException("proofType must be a single byte");
-        }
-        int proofTypeUnsigned = proofTypeRaw[0] & 0xFF;
-        if (proofTypeUnsigned > 2) {
-            throw new IllegalArgumentException("proofType must be 0, 1, or 2");
-        }
-        byte proofType = (byte) proofTypeUnsigned;
-        byte[] parent = list.get(1).getRLPData();
+        byte[] parent = list.get(0).getRLPData();
         if (parent == null || parent.length != 80) {
             throw new IllegalArgumentException("parentBtcHeader must be exactly 80 bytes");
         }
-        byte[] hash = list.get(2).getRLPData();
+        byte[] hash = list.get(1).getRLPData();
         if (hash == null) {
             hash = EMPTY_BYTE_ARRAY;
         }
         if (hash.length != 0 && hash.length != Sha256Hash.LENGTH) {
             throw new IllegalArgumentException("coinbaseHash must be empty or exactly 32 bytes");
         }
-        byte[] cbProof = list.get(3).getRLPData();
+        byte[] cbProof = list.get(2).getRLPData();
         if (cbProof == null) {
             cbProof = EMPTY_BYTE_ARRAY;
         }
-        byte[] lastBytes = list.get(4).getRLPData();
+        byte[] lastBytes = list.get(3).getRLPData();
         if (lastBytes == null) {
             lastBytes = EMPTY_BYTE_ARRAY;
         }
@@ -351,14 +308,14 @@ public final class ForkBalanceProofUtils {
                     "coinbaseLastBytes exceeds "
                             + ForkBalanceFacProtocolConstants.PARENT_COINBASE_SUFFIX_MAX_BYTES + " bytes");
         }
-        byte[] mid = list.get(5).getRLPData();
+        byte[] mid = list.get(4).getRLPData();
         if (mid == null) {
             mid = EMPTY_BYTE_ARRAY;
         }
         if (mid.length != 0 && !ForkBalanceParentCoinbaseProof.isValidMidstateWireBytes(mid)) {
             throw new IllegalArgumentException("midstateProof is not a valid SHA-256 encoded midstate");
         }
-        return new ForkBalanceProofDecoded(proofType, parent, hash, cbProof, lastBytes, mid);
+        return new ForkBalanceProofDecoded(parent, hash, cbProof, lastBytes, mid);
     }
 
     /**

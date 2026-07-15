@@ -110,8 +110,7 @@ public final class ForkBalanceMainnetMiningTestSupport {
                     .setBlockFacTracker(new BlockFacTracker())
                     .setForkBalanceValidationRule(new ForkBalanceValidationRule(
                             props.getActivationConfig(),
-                            props.getNetworkConstants().getBridgeConstants(),
-                            facBlockHashesCache));
+                            props.getNetworkConstants().getBridgeConstants()));
         }
         BlockChainImpl chain = chainBuilder.build();
         connectPreVetiverParent(chainBuilder, chain, props);
@@ -133,7 +132,6 @@ public final class ForkBalanceMainnetMiningTestSupport {
             BlockChainBuilder chainBuilder,
             BlockChainImpl chain,
             NetworkParameters mainnetBtc,
-            FacBlockHashesCache facBlockHashesCache,
             @Nullable BtcBlockFacCache btcBlockFacCache) {
         MiningMainchainView mainchainView = new MiningMainchainViewImpl(
                 chainBuilder.getBlockStore(),
@@ -170,7 +168,6 @@ public final class ForkBalanceMainnetMiningTestSupport {
                 blockFactory,
                 new BuildInfo("test", "test"),
                 miningConfig,
-                facBlockHashesCache,
                 btcBlockFacCache,
                 mainnetBtc);
     }

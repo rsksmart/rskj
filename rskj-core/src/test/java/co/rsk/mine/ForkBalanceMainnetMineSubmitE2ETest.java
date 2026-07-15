@@ -142,8 +142,7 @@ class ForkBalanceMainnetMineSubmitE2ETest {
                     props, facBlockHashesCache, btcBlockFacCache, true);
             chain = chainFixture.chain;
             minerServer = ForkBalanceMainnetMiningTestSupport.createMinerServer(
-                    props, chainFixture.chainBuilder, chain, MAINNET_BTC,
-                    facBlockHashesCache, btcBlockFacCache);
+                    props, chainFixture.chainBuilder, chain, MAINNET_BTC, btcBlockFacCache);
         }
 
         SubmitBlockResult mineBestBlock() {

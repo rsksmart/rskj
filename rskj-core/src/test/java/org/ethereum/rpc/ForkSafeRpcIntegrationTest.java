@@ -140,21 +140,31 @@ class ForkSafeRpcIntegrationTest {
     private static FacChainFixture buildChainWithLastSafeBehindTip() {
         AllRulesActiveTestProperties props = new AllRulesActiveTestProperties();
         BlockFacTracker tracker = new BlockFacTracker();
+        co.rsk.core.bc.FacBlockHashesCache cache = new co.rsk.core.bc.FacBlockHashesCache();
         BlockChainBuilder builder = new BlockChainBuilder()
                 .setConfig(props)
                 .setTesting(true)
-                .setBlockFacTracker(tracker);
+                .setBlockFacTracker(tracker)
+                .setFacBlockHashesCache(cache);
         BlockChainImpl chain = builder.build();
         Block genesis = chain.getBestBlock();
+
+        co.rsk.crypto.Keccak256 knownMm = new co.rsk.crypto.Keccak256(
+                org.bouncycastle.util.encoders.Hex.decode(
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        co.rsk.crypto.Keccak256 unknownMm = new co.rsk.crypto.Keccak256(
+                org.bouncycastle.util.encoders.Hex.decode(
+                        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"));
+        cache.seedMergedMiningHashesForTests(knownMm);
 
         BlockGenerator gen = new BlockGenerator(Constants.regtest(), props.getActivationConfig());
 
         Block block1 = gen.createChildBlock(genesis);
-        block1.getHeader().setForkBalanceProof(skeletonProof((byte) 0));
+        block1.getHeader().setForkBalanceProof(skeletonProofWithTaggedHash(knownMm));
         connect(builder, chain, block1, genesis);
 
         Block block2 = gen.createChildBlock(block1);
-        block2.getHeader().setForkBalanceProof(skeletonProof((byte) 1));
+        block2.getHeader().setForkBalanceProof(skeletonProofWithTaggedHash(unknownMm));
         connect(builder, chain, block2, block1);
 
         BlockFacFields tipFac = chain.getBlockFacFields(block2.getHash());
@@ -172,8 +182,10 @@ class ForkSafeRpcIntegrationTest {
         Assertions.assertEquals(ImportResult.IMPORTED_BEST, chain.tryToConnect(child));
     }
 
-    private static byte[] skeletonProof(byte proofType) {
+    private static byte[] skeletonProofWithTaggedHash(co.rsk.crypto.Keccak256 hashAfterTag) {
+        byte[] suffix = org.bouncycastle.util.Arrays.concatenate(
+                co.rsk.config.RskMiningConstants.RSK_TAG, hashAfterTag.getBytes());
         return ForkBalanceProofUtils.encodeForkBalanceProofSkeleton(
-                proofType, new byte[80], new byte[0], new byte[0], new byte[0], new byte[0]);
+                new byte[80], new byte[0], new byte[0], suffix, new byte[0]);
     }
 }

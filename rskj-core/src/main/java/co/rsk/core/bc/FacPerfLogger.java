@@ -62,7 +62,6 @@ public final class FacPerfLogger {
             @Nullable BlockFacTracker blockFacTracker,
             @Nullable BlockStore blockStore) {
         int headerVersion = block.getHeader().getVersion() & 0xFF;
-        String proofType = forkBalanceProofTypeLabel(block);
 
         BlockFacFields fields = blockFacTracker != null ? blockFacTracker.get(block.getHash()) : null;
         if (fields == null) {
@@ -72,7 +71,7 @@ public final class FacPerfLogger {
                     block.getNumber(),
                     block.getPrintableHash(),
                     Integer.toHexString(headerVersion),
-                    proofType,
+                    forkBalanceProofTypeLabel(block, null),
                     importResult);
             return;
         }
@@ -87,7 +86,7 @@ public final class FacPerfLogger {
                 block.getNumber(),
                 block.getPrintableHash(),
                 Integer.toHexString(headerVersion),
-                proofType,
+                forkBalanceProofTypeLabel(block, fields),
                 importResult,
                 fields.getFacEvidenceValue(),
                 fields.getFacSafetyLevel(),
@@ -104,7 +103,10 @@ public final class FacPerfLogger {
         return b != null ? b.getNumber() : null;
     }
 
-    private static String forkBalanceProofTypeLabel(Block block) {
+    private static String forkBalanceProofTypeLabel(Block block, @Nullable BlockFacFields fields) {
+        if (fields != null) {
+            return String.valueOf(fields.getProofType() & 0xFF);
+        }
         if (block.getHeader().getVersion() != (byte) 0x03) {
             return "n/a";
         }
@@ -115,10 +117,6 @@ public final class FacPerfLogger {
         if (ForkBalanceProofUtils.isDefaultForkBalancePlaceholder(fbp)) {
             return "placeholder";
         }
-        try {
-            return String.valueOf(ForkBalanceProofUtils.decodeForkBalanceProof(fbp).getProofType() & 0xFF);
-        } catch (IllegalArgumentException ex) {
-            return "invalid";
-        }
+        return "pending";
     }
 }

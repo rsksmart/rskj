@@ -29,7 +29,7 @@ class BlockFacTrackerReorgTest {
     private static final BlockFactory BLOCK_FACTORY = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
-    void onReorganization_recomputesNewBranchAndDropsOldTip() {
+    void onReorganization_dropsOldAndNewSegment_warmRebuildsNewBranch() {
         BlockStore store = createBlockStore();
         BlockGenerator gen = new BlockGenerator();
         Block genesis = gen.getGenesisBlock();
@@ -51,6 +51,13 @@ class BlockFacTrackerReorgTest {
 
         BlockFork fork = new BlockchainBranchComparator(store).calculateFork(oldTip, newTip);
         tracker.onReorganization(store, fork);
+
+        Assertions.assertNull(tracker.get(oldTip.getHash()));
+        Assertions.assertNull(tracker.get(newForkChild.getHash()));
+        Assertions.assertNull(tracker.get(newTip.getHash()));
+
+        FacBlockHashesCache cache = new FacBlockHashesCache();
+        cache.warmFromCanonicalTip(tracker, store, newTip);
 
         Assertions.assertNull(tracker.get(oldTip.getHash()));
         Assertions.assertNotNull(tracker.get(newForkChild.getHash()));

@@ -25,9 +25,13 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Time-retained cache of recent validated main-chain and uncle blocks with merged-mining hashes and FAC fields.
+ * Time-retained cache of recent <strong>best-chain</strong> blocks and their uncle headers with merged-mining hashes
+ * and FAC metadata (including locally derived {@code proofType}).
  * Updated when a block becomes the new best chain head in {@link BlockChainImpl#tryToConnect(org.ethereum.core.Block)}
  * (and on startup / reorg replay via {@link #warmFromCanonicalTip}).
+ * <p>
+ * Uncles are taken from {@link Block#getUncleList()} (full headers already on the connecting block), not from optional
+ * bodies in {@code blockStore}, so every node that imported the same best block shares the same MM-hash window.
  * <p>
  * Rows are evicted when {@code rskTimestamp < BTC_TAIL(connecting) - 300s - DELAY_PARAMETER} (see
  * {@link FacBlockCacheEviction}).
@@ -52,7 +56,7 @@ public final class FacBlockHashesCache {
     }
 
     /**
-     * Seeds {@link #getMergedMiningHashesForProofType()} for unit tests (fork-balance proof type 0).
+     * Seeds {@link #getMergedMiningHashesForProofType()} for unit tests of local proof-type classification.
      */
     @VisibleForTesting
     public synchronized void seedMergedMiningHashesForTests(Keccak256... hashes) {
@@ -67,6 +71,7 @@ public final class FacBlockHashesCache {
                         Keccak256.ZERO_HASH,
                         hash,
                         Keccak256.ZERO_HASH,
+                        (byte) 2,
                         0,
                         0,
                         Long.MAX_VALUE,
@@ -85,6 +90,12 @@ public final class FacBlockHashesCache {
     }
 
     public synchronized List<Keccak256> getMergedMiningHashesForProofType() {
+        List<Keccak256> snapshot = snapshotMergedMiningHashes();
+        return snapshot.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(snapshot);
+    }
+
+    /** Caller must already hold {@code this}'s monitor. */
+    private List<Keccak256> snapshotMergedMiningHashes() {
         if (facBlockHashes.isEmpty()) {
             return Collections.emptyList();
         }
@@ -92,15 +103,14 @@ public final class FacBlockHashesCache {
         for (FacBlockHashEntry e : facBlockHashes) {
             out.add(e.getBlockMergedMiningHash());
         }
-        return Collections.unmodifiableList(out);
+        return out;
     }
 
     /**
-     * Rebuilds the MM-hash deque after node restart by replaying recent canonical history in connect order.
+     * Rebuilds the MM-hash deque after node restart / reorg by replaying recent canonical history in connect order.
      * <p>
      * Walks the best chain backward from {@code bestBlock} through the retention window, then replays each main-chain
-     * block (and its uncles loaded from {@code blockStore}) via {@link #appendAfterSuccessfulValidation}.
-     * {@code tracker} must already cover the replayed chain (see {@link BlockFacTracker#ensureChainRecorded}).
+     * block (and its uncle <em>headers</em> from {@link Block#getUncleList()}) via {@link #appendAfterSuccessfulValidation}.
      */
     public synchronized void warmFromCanonicalTip(
             BlockFacTracker tracker,
@@ -146,14 +156,13 @@ public final class FacBlockHashesCache {
             cur = blockStore.getBlockByHash(cur.getParentHash().getBytes());
         }
 
-        List<Block> oldestFirst = new ArrayList<>(newestFirst);
-        Collections.reverse(oldestFirst);
-        return oldestFirst;
+        Collections.reverse(newestFirst);
+        return newestFirst;
     }
 
     /**
-     * Appends the connected {@code block} and any known uncle blocks (loaded from {@code blockStore}) after FAC rows
-     * exist in {@code tracker}, then applies timestamp-based eviction.
+     * Appends the new best {@code connectingBlock} and each uncle header from its uncle list after recording FAC
+     * metadata (proof type derived against the cache <em>before</em> this append), then applies timestamp eviction.
      */
     public synchronized void appendAfterSuccessfulValidation(
             BlockFacTracker tracker,
@@ -163,17 +172,13 @@ public final class FacBlockHashesCache {
         Objects.requireNonNull(tracker, "tracker");
         Objects.requireNonNull(blockStore, "blockStore");
         Objects.requireNonNull(connectingBlock, "connectingBlock");
-        appendOne(tracker, blockStore, connectingBlock, parent);
+
+        List<Keccak256> hashesBeforeAppend = snapshotMergedMiningHashes();
+        tracker.recordAfterSuccessfulValidation(blockStore, connectingBlock, hashesBeforeAppend);
+        appendMainChainBlock(tracker, connectingBlock, parent);
+
         for (BlockHeader uh : connectingBlock.getUncleList()) {
-            Block uncleBlock = blockStore.getBlockByHash(uh.getHash().getBytes());
-            if (uncleBlock == null) {
-                continue;
-            }
-            Block uncleParent = uncleBlock.getNumber() == 0
-                    ? null
-                    : blockStore.getBlockByHash(uncleBlock.getParentHash().getBytes());
-            tracker.ensureChainRecorded(blockStore, uncleBlock);
-            appendOne(tracker, blockStore, uncleBlock, uncleParent);
+            appendUncleHeader(uh, hashesBeforeAppend);
         }
         evictStaleEntries(tracker, connectingBlock);
     }
@@ -194,14 +199,13 @@ public final class FacBlockHashesCache {
         tracker.evictEntriesWithRskTimestampBelow(threshold);
     }
 
-    private void appendOne(BlockFacTracker tracker, BlockStore blockStore, Block block, @Nullable Block parent) {
+    private void appendMainChainBlock(BlockFacTracker tracker, Block block, @Nullable Block parent) {
         Keccak256 blockHash = block.getHash();
         for (FacBlockHashEntry existing : facBlockHashes) {
             if (existing.getBlockHash().equals(blockHash)) {
                 return;
             }
         }
-        tracker.ensureChainRecorded(blockStore, block);
         BlockFacFields fields = tracker.get(blockHash);
         if (fields == null) {
             return;
@@ -209,16 +213,57 @@ public final class FacBlockHashesCache {
         Keccak256 blockMm = new Keccak256(block.getHeader().getHashForMergedMining());
         Keccak256 parentMm = parent != null
                 ? new Keccak256(parent.getHeader().getHashForMergedMining())
-                : Keccak256.ZERO_HASH;
+                : resolveParentMergedMiningHash(block.getParentHash());
         FacBlockHashEntry entry = new FacBlockHashEntry(
                 block.getNumber(),
                 blockHash,
                 blockMm,
                 parentMm,
+                fields.getProofType(),
                 fields.getFacEvidenceValue(),
                 fields.getFacSafetyLevel(),
                 fields.getRskTimestampSeconds(),
                 fields.getBtcTimestampSeconds());
         facBlockHashes.addLast(entry);
+    }
+
+    /**
+     * Adds an uncle from the connecting block's uncle list. Uses the uncle {@link BlockHeader} directly
+     * ({@link BlockHeader#getHashForMergedMining()} matches the RSK-tag payload).
+     */
+    private void appendUncleHeader(BlockHeader uncleHeader, List<Keccak256> hashesBeforeConnectingBlock) {
+        Keccak256 blockHash = uncleHeader.getHash();
+        for (FacBlockHashEntry existing : facBlockHashes) {
+            if (existing.getBlockHash().equals(blockHash)) {
+                return;
+            }
+        }
+        // Classify uncle against the cache as it stood when the nephew became best (same for all nodes).
+        byte proofType = FacEvidenceCalculator.proofTypeFromHeader(uncleHeader, hashesBeforeConnectingBlock);
+        int evidence = FacEvidenceCalculator.facEvidenceValueFromProofType(proofType);
+        Keccak256 blockMm = new Keccak256(uncleHeader.getHashForMergedMining());
+        Keccak256 parentMm = resolveParentMergedMiningHash(uncleHeader.getParentHash());
+        long rskTs = uncleHeader.getTimestamp();
+        long btcTs = FacBlockTimestamps.btcTimestampFromHeader80(uncleHeader.getBitcoinMergedMiningHeader());
+        FacBlockHashEntry entry = new FacBlockHashEntry(
+                uncleHeader.getNumber(),
+                blockHash,
+                blockMm,
+                parentMm,
+                proofType,
+                evidence,
+                0,
+                rskTs,
+                btcTs);
+        facBlockHashes.addLast(entry);
+    }
+
+    private Keccak256 resolveParentMergedMiningHash(Keccak256 parentHash) {
+        for (FacBlockHashEntry e : facBlockHashes) {
+            if (e.getBlockHash().equals(parentHash)) {
+                return e.getBlockMergedMiningHash();
+            }
+        }
+        return Keccak256.ZERO_HASH;
     }
 }

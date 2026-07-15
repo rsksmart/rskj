@@ -151,9 +151,8 @@ public class BlockChainLoader {
         );
         blockchain.setStatus(bestBlock, totalDifficulty);
 
-        if (blockFacTracker != null) {
-            blockFacTracker.ensureChainRecorded(blockStore, bestBlock);
-        }
+        // Warm FAC state from the canonical tip only. Do not pre-record tracker rows against an empty
+        // MM-hash list: ensureChainRecorded early-returns and would permanently pin neutral proofTypes.
         if (facBlockHashesCache != null && blockFacTracker != null) {
             facBlockHashesCache.warmFromCanonicalTip(blockFacTracker, blockStore, bestBlock);
         }

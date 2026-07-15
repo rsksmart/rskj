@@ -9,11 +9,17 @@
  */
 package co.rsk.core.bc;
 
+import co.rsk.crypto.Keccak256;
 import co.rsk.mine.ForkBalanceProofUtils;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+
+import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * Maps fork-balance proof type (header v3) to {@code facEvidenceValue}.
+ * Maps fork-balance proof type (derived locally after proof validation) to {@code facEvidenceValue}.
  */
 public final class FacEvidenceCalculator {
 
@@ -21,25 +27,45 @@ public final class FacEvidenceCalculator {
     }
 
     /**
-     * Type 2 → 0, type 1 → -1, type 0 → +1. Non–v3 headers and undecodable proofs → 0.
+     * Type 2 → 0, type 1 → -1, type 0 → +1.
      */
-    public static int facEvidenceValueFromBlock(Block block) {
-        if (block.getHeader().getVersion() != (byte) 0x03) {
-            return 0;
+    public static int facEvidenceValueFromProofType(byte proofType) {
+        return switch (proofType) {
+            case 0 -> 1;
+            case 1 -> -1;
+            default -> 0;
+        };
+    }
+
+    /**
+     * Derives proof type from the block's fork-balance proof suffix against recent merged-mining hashes.
+     * Non–v3 headers, missing/placeholder/undecodable proofs → type {@code 2} (neutral evidence).
+     */
+    public static byte proofTypeFromBlock(Block block, @Nullable List<Keccak256> recentMergedMiningHashes) {
+        return proofTypeFromHeader(block.getHeader(), recentMergedMiningHashes);
+    }
+
+    /**
+     * Same as {@link #proofTypeFromBlock} for a header (e.g. uncle list entries).
+     */
+    public static byte proofTypeFromHeader(BlockHeader header, @Nullable List<Keccak256> recentMergedMiningHashes) {
+        if (header.getVersion() != (byte) 0x03) {
+            return 2;
         }
-        byte[] fbp = block.getHeader().getForkBalanceProof();
+        byte[] fbp = header.getForkBalanceProof();
         if (fbp == null || fbp.length == 0 || ForkBalanceProofUtils.isDefaultForkBalancePlaceholder(fbp)) {
-            return 0;
+            return 2;
         }
         try {
-            byte t = ForkBalanceProofUtils.decodeForkBalanceProof(fbp).getProofType();
-            return switch (t) {
-                case 0 -> 1;
-                case 1 -> -1;
-                default -> 0;
-            };
+            ForkBalanceProofUtils.ForkBalanceProofDecoded decoded =
+                    ForkBalanceProofUtils.decodeForkBalanceProof(fbp);
+            List<Keccak256> hashes = recentMergedMiningHashes != null
+                    ? recentMergedMiningHashes
+                    : Collections.emptyList();
+            return ForkBalanceProofUtils.proofTypeIdentificationFromCoinbaseSuffix(
+                    decoded.getCoinbaseLastBytes(), hashes);
         } catch (IllegalArgumentException ex) {
-            return 0;
+            return 2;
         }
     }
 }

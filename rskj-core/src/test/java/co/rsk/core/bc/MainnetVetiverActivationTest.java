@@ -78,8 +78,7 @@ class MainnetVetiverActivationTest {
         FacBlockHashesCache facCache = new FacBlockHashesCache();
         ForkBalanceValidationRule forkRule = new ForkBalanceValidationRule(
                 activation,
-                props.getNetworkConstants().getBridgeConstants(),
-                facCache);
+                props.getNetworkConstants().getBridgeConstants());
 
         BlockChainBuilder builder = new BlockChainBuilder()
                 .setConfig(props)
@@ -111,8 +110,7 @@ class MainnetVetiverActivationTest {
         ActivationConfig activation = props.getActivationConfig();
         ForkBalanceValidationRule forkRule = new ForkBalanceValidationRule(
                 activation,
-                props.getNetworkConstants().getBridgeConstants(),
-                new FacBlockHashesCache());
+                props.getNetworkConstants().getBridgeConstants());
 
         BlockChainBuilder builder = new BlockChainBuilder()
                 .setConfig(props)
@@ -155,7 +153,6 @@ class MainnetVetiverActivationTest {
                 pb -> pb.buildFromBlock(btcParent),
                 parent.getNumber() + 1);
         byte[] proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
-                Collections.emptyList(),
                 mergedChild,
                 btcParent,
                 coinbaseMerkleProof);

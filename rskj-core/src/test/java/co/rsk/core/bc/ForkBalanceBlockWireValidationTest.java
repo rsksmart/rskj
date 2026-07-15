@@ -115,18 +115,17 @@ class ForkBalanceBlockWireValidationTest {
         }
     }
 
-    private static ForkBalanceValidationRule forkRule(TestSystemProperties props, FacBlockHashesCache cache) {
+    private static ForkBalanceValidationRule forkRule(TestSystemProperties props) {
         return new ForkBalanceValidationRule(
                 props.getActivationConfig(),
-                props.getNetworkConstants().getBridgeConstants(),
-                cache);
+                props.getNetworkConstants().getBridgeConstants());
     }
 
     private static BlockChainBuilder forkBalanceChainBuilder(TestSystemProperties props) {
         return new BlockChainBuilder()
                 .setConfig(props)
                 .setTesting(false)
-                .setForkBalanceValidationRule(forkRule(props, new FacBlockHashesCache()))
+                .setForkBalanceValidationRule(forkRule(props))
                 .setFacBlockHashesCache(new FacBlockHashesCache());
     }
 
@@ -182,7 +181,7 @@ class ForkBalanceBlockWireValidationTest {
         Block v2Block = gen.createChildBlock(genesis);
         Assertions.assertEquals((byte) 0x02, v2Block.getHeader().getVersion());
 
-        ForkBalanceValidationRule rule = forkRule(props555, new FacBlockHashesCache());
+        ForkBalanceValidationRule rule = forkRule(props555);
         Assertions.assertFalse(rule.isValid(v2Block));
     }
 
@@ -232,14 +231,16 @@ class ForkBalanceBlockWireValidationTest {
                 "fork-balance validation requires a non-empty coinbase merkle proof (see ForkBalanceValidationRule)");
 
         byte[] proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
-                Collections.emptyList(),
                 mergedChild,
                 btcParent,
                 coinbaseMerkleProof);
 
         ForkBalanceProofUtils.ForkBalanceProofDecoded decoded = ForkBalanceProofUtils.decodeForkBalanceProof(proof);
-        Assertions.assertEquals((byte) 2, decoded.getProofType());
         Assertions.assertArrayEquals(btcParent.cloneAsHeader().bitcoinSerialize(), decoded.getParentBtcHeader());
+        Assertions.assertEquals(
+                (byte) 2,
+                ForkBalanceProofUtils.proofTypeIdentificationFromCoinbaseSuffix(
+                        decoded.getCoinbaseLastBytes(), Collections.emptyList()));
         Assertions.assertTrue(decoded.getCoinbaseProof().length > 0);
         Assertions.assertTrue(decoded.getCoinbaseLastBytes().length > 0);
         Assertions.assertEquals(32, decoded.getCoinbaseHash().length);
@@ -270,14 +271,14 @@ class ForkBalanceBlockWireValidationTest {
         modified.setBitcoinMergedMiningMerkleProof(
                 MinerUtils.buildMerkleProof(activation, pb -> pb.buildFromBlock(mergedChild), modified.getNumber()));
 
-        ForkBalanceValidationRule rule = forkRule(props, new FacBlockHashesCache());
+        ForkBalanceValidationRule rule = forkRule(props);
         Assertions.assertTrue(rule.isValid(modified));
     }
 
     @Test
     void v3PlaceholderForkBalance_withMergedMiningFieldsPresent_failsForkBalanceRule() {
         AllButRskip144 props = new AllButRskip144();
-        ForkBalanceValidationRule rule = forkRule(props, new FacBlockHashesCache());
+        ForkBalanceValidationRule rule = forkRule(props);
         Block block = new BlockGenerator(Constants.regtest(), props.getActivationConfig()).getBlock(1);
         Block b = new BlockFactory(props.getActivationConfig()).cloneBlockForModification(block);
         Assertions.assertEquals((byte) 0x03, b.getHeader().getVersion());
@@ -314,7 +315,6 @@ class ForkBalanceBlockWireValidationTest {
                 1L);
 
         byte[] proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
-                Collections.emptyList(),
                 mergedChild,
                 btcParent,
                 coinbaseMerkleProof);
@@ -324,7 +324,6 @@ class ForkBalanceBlockWireValidationTest {
 
         ForkBalanceProofUtils.ForkBalanceProofDecoded decodedProof = ForkBalanceProofUtils.decodeForkBalanceProof(proof);
         byte[] tamperedProof = ForkBalanceProofUtils.encodeForkBalanceProofSkeleton(
-                (byte) 2,
                 otherParent.cloneAsHeader().bitcoinSerialize(),
                 decodedProof.getCoinbaseHash(),
                 decodedProof.getCoinbaseProof(),
@@ -339,7 +338,7 @@ class ForkBalanceBlockWireValidationTest {
         b.setBitcoinMergedMiningCoinbaseTransaction(
                 MinerServerImpl.compressCoinbase(childCoinbase.bitcoinSerialize()));
 
-        ForkBalanceValidationRule rule = forkRule(props, new FacBlockHashesCache());
+        ForkBalanceValidationRule rule = forkRule(props);
         Assertions.assertFalse(rule.isValid(b));
     }
 
@@ -365,14 +364,12 @@ class ForkBalanceBlockWireValidationTest {
         new BlockMiner(activation).findNonce(mergedChild, btcParams.getMaxTarget());
 
         byte[] goodProof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
-                Collections.emptyList(),
                 mergedChild,
                 btcParent,
                 MinerUtils.buildMerkleProof(activation, pb -> pb.buildFromBlock(btcParent), 1L));
 
         ForkBalanceProofUtils.ForkBalanceProofDecoded goodDecoded = ForkBalanceProofUtils.decodeForkBalanceProof(goodProof);
         byte[] badProof = ForkBalanceProofUtils.encodeForkBalanceProofSkeleton(
-                (byte) 2,
                 goodDecoded.getParentBtcHeader(),
                 goodDecoded.getCoinbaseHash(),
                 new byte[]{0x01, 0x02, 0x03},
@@ -387,14 +384,23 @@ class ForkBalanceBlockWireValidationTest {
         b.setBitcoinMergedMiningCoinbaseTransaction(
                 MinerServerImpl.compressCoinbase(childCoinbase.bitcoinSerialize()));
 
-        ForkBalanceValidationRule rule = forkRule(props, new FacBlockHashesCache());
+        ForkBalanceValidationRule rule = forkRule(props);
         Assertions.assertFalse(rule.isValid(b));
     }
 
     @Test
-    void decodeForkBalanceProof_rejectsInvalidProofType() {
+    void decodeForkBalanceProof_rejectsWrongListSize() {
         byte[] encoded = ForkBalanceProofUtils.encodeForkBalanceProofSkeleton(
-                (byte) 5, new byte[80], new byte[0], new byte[0], new byte[0], new byte[0]);
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ForkBalanceProofUtils.decodeForkBalanceProof(encoded));
+                new byte[80], new byte[0], new byte[0], new byte[0], new byte[0]);
+        // force 6-element legacy shape
+        byte[] legacySix = org.ethereum.util.RLP.encodeList(
+                org.ethereum.util.RLP.encodeElement(new byte[]{0}),
+                org.ethereum.util.RLP.encodeElement(new byte[80]),
+                org.ethereum.util.RLP.encodeElement(new byte[0]),
+                org.ethereum.util.RLP.encodeElement(new byte[0]),
+                org.ethereum.util.RLP.encodeElement(new byte[0]),
+                org.ethereum.util.RLP.encodeElement(new byte[0]));
+        Assertions.assertDoesNotThrow(() -> ForkBalanceProofUtils.decodeForkBalanceProof(encoded));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ForkBalanceProofUtils.decodeForkBalanceProof(legacySix));
     }
 }

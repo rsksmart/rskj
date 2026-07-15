@@ -70,7 +70,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BtcBlockFacCache;
 import co.rsk.core.bc.BtcMiningParentResolution;
 import co.rsk.core.bc.CachedBtcBlockForFac;
-import co.rsk.core.bc.FacBlockHashesCache;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockProcessor;
@@ -142,9 +141,6 @@ public class MinerServerImpl implements MinerServer {
     private final boolean updateWorkOnNewTransaction;
 
     @Nullable
-    private final FacBlockHashesCache facBlockHashesCache;
-
-    @Nullable
     private final BtcBlockFacCache btcBlockFacCache;
 
     private final NetworkParameters bitcoinNetworkParameters;
@@ -166,7 +162,7 @@ public class MinerServerImpl implements MinerServer {
             MiningConfig miningConfig) {
         this(config, ethereum, mainchainView, nodeBlockProcessor, powRule, builder,
                 clock, blockFactory, buildInfo, miningConfig, SubmissionRateLimitHandler.ofMiningConfig(miningConfig),
-                null, null, config.getBitcoinjNetworkConstants());
+                null, config.getBitcoinjNetworkConstants());
     }
 
     public MinerServerImpl(
@@ -180,29 +176,11 @@ public class MinerServerImpl implements MinerServer {
             BlockFactory blockFactory,
             BuildInfo buildInfo,
             MiningConfig miningConfig,
-            @Nullable FacBlockHashesCache facBlockHashesCache) {
-        this(config, ethereum, mainchainView, nodeBlockProcessor, powRule, builder,
-                clock, blockFactory, buildInfo, miningConfig, SubmissionRateLimitHandler.ofMiningConfig(miningConfig),
-                facBlockHashesCache, null, config.getBitcoinjNetworkConstants());
-    }
-
-    public MinerServerImpl(
-            RskSystemProperties config,
-            Ethereum ethereum,
-            MiningMainchainView mainchainView,
-            BlockProcessor nodeBlockProcessor,
-            ProofOfWorkRule powRule,
-            BlockToMineBuilder builder,
-            MinerClock clock,
-            BlockFactory blockFactory,
-            BuildInfo buildInfo,
-            MiningConfig miningConfig,
-            @Nullable FacBlockHashesCache facBlockHashesCache,
             @Nullable BtcBlockFacCache btcBlockFacCache,
             NetworkParameters bitcoinNetworkParameters) {
         this(config, ethereum, mainchainView, nodeBlockProcessor, powRule, builder,
                 clock, blockFactory, buildInfo, miningConfig, SubmissionRateLimitHandler.ofMiningConfig(miningConfig),
-                facBlockHashesCache, btcBlockFacCache, bitcoinNetworkParameters);
+                btcBlockFacCache, bitcoinNetworkParameters);
     }
 
     @VisibleForTesting
@@ -220,7 +198,7 @@ public class MinerServerImpl implements MinerServer {
             SubmissionRateLimitHandler submissionRateLimitHandler) {
         this(config, ethereum, mainchainView, nodeBlockProcessor, powRule, builder,
                 clock, blockFactory, buildInfo, miningConfig, submissionRateLimitHandler,
-                null, null, config.getBitcoinjNetworkConstants());
+                null, config.getBitcoinjNetworkConstants());
     }
 
     @VisibleForTesting
@@ -236,7 +214,6 @@ public class MinerServerImpl implements MinerServer {
             BuildInfo buildInfo,
             MiningConfig miningConfig,
             SubmissionRateLimitHandler submissionRateLimitHandler,
-            @Nullable FacBlockHashesCache facBlockHashesCache,
             @Nullable BtcBlockFacCache btcBlockFacCache,
             NetworkParameters bitcoinNetworkParameters) {
         this.ethereum = ethereum;
@@ -267,7 +244,6 @@ public class MinerServerImpl implements MinerServer {
 
         extraData = buildExtraData(config, buildInfo);
 
-        this.facBlockHashesCache = facBlockHashesCache;
         this.btcBlockFacCache = btcBlockFacCache;
         this.bitcoinNetworkParameters = Objects.requireNonNull(bitcoinNetworkParameters, "bitcoinNetworkParameters");
     }
@@ -540,11 +516,7 @@ public class MinerServerImpl implements MinerServer {
             return false;
         }
         try {
-            List<Keccak256> rskHashesForProofType = facBlockHashesCache != null
-                    ? facBlockHashesCache.getMergedMiningHashesForProofType()
-                    : Collections.singletonList(mergedMiningHashKey);
             byte[] proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
-                    rskHashesForProofType,
                     mergedMinedBtcHeaderOrBlock,
                     cachedParent.get());
             newBlock.getHeader().setForkBalanceProof(proof);
@@ -665,21 +637,16 @@ public class MinerServerImpl implements MinerServer {
                             resolution.getParent().getHeight());
                 }
                 CachedBtcBlockForFac cachedParent = resolution.getParent();
-                List<Keccak256> rskHashes = facBlockHashesCache != null
-                        ? facBlockHashesCache.getMergedMiningHashesForProofType()
-                        : Collections.emptyList();
 
                 byte[] mergedMiningHash = block.getHashForMergedMining();
                 BtcBlock childTemplate = buildBtcChildTemplateForMining(cachedParent, mergedMiningHash);
-                byte[] proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
-                        rskHashes, childTemplate, cachedParent);
+                byte[] proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(childTemplate, cachedParent);
                 block.getHeader().setForkBalanceProof(proof);
 
                 byte[] mergedMiningHashAfterProof = block.getHashForMergedMining();
                 if (!java.util.Arrays.equals(mergedMiningHash, mergedMiningHashAfterProof)) {
                     childTemplate = buildBtcChildTemplateForMining(cachedParent, mergedMiningHashAfterProof);
-                    proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
-                            rskHashes, childTemplate, cachedParent);
+                    proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(childTemplate, cachedParent);
                     block.getHeader().setForkBalanceProof(proof);
                 }
 

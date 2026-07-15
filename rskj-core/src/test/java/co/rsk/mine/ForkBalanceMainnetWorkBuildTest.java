@@ -47,8 +47,7 @@ class ForkBalanceMainnetWorkBuildTest {
         ChainFixture chainFixture = ForkBalanceMainnetMiningTestSupport.buildChainFixture(
                 props, facBlockHashesCache, btcBlockFacCache, false);
         MinerServerImpl minerServer = ForkBalanceMainnetMiningTestSupport.createMinerServer(
-                props, chainFixture.chainBuilder, chainFixture.chain, MAINNET_BTC,
-                facBlockHashesCache, btcBlockFacCache);
+                props, chainFixture.chainBuilder, chainFixture.chain, MAINNET_BTC, btcBlockFacCache);
 
         try {
             minerServer.buildBlockToMine(false);
@@ -89,8 +88,7 @@ class ForkBalanceMainnetWorkBuildTest {
                 props, facBlockHashesCache, emptyBtcCache, false);
 
         MinerServerImpl minerServer = ForkBalanceMainnetMiningTestSupport.createMinerServer(
-                props, chainFixture.chainBuilder, chainFixture.chain, MAINNET_BTC,
-                facBlockHashesCache, emptyBtcCache);
+                props, chainFixture.chainBuilder, chainFixture.chain, MAINNET_BTC, emptyBtcCache);
 
         try {
             Assertions.assertNull(minerServer.getLatestBuiltBlockForTesting());
@@ -113,8 +111,7 @@ class ForkBalanceMainnetWorkBuildTest {
                 props, facBlockHashesCache, null, false);
 
         MinerServerImpl minerServer = ForkBalanceMainnetMiningTestSupport.createMinerServer(
-                props, chainFixture.chainBuilder, chainFixture.chain, MAINNET_BTC,
-                facBlockHashesCache, null);
+                props, chainFixture.chainBuilder, chainFixture.chain, MAINNET_BTC, null);
 
         try {
             minerServer.buildBlockToMine(false);

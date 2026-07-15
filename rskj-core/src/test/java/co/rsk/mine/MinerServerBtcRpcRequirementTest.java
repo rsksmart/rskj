@@ -99,7 +99,6 @@ class MinerServerBtcRpcRequirementTest {
                 ConfigUtils.getDefaultMiningConfig(),
                 SubmissionRateLimitHandler.ofMiningConfig(ConfigUtils.getDefaultMiningConfig()),
                 null,
-                null,
                 Constants.mainnet().getBridgeConstants().getBtcParams());
 
         IllegalStateException ex = Assertions.assertThrows(
@@ -149,7 +148,6 @@ class MinerServerBtcRpcRequirementTest {
                 ConfigUtils.getDefaultMiningConfig(),
                 SubmissionRateLimitHandler.ofMiningConfig(ConfigUtils.getDefaultMiningConfig()),
                 null,
-                null,
                 Constants.mainnet().getBridgeConstants().getBtcParams());
     }
 
@@ -177,7 +175,6 @@ class MinerServerBtcRpcRequirementTest {
                 new BuildInfo("test", "test"),
                 ConfigUtils.getDefaultMiningConfig(),
                 SubmissionRateLimitHandler.ofMiningConfig(ConfigUtils.getDefaultMiningConfig()),
-                null,
                 null,
                 btcParams);
     }

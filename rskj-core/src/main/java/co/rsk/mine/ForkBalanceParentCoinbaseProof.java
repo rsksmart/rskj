@@ -48,12 +48,6 @@ public final class ForkBalanceParentCoinbaseProof {
             return lastCoinbaseBytes.clone();
         }
 
-        /** @deprecated use {@link #getCoinbaseLastBytes()} */
-        @Deprecated
-        public byte[] getLastCoinbaseBytes() {
-            return getCoinbaseLastBytes();
-        }
-
         public byte[] getCoinbaseHash() {
             return coinbaseHash.clone();
         }

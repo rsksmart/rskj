@@ -518,11 +518,11 @@ public class BlockChainImpl implements Blockchain {
             }
             return;
         }
-        if (blockFacTracker != null) {
-            blockFacTracker.recordAfterSuccessfulValidation(blockStore, block, parent);
-        }
+        // Cache path derives proofType against MM hashes *before* appending this best block (+ uncle headers).
         if (facBlockHashesCache != null && blockFacTracker != null) {
             facBlockHashesCache.appendAfterSuccessfulValidation(blockFacTracker, blockStore, block, parent);
+        } else if (blockFacTracker != null) {
+            blockFacTracker.recordAfterSuccessfulValidation(blockStore, block);
         }
     }
 

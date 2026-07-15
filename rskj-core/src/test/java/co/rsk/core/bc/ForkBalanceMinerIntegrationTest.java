@@ -141,8 +141,7 @@ class ForkBalanceMinerIntegrationTest {
                     props.getActivationConfig());
             ForkBalanceValidationRule forkBalanceValidationRule = new ForkBalanceValidationRule(
                     props.getActivationConfig(),
-                    props.getNetworkConstants().getBridgeConstants(),
-                    facBlockHashesCache);
+                    props.getNetworkConstants().getBridgeConstants());
             chainBuilder = new BlockChainBuilder()
                     .setConfig(props)
                     .setTesting(false)
@@ -187,7 +186,6 @@ class ForkBalanceMinerIntegrationTest {
                     blockFactory,
                     new BuildInfo("test", "test"),
                     miningConfig,
-                    facBlockHashesCache,
                     btcBlockFacCache,
                     RegTestParams.get());
         }

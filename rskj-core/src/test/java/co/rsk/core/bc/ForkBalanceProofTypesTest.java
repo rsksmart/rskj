@@ -40,8 +40,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -123,61 +121,68 @@ class ForkBalanceProofTypesTest {
                         MinerServerImpl.compressCoinbase(serialized)));
     }
 
-    // --- buildForkBalanceProofSkeleton auto-classification ---
+    // --- buildForkBalanceProofSkeleton (no proofType on wire) ---
 
     @Test
-    void buildSkeleton_classifiesType2_whenParentCoinbaseHasNoTag() throws Exception {
+    void buildSkeleton_roundTripsParentCoinbaseWithoutEmbeddingProofType() throws Exception {
         MergedMiningFixture fx = buildMergedMiningFixture(coinbaseWithoutRskTag((byte) 0x10), coinbaseWithoutRskTag((byte) 0x11));
         byte[] proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
-                List.of(CANONICAL_MM_HASH),
                 fx.mergedChild(),
                 fx.btcParent(),
                 fx.parentMerkleProof());
 
         ForkBalanceProofUtils.ForkBalanceProofDecoded d = ForkBalanceProofUtils.decodeForkBalanceProof(proof);
-        Assertions.assertEquals((byte) 2, d.getProofType());
+        Assertions.assertEquals(80, d.getParentBtcHeader().length);
+        Assertions.assertTrue(d.getCoinbaseLastBytes().length > 0);
+        Assertions.assertEquals(
+                (byte) 2,
+                ForkBalanceProofUtils.proofTypeIdentificationFromCoinbaseSuffix(
+                        d.getCoinbaseLastBytes(), List.of(CANONICAL_MM_HASH)));
     }
 
     @Test
-    void buildSkeleton_classifiesType0_whenParentTagHashInList() throws Exception {
+    void buildSkeleton_suffixClassifiesType0_whenParentTagHashInList() throws Exception {
         MergedMiningFixture fx = buildMergedMiningFixture(
                 coinbaseWithRskTag(CANONICAL_MM_HASH), coinbaseWithoutRskTag((byte) 0x12));
         byte[] proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
-                List.of(CANONICAL_MM_HASH),
                 fx.mergedChild(),
                 fx.btcParent(),
                 fx.parentMerkleProof());
 
-        Assertions.assertEquals((byte) 0, ForkBalanceProofUtils.decodeForkBalanceProof(proof).getProofType());
+        Assertions.assertEquals(
+                (byte) 0,
+                ForkBalanceProofUtils.proofTypeIdentificationFromCoinbaseSuffix(
+                        ForkBalanceProofUtils.decodeForkBalanceProof(proof).getCoinbaseLastBytes(),
+                        List.of(CANONICAL_MM_HASH)));
     }
 
     @Test
-    void buildSkeleton_classifiesType1_whenParentTagHashNotInList() throws Exception {
+    void buildSkeleton_suffixClassifiesType1_whenParentTagHashNotInList() throws Exception {
         MergedMiningFixture fx = buildMergedMiningFixture(
                 coinbaseWithRskTag(HIDDEN_FORK_MM_HASH), coinbaseWithoutRskTag((byte) 0x13));
         byte[] proof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
-                List.of(CANONICAL_MM_HASH),
                 fx.mergedChild(),
                 fx.btcParent(),
                 fx.parentMerkleProof());
 
-        Assertions.assertEquals((byte) 1, ForkBalanceProofUtils.decodeForkBalanceProof(proof).getProofType());
+        Assertions.assertEquals(
+                (byte) 1,
+                ForkBalanceProofUtils.proofTypeIdentificationFromCoinbaseSuffix(
+                        ForkBalanceProofUtils.decodeForkBalanceProof(proof).getCoinbaseLastBytes(),
+                        List.of(CANONICAL_MM_HASH)));
     }
 
-    @ParameterizedTest
-    @ValueSource(ints = {0, 1, 2})
-    void encodeDecode_roundTrip_preservesProofType(int proofType) throws Exception {
+    @Test
+    void encodeDecode_roundTrip_preservesCoinbaseFields() throws Exception {
         MergedMiningFixture fx = buildMergedMiningFixture(
-                proofType == 2 ? coinbaseWithoutRskTag((byte) 0x20) : coinbaseWithRskTag(CANONICAL_MM_HASH),
+                coinbaseWithRskTag(CANONICAL_MM_HASH),
                 coinbaseWithoutRskTag((byte) 0x21));
         byte[] proof = encodeProofWithParentCoinbase(
-                (byte) proofType,
                 fx.btcParent().cloneAsHeader().bitcoinSerialize(),
                 fx.btcParent().getTransactions().get(0).bitcoinSerialize(),
                 fx.parentMerkleProof());
 
         ForkBalanceProofUtils.ForkBalanceProofDecoded decoded = ForkBalanceProofUtils.decodeForkBalanceProof(proof);
-        Assertions.assertEquals((byte) proofType, decoded.getProofType());
         Assertions.assertEquals(80, decoded.getParentBtcHeader().length);
         Assertions.assertTrue(decoded.getCoinbaseLastBytes().length > 0);
         Assertions.assertEquals(32, decoded.getCoinbaseHash().length);
@@ -193,7 +198,7 @@ class ForkBalanceProofTypesTest {
                 ForkBalanceParentCoinbaseProof.fromSerialized(serialized);
         Assertions.assertTrue(ForkBalanceParentCoinbaseProof.verifyCoinbaseHash(
                 compact.getMidStateProof(),
-                compact.getLastCoinbaseBytes(),
+                compact.getCoinbaseLastBytes(),
                 compact.getCoinbaseHash()));
         Assertions.assertArrayEquals(parentCoinbase.getHash().getBytes(), compact.getCoinbaseHash());
     }
@@ -229,7 +234,7 @@ class ForkBalanceProofTypesTest {
                 ForkBalanceParentCoinbaseProof.fromSerialized(serialized);
         Assertions.assertTrue(ForkBalanceParentCoinbaseProof.verifyCoinbaseHash(
                 compact.getMidStateProof(),
-                compact.getLastCoinbaseBytes(),
+                compact.getCoinbaseLastBytes(),
                 compact.getCoinbaseHash()));
     }
 
@@ -247,7 +252,7 @@ class ForkBalanceProofTypesTest {
                 ForkBalanceParentCoinbaseProof.fromSerialized(serialized);
         Assertions.assertTrue(ForkBalanceParentCoinbaseProof.verifyCoinbaseHash(
                 compact.getMidStateProof(),
-                compact.getLastCoinbaseBytes(),
+                compact.getCoinbaseLastBytes(),
                 compact.getCoinbaseHash()));
     }
 
@@ -259,7 +264,7 @@ class ForkBalanceProofTypesTest {
                 ForkBalanceParentCoinbaseProof.fromSerialized(coinbase.bitcoinSerialize());
         Assertions.assertTrue(ForkBalanceParentCoinbaseProof.verifyCoinbaseHash(
                 compact.getMidStateProof(),
-                compact.getLastCoinbaseBytes(),
+                compact.getCoinbaseLastBytes(),
                 compact.getCoinbaseHash()));
     }
 
@@ -267,94 +272,52 @@ class ForkBalanceProofTypesTest {
     void parentCoinbaseProof_rejectsTamperedSuffix() {
         ForkBalanceParentCoinbaseProof.CompactFields compact =
                 ForkBalanceParentCoinbaseProof.fromSerialized(coinbaseWithoutRskTag((byte) 0x71).bitcoinSerialize());
-        byte[] tampered = compact.getLastCoinbaseBytes().clone();
+        byte[] tampered = compact.getCoinbaseLastBytes().clone();
         tampered[tampered.length - 1] ^= 0x01;
         Assertions.assertFalse(ForkBalanceParentCoinbaseProof.verifyCoinbaseHash(
                 compact.getMidStateProof(), tampered, compact.getCoinbaseHash()));
     }
 
-    // --- ForkBalanceValidationRule ---
+    // --- ForkBalanceValidationRule (crypto only; proofType is local metadata) ---
 
     @Test
-    void validation_acceptsProofType0_whenTagMatchesCache() throws Exception {
-        assertValidationAcceptsDeclaredType((byte) 0, coinbaseWithRskTag(CANONICAL_MM_HASH), cacheWith(CANONICAL_MM_HASH));
+    void validation_acceptsCryptographicallyValidProofs() throws Exception {
+        Assertions.assertTrue(buildAndValidate(coinbaseWithRskTag(CANONICAL_MM_HASH)));
+        Assertions.assertTrue(buildAndValidate(coinbaseWithRskTag(HIDDEN_FORK_MM_HASH)));
+        Assertions.assertTrue(buildAndValidate(coinbaseWithoutRskTag((byte) 0x30)));
     }
 
     @Test
-    void validation_acceptsProofType1_whenTagNotInCache() throws Exception {
-        assertValidationAcceptsDeclaredType((byte) 1, coinbaseWithRskTag(HIDDEN_FORK_MM_HASH), cacheWith(CANONICAL_MM_HASH));
-    }
+    void facEvidenceValue_mapsProofTypesFromCoinbaseSuffixAndCache() throws Exception {
+        Block type0 = blockWithParentCoinbase(coinbaseWithRskTag(CANONICAL_MM_HASH));
+        Block type1 = blockWithParentCoinbase(coinbaseWithRskTag(HIDDEN_FORK_MM_HASH));
+        Block type2 = blockWithParentCoinbase(coinbaseWithoutRskTag((byte) 0x60));
 
-    @Test
-    void validation_acceptsProofType2_whenNoRskTagInParentCoinbase() throws Exception {
-        assertValidationAcceptsDeclaredType((byte) 2, coinbaseWithoutRskTag((byte) 0x30), cacheWith(CANONICAL_MM_HASH));
-    }
-
-    @Test
-    void validation_rejectsProofType0_whenDeclared0ButNoTag() throws Exception {
-        Assertions.assertFalse(buildAndValidate((byte) 0, coinbaseWithoutRskTag((byte) 0x31), cacheWith(CANONICAL_MM_HASH)));
-    }
-
-    @Test
-    void validation_rejectsProofType1_whenDeclared1ButHashInCache() throws Exception {
-        Assertions.assertFalse(buildAndValidate((byte) 1, coinbaseWithRskTag(CANONICAL_MM_HASH), cacheWith(CANONICAL_MM_HASH)));
-    }
-
-    @Test
-    void validation_rejectsProofType2_whenDeclared2ButParentTagPresent() throws Exception {
-        Assertions.assertFalse(buildAndValidate((byte) 2, coinbaseWithRskTag(HIDDEN_FORK_MM_HASH), cacheWith(CANONICAL_MM_HASH)));
-    }
-
-    @Test
-    void validation_rejectsMismatchedDeclaredType_whenSkeletonBuiltWithWrongTypeByte() throws Exception {
-        MergedMiningFixture fx = buildMergedMiningFixture(
-                coinbaseWithRskTag(CANONICAL_MM_HASH), coinbaseWithoutRskTag((byte) 0x40));
-        byte[] autoProof = ForkBalanceProofUtils.buildForkBalanceProofSkeleton(
-                List.of(CANONICAL_MM_HASH),
-                fx.mergedChild(),
-                fx.btcParent(),
-                fx.parentMerkleProof());
-        Assertions.assertEquals((byte) 0, ForkBalanceProofUtils.decodeForkBalanceProof(autoProof).getProofType());
-
-        byte[] wrongDeclared = encodeProofWithParentCoinbase(
-                (byte) 1,
-                ForkBalanceProofUtils.decodeForkBalanceProof(autoProof).getParentBtcHeader(),
-                fx.btcParent().getTransactions().get(0).bitcoinSerialize(),
-                ForkBalanceProofUtils.decodeForkBalanceProof(autoProof).getCoinbaseProof());
-
-        Block block = v3BlockWithProof(fx, wrongDeclared);
-        Assertions.assertFalse(forkRule(cacheWith(CANONICAL_MM_HASH)).isValid(block));
-    }
-
-    // --- FAC evidence mapping ---
-
-    @Test
-    void facEvidenceValue_mapsProofTypes() throws Exception {
-        Assertions.assertEquals(1, FacEvidenceCalculator.facEvidenceValueFromBlock(blockWithProofType((byte) 0)));
-        Assertions.assertEquals(-1, FacEvidenceCalculator.facEvidenceValueFromBlock(blockWithProofType((byte) 1)));
-        Assertions.assertEquals(0, FacEvidenceCalculator.facEvidenceValueFromBlock(blockWithProofType((byte) 2)));
+        Assertions.assertEquals(
+                1,
+                FacEvidenceCalculator.facEvidenceValueFromProofType(
+                        FacEvidenceCalculator.proofTypeFromBlock(type0, List.of(CANONICAL_MM_HASH))));
+        Assertions.assertEquals(
+                -1,
+                FacEvidenceCalculator.facEvidenceValueFromProofType(
+                        FacEvidenceCalculator.proofTypeFromBlock(type1, List.of(CANONICAL_MM_HASH))));
+        Assertions.assertEquals(
+                0,
+                FacEvidenceCalculator.facEvidenceValueFromProofType(
+                        FacEvidenceCalculator.proofTypeFromBlock(type2, List.of(CANONICAL_MM_HASH))));
     }
 
     // --- helpers ---
 
-    private static void assertValidationAcceptsDeclaredType(
-            byte declaredType,
-            BtcTransaction parentCoinbase,
-            FacBlockHashesCache cache) throws Exception {
-        Assertions.assertTrue(buildAndValidate(declaredType, parentCoinbase, cache));
-    }
-
-    private static boolean buildAndValidate(byte declaredType, BtcTransaction parentCoinbase, FacBlockHashesCache cache)
-            throws Exception {
+    private static boolean buildAndValidate(BtcTransaction parentCoinbase) throws Exception {
         MergedMiningFixture fx = buildMergedMiningFixture(
                 parentCoinbase, coinbaseWithoutRskTag((byte) 0x50));
         byte[] proof = encodeProofWithParentCoinbase(
-                declaredType,
                 fx.btcParent().cloneAsHeader().bitcoinSerialize(),
                 fx.btcParent().getTransactions().get(0).bitcoinSerialize(),
                 fx.parentMerkleProof());
         Block block = v3BlockWithProof(fx, proof);
-        return forkRule(cache).isValid(block);
+        return forkRule().isValid(block);
     }
 
     private static Block v3BlockWithProof(MergedMiningFixture fx, byte[] proof) {
@@ -370,29 +333,21 @@ class ForkBalanceProofTypesTest {
         return modified;
     }
 
-    private static Block blockWithProofType(byte proofType) throws Exception {
+    private static Block blockWithParentCoinbase(BtcTransaction parentCoinbase) throws Exception {
         MergedMiningFixture fx = buildMergedMiningFixture(
-                proofType == 2 ? coinbaseWithoutRskTag((byte) 0x60) : coinbaseWithRskTag(CANONICAL_MM_HASH),
+                parentCoinbase,
                 coinbaseWithoutRskTag((byte) 0x61));
         byte[] proof = encodeProofWithParentCoinbase(
-                proofType,
                 fx.btcParent().cloneAsHeader().bitcoinSerialize(),
                 fx.btcParent().getTransactions().get(0).bitcoinSerialize(),
                 fx.parentMerkleProof());
         return v3BlockWithProof(fx, proof);
     }
 
-    private static ForkBalanceValidationRule forkRule(FacBlockHashesCache cache) {
+    private static ForkBalanceValidationRule forkRule() {
         return new ForkBalanceValidationRule(
                 ACTIVATION,
-                PROPS.getNetworkConstants().getBridgeConstants(),
-                cache);
-    }
-
-    private static FacBlockHashesCache cacheWith(Keccak256... hashes) {
-        FacBlockHashesCache cache = new FacBlockHashesCache();
-        cache.seedMergedMiningHashesForTests(hashes);
-        return cache;
+                PROPS.getNetworkConstants().getBridgeConstants());
     }
 
     /**
@@ -419,14 +374,12 @@ class ForkBalanceProofTypesTest {
     }
 
     private static byte[] encodeProofWithParentCoinbase(
-            byte proofType,
             byte[] parentBtcHeader,
             byte[] parentCoinbaseSerialized,
             byte[] parentMerkleProof) {
         ForkBalanceParentCoinbaseProof.CompactFields compact =
                 ForkBalanceParentCoinbaseProof.fromSerialized(parentCoinbaseSerialized);
         return ForkBalanceProofUtils.encodeForkBalanceProofSkeleton(
-                proofType,
                 parentBtcHeader,
                 compact.getCoinbaseHash(),
                 parentMerkleProof,

@@ -14,10 +14,12 @@ import co.rsk.crypto.Keccak256;
 import javax.annotation.Nullable;
 
 /**
- * Post-connect metadata derived from fork-balance proof type (not part of the canonical block wire format).
+ * Post-connect metadata derived after fork-balance proof validation (not part of the canonical block wire format).
+ * Includes locally determined {@code proofType}.
  */
 public final class BlockFacFields {
 
+    private final byte proofType;
     private final int facEvidenceValue;
     private final int facSafetyLevel;
     @Nullable
@@ -26,16 +28,34 @@ public final class BlockFacFields {
     private final long btcTimestampSeconds;
 
     public BlockFacFields(
+            byte proofType,
             int facEvidenceValue,
             int facSafetyLevel,
             @Nullable Keccak256 lastSafeBlock,
             long rskTimestampSeconds,
             long btcTimestampSeconds) {
+        this.proofType = proofType;
         this.facEvidenceValue = facEvidenceValue;
         this.facSafetyLevel = facSafetyLevel;
         this.lastSafeBlock = lastSafeBlock;
         this.rskTimestampSeconds = rskTimestampSeconds;
         this.btcTimestampSeconds = btcTimestampSeconds;
+    }
+
+    /**
+     * Convenience for tests / callers that do not care about proof type (stored as type 2 / neutral).
+     */
+    public BlockFacFields(
+            int facEvidenceValue,
+            int facSafetyLevel,
+            @Nullable Keccak256 lastSafeBlock,
+            long rskTimestampSeconds,
+            long btcTimestampSeconds) {
+        this((byte) 2, facEvidenceValue, facSafetyLevel, lastSafeBlock, rskTimestampSeconds, btcTimestampSeconds);
+    }
+
+    public byte getProofType() {
+        return proofType;
     }
 
     public int getFacEvidenceValue() {

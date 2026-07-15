@@ -969,7 +969,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockFactory(),
                     getBuildInfo(),
                     getMiningConfig(),
-                    getFacBlockHashesCache(),
                     getBtcBlockFacCache(),
                     getRskSystemProperties().getBitcoinjNetworkConstants()
             );
@@ -1466,8 +1465,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 getBlockValidationRule(),
                 new ForkBalanceValidationRule(
                         getRskSystemProperties().getActivationConfig(),
-                        getRskSystemProperties().getNetworkConstants().getBridgeConstants(),
-                        getFacBlockHashesCache())
+                        getRskSystemProperties().getNetworkConstants().getBridgeConstants())
         );
     }
 

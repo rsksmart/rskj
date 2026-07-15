@@ -91,20 +91,29 @@ class BlockFacTrackerChainTest {
     }
 
     @Test
-    void v3ProofTypeZero_setsEvidenceOne_andAdvancesLastSafe() {
+    void v3ProofTypeZero_fromCoinbaseSuffixAndCache_setsEvidenceOne_andAdvancesLastSafe() {
         AllRulesActiveTestProperties props = new AllRulesActiveTestProperties();
         BlockFacTracker tracker = new BlockFacTracker();
+        FacBlockHashesCache cache = new FacBlockHashesCache();
         BlockChainBuilder builder = new BlockChainBuilder()
                 .setConfig(props)
                 .setTesting(true)
-                .setBlockFacTracker(tracker);
+                .setBlockFacTracker(tracker)
+                .setFacBlockHashesCache(cache);
         BlockChainImpl chain = builder.build();
         Block genesis = chain.getBestBlock();
 
+        Keccak256 taggedMmHash = new Keccak256(
+                org.bouncycastle.util.encoders.Hex.decode(
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        cache.seedMergedMiningHashesForTests(taggedMmHash);
+
         BlockGenerator gen = new BlockGenerator(Constants.regtest(), props.getActivationConfig());
         Block block1 = gen.createChildBlock(genesis);
+        byte[] suffix = org.bouncycastle.util.Arrays.concatenate(
+                co.rsk.config.RskMiningConstants.RSK_TAG, taggedMmHash.getBytes());
         byte[] forkBalanceProof = ForkBalanceProofUtils.encodeForkBalanceProofSkeleton(
-                (byte) 0, new byte[80], new byte[0], new byte[0], new byte[0], new byte[0]);
+                new byte[80], new byte[0], new byte[0], suffix, new byte[0]);
         block1.getHeader().setForkBalanceProof(forkBalanceProof);
         builder.getBlockExecutor().executeAndFillAll(block1, genesis.getHeader());
         block1.seal();
@@ -112,6 +121,7 @@ class BlockFacTrackerChainTest {
 
         BlockFacFields b1Fac = chain.getBlockFacFields(block1.getHash());
         Assertions.assertNotNull(b1Fac);
+        Assertions.assertEquals((byte) 0, b1Fac.getProofType());
         Assertions.assertEquals(1, b1Fac.getFacEvidenceValue());
         Assertions.assertEquals(1, b1Fac.getFacSafetyLevel());
         Assertions.assertEquals(block1.getHash(), b1Fac.getLastSafeBlock());

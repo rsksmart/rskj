@@ -12,9 +12,7 @@ package co.rsk.validators;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.core.bc.FacBlockHashesCache;
 import co.rsk.core.bc.FacPerfLogger;
-import co.rsk.crypto.Keccak256;
 import co.rsk.mine.ForkBalanceParentCoinbaseProof;
 import co.rsk.mine.ForkBalanceProofUtils;
 import co.rsk.peg.constants.BridgeConstants;
@@ -25,12 +23,12 @@ import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import java.util.Collections;
-import java.util.List;
-
 /**
  * Validates fork-balance proof for RSK blocks with header version 3 after {@link ConsensusRule#RSKIP555}.
+ * <p>
+ * Checks cryptographic proof content only (header version, BTC parent link, coinbase midstate/merkle).
+ * Proof type is derived locally after import as FAC cache metadata
+ * ({@link co.rsk.core.bc.FacBlockHashesCache}), and is not a wire-validity check.
  */
 public class ForkBalanceValidationRule implements BlockValidationRule {
 
@@ -38,16 +36,10 @@ public class ForkBalanceValidationRule implements BlockValidationRule {
 
     private final ActivationConfig activationConfig;
     private final NetworkParameters btcParams;
-    @Nullable
-    private final FacBlockHashesCache facBlockHashesCache;
 
-    public ForkBalanceValidationRule(
-            ActivationConfig activationConfig,
-            BridgeConstants bridgeConstants,
-            @Nullable FacBlockHashesCache facBlockHashesCache) {
+    public ForkBalanceValidationRule(ActivationConfig activationConfig, BridgeConstants bridgeConstants) {
         this.activationConfig = activationConfig;
         this.btcParams = bridgeConstants.getBtcParams();
-        this.facBlockHashesCache = facBlockHashesCache;
     }
 
     @Override
@@ -101,28 +93,7 @@ public class ForkBalanceValidationRule implements BlockValidationRule {
             return false;
         }
 
-        if (!checkParentCoinbaseMerkle(blockNumber, printableHash, decoded)) {
-            return false;
-        }
-
-        List<Keccak256> recentMerged = mergedMiningHashesForProofType();
-        if (!checkProofTypeAgainstParentCoinbase(decoded.getProofType(), decoded.getCoinbaseLastBytes(), recentMerged)) {
-            FacPerfLogger.logForkBalanceProofRejected(
-                    blockNumber,
-                    printableHash,
-                    "PROOF_TYPE_MISMATCH",
-                    "declared=" + (decoded.getProofType() & 0xFF) + " recentMergedCount=" + recentMerged.size());
-            return false;
-        }
-
-        return true;
-    }
-
-    private List<Keccak256> mergedMiningHashesForProofType() {
-        if (facBlockHashesCache == null) {
-            return Collections.emptyList();
-        }
-        return facBlockHashesCache.getMergedMiningHashesForProofType();
+        return checkParentCoinbaseMerkle(blockNumber, printableHash, decoded);
     }
 
     private boolean checkParentHeaderMatchesMergedPrev(byte[] mergedMiningHeader80, byte[] parentBtcHeader80) {
@@ -180,13 +151,5 @@ public class ForkBalanceValidationRule implements BlockValidationRule {
                     blockNumber, printableHash, "COINBASE_MERKLE_EXCEPTION", e.getMessage());
             return false;
         }
-    }
-
-    private boolean checkProofTypeAgainstParentCoinbase(
-            byte declared,
-            byte[] coinbaseLastBytes,
-            List<Keccak256> recentMerged) {
-        byte expected = ForkBalanceProofUtils.proofTypeIdentificationFromCoinbaseSuffix(coinbaseLastBytes, recentMerged);
-        return declared == expected;
     }
 }

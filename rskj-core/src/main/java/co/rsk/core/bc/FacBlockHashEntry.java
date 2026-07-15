@@ -23,6 +23,7 @@ public final class FacBlockHashEntry {
     private final Keccak256 blockHash;
     private final Keccak256 blockMergedMiningHash;
     private final Keccak256 parentMergedMiningHash;
+    private final byte proofType;
     private final int facEvidenceValue;
     private final int facSafetyLevel;
     private final long rskTimestampSeconds;
@@ -33,6 +34,7 @@ public final class FacBlockHashEntry {
             Keccak256 blockHash,
             Keccak256 blockMergedMiningHash,
             Keccak256 parentMergedMiningHash,
+            byte proofType,
             int facEvidenceValue,
             int facSafetyLevel,
             long rskTimestampSeconds,
@@ -41,10 +43,35 @@ public final class FacBlockHashEntry {
         this.blockHash = Objects.requireNonNull(blockHash, "blockHash");
         this.blockMergedMiningHash = Objects.requireNonNull(blockMergedMiningHash);
         this.parentMergedMiningHash = Objects.requireNonNull(parentMergedMiningHash);
+        this.proofType = proofType;
         this.facEvidenceValue = facEvidenceValue;
         this.facSafetyLevel = facSafetyLevel;
         this.rskTimestampSeconds = rskTimestampSeconds;
         this.btcTimestampSeconds = btcTimestampSeconds;
+    }
+
+    /**
+     * Convenience when proof type metadata is unused (neutral type 2).
+     */
+    public FacBlockHashEntry(
+            long blockHeight,
+            Keccak256 blockHash,
+            Keccak256 blockMergedMiningHash,
+            Keccak256 parentMergedMiningHash,
+            int facEvidenceValue,
+            int facSafetyLevel,
+            long rskTimestampSeconds,
+            long btcTimestampSeconds) {
+        this(
+                blockHeight,
+                blockHash,
+                blockMergedMiningHash,
+                parentMergedMiningHash,
+                (byte) 2,
+                facEvidenceValue,
+                facSafetyLevel,
+                rskTimestampSeconds,
+                btcTimestampSeconds);
     }
 
     public long getBlockHeight() {
@@ -61,6 +88,10 @@ public final class FacBlockHashEntry {
 
     public Keccak256 getParentMergedMiningHash() {
         return parentMergedMiningHash;
+    }
+
+    public byte getProofType() {
+        return proofType;
     }
 
     public int getFacEvidenceValue() {
@@ -89,6 +120,7 @@ public final class FacBlockHashEntry {
         }
         FacBlockHashEntry that = (FacBlockHashEntry) o;
         return blockHeight == that.blockHeight
+                && proofType == that.proofType
                 && facEvidenceValue == that.facEvidenceValue
                 && facSafetyLevel == that.facSafetyLevel
                 && rskTimestampSeconds == that.rskTimestampSeconds
@@ -105,6 +137,7 @@ public final class FacBlockHashEntry {
                 blockHash,
                 blockMergedMiningHash,
                 parentMergedMiningHash,
+                proofType,
                 facEvidenceValue,
                 facSafetyLevel,
                 rskTimestampSeconds,
