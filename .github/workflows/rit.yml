@@ -169,7 +169,7 @@ jobs:
         run: |
           # Delete non-alphanumeric characters and limit to 75 chars, which is the branch title limit in GitHub
           sanitize() {
-            echo "$1" | tr -cd '[:alnum:]_ -' | cut -c1-75
+            printf '%s' "$1" | tr -cd '[:alnum:]_ -' | cut -c1-75
           }
 
           if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
@@ -179,7 +179,7 @@ jobs:
             NOTIFICATION_ACTION_LABEL="Open PR"
           elif [ "$GITHUB_EVENT_NAME" = push ]; then
             NOTIFICATION_TITLE="Push to ${GITHUB_REF_NAME}"
-            NOTIFICATION_SUBTITLE=$(sanitize "$(echo "$GITHUB_EVENT_HEAD_COMMIT_MESSAGE" | head -n1)")
+            NOTIFICATION_SUBTITLE=$(sanitize "$(printf '%s' "$GITHUB_EVENT_HEAD_COMMIT_MESSAGE" | head -n1)")
             NOTIFICATION_URL="$GITHUB_EVENT_HEAD_COMMIT_URL"
             NOTIFICATION_ACTION_LABEL="View Commit"
           else
