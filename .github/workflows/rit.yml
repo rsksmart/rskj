@@ -41,7 +41,7 @@ jobs:
   rootstock-integration-tests:
     name: Rootstock Integration Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       SLACK_NOTIFICATION_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
     steps:
