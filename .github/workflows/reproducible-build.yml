@@ -106,6 +106,14 @@ jobs:
           if [ -z "$version" ] || [ -z "$modifier" ]; then
             echo "::error::could not parse version.properties at ${REF}"; exit 1
           fi
+          case "$version" in
+            *..*) echo "::error::versionNumber contains '..': '$version'"; exit 1;;
+            *[!A-Za-z0-9.-]*) echo "::error::versionNumber has disallowed characters (allowed: A-Za-z0-9.-): '$version'"; exit 1;;
+          esac
+          case "$modifier" in
+            *..*) echo "::error::modifier contains '..': '$modifier'"; exit 1;;
+            *[!A-Za-z0-9.-]*) echo "::error::modifier has disallowed characters (allowed: A-Za-z0-9.-): '$modifier'"; exit 1;;
+          esac
           {
             echo "version=$version"
             echo "modifier=$modifier"
