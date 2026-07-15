@@ -42,8 +42,6 @@ jobs:
     name: Rootstock Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      SLACK_NOTIFICATION_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
     steps:
       - name: Checkout Repository # Step needed to access the PR description using github CLI
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
@@ -203,8 +201,24 @@ jobs:
           repo-owner: ${{ env.REPO_OWNER }}
           test-suite: ${{ env.TEST_SUITE }}
 
+      - name: Check Slack Token
+        id: check-slack-token
+        # always() so this still runs (and the failure-notification step can gate on its output)
+        # even if the RIT action step above failed.
+        if: always()
+        # Kept in its own step-scoped env (not job-level) so the token itself is never exposed
+        # to other steps (e.g. the RIT action above); only a boolean flag is exposed as an output.
+        env:
+          SLACK_NOTIFICATION_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
+        run: |
+          if [ -n "$SLACK_NOTIFICATION_TOKEN" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Send Slack Notification on Success
-        if: success() && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart')) && env.SLACK_NOTIFICATION_TOKEN != ''
+        if: success() && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart')) && steps.check-slack-token.outputs.has_token == 'true'
         uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           token: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
@@ -238,7 +252,7 @@ jobs:
                     url: "${{ env.BUILD_URL }}"
 
       - name: Send Slack Notification on Failure
-        if: failure() && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart')) && env.SLACK_NOTIFICATION_TOKEN != ''
+        if: failure() && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart')) && steps.check-slack-token.outputs.has_token == 'true'
         uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           token: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
