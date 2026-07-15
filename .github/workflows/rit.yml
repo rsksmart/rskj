@@ -212,30 +212,30 @@ jobs:
           payload: |
             channel: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
             blocks:
-            - type: header
-              text:
-                type: plain_text
-                text: "✅ PASSED — ${{ github.repository }} – ${{ env.NOTIFICATION_TITLE }}"
-                emoji: true
-            - type: section
-              text:
-                type: mrkdwn
-                text: "*${{ env.NOTIFICATION_SUBTITLE }}*"
-              fields:
-                - type: mrkdwn
-                  text: "• rskj: `${{ env.RSKJ_BRANCH }}`\n• fed: `${{ env.POWPEG_BRANCH }}`\n• rit: `${{ env.RIT_BRANCH }}`"
-            - type: actions
-              elements:
-                - type: button
-                  text:
-                    type: plain_text
-                    text: "${{ env.NOTIFICATION_ACTION_LABEL }}"
-                  url: "${{ env.NOTIFICATION_URL }}"
-                - type: button
-                  text:
-                    type: plain_text
-                    text: View Actions Run
-                  url: "${{ env.BUILD_URL }}"
+              - type: header
+                text:
+                  type: plain_text
+                  text: "✅ PASSED — ${{ github.repository }} – ${{ env.NOTIFICATION_TITLE }}"
+                  emoji: true
+              - type: section
+                text:
+                  type: mrkdwn
+                  text: "*${{ env.NOTIFICATION_SUBTITLE }}*"
+                fields:
+                  - type: mrkdwn
+                    text: "• rskj: `${{ env.RSKJ_BRANCH }}`\n• fed: `${{ env.POWPEG_BRANCH }}`\n• rit: `${{ env.RIT_BRANCH }}`"
+              - type: actions
+                elements:
+                  - type: button
+                    text:
+                      type: plain_text
+                      text: "${{ env.NOTIFICATION_ACTION_LABEL }}"
+                    url: "${{ env.NOTIFICATION_URL }}"
+                  - type: button
+                    text:
+                      type: plain_text
+                      text: View Actions Run
+                    url: "${{ env.BUILD_URL }}"
 
       - name: Send Slack Notification on Failure
         if: failure() && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart')) && env.SLACK_NOTIFICATION_TOKEN != ''
