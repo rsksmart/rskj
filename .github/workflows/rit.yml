@@ -163,11 +163,12 @@ jobs:
           GITHUB_EVENT_HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message || '' }}
           GITHUB_EVENT_HEAD_COMMIT_URL: ${{ github.event.head_commit.url || '' }}
           GITHUB_REF_NAME: ${{ github.ref_name || '' }}
+          GITHUB_SHA: ${{ github.sha }}
           RUN_URL: ${{ env.BUILD_URL }}
         run: |
           # Replace (not delete) non-alphanumeric characters so stripped punctuation never welds
           # two words together (e.g. "rsksmart/rit-update" must not become "rsksmartrit-update"),
-          # then squeeze runs of spaces and trim, and limit to 75 chars (GitHub's branch title limit).
+          # then squeeze runs of spaces and trim, and cap length to keep the Slack message concise.
           sanitize() {
             printf '%s' "$1" | tr -c '[:alnum:]_ -' ' ' | tr -s ' ' | sed 's/^ *//;s/ *$//' | cut -c1-75
           }
@@ -175,11 +176,18 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
             NOTIFICATION_TITLE="PR #${GITHUB_EVENT_PULL_REQUEST_NUMBER}"
             NOTIFICATION_SUBTITLE=$(sanitize "$GITHUB_EVENT_PULL_REQUEST_TITLE")
+            # A PR title made up entirely of characters sanitize() strips (e.g. only emoji)
+            # would otherwise produce an empty string, which Slack's Block Kit rejects (text
+            # objects require a minimum length of 1), failing this step and misreporting a
+            # successful run as failed.
+            : "${NOTIFICATION_SUBTITLE:=PR #${GITHUB_EVENT_PULL_REQUEST_NUMBER}}"
             NOTIFICATION_URL="$GITHUB_EVENT_PULL_REQUEST_HTML_URL"
             NOTIFICATION_ACTION_LABEL="Open PR"
           elif [ "$GITHUB_EVENT_NAME" = push ]; then
             NOTIFICATION_TITLE="Push to ${GITHUB_REF_NAME}"
             NOTIFICATION_SUBTITLE=$(sanitize "$(printf '%s' "$GITHUB_EVENT_HEAD_COMMIT_MESSAGE" | head -n1)")
+            # Same empty-string risk as above, for commit messages.
+            : "${NOTIFICATION_SUBTITLE:=Commit ${GITHUB_SHA:0:7}}"
             NOTIFICATION_URL="$GITHUB_EVENT_HEAD_COMMIT_URL"
             NOTIFICATION_ACTION_LABEL="View Commit"
           else
