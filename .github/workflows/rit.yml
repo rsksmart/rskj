@@ -165,9 +165,11 @@ jobs:
           GITHUB_REF_NAME: ${{ github.ref_name || '' }}
           RUN_URL: ${{ env.BUILD_URL }}
         run: |
-          # Delete non-alphanumeric characters and limit to 75 chars, which is the branch title limit in GitHub
+          # Replace (not delete) non-alphanumeric characters so stripped punctuation never welds
+          # two words together (e.g. "rsksmart/rit-update" must not become "rsksmartrit-update"),
+          # then squeeze runs of spaces and trim, and limit to 75 chars (GitHub's branch title limit).
           sanitize() {
-            printf '%s' "$1" | tr -cd '[:alnum:]_ -' | cut -c1-75
+            printf '%s' "$1" | tr -c '[:alnum:]_ -' ' ' | tr -s ' ' | sed 's/^ *//;s/ *$//' | cut -c1-75
           }
 
           if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
