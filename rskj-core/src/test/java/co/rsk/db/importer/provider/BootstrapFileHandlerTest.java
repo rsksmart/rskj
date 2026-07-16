@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -156,6 +157,63 @@ class BootstrapFileHandlerTest {
         BootstrapFileHandler handler = createHandlerWithTempPath(urlProvider, unzipper, downloadDir);
 
         BootstrapDataEntry entry = new BootstrapDataEntry(1L, "2024-01-01", "path/to/db", expectedHash, null);
+        Map<String, BootstrapDataEntry> entries = new HashMap<>();
+        entries.put("pubkey1", entry);
+
+        assertThrows(BootstrapImportException.class, () -> handler.retrieveAndUnpack(entries));
+    }
+
+    @Test
+    void retrieveAndUnpack_streamsHashOverMultipleBuffersForLargeFile() throws Exception {
+        // A fixture larger than HASH_BUFFER_SIZE (64 KiB) so checkFileHash's streaming loop performs several
+        // digest.update iterations, exercising the multi-buffer path the ~14-byte fixtures never reach. The
+        // incrementally streamed digest must equal the one-shot HashUtil.sha256 over the full bytes.
+        byte[] fileContent = new byte[64 * 1024 * 3 + 123]; // > 3 buffers, with a non-buffer-aligned tail
+        new Random(42).nextBytes(fileContent);
+        Path sourceFile = tempDir.resolve("large-source.zip");
+        Files.write(sourceFile, fileContent);
+        String expectedHash = Hex.toHexString(HashUtil.sha256(fileContent));
+
+        URL fileUrl = sourceFile.toUri().toURL();
+        BootstrapURLProvider urlProvider = mock(BootstrapURLProvider.class);
+        when(urlProvider.getFullURL(any())).thenReturn(fileUrl);
+
+        Unzipper unzipper = mock(Unzipper.class);
+        Path downloadDir = tempDir.resolve("download-large");
+        Files.createDirectories(downloadDir);
+        BootstrapFileHandler handler = createHandlerWithTempPath(urlProvider, unzipper, downloadDir);
+
+        BootstrapDataEntry entry = new BootstrapDataEntry(1L, "2024-01-01", "path/to/db", expectedHash, null);
+        Map<String, BootstrapDataEntry> entries = new HashMap<>();
+        entries.put("pubkey1", entry);
+
+        assertDoesNotThrow(() -> handler.retrieveAndUnpack(entries));
+        verify(unzipper).unzip(any(InputStream.class), eq(downloadDir));
+    }
+
+    @Test
+    void retrieveAndUnpack_rejectsLargeFileWhenOneByteMutated() throws Exception {
+        // Same > 64 KiB multi-buffer fixture, but the expected hash is computed over a one-byte-mutated copy.
+        // The streamed digest of the real bytes must NOT match, so the import is rejected — proving the
+        // streaming loop actually digests every buffer (including the byte flipped in a later buffer).
+        byte[] fileContent = new byte[64 * 1024 * 2 + 7];
+        new Random(7).nextBytes(fileContent);
+        Path sourceFile = tempDir.resolve("large-source-mut.zip");
+        Files.write(sourceFile, fileContent);
+
+        byte[] mutated = fileContent.clone();
+        mutated[fileContent.length - 1] ^= 0x01; // flip one bit in the last byte (in a later buffer)
+        String mismatchedHash = Hex.toHexString(HashUtil.sha256(mutated));
+
+        URL fileUrl = sourceFile.toUri().toURL();
+        BootstrapURLProvider urlProvider = mock(BootstrapURLProvider.class);
+        when(urlProvider.getFullURL(any())).thenReturn(fileUrl);
+
+        Path downloadDir = tempDir.resolve("download-large-mut");
+        Files.createDirectories(downloadDir);
+        BootstrapFileHandler handler = createHandlerWithTempPath(urlProvider, mock(Unzipper.class), downloadDir);
+
+        BootstrapDataEntry entry = new BootstrapDataEntry(1L, "2024-01-01", "path/to/db", mismatchedHash, null);
         Map<String, BootstrapDataEntry> entries = new HashMap<>();
         entries.put("pubkey1", entry);
 
