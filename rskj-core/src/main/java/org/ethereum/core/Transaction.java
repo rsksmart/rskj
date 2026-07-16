@@ -193,6 +193,9 @@ public class Transaction {
         return parsed.accept(new ParsedRawTransactionToTransaction(isLocalCall));
     }
 
+    // Rootstock has no EIP-1559 base fee. The effective gas price is therefore
+    // min(maxPriorityFeePerGas, maxFeePerGas). For valid transactions,
+    // maxPriorityFeePerGas <= maxFeePerGas, so this resolves to the priority fee.
     private static Coin effectiveGasPrice(Coin maxPriorityFeePerGas, Coin maxFeePerGas) {
         return maxPriorityFeePerGas.compareTo(maxFeePerGas) <= 0 ? maxPriorityFeePerGas : maxFeePerGas;
     }
@@ -440,10 +443,8 @@ public class Transaction {
     }
 
     public Coin getGasPrice() {
-        // some blocks have zero encoded as null, but if we altered the internal field then re-encoding the value would
-        // give a different value than the original.
         if (usesRskip546FeeFields() && maxPriorityFeePerGas != null && maxFeePerGas != null) {
-            return maxPriorityFeePerGas.compareTo(maxFeePerGas) <= 0 ? maxPriorityFeePerGas : maxFeePerGas;
+            return effectiveGasPrice(maxPriorityFeePerGas, maxFeePerGas);
         }
         if (gasPrice == null) {
             return Coin.ZERO;
