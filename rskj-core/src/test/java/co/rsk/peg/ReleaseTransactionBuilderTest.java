@@ -489,6 +489,153 @@ class ReleaseTransactionBuilderTest {
     }
 
     @Test
+    void createRealTransactionInTestnet2() {
+        BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
+        NetworkParameters btcTestNetParams = bridgeTestNetConstants.getBtcParams();
+        FederationConstants federationConstants = bridgeTestNetConstants.getFederationConstants();
+        List<BtcECKey> erpPublicKeys = federationConstants.getErpFedPubKeysList();
+        long erpActivationDelay = federationConstants.getErpFedActivationDelay();
+
+        List<BtcECKey> theSigningKeys = BitcoinTestUtils.getBtcEcKeys(20);
+        System.out.println("Signing keys:");
+        for (BtcECKey key : theSigningKeys) {
+            System.out.println("Key - " + key.getPrivateKeyAsHex());
+            String wif = hexPrivToWif(btcTestNetParams, key.getPrivateKeyAsHex(), true);
+            System.out.println("WIF: " + wif);
+            Address memberAddress = key.toAddress(btcTestNetParams);
+            System.out.println("Address - " + memberAddress);
+            System.out.println();
+        }
+
+        ErpFederation myP2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder()
+            .withNetworkParameters(btcTestNetParams)
+            .withMembersBtcPublicKeys(theSigningKeys)
+            .withErpPublicKeys(erpPublicKeys)
+            .withErpActivationDelay(erpActivationDelay)
+            .build();
+
+        Address federationAddress = myP2shP2wshErpFederation.getAddress();
+        System.out.println("Federation address: " + federationAddress);
+
+        byte[] rawPrevBtcTx = Hex.decode("02000000018863478708ad937f63c204fac92c6d6a3470dfe8d6220832996b96d4e62d1cfc010000006a47304402200ce32f8948a605a18a6b312ef1ddf40a7f58ab78abcf4307ce4264ced60c666d0220400c6f1bdd405a0051fefa2318922d68c18b95bbd47eaed2b31403b2dd175f500121039702e02976e7f42b292183c66addf5aafa19f971bb02c8fbef1b3a69eccb0856fdffffff01881300000000000017a914d9b61b58043c2b8a5b84290a9c096465054887c487fd3d4d00");
+        Address recipient = Address.fromBase58(btcTestNetParams, "mixQ24uzKPmE794iT7gSGDKDDew4TWJZG3");
+        BtcTransaction btcTx = createRealBtcTransactionWith1InputsAnd1Outputs(rawPrevBtcTx, myP2shP2wshErpFederation, theSigningKeys, btcTestNetParams, recipient);
+
+        System.out.println("Transaction hex:");
+        System.out.println(Hex.toHexString(btcTx.bitcoinSerialize()));
+    }
+
+    @Test
+    void createRealPegoutTransaction_withFlyoverInputs_withOutputs2() {
+        // arrange
+        BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
+        NetworkParameters btcTestNetParams = bridgeTestNetConstants.getBtcParams();
+        FederationConstants federationConstants = bridgeTestNetConstants.getFederationConstants();
+        List<BtcECKey> erpPublicKeys = federationConstants.getErpFedPubKeysList();
+        long erpActivationDelay = federationConstants.getErpFedActivationDelay();
+
+        List<BtcECKey> theSigningKeys = BitcoinTestUtils.getBtcEcKeys(20);
+        System.out.println("Signing keys:");
+        for (BtcECKey key : theSigningKeys) {
+            System.out.println("Key - " + key.getPrivateKeyAsHex());
+            String wif = hexPrivToWif(btcTestNetParams, key.getPrivateKeyAsHex(), true);
+            System.out.println("WIF: " + wif);
+            Address memberAddress = key.toAddress(btcTestNetParams);
+            System.out.println("Address - " + memberAddress);
+            System.out.println();
+        }
+
+        ErpFederation activeP2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder()
+            .withNetworkParameters(btcTestNetParams)
+            .withMembersBtcPublicKeys(theSigningKeys)
+            .withErpPublicKeys(erpPublicKeys)
+            .withErpActivationDelay(erpActivationDelay)
+            .build();
+
+        Address federationAddress = activeP2shP2wshErpFederation.getAddress();
+        System.out.println("Federation address: " + federationAddress);
+
+        Address userRefundBtcAddress = Address.fromBase58(btcTestNetParams, "mixQ24uzKPmE794iT7gSGDKDDew4TWJZG3");
+        Address lpBtcAddress = Address.fromBase58(btcTestNetParams, "mwZx3VeqwixDw6nPxwXpjnfrCx4u4iRT2v");
+        RskAddress lbcAddress = new RskAddress("62db6c4b118d7259c23692b162829e6bd5e4d5b0");
+
+        Keccak256 flyoverDerivationHash = getFlyoverDerivationHash(
+            RskTestUtils.createHash(1),
+            userRefundBtcAddress,
+            lpBtcAddress,
+            lbcAddress,
+            activations
+        );
+
+        System.out.println("Flyover derivation hash: " + flyoverDerivationHash);
+
+        Address flyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcTestNetParams, flyoverDerivationHash, activeP2shP2wshErpFederation);
+        System.out.println("Flyover federation address: " + flyoverFederationAddress);
+
+        Script federationRedeemScript = activeP2shP2wshErpFederation.getRedeemScript();
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            flyoverDerivationHash,
+            federationRedeemScript
+        );
+
+        byte[] rawFundTx = Hex.decode("020000000194cf18839bc6470993b0e9c8ef9ec7204df9c5437bde72fc7dec6a5f0aa24307000000006a47304402202e8c1afa5701bf9da4cdcf52a5fd6d6f7b31b50937dbb80ab049b4f77c87b559022071b82bcabe2924638ff1aafe243a0feb1634e4ab9dd436b120584e00d0536cf5012102fbd6078946021f1da55b485ae44f94bb91f075fe7ac1be91dfe9dcd764435a61fdffffff97d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787d00700000000000017a914b64ed9e659717b0eb22132e370e2d8b2b599e72787180f0100000000001976a914e30cccc28c931e80f646d38553ab33b9b204c78388ac003e4d00");
+        BtcTransaction fundTx = new BtcTransaction(btcTestNetParams, rawFundTx);
+
+        Coin value = fundTx.getOutput(1).getValue();
+        int numberOfInputs = fundTx.getOutputs().size() - 1;
+        Coin totalInputValue = value.multiply(numberOfInputs);
+        System.out.println("totalInputValue: " + totalInputValue);
+
+        int numberOfOutputs = 50;
+        Coin sendingValue = totalInputValue.div(numberOfOutputs);
+        System.out.println("sendingValue: " + sendingValue);
+
+        BtcTransaction spendTx = new BtcTransaction(btcTestNetParams);
+        Address recipient = Address.fromBase58(btcTestNetParams, "mixQ24uzKPmE794iT7gSGDKDDew4TWJZG3");
+
+        for (int i = 0; i < numberOfOutputs; i++) {
+            Coin remainingValue = sendingValue.subtract(Coin.valueOf(1000));
+            spendTx.addOutput(remainingValue, recipient);
+        }
+
+        Sha256Hash spendTxHash = fundTx.getHash();
+        for (int prevOutputIndex = 0; prevOutputIndex < fundTx.getOutputs().size() - 1; prevOutputIndex++) {
+            TransactionInput transactionInput = new TransactionInput(
+                btcTestNetParams,
+                null,
+                flyoverRedeemScript.getProgram(),
+                new TransactionOutPoint(btcTestNetParams, prevOutputIndex, spendTxHash),
+                value
+            );
+
+            spendTx.addInput(transactionInput);
+        }
+
+        int inputIndex = 0;
+        for (TransactionInput input : spendTx.getInputs()) {
+            BitcoinUtils.addSpendingFederationBaseScript(
+                spendTx,
+                inputIndex,
+                flyoverRedeemScript,
+                activeP2shP2wshErpFederation.getFormatVersion()
+            );
+
+            Coin inputValue = input.getValue();
+            BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(
+                spendTx,
+                inputIndex,
+                inputValue,
+                theSigningKeys
+            );
+
+            inputIndex++;
+        }
+
+        System.out.println("Transaction hex:");
+        System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
+    }
+
+    @Test
     void createRealPegoutTransaction_with1FlyoverInputs_with1Output() {
         // arrange
         BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
@@ -816,6 +963,61 @@ class ReleaseTransactionBuilderTest {
         System.out.println("totalInputValue: " + totalInputValue);
 
         int numberOfOutputs = 50;
+        Coin sendingValue = totalInputValue.div(numberOfOutputs);
+        System.out.println("sendingValue: " + sendingValue);
+
+        int satoshisExtractedForFees = 2000;
+        for (int i = 0; i < numberOfOutputs; i++) {
+            Coin remainingValue = sendingValue.subtract(Coin.valueOf(satoshisExtractedForFees));
+            btcTx.addOutput(remainingValue, recipient);
+        }
+
+        Sha256Hash spendTxHash = prevBtcTx.getHash();
+        for (int prevOutputIndex = 0; prevOutputIndex < prevBtcTx.getOutputs().size() - 1; prevOutputIndex++) {
+            TransactionInput transactionInput = new TransactionInput(
+                networkParameters,
+                null,
+                activeFederation.getRedeemScript().getProgram(),
+                new TransactionOutPoint(networkParameters, prevOutputIndex, spendTxHash),
+                value
+            );
+
+            btcTx.addInput(transactionInput);
+        }
+
+        int inputIndex = 0;
+        for (TransactionInput input : btcTx.getInputs()) {
+            BitcoinUtils.addSpendingFederationBaseScript(
+                btcTx,
+                inputIndex,
+                activeFederation.getRedeemScript(),
+                activeFederation.getFormatVersion()
+            );
+
+            Coin inputValue = input.getValue();
+            BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(
+                btcTx,
+                inputIndex,
+                inputValue,
+                signingKeys
+            );
+
+            inputIndex++;
+        }
+
+        return btcTx;
+    }
+
+    private BtcTransaction createRealBtcTransactionWith1InputsAnd1Outputs(byte[] rawPrevBtcTx, ErpFederation activeFederation, List<BtcECKey> signingKeys, NetworkParameters networkParameters, Address recipient) {
+        BtcTransaction prevBtcTx = new BtcTransaction(networkParameters, rawPrevBtcTx);
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+
+        Coin value = prevBtcTx.getOutput(0).getValue();
+        int numberOfInputs = prevBtcTx.getOutputs().size() - 1;
+        Coin totalInputValue = value.multiply(numberOfInputs);
+        System.out.println("totalInputValue: " + totalInputValue);
+
+        int numberOfOutputs = 1;
         Coin sendingValue = totalInputValue.div(numberOfOutputs);
         System.out.println("sendingValue: " + sendingValue);
 
