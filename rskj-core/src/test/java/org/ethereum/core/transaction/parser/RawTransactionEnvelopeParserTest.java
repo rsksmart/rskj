@@ -158,7 +158,7 @@ class RawTransactionEnvelopeParserTest {
     }
 
     @Test
-    void parse_signedRskNamespaceType2Encoded_isRejectedByBuilder() {
+    void builder_rskNamespaceType2_isRejected() {
         assertThrows(IllegalArgumentException.class, () -> Transaction.builder()
                 .nonce(new byte[]{0x01})
                 .gasPrice(Coin.valueOf(1000))
