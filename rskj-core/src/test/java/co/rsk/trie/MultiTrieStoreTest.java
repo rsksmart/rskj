@@ -18,7 +18,11 @@
 
 package co.rsk.trie;
 
+import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.HashMapDB;
 import org.junit.jupiter.api.Test;
+
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -63,6 +67,32 @@ class MultiTrieStoreTest {
         verify(store1, never()).save(trie);
         verify(store2, never()).save(trie);
         verify(store3).save(trie);
+    }
+
+    @Test
+    void saveValueDelegatesToCurrentStoreAndIsRetrievableByHash() {
+        // saveValue must write only to the current (newest) epoch store; the value is then retrievable by
+        // its keccak256 value-hash through the MultiTrieStore's newest-to-oldest lookup, and the older
+        // epochs are never written to.
+        TrieStore currentStore = new TrieStoreImpl(new HashMapDB());
+        TrieStore store2 = mock(TrieStore.class);
+        TrieStore store3 = mock(TrieStore.class);
+        TrieStoreFactory storeFactory = mock(TrieStoreFactory.class);
+        when(storeFactory.newInstance("48")).thenReturn(currentStore); // newest epoch -> current store
+        when(storeFactory.newInstance("47")).thenReturn(store2);
+        when(storeFactory.newInstance("46")).thenReturn(store3);
+        MultiTrieStore store = new MultiTrieStore(49, 3, storeFactory, null);
+
+        byte[] value = "a-long-bootstrap-value-well-over-32-bytes-long".getBytes(StandardCharsets.UTF_8);
+        store.saveValue(value);
+
+        // only the newest store received the write
+        verify(store2, never()).saveValue(any());
+        verify(store3, never()).saveValue(any());
+
+        // retrievable by its value-hash (keccak256 of the value), served from the current store
+        byte[] valueHash = Keccak256Helper.keccak256(value);
+        assertArrayEquals(value, store.retrieveValue(valueHash));
     }
 
     @Test
