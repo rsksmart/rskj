@@ -1402,7 +1402,7 @@ class Type4TransactionExecutorTests extends Type4TransactionExecutorHelperTest {
     }
 
     @Test
-    void type4TransactionCapsCombinedVmAndAuthorizationRefundAtHalfGasUsed() {
+    void type4TransactionAppliesCombinedVmAndAuthorizationRefundWhenBelowCap() {
         long expectedAuthorizationRefund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST;
         long expectedVmRefund = GasCost.SUICIDE_REFUND;
 
