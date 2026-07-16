@@ -25,6 +25,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Rskip546TestSupport;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionBuilder;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.encoder.Type4TransactionEncoder;
@@ -130,7 +131,7 @@ class RawTransactionEnvelopeParserTest {
     }
 
     // -------------------------------------------------------------------------
-    // Type 2 (RSKIP-546 / EIP-1559)
+    // Type 2 — reserved RSK namespace
     // -------------------------------------------------------------------------
 
     @Test
@@ -159,15 +160,16 @@ class RawTransactionEnvelopeParserTest {
 
     @Test
     void builder_rskNamespaceType2_isRejected() {
-        assertThrows(IllegalArgumentException.class, () -> Transaction.builder()
+        TransactionBuilder builder = Transaction.builder()
                 .nonce(new byte[]{0x01})
                 .gasPrice(Coin.valueOf(1000))
                 .gasLimit(BigInteger.valueOf(21000))
                 .receiveAddress(new RskAddress("0x0000000000000000000000000000000000000002").getBytes())
                 .value(BigInteger.ZERO)
                 .chainId(REGTEST_CHAIN_ID)
-                .typePrefix(TransactionTypePrefix.rskNamespace((byte) 0x03))
-                .build());
+                .typePrefix(TransactionTypePrefix.rskNamespace((byte) 0x03));
+
+        assertThrows(IllegalArgumentException.class, builder::build);
     }
 
     // -------------------------------------------------------------------------

@@ -28,7 +28,8 @@ import java.util.Objects;
 
 /**
  * Type-safe representation of transaction/receipt prefixes:
- * legacy (no prefix), standard typed (1 byte), and RSK namespace (2 bytes).
+ * legacy (no prefix), standard typed (1 byte), and the reserved RSK-namespace
+ * prefix ({@code 0x02 || subtype}, 2 bytes).
  */
 public sealed interface TransactionTypePrefix
         permits LegacyPrefix, StandardTypedPrefix, RskNamespacePrefix {
@@ -46,7 +47,7 @@ public sealed interface TransactionTypePrefix
     boolean isRskNamespace();
 
     default byte subtype() {
-        throw new UnsupportedOperationException("subtype is only available for RSK namespace transactions");
+        throw new UnsupportedOperationException("subtype is only available for RSK-namespace prefixes");
     }
 
     byte[] toBytes();
@@ -69,12 +70,19 @@ public sealed interface TransactionTypePrefix
         return new StandardTypedPrefix(type);
     }
 
+    /**
+     * Builds a reserved RSK-namespace prefix for recognition.
+     * Transactions using this prefix are not supported until a subtype RSKIP defines the payload.
+     */
     static TransactionTypePrefix rskNamespace(byte subtype) {
         return new RskNamespacePrefix(subtype);
     }
 
     /**
      * Selects the prefix variant from transaction type and optional RSK subtype.
+     * A non-null {@code rskSubtype} yields a reserved namespace prefix that must still be rejected
+     * by transaction parse/construction paths.
+     *
      * @throws IllegalArgumentException if rskSubtype is non-null but type is not TYPE_2
      */
     static TransactionTypePrefix of(TransactionType type, Byte rskSubtype) {

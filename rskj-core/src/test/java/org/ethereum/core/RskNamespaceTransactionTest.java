@@ -81,35 +81,49 @@ class RskNamespaceTransactionTest {
 
     @Test
     void builderNamespace_isRejected() {
+        byte[] nonce = BigInteger.ZERO.toByteArray();
+        Coin gasPrice = Coin.valueOf(10);
+        byte[] gasLimit = BigInteger.valueOf(21_000).toByteArray();
+        RskAddress receiveAddress = new RskAddress("0x1234567890123456789012345678901234567890");
+        TransactionTypePrefix typePrefix = TransactionTypePrefix.rskNamespace((byte) 0x03);
+
+        TransactionBuilder builder = Transaction.builder()
+                .typePrefix(typePrefix)
+                .chainId(REGTEST_CHAIN_ID)
+                .nonce(nonce)
+                .gasPrice(gasPrice)
+                .gasLimit(gasLimit)
+                .receiveAddress(receiveAddress)
+                .value(Coin.ZERO);
+
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> Transaction.builder()
-                        .typePrefix(TransactionTypePrefix.rskNamespace((byte) 0x03))
-                        .chainId(REGTEST_CHAIN_ID)
-                        .nonce(BigInteger.ZERO)
-                        .gasPrice(Coin.valueOf(10))
-                        .gasLimit(BigInteger.valueOf(21_000))
-                        .receiveAddress(new RskAddress("0x1234567890123456789012345678901234567890"))
-                        .value(Coin.ZERO)
-                        .build());
+                builder::build);
 
         assertEquals(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE, ex.getMessage());
     }
 
     @Test
     void directTransactionConstructionWithNamespace_isRejected() {
+        byte[] nonce = new byte[]{0x00};
+        Coin gasPrice = Coin.valueOf(10);
+        byte[] gasLimit = BigInteger.valueOf(21_000).toByteArray();
+        RskAddress receiveAddress = new RskAddress("0x1234567890123456789012345678901234567890");
+        byte[] data = new byte[0];
+        TransactionTypePrefix typePrefix = TransactionTypePrefix.rskNamespace((byte) 0x03);
+
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> new Transaction(
-                        new byte[]{0x00},
-                        Coin.valueOf(10),
-                        BigInteger.valueOf(21_000).toByteArray(),
-                        new RskAddress("0x1234567890123456789012345678901234567890"),
+                        nonce,
+                        gasPrice,
+                        gasLimit,
+                        receiveAddress,
                         Coin.ZERO,
-                        new byte[0],
+                        data,
                         REGTEST_CHAIN_ID,
                         false,
-                        TransactionTypePrefix.rskNamespace((byte) 0x03),
+                        typePrefix,
                         null,
                         null,
                         null,
