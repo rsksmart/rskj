@@ -26,8 +26,8 @@ import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import java.util.function.Supplier;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public final class RawTransactionEnvelopeParser {
 
@@ -44,6 +44,7 @@ public final class RawTransactionEnvelopeParser {
         }
 
         TransactionTypePrefix typePrefix = TransactionTypePrefix.fromRawData(rawData);
+        rejectUnsupportedNamespace(typePrefix);
         BytesSlice payload = TransactionTypePrefix.stripPrefix(rawData, typePrefix);
         RLPList txFields = RLP.decodeList(payload);
 
@@ -74,6 +75,7 @@ public final class RawTransactionEnvelopeParser {
     public static ParsedRawTransaction parse(TransactionInput input, byte defaultChainId) {
         Objects.requireNonNull(input, "input");
         TransactionTypePrefix typePrefix = input.typePrefix();
+        rejectUnsupportedNamespace(typePrefix);
         return resolveParser(typePrefix).parse(typePrefix, input, defaultChainId);
     }
 
@@ -122,9 +124,15 @@ public final class RawTransactionEnvelopeParser {
         return switch (type) {
             case LEGACY -> type0Parser;
             case TYPE_1 -> type1Parser;
-            case TYPE_2 -> typePrefix.isRskNamespace() ? type0Parser : type2Parser;
+            case TYPE_2 -> type2Parser;
             case TYPE_3 -> throw new IllegalArgumentException("Unsupported transaction type: " + typePrefix);
             case TYPE_4 -> type4Parser;
         };
+    }
+
+    private static void rejectUnsupportedNamespace(TransactionTypePrefix typePrefix) {
+        if (typePrefix.isRskNamespace()) {
+            throw new IllegalArgumentException(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE);
+        }
     }
 }

@@ -38,7 +38,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration tests for typed transactions (RSKIP-543/546) covering transport encoding,
@@ -119,15 +123,6 @@ class TypedTransactionIntegrationTest {
                 "Unwrapped Type 2 payload must start with 0x02");
     }
 
-    @Test
-    void rskNamespaceTransaction_isWrappedAsRlpByteStringInBlockBody() {
-        Transaction rsk = buildRskNamespace(0, (byte) 0x03);
-        byte[] encoded = BlockBodyCodec.encodeTransaction(rsk);
-
-        assertTrue((encoded[0] & 0xFF) >= 0x80 && (encoded[0] & 0xFF) <= 0xBF,
-                "RSK namespace tx must be wrapped as RLP byte string in block body");
-    }
-
     // =========================================================================
     // BlockBodyCodec encode / decode
     // =========================================================================
@@ -148,17 +143,11 @@ class TypedTransactionIntegrationTest {
     }
 
     @Test
-    void rskNamespaceTransaction_encodesAndDecodesViaBlockBodyCodec() {
-        assertBlockBodyCodecEncodeDecode(List.of(buildRskNamespace(0, (byte) 0x03)));
-    }
-
-    @Test
     void mixedBlock_allTransactionTypesEncodeAndDecodeViaBlockBodyCodec() {
         List<Transaction> txs = List.of(
                 buildLegacy(0),
                 buildType1(1),
-                buildType2(2),
-                buildRskNamespace(3, (byte) 0x05)
+                buildType2(2)
         );
         assertBlockBodyCodecEncodeDecode(txs);
     }
@@ -216,8 +205,7 @@ class TypedTransactionIntegrationTest {
         List<Transaction> txs = List.of(
                 buildLegacy(0),
                 buildType1(1),
-                buildType2(2),
-                buildRskNamespace(3, (byte) 0x07)
+                buildType2(2)
         );
 
         TransactionsMessage original = new TransactionsMessage(txs);
@@ -228,13 +216,12 @@ class TypedTransactionIntegrationTest {
         TransactionsMessage decoded = (TransactionsMessage) Message.create(blockFactory, paramsList);
 
         assertNotNull(decoded);
-        assertEquals(4, decoded.getTransactions().size());
+        assertEquals(3, decoded.getTransactions().size());
 
         assertEquals(TransactionType.LEGACY, decoded.getTransactions().get(0).getType());
         assertEquals(TransactionType.TYPE_1, decoded.getTransactions().get(1).getType());
         assertEquals(TransactionType.TYPE_2, decoded.getTransactions().get(2).getType());
         assertFalse(decoded.getTransactions().get(2).getTypePrefix().isRskNamespace());
-        assertTrue(decoded.getTransactions().get(3).getTypePrefix().isRskNamespace());
 
         for (int i = 0; i < txs.size(); i++) {
             assertArrayEquals(txs.get(i).getHash().getBytes(),
@@ -262,11 +249,6 @@ class TypedTransactionIntegrationTest {
         assertHashConsistencyBuilderToRaw(buildType2(0));
     }
 
-    @Test
-    void rskNamespaceTransaction_hashConsistentAcrossBuilderAndRawDecode() {
-        assertHashConsistencyBuilderToRaw(buildRskNamespace(0, (byte) 0x03));
-    }
-
     // =========================================================================
     // Hash consistency: builder -> BlockBodyCodec encode/decode
     // =========================================================================
@@ -287,17 +269,11 @@ class TypedTransactionIntegrationTest {
     }
 
     @Test
-    void rskNamespaceTransaction_hashConsistentViaBlockBodyCodec() {
-        assertHashConsistencyViaBlockBodyCodec(buildRskNamespace(0, (byte) 0x05));
-    }
-
-    @Test
     void mixedTransactions_allHashesConsistentViaBlockBodyCodec() {
         List<Transaction> txs = List.of(
                 buildLegacy(0),
                 buildType1(1),
-                buildType2(2),
-                buildRskNamespace(3, (byte) 0x07)
+                buildType2(2)
         );
 
         byte[] blockBodyEncoded = BlockBodyCodec.encodeTransactions(txs);
@@ -350,15 +326,6 @@ class TypedTransactionIntegrationTest {
                 "Hash must match after 3rd encode/decode");
     }
 
-    @Test
-    void type2Transaction_hashDependsOnTypePrefixByte() {
-        Transaction standard = buildType2(0);
-        Transaction rskNamespace = buildRskNamespace(0, (byte) 0x02);
-
-        assertFalse(Arrays.equals(standard.getHash().getBytes(), rskNamespace.getHash().getBytes()),
-                "Standard Type 2 and RSK-namespace Type 2 with same nonce must have different hashes");
-    }
-
     // =========================================================================
     // End-to-end Type 2 mining and receipts
     // =========================================================================
@@ -368,7 +335,7 @@ class TypedTransactionIntegrationTest {
         Transaction tx = buildType2(0);
 
         assertEquals(TransactionType.TYPE_2, tx.getType());
-        assertFalse(tx.isRskNamespaceTransaction(), "Standard Type 2 must NOT be RSK namespace");
+        assertFalse(tx.getTypePrefix().isRskNamespace(), "Standard Type 2 must NOT be RSK namespace");
     }
 
     @Test
@@ -578,20 +545,6 @@ class TypedTransactionIntegrationTest {
                 BigInteger.valueOf(nonce).toByteArray(),
                 new byte[0],
                 Rskip546TestSupport.EMPTY_ACCESS_LIST);
-        tx.sign(sender.getEcKey().getPrivKeyBytes());
-        return tx;
-    }
-
-    private Transaction buildRskNamespace(int nonce, byte subtype) {
-        Transaction tx = Transaction.builder()
-                .type(TransactionType.TYPE_2, subtype)
-                .chainId(CHAIN_ID)
-                .nonce(BigInteger.valueOf(nonce))
-                .gasPrice(GAS_PRICE)
-                .gasLimit(BigInteger.valueOf(21_000))
-                .receiveAddress(receiver.getAddress().getBytes())
-                .value(Coin.valueOf(1))
-                .build();
         tx.sign(sender.getEcKey().getPrivKeyBytes());
         return tx;
     }

@@ -19,416 +19,118 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.exception.InvalidRskAddressException;
 import org.ethereum.core.transaction.TransactionType;
-import org.ethereum.core.transaction.parser.ParsedType2RSKTransaction;
-import org.ethereum.core.transaction.parser.UnsignedSignature;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLP;
+import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
+import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test suite for RSKIP543 RSK Namespace Transactions (0x02 || rsk-tx-type || payload)
+ * RSKIP-543 reserves the RSK namespace envelope, but no subtype transaction payload is defined.
  */
 class RskNamespaceTransactionTest {
 
-    private static final byte[] TEST_NONCE = BigInteger.ONE.toByteArray();
-    private static final byte[] TEST_GAS_LIMIT = BigInteger.valueOf(21000).toByteArray();
-    private static final byte[] TEST_DATA = new byte[]{0x01, 0x02, 0x03};
-    private static final RskAddress TEST_ADDRESS = new RskAddress("0x0000000000000000000000000000000001000006");
-    private static final Coin TEST_GAS_PRICE = Coin.valueOf(1000);
-    private static final Coin TEST_VALUE = Coin.ZERO;
-    private static final byte TEST_CHAIN_ID = 33;
-    private static final byte[] TEST_PRIVATE_KEY = buildTestPrivateKey();
+    private static final byte REGTEST_CHAIN_ID = 33;
 
-    private static byte[] buildTestPrivateKey() {
-        byte[] key = new byte[32];
-        for (int i = 0; i < 32; i++) {
-            key[i] = (byte) (i + 1);
-        }
-        return key;
-    }
+    @Test
+    void rawNamespaceEnvelope_isRejectedBeforePayloadDecoding() {
+        byte[] malformedPayload = {TransactionType.RSK_NAMESPACE_PREFIX, 0x03, 0x00};
 
-    private Transaction createRskTransaction(byte rskSubtype) {
-        return  Transaction.builder().nonce(TEST_NONCE)
-                .gasPrice(TEST_GAS_PRICE)
-                .gasLimit(TEST_GAS_LIMIT)
-                .receiveAddress(TEST_ADDRESS)
-                .value(TEST_VALUE)
-                .data(TEST_DATA)
-                .chainId(TEST_CHAIN_ID)
-                .type(TransactionType.TYPE_2, rskSubtype)
-                .isLocalCall(false)
-                .build();
-    }
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> RawTransactionEnvelopeParser.parse(malformedPayload));
 
-    private Transaction createSignedRskTransaction(byte rskSubtype) {
-        Transaction tx = createRskTransaction(rskSubtype);
-        tx.sign(TEST_PRIVATE_KEY);
-        return tx;
+        assertEquals(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE, ex.getMessage());
     }
 
     @Test
-    void rskNamespace_creation_setsTypeSubtypeAndFlag() {
-        byte rskSubtype = 0x03;
-        Transaction tx = createRskTransaction(rskSubtype);
+    void namespaceReceipt_isRejectedBeforePayloadDecoding() {
+        byte[] malformedPayload = {TransactionType.RSK_NAMESPACE_PREFIX, 0x03, 0x00};
 
-        assertEquals(TransactionType.TYPE_2, tx.getType());
-        assertTrue(tx.isRskNamespaceTransaction());
-        assertEquals(rskSubtype, tx.getRskSubtype());
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new TransactionReceipt(malformedPayload));
+
+        assertEquals(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE, ex.getMessage());
     }
 
     @Test
-    void rskNamespace_encoding_startsWithTypeByteThenSubtype() {
-        byte rskSubtype = 0x03;
-        Transaction tx = createSignedRskTransaction(rskSubtype);
-        byte[] encoded = tx.getEncoded();
+    void callArgumentsNamespace_isRejectedBeforeNonceResolution() {
+        CallArguments args = new CallArguments();
+        args.setType("0x2");
+        args.setRskSubtype("0x3");
+        AtomicBoolean nonceRequested = new AtomicBoolean();
 
-        assertNotNull(encoded);
-        assertTrue(encoded.length > 2);
-        assertEquals(0x02, encoded[0]);
-        assertEquals(rskSubtype, encoded[1]);
+        RskJsonRpcRequestException ex = assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> Transaction.fromCallArguments(args, () -> {
+                    nonceRequested.set(true);
+                    return "0x0";
+                }, REGTEST_CHAIN_ID));
+
+        assertEquals(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE, ex.getMessage());
+        assertFalse(nonceRequested.get());
     }
 
     @Test
-    void rskNamespace_decoding_preservesSubtype() {
-        byte rskSubtype = 0x05;
-        Transaction original = createSignedRskTransaction(rskSubtype);
-
-        byte[] encoded = original.getEncoded();
-        Transaction decoded = new Transaction(encoded);
-
-        assertEquals(TransactionType.TYPE_2, decoded.getType());
-        assertTrue(decoded.isRskNamespaceTransaction());
-        assertEquals(rskSubtype, decoded.getRskSubtype());
-    }
-
-    @Test
-    void rskNamespace_encodeDecode_roundTripPreservesCoreFields() {
-        byte rskSubtype = 0x07;
-        Transaction original = createSignedRskTransaction(rskSubtype);
-
-        byte[] encoded = original.getEncoded();
-        Transaction decoded = new Transaction(encoded);
-
-        assertEquals(original.getType(), decoded.getType());
-        assertTrue(decoded.isRskNamespaceTransaction());
-        assertEquals(original.getRskSubtype(), decoded.getRskSubtype());
-        assertArrayEquals(original.getNonce(), decoded.getNonce());
-        assertEquals(original.getGasPrice(), decoded.getGasPrice());
-        assertArrayEquals(original.getGasLimit(), decoded.getGasLimit());
-    }
-
-    @Test
-    void rskSubtypes_allValidRange_areAccepted() {
-        for (int i = 0x00; i <= 0x7f; i++) {
-            byte subtype = (byte) i;
-            Transaction tx = createRskTransaction(subtype);
-
-            assertTrue(tx.isRskNamespaceTransaction());
-            assertEquals(TransactionType.TYPE_2, tx.getType());
-            assertEquals(subtype, tx.getRskSubtype());
-        }
-    }
-
-    @Test
-    void rskNamespace_decodedTx_isDistinguishableFromStandardType2() {
-        Transaction rskTx = createSignedRskTransaction((byte) 0x03);
-
-        byte[] encoded = rskTx.getEncoded();
-        Transaction decoded = new Transaction(encoded);
-
-        assertTrue(decoded.isRskNamespaceTransaction());
-        assertEquals((byte) 0x03, decoded.getRskSubtype());
-    }
-
-    @Test
-    void rskSubtype_outOfRange_throws() {
-        assertDoesNotThrow(() -> createRskTransaction((byte) 0x00));
-        assertDoesNotThrow(() -> createRskTransaction((byte) 0x7f));
-
-        assertThrows(IllegalArgumentException.class, () ->
-                Transaction.builder().nonce(TEST_NONCE)
-                        .gasPrice(TEST_GAS_PRICE)
-                        .gasLimit(TEST_GAS_LIMIT)
-                        .receiveAddress(TEST_ADDRESS)
-                        .value(TEST_VALUE)
-                        .data(TEST_DATA)
-                        .chainId(TEST_CHAIN_ID)
-                        .type(TransactionType.TYPE_2,  (byte) 0x80)
-                        .isLocalCall(false)
+    void builderNamespace_isRejected() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> Transaction.builder()
+                        .typePrefix(TransactionTypePrefix.rskNamespace((byte) 0x03))
+                        .chainId(REGTEST_CHAIN_ID)
+                        .nonce(BigInteger.ZERO)
+                        .gasPrice(Coin.valueOf(10))
+                        .gasLimit(BigInteger.valueOf(21_000))
+                        .receiveAddress(new RskAddress("0x1234567890123456789012345678901234567890"))
+                        .value(Coin.ZERO)
                         .build());
+
+        assertEquals(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE, ex.getMessage());
     }
 
     @Test
-    void rskSubtype_withNonType2_throws() {
-        assertThrows(IllegalArgumentException.class, () ->
-                        Transaction.builder().nonce(TEST_NONCE)
-                                .gasPrice(TEST_GAS_PRICE)
-                                .gasLimit(TEST_GAS_LIMIT)
-                                .receiveAddress(TEST_ADDRESS)
-                                .value(TEST_VALUE)
-                                .data(TEST_DATA)
-                                .chainId(TEST_CHAIN_ID)
-                                .type(TransactionType.TYPE_1, (byte) 0x03)
-                                .isLocalCall(false)
-                                .build());
+    void directTransactionConstructionWithNamespace_isRejected() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new Transaction(
+                        new byte[]{0x00},
+                        Coin.valueOf(10),
+                        BigInteger.valueOf(21_000).toByteArray(),
+                        new RskAddress("0x1234567890123456789012345678901234567890"),
+                        Coin.ZERO,
+                        new byte[0],
+                        REGTEST_CHAIN_ID,
+                        false,
+                        TransactionTypePrefix.rskNamespace((byte) 0x03),
+                        null,
+                        null,
+                        null,
+                        null));
+
+        assertEquals(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE, ex.getMessage());
     }
 
     @Test
-    void getFullTypeString_rskNamespaceAndOtherTypes_returnsExpectedHex() {
-        Transaction rskTx = createRskTransaction((byte) 0x03);
-        assertEquals("0x0203", rskTx.getFullTypeString());
+    void namespacePrefix_remainsRecognizable() {
+        TransactionTypePrefix prefix =
+                TransactionTypePrefix.fromRawData(new byte[]{TransactionType.RSK_NAMESPACE_PREFIX, 0x03});
 
-        rskTx = createRskTransaction((byte) 0x0a);
-        assertEquals("0x020a", rskTx.getFullTypeString());
-
-        Transaction type1Tx = Rskip546TestSupport.unsignedType1(
-                TEST_CHAIN_ID, TEST_ADDRESS, TEST_GAS_PRICE, TEST_NONCE, TEST_DATA, Rskip546TestSupport.EMPTY_ACCESS_LIST);
-
-        assertEquals("0x01", type1Tx.getFullTypeString());
-
-        Transaction legacyTx = Transaction.builder().nonce(TEST_NONCE)
-                .gasPrice(TEST_GAS_PRICE)
-                .gasLimit(TEST_GAS_LIMIT)
-                .receiveAddress(TEST_ADDRESS)
-                .value(TEST_VALUE)
-                .data(TEST_DATA)
-                .chainId((byte) 0)
-                .type(TransactionType.LEGACY)
-                .isLocalCall(false)
-                .build();
-
-        assertEquals("0x00", legacyTx.getFullTypeString());
+        assertEquals("0x0203", prefix.toFullString());
+        assertEquals((byte) 0x03, prefix.subtype());
     }
 
     @Test
-    void getRskSubtype_onNonRskNamespaceTransaction_throws() {
-        Transaction legacyTx = Transaction.builder().nonce(TEST_NONCE)
-                .gasPrice(TEST_GAS_PRICE)
-                .gasLimit(TEST_GAS_LIMIT)
-                .chainId( (byte) 0 )
-                .receiveAddress(TEST_ADDRESS)
-                .value(TEST_VALUE)
-                .data(TEST_DATA)
-                .chainId(TEST_CHAIN_ID)
-                .type(TransactionType.LEGACY)
-                .isLocalCall(false)
-                .build();
-
-
-        assertFalse(legacyTx.isRskNamespaceTransaction());
-        assertThrows(UnsupportedOperationException.class, legacyTx::getRskSubtype);
-        Transaction type1Tx = Rskip546TestSupport.unsignedType1(
-                TEST_CHAIN_ID, TEST_ADDRESS, TEST_GAS_PRICE, TEST_NONCE, TEST_DATA, Rskip546TestSupport.EMPTY_ACCESS_LIST);
-
-        assertFalse(type1Tx.isRskNamespaceTransaction());
-        assertThrows(UnsupportedOperationException.class, type1Tx::getRskSubtype);
-    }
-
-    @Test
-    void rskNamespace_receiptEncoding_startsWithTypeByteThenSubtype() {
-        byte rskSubtype = 0x03;
-        Transaction tx = createSignedRskTransaction(rskSubtype);
-
-        TransactionReceipt receipt = new TransactionReceipt();
-        receipt.setTransaction(tx);
-
-        byte[] encoded = receipt.getEncoded();
-
-        assertNotNull(encoded);
-        assertTrue(encoded.length > 2);
-        assertEquals(0x02, encoded[0]);
-        assertEquals(rskSubtype, encoded[1]);
-    }
-
-    @Test
-    void rskNamespace_receiptDecoding_encodedBytesRoundTrip() {
-        byte rskSubtype = 0x05;
-        Transaction tx = createSignedRskTransaction(rskSubtype);
-
-        TransactionReceipt originalReceipt = new TransactionReceipt();
-        originalReceipt.setTransaction(tx);
-        originalReceipt.setCumulativeGas(21000);
-        originalReceipt.setGasUsed(21000);
-        originalReceipt.setTxStatus(true);
-
-        byte[] encoded = originalReceipt.getEncoded();
-        TransactionReceipt decodedReceipt = new TransactionReceipt(encoded);
-
-        assertArrayEquals(encoded, decodedReceipt.getEncoded());
-    }
-
-    @Test
-    void rskNamespace_receiptEncodeDecode_allSubtypesPreservePrefixBytes() {
-        byte[] subtypes = {0x00, 0x03, 0x0f};
-
-        for (byte subtype : subtypes) {
-            Transaction tx = createSignedRskTransaction(subtype);
-
-            TransactionReceipt original = new TransactionReceipt();
-            original.setTransaction(tx);
-            original.setCumulativeGas(21000);
-            original.setGasUsed(21000);
-            original.setTxStatus(true);
-
-            byte[] encoded = original.getEncoded();
-
-            assertEquals(0x02, encoded[0]);
-            assertEquals(subtype, encoded[1]);
-            assertNotNull(encoded);
-            assertTrue(encoded.length > 2);
-        }
-    }
-
-    @Test
-    void backwardCompatibility_legacyTransaction_encodingStartsWithRlpListMarker() {
-        Transaction legacy = Transaction.builder().nonce(TEST_NONCE)
-                .gasPrice(TEST_GAS_PRICE)
-                .gasLimit(TEST_GAS_LIMIT)
-                .receiveAddress(TEST_ADDRESS)
-                .value(TEST_VALUE)
-                .data(TEST_DATA)
-                .chainId((byte) 0)
-                .type(TransactionType.LEGACY)
-                .isLocalCall(false)
-                .build();
-
-        assertFalse(legacy.isRskNamespaceTransaction());
-        assertEquals(TransactionType.LEGACY, legacy.getType());
-
-        legacy.sign(TEST_PRIVATE_KEY);
-
-        byte[] encoded = legacy.getEncoded();
-        assertTrue((encoded[0] & 0xFF) >= 0xc0);
-    }
-
-    @Test
-    void backwardCompatibility_type1Transaction_encodingStartsWithTypeByte() {
-        Transaction type1 = Rskip546TestSupport.unsignedType1(
-                TEST_CHAIN_ID, TEST_ADDRESS, TEST_GAS_PRICE, TEST_NONCE, TEST_DATA, Rskip546TestSupport.EMPTY_ACCESS_LIST);
-        assertFalse(type1.isRskNamespaceTransaction());
-        assertEquals(TransactionType.TYPE_1, type1.getType());
-
-        type1.sign(TEST_PRIVATE_KEY);
-
-        byte[] encoded = type1.getEncoded();
-        assertEquals(0x01, encoded[0]);
-    }
-
-    @Test
-    void fromParsed_type2Rsk_buildsRskNamespaceTransaction() {
-        ParsedType2RSKTransaction parsed = new ParsedType2RSKTransaction(
-                TransactionTypePrefix.rskNamespace((byte) 0x03),
-                TEST_NONCE,
-                TEST_GAS_PRICE,
-                TEST_GAS_LIMIT,
-                TEST_ADDRESS,
-                TEST_VALUE,
-                TEST_DATA,
-                TEST_CHAIN_ID,
-                new UnsignedSignature(TEST_CHAIN_ID));
-
-        Transaction tx = Transaction.fromParsed(parsed, false);
-
-        assertEquals(TransactionType.TYPE_2, tx.getType());
-        assertTrue(tx.isRskNamespaceTransaction());
-        assertEquals((byte) 0x03, tx.getRskSubtype());
-        assertEquals(TEST_CHAIN_ID, tx.getChainId());
-    }
-
-    // =========================================================================
-    // RSK namespace decode-time field validation
-    // =========================================================================
-
-    private static final byte[] OVERSIZE_WORD = oversizeDataWord();
-    private static final byte RSK_NAMESPACE_SUBTYPE = 0x03;
-
-    @Test
-    void rskNamespace_decodeRejectsToAddressWrongLength() {
-        byte[] badTo = new byte[21];
-        badTo[20] = 0x01;
-        byte[] raw = rawRskNamespaceType2(field(3, RLP.encodeElement(badTo)));
-
-        assertThrows(InvalidRskAddressException.class, () -> new ImmutableTransaction(raw));
-    }
-
-    @Test
-    void rskNamespace_decodeRejectsOversizeNonce() {
-        assertDecodeRejects(rawRskNamespaceType2(field(0, RLP.encodeElement(OVERSIZE_WORD))), "Nonce is not valid");
-    }
-
-    @Test
-    void rskNamespace_decodeRejectsOversizeGasLimit() {
-        assertDecodeRejects(rawRskNamespaceType2(field(2, RLP.encodeElement(OVERSIZE_WORD))), "Gas Limit is not valid");
-    }
-
-    @Test
-    void rskNamespace_decodeRejectsOversizeValue() {
-        assertDecodeRejects(rawRskNamespaceType2(field(4, RLP.encodeElement(OVERSIZE_WORD))), "Value is not valid");
-    }
-
-    @Test
-    void rskNamespace_decodeRejectsOversizeGasPrice() {
-        assertDecodeRejects(rawRskNamespaceType2(field(1, RLP.encodeCoinNonNullZero(new Coin(OVERSIZE_WORD)))),
-                "Gas Price is not valid");
-    }
-
-    private record FieldOverride(int index, byte[] encoded) {}
-
-    private static FieldOverride field(int index, byte[] encoded) {
-        return new FieldOverride(index, encoded);
-    }
-
-    private static byte[] oversizeDataWord() {
-        byte[] word = new byte[33];
-        word[0] = 0x01;
-        return word;
-    }
-
-    private static void assertDecodeRejects(byte[] raw, String expectedMessageFragment) {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> new ImmutableTransaction(raw));
-        assertTrue(ex.getMessage().contains(expectedMessageFragment),
-                "Expected message containing '" + expectedMessageFragment + "', got: " + ex.getMessage());
-    }
-
-    private static byte[] rawRskNamespaceType2(FieldOverride... overrides) {
-        byte[][] fields = defaultLegacyShapeFields();
-        applyOverrides(fields, overrides);
-        return ByteUtil.merge(
-                new byte[] {TransactionType.TYPE_2.getByteCode(), RSK_NAMESPACE_SUBTYPE},
-                RLP.encodeList(fields)
-        );
-    }
-
-    private static byte[][] defaultLegacyShapeFields() {
-        return new byte[][] {
-                RLP.encodeElement(TEST_NONCE),
-                RLP.encodeCoinNonNullZero(TEST_GAS_PRICE),
-                RLP.encodeElement(TEST_GAS_LIMIT),
-                RLP.encodeElement(TEST_ADDRESS.getBytes()),
-                RLP.encodeElement(TEST_VALUE.getBytes()),
-                RLP.encodeElement(TEST_DATA),
-                RLP.encodeElement(null),
-                RLP.encodeElement(null),
-                RLP.encodeElement(null)
-        };
-    }
-
-    private static void applyOverrides(byte[][] fields, FieldOverride... overrides) {
-        for (FieldOverride override : overrides) {
-            fields[override.index()] = override.encoded();
-        }
+    void namespaceSubtypeOutsideEip2718Range_isRejected() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> TransactionTypePrefix.rskNamespace((byte) 0x80));
     }
 }

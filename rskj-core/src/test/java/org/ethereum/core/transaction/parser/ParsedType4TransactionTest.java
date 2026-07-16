@@ -113,11 +113,6 @@ class ParsedType4TransactionTest {
             }
 
             @Override
-            public String visitType2Rsk(ParsedType2RSKTransaction transaction) {
-                return "type2rsk";
-            }
-
-            @Override
             public String visitType4(ParsedType4Transaction transaction) {
                 return "type4";
             }

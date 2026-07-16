@@ -110,7 +110,7 @@ class Rskip545DslTest {
 
         assertNotNull(tx);
         assertEquals(TransactionType.TYPE_4, tx.getType());
-        assertFalse(tx.isRskNamespaceTransaction());
+        assertFalse(tx.getTypePrefix().isRskNamespace());
         assertFalse(tx.getAuthorizationList().isEmpty(),
                 "Type 4 transaction must carry a non-empty authorization list");
     }

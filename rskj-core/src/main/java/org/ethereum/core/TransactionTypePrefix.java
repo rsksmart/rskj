@@ -37,6 +37,8 @@ public sealed interface TransactionTypePrefix
 
     String ERR_INVALID_TX_TYPE = "Invalid transaction type: ";
     String ERR_INVALID_RSK_SUBTYPE = "Invalid RSK subtype: ";
+    String RSK_NAMESPACE_UNSUPPORTED_MESSAGE =
+            "RSK-namespace transactions are not supported";
 
     TransactionType type();
     boolean isLegacy();
