@@ -83,6 +83,7 @@ import static co.rsk.util.ListArrayUtil.getLength;
 import static co.rsk.util.ListArrayUtil.isEmpty;
 import static co.rsk.util.ListArrayUtil.nullToEmpty;
 import static java.lang.String.format;
+import static org.ethereum.core.DelegationCodeResolver.getExecutionCode;
 import static org.ethereum.util.BIUtil.isNotCovers;
 import static org.ethereum.util.BIUtil.isPositive;
 import static org.ethereum.util.BIUtil.toBI;
@@ -856,7 +857,8 @@ public class Program {
         }
 
         // FETCH THE CODE
-        byte[] programCode = getExecutionCode(codeAddress);
+        byte[] programCode = DelegationCodeResolver
+                .getExecutionCode(getStorage(), codeAddress, this::isPrecompile);
         // programCode can be null
 
         // Always first remove funds from sender
@@ -910,33 +912,6 @@ public class Program {
         } else {
             stackPushZero();
         }
-    }
-
-    private byte[] getExecutionCode(RskAddress codeAddress) {
-        if (!getStorage().isExist(codeAddress)) {
-            return EMPTY_BYTE_ARRAY;
-        }
-        byte[] code = getStorage().getCode(codeAddress);
-
-        if (code == null || code.length == 0) {
-            return EMPTY_BYTE_ARRAY;
-        }
-
-        if (!DelegationCodeResolver.isDelegatedCode(code)) {
-            return code;
-        }
-
-        RskAddress delegatedAddress = DelegationCodeResolver.extractDelegatedAddress(code);
-
-        if (isPrecompile(delegatedAddress)) {
-            return EMPTY_BYTE_ARRAY;
-        }
-
-        byte[] delegatedCode = getStorage().isExist(delegatedAddress)
-                ? getStorage().getCode(delegatedAddress)
-                : EMPTY_BYTE_ARRAY;
-
-        return delegatedCode == null ? EMPTY_BYTE_ARRAY : delegatedCode;
     }
 
     private boolean isPrecompile(RskAddress address) {
