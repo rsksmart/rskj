@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseWasSettled;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxosInStorage;
@@ -8,6 +9,7 @@ import static co.rsk.peg.ReleaseTransactionAssertions.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.MIN_NON_DUST_VALUE_FOR_P2SH_OUTPUT_SCRIPT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.getBtcEcKeysFromSeeds;
+import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,6 +38,8 @@ import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import co.rsk.test.builders.UTXOBuilder;
@@ -47,6 +51,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -72,7 +77,7 @@ class BridgeSupportProcessFundsMigrationTest {
     private static final long ACTIVE_FEDERATION_CREATION_BLOCK = 100L;
     private static final Sha256Hash BTC_TX_HASH_FLYOVER_UTXO = createHash(10_000);
     private static final Keccak256 FLYOVER_DERIVATION_HASH = RskTestUtils.createHash(100_000);
-    private final Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
+    private Transaction updateCollectionsTransaction = buildUpdateCollectionsTransaction();
 
     private StorageAccessor bridgeStorageAccessor;
     private BridgeStorageProvider bridgeStorageProvider;
@@ -81,6 +86,7 @@ class BridgeSupportProcessFundsMigrationTest {
     private BridgeSupport bridgeSupport;
     private FeePerKbSupport feePerKbSupport;
     private Repository repository;
+    private List<LogInfo> logs;
 
     @BeforeEach
     void setUp() {
@@ -88,6 +94,7 @@ class BridgeSupportProcessFundsMigrationTest {
         bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, ALL_ACTIVATIONS);
         bridgeStorageAccessor = new InMemoryStorage();
         federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        logs = new ArrayList<>();
 
         FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
         FeePerKbConstants feePerKbConstants = BRIDGE_CONSTANTS.getFeePerKbConstants();
@@ -269,16 +276,27 @@ class BridgeSupportProcessFundsMigrationTest {
 
             long executionBlockNumber = duringMigrationBlockNumber(VETIVER_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(executionBlockNumber);
-            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
+            setUpFlyoverUtxoInStorage(
+                flyoverUtxo,
+                flyoverOutputScript,
+                retiringFederation,
+                bridgeStorageProvider,
+                FLYOVER_DERIVATION_HASH
+            );
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, VETIVER_ACTIVATIONS);
             assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
-                retiringFederation, retiringUtxos, MAX_INPUTS_PER_PEGOUT_TX_LEGACY, VETIVER_ACTIVATIONS
+                retiringFederation,
+                retiringUtxos,
+                MAX_INPUTS_PER_PEGOUT_TX_LEGACY,
+                VETIVER_ACTIVATIONS,
+                executionBlockNumber
             );
             assertRetiringFederationStillPresent();
 
@@ -288,13 +306,18 @@ class BridgeSupportProcessFundsMigrationTest {
             // Act
             long secondExecutionBlockNumber = executionBlockNumber + 1;
             setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber, VETIVER_ACTIVATIONS);
-            Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
-            bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
+            updateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+            bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, VETIVER_ACTIVATIONS);
             assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
-                retiringFederation, retiringUtxos, remainingUtxos, VETIVER_ACTIVATIONS
+                retiringFederation,
+                retiringUtxos,
+                remainingUtxos,
+                VETIVER_ACTIVATIONS,
+                secondExecutionBlockNumber
             );
             assertRetiringFederationStillPresent();
             assertNoRemainingRetiringUtxos();
@@ -311,11 +334,18 @@ class BridgeSupportProcessFundsMigrationTest {
 
             long executionBlockNumber = pastMigrationBlockNumber(VETIVER_ACTIVATIONS);
             setUpBridgeAndFederationSupportForExecutionBlockForVETIVER(executionBlockNumber);
-            setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
+            setUpFlyoverUtxoInStorage(
+                flyoverUtxo,
+                flyoverOutputScript,
+                retiringFederation,
+                bridgeStorageProvider,
+                FLYOVER_DERIVATION_HASH
+            );
             setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, VETIVER_ACTIVATIONS);
@@ -323,7 +353,8 @@ class BridgeSupportProcessFundsMigrationTest {
                 retiringFederation,
                 retiringUtxos,
                 MAX_INPUTS_PER_PEGOUT_TX_LEGACY,
-                VETIVER_ACTIVATIONS
+                VETIVER_ACTIVATIONS,
+                executionBlockNumber
             );
             assertRetiringFederationCleared();
 
@@ -443,6 +474,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -450,7 +482,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -470,6 +503,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -477,7 +511,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -497,6 +532,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -504,7 +540,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -524,6 +561,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act - first call
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - first call: MAX_INPUTS_PER_PEGOUT_TX inputs, 1 UTXO remaining
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -531,7 +569,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
 
@@ -539,14 +578,20 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertRetiringUtxosCount(remainingUtxos);
 
                 // Act - second call: consumes the 1 remaining UTXO
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
-                Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
-                bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
+                long secondExecutionBlockNumber = executionBlockNumber + 1;
+                setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber);
+                updateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - second call
                 assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
-                    retiringFederation, retiringUtxos, remainingUtxos, ALL_ACTIVATIONS
+                    retiringFederation,
+                    retiringUtxos,
+                    remainingUtxos,
+                    ALL_ACTIVATIONS,
+                    secondExecutionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -567,6 +612,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act - first call: consumes MAX_INPUTS_PER_PEGOUT_TX UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -574,7 +620,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 int numberOfRetiringUtxos = retiringUtxos.size();
@@ -582,8 +629,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertRetiringUtxosCount(remainingUtxosCount);
 
                 // Act - second call: consumes MAX_INPUTS_PER_PEGOUT_TX more UTXOs
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
-                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+                long secondExecutionBlockNumber = executionBlockNumber + 1;
+                setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber);
+                updateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - second call
                 assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -591,15 +641,19 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    secondExecutionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 remainingUtxosCount -= MAX_INPUTS_PER_PEGOUT_TX;
                 assertRetiringUtxosCount(remainingUtxosCount);
 
                 // Act - third call: consumes the final 1 UTXO
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 2);
-                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(2));
+                long thirdExecutionBlockNumber = secondExecutionBlockNumber + 1;
+                setUpBridgeAndFederationSupportForExecutionBlock(thirdExecutionBlockNumber);
+                updateCollectionsTransaction = buildUpdateCollectionsTransaction(2);
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - third call
                 assertMigrationTxCount(THREE_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -607,7 +661,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     remainingUtxosCount,
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    thirdExecutionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -624,11 +679,18 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 long executionBlockNumber = pastMigrationBlockNumber();
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
-                setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
+                setUpFlyoverUtxoInStorage(
+                    flyoverUtxo,
+                    flyoverOutputScript,
+                    retiringFederation,
+                    bridgeStorageProvider,
+                    FLYOVER_DERIVATION_HASH
+                );
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
                 // Act - first call: migrates all UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -636,7 +698,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -664,6 +727,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act - first call: consumes MAX_INPUTS_PER_PEGOUT_TX UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -671,7 +735,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
 
@@ -679,8 +744,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertRetiringUtxosCount(remainingUtxosCount);
 
                 // Act - second call: consumes the remaining UTXO
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
-                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+                long secondExecutionBlockNumber = executionBlockNumber + 1;
+                setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber);
+                updateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - second call
                 assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -688,13 +756,14 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     remainingUtxosCount,
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    secondExecutionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
 
                 // Act - third call: no funds left to migrate
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 2);
+                setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber + 1);
                 bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(2));
 
                 // Assert - third call
@@ -743,6 +812,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -754,7 +824,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    expectedOutputValues
+                    expectedOutputValues,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -775,6 +846,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -787,7 +859,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    expectedOutputValues
+                    expectedOutputValues,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -804,11 +877,18 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 long executionBlockNumber = duringMigrationBlockNumber();
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
-                setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
+                setUpFlyoverUtxoInStorage(
+                    flyoverUtxo,
+                    flyoverOutputScript,
+                    retiringFederation,
+                    bridgeStorageProvider,
+                    FLYOVER_DERIVATION_HASH
+                );
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
                 // Act
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -823,7 +903,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    expectedOutputValues
+                    expectedOutputValues,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -841,11 +922,18 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 long executionBlockNumber = duringMigrationBlockNumber();
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
-                setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
+                setUpFlyoverUtxoInStorage(
+                    flyoverUtxo,
+                    flyoverOutputScript,
+                    retiringFederation,
+                    bridgeStorageProvider,
+                    FLYOVER_DERIVATION_HASH
+                );
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
                 // Act
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -853,7 +941,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
+                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -870,11 +959,18 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 long executionBlockNumber = duringMigrationBlockNumber();
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
-                setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
+                setUpFlyoverUtxoInStorage(
+                    flyoverUtxo,
+                    flyoverOutputScript,
+                    retiringFederation,
+                    bridgeStorageProvider,
+                    FLYOVER_DERIVATION_HASH
+                );
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
                 // Act — first call: picks up MAX_INPUTS_PER_PEGOUT_TX UTXOs whose sum is above MTMU threshold
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert — first migration tx has 2 outputs
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -882,7 +978,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
+                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
 
@@ -890,9 +987,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertRetiringUtxosCount(remainingUtxos);
 
                 // Act — second call: picks up the remaining 1 UTXO whose sum is below MTMU threshold
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
-                Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
-                bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
+                long secondExecutionBlockNumber = executionBlockNumber + 1;
+                setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber);
+                updateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert — second migration tx has 1 output
                 assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -900,7 +999,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     remainingUtxos,
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    secondExecutionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -920,11 +1020,18 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 long executionBlockNumber = duringMigrationBlockNumber();
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
-                setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
+                setUpFlyoverUtxoInStorage(
+                    flyoverUtxo,
+                    flyoverOutputScript,
+                    retiringFederation,
+                    bridgeStorageProvider,
+                    FLYOVER_DERIVATION_HASH
+                );
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
                 // Act - first call: MAX_INPUTS_PER_PEGOUT_TX UTXOs above MTMU threshold, 2 outputs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -932,7 +1039,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
+                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
 
@@ -940,9 +1048,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertRetiringUtxosCount(remainingUtxos);
 
                 // Act - second call: next MAX_INPUTS_PER_PEGOUT_TX UTXOs above MTMU threshold, 2 outputs
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
-                Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
-                bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
+                long secondExecutionBlockNumber = executionBlockNumber + 1;
+                setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber);
+                updateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - second call
                 assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -950,16 +1060,19 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
+                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION,
+                    secondExecutionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 remainingUtxos -= MAX_INPUTS_PER_PEGOUT_TX;
                 assertRetiringUtxosCount(remainingUtxos);
 
                 // Act - third call: 1 remaining UTXO, 1 output
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 2);
-                Transaction thirdUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(2);
-                bridgeSupport.updateCollections(thirdUpdateCollectionsTransaction);
+                long thirdExecutionBlockNumber = secondExecutionBlockNumber + 1;
+                setUpBridgeAndFederationSupportForExecutionBlock(thirdExecutionBlockNumber);
+                updateCollectionsTransaction = buildUpdateCollectionsTransaction(2);
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - third call
                 assertMigrationTxCount(THREE_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -967,7 +1080,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     remainingUtxos,
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    thirdExecutionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -989,6 +1103,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -999,7 +1114,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    expectedOutputValues
+                    expectedOutputValues,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -1016,11 +1132,18 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 long executionBlockNumber = pastMigrationBlockNumber();
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
-                setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
+                setUpFlyoverUtxoInStorage(
+                    flyoverUtxo,
+                    flyoverOutputScript,
+                    retiringFederation,
+                    bridgeStorageProvider,
+                    FLYOVER_DERIVATION_HASH
+                );
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
                 // Act - first call: migrates all UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -1028,7 +1151,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
+                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -1053,11 +1177,18 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 long executionBlockNumber = pastMigrationBlockNumber();
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
-                setUpFlyoverUtxoInStorage(flyoverUtxo, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
+                setUpFlyoverUtxoInStorage(
+                    flyoverUtxo,
+                    flyoverOutputScript,
+                    retiringFederation,
+                    bridgeStorageProvider,
+                    FLYOVER_DERIVATION_HASH
+                );
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
                 // Act - first call: consumes MAX_INPUTS_PER_PEGOUT_TX UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -1065,7 +1196,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION
+                    EXPECTED_OUTPUT_VALUES_FOR_MIGRATION,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
 
@@ -1073,8 +1205,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertRetiringUtxosCount(remainingUtxosCount);
 
                 // Act - second call: consumes the remaining UTXO, whose value is below the MTMU threshold
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
-                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+                long secondExecutionBlockNumber = executionBlockNumber + 1;
+                setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber);
+                updateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - second call
                 assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -1082,13 +1217,14 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     remainingUtxosCount,
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    secondExecutionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
 
                 // Act - third call: no funds left to migrate
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 2);
+                setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber + 1);
                 bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(2));
 
                 // Assert - third call
@@ -1113,6 +1249,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act - first call: migrates all UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -1123,7 +1260,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    expectedOutputValues
+                    expectedOutputValues,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -1172,6 +1310,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -1181,7 +1320,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    expectedOutputValues
+                    expectedOutputValues,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -1203,6 +1343,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -1212,7 +1353,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    expectedOutputValues
+                    expectedOutputValues,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -1232,6 +1374,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -1241,7 +1384,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    expectedOutputValues
+                    expectedOutputValues,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -1257,11 +1401,18 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 long executionBlockNumber = duringMigrationBlockNumber();
                 setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber);
-                setUpFlyoverUtxosInStorage(retiringUtxos, flyoverOutputScript, retiringFederation, bridgeStorageProvider, FLYOVER_DERIVATION_HASH);
+                setUpFlyoverUtxosInStorage(
+                    retiringUtxos,
+                    flyoverOutputScript,
+                    retiringFederation,
+                    bridgeStorageProvider,
+                    FLYOVER_DERIVATION_HASH
+                );
                 setUpActiveAndRetiringFederations(activeFederation, retiringFederation, retiringUtxos);
 
                 // Act
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -1271,7 +1422,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    expectedOutputValues
+                    expectedOutputValues,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -1291,6 +1443,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act - first call: MAX_INPUTS_PER_PEGOUT_TX UTXOs above large MTMU threshold, 50 outputs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -1299,7 +1452,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    expectedOutputValues
+                    expectedOutputValues,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
 
@@ -1307,8 +1461,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertRetiringUtxosCount(remainingUtxos);
 
                 // Act - second call: 1 remaining UTXO below MTMU threshold, 1 output
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
-                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+                long secondExecutionBlockNumber = executionBlockNumber + 1;
+                setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber);
+                updateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - second call
                 assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -1316,7 +1473,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     remainingUtxos,
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    secondExecutionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -1337,6 +1495,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act - first call: MAX_INPUTS_PER_PEGOUT_TX UTXOs above large MTMU threshold, 50 outputs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -1345,7 +1504,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    expectedOutputValues
+                    expectedOutputValues,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
 
@@ -1353,8 +1513,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertRetiringUtxosCount(remainingUtxos);
 
                 // Act - second call: next MAX_INPUTS_PER_PEGOUT_TX UTXOs above large MTMU threshold, 50 outputs
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
-                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+                long secondExecutionBlockNumber = executionBlockNumber + 1;
+                setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber);
+                updateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - second call
                 assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -1362,15 +1525,19 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    expectedOutputValues
+                    expectedOutputValues,
+                    secondExecutionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 remainingUtxos -= MAX_INPUTS_PER_PEGOUT_TX;
                 assertRetiringUtxosCount(remainingUtxos);
 
                 // Act - third call: 1 remaining UTXO below MTMU threshold, 1 output
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 2);
-                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(2));
+                long thirdExecutionBlockNumber = secondExecutionBlockNumber + 1;
+                setUpBridgeAndFederationSupportForExecutionBlock(thirdExecutionBlockNumber);
+                updateCollectionsTransaction = buildUpdateCollectionsTransaction(2);
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - third call
                 assertMigrationTxCount(THREE_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -1378,7 +1545,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     remainingUtxos,
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    thirdExecutionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -1398,6 +1566,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act - first call: migrates all UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -1407,7 +1576,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     retiringUtxos.size(),
-                    expectedOutputValues
+                    expectedOutputValues,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
@@ -1435,6 +1605,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
                 // Act - first call: consumes MAX_INPUTS_PER_PEGOUT_TX UTXOs
                 bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - first call
                 assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
@@ -1443,7 +1614,8 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     MAX_INPUTS_PER_PEGOUT_TX,
-                    expectedOutputValues
+                    expectedOutputValues,
+                    executionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
 
@@ -1451,8 +1623,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertRetiringUtxosCount(remainingUtxosCount);
 
                 // Act - second call: consumes the remaining UTXO, whose value is below the MTMU threshold
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 1);
-                bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(1));
+                long secondExecutionBlockNumber = executionBlockNumber + 1;
+                setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber);
+                updateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+                bridgeSupport.updateCollections(updateCollectionsTransaction);
+                bridgeStorageProvider.save();
 
                 // Assert - second call
                 assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -1460,14 +1635,16 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederation,
                     retiringUtxos,
                     remainingUtxosCount,
-                    ALL_ACTIVATIONS
+                    ALL_ACTIVATIONS,
+                    secondExecutionBlockNumber
                 );
                 assertRetiringFederationStillPresent();
                 assertNoRemainingRetiringUtxos();
 
                 // Act - third call: no funds left to migrate
-                setUpBridgeAndFederationSupportForExecutionBlock(executionBlockNumber + 2);
+                setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber + 1);
                 bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(2));
+                bridgeStorageProvider.save();
 
                 // Assert - third call
                 assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -1479,11 +1656,27 @@ class BridgeSupportProcessFundsMigrationTest {
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos,
             int expectedInputCount,
-            ActivationConfig.ForBlock activations
+            ActivationConfig.ForBlock activations,
+            long executionBlock
         ) throws IOException {
             BtcTransaction migrationTransaction = getLastMigrationTxAdded(activations);
-            assertBtcTxVersionIs2(migrationTransaction);
+            List<Coin> outpointValues = extractOutpointValues(migrationTransaction);
             List<UTXO> selectedUtxos = getSelectedUtxos(migrationTransaction, retiringFederationUtxos);
+            Coin totalAmountMigrated = getTotalValue(selectedUtxos);
+
+            assertReleaseWasSettled(
+                repository,
+                bridgeStorageProvider,
+                logs,
+                executionBlock,
+                updateCollectionsTransaction.getHash(),
+                migrationTransaction,
+                outpointValues,
+                totalAmountMigrated,
+                activations
+            );
+
+            assertBtcTxVersionIs2(migrationTransaction);
             assertReleaseTxInputsP2shP2wshErp(
                 migrationTransaction,
                 retiringFederation.getRedeemScript(),
@@ -1492,18 +1685,34 @@ class BridgeSupportProcessFundsMigrationTest {
                 expectedInputCount
             );
             assertMigrationTxWithOneOutput(migrationTransaction, selectedUtxos);
-            assertMigrationReleaseTxSizeIsBelowStandardSizeAllowed(retiringFederation, migrationTransaction, ALL_ACTIVATIONS);
+            assertMigrationReleaseTxSizeIsBelowStandardSizeAllowed(retiringFederation, migrationTransaction, activations);
         }
 
         private void assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos,
             int expectedInputCount,
-            List<Coin> expectedOutputValues
+            List<Coin> expectedOutputValues,
+            long executionBlock
         ) throws IOException {
             BtcTransaction migrationTransaction = getLastMigrationTxAdded(ALL_ACTIVATIONS);
-            assertBtcTxVersionIs2(migrationTransaction);
+            List<Coin> outpointValues = extractOutpointValues(migrationTransaction);
             List<UTXO> selectedUtxos = getSelectedUtxos(migrationTransaction, retiringFederationUtxos);
+            Coin totalAmountMigrated = getTotalValue(selectedUtxos);
+
+            assertReleaseWasSettled(
+                repository,
+                bridgeStorageProvider,
+                logs,
+                executionBlock,
+                updateCollectionsTransaction.getHash(),
+                migrationTransaction,
+                outpointValues,
+                totalAmountMigrated,
+                ALL_ACTIVATIONS
+            );
+
+            assertBtcTxVersionIs2(migrationTransaction);
             assertReleaseTxInputsP2shP2wshErp(
                 migrationTransaction,
                 retiringFederation.getRedeemScript(),
