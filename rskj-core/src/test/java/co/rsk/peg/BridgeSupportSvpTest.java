@@ -422,7 +422,8 @@ class BridgeSupportSvpTest {
                 rskTx.getHash(),
                 svpFundTransaction,
                 svpFundTxOutpointsValues,
-                totalValueSentToProposedFederation
+                totalValueSentToProposedFederation,
+                allActivations
             );
 
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - svpFundTxOutpointsValues.size()); // using all outpoints
@@ -505,7 +506,8 @@ class BridgeSupportSvpTest {
                 rskTx.getHash(),
                 svpFundTransaction,
                 svpFundTxOutpointsValues,
-                totalValueSentToProposedFederation
+                totalValueSentToProposedFederation,
+                allActivations
             );
 
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - svpFundTxOutpointsValues.size()); // using all outpoints
