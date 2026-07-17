@@ -306,7 +306,7 @@ public final class BridgeSupportTestUtil {
         Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
-        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, executionBlock);
+        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, executionBlock, ACTIVATIONS_ALL);
         assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, totalAmountRequested);
         assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
     }
@@ -319,17 +319,18 @@ public final class BridgeSupportTestUtil {
         Keccak256 releaseCreationTxHash,
         BtcTransaction releaseTransaction,
         List<Coin> expectedOutpointsValues,
-        Coin totalAmountRequested
+        Coin totalAmountRequested,
+        ActivationConfig.ForBlock activations
     ) throws IOException {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
-        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock);
+        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock, activations);
         assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
         assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransaction.getHash(), totalAmountRequested);
         assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
     }
 
-    public static void assertPegoutWasAddedToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, Sha256Hash pegoutTransactionHash, Keccak256 releaseCreationTxHash, long executionBlock) {
-        var pegoutEntries = pegoutsWaitingForConfirmations.getEntries(ACTIVATIONS_ALL);
+    public static void assertPegoutWasAddedToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, Sha256Hash pegoutTransactionHash, Keccak256 releaseCreationTxHash, long executionBlock, ActivationConfig.ForBlock activations) {
+        var pegoutEntries = pegoutsWaitingForConfirmations.getEntries(activations);
         Optional<PegoutsWaitingForConfirmations.Entry> pegoutEntry = pegoutEntries.stream()
             .filter(entry -> entry.getBtcTransaction().getHash().equals(pegoutTransactionHash) &&
                 entry.getPegoutCreationRskBlockNumber().equals(executionBlock) &&
