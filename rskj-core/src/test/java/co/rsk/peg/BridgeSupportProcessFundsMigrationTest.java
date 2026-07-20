@@ -1,6 +1,8 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.peg.BridgeSupportTestUtil.assertLogReleaseRequested;
+import static co.rsk.peg.BridgeSupportTestUtil.assertPegoutWasAddedToPegoutsWaitingForConfirmations;
 import static co.rsk.peg.BridgeSupportTestUtil.assertReleaseWasSettled;
 import static co.rsk.peg.BridgeSupportTestUtil.buildUpdateCollectionsTransaction;
 import static co.rsk.peg.BridgeSupportTestUtil.setUpFlyoverUtxoInStorage;
@@ -290,10 +292,10 @@ class BridgeSupportProcessFundsMigrationTest {
             bridgeStorageProvider.save();
 
             // Assert
-            assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, VETIVER_ACTIVATIONS);
             assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
+                ONE_MIGRATION_TX_COUNT,
                 MAX_INPUTS_PER_PEGOUT_TX_LEGACY,
                 VETIVER_ACTIVATIONS,
                 executionBlockNumber
@@ -311,10 +313,10 @@ class BridgeSupportProcessFundsMigrationTest {
             bridgeStorageProvider.save();
 
             // Assert
-            assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, VETIVER_ACTIVATIONS);
             assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
+                TWO_MIGRATION_TXS_COUNT,
                 remainingUtxos,
                 VETIVER_ACTIVATIONS,
                 secondExecutionBlockNumber
@@ -348,10 +350,10 @@ class BridgeSupportProcessFundsMigrationTest {
             bridgeStorageProvider.save();
 
             // Assert
-            assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, VETIVER_ACTIVATIONS);
             assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                 retiringFederation,
                 retiringUtxos,
+                ONE_MIGRATION_TX_COUNT,
                 MAX_INPUTS_PER_PEGOUT_TX_LEGACY,
                 VETIVER_ACTIVATIONS,
                 executionBlockNumber
@@ -477,10 +479,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     ALL_ACTIVATIONS,
                     executionBlockNumber
@@ -506,10 +508,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     ALL_ACTIVATIONS,
                     executionBlockNumber
@@ -535,10 +537,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     ALL_ACTIVATIONS,
                     executionBlockNumber
@@ -564,10 +566,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - first call: MAX_INPUTS_PER_PEGOUT_TX inputs, 1 UTXO remaining
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     MAX_INPUTS_PER_PEGOUT_TX,
                     ALL_ACTIVATIONS,
                     executionBlockNumber
@@ -585,10 +587,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - second call
-                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    TWO_MIGRATION_TXS_COUNT,
                     remainingUtxos,
                     ALL_ACTIVATIONS,
                     secondExecutionBlockNumber
@@ -615,10 +617,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - first call
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     MAX_INPUTS_PER_PEGOUT_TX,
                     ALL_ACTIVATIONS,
                     executionBlockNumber
@@ -636,10 +638,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - second call
-                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    TWO_MIGRATION_TXS_COUNT,
                     MAX_INPUTS_PER_PEGOUT_TX,
                     ALL_ACTIVATIONS,
                     secondExecutionBlockNumber
@@ -656,10 +658,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - third call
-                assertMigrationTxCount(THREE_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    THREE_MIGRATION_TXS_COUNT,
                     remainingUtxosCount,
                     ALL_ACTIVATIONS,
                     thirdExecutionBlockNumber
@@ -693,10 +695,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - first call
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     ALL_ACTIVATIONS,
                     executionBlockNumber
@@ -730,10 +732,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - first call
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     MAX_INPUTS_PER_PEGOUT_TX,
                     ALL_ACTIVATIONS,
                     executionBlockNumber
@@ -751,10 +753,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - second call
-                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    TWO_MIGRATION_TXS_COUNT,
                     remainingUtxosCount,
                     ALL_ACTIVATIONS,
                     secondExecutionBlockNumber
@@ -815,7 +817,6 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 List<Coin> expectedOutputValues = List.of(
                     MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE,
                     MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE
@@ -823,6 +824,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     expectedOutputValues,
                     executionBlockNumber
@@ -849,7 +851,6 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 Coin lastMigrationOutputValue = MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE.add(Coin.SATOSHI);
                 List<Coin> expectedOutputValues = List.of(
                     MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE,
@@ -858,6 +859,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     expectedOutputValues,
                     executionBlockNumber
@@ -891,8 +893,6 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
-
                 Coin migratedAmount = getTotalValue(retiringUtxos);
                 Coin lastMigrationOutputValue = migratedAmount.subtract(MIGRATION_VALUE_PER_OUTPUT_BTC_VALUE);
                 List<Coin> expectedOutputValues = List.of(
@@ -902,6 +902,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     expectedOutputValues,
                     executionBlockNumber
@@ -936,10 +937,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     EXPECTED_OUTPUT_VALUES_FOR_MIGRATION,
                     executionBlockNumber
@@ -973,10 +974,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert — first migration tx has 2 outputs
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     MAX_INPUTS_PER_PEGOUT_TX,
                     EXPECTED_OUTPUT_VALUES_FOR_MIGRATION,
                     executionBlockNumber
@@ -994,10 +995,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert — second migration tx has 1 output
-                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    TWO_MIGRATION_TXS_COUNT,
                     remainingUtxos,
                     ALL_ACTIVATIONS,
                     secondExecutionBlockNumber
@@ -1034,10 +1035,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - first call
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     MAX_INPUTS_PER_PEGOUT_TX,
                     EXPECTED_OUTPUT_VALUES_FOR_MIGRATION,
                     executionBlockNumber
@@ -1055,10 +1056,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - second call
-                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    TWO_MIGRATION_TXS_COUNT,
                     MAX_INPUTS_PER_PEGOUT_TX,
                     EXPECTED_OUTPUT_VALUES_FOR_MIGRATION,
                     secondExecutionBlockNumber
@@ -1075,10 +1076,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - third call
-                assertMigrationTxCount(THREE_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    THREE_MIGRATION_TXS_COUNT,
                     remainingUtxos,
                     ALL_ACTIVATIONS,
                     thirdExecutionBlockNumber
@@ -1106,13 +1107,12 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
-
                 List<Coin> expectedOutputValues = getExpectedOutputValuesForOneUtxoJustBelowLargeMTMUThreshold();
 
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     expectedOutputValues,
                     executionBlockNumber
@@ -1146,10 +1146,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - first call
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     EXPECTED_OUTPUT_VALUES_FOR_MIGRATION,
                     executionBlockNumber
@@ -1191,10 +1191,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - first call
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     MAX_INPUTS_PER_PEGOUT_TX,
                     EXPECTED_OUTPUT_VALUES_FOR_MIGRATION,
                     executionBlockNumber
@@ -1212,10 +1212,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - second call
-                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    TWO_MIGRATION_TXS_COUNT,
                     remainingUtxosCount,
                     ALL_ACTIVATIONS,
                     secondExecutionBlockNumber
@@ -1252,13 +1252,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - first call
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
-
                 List<Coin> expectedOutputValues = getExpectedOutputValuesForOneUtxoJustBelowLargeMTMUThreshold();
-
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     expectedOutputValues,
                     executionBlockNumber
@@ -1313,12 +1311,12 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 Coin migratedAmount = getTotalValue(retiringUtxos);
                 List<Coin> expectedOutputValues = buildEvenlyDistributedExpectedOutputValues(migratedAmount);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     expectedOutputValues,
                     executionBlockNumber
@@ -1346,12 +1344,12 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 Coin migratedAmount = getTotalValue(retiringUtxos);
                 List<Coin> expectedOutputValues = buildEvenlyDistributedExpectedOutputValues(migratedAmount);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     expectedOutputValues,
                     executionBlockNumber
@@ -1377,12 +1375,12 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 Coin migratedAmount = getTotalValue(retiringUtxos);
                 List<Coin> expectedOutputValues = buildEvenlyDistributedExpectedOutputValues(migratedAmount);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     expectedOutputValues,
                     executionBlockNumber
@@ -1415,12 +1413,12 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 Coin migratedAmount = getTotalValue(retiringUtxos);
                 List<Coin> expectedOutputValues = buildEvenlyDistributedExpectedOutputValues(migratedAmount);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     expectedOutputValues,
                     executionBlockNumber
@@ -1446,11 +1444,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - first call
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 List<Coin> expectedOutputValues = buildEvenlyDistributedExpectedOutputValues(MIGRATED_VALUE_FOR_MAX_INPUTS_IN_BTC);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     MAX_INPUTS_PER_PEGOUT_TX,
                     expectedOutputValues,
                     executionBlockNumber
@@ -1468,10 +1466,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - second call
-                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    TWO_MIGRATION_TXS_COUNT,
                     remainingUtxos,
                     ALL_ACTIVATIONS,
                     secondExecutionBlockNumber
@@ -1498,11 +1496,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - first call
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 List<Coin> expectedOutputValues = buildEvenlyDistributedExpectedOutputValues(MIGRATED_VALUE_FOR_MAX_INPUTS_IN_BTC);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     MAX_INPUTS_PER_PEGOUT_TX,
                     expectedOutputValues,
                     executionBlockNumber
@@ -1520,10 +1518,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - second call
-                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    TWO_MIGRATION_TXS_COUNT,
                     MAX_INPUTS_PER_PEGOUT_TX,
                     expectedOutputValues,
                     secondExecutionBlockNumber
@@ -1540,10 +1538,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - third call
-                assertMigrationTxCount(THREE_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    THREE_MIGRATION_TXS_COUNT,
                     remainingUtxos,
                     ALL_ACTIVATIONS,
                     thirdExecutionBlockNumber
@@ -1569,12 +1567,12 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - first call
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 Coin migratedAmount = getTotalValue(retiringUtxos);
                 List<Coin> expectedOutputValues = buildEvenlyDistributedExpectedOutputValues(migratedAmount);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     retiringUtxos.size(),
                     expectedOutputValues,
                     executionBlockNumber
@@ -1608,11 +1606,11 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - first call
-                assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, ALL_ACTIVATIONS);
                 List<Coin> expectedOutputValues = buildEvenlyDistributedExpectedOutputValues(MIGRATED_VALUE_FOR_MAX_INPUTS_IN_BTC);
                 assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    ONE_MIGRATION_TX_COUNT,
                     MAX_INPUTS_PER_PEGOUT_TX,
                     expectedOutputValues,
                     executionBlockNumber
@@ -1630,10 +1628,10 @@ class BridgeSupportProcessFundsMigrationTest {
                 bridgeStorageProvider.save();
 
                 // Assert - second call
-                assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
                 assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
                     retiringFederation,
                     retiringUtxos,
+                    TWO_MIGRATION_TXS_COUNT,
                     remainingUtxosCount,
                     ALL_ACTIVATIONS,
                     secondExecutionBlockNumber
@@ -1655,10 +1653,13 @@ class BridgeSupportProcessFundsMigrationTest {
         private void assertLastMigrationTxAddedWithOneOutputWasBuiltAsExpected(
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos,
+            int expectedMigrationTxCount,
             int expectedInputCount,
             ActivationConfig.ForBlock activations,
             long executionBlock
         ) throws IOException {
+            assertMigrationTxCount(expectedMigrationTxCount, activations);
+
             BtcTransaction migrationTransaction = getLastMigrationTxAdded(activations);
             List<Coin> outpointValues = extractOutpointValues(migrationTransaction);
             List<UTXO> selectedUtxos = getSelectedUtxos(migrationTransaction, retiringFederationUtxos);
@@ -1691,10 +1692,13 @@ class BridgeSupportProcessFundsMigrationTest {
         private void assertLastMigrationTxAddedWithMultipleOutputsWasBuiltAsExpected(
             Federation retiringFederation,
             List<UTXO> retiringFederationUtxos,
+            int expectedMigrationTxCount,
             int expectedInputCount,
             List<Coin> expectedOutputValues,
             long executionBlock
         ) throws IOException {
+            assertMigrationTxCount(expectedMigrationTxCount, ALL_ACTIVATIONS);
+
             BtcTransaction migrationTransaction = getLastMigrationTxAdded(ALL_ACTIVATIONS);
             List<Coin> outpointValues = extractOutpointValues(migrationTransaction);
             List<UTXO> selectedUtxos = getSelectedUtxos(migrationTransaction, retiringFederationUtxos);
@@ -1741,11 +1745,6 @@ class BridgeSupportProcessFundsMigrationTest {
             }
             expectedOutputValues.add(valuePerOutput.add(valueRemainder));
             return expectedOutputValues;
-        }
-
-        private BtcTransaction getLastMigrationTxAdded(ActivationConfig.ForBlock activations) throws IOException {
-            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount(activations);
-            return migrationTransactions.get(migrationTransactions.size() - 1);
         }
     }
 
@@ -1807,6 +1806,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
@@ -1837,6 +1837,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
@@ -1932,6 +1933,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
@@ -1949,8 +1951,9 @@ class BridgeSupportProcessFundsMigrationTest {
             // Act
             long secondExecutionBlockNumber = executionBlockNumber + 1;
             setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber, VETIVER_ACTIVATIONS);
-            Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
-            bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
+            updateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+            bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
@@ -1980,6 +1983,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act - first call: migrates all UTXOs
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert - first call
             assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
@@ -2018,6 +2022,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act - first call: migrates all UTXOs
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert - first call
             assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
@@ -2055,6 +2060,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertMigrationTransactionsBetweenP2shErpFedsWereBuiltAsExpected(
@@ -2147,6 +2153,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertNoMigrationTxCreated();
@@ -2163,10 +2170,11 @@ class BridgeSupportProcessFundsMigrationTest {
         ) throws IOException {
             assertMigrationTxCount(expectedMigrationTxCount, activations);
 
-            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount(activations);
+            List<PegoutsWaitingForConfirmations.Entry> migrationEntries = getMigrationEntriesSortedByCreationAndInputsCount(activations);
             List<UTXO> migratedUtxos = new ArrayList<>();
             int remainingExpectedInputs = expectedTotalInputCount;
-            for (BtcTransaction migrationTransaction : migrationTransactions) {
+            for (PegoutsWaitingForConfirmations.Entry migrationEntry : migrationEntries) {
+                BtcTransaction migrationTransaction = migrationEntry.getBtcTransaction();
                 assertBtcTxVersionIs2(migrationTransaction);
 
                 int expectedInputCountInTx = getExpectedInputCountInTx(remainingExpectedInputs, activations);
@@ -2178,10 +2186,22 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederationUtxos,
                     selectedUtxosInTx
                 );
+
+                assertReleaseWasSettled(
+                    repository,
+                    bridgeStorageProvider,
+                    logs,
+                    migrationEntry.getPegoutCreationRskBlockNumber(),
+                    migrationEntry.getPegoutCreationRskTxHash(),
+                    migrationTransaction,
+                    extractOutpointValues(migrationTransaction),
+                    getTotalValue(selectedUtxosInTx),
+                    activations
+                );
+
                 migratedUtxos.addAll(selectedUtxosInTx);
                 assertMigrationTxWithOneOutput(migrationTransaction, selectedUtxosInTx);
                 remainingExpectedInputs -= expectedInputCountInTx;
-
             }
             assertAllExpectedInputsWereIncluded(remainingExpectedInputs);
             assertExpectedUtxosWereMigrated(migratedUtxos, retiringFederationUtxos, expectedTotalInputCount);
@@ -2247,6 +2267,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
@@ -2277,6 +2298,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
@@ -2397,6 +2419,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
@@ -2414,8 +2437,9 @@ class BridgeSupportProcessFundsMigrationTest {
             // Act
             long secondExecutionBlockNumber = executionBlockNumber + 1;
             setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber, VETIVER_ACTIVATIONS);
-            Transaction secondUpdateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
-            bridgeSupport.updateCollections(secondUpdateCollectionsTransaction);
+            updateCollectionsTransaction = buildUpdateCollectionsTransaction(1);
+            bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
@@ -2445,6 +2469,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act - first call: migrates all UTXOs
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert - first call
             assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
@@ -2483,6 +2508,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act - first call: migrates all UTXOs
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert - first call
             assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
@@ -2545,6 +2571,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertMigrationTransactionsBetweenStandardMultisigFedsWereBuiltAsExpected(
@@ -2638,6 +2665,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
+            bridgeStorageProvider.save();
 
             // Assert
             assertNoMigrationTxCreated();
@@ -2659,10 +2687,11 @@ class BridgeSupportProcessFundsMigrationTest {
         ) throws IOException {
             assertMigrationTxCount(expectedMigrationTxCount, activations);
 
-            List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount(activations);
+            List<PegoutsWaitingForConfirmations.Entry> migrationEntries = getMigrationEntriesSortedByCreationAndInputsCount(activations);
             List<UTXO> migratedUtxos = new ArrayList<>();
             int remainingExpectedInputs = expectedTotalInputCount;
-            for (BtcTransaction migrationTransaction : migrationTransactions) {
+            for (PegoutsWaitingForConfirmations.Entry migrationEntry : migrationEntries) {
+                BtcTransaction migrationTransaction = migrationEntry.getBtcTransaction();
                 assertBtcTxVersionIs2(migrationTransaction);
 
                 int expectedInputCountInTx = getExpectedInputCountInTx(remainingExpectedInputs, activations);
@@ -2674,10 +2703,22 @@ class BridgeSupportProcessFundsMigrationTest {
                     retiringFederationUtxos,
                     selectedUtxosInTx
                 );
+
+                assertReleaseWasSettled(
+                    repository,
+                    bridgeStorageProvider,
+                    logs,
+                    migrationEntry.getPegoutCreationRskBlockNumber(),
+                    migrationEntry.getPegoutCreationRskTxHash(),
+                    migrationTransaction,
+                    extractOutpointValues(migrationTransaction),
+                    getTotalValue(selectedUtxosInTx),
+                    activations
+                );
+
                 migratedUtxos.addAll(selectedUtxosInTx);
                 assertMigrationTxWithOneOutput(migrationTransaction, selectedUtxosInTx);
                 remainingExpectedInputs -= expectedInputCountInTx;
-
             }
             assertAllExpectedInputsWereIncluded(remainingExpectedInputs);
             assertExpectedUtxosWereMigrated(migratedUtxos, retiringFederationUtxos, expectedTotalInputCount);
@@ -2690,7 +2731,8 @@ class BridgeSupportProcessFundsMigrationTest {
         ) throws IOException {
             assertOneMigrationTxCountForIRIS();
 
-            BtcTransaction migrationTransaction = getMigrationTransactionForIRIS();
+            PegoutsWaitingForConfirmations.Entry migrationEntry = getMigrationEntryForIRIS();
+            BtcTransaction migrationTransaction = migrationEntry.getBtcTransaction();
             assertBtcTxVersionIs1(migrationTransaction);
             List<UTXO> selectedUtxos = getSelectedUtxos(migrationTransaction, retiringFederationUtxos);
             assertReleaseTxInputsStandardMultisig(
@@ -2701,6 +2743,20 @@ class BridgeSupportProcessFundsMigrationTest {
                 selectedUtxos
             );
 
+            assertPegoutWasAddedToPegoutsWaitingForConfirmations(
+                bridgeStorageProvider.getPegoutsWaitingForConfirmations(),
+                migrationTransaction.getHash(),
+                migrationEntry.getPegoutCreationRskTxHash(),
+                migrationEntry.getPegoutCreationRskBlockNumber(),
+                IRIS_ACTIVATIONS
+            );
+            assertLogReleaseRequested(
+                logs,
+                migrationEntry.getPegoutCreationRskTxHash(),
+                migrationTransaction.getHash(),
+                getTotalValue(selectedUtxos)
+            );
+
             assertMigrationTxWithOneOutput(migrationTransaction, selectedUtxos);
             assertExpectedUtxosWereMigrated(selectedUtxos, retiringFederationUtxos, expectedInputCount);
         }
@@ -2709,12 +2765,11 @@ class BridgeSupportProcessFundsMigrationTest {
             assertMigrationTxCount(ONE_MIGRATION_TX_COUNT, IRIS_ACTIVATIONS);
         }
 
-        private BtcTransaction getMigrationTransactionForIRIS() throws IOException {
+        private PegoutsWaitingForConfirmations.Entry getMigrationEntryForIRIS() throws IOException {
             return bridgeStorageProvider.getPegoutsWaitingForConfirmations()
                 .getEntries(IRIS_ACTIVATIONS)
                 .iterator()
-                .next()
-                .getBtcTransaction();
+                .next();
         }
     }
 
@@ -2727,7 +2782,7 @@ class BridgeSupportProcessFundsMigrationTest {
         return Math.min(maxInputsPerPegoutTx, remainingExpectedInputs);
     }
 
-    private List<BtcTransaction> getMigrationTransactionsSortedByCreationAndInputsCount(ActivationConfig.ForBlock activations) throws IOException {
+    private List<PegoutsWaitingForConfirmations.Entry> getMigrationEntriesSortedByCreationAndInputsCount(ActivationConfig.ForBlock activations) throws IOException {
         return bridgeStorageProvider.getPegoutsWaitingForConfirmations()
             .getEntries(activations)
             .stream()
@@ -2738,8 +2793,19 @@ class BridgeSupportProcessFundsMigrationTest {
                     Comparator.reverseOrder()
                 )
             )
+            .toList();
+    }
+
+    private List<BtcTransaction> getMigrationTransactionsSortedByCreationAndInputsCount(ActivationConfig.ForBlock activations) throws IOException {
+        return getMigrationEntriesSortedByCreationAndInputsCount(activations)
+            .stream()
             .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
             .toList();
+    }
+
+    private BtcTransaction getLastMigrationTxAdded(ActivationConfig.ForBlock activations) throws IOException {
+        List<BtcTransaction> migrationTransactions = getMigrationTransactionsSortedByCreationAndInputsCount(activations);
+        return migrationTransactions.get(migrationTransactions.size() - 1);
     }
 
     private void assertExpectedUtxosWereMigrated(
@@ -2790,6 +2856,8 @@ class BridgeSupportProcessFundsMigrationTest {
             .withActivations(activations)
             .build();
 
+        BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, activations, logs);
+
         bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(BRIDGE_CONSTANTS)
             .withProvider(bridgeStorageProvider)
@@ -2797,6 +2865,7 @@ class BridgeSupportProcessFundsMigrationTest {
             .withActivations(activations)
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
+            .withEventLogger(bridgeEventLogger)
             .build();
     }
 
