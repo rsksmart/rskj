@@ -66,7 +66,6 @@ class FederationChangeIT {
         BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{
                 "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true);
-    private static final List<FederationMember> ORIGINAL_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembersWithBtcKeys(ORIGINAL_FEDERATION_MEMBERS_KEYS);
     private static final List<BtcECKey> NEW_FEDERATION_MEMBERS_KEYS = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
         "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "newMember10",
         "newMember11", "newMember12", "newMember13", "newMember14", "newMember15", "newMember16", "newMember17", "newMember18", "newMember19", "newMember20"
@@ -266,15 +265,10 @@ class FederationChangeIT {
     }
 
     private Federation createOriginalFederation() {
-        var originalFederationArgs = new FederationArgs(
-            ORIGINAL_FEDERATION_MEMBERS,
-            Instant.EPOCH,
-            0,
-            NETWORK_PARAMS);
-        var erpPubKeys = FEDERATION_CONSTANTS.getErpFedPubKeysList();
-        var activationDelay = FEDERATION_CONSTANTS.getErpFedActivationDelay();
+        Federation originalFederation = P2shErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(ORIGINAL_FEDERATION_MEMBERS_KEYS)
+            .build();
 
-        Federation originalFederation = FederationFactory.buildP2shErpFederation(originalFederationArgs, erpPubKeys, activationDelay);
         // Set original federation
         federationStorageProvider.setNewFederation(originalFederation);
 
