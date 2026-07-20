@@ -7638,7 +7638,7 @@ class BridgeSupportTest {
             Keccak256 releaseCreationTxHash = tx.getHash();
 
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
-            assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, currentBlock.getNumber(), allActivations);
+            assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, currentBlock.getNumber(), lovellActivations);
             assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
             assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, totalAmountRequested);
             assertLogPegoutTransactionCreated(logs, releaseTransaction, outpointValues);
@@ -7842,7 +7842,7 @@ class BridgeSupportTest {
             Keccak256 releaseCreationTxHash = tx.getHash();
 
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
-            assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, currentBlock.getNumber(), allActivations);
+            assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, currentBlock.getNumber(), lovellActivations);
             assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, amountToSend);
             assertLogPegoutTransactionCreated(logs, releaseTransaction, List.of(amountToSend));
             assertReleaseOutpointsValuesWereNotSavedInStorage(releaseTransaction);
