@@ -4,6 +4,7 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
+import static co.rsk.peg.bitcoin.BitcoinTestAssertions.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
@@ -54,6 +55,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class FederationChangeIT {
@@ -62,10 +64,6 @@ class FederationChangeIT {
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
     private static final NetworkParameters NETWORK_PARAMS = BRIDGE_CONSTANTS.getBtcParams();
-    private static final List<BtcECKey> ORIGINAL_FEDERATION_MEMBERS_KEYS =
-        BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{
-                "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true);
     private static final List<BtcECKey> NEW_FEDERATION_MEMBERS_KEYS = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
         "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "newMember10",
         "newMember11", "newMember12", "newMember13", "newMember14", "newMember15", "newMember16", "newMember17", "newMember18", "newMember19", "newMember20"
@@ -106,97 +104,293 @@ class FederationChangeIT {
     private PartialMerkleTree pmtWithTransactions;
     private int btcBlockWithPmtHeight;
 
-    @Test
-    void whenAllActivationsArePresentAndFederationChanges_shouldSuccessfullyChangeFederation() throws Exception {
-        // Arrange
-        setUp();
+    @Nested
+    class ErpP2shToErpP2shP2wshFederationChange {
+        private final List<BtcECKey> ORIGINAL_FEDERATION_MEMBERS_KEYS =
+            BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{
+                    "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true);
 
-        // Create a default original federation using the list of UTXOs
-        var originalFederation = createOriginalFederation();
-        var originalUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMS, ACTIVATIONS);
+        @Test
+        void whenAllActivationsArePresentAndFederationChanges_shouldSuccessfullyChangeFederation() throws Exception {
+            // Arrange
+            setUp();
 
-        // Act & Assert
-        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
-        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
-        // Create pending federation using the new federation keys
-        voteToCreateEmptyPendingFederation();
-        voteToAddFederatorPublicKeysToPendingFederation();
+            // Create a default original federation using the list of UTXOs
+            var originalFederation = createOriginalP2shErpFederation();
+            var originalUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMS, ACTIVATIONS);
 
-        var pendingFederation = federationStorageProvider.getPendingFederation();
-        assertPendingFederationIsBuiltAsExpected(pendingFederation);
+            // Act & Assert
+            assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
+            assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
+            // Create pending federation using the new federation keys
+            voteToCreateEmptyPendingFederation();
+            voteToAddFederatorPublicKeysToPendingFederation();
 
-        voteToCommitPendingFederation();
-        var newFederationOpt = federationSupport.getProposedFederation();
-        assertTrue(newFederationOpt.isPresent());
-        var newFederation = newFederationOpt.get();
-        var expectedProposedFederation = createExpectedProposedFederation();
-        assertEquals(expectedProposedFederation, newFederation);
+            var pendingFederation = federationStorageProvider.getPendingFederation();
+            assertPendingFederationIsBuiltAsExpected(pendingFederation);
 
-        assertPeginsShouldNotWorkToFed(newFederation, "sender1");
+            voteToCommitPendingFederation();
+            var newFederationOpt = federationSupport.getProposedFederation();
+            assertTrue(newFederationOpt.isPresent());
+            var newFederation = newFederationOpt.get();
+            var expectedProposedFederation = createExpectedProposedFederation();
+            assertEquals(expectedProposedFederation, newFederation);
 
-        // Proceed with SVP process
-        callUpdateCollectionsAndAssertSvpFundTxIsCreated();
-        registerSignedSvpFundTx();
+            assertPeginsShouldNotWorkToFed(newFederation, "sender1");
 
-        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender2");
-        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender2");
-        assertPeginsShouldNotWorkToFed(newFederation, "sender3");
-        assertPegoutsShouldNotWorkToFed(newFederation, "sender3");
+            // Proceed with SVP process
+            callUpdateCollectionsAndAssertSvpFundTxIsCreated();
+            registerSignedSvpFundTx();
 
-        callUpdateCollectionsAndAssertSvpSpendTxIsCreated();
-        addSignaturesToAndRegisterSvpSpendTx();
+            assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender2");
+            assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender2");
+            assertPeginsShouldNotWorkToFed(newFederation, "sender3");
+            assertPegoutsShouldNotWorkToFed(newFederation, "sender3");
 
-        // Validations post commit
-        assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(originalFederation);
-        assertUTXOsReferenceMovedFromNewToOldFederation(originalUTXOs);
-        assertNewAndOldFederationsReferences(newFederation, originalFederation);
-        assertNextFederationCreationBlockHeight(newFederation.getCreationBlockNumber());
+            callUpdateCollectionsAndAssertSvpSpendTxIsCreated();
+            addSignaturesToAndRegisterSvpSpendTx();
 
-        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender4");
-        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender4");
-        assertPeginsShouldNotWorkToFed(newFederation, "sender5");
-        assertPegoutsShouldNotWorkToFed(newFederation, "sender5");
+            // Validations post commit
+            assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(originalFederation);
+            assertUTXOsReferenceMovedFromNewToOldFederation(originalUTXOs);
+            assertNewAndOldFederationsReferences(newFederation, originalFederation);
+            assertNextFederationCreationBlockHeight(newFederation.getCreationBlockNumber());
 
-        // Move blockchain until the activation phase
-        activateNewFederation();
-        assertActiveAndRetiringFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
-        assertMigrationHasNotStarted();
+            assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender4");
+            assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender4");
+            assertPeginsShouldNotWorkToFed(newFederation, "sender5");
+            assertPegoutsShouldNotWorkToFed(newFederation, "sender5");
 
-        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender6");
-        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender6");
-        assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender7");
-        assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender7");
+            // Move blockchain until the activation phase
+            activateNewFederation();
+            assertActiveAndRetiringFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
+            assertMigrationHasNotStarted();
 
-        // Move blockchain until the migration phase
-        activateMigration();
+            assertPeginsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender6");
+            assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender6");
+            assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender7");
+            assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender7");
 
-        // Calling update collections should start migration
-        callUpdateCollections();
-        assertMigrationHasStarted();
-        assertPegoutTxSigHashesAreSaved();
-        assertReleaseBtcRequestedEventEventWasEmitted();
-        assertPegoutTransactionCreatedEventWasEmitted();
-        verifyPegouts();
+            // Move blockchain until the migration phase
+            activateMigration();
 
-        // Check again live federations references are as expected
-        assertNewAndOldFederationsReferences(newFederation, originalFederation);
-        assertActiveAndRetiringFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
+            // Calling update collections should start migration
+            callUpdateCollections();
+            assertMigrationHasStarted();
+            assertPegoutTxSigHashesAreSaved();
+            assertReleaseBtcRequestedEventEventWasEmitted();
+            assertPegoutTransactionCreatedEventWasEmitted();
+            verifyPegoutsByErpP2shFederation();
 
-        assertPeginsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender8");
-        assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender8");
-        assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender9");
-        assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender9");
+            // Check again live federations references are as expected
+            assertNewAndOldFederationsReferences(newFederation, originalFederation);
+            assertActiveAndRetiringFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
 
-        // Move blockchain until the end of the migration phase
-        long migrationCreationRskBlockNumber = currentBlock.getNumber();
-        endMigration();
-        assertPegoutConfirmedEventEventWasEmitted(migrationCreationRskBlockNumber);
+            assertPeginsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender8");
+            assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender8");
+            assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender9");
+            assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender9");
 
-        assertOnlyActiveFedIsLive(newFederation);
-        assertPeginsShouldNotWorkToFed(originalFederation, "sender10");
-        assertPegoutsShouldNotWorkToFed(originalFederation, "sender10");
-        assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender11");
-        assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender11");
+            // Move blockchain until the end of the migration phase
+            long migrationCreationRskBlockNumber = currentBlock.getNumber();
+            endMigration();
+            assertPegoutConfirmedEventEventWasEmitted(migrationCreationRskBlockNumber);
+
+            assertOnlyActiveFedIsLive(newFederation);
+            assertPeginsShouldNotWorkToFed(originalFederation, "sender10");
+            assertPegoutsShouldNotWorkToFed(originalFederation, "sender10");
+            assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender11");
+            assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender11");
+        }
+
+        private Federation createOriginalP2shErpFederation() {
+            Federation originalFederation = P2shErpFederationBuilder.builder()
+                .withMembersBtcPublicKeys(ORIGINAL_FEDERATION_MEMBERS_KEYS)
+                .build();
+
+            // Set original federation
+            federationStorageProvider.setNewFederation(originalFederation);
+
+            // Set new UTXOs
+            int numberOfUtxos = 50;
+            Address originalFederationAddress = originalFederation.getAddress();
+            Script outputScript = ScriptBuilder.createOutputScript(originalFederationAddress);
+            List<UTXO> originalUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(outputScript)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+            bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), originalUTXOs, BridgeSerializationUtils::serializeUTXOList);
+
+            return originalFederation;
+        }
+
+        private void registerSignedSvpFundTx() throws Exception {
+            var pegoutsTxs =
+                bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS).stream().toList();
+            assertEquals(1, pegoutsTxs.size());
+            var svpFundTx = new BtcTransaction(NETWORK_PARAMS, pegoutsTxs.get(0).getBtcTransaction().bitcoinSerialize());
+
+            int neededSignatures = federationSupport.getActiveFederationThreshold();
+            signInputs(svpFundTx, ORIGINAL_FEDERATION_MEMBERS_KEYS.subList(0, neededSignatures));
+
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            registerBtcTransaction(svpFundTx);
+
+            assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
+            var svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertFalse(svpFundTxHashUnsigned.isPresent());
+            var svpFundTransactionSigned = bridgeStorageProvider.getSvpFundTxSigned();
+            assertTrue(svpFundTransactionSigned.isPresent());
+
+            // simulate removal to leave state clean
+            assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().removeEntry(pegoutsTxs.get(0)));
+        }
+    }
+
+    @Nested
+    class ErpP2shP2wshToErpP2shP2wshFederationChange {
+        private final List<BtcECKey> ORIGINAL_FEDERATION_MEMBERS_KEYS =
+            BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{
+                    "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "member10",
+                    "member11", "member12", "member13", "member14", "member15", "member16", "member17", "member18", "member19", "member20"}, true);
+
+        @Test
+        void whenAllActivationsArePresentAndFederationChanges_shouldSuccessfullyChangeFederation() throws Exception {
+            // Arrange
+            setUp();
+
+            // Create a default original federation using the list of UTXOs
+            var originalFederation = createOriginalP2shP2wshErpFederation();
+            var originalUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMS, ACTIVATIONS);
+
+            // Act & Assert
+            assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
+            assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
+            // Create pending federation using the new federation keys
+            voteToCreateEmptyPendingFederation();
+            voteToAddFederatorPublicKeysToPendingFederation();
+
+            var pendingFederation = federationStorageProvider.getPendingFederation();
+            assertPendingFederationIsBuiltAsExpected(pendingFederation);
+
+            voteToCommitPendingFederation();
+            var newFederationOpt = federationSupport.getProposedFederation();
+            assertTrue(newFederationOpt.isPresent());
+            var newFederation = newFederationOpt.get();
+            var expectedProposedFederation = createExpectedProposedFederation();
+            assertEquals(expectedProposedFederation, newFederation);
+
+            assertPeginsShouldNotWorkToFed(newFederation, "sender1");
+
+            // Proceed with SVP process
+            callUpdateCollectionsAndAssertSvpFundTxIsCreated();
+            registerSignedSvpFundTxForSegwit();
+
+            assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender2");
+            assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender2");
+            assertPeginsShouldNotWorkToFed(newFederation, "sender3");
+            assertPegoutsShouldNotWorkToFed(newFederation, "sender3");
+
+            callUpdateCollectionsAndAssertSvpSpendTxIsCreated();
+            addSignaturesToAndRegisterSvpSpendTx();
+
+            // Validations post commit
+            assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(originalFederation);
+            assertUTXOsReferenceMovedFromNewToOldFederation(originalUTXOs);
+            assertNewAndOldFederationsReferences(newFederation, originalFederation);
+            assertNextFederationCreationBlockHeight(newFederation.getCreationBlockNumber());
+
+            assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender4");
+            assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender4");
+            assertPeginsShouldNotWorkToFed(newFederation, "sender5");
+            assertPegoutsShouldNotWorkToFed(newFederation, "sender5");
+
+            // Move blockchain until the activation phase
+            activateNewFederation();
+            assertActiveAndRetiringFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
+            assertMigrationHasNotStarted();
+
+            assertPeginsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender6");
+            assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender6");
+            assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender7");
+            assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender7");
+
+            // Move blockchain until the migration phase
+            activateMigration();
+
+            // Calling update collections should start migration
+            callUpdateCollections();
+            assertMigrationHasStarted();
+            assertPegoutTxSigHashesAreSaved();
+            assertReleaseBtcRequestedEventEventWasEmitted();
+            assertPegoutTransactionCreatedEventWasEmitted();
+            verifyPegoutsByErpP2shP2wshFederation();
+
+            // Check again live federations references are as expected
+            assertNewAndOldFederationsReferences(newFederation, originalFederation);
+            assertActiveAndRetiringFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
+
+            assertPeginsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender8");
+            assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getRetiringFederationBtcUTXOs(), "sender8");
+            assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender9");
+            assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender9");
+
+            // Move blockchain until the end of the migration phase
+            long migrationCreationRskBlockNumber = currentBlock.getNumber();
+            endMigration();
+            assertPegoutConfirmedEventEventWasEmitted(migrationCreationRskBlockNumber);
+
+            assertOnlyActiveFedIsLive(newFederation);
+            assertPeginsShouldNotWorkToFed(originalFederation, "sender10");
+            assertPegoutsShouldNotWorkToFed(originalFederation, "sender10");
+            assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender11");
+            assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender11");
+        }
+
+        private Federation createOriginalP2shP2wshErpFederation() {
+            Federation originalFederation = P2shP2wshErpFederationBuilder.builder()
+                .withMembersBtcPublicKeys(ORIGINAL_FEDERATION_MEMBERS_KEYS)
+                .build();
+
+            // Set original federation
+            federationStorageProvider.setNewFederation(originalFederation);
+
+            // Set new UTXOs
+            int numberOfUtxos = 50;
+            Address originalFederationAddress = originalFederation.getAddress();
+            Script outputScript = ScriptBuilder.createOutputScript(originalFederationAddress);
+            List<UTXO> originalUTXOs = UTXOBuilder.builder()
+                .withScriptPubKey(outputScript)
+                .buildMany(numberOfUtxos, i -> createHash(i + 1));
+
+            bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), originalUTXOs, BridgeSerializationUtils::serializeUTXOList);
+
+            return originalFederation;
+        }
+
+        private void registerSignedSvpFundTxForSegwit() throws Exception {
+            var pegoutsTxs =
+                bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS).stream().toList();
+            assertEquals(1, pegoutsTxs.size());
+            var svpFundTx = pegoutsTxs.get(0).getBtcTransaction();
+
+            int neededSignatures = federationSupport.getActiveFederationThreshold();
+            signSegwitInputs(svpFundTx, ORIGINAL_FEDERATION_MEMBERS_KEYS.subList(0, neededSignatures));
+
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            registerBtcTransaction(svpFundTx);
+
+            assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
+            var svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertFalse(svpFundTxHashUnsigned.isPresent());
+            var svpFundTransactionSigned = bridgeStorageProvider.getSvpFundTxSigned();
+            assertTrue(svpFundTransactionSigned.isPresent());
+
+            // simulate removal to leave state clean
+            assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().removeEntry(pegoutsTxs.get(0)));
+        }
     }
 
     private void setUp() throws Exception {
@@ -262,27 +456,6 @@ class FederationChangeIT {
             .withFeePerKbSupport(feePerKbSupport)
             .withLockingCapSupport(lockingCapSupport)
             .build();
-    }
-
-    private Federation createOriginalFederation() {
-        Federation originalFederation = P2shErpFederationBuilder.builder()
-            .withMembersBtcPublicKeys(ORIGINAL_FEDERATION_MEMBERS_KEYS)
-            .build();
-
-        // Set original federation
-        federationStorageProvider.setNewFederation(originalFederation);
-
-        // Set new UTXOs
-        int numberOfUtxos = 50;
-        Address originalFederationAddress = originalFederation.getAddress();
-        Script outputScript = ScriptBuilder.createOutputScript(originalFederationAddress);
-        List<UTXO> originalUTXOs = UTXOBuilder.builder()
-            .withScriptPubKey(outputScript)
-            .buildMany(numberOfUtxos, i -> createHash(i + 1));
-
-        bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), originalUTXOs, BridgeSerializationUtils::serializeUTXOList);
-
-        return originalFederation;
     }
 
     private Federation createExpectedProposedFederation() {
@@ -376,28 +549,6 @@ class FederationChangeIT {
         var svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
         assertTrue(svpFundTxHashUnsigned.isPresent());
         assertEquals(activeFederationUtxosSizeBeforeCreatingFundTx - 1, federationSupport.getActiveFederationBtcUTXOs().size());
-    }
-
-    private void registerSignedSvpFundTx() throws Exception {
-        var pegoutsTxs =
-            bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS).stream().toList();
-        assertEquals(1, pegoutsTxs.size());
-        var svpFundTx = new BtcTransaction(NETWORK_PARAMS, pegoutsTxs.get(0).getBtcTransaction().bitcoinSerialize());
-
-        int neededSignatures = federationSupport.getActiveFederationThreshold();
-        signInputs(svpFundTx, ORIGINAL_FEDERATION_MEMBERS_KEYS.subList(0, neededSignatures));
-
-        int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
-        registerBtcTransaction(svpFundTx);
-
-        assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
-        var svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
-        assertFalse(svpFundTxHashUnsigned.isPresent());
-        var svpFundTransactionSigned = bridgeStorageProvider.getSvpFundTxSigned();
-        assertTrue(svpFundTransactionSigned.isPresent());
-
-        // simulate removal to leave state clean
-        assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().removeEntry(pegoutsTxs.get(0)));
     }
 
     private void callUpdateCollectionsAndAssertSvpSpendTxIsCreated() throws Exception {
@@ -847,6 +998,13 @@ class FederationChangeIT {
             BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, i, keysToSign)
         );
     }
+
+    private void signSegwitInputs(BtcTransaction transaction, List<BtcECKey> keysToSign) {
+        List<TransactionInput> inputs = transaction.getInputs();
+        IntStream.range(0, inputs.size()).forEach(i ->
+            BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(transaction, i, transaction.getInput(i).getValue(), keysToSign)
+        );
+    }
     
     // Assert federation change related methods
     private void assertUTXOsReferenceMovedFromNewToOldFederation(List<UTXO> utxos) {
@@ -998,7 +1156,7 @@ class FederationChangeIT {
         assertEventWasEmittedWithExpectedData(encodedData);
     }
     
-    private void verifyPegouts() throws Exception {
+    private void verifyPegoutsByErpP2shFederation() throws Exception {
         var activeFederation = federationStorageProvider.getNewFederation(
             FEDERATION_CONSTANTS, ACTIVATIONS);
         var retiringFederation = federationStorageProvider.getOldFederation(
@@ -1009,8 +1167,6 @@ class FederationChangeIT {
 
             List<TransactionInput> inputs = pegoutBtcTransaction.getInputs();
             for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
-                TransactionInput input = inputs.get(inputIndex);
-
                 // Each input should contain the right scriptSig
                 Script inputRedeemScript = BitcoinUtils.extractRedeemScriptFromInput(pegoutBtcTransaction, inputIndex).orElseThrow();
 
@@ -1022,18 +1178,8 @@ class FederationChangeIT {
                 var inputStandardRedeemScriptChunks = redeemScriptParser.extractStandardRedeemScriptChunks();
                 var inputStandardRedeemScript = new ScriptBuilder().addChunks(inputStandardRedeemScriptChunks).build();
 
-                Optional<Federation> spendingFederationOptional = Optional.empty();
-                if (inputStandardRedeemScript.equals(getFederationDefaultRedeemScript(activeFederation))) {
-                    spendingFederationOptional = Optional.of(activeFederation);
-                } else if (retiringFederation != null &&
-                    inputStandardRedeemScript.equals(getFederationDefaultRedeemScript(retiringFederation))) {
-                    spendingFederationOptional = Optional.of(retiringFederation);
-                } else {
-                    fail("Pegout scriptsig does not match any Federation");
-                }
-
-                // Check the script sig composition
-                Federation spendingFederation = spendingFederationOptional.get();
+                Federation spendingFederation = getSpendingFederation(inputStandardRedeemScript, activeFederation, retiringFederation);
+                TransactionInput input = inputs.get(inputIndex);
                 var inputScriptChunks = input.getScriptSig().getChunks();
                 assertEquals(ScriptOpCodes.OP_0, inputScriptChunks.get(0).opcode);
                 for (int i = 1; i <= spendingFederation.getNumberOfSignaturesRequired(); i++) {
@@ -1047,6 +1193,51 @@ class FederationChangeIT {
                 }
             }
         }
+    }
+
+    private void verifyPegoutsByErpP2shP2wshFederation() throws Exception {
+        var activeFederation = federationStorageProvider.getNewFederation(
+            FEDERATION_CONSTANTS, ACTIVATIONS);
+        var retiringFederation = federationStorageProvider.getOldFederation(
+            FEDERATION_CONSTANTS, ACTIVATIONS);
+
+        for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS)) {
+            var pegoutBtcTransaction = pegoutEntry.getBtcTransaction();
+
+            List<TransactionInput> inputs = pegoutBtcTransaction.getInputs();
+            for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
+                // Each input should contain the right redeem script
+                Script inputRedeemScript = BitcoinUtils.extractRedeemScriptFromInput(pegoutBtcTransaction, inputIndex).orElseThrow();
+
+                // Get the standard redeem script to compare against, since it could be a flyover redeem script
+                var redeemScriptChunks = ScriptParser.parseScriptProgram(
+                    inputRedeemScript.getProgram());
+
+                var redeemScriptParser = RedeemScriptParserFactory.get(redeemScriptChunks);
+                var inputStandardRedeemScriptChunks = redeemScriptParser.extractStandardRedeemScriptChunks();
+                var inputStandardRedeemScript = new ScriptBuilder().addChunks(inputStandardRedeemScriptChunks).build();
+
+                Federation spendingFederation = getSpendingFederation(inputStandardRedeemScript, activeFederation, retiringFederation);
+
+                // Check the witness composition
+                var witness = pegoutBtcTransaction.getWitness(inputIndex);
+                assertP2shP2wshWitnessWithoutSignaturesHasProperFormat(
+                    witness, getFederationDefaultRedeemScript(spendingFederation));
+            }
+        }
+    }
+
+    private Federation getSpendingFederation(Script inputStandardRedeemScript, Federation activeFederation, Federation retiringFederation) {
+        Optional<Federation> spendingFederationOptional = Optional.empty();
+        if (inputStandardRedeemScript.equals(getFederationDefaultRedeemScript(activeFederation))) {
+            spendingFederationOptional = Optional.of(activeFederation);
+        } else if (retiringFederation != null &&
+            inputStandardRedeemScript.equals(getFederationDefaultRedeemScript(retiringFederation))) {
+            spendingFederationOptional = Optional.of(retiringFederation);
+        } else {
+            fail("Pegout scriptsig does not match any Federation");
+        }
+        return spendingFederationOptional.get();
     }
 
     private void assertPegoutTxSigHashesAreSaved() throws IOException {
