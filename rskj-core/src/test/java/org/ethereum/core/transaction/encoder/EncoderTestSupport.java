@@ -63,10 +63,13 @@ public final class EncoderTestSupport {
     /** Deterministic private key so recovered senders and signatures are stable within a run. */
     public static final byte[] PRIVATE_KEY = deterministicPrivateKey();
 
-    /** Fixed signature components used by the golden vectors: r=0x11*32, s=0x22*32, v=28 (yParity 1). */
+    /** Fixed signature components used by the golden vectors: r=0x11*32, s=0x22*32. */
     public static final byte[] FIXED_R = repeat((byte) 0x11, 32);
     public static final byte[] FIXED_S = repeat((byte) 0x22, 32);
+    /** Recovery id 28 -> typed yParity 1. */
     public static final byte FIXED_V = 28;
+    /** Recovery id 27 -> typed yParity 0 (must encode as empty RLP byte {@code 0x80}, not {@code 0x00}). */
+    public static final byte FIXED_V_Y_PARITY_0 = 27;
 
     private EncoderTestSupport() {
     }
@@ -105,24 +108,32 @@ public final class EncoderTestSupport {
 
     public static Transaction unsignedType4(byte chainId) {
         return build(TransactionTypePrefix.typed(TransactionType.TYPE_4), chainId,
-                EMPTY_ACCESS_LIST, MAX_PRIORITY_FEE, MAX_FEE, List.of(deterministicAuthorization()));
+                EMPTY_ACCESS_LIST, MAX_PRIORITY_FEE, MAX_FEE, List.of(deterministicAuthorization(chainId)));
     }
 
     /**
      * RSKIP-545 authorization tuple with fixed components so the encoding is fully deterministic:
-     * {@code [33, 0x…03, nonce=1, yParity=0, r=1, s=1]}.
+     * {@code [chainId, 0x...03, nonce=1, yParity=0, r=1, s=1]}.
      */
     public static SetCodeAuthorization deterministicAuthorization() {
+        return deterministicAuthorization(CHAIN_ID);
+    }
+
+    public static SetCodeAuthorization deterministicAuthorization(byte chainId) {
         return new SetCodeAuthorization(
-                BigInteger.valueOf(CHAIN_ID),
+                BigInteger.valueOf(chainId & 0xFF),
                 AUTH_DELEGATE,
                 new byte[]{0x01},
                 ECDSASignature.fromComponents(new byte[]{0x01}, new byte[]{0x01}, (byte) 27));
     }
 
-    /** Installs the fixed (non-recoverable) signature used by the golden signed vectors. */
+    /** Installs the fixed (non-recoverable) signature used by the golden signed vectors (yParity 1). */
     public static Transaction withFixedSignature(Transaction tx) {
-        tx.setSignature(ECDSASignature.fromComponents(FIXED_R, FIXED_S, FIXED_V));
+        return withFixedSignature(tx, FIXED_V);
+    }
+
+    public static Transaction withFixedSignature(Transaction tx, byte v) {
+        tx.setSignature(ECDSASignature.fromComponents(FIXED_R, FIXED_S, v));
         return tx;
     }
 

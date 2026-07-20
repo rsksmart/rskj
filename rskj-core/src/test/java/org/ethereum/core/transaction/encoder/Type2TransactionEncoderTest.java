@@ -28,10 +28,14 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.CHAIN_ID;
+import static org.ethereum.core.transaction.encoder.EncoderTestSupport.FIXED_R;
+import static org.ethereum.core.transaction.encoder.EncoderTestSupport.FIXED_S;
+import static org.ethereum.core.transaction.encoder.EncoderTestSupport.FIXED_V_Y_PARITY_0;
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.MAX_FEE;
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.MAX_PRIORITY_FEE;
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.PRIVATE_KEY;
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.unsignedType2;
+import static org.ethereum.core.transaction.encoder.EncoderTestSupport.withFixedSignature;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -89,9 +93,22 @@ class Type2TransactionEncoderTest {
         assertEquals(TransactionType.TYPE_2.getByteCode(), encoded[0]);
         RLPList fields = decodePayload(encoded);
         assertEquals(12, fields.size(), "Signed Type 2 layout must have 12 fields");
-        assertNullOrZero(fields.get(9).getRLPData(), "yParity defaults to 0 when unsigned");
+        assertNullOrEmpty(fields.get(9).getRLPData(),
+                "yParity defaults to empty RLP byte (0x80) when unsigned - not a bare 0x00");
         assertNullOrEmpty(fields.get(10).getRLPData(), "r must be empty when unsigned");
         assertNullOrEmpty(fields.get(11).getRLPData(), "s must be empty when unsigned");
+    }
+
+    @Test
+    void encodeSigned_yParity0_encodesAsEmptyRlpByte() {
+        Transaction tx = withFixedSignature(unsignedType2(), FIXED_V_Y_PARITY_0);
+
+        RLPList fields = decodePayload(ENCODER.encodeSigned(tx));
+
+        assertNullOrEmpty(fields.get(9).getRLPData(),
+                "yParity 0 must encode as empty RLP byte (0x80), not 0x00");
+        assertArrayEquals(FIXED_R, fields.get(10).getRLPData());
+        assertArrayEquals(FIXED_S, fields.get(11).getRLPData());
     }
 
     @Test
@@ -137,9 +154,5 @@ class Type2TransactionEncoderTest {
 
     private static void assertNullOrEmpty(byte[] value, String message) {
         assertTrue(value == null || value.length == 0, message);
-    }
-
-    private static void assertNullOrZero(byte[] value, String message) {
-        assertTrue(value == null || value.length == 0 || value[0] == 0, message);
     }
 }

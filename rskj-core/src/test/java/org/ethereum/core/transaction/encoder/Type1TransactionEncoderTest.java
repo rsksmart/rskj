@@ -26,8 +26,12 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.CHAIN_ID;
+import static org.ethereum.core.transaction.encoder.EncoderTestSupport.FIXED_R;
+import static org.ethereum.core.transaction.encoder.EncoderTestSupport.FIXED_S;
+import static org.ethereum.core.transaction.encoder.EncoderTestSupport.FIXED_V_Y_PARITY_0;
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.PRIVATE_KEY;
 import static org.ethereum.core.transaction.encoder.EncoderTestSupport.unsignedType1;
+import static org.ethereum.core.transaction.encoder.EncoderTestSupport.withFixedSignature;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -62,9 +66,22 @@ class Type1TransactionEncoderTest {
         assertEquals(TransactionType.TYPE_1.getByteCode(), encoded[0]);
         RLPList fields = decodePayload(encoded);
         assertEquals(11, fields.size(), "Signed Type 1 layout must have 11 fields");
-        assertNullOrZero(fields.get(8).getRLPData(), "yParity defaults to 0 when unsigned");
+        assertNullOrEmpty(fields.get(8).getRLPData(),
+                "yParity defaults to empty RLP byte (0x80) when unsigned - not a bare 0x00");
         assertNullOrEmpty(fields.get(9).getRLPData(), "r must be empty when unsigned");
         assertNullOrEmpty(fields.get(10).getRLPData(), "s must be empty when unsigned");
+    }
+
+    @Test
+    void encodeSigned_yParity0_encodesAsEmptyRlpByte() {
+        Transaction tx = withFixedSignature(unsignedType1(), FIXED_V_Y_PARITY_0);
+
+        RLPList fields = decodePayload(ENCODER.encodeSigned(tx));
+
+        assertNullOrEmpty(fields.get(8).getRLPData(),
+                "yParity 0 must encode as empty RLP byte (0x80), not 0x00");
+        assertArrayEquals(FIXED_R, fields.get(9).getRLPData());
+        assertArrayEquals(FIXED_S, fields.get(10).getRLPData());
     }
 
     @Test
@@ -118,9 +135,5 @@ class Type1TransactionEncoderTest {
 
     private static void assertNullOrEmpty(byte[] value, String message) {
         assertTrue(value == null || value.length == 0, message);
-    }
-
-    private static void assertNullOrZero(byte[] value, String message) {
-        assertTrue(value == null || value.length == 0 || value[0] == 0, message);
     }
 }

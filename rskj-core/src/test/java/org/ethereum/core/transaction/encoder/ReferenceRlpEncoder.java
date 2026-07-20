@@ -35,7 +35,7 @@ import java.util.Map;
  * together and stay self-consistent.
  *
  * <p>The field values mirror {@link EncoderTestSupport}; if you change a fixture there, change it
- * here too — do not make this class read from the production encoders to "sync" them.
+ * here too - do not make this class read from the production encoders to "sync" them.
  */
 final class ReferenceRlpEncoder {
 
@@ -51,11 +51,12 @@ final class ReferenceRlpEncoder {
     private static final byte[] DATA = new byte[0];
     private static final byte[] EMPTY_ACCESS_LIST = list();
 
-    // Fixed outer signature shared with EncoderTestSupport: r=0x11*32, s=0x22*32, v=28 (yParity 1).
+    // Fixed outer signature shared with EncoderTestSupport: r=0x11*32, s=0x22*32.
     private static final byte[] SIG_R = repeat((byte) 0x11, 32);
     private static final byte[] SIG_S = repeat((byte) 0x22, 32);
     private static final int SIG_V_RAW = 28;
     private static final int Y_PARITY = SIG_V_RAW - 27;
+    private static final int Y_PARITY_0 = 0;
 
     // Deterministic RSKIP-545 authorization tuple: [chainId, address, nonce, yParity, r, s].
     private static final byte[] AUTH_DELEGATE = hex("0000000000000000000000000000000000000003");
@@ -70,6 +71,7 @@ final class ReferenceRlpEncoder {
         vectors.put("legacy-chain33", legacy(CHAIN_ID));
         vectors.put("type1-chain33", type1(CHAIN_ID));
         vectors.put("type2-chain33", type2(CHAIN_ID));
+        vectors.put("type2-chain33-yParity0", type2(CHAIN_ID, Y_PARITY_0));
         vectors.put("type2-chain200", type2(HIGH_CHAIN_ID));
         vectors.put("type4-chain33", type4(CHAIN_ID));
         return vectors;
@@ -97,14 +99,18 @@ final class ReferenceRlpEncoder {
     }
 
     private static String[] type2(int chainId) {
-        return typed(0x02, type2Body(chainId));
+        return type2(chainId, Y_PARITY);
+    }
+
+    private static String[] type2(int chainId, int yParity) {
+        return typed(0x02, type2Body(chainId), yParity);
     }
 
     private static String[] type4(int chainId) {
         byte[] authList = list(list(
-                integer(CHAIN_ID), bytes(AUTH_DELEGATE), integer(1), integer(0), integer(1), integer(1)));
+                integer(chainId), bytes(AUTH_DELEGATE), integer(1), integer(0), integer(1), integer(1)));
         byte[][] body = append(type2Body(chainId), authList);
-        return typed(0x04, body);
+        return typed(0x04, body, Y_PARITY);
     }
 
     private static byte[][] type2Body(int chainId) {
@@ -115,15 +121,19 @@ final class ReferenceRlpEncoder {
     }
 
     private static String[] typed(int typeByte, byte[][] body) {
-        return new String[]{hex(typed(typeByte, list(body))), hex(typedSigned(typeByte, body))};
+        return typed(typeByte, body, Y_PARITY);
+    }
+
+    private static String[] typed(int typeByte, byte[][] body, int yParity) {
+        return new String[]{hex(typed(typeByte, list(body))), hex(typedSigned(typeByte, body, yParity))};
     }
 
     private static byte[] typed(int typeByte, byte[] rlp) {
         return concat(new byte[]{(byte) typeByte}, rlp);
     }
 
-    private static byte[] typedSigned(int typeByte, byte[][] body) {
-        return typed(typeByte, list(append(body, integer(Y_PARITY), bytes(SIG_R), bytes(SIG_S))));
+    private static byte[] typedSigned(int typeByte, byte[][] body, int yParity) {
+        return typed(typeByte, list(append(body, integer(yParity), bytes(SIG_R), bytes(SIG_S))));
     }
 
     // ---------------------------------------------------------------------
