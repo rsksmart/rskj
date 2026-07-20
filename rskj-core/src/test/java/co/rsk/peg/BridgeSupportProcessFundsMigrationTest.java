@@ -1602,7 +1602,6 @@ class BridgeSupportProcessFundsMigrationTest {
                 // Act - third call: no funds left to migrate
                 setUpBridgeAndFederationSupportForExecutionBlock(secondExecutionBlockNumber + 1);
                 bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(2));
-                bridgeStorageProvider.save();
 
                 // Assert - third call
                 assertMigrationTxCount(TWO_MIGRATION_TXS_COUNT, ALL_ACTIVATIONS);
@@ -2113,7 +2112,6 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
-            bridgeStorageProvider.save();
 
             // Assert
             assertNoMigrationTxCreated();
@@ -2626,7 +2624,6 @@ class BridgeSupportProcessFundsMigrationTest {
 
             // Act
             bridgeSupport.updateCollections(updateCollectionsTransaction);
-            bridgeStorageProvider.save();
 
             // Assert
             assertNoMigrationTxCreated();
