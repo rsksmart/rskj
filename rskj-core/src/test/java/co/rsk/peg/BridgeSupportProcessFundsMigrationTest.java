@@ -2147,6 +2147,7 @@ class BridgeSupportProcessFundsMigrationTest {
                     selectedUtxosInTx
                 );
 
+                List<Coin> outpointValues = extractOutpointValues(migrationTransaction);
                 assertReleaseWasSettled(
                     repository,
                     bridgeStorageProvider,
@@ -2154,7 +2155,7 @@ class BridgeSupportProcessFundsMigrationTest {
                     migrationEntry.getPegoutCreationRskBlockNumber(),
                     migrationEntry.getPegoutCreationRskTxHash(),
                     migrationTransaction,
-                    extractOutpointValues(migrationTransaction),
+                    outpointValues,
                     getTotalValue(selectedUtxosInTx),
                     activations
                 );
@@ -2664,6 +2665,7 @@ class BridgeSupportProcessFundsMigrationTest {
                     selectedUtxosInTx
                 );
 
+                List<Coin> outpointValues = extractOutpointValues(migrationTransaction);
                 assertReleaseWasSettled(
                     repository,
                     bridgeStorageProvider,
@@ -2671,7 +2673,7 @@ class BridgeSupportProcessFundsMigrationTest {
                     migrationEntry.getPegoutCreationRskBlockNumber(),
                     migrationEntry.getPegoutCreationRskTxHash(),
                     migrationTransaction,
-                    extractOutpointValues(migrationTransaction),
+                    outpointValues,
                     getTotalValue(selectedUtxosInTx),
                     activations
                 );
