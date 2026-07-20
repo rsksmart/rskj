@@ -31,6 +31,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.*;
 
@@ -39,6 +40,7 @@ public class BootstrapFileHandler {
     private static final Logger logger = LoggerFactory.getLogger(BootstrapFileHandler.class);
     private static final String BOOTSTRAP_DATA_NAME = "bootstrap-data.zip";
     private static final String EXTRACTED_PATH = "bootstrap-data.bin";
+    private static final int HASH_BUFFER_SIZE = 64 * 1024;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final BootstrapURLProvider bootstrapUrlProvider;
@@ -68,6 +70,15 @@ public class BootstrapFileHandler {
         }
     }
 
+    /**
+     * Path to the extracted {@code bootstrap-data.bin}. Exposed so the importer can stream it instead
+     * of loading the whole file into a single {@code byte[]} (the v2 format can exceed the
+     * {@code Integer.MAX_VALUE} array ceiling).
+     */
+    public Path getBootstrapDataPath() {
+        return tempPath.resolve(EXTRACTED_PATH);
+    }
+
     public void retrieveAndUnpack(Map<String, BootstrapDataEntry> selectedEntries) {
         Path zipPath = tempPath.resolve(BOOTSTRAP_DATA_NAME);
 
@@ -84,9 +95,15 @@ public class BootstrapFileHandler {
     }
 
     private void checkFileHash(Path databasePath, String expectedHash) {
-        try {
-            byte[] fileContent = Files.readAllBytes(databasePath);
-            byte[] hash = HashUtil.sha256(fileContent);
+        // Stream the digest so the (potentially > 2 GiB) zip is never loaded into a single byte[].
+        // The hash value is unchanged - same SHA-256 over the same bytes, just computed incrementally.
+        MessageDigest digest = HashUtil.makeMessageDigest();
+        try (InputStream is = new BufferedInputStream(Files.newInputStream(databasePath), HASH_BUFFER_SIZE)) {
+            byte[] buffer = new byte[HASH_BUFFER_SIZE];
+            for (int read = is.read(buffer); read >= 0; read = is.read(buffer)) {
+                digest.update(buffer, 0, read);
+            }
+            byte[] hash = digest.digest();
             if (!Arrays.equals(hash, Hex.decode(expectedHash))) {
                 throw new BootstrapImportException(String.format(
                         "File: %s does not match with expected hash: %s", databasePath, expectedHash));
