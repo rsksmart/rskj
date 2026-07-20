@@ -10,6 +10,7 @@ import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.store.BtcBlockStore;
@@ -80,7 +81,7 @@ class FederationChangeIT {
 
     private static final Transaction REGISTRATION_TX = mock(Transaction.class);
     private static final RskAddress LBC_ADDRESS = new RskAddress(new byte[20]);
-    private static final Keccak256 DERIVATION_ARGUMENTS_HASH = PegTestUtils.createHash3(0);
+    private static final Keccak256 DERIVATION_ARGUMENTS_HASH = RskTestUtils.createHash(0);
     private static final Address LIQUIDITY_PROVIDER_BTC_ADDRESS = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMS, "liqProvider");
     private static final Transaction FLYOVER_REGISTRATION_TX = new InternalTransaction(
         Keccak256.ZERO_HASH.getBytes(), 0, 0, null, null, null,
