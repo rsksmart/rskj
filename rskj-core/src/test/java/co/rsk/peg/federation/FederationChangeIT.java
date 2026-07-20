@@ -280,22 +280,16 @@ class FederationChangeIT {
 
         // Set new UTXOs
         int numberOfUtxos = 50;
-        List<UTXO> originalUTXOs = new ArrayList<>();
         Address originalFederationAddress = originalFederation.getAddress();
         Script outputScript = ScriptBuilder.createOutputScript(originalFederationAddress);
-        for (int i = 0; i < numberOfUtxos; i++) {
-            Sha256Hash transactionHash = createHash(i + 1);
-            UTXO utxo = UTXOBuilder.builder()
-                .withTransactionHash(transactionHash)
-                .withScriptPubKey(outputScript)
-                .build();
-            originalUTXOs.add(utxo);
-        }
+        List<UTXO> originalUTXOs = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), originalUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
         return originalFederation;
-    }  
+    }
 
     private Federation createExpectedProposedFederation() {
         var expectedFederationArgs =
