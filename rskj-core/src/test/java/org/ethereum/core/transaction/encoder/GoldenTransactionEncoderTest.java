@@ -65,7 +65,7 @@ class GoldenTransactionEncoderTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("goldenCases")
-    void encodeForSigning_matchesGoldenVector(String id, Supplier<Transaction> transactionSupplier) {
+    void encodeForSigning_matchesGoldenVector(String id, Supplier<Transaction> transactionSupplier, byte unusedV) {
         Transaction tx = transactionSupplier.get();
         TransactionEncoder encoder = TransactionEncoderFactory.getEncoder(tx);
 
