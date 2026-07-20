@@ -896,7 +896,7 @@ class FederationChangeIT {
      
     private void assertMigrationHasStarted() throws Exception {
         // Pegouts waiting for confirmations should not be empty
-        // Expecting only one element since the retiring federation had less than 50 UTXOs
+        // Expecting only one element since the retiring federation had less than 150 UTXOs
         assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(ACTIVATIONS).size());
     }
 
