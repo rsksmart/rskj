@@ -87,8 +87,10 @@ class ParsedType4TransactionTest {
         parsed.nonce()[0] ^= 0x01;
         parsed.gasLimit()[0] ^= 0x01;
         parsed.data()[0] ^= 0x01;
+        parsed.accessListBytes()[0] ^= 0x01;
 
         assertNotSame(parsed.nonce(), parsed.nonce());
+        assertNotSame(parsed.accessListBytes(), parsed.accessListBytes());
         assertEquals(newParsedType4(List.of(auth)), parsed);
     }
 

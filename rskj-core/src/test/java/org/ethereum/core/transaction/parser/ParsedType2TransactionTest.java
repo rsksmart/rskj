@@ -69,8 +69,10 @@ class ParsedType2TransactionTest {
         parsed.nonce()[0] ^= 0x01;
         parsed.gasLimit()[0] ^= 0x01;
         parsed.data()[0] ^= 0x01;
+        parsed.accessListBytes()[0] ^= 0x01;
 
         assertNotSame(parsed.nonce(), parsed.nonce());
+        assertNotSame(parsed.accessListBytes(), parsed.accessListBytes());
         assertEquals(sample(), parsed);
     }
 
