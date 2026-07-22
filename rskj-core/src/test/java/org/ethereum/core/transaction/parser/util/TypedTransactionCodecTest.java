@@ -169,4 +169,19 @@ class TypedTransactionCodecTest {
         assertThrows(IllegalArgumentException.class,
                 () -> TypedTransactionCodec.parseTypedSignatureState(list, 0, 1, 2, 3));
     }
+
+    @Test
+    void parseTypedSignatureState_yParityMultiByte_throws() {
+        byte[] dummyRS = new byte[32];
+        byte[] encoded = RLP.encodeList(
+                RLP.encodeElement(new byte[]{33}),
+                RLP.encodeElement(new byte[]{0, 1}),
+                RLP.encodeElement(dummyRS),
+                RLP.encodeElement(dummyRS)
+        );
+        RLPList list = (RLPList) RLP.decode2(encoded).get(0);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> TypedTransactionCodec.parseTypedSignatureState(list, 0, 1, 2, 3));
+    }
 }

@@ -68,7 +68,13 @@ public final class TypedTransactionCodec {
     }
 
     private static byte parseTypedYParity(byte[] yParityData) {
-        byte yParity = (yParityData != null && yParityData.length > 0) ? yParityData[0] : 0;
+        if (yParityData == null || yParityData.length == 0) {
+            return 0;
+        }
+        if (yParityData.length > 1) {
+            throw new IllegalArgumentException("Typed transaction yParity must fit in a single byte");
+        }
+        byte yParity = yParityData[0];
         if (yParity != 0 && yParity != 1) {
             throw new IllegalArgumentException("Typed transaction yParity must be 0 or 1, got: " + (yParity & 0xFF));
         }
