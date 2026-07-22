@@ -55,90 +55,6 @@ jobs:
           path: |
             rskj-core/build
 
-  smell-test:
-    needs: unit-tests-java17
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
-        with:
-          fetch-depth: 0
-
-      - name: Setup Java & Gradle
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 #v5.2.0
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'gradle'
-
-      # TODO: Remove cache/restore + configure.sh fallback once gradle-wrapper.jar is committed
-      - uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5
-        name: Restore Gradle Wrapper
-        id: cache-gradle-wrapper
-        with:
-          path: |
-            gradle/wrapper/gradle-wrapper.jar
-          key: gradle-wrapper-v1
-
-      - name: Get Gradle wrapper
-        if: steps.cache-gradle-wrapper.outputs.cache-hit != 'true'
-        run: |
-          ./configure.sh
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-        with:
-          name: build-files
-          path: |
-            rskj-core/build
-
-      - name: Download test results
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-        with:
-          name: test-results
-          path: |
-            rskj-core/build/test-results/
-
-      - name: Download test reports
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-        with:
-          name: test-reports
-          path: |
-            rskj-core/build/reports/
-
-      - name: Upload HTML Test Report
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
-        with:
-          retention-days: 7
-          name: smell-test-html-test-report
-          path: |
-            rskj-core/build/reports/
-
-      - name: Run SonarQube analysis
-        env:
-          GH_EVENT: ${{ github.event_name }}
-          GH_PR_NUMBER: ${{ github.event.pull_request.number }}
-          GH_PR_BASE_REF: ${{ github.base_ref }}
-          GH_PR_HEAD_REF: ${{ github.head_ref }}
-          GH_REF: ${{ github.ref }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          if [ "$GH_EVENT" = "pull_request" ]; then
-            if [ "$SONAR_TOKEN" != "" ]; then
-              ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonar --no-daemon -x build -x test \
-                -Dsonar.pullrequest.base="$GH_PR_BASE_REF" \
-                -Dsonar.pullrequest.branch="$GH_PR_HEAD_REF" \
-                -Dsonar.pullrequest.key="$GH_PR_NUMBER" \
-                -Dsonar.token="$SONAR_TOKEN"
-            else
-              echo "Skipping SonarQube analysis."
-            fi
-          else
-            ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonar --no-daemon -x build -x test \
-              -Dsonar.branch.name="$GH_REF" \
-              -Dsonar.token="$SONAR_TOKEN"
-          fi
-
   mining-tests:
     needs: build
     runs-on: ubuntu-latest
@@ -274,20 +190,6 @@ jobs:
       - name: Run tests
         run: |
           ./gradlew --no-daemon --stacktrace test
-
-      - name: Persist test results for sonar
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
-        with:
-          name: test-results
-          path: |
-            rskj-core/build/test-results/
-
-      - name: Persist test reports for sonar
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
-        with:
-          name: test-reports
-          path: |
-            rskj-core/build/reports/
 
       - name: Upload HTML Test Report
         if: failure()

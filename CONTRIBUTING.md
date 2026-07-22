@@ -33,7 +33,6 @@ We make use of GitHub Checks to ensure all changes meet a certain criteria:
 
 1. The `master` branch is protected and only changeable through pull requests
 1. All unit tests must pass
-1. SonarQube quality gate must be met
 1. A project maintainer must approve the pull request
 1. An authorized merger must merge the pull request
 
@@ -53,7 +52,7 @@ New dependencies are discouraged in order to minimize the attack surface. Howeve
 
 In order to ease review, it is expected that the code diff is maintained to a minimum. This includes things like not changing unrelated files, not changing names or reordering code when there isn't an evident benefit.
 
-When automatic code quality and security checks are ready in the pipeline for external PRs, then the PR must pass all PR validations including code coverage (Sonar), code smells (Sonar), Security advisories (Sonar, LGTM).
+When automatic code quality and security checks are ready in the pipeline for external PRs, then the PR must pass all PR validations including static analysis (CodeQL), style checks (Checkstyle, Spotless), and Security advisories.
 
 ## Styleguides
 
