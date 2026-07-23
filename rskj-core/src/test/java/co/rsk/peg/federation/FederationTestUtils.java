@@ -18,7 +18,6 @@
 
 package co.rsk.peg.federation;
 
-import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.bitcoin.BitcoinUtils.BTC_TX_VERSION_2;
 
 import co.rsk.bitcoinj.core.Address;
@@ -32,6 +31,7 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -281,37 +281,19 @@ public final class FederationTestUtils {
 //        System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
     }
 
-    public static void addSignatures(Federation federation, List<BtcECKey> signers, BtcTransaction tx){
-        Script fedInputScript = createBaseInputScriptThatSpendsFromTheFederation(federation);
-        tx.getInput(0).setScriptSig(fedInputScript);
+    public static void addSignatures(Federation federation, List<BtcECKey> signers, BtcTransaction tx) {
+        boolean isSegwitFederation = federation.getFormatVersion() == FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion();
 
-        Sha256Hash sighash = tx.hashForSignature(
-            0,
-            federation.getRedeemScript(),
-            BtcTransaction.SigHash.ALL,
-            false
-        );
+        for (int inputIndex = 0; inputIndex < tx.getInputs().size(); inputIndex++) {
+            BitcoinUtils.addSpendingFederationBaseScript(tx, inputIndex, federation.getRedeemScript(), federation.getFormatVersion());
 
-        int totalSigners = signers.size();
-        int requiredSignatures = totalSigners / 2 + 1;
-
-        for (int i = 0; i < requiredSignatures; i++) {
-            BtcECKey privateKey = signers.get(i);
-            BtcECKey publicKey = BtcECKey.fromPublicOnly(privateKey.getPubKeyPoint().getEncoded(true));
-
-            BtcECKey.ECDSASignature signature = privateKey.sign(sighash);
-            TransactionSignature txSig = new TransactionSignature(signature, BtcTransaction.SigHash.ALL, false);
-
-            int sigIndex = fedInputScript.getSigInsertionIndex(sighash, publicKey);
-            fedInputScript = ScriptBuilder.updateScriptWithSignature(
-                fedInputScript,
-                txSig.encodeToBitcoin(),
-                sigIndex,
-                1,
-                1
-            );
+            if (isSegwitFederation) {
+                Coin inputValue = tx.getInput(inputIndex).getValue();
+                BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(tx, inputIndex, inputValue, signers);
+            } else {
+                BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(tx, inputIndex, signers);
+            }
         }
-        tx.getInput(0).setScriptSig(fedInputScript);
     }
 
     private static Script createInputScriptSig(
