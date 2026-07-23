@@ -48,7 +48,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
-import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -280,7 +279,7 @@ class PegUtilsGetTransactionTypeTest {
         // Arrange
         int protocolVersion = 1;
         BtcECKey key = new BtcECKey();
-        RskAddress rskDestinationAddress = new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress());
+        RskAddress rskDestinationAddress = BitcoinTestUtils.getRskAddressFromBtcPublicKey(key);
         Address btcRefundAddress = key.toAddress(btcMainnetParams);
 
         Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(protocolVersion, rskDestinationAddress, Optional.of(btcRefundAddress));
