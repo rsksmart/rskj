@@ -196,27 +196,6 @@ import static org.mockito.Mockito.when;
     }
 
     @Test
-    void processAuthorizationTuple_shouldThrow_whenSignatureSIsTooHigh() {
-        ECDSASignature signature = mock(ECDSASignature.class);
-
-        when(signature.getS()).thenReturn(Constants.getSECP256K1N());
-
-        var  tuple = new SetCodeAuthorization(
-                        ZERO_CHAIN_ID,
-                        randomAddress(),
-                        new byte[]{0x01},
-                        signature
-                );
-
-        IllegalStateException ex = assertThrows(
-                IllegalStateException.class,
-                () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
-        );
-
-        assertEquals("Signature s exceeds secp256k1n / 2", ex.getMessage());
-    }
-
-    @Test
     void processAuthorizationTuple_shouldThrow_whenSignatureRecoveryFails() {
         ECDSASignature signature = mock(ECDSASignature.class);
 
@@ -415,6 +394,27 @@ import static org.mockito.Mockito.when;
     void processAuthorizationTuple_shouldNotSaveOrIncreaseNonce_whenSignatureSIsTooHigh() {
         ECDSASignature signature = mock(ECDSASignature.class);
         when(signature.getS()).thenReturn(Constants.getSECP256K1N());
+
+        var tuple = new SetCodeAuthorization(
+                ZERO_CHAIN_ID,
+                randomAddress(),
+                NONCE_ONE,
+                signature
+        );
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
+        );
+
+        verify(repository, never()).saveCode(any(), any());
+        verify(repository, never()).increaseNonce(any());
+    }
+
+    @Test
+    void processAuthorizationTuple_shouldNotSaveOrIncreaseNonce_whenSignatureSIsHalfCurveOrder() {
+        ECDSASignature signature = mock(ECDSASignature.class);
+        when(signature.getS()).thenReturn(Constants.getSECP256K1N().divide(BigInteger.valueOf(2)));
 
         var tuple = new SetCodeAuthorization(
                 ZERO_CHAIN_ID,

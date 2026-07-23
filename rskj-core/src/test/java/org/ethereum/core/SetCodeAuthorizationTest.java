@@ -1,20 +1,20 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
+import org.ethereum.config.Constants;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
+
 import java.math.BigInteger;
 
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import org.ethereum.config.Constants;
-import org.ethereum.crypto.signature.ECDSASignature;
 
 public class SetCodeAuthorizationTest {
 
@@ -111,11 +111,25 @@ public class SetCodeAuthorizationTest {
                 signatureWithS(BigInteger.ONE)
         );
 
-        authorization.verifyLowS();
+        assertDoesNotThrow(authorization::verifyLowS);
     }
 
     @Test
-    public void verifyLowSShouldAcceptHalfCurveOrderS() {
+    public void verifyLowSShouldAcceptJustBelowHalfCurveOrderS() {
+        BigInteger justBelowHalf = Constants.getSECP256K1N().divide(BigInteger.valueOf(2)).subtract(BigInteger.ONE);
+
+        SetCodeAuthorization authorization = new SetCodeAuthorization(
+                CHAIN_ID,
+                ADDRESS,
+                NONCE,
+                signatureWithS(justBelowHalf)
+        );
+
+        assertDoesNotThrow(authorization::verifyLowS);
+    }
+
+    @Test
+    public void verifyLowSShouldRejectHalfCurveOrderS() {
         BigInteger halfCurveOrder = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
         SetCodeAuthorization authorization = new SetCodeAuthorization(
@@ -125,7 +139,12 @@ public class SetCodeAuthorizationTest {
                 signatureWithS(halfCurveOrder)
         );
 
-        authorization.verifyLowS();
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                authorization::verifyLowS
+        );
+
+        assertEquals("Signature s exceeds secp256k1n / 2", exception.getMessage());
     }
 
     @Test

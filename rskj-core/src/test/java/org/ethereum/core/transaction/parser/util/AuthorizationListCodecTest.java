@@ -22,7 +22,6 @@ import co.rsk.util.HexUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Rskip545TestSupport;
-import org.ethereum.core.Transaction;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.rpc.CallArguments;
@@ -50,6 +49,7 @@ import static org.mockito.ArgumentMatchers.eq;
  */
 class AuthorizationListCodecTest {
 
+    private static final byte LOWER_REAL_V = 27;
     private static final BigInteger SECP256K1N_HALF =
             Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
@@ -363,7 +363,7 @@ class AuthorizationListCodecTest {
 
         SetCodeAuthorization decoded = AuthorizationListCodec.decodeTuple(RLP.decode2(tuple).get(0));
 
-        assertEquals((byte) 0, (byte) (decoded.getSignature().getV() - Transaction.LOWER_REAL_V));
+        assertEquals((byte) 0, (byte) (decoded.getSignature().getV() - LOWER_REAL_V));
     }
 
     @Test
@@ -424,8 +424,72 @@ class AuthorizationListCodecTest {
                         BigIntegers.asUnsignedByteArray(highS),
                         auth.getSignature().getV()));
 
-        assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> AuthorizationListCodec.encodeTuple(bad));
+        assertTrue(ex.getMessage().contains("secp256k1n/2"), ex.getMessage());
+    }
+
+    @Test
+    void encodeTuple_halfCurveOrderS_throws() {
+        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        SetCodeAuthorization boundary = new SetCodeAuthorization(
+                auth.getChainId(),
+                auth.getAddress(),
+                auth.getNonce(),
+                ECDSASignature.fromComponents(
+                        BigIntegers.asUnsignedByteArray(auth.getSignature().getR()),
+                        BigIntegers.asUnsignedByteArray(SECP256K1N_HALF),
+                        auth.getSignature().getV()));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> AuthorizationListCodec.encodeTuple(boundary));
+        assertTrue(ex.getMessage().contains("secp256k1n/2"), ex.getMessage());
+    }
+
+    @Test
+    void encodeTuple_justBelowHalfCurveOrderS_succeeds() {
+        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger justBelowHalf = SECP256K1N_HALF.subtract(BigInteger.ONE);
+        SetCodeAuthorization boundary = new SetCodeAuthorization(
+                auth.getChainId(),
+                auth.getAddress(),
+                auth.getNonce(),
+                ECDSASignature.fromComponents(
+                        BigIntegers.asUnsignedByteArray(auth.getSignature().getR()),
+                        BigIntegers.asUnsignedByteArray(justBelowHalf),
+                        auth.getSignature().getV()));
+
+        byte[] encoded = AuthorizationListCodec.encodeTuple(boundary);
+        SetCodeAuthorization decoded = AuthorizationListCodec.decodeTuple(RLP.decode2(encoded).get(0));
+
+        assertEquals(justBelowHalf, decoded.getSignature().getS());
+    }
+
+    @Test
+    void decodeTuple_halfCurveOrderS_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(
+                reference,
+                5,
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(SECP256K1N_HALF)));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("secp256k1n/2"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_justBelowHalfCurveOrderS_succeeds() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger justBelowHalf = SECP256K1N_HALF.subtract(BigInteger.ONE);
+        byte[] tuple = rebuildTupleField(
+                reference,
+                5,
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(justBelowHalf)));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(justBelowHalf, decoded.getSignature().getS());
     }
 
     @Test
@@ -605,7 +669,7 @@ class AuthorizationListCodecTest {
         entry.setAddress(reference.getAddress().toHexString());
         entry.setNonce("0x0");
         entry.setYParity(HexUtils.toQuantityJsonHex(
-                new byte[]{(byte) (sig.getV() - Transaction.LOWER_REAL_V)}));
+                new byte[]{(byte) (sig.getV() - LOWER_REAL_V)}));
         entry.setR(HexUtils.toQuantityJsonHex(BigIntegers.asUnsignedByteArray(sig.getR())));
         entry.setS(HexUtils.toQuantityJsonHex(BigIntegers.asUnsignedByteArray(sig.getS())));
         return entry;

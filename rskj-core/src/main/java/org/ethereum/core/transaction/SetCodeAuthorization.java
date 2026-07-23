@@ -86,7 +86,7 @@ public class SetCodeAuthorization {
     }
 
     public void verifyLowS() {
-        if (signature.getS().compareTo(SECP256K1N_HALF) > 0) {
+        if (signature.getS().compareTo(SECP256K1N_HALF) >= 0) {
             throw new IllegalStateException("Signature s exceeds secp256k1n / 2");
         }
     }

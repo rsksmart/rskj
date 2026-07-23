@@ -67,8 +67,6 @@ public class SetCodeAuthorizationTransactionExecutor {
     }
 
     private RskAddress checkRecoveredAuthority(SetCodeAuthorization setCodeAuthorization) {
-        setCodeAuthorization.verifyLowS();
-
         byte[] messageHash =  setCodeAuthorization.getSigningHash();
         ECKey key;
 
