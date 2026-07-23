@@ -7,6 +7,7 @@ import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
+import co.rsk.core.RskAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -14,6 +15,7 @@ import java.util.stream.IntStream;
 
 import co.rsk.peg.constants.BridgeConstants;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 
@@ -56,6 +58,10 @@ public class BitcoinTestUtils {
         }
 
         return keys;
+    }
+
+    public static RskAddress getRskAddressFromBtcPublicKey(BtcECKey btcPublicKey) {
+        return new RskAddress(ECKey.fromPublicOnly(btcPublicKey.getPubKey()).getAddress());
     }
 
     public static Address createP2PKHAddress(NetworkParameters networkParameters, String seed) {
