@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+
 /**
  * Created by martin.medina on 3/7/17.
  */
@@ -63,6 +65,9 @@ public class CallArgumentsToByteArray {
         }
         if (hasMaxFee) {
             return HexUtils.strHexOrStrNumberToBigInteger(args.getMaxFeePerGas());
+        }
+        if (hasMaxPriority) {
+            throw invalidParamError("maxPriorityFeePerGas requires maxFeePerGas");
         }
         return null;
     }

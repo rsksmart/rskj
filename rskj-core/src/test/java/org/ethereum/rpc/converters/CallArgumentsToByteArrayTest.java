@@ -19,6 +19,7 @@
 package org.ethereum.rpc.converters;
 
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -209,6 +210,46 @@ class CallArgumentsToByteArrayTest {
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
         Assertions.assertArrayEquals(new byte[] {0x64}, byteArrayArgs.getGasPrice());
+    }
+
+    @Test
+    void getGasPrice_whenOnlyMaxPriorityFeeIsSet_rejectsRequest() {
+        CallArguments args = new CallArguments();
+        args.setMaxPriorityFeePerGas("0x64");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                byteArrayArgs::getGasPrice);
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals("maxPriorityFeePerGas requires maxFeePerGas", ex.getMessage());
+    }
+
+    @Test
+    void getGasPrice_whenMaxPriorityFeeSetAndMaxFeeEmpty_rejectsRequest() {
+        CallArguments args = new CallArguments();
+        args.setMaxPriorityFeePerGas("0x64");
+        args.setMaxFeePerGas("");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                byteArrayArgs::getGasPrice);
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals("maxPriorityFeePerGas requires maxFeePerGas", ex.getMessage());
+    }
+
+    @Test
+    void getGasPrice_whenGasPriceSetAndOnlyMaxPriorityFee_usesGasPriceWithoutError() {
+        CallArguments args = new CallArguments();
+        args.setGasPrice("0x7");
+        args.setMaxPriorityFeePerGas("0x64");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertArrayEquals(new byte[] {0x7}, byteArrayArgs.getGasPrice());
     }
 
     @Test
