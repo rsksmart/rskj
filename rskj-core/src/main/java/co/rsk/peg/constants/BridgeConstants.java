@@ -43,8 +43,6 @@ public abstract class BridgeConstants {
 
     protected int updateBridgeExecutionPeriod;
 
-    protected int maxBtcHeadersPerRskBlock;
-
     protected Coin legacyMinimumPeginTxValue;
     protected Coin minimumPeginTxValue;
     protected Coin legacyMinimumPegoutTxValue;
@@ -95,8 +93,6 @@ public abstract class BridgeConstants {
     }
 
     public int getUpdateBridgeExecutionPeriod() { return updateBridgeExecutionPeriod; }
-
-    public int getMaxBtcHeadersPerRskBlock() { return maxBtcHeadersPerRskBlock; }
 
     public Coin getMinimumPeginTxValue(ActivationConfig.ForBlock activations) {
         return activations.isActive(ConsensusRule.RSKIP219) ? minimumPeginTxValue : legacyMinimumPeginTxValue;
