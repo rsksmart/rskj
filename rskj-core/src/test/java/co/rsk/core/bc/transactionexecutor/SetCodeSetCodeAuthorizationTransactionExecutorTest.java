@@ -402,11 +402,12 @@ import static org.mockito.Mockito.when;
                 signature
         );
 
-        assertThrows(
+        IllegalStateException ex = assertThrows(
                 IllegalStateException.class,
                 () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
         );
 
+        assertEquals("Signature recovery failed", ex.getMessage());
         verify(repository, never()).saveCode(any(), any());
         verify(repository, never()).increaseNonce(any());
     }
@@ -423,11 +424,12 @@ import static org.mockito.Mockito.when;
                 signature
         );
 
-        assertThrows(
+        IllegalStateException ex = assertThrows(
                 IllegalStateException.class,
                 () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
         );
 
+        assertEquals("Signature recovery failed", ex.getMessage());
         verify(repository, never()).saveCode(any(), any());
         verify(repository, never()).increaseNonce(any());
     }
