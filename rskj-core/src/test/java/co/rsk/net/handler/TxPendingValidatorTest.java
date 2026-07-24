@@ -22,6 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.net.TransactionValidationResult;
+import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -208,6 +209,39 @@ class TxPendingValidatorTest {
                 config.getNetworkConstants(), activationConfig, config.getNumOfAccountSlots(), signatureCache);
 
         TransactionValidationResult result = validator.isValid(tx, executionBlock, null);
+
+        assertFalse(result.transactionIsValid());
+        assertTrue(result.getErrorMessage().contains("is not supported before its activation"));
+        verify(tx).isTypedTransactionNotAllowed(forBlock);
+        verify(tx, never()).transactionCost(any(), any(), any());
+        verify(tx, never()).isInitCodeSizeInvalidForTx(any());
+        verify(tx, never()).getSize();
+    }
+
+    @Test
+    void isValid_ShouldRejectRealTypedTransactionBeforeFurtherValidation_WhenRSKIP543IsNotActivated() {
+        long executionBlockNumber = 10L;
+        TestSystemProperties config = new TestSystemProperties(baseConfig -> baseConfig.withValue(
+                "blockchain.config.hardforkActivationHeights.vetiver900",
+                ConfigValueFactory.fromAnyRef(executionBlockNumber + 1)
+        ));
+        ActivationConfig activationConfig = config.getActivationConfig();
+        ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlockNumber);
+        Transaction tx = Rskip546TestSupport.unsignedType1();
+
+        assertFalse(activations.isActive(ConsensusRule.RSKIP543));
+        assertTrue(tx.isTypedTransactionNotAllowed(activations));
+
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(executionBlockNumber);
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(100_000L).toByteArray());
+        when(executionBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
+
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        TxPendingValidator validator = new TxPendingValidator(
+                config.getNetworkConstants(), activationConfig, config.getNumOfAccountSlots(), signatureCache);
+
+        TransactionValidationResult result = validator.isValid(tx, executionBlock, mock(AccountState.class));
 
         assertFalse(result.transactionIsValid());
         assertTrue(result.getErrorMessage().contains("is not supported before its activation"));
