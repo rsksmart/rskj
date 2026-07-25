@@ -123,7 +123,6 @@ class FederationChangeIT {
         },
         true
     );
-    private static final List<FederationMember> ORIGINAL_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembersWithBtcKeys(ORIGINAL_FEDERATION_MEMBERS_KEYS);
     private static final List<BtcECKey> ORIGINAL_SEGWIT_FEDERATION_MEMBERS_KEYS = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[] {
             "segwitMember01", "segwitMember02", "segwitMember03", "segwitMember04", "segwitMember05",
@@ -133,7 +132,6 @@ class FederationChangeIT {
         },
         true
     );
-    private static final List<FederationMember> ORIGINAL_SEGWIT_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembersWithBtcKeys(ORIGINAL_SEGWIT_FEDERATION_MEMBERS_KEYS);
     private static final List<BtcECKey> NEW_FEDERATION_MEMBERS_KEYS = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[]{
             "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09",
@@ -218,7 +216,7 @@ class FederationChangeIT {
         assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
         assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
         // Create pending federation using the new federation keys
-        voteToCreateEmptyPendingFederation();
+        voteToCreateEmptyPendingFederationAndCheckCorrectCreation();
         voteToAddFederatorPublicKeysToPendingFederation();
 
         var pendingFederation = federationStorageProvider.getPendingFederation();
@@ -332,7 +330,7 @@ class FederationChangeIT {
         assertPeginsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
         assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
         // Create pending federation using the new federation keys
-        voteToCreateEmptyPendingFederation();
+        voteToCreateEmptyPendingFederationAndCheckCorrectCreation();
         voteToAddFederatorPublicKeysToPendingFederation();
 
         var pendingFederation = federationStorageProvider.getPendingFederation();
@@ -453,7 +451,7 @@ class FederationChangeIT {
         assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
 
         // Start a federation change but only partially build the pending federation
-        voteToCreateEmptyPendingFederation();
+        voteToCreateEmptyPendingFederationAndCheckCorrectCreation();
         var firstNewMember = NEW_FEDERATION_MEMBERS.get(0);
         voteToAddFederatorPublicKeysToPendingFederation(
             firstNewMember.getBtcPublicKey(),
@@ -473,7 +471,7 @@ class FederationChangeIT {
 
         // A brand-new federation change should proceed normally from here, unaffected by the rolled-back
         // attempt or the vote it partially cast for the first new member
-        voteToCreateEmptyPendingFederation();
+        voteToCreateEmptyPendingFederationAndCheckCorrectCreation();
         voteToAddFederatorPublicKeysToPendingFederation();
 
         var pendingFederation = federationStorageProvider.getPendingFederation();
@@ -496,7 +494,7 @@ class FederationChangeIT {
         assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender0");
 
         // Commit a pending federation, entering the SVP process
-        voteToCreateEmptyPendingFederation();
+        voteToCreateEmptyPendingFederationAndCheckCorrectCreation();
         voteToAddFederatorPublicKeysToPendingFederation();
         voteToCommitPendingFederation(originalFederation);
 
@@ -531,7 +529,7 @@ class FederationChangeIT {
         assertPegoutsShouldWorkToFed(originalFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender2");
 
         // A brand-new federation change should now be able to proceed from scratch
-        voteToCreateEmptyPendingFederation();
+        voteToCreateEmptyPendingFederationAndCheckCorrectCreation();
         voteToAddFederatorPublicKeysToPendingFederation();
 
         var pendingFederation = federationStorageProvider.getPendingFederation();
@@ -611,25 +609,24 @@ class FederationChangeIT {
     }
 
     private Federation createOriginalP2shErpFederation() {
-        return createOriginalFederationWith50Utxos(ORIGINAL_FEDERATION_MEMBERS, false);
+        Federation originalFederation = P2shErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(ORIGINAL_FEDERATION_MEMBERS_KEYS)
+            .build();
+        saveOriginalFederationWith50Utxos(originalFederation);
+        return originalFederation;
     }
 
     private Federation createOriginalSegwitFederation() {
-        return createOriginalFederationWith50Utxos(ORIGINAL_SEGWIT_FEDERATION_MEMBERS, true);
+        Federation originalFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(ORIGINAL_SEGWIT_FEDERATION_MEMBERS_KEYS)
+            .build();
+        saveOriginalFederationWith50Utxos(originalFederation);
+        return originalFederation;
     }
 
-    private Federation createOriginalFederationWith50Utxos(List<FederationMember> members, boolean segwit) {
-        var originalFederationArgs = new FederationArgs(members, Instant.EPOCH, 0, NETWORK_PARAMS);
-        var erpPubKeys = FEDERATION_CONSTANTS.getErpFedPubKeysList();
-        var activationDelay = FEDERATION_CONSTANTS.getErpFedActivationDelay();
-
-        Federation originalFederation = segwit
-            ? FederationFactory.buildP2shP2wshErpFederation(originalFederationArgs, erpPubKeys, activationDelay)
-            : FederationFactory.buildP2shErpFederation(originalFederationArgs, erpPubKeys, activationDelay);
-        // Set original federation
+    private void saveOriginalFederationWith50Utxos(Federation originalFederation) {
         federationStorageProvider.setNewFederation(originalFederation);
 
-        // Set new UTXOs
         int numberOfUtxos = 50;
         Script outputScript = ScriptBuilder.createOutputScript(originalFederation.getAddress());
         List<UTXO> originalUTXOs = UTXOBuilder.builder()
@@ -638,21 +635,15 @@ class FederationChangeIT {
             .buildMany(numberOfUtxos, i -> createHash(i + 1));
 
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), originalUTXOs, BridgeSerializationUtils::serializeUTXOList);
-
-        return originalFederation;
-    }
-
-    private UTXO buildUtxo(Address address, Coin value, int hashSeed) {
-        Script outputScript = ScriptBuilder.createOutputScript(address);
-        return UTXOBuilder.builder()
-            .withTransactionHash(createHash(hashSeed))
-            .withScriptPubKey(outputScript)
-            .withValue(value)
-            .build();
     }
 
     private void injectUtxoToRetiringFederation(Address retiringFederationAddress, Coin value) {
-        UTXO utxo = buildUtxo(retiringFederationAddress, value, nextUtxoHashSeed++);
+        Script outputScript = ScriptBuilder.createOutputScript(retiringFederationAddress);
+        UTXO utxo = UTXOBuilder.builder()
+            .withTransactionHash(createHash(nextUtxoHashSeed++))
+            .withScriptPubKey(outputScript)
+            .withValue(value)
+            .build();
         federationStorageProvider.getOldFederationBtcUTXOs().add(utxo);
     }
 
@@ -697,7 +688,7 @@ class FederationChangeIT {
         return voteCommitPendingFederationWithHash(tx, pendingFederationHash);
     }
 
-    private void voteToCreateEmptyPendingFederation() {
+    private void voteToCreateEmptyPendingFederationAndCheckCorrectCreation() {
         // Voting for any other federation change function must fail while no pending federation exists yet
         assertFederationNonExistentIsReturnedWhenNoPendingFederationExists();
 
@@ -872,7 +863,12 @@ class FederationChangeIT {
         var pegoutsTxs =
             bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(activations).stream().toList();
         assertEquals(1, pegoutsTxs.size());
-        var svpFundTx = new BtcTransaction(NETWORK_PARAMS, pegoutsTxs.get(0).getBtcTransaction().bitcoinSerialize());
+        // Sign an independent copy, not the entry's own transaction instance: for legacy (non-segwit)
+        // federations, adding a scriptSig changes the tx's hash, and that instance is still a live member
+        // of PegoutsWaitingForConfirmations' entry set, so mutating it in place would corrupt that set.
+        // The copy still needs each input's spent value preserved, since segwit witness signing requires
+        // it (BIP143) and a plain bitcoinSerialize() round-trip would otherwise discard it.
+        var svpFundTx = copyPreservingInputValues(pegoutsTxs.get(0).getBtcTransaction());
 
         int neededSignatures = federationSupport.getActiveFederationThreshold();
         signInputs(svpFundTx, activeFederationMembersKeys.subList(0, neededSignatures));
@@ -954,7 +950,7 @@ class FederationChangeIT {
         assertFalse(newFederationOpt.isPresent());
     }
 
-    private void assertLogReleaseBtc(int logsSizeBefore, Keccak256 rskTxHash, BtcTransaction btcTx) {
+    private void assertLogReleaseBtc(int logsSizeBeforeCheckpoint, Keccak256 rskTxHash, BtcTransaction btcTx) {
         CallTransaction.Function releaseBtcEvent = BridgeEvents.RELEASE_BTC.getEvent();
 
         byte[] rskTxHashSerialized = rskTxHash.getBytes();
@@ -963,23 +959,23 @@ class FederationChangeIT {
         byte[] btcTxSerialized = btcTx.bitcoinSerialize();
         byte[] encodedData = getEncodedData(releaseBtcEvent, btcTxSerialized);
 
-        assertEventWasEmittedSince(logsSizeBefore, encodedTopics, encodedData);
+        assertEventWasEmittedSince(logsSizeBeforeCheckpoint, encodedTopics, encodedData);
     }
 
     /**
-     * Unlike a whole-history search, this only looks at logs emitted after {@code logsSizeBefore} was captured,
+     * Unlike a whole-history search, this only looks at logs emitted after {@code logsSizeBeforeCheckpoint} was captured,
      * and requires the topics AND data to match on the SAME log entry - proving both the exact value and that
      * it was emitted as a result of the action taken since the checkpoint, not some earlier step.
      */
-    private void assertEventWasEmittedSince(int logsSizeBefore, List<DataWord> expectedTopics, byte[] expectedData) {
-        List<LogInfo> logsSinceCheckpoint = logs.subList(logsSizeBefore, logs.size());
+    private void assertEventWasEmittedSince(int logsSizeBeforeCheckpoint, List<DataWord> expectedTopics, byte[] expectedData) {
+        List<LogInfo> logsSinceCheckpoint = logs.subList(logsSizeBeforeCheckpoint, logs.size());
         boolean eventWasEmitted = logsSinceCheckpoint.stream()
             .anyMatch(log -> log.getTopics().equals(expectedTopics) && Arrays.equals(log.getData(), expectedData));
         assertTrue(eventWasEmitted);
     }
 
-    private void assertNoEventWasEmittedSince(int logsSizeBefore) {
-        assertEquals(logsSizeBefore, logs.size());
+    private void assertNoEventWasEmittedSince(int logsSizeBeforeCheckpoint) {
+        assertEquals(logsSizeBeforeCheckpoint, logs.size());
     }
 
     private void activateNewFederation() {
@@ -1415,11 +1411,39 @@ class FederationChangeIT {
         return ((ErpFederation) federation).getDefaultP2SHScript();
     }
 
+    /**
+     * A plain {@code new BtcTransaction(params, tx.bitcoinSerialize())} round-trip discards each input's
+     * spent value, since the raw wire format doesn't carry it - it needs to be reattached from the
+     * connected output instead. Segwit witness signing (BIP143) requires that value to compute the sig hash.
+     */
+    private BtcTransaction copyPreservingInputValues(BtcTransaction original) {
+        BtcTransaction copy = new BtcTransaction(NETWORK_PARAMS, original.bitcoinSerialize());
+        List<TransactionInput> originalInputs = original.getInputs();
+        List<TransactionInput> copyInputs = new ArrayList<>(copy.getInputs());
+
+        copy.clearInputs();
+        for (int i = 0; i < copyInputs.size(); i++) {
+            TransactionInput input = copyInputs.get(i);
+            copy.addInput(new TransactionInput(
+                NETWORK_PARAMS, copy, input.getScriptBytes(), input.getOutpoint(), originalInputs.get(i).getValue()
+            ));
+        }
+
+        return copy;
+    }
+
     private void signInputs(BtcTransaction transaction, List<BtcECKey> keysToSign) {
+        boolean isSegwitFederation = federationSupport.getActiveFederation().getFormatVersion() ==
+            FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion();
+
         List<TransactionInput> inputs = transaction.getInputs();
-        IntStream.range(0, inputs.size()).forEach(i ->
-            BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, i, keysToSign)
-        );
+        IntStream.range(0, inputs.size()).forEach(i -> {
+            if (isSegwitFederation) {
+                BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(transaction, i, inputs.get(i).getValue(), keysToSign);
+            } else {
+                BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, i, keysToSign);
+            }
+        });
     }
     
     // Assert federation change related methods
@@ -1495,7 +1519,7 @@ class FederationChangeIT {
         assertTrue(pendingFederation.getMembers().containsAll(NEW_FEDERATION_MEMBERS));
     }
 
-    private void assertLogPegoutTransactionCreated(int logsSizeBefore, BtcTransaction pegoutTransaction) {
+    private void assertLogPegoutTransactionCreated(int logsSizeBeforeCheckpoint, BtcTransaction pegoutTransaction) {
         CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
 
         Sha256Hash pegoutTransactionHash = pegoutTransaction.getHash();
@@ -1506,11 +1530,11 @@ class FederationChangeIT {
         byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(outpointValues);
         byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
 
-        assertEventWasEmittedSince(logsSizeBefore, encodedTopics, encodedData);
+        assertEventWasEmittedSince(logsSizeBeforeCheckpoint, encodedTopics, encodedData);
     }
 
     private void assertLogReleaseRequested(
-        int logsSizeBefore,
+        int logsSizeBeforeCheckpoint,
         Keccak256 releaseCreationTxHash,
         Sha256Hash pegoutTransactionHash,
         Coin requestedAmount
@@ -1527,10 +1551,10 @@ class FederationChangeIT {
 
         byte[] encodedData = getEncodedData(releaseRequestedEvent, requestedAmount.getValue());
 
-        assertEventWasEmittedSince(logsSizeBefore, encodedTopics, encodedData);
+        assertEventWasEmittedSince(logsSizeBeforeCheckpoint, encodedTopics, encodedData);
     }
 
-    private void assertPegoutConfirmedEventWasEmitted(int logsSizeBefore, long pegoutCreationRskBlockNumber) throws Exception {
+    private void assertPegoutConfirmedEventWasEmitted(int logsSizeBeforeCheckpoint, long pegoutCreationRskBlockNumber) throws Exception {
         var pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForSignatures()
             .entrySet().stream()
             .toList();
@@ -1539,11 +1563,11 @@ class FederationChangeIT {
         // each created at the same block and therefore confirmed together here.
         assertFalse(pegoutsTxs.isEmpty());
         for (var pegoutTxEntry : pegoutsTxs) {
-            assertLogPegoutConfirmed(logsSizeBefore, pegoutTxEntry.getValue().getHash(), pegoutCreationRskBlockNumber);
+            assertLogPegoutConfirmed(logsSizeBeforeCheckpoint, pegoutTxEntry.getValue().getHash(), pegoutCreationRskBlockNumber);
         }
     }
 
-    private void assertLogPegoutConfirmed(int logsSizeBefore, Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber) {
+    private void assertLogPegoutConfirmed(int logsSizeBeforeCheckpoint, Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber) {
         CallTransaction.Function pegoutConfirmedEvent = BridgeEvents.PEGOUT_CONFIRMED.getEvent();
 
         byte[] btcTxHashSerialized = btcTxHash.getBytes();
@@ -1551,11 +1575,11 @@ class FederationChangeIT {
 
         byte[] encodedData = getEncodedData(pegoutConfirmedEvent, pegoutCreationRskBlockNumber);
 
-        assertEventWasEmittedSince(logsSizeBefore, encodedTopics, encodedData);
+        assertEventWasEmittedSince(logsSizeBeforeCheckpoint, encodedTopics, encodedData);
     }
 
     private void assertCommitFederationEventWasEmitted(
-        int logsSizeBefore,
+        int logsSizeBeforeCheckpoint,
         Federation oldFederation,
         Federation newFederation,
         long expectedActivationBlockNumber
@@ -1578,10 +1602,10 @@ class FederationChangeIT {
             expectedActivationBlockNumber
         );
 
-        assertEventWasEmittedSince(logsSizeBefore, encodedTopics, encodedData);
+        assertEventWasEmittedSince(logsSizeBeforeCheckpoint, encodedTopics, encodedData);
     }
 
-    private void assertCommitFederationFailedEventWasEmitted(int logsSizeBefore, Federation proposedFederation, long expectedBlockNumber) {
+    private void assertCommitFederationFailedEventWasEmitted(int logsSizeBeforeCheckpoint, Federation proposedFederation, long expectedBlockNumber) {
         CallTransaction.Function commitFederationFailedEvent = BridgeEvents.COMMIT_FEDERATION_FAILED.getEvent();
 
         List<DataWord> encodedTopics = getEncodedTopics(commitFederationFailedEvent);
@@ -1589,11 +1613,11 @@ class FederationChangeIT {
         byte[] proposedFederationRedeemScriptSerialized = proposedFederation.getRedeemScript().getProgram();
         byte[] encodedData = getEncodedData(commitFederationFailedEvent, proposedFederationRedeemScriptSerialized, expectedBlockNumber);
 
-        assertEventWasEmittedSince(logsSizeBefore, encodedTopics, encodedData);
+        assertEventWasEmittedSince(logsSizeBeforeCheckpoint, encodedTopics, encodedData);
     }
 
     private void assertPeginBtcEventWasEmitted(
-        int logsSizeBefore,
+        int logsSizeBeforeCheckpoint,
         BtcTransaction peginTransaction,
         RskAddress expectedReceiver,
         Coin expectedAmount,
@@ -1606,7 +1630,7 @@ class FederationChangeIT {
 
         byte[] encodedData = getEncodedData(peginBtcEvent, expectedAmount.getValue(), expectedProtocolVersion);
 
-        assertEventWasEmittedSince(logsSizeBefore, encodedTopics, encodedData);
+        assertEventWasEmittedSince(logsSizeBeforeCheckpoint, encodedTopics, encodedData);
     }
 
     /**
