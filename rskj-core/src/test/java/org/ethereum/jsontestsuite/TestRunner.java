@@ -315,7 +315,7 @@ public class TestRunner {
 
             // No items in POST means an exception is expected
             if (testCase.getPost().size() == 0) {
-                if (vmDidThrowAnEception != true) {
+                if (!vmDidThrowAnEception) {
                     String output =
                             "VM was expected to throw an exception, but did not";
                     logger.info(output);
