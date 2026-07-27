@@ -11,4 +11,43 @@
     <module name="NewlineAtEndOfFile">
         <property name="lineSeparator" value="lf"/>
     </module>
+
+    <module name="SuppressionFilter">
+        <property name="file" value="${config_loc}/suppressions.xml"/>
+        <property name="optional" value="false"/>
+    </module>
+
+    <module name="TreeWalker">
+        <!-- equals()/hashCode() contract must be kept in sync -->
+        <module name="EqualsHashCode"/>
+
+        <!-- equals(SpecificType) without a real equals(Object) override hides a bug -->
+        <module name="CovariantEquals"/>
+
+        <!-- == / != on a String literal instead of .equals() -->
+        <module name="StringLiteralEquality"/>
+
+        <!-- Java-style array declarations only: Type[] name, not Type name[] -->
+        <module name="ArrayTypeStyle"/>
+
+        <!-- Modifiers must appear in JLS order (public static final, not static public final) -->
+        <module name="ModifierOrder"/>
+
+        <!-- Long literals must use uppercase L (1L, not 1l) -->
+        <module name="UpperEll"/>
+
+        <!-- Stray empty statements (extra ;) -->
+        <module name="EmptyStatement"/>
+
+        <!-- Empty catch blocks must at least contain a comment explaining why -->
+        <module name="EmptyBlock">
+            <property name="option" value="text"/>
+            <property name="tokens" value="LITERAL_CATCH"/>
+        </module>
+
+        <!-- Unused imports; strict mode does not give a pass to imports only referenced in Javadoc -->
+        <module name="UnusedImports">
+            <property name="processJavadoc" value="false"/>
+        </module>
+    </module>
 </module>
