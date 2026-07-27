@@ -52,9 +52,9 @@ public class ToBase58Check extends NativeMethod {
             new String[]{"string"}
     );
 
-    private final static String HASH_NOT_PRESENT = "hash160 must be present";
-    private final static String HASH_INVALID = "Invalid hash160 '%s' (should be 20 bytes and is %d bytes)";
-    private final static String INVALID_VERSION = "version must be a numeric value between 0 and 255";
+    private static final String HASH_NOT_PRESENT = "hash160 must be present";
+    private static final String HASH_INVALID = "Invalid hash160 '%s' (should be 20 bytes and is %d bytes)";
+    private static final String INVALID_VERSION = "version must be a numeric value between 0 and 255";
 
     public ToBase58Check(ExecutionEnvironment executionEnvironment) {
         super(executionEnvironment);

@@ -829,6 +829,7 @@ class BridgeIT {
                 try {
                     bitcoinSerializeToStream(baos);
                 } catch (IOException e) {
+                    // ByteArrayOutputStream never actually throws
                 }
                 return baos.toByteArray();
             }

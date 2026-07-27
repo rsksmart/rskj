@@ -179,7 +179,7 @@ class RemascTestRunner {
             }
 
             long txNonce = i;
-            RskAddress coinbase = fixedCoinbase != null ? fixedCoinbase : new RskAddress(TestUtils.generateBytesFromRandom(random,20));;
+            RskAddress coinbase = fixedCoinbase != null ? fixedCoinbase : new RskAddress(TestUtils.generateBytesFromRandom(random,20));
             Block block = createBlock(this.genesis, this.blockchain.getBestBlock(), PegTestUtils.createHash3(),
                                       coinbase, blockSiblings, minerFee, this.gasPrice, txNonce, this.txValue, this.txSigningKey, null);
             mainChainBlocks.add(block);

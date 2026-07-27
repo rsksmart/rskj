@@ -79,7 +79,7 @@ class RLPFuzzTest {
     @Tag("RLPFuzzGetNextElementIndex")
     @FuzzTest
     public void fuzzGetNextElementIndex(FuzzedDataProvider data) {
-        byte[] payload = generateMixedRLPData(data);;
+        byte[] payload = generateMixedRLPData(data);
         if (payload.length < 1) { return; }
         int pos = data.consumeInt(0, payload.length - 1);
         try {

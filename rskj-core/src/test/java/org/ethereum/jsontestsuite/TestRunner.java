@@ -294,7 +294,6 @@ public class TestRunner {
             }
             try {
                 vm.steps(program, Long.MAX_VALUE);
-                ;
             } catch (RuntimeException ex) {
                 vmDidThrowAnEception = true;
                 e = ex;
