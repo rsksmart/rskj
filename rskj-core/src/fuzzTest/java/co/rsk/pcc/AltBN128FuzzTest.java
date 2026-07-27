@@ -21,13 +21,7 @@ import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import co.rsk.pcc.altBN128.impls.GoAltBN128;
 import co.rsk.pcc.altBN128.impls.JavaAltBN128;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 
-import java.math.BigInteger;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;

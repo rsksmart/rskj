@@ -18,8 +18,6 @@
 
 package co.rsk.core.types.bytes;
 
-import org.ethereum.util.ByteUtil;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
