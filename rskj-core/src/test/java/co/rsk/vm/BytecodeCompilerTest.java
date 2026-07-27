@@ -21,7 +21,6 @@ package co.rsk.vm;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 
 /**
  * Created by ajlopez on 25/01/2017.

@@ -34,7 +34,8 @@ public class SimpleHttpTestServer {
     protected static final String HELLO_PATH = "/hello";
     protected static final String NOT_FOUND_PATH = "/notfound";
     protected static final String ERROR_PATH = "/error";
-    protected static final String SLOW_PATH = "/slow";   private HttpServer server;
+    protected static final String SLOW_PATH = "/slow";
+    private HttpServer server;
 
     public void start(int port) throws IOException {
         server = HttpServer.create(new InetSocketAddress(port), 0);

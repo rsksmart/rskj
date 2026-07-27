@@ -46,7 +46,7 @@ class RemascStorageProvider {
     private Coin federationBalance;
     private Boolean brokenSelectionRule;
 
-    public RemascStorageProvider(Repository repository, RskAddress contractAddress) {
+    RemascStorageProvider(Repository repository, RskAddress contractAddress) {
         this.repository = repository;
         this.contractAddress = contractAddress;
     }

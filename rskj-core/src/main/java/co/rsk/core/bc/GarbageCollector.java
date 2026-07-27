@@ -70,7 +70,7 @@ public class GarbageCollector implements InternalService {
         private final int blocksPerEpoch;
         private final int numberOfEpochs;
 
-        public GarbageCollectorInvoker(int blocksPerEpoch, int numberOfEpochs) {
+        GarbageCollectorInvoker(int blocksPerEpoch, int numberOfEpochs) {
             this.blocksPerEpoch = blocksPerEpoch;
             this.numberOfEpochs = numberOfEpochs;
         }

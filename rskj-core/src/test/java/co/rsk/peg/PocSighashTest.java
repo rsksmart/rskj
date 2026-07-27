@@ -696,7 +696,7 @@ class PocSighashTest {
             return Arrays.stream(seeds).map(FedSigner::of).sorted().collect(Collectors.toList());
         }
 
-        public FedSigner(String publicKeyHex, String secretKeyHex) {
+        FedSigner(String publicKeyHex, String secretKeyHex) {
             super(publicKeyHex);
             privateKey = BtcECKey.fromPrivate(Hex.decode(secretKeyHex));
         }

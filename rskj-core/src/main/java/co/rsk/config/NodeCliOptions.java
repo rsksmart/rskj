@@ -115,5 +115,5 @@ public enum NodeCliOptions implements OptionalizableCliArg {
     /**
      * @return a new, augmented config with settings for this flag.
      */
-    abstract public Config withConfig(Config config, String configValue);
+    public abstract Config withConfig(Config config, String configValue);
 }

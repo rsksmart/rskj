@@ -14,7 +14,7 @@ public final class RawTransactions {
     private RawTransactions() {
     }
 
-    public final static Map<TxSenderAddressType, String> txs;
+    public static final Map<TxSenderAddressType, String> txs;
 
     static {
         txs = new HashMap<>();

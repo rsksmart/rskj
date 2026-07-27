@@ -35,7 +35,7 @@ import static co.rsk.crypto.altbn128java.Params.B_Fp2;
 public class BN128Fp2 extends BN128<Fp2> {
 
     // the point at infinity
-    static public final BN128<Fp2> ZERO = new BN128Fp2(Fp2.ZERO, Fp2.ZERO, Fp2.ZERO);
+    public static final BN128<Fp2> ZERO = new BN128Fp2(Fp2.ZERO, Fp2.ZERO, Fp2.ZERO);
 
     protected BN128Fp2(Fp2 x, Fp2 y, Fp2 z) {
         super(x, y, z);

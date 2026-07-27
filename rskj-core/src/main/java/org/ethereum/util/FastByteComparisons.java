@@ -35,7 +35,6 @@
  */
 package org.ethereum.util;
 
-import com.google.common.primitives.UnsignedBytes;
 
 
 /**

@@ -46,7 +46,7 @@ class StatsTest {
     @Test
     void TestLowFrequency() {
         Stats stats = new Stats();
-        stats.setAvg(500);;
+        stats.setAvg(500);
 
         double old = stats.score(MessageType.STATUS_MESSAGE);
         double updated = stats.update(1000, MessageType.STATUS_MESSAGE);

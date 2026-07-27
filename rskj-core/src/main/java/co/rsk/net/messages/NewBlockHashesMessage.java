@@ -19,7 +19,6 @@
 package co.rsk.net.messages;
 
 import org.ethereum.core.BlockIdentifier;
-import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
