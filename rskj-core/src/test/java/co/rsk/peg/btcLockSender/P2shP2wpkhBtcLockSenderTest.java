@@ -6,7 +6,6 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.core.RskAddress;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import org.bouncycastle.util.encoders.Hex;
