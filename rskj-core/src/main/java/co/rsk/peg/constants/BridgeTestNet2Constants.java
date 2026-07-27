@@ -50,14 +50,8 @@ public class BridgeTestNet2Constants extends BridgeConstants {
 
         maxBtcHeadersPerRskBlock = 500;
 
-        legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
         minimumPeginTxValue = Coin.valueOf(500_000);
-        legacyMinimumPegoutTxValue = Coin.valueOf(500_000);
-        minimumPegoutTxValue = Coin.valueOf(250_000);
-
-        // testnet4 is a fresh chain, so the block-index and pegout-tx-index features are active from genesis.
-        btcHeightWhenBlockIndexActivates = 0;
-        maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (1 block every 10 minutes)
+        minimumPegoutTxValue = Coin.valueOf(400_000);
 
         minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes
         maxDepthBlockchainAccepted = 25;
@@ -67,9 +61,6 @@ public class BridgeTestNet2Constants extends BridgeConstants {
         maxInputsPerPegoutTransaction = 50;
 
         numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (1 block every 30 seconds)
-
-        btcHeightWhenPegoutTxIndexActivates = 0;
-        pegoutTxIndexGracePeriodInBtcBlocks = 1_440; // 10 days in BTC blocks (1 block every 10 minutes)
 
         blockWithTooMuchChainWorkHeight = Integer.MAX_VALUE;
     }
