@@ -634,7 +634,7 @@ static def amendPathIfNeeded(details) {
 task checkstyleAll {
     group = 'Verification'
     description = 'Run all Checkstyle checks'
-    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzz'
+    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzzTest'
 }
 
 task checkstyleFile(type: Checkstyle) {
