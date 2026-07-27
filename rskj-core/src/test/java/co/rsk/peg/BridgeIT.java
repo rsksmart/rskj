@@ -3724,7 +3724,7 @@ class BridgeIT {
         private final boolean hackWitnessPushCountSize;
         private final boolean hackWitnessPushSize;
 
-        public HugeDeclaredSizeBtcTransaction(NetworkParameters params, boolean hackInputsSize, boolean hackOutputsSize, boolean hackWitnessPushCountSize, boolean hackWitnessPushSize) {
+        HugeDeclaredSizeBtcTransaction(NetworkParameters params, boolean hackInputsSize, boolean hackOutputsSize, boolean hackWitnessPushCountSize, boolean hackWitnessPushSize) {
             super(params);
             BtcTransaction inputTx = new BtcTransaction(params);
             inputTx.addOutput(Coin.FIFTY_COINS, BtcECKey.fromPrivate(BigInteger.valueOf(123456)).toAddress(params));

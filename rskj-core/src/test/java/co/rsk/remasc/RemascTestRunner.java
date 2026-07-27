@@ -74,7 +74,7 @@ class RemascTestRunner {
     private Block genesis;
     private RskAddress fixedCoinbase;
 
-    public RemascTestRunner(BlockChainBuilder blockchainBuilder, Block genesis) {
+    RemascTestRunner(BlockChainBuilder blockchainBuilder, Block genesis) {
         this.builder = blockchainBuilder;
         this.genesis = genesis;
     }
@@ -285,7 +285,7 @@ class RemascTestRunner {
     private static class HardcodedHashBlockHeader extends BlockHeaderV0 {
         private final Keccak256 blockHash;
 
-        public HardcodedHashBlockHeader(
+        HardcodedHashBlockHeader(
                 Block parentBlock, RskAddress coinbase, Block genesis, List<Transaction> txs,
                 BlockDifficulty finalDifficulty, Coin paidFees, List<BlockHeader> uncles, Keccak256 blockHash) {
             super(

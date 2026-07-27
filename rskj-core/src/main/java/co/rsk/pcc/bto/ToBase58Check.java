@@ -41,7 +41,7 @@ public class ToBase58Check extends NativeMethod {
     private static class ExtendedVersionedChecksummedBytes extends co.rsk.bitcoinj.core.VersionedChecksummedBytes {
         private static final long serialVersionUID = 3721215336363685421L;
 
-        public ExtendedVersionedChecksummedBytes(int version, byte[] bytes) {
+        ExtendedVersionedChecksummedBytes(int version, byte[] bytes) {
             super(version, bytes);
         }
     }

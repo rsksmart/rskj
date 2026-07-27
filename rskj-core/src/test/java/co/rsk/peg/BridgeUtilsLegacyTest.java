@@ -517,7 +517,7 @@ class BridgeUtilsLegacyTest {
         private BtcTransaction btcTransaction;
         private Address destinationAddress;
 
-        public SimpleBtcTransaction(BtcTransaction btcTransaction, Address destinationAddress) {
+        SimpleBtcTransaction(BtcTransaction btcTransaction, Address destinationAddress) {
             this.btcTransaction = btcTransaction;
             this.destinationAddress = destinationAddress;
         }

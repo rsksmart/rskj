@@ -990,7 +990,7 @@ public class BlockExecutor {
     private static final class ThreadPoolExecutorImpl extends ThreadPoolExecutor {
         private static final long KEEP_ALIVE_TIME_IN_SECS = 15 * 60L; /* 15 minutes */
 
-        public ThreadPoolExecutorImpl(int parallelListIndex) {
+        ThreadPoolExecutorImpl(int parallelListIndex) {
             super(0, Integer.MAX_VALUE,
                     KEEP_ALIVE_TIME_IN_SECS, TimeUnit.SECONDS,
                     new SynchronousQueue<>(), new ThreadFactoryImpl(parallelListIndex));

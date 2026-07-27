@@ -21,7 +21,7 @@ class Secp256k1ServiceNativeFuzzTest extends Secp256k1ServiceTest {
         assumeTrue(Secp256k1Context.isEnabled());
     }
 
-    public Secp256k1ServiceNativeFuzzTest() {
+    Secp256k1ServiceNativeFuzzTest() {
         super(new Secp256k1ServiceNative());
     }
 
