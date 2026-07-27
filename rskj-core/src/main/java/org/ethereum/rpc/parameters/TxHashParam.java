@@ -50,4 +50,3 @@ public class TxHashParam extends HashParam32 {
         }
     }
 }
-
