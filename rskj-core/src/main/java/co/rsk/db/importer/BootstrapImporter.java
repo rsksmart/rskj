@@ -61,13 +61,12 @@ public class BootstrapImporter {
     private static final Logger logger = LoggerFactory.getLogger(BootstrapImporter.class);
 
     private static final int READ_BUFFER_SIZE = 64 * 1024;
-    // A chunk is read into a single byte[], so per-chunk memory must stay bounded. The exporter flushes
-    // once its buffer crosses CHUNK_MAX on an element boundary, so a well-formed chunk is at most
-    // CHUNK_MAX plus one element; 2x CHUNK_MAX gives ample headroom while rejecting a corrupt length that
-    // would otherwise allocate up to a ~2 GiB byte[]. Held as an int (via toIntExact) so a validated length
-    // always fits the new byte[(int) len] allocation by construction; CHUNK_MAX is a documented tuning
-    // knob, and raising it past ~1 GiB fails fast at class-load here rather than overflowing the cast.
-    private static final int MAX_CHUNK_BYTES = Math.toIntExact(2 * BootstrapV2Format.CHUNK_MAX);
+    // A chunk is read into a single byte[], so per-chunk memory must stay bounded. The reader rejects any
+    // chunk whose declared length exceeds MAX_CHUNK_LEN — the format-contract ceiling, defined independently
+    // of the exporter's CHUNK_MAX flush threshold so that changing that tuning knob can never silently make a
+    // deployed reader reject an otherwise-valid snapshot. Held as an int (via toIntExact) so a validated
+    // length always fits the new byte[(int) len] allocation by construction.
+    private static final int MAX_CHUNK_BYTES = Math.toIntExact(BootstrapV2Format.MAX_CHUNK_LEN);
 
     // The sections the v2 import consumes. Any other tag (e.g. a future manifest a newer exporter adds) is
     // skipped without being read into memory, so an older reader tolerates optional sections.

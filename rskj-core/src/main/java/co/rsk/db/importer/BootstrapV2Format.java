@@ -38,7 +38,7 @@ import java.nio.charset.StandardCharsets;
  * SECTION =
  *   [1 byte  section tag]
  *   zero or more chunks:
- *       [8-byte big-endian chunk length L]   (0 &lt; L &le; CHUNK_MAX, plus the rare single oversized element)
+ *       [8-byte big-endian chunk length L]   (0 &lt; L &le; MAX_CHUNK_LEN; a reader rejects any larger chunk)
  *       [L bytes: a concatenation of whole canonical RLP elements]
  *   [8-byte big-endian 0]                    &lt;- end-of-section sentinel
  * </pre>
@@ -82,10 +82,22 @@ public final class BootstrapV2Format {
 
     /**
      * Soft cap on a chunk's payload. The exporter flushes a chunk once its buffer crosses this on an
-     * element boundary; a single element larger than this still becomes its own (oversized) chunk. Kept
-     * well under {@code Integer.MAX_VALUE} so a chunk always fits a bounded {@code byte[]}.
+     * element boundary; a single element larger than this still becomes its own (oversized) chunk. This is
+     * an exporter-side <b>tuning knob</b>, not part of the on-disk contract — a different exporter may pick a
+     * different value. Kept well under {@code Integer.MAX_VALUE} so a chunk always fits a bounded {@code byte[]}.
      */
     public static final long CHUNK_MAX = 256L * 1024 * 1024;
+
+    /**
+     * Format-contract ceiling on a single chunk's declared on-disk length: a reader MUST reject any chunk
+     * whose length exceeds this. Unlike {@link #CHUNK_MAX} (an exporter tuning knob), this is a fixed part
+     * of the contract, so every reader accepts exactly the same chunk sizes regardless of the exporter's
+     * flush threshold — changing {@code CHUNK_MAX} can never silently make deployed readers reject otherwise
+     * valid snapshots. An exporter must keep every emitted chunk within this bound (its {@code CHUNK_MAX}
+     * plus the largest single element it may emit must not exceed it). Kept well under {@code Integer.MAX_VALUE}
+     * so a validated length always fits a bounded {@code byte[]}.
+     */
+    public static final long MAX_CHUNK_LEN = 512L * 1024 * 1024;
 
     private BootstrapV2Format() {
     }

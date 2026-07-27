@@ -222,6 +222,32 @@ class BootstrapImporterV2Test {
     }
 
     @Test
+    void rejectsChunkLengthExceedingTheFormatContractCeiling() throws IOException {
+        // a declared chunk length just past MAX_CHUNK_LEN (the format-contract ceiling, independent of the
+        // exporter's CHUNK_MAX tuning knob) must be rejected up front, before any allocation.
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(bos);
+        out.write(BootstrapV2Format.magic());
+        out.writeByte(BootstrapV2Format.VERSION);
+        out.writeByte(BootstrapV2Format.TAG_BLOCKS);
+        out.writeLong(BootstrapV2Format.MAX_CHUNK_LEN + 1); // over the contract ceiling; no payload follows
+        out.flush();
+
+        BootstrapImporter importer = newImporter(bos.toByteArray(), "over-ceiling.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("out of range"), ex.getMessage());
+    }
+
+    @Test
+    void formatContractChunkCeilingCoversAFullFlushChunk() {
+        // the reader's contract ceiling must admit at least one full exporter flush chunk, otherwise a
+        // legitimately-produced snapshot could be rejected.
+        assertTrue(BootstrapV2Format.MAX_CHUNK_LEN >= BootstrapV2Format.CHUNK_MAX,
+                "MAX_CHUNK_LEN must be >= CHUNK_MAX");
+    }
+
+    @Test
     void failsWithActionableErrorWhenNodeReferencesMissingLongValue() throws IOException {
         StateFixture fixture = buildState();
         assertFalse(collectValueElements(fixture.store, fixture.stateRoot).isEmpty(),
