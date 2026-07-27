@@ -53,5 +53,29 @@
         <!-- Modifiers that add nothing: public/abstract on interface methods, static on
              nested interfaces, final on methods of a final class or on private methods -->
         <module name="RedundantModifier"/>
+
+        <!-- Overriding a method without @Override hides typos in the signature -->
+        <module name="MissingOverride"/>
+
+        <!-- A switch "default" clause that isn't physically last -->
+        <module name="DefaultComesLast"/>
+
+        <!-- if (x) return true; else return false; instead of return x; -->
+        <module name="SimplifyBooleanReturn"/>
+
+        <!-- Duplicate imports, or importing from java.lang / the current package -->
+        <module name="RedundantImport"/>
+
+        <!-- Overriding Object.clone()/finalize(): legacy APIs that are easy to get wrong -->
+        <module name="NoClone"/>
+        <module name="NoFinalizer"/>
+
+        <!-- Switch case falls through to the next case without a comment marking it intentional -->
+        <module name="FallThrough"/>
+
+        <!-- Stray empty statements EmptyStatement doesn't cover -->
+        <module name="UnnecessarySemicolonAfterOuterTypeDeclaration"/>
+        <module name="UnnecessarySemicolonInTryWithResources"/>
+        <module name="UnnecessarySemicolonInEnumeration"/>
     </module>
 </module>
