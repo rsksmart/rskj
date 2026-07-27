@@ -401,18 +401,66 @@ class FederationChangeIT {
         assertPeginsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender9");
         assertPegoutsShouldWorkToFed(newFederation, federationSupport.getActiveFederationBtcUTXOs(), "sender9");
 
-        // Round 2: top up the retiring federation past the large multiple-outputs threshold
-        // (1000 BTC on mainnet) to force a migration transaction with evenly distributed outputs.
-        // This round needs its own rskTxHash since round 1's entry hasn't been confirmed away yet
-        // (see PegoutsWaitingForSignatures uniqueness check).
+        // Round 2: top up the retiring federation with exactly maxInputsPerMigrationTransaction (150)
+        // UTXOs whose combined value clears the large multiple-outputs threshold (1000 BTC on mainnet),
+        // forcing a migration transaction built at both RSKIP455 maximums at once: 150 inputs (capped by
+        // getMaxInputsPerMigrationTransaction) and 50 outputs (capped by getMaxOutputsPerMigrationTransaction,
+        // evenly distributed). This round needs its own rskTxHash since round 1's entry hasn't been
+        // confirmed away yet (see PegoutsWaitingForSignatures uniqueness check).
         Set<Entry> pegoutEntriesBeforeRound2 = getPegoutEntriesSnapshot();
         int logsSizeBeforeRound2 = logs.size();
-        injectUtxoToRetiringFederation(originalFederation.getAddress(), Coin.COIN.multiply(1105));
+        int maxInputsPerMigrationTransaction = BRIDGE_CONSTANTS.getMaxInputsPerMigrationTransaction(activations);
+        // Pegins/pegouts to the retiring federation above (sender8) already left a couple of UTXOs behind;
+        // top up only what's missing so the retiring federation ends up with exactly the max input count.
+        int utxosAlreadyPresent = federationSupport.getRetiringFederationBtcUTXOs().size();
+        int missingUTXOs = maxInputsPerMigrationTransaction - utxosAlreadyPresent;
+        injectUtxosToRetiringFederation(originalFederation.getAddress(), Coin.COIN.multiply(10), missingUTXOs);
         callUpdateCollections(buildUpdateCollectionsTransaction(300));
         assertPegoutTxSigHashesAreSaved();
         verifyPegouts();
-        assertMigrationRoundWasSettledAsExpected(pegoutEntriesBeforeRound2, logsSizeBeforeRound2, newFederation.getAddress());
+        Entry maxSizeMigrationEntry = assertMigrationRoundWasSettledAsExpected(pegoutEntriesBeforeRound2, logsSizeBeforeRound2, newFederation.getAddress());
         assertTrue(federationSupport.getRetiringFederationBtcUTXOs().isEmpty());
+
+        BtcTransaction maxSizeMigrationTransaction = maxSizeMigrationEntry.getBtcTransaction();
+        assertEquals(maxInputsPerMigrationTransaction, maxSizeMigrationTransaction.getInputs().size());
+        assertEquals(BRIDGE_CONSTANTS.getMaxOutputsPerMigrationTransaction(), maxSizeMigrationTransaction.getOutputs().size());
+
+        // Drive this max-size migration transaction through the full signing flow to prove it can
+        // actually be completed - not just built - and that its full raw bytes (150 signed inputs'
+        // worth of witnesses, 50 outputs) fit inside the RELEASE_BTC event without truncation.
+        Keccak256 maxSizeMigrationReleaseCreationRskTxHash = maxSizeMigrationEntry.getPegoutCreationRskTxHash();
+        int logsSizeBeforeConfirmation = logs.size();
+        BtcTransaction maxSizeMigrationTxWaitingForSignatures = confirmAndGetPegoutWaitingForSignatures(
+            maxSizeMigrationReleaseCreationRskTxHash, originalFederation, ORIGINAL_SEGWIT_FEDERATION_MEMBERS_KEYS
+        );
+        assertLogPegoutConfirmed(
+            logsSizeBeforeConfirmation,
+            maxSizeMigrationTransaction.getHash(),
+            maxSizeMigrationEntry.getPegoutCreationRskBlockNumber()
+        );
+
+        int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold().orElseThrow();
+        var maxSizeMigrationSigHashes = IntStream.range(0, maxSizeMigrationTxWaitingForSignatures.getInputs().size())
+            .mapToObj(i -> BitcoinUtils.generateSigHashForSegwitTransactionInput(
+                maxSizeMigrationTxWaitingForSignatures, i, maxSizeMigrationTxWaitingForSignatures.getInput(i).getValue()))
+            .toList();
+
+        int logsSizeBeforeMigrationSigning = logs.size();
+        for (BtcECKey retiringFederatorSignerKey : ORIGINAL_SEGWIT_FEDERATION_MEMBERS_KEYS.subList(0, retiringFederationThreshold)) {
+            List<byte[]> signatures = BitcoinTestUtils.generateSignerEncodedSignatures(retiringFederatorSignerKey, maxSizeMigrationSigHashes);
+            bridgeSupport.addSignature(retiringFederatorSignerKey, signatures, maxSizeMigrationReleaseCreationRskTxHash);
+            assertFederatorSigning(
+                maxSizeMigrationReleaseCreationRskTxHash.getBytes(),
+                maxSizeMigrationTxWaitingForSignatures,
+                maxSizeMigrationSigHashes,
+                originalFederation,
+                retiringFederatorSignerKey,
+                logs
+            );
+        }
+
+        assertLogReleaseBtc(logsSizeBeforeMigrationSigning, maxSizeMigrationReleaseCreationRskTxHash, maxSizeMigrationTxWaitingForSignatures);
+        assertFalse(bridgeStorageProvider.getPegoutsWaitingForSignatures().containsKey(maxSizeMigrationReleaseCreationRskTxHash));
 
         // Round 3: top up the (now empty) retiring federation with a small balance, comfortably
         // under the single-output threshold (40 BTC on mainnet), to exercise RSKIP455's single-output
@@ -645,6 +693,15 @@ class FederationChangeIT {
             .withValue(value)
             .build();
         federationStorageProvider.getOldFederationBtcUTXOs().add(utxo);
+    }
+
+    private void injectUtxosToRetiringFederation(Address retiringFederationAddress, Coin valuePerUtxo, int numberOfUtxos) {
+        Script outputScript = ScriptBuilder.createOutputScript(retiringFederationAddress);
+        List<UTXO> utxos = UTXOBuilder.builder()
+            .withScriptPubKey(outputScript)
+            .withValue(valuePerUtxo)
+            .buildMany(numberOfUtxos, i -> createHash(nextUtxoHashSeed++));
+        federationStorageProvider.getOldFederationBtcUTXOs().addAll(utxos);
     }
 
     private Set<Entry> getPegoutEntriesSnapshot() throws IOException {
@@ -1034,6 +1091,57 @@ class FederationChangeIT {
     private void callUpdateCollections(Transaction updateCollectionsTx) throws Exception {
         bridgeSupport.updateCollections(updateCollectionsTx);
         bridgeSupport.save();
+    }
+
+    /**
+     * Advances the chain until {@code releaseCreationRskTxHash}'s pegout is old enough to be confirmed,
+     * then keeps calling updateCollections until that specific pegout - and not some other pegout still
+     * waiting for confirmations - is the one promoted into pegoutsWaitingForSignatures. Only one pegout
+     * is promoted per updateCollections call (see BridgeSupport.processConfirmedPegouts), and which one
+     * is picked among several eligible entries is unpredictable (they're ordered by raw tx bytes), so
+     * this may take a few calls when other pegouts are still pending confirmation alongside this one.
+     * Any other pegout promoted along the way is fully signed and completed too (using {@code
+     * otherPegoutsSigningFederation}'s keys), rather than left dangling in pegoutsWaitingForSignatures,
+     * where it would otherwise trip up a later checkpoint-scoped PEGOUT_CONFIRMED assertion.
+     */
+    private BtcTransaction confirmAndGetPegoutWaitingForSignatures(
+        Keccak256 releaseCreationRskTxHash,
+        Federation otherPegoutsSigningFederation,
+        List<BtcECKey> otherPegoutsSigningFederationKeys
+    ) throws Exception {
+        currentBlock = createRskBlock(currentBlock.getNumber() + BRIDGE_CONSTANTS.getRsk2BtcMinimumAcceptableConfirmations() + 1L);
+        advanceBlockchainTo(currentBlock);
+
+        BtcTransaction targetPegout = null;
+        int maxAttempts = 5;
+        for (int attempt = 0; attempt < maxAttempts && targetPegout == null; attempt++) {
+            callUpdateCollections(buildUpdateCollectionsTransaction(600 + attempt));
+
+            for (var pegoutEntry : new ArrayList<>(bridgeStorageProvider.getPegoutsWaitingForSignatures().entrySet())) {
+                if (pegoutEntry.getKey().equals(releaseCreationRskTxHash)) {
+                    targetPegout = pegoutEntry.getValue();
+                } else {
+                    signPegoutToCompletion(pegoutEntry.getKey(), pegoutEntry.getValue(), otherPegoutsSigningFederation, otherPegoutsSigningFederationKeys);
+                }
+            }
+        }
+
+        if (targetPegout == null) {
+            throw new IllegalStateException("Pegout was never promoted to pegoutsWaitingForSignatures after " + maxAttempts + " attempts");
+        }
+        return targetPegout;
+    }
+
+    private void signPegoutToCompletion(Keccak256 releaseCreationRskTxHash, BtcTransaction pegoutTx, Federation signingFederation, List<BtcECKey> signingFederationKeys) throws IOException {
+        int threshold = signingFederation.getNumberOfSignaturesRequired();
+        var sigHashes = IntStream.range(0, pegoutTx.getInputs().size())
+            .mapToObj(i -> BitcoinUtils.generateSigHashForSegwitTransactionInput(pegoutTx, i, pegoutTx.getInput(i).getValue()))
+            .toList();
+
+        for (BtcECKey signerKey : signingFederationKeys.subList(0, threshold)) {
+            List<byte[]> signatures = BitcoinTestUtils.generateSignerEncodedSignatures(signerKey, sigHashes);
+            bridgeSupport.addSignature(signerKey, signatures, releaseCreationRskTxHash);
+        }
     }
 
     private void assertPeginsShouldWorkToFed(Federation federation, List<UTXO> federationUtxosReference, String senderSeed) throws Exception {
@@ -1639,7 +1747,7 @@ class FederationChangeIT {
      * {@code logsSizeBeforeMigration}) and that its outputs match the RSKIP455 thresholds for the given
      * retiring federation balance.
      */
-    private void assertMigrationRoundWasSettledAsExpected(
+    private Entry assertMigrationRoundWasSettledAsExpected(
         Set<Entry> pegoutEntriesBeforeMigration,
         int logsSizeBeforeMigration,
         Address destinationAddress
@@ -1667,7 +1775,7 @@ class FederationChangeIT {
                 destinationAddress,
                 NETWORK_PARAMS
             );
-            return;
+            return migrationEntry;
         }
 
         List<Coin> expectedOutputValues = BridgeUtils.calculateMigrationTransactionOutputsValues(requestedAmount, BRIDGE_CONSTANTS);
@@ -1686,6 +1794,8 @@ class FederationChangeIT {
                 NETWORK_PARAMS
             );
         }
+
+        return migrationEntry;
     }
     
     private void verifyPegouts() throws Exception {
