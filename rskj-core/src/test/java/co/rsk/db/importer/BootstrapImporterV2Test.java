@@ -344,6 +344,50 @@ class BootstrapImporterV2Test {
     }
 
     @Test
+    void failsWithActionableErrorWhenNodeElementIsNotAValidNodeMessage() throws IOException {
+        // a nodes element that is well-formed RLP and non-empty, but not a decodable trie-node message: its
+        // flags byte declares a (non-embedded) left child, yet the buffer is truncated before the 32-byte
+        // child hash, so Trie.fromMessage reads past the end. That decode failure runs outside saveNode's
+        // translation and would otherwise escape raw; it must surface as an actionable BootstrapImportException.
+        StateFixture fixture = buildState();
+        List<byte[]> nodes = new ArrayList<>();
+        nodes.add(RLP.encodeElement(new byte[]{0x08})); // flags: leftNodePresent, non-embedded; no hash follows
+        byte[] v2 = assembleV2(1024,
+                syntheticBlockElements(), nodes, collectValueElements(fixture.store, fixture.stateRoot));
+
+        BootstrapImporter importer = newImporter(v2, "malformed-node.bin");
+
+        assertThrows(BootstrapImportException.class, importer::importData);
+    }
+
+    @Test
+    void failsWithActionableErrorWhenChunkIsNotDecodableRlp() throws IOException {
+        // a nodes section carrying a single chunk whose bytes are not decodable as RLP elements: RLP.decode2
+        // would otherwise throw a raw RLPException. It must surface as an actionable BootstrapImportException.
+        StateFixture fixture = buildState();
+        byte[] malformedChunk = new byte[]{(byte) 0x83, 0x01, 0x02}; // RLP header says 3-byte string, only 2 follow
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(bos);
+        out.write(BootstrapV2Format.magic());
+        out.writeByte(BootstrapV2Format.VERSION);
+        writeSection(out, BootstrapV2Format.TAG_BLOCKS, syntheticBlockElements(), 1024);
+        writeSection(out, BootstrapV2Format.TAG_VALUES,
+                collectValueElements(fixture.store, fixture.stateRoot), 1024);
+        // a hand-written nodes section with one malformed chunk (bypasses writeSection's whole-element framing)
+        out.writeByte(BootstrapV2Format.TAG_NODES);
+        out.writeLong(malformedChunk.length);
+        out.write(malformedChunk);
+        out.writeLong(0L); // end-of-section sentinel
+        out.writeByte(BootstrapV2Format.TAG_END);
+        out.flush();
+
+        BootstrapImporter importer = newImporter(bos.toByteArray(), "malformed-chunk.bin");
+
+        assertThrows(BootstrapImportException.class, importer::importData);
+    }
+
+    @Test
     void rejectsUnrecognizedFirstByteAsNeitherV1NorV2() throws IOException {
         // First byte is neither the v2 magic ('R') nor a v1 RLP list prefix (0xc0+): a corrupt or wrong file
         // must be rejected up front with a clear error, not sent down the v1 path to fail with an opaque

@@ -117,8 +117,11 @@ for pre-import validation) — but is not written or read today.
 Chunk length fields are validated before any allocation: a length must be positive, must not exceed
 `MAX_CHUNK_LEN` (the format-contract ceiling — see below), and must not exceed the bytes actually remaining
 in the file (catches truncation and corrupt lengths). A missing end-of-sections marker (EOF before
-`TAG_END`) is rejected as truncated. The import also fails fast if the blocks or the nodes section is absent
-or empty, rather than "succeeding" with no state and only crashing later at first state access.
+`TAG_END`) is rejected as truncated. Reading a chunk's bytes and decoding/applying its elements is wrapped
+so that corrupt data (undecodable RLP, a malformed node message, a referenced value missing) surfaces as an
+actionable `BootstrapImportException` rather than an opaque `RLPException` / `IllegalArgumentException` /
+`NullPointerException`. The import also fails fast if the blocks or the nodes section is absent or empty,
+rather than "succeeding" with no state and only crashing later at first state access.
 
 ## Constants
 

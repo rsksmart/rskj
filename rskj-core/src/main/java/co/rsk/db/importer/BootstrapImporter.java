@@ -239,13 +239,24 @@ public class BootstrapImporter {
     /**
      * Applies {@code action} to every element of a section chunk (after rejecting empty elements) and
      * returns how many were processed. The decode/count/empty-check invariant lives here for all sections;
-     * only the per-element action differs (save a block, a long value, or a state node).
+     * only the per-element action differs (save a block, a long value, or a state node). Any raw failure while
+     * decoding the chunk ({@link RLP#decode2}) or applying an element (e.g. {@code Trie.fromMessage} on an
+     * undecodable node message) is translated into an actionable {@link BootstrapImportException} rather than
+     * escaping as an opaque {@code RLPException} / {@code IllegalArgumentException} / {@code NullPointerException}.
      */
     private long importElements(byte[] chunk, String section, Consumer<byte[]> action) {
         long imported = 0;
-        for (RLPElement element : RLP.decode2(chunk)) {
-            action.accept(requireNonEmptyElement(element, section));
-            imported++;
+        try {
+            for (RLPElement element : RLP.decode2(chunk)) {
+                action.accept(requireNonEmptyElement(element, section));
+                imported++;
+            }
+        } catch (BootstrapImportException e) {
+            // already actionable (an empty element, or a node's missing long value) — keep its specific message
+            throw e;
+        } catch (RuntimeException e) {
+            throw new BootstrapImportException("Bootstrap-data v2 " + section
+                    + " section is malformed or corrupt (a chunk element could not be decoded or applied)", e);
         }
         return imported;
     }
