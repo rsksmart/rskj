@@ -18,18 +18,18 @@ public class FederationTestNet2Constants extends FederationConstants {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET4);
 
         genesisFederationPublicKeys = Stream.of(
-            "02337f4a3d81fb621ec72e0f62336e3fb9b181063ad86674ea7f80d3ae687acf73",
-            "02f9c08784952982e5cc24624f34d5afd1584ed32851b0790f2bba965e7a131b0f",
-            "030e6370c451967cef1ae35e3a04d2cdfc337d94cc15ce1afa16130ca677294a9b"
+            "03d9d48cdc0fdf039d08371c64b1e86e1715e9898d4680595f1d4e3398dbdd9e9e",
+            "0379d78dcae0be90715a088413c588da6a9381aae42e504f6e05c7b5204ed5bf3a",
+            "035f29d6a4825b42f43de2e654531b7864059bfcfb33f5b6d868ba9b302cfb522b"
 
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
         genesisFederationCreationTime = ZonedDateTime.parse("2026-07-20T00:00:00Z").toInstant();
         genesisFederationType = FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION;
 
         List<ECKey> federationChangeAuthorizedKeys = Stream.of(
-            "04d9052c2022f6f35da53f04f02856ff5e59f9836eec03daad0328d12c5c66140205da540498e46cd05bf63c1201382dd84c100f0d52a10654159965aea452c3f2",
-            "04bf889f2035c8c441d7d1054b6a449742edd04d202f44a29348b4140b34e2a81ce66e388f40046636fd012bd7e3cecd9b951ffe28422334722d20a1cf6c7926fb",
-            "047e707e4f67655c40c539363fb435d89574b8fe400971ba0290de9c2adbb2bd4e1e5b35a2188b9409ff2cc102292616efc113623483056bb8d8a02bf7695670ea"
+            "03fcf11ef18d377b345571cb71d533aee40354020d3aa082354ee33a8df60cae2b",
+            "02eec0e71e7b459f2a20db8c06a06d1132ff1bec329d3cc2d761aec570cca4fe14",
+            "030b5baaac2550b527d94ea50881f4291c963cfa3638bfdec8a094cb86f6b96ed1"
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
