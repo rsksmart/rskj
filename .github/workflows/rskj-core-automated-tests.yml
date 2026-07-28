@@ -48,8 +48,8 @@ on:
 
 # Least privilege at the top level; the only job that needs a write scope
 # (pull-requests: write, for the sticky PR comment) declares it itself.
-permissions:
-  contents: read
+# Declare default permissions as read only.
+permissions: read-all
 
 concurrency:
   group: rskj-core-automated-tests-${{ github.ref }}

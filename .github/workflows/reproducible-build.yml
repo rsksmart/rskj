@@ -53,8 +53,8 @@ on:
         description: 'modifier resolved from version.properties at the ref'
         value: ${{ jobs.reproducible-build.outputs.modifier }}
 
-permissions:
-  contents: read
+# Declare default permissions as read only.
+permissions: read-all
 
 concurrency:
   # Key by the ref actually being built (inputs.ref for dispatch/call, the commit

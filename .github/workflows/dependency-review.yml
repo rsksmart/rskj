@@ -1,13 +1,13 @@
 name: 'Dependency Review'
 on: [pull_request]
 
+# Declare default permissions as read only.
 permissions: read-all
 
 jobs:
   dependency-review:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       pull-requests: write
     steps:
       - name: 'Checkout Repository'
