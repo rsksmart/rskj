@@ -8,9 +8,7 @@ on:
     types: [opened, synchronize, reopened]
 
 # Declare default permissions as read only.
-permissions:
-  contents: read
-  actions: read
+permissions: read-all
 
 jobs:
   docker:

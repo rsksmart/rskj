@@ -25,8 +25,8 @@ on:
 
 # Only read permission is needed. The cross-repo PR is opened with the
 # scoped App token, NOT GITHUB_TOKEN.
-permissions:
-  contents: read
+# Declare default permissions as read only.
+permissions: read-all
 
 concurrency:
   group: reproducible-build-pr-${{ github.ref }}

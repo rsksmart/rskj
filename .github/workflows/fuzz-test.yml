@@ -12,6 +12,9 @@ on:
         required: false
         default: 'master'
 
+# Declare default permissions as read only.
+permissions: read-all
+
 jobs:
   fuzz-test:
     runs-on: ubuntu-latest
