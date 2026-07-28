@@ -18,6 +18,8 @@
 
 package co.rsk.core.types.bytes;
 
+import org.ethereum.util.ByteUtil;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -71,7 +73,7 @@ public interface HexPrintableBytes extends PrintableBytes {
     }
 
     /**
-     * This is a bit optimized version of {@link org.ethereum.util.ByteUtil#toHexString(byte[], int, int)},
+     * This is a bit optimized version of {@link ByteUtil#toHexString(byte[], int, int)},
      * which does not use a third-party library.
      *
      * @param offset the start index of the bytes to be converted to hexadecimal.

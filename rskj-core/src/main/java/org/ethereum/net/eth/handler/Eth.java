@@ -21,6 +21,7 @@ package org.ethereum.net.eth.handler;
 
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessage;
+import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.sync.SyncStatistics;
 
 /**

@@ -35,7 +35,7 @@
  */
 package org.ethereum.util;
 
-
+import com.google.common.primitives.UnsignedBytes;
 
 /**
  * Utility code to do optimized byte-array comparison.

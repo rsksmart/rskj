@@ -18,6 +18,8 @@
 
 package co.rsk.core.types.bytes;
 
+import java.util.Arrays;
+
 /**
  * A {@link BytesSlice} is a subsequence of bytes backed by another broader byte sequence.
  */
