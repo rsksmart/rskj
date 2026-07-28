@@ -59,6 +59,9 @@ jobs:
   resolve:
     name: Resolve refs
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     outputs:
       has_token: ${{ steps.token.outputs.has_token }}
       rskj_ref: ${{ steps.refs.outputs.rskj_ref }}
