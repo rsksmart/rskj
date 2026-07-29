@@ -98,5 +98,32 @@
 
         <!-- One variable declaration per statement: "int a, b;" -> "int a; int b;" -->
         <module name="MultipleVariableDeclarations"/>
+
+        <!-- The top-level type must match its filename -->
+        <module name="OuterTypeFilename"/>
+
+        <!-- The package statement must match the file's directory, and must be present -->
+        <module name="PackageDeclaration"/>
+
+        <!-- Exception classes should be immutable: no non-final fields -->
+        <module name="MutableException"/>
+
+        <!-- package/import statements must not be wrapped across lines -->
+        <module name="NoLineWrap"/>
+
+        <!-- Naming conventions that are already 100% respected in this codebase -->
+        <module name="TypeName"/>
+        <module name="PackageName"/>
+        <module name="ClassTypeParameterName"/>
+        <module name="MethodTypeParameterName"/>
+        <module name="LambdaParameterName"/>
+
+        <!-- Ban identifiers that are contextual keywords in newer Java versions and would
+             break if this codebase's language level moves up. "sealed"/"permits" are excluded
+             from the ban: they're used as domain terms (e.g. BlockHeader/BlockFactory), not as
+             the sealed-classes feature, so renaming them would hurt readability for no benefit. -->
+        <module name="IllegalIdentifierName">
+            <property name="format" value="(?i)^(?!(record|yield|var|_)$).+$"/>
+        </module>
     </module>
 </module>
