@@ -80,8 +80,12 @@
         <module name="NoClone"/>
         <module name="NoFinalizer"/>
 
-        <!-- Switch case falls through to the next case without a comment marking it intentional -->
-        <module name="FallThrough"/>
+        <!-- Switch case falls through to the next case without a comment marking it intentional.
+             checkLastCaseGroup also requires the last group (often "default") to terminate, so a
+             case appended after it can't silently fall into a default that never returns/breaks. -->
+        <module name="FallThrough">
+            <property name="checkLastCaseGroup" value="true"/>
+        </module>
 
         <!-- Stray empty statements EmptyStatement doesn't cover -->
         <module name="UnnecessarySemicolonAfterOuterTypeDeclaration"/>
