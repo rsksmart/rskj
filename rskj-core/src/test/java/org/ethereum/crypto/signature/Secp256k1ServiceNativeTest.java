@@ -51,6 +51,7 @@ class Secp256k1ServiceNativeTest extends Secp256k1ServiceTest {
         assertEquals(s, new BigInteger(Arrays.copyOfRange(result, 32, 64)));
     }
 
+    @Override
     protected Secp256k1ServiceNative getSecp256k1() {
         return (Secp256k1ServiceNative) super.getSecp256k1();
     }
