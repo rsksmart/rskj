@@ -41,8 +41,17 @@
 
         <!-- Empty catch blocks must at least contain a comment explaining why -->
         <module name="EmptyBlock">
+            <property name="id" value="EmptyCatchBlock"/>
             <property name="option" value="text"/>
             <property name="tokens" value="LITERAL_CATCH"/>
+        </module>
+
+        <!-- Empty if/else/for/while/do/try/finally/synchronized/switch/static-or-instance-init
+             blocks: unlike an empty catch, these usually mean dropped logic -->
+        <module name="EmptyBlock">
+            <property name="id" value="EmptyNonCatchBlock"/>
+            <property name="option" value="text"/>
+            <property name="tokens" value="LITERAL_TRY,LITERAL_FINALLY,LITERAL_IF,LITERAL_ELSE,LITERAL_FOR,LITERAL_WHILE,LITERAL_DO,LITERAL_SYNCHRONIZED,STATIC_INIT,INSTANCE_INIT,LITERAL_SWITCH"/>
         </module>
 
         <!-- Unused imports; an import referenced only from a Javadoc {@link}/@see tag still
