@@ -80,7 +80,6 @@ public enum NodeCliOptions implements OptionalizableCliArg {
                 }
                 return config;
             } catch (Exception e) {
-                e.printStackTrace();
                 throw new RuntimeException("expecting URL in the format enode://PUBKEY@HOST:PORT", e);
             }
         }
