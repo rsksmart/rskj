@@ -829,7 +829,7 @@ class BridgeIT {
                 try {
                     bitcoinSerializeToStream(baos);
                 } catch (IOException e) {
-                    // ByteArrayOutputStream never actually throws
+                    throw new AssertionError("Unexpected IOException while serializing to ByteArrayOutputStream", e);
                 }
                 return baos.toByteArray();
             }
