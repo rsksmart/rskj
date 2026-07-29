@@ -17,7 +17,10 @@ checkstyle {
 }
 
 spotless {
-    enforceCheck false
+    // Wire spotlessJavaCheck into the `check` lifecycle task (and hence `./gradlew build`),
+    // so it actually runs instead of silently being a no-op the ratchet plumbing sets up but
+    // never invokes. Already passes clean unratcheted against the whole tree.
+    enforceCheck true
     java {
         // Only check for newline at end of file
         endWithNewline()
@@ -60,6 +63,29 @@ tasks.named('run', JavaExec) {
 // depends on how much git history the checkout has (e.g. a shallow CI clone sees every file in
 // its single commit as "added", while a full local clone only sees files touched since that
 // date) rather than on what the current branch/PR actually changed.
+// Runs a git command, keeping stderr separate from stdout. Fails loudly (GradleException) on
+// a non-zero exit instead of silently swallowing the error, so a bad/unfetched ratchetFrom ref
+// disables the check (via getRatchetedFiles() returning null further up), rather than
+// producing an empty file list that reads as "nothing changed" and disables the check.
+def runGit(List<String> command) {
+    def out = new ByteArrayOutputStream()
+    def err = new ByteArrayOutputStream()
+    def result = exec {
+        commandLine command
+        standardOutput = out
+        errorOutput = err
+        ignoreExitValue = true
+    }
+    if (result.exitValue != 0) {
+        throw new GradleException(
+                "Cannot determine the ratcheted file set: '${command.join(' ')}' exited " +
+                "${result.exitValue}. This usually means the -PratchetFrom ref isn't available " +
+                "locally (e.g. the base branch wasn't fetched, or the ref is invalid).\nstderr:\n${err}"
+        )
+    }
+    return out.toString()
+}
+
 def getRatchetedFiles() {
     if (!project.hasProperty('ratchetFrom')) {
         return null
@@ -67,44 +93,13 @@ def getRatchetedFiles() {
 
     def ratchetFrom = project.property('ratchetFrom')
 
-    def commandBaseDiff = [
-            'git', 'diff', '--name-only', "${ratchetFrom}...HEAD"
-    ]
-    def commandUncommitted = [
-            'git', 'diff', '--name-only'
-    ]
-    def commandStaged = [
-            'git', 'diff', '--cached', '--name-only'
-    ]
+    def baseDiffOutput = runGit(['git', 'diff', '--name-only', "${ratchetFrom}...HEAD"])
+    def uncommittedOutput = runGit(['git', 'diff', '--name-only'])
+    def stagedOutput = runGit(['git', 'diff', '--cached', '--name-only'])
 
-    def outputBaseDiff = new ByteArrayOutputStream()
-    def outputUncommitted = new ByteArrayOutputStream()
-    def outputStaged = new ByteArrayOutputStream()
-
-    exec {
-        commandLine commandBaseDiff
-        standardOutput = outputBaseDiff
-        errorOutput = outputBaseDiff
-        ignoreExitValue = true
-    }
-
-    exec {
-        commandLine commandUncommitted
-        standardOutput = outputUncommitted
-        errorOutput = outputUncommitted
-        ignoreExitValue = true
-    }
-
-    exec {
-        commandLine commandStaged
-        standardOutput = outputStaged
-        errorOutput = outputStaged
-        ignoreExitValue = true
-    }
-
-    def baseDiffFiles = outputBaseDiff.toString().trim().split('\n').toList()
-    def uncommittedFiles = outputUncommitted.toString().trim().split('\n').toList()
-    def stagedFiles = outputStaged.toString().trim().split('\n').toList()
+    def baseDiffFiles = baseDiffOutput.trim().split('\n').toList()
+    def uncommittedFiles = uncommittedOutput.trim().split('\n').toList()
+    def stagedFiles = stagedOutput.trim().split('\n').toList()
     def allFiles = (baseDiffFiles + uncommittedFiles + stagedFiles).unique().findAll { file -> file }
 
     def projectRoot = project.projectDir.toPath().toAbsolutePath()
@@ -186,10 +181,22 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
         }
     }
 
-    // These source sets are (re)configured after this block runs, which resets task.source;
-    // re-apply the ratchet filtering at execution time so it sticks.
-    if (task.name in ['checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzzTest']) {
-        task.doFirst {
+    task.dependsOn processResources
+}
+
+// jmh/integrationTest/fuzzTest are wired up later in this file (see sourceSets{}/testing{}
+// below), which resets task.source after the configureEach block above runs. Re-applying the
+// filter in a task.doFirst {} used to "win" that race, but doFirst runs at task EXECUTION
+// time, after Gradle has already snapshotted task.source for its up-to-date check -- so the
+// task's recorded inputs stay the full (unfiltered) source set forever, and a later run with a
+// *different* -PratchetFrom value is wrongly reported UP-TO-DATE, serving a stale report from
+// whatever scope happened to run first. project.afterEvaluate {} still runs during the
+// CONFIGURATION phase (after all source-set wiring has settled, guaranteed by Gradle to
+// complete before any task executes), so reassigning task.source here is seen by the
+// up-to-date check like any other configuration-time input.
+project.afterEvaluate {
+    tasks.withType(Checkstyle).configureEach { Checkstyle task ->
+        if (task.name in ['checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzzTest']) {
             def relevantSourceDir = task.name == 'checkstyleJmh' ? 'src/jmh/java'
                     : task.name == 'checkstyleIntegrationTest' ? 'src/integrationTest/java'
                     : 'src/fuzzTest/java'
@@ -197,10 +204,11 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
 
             if (checkstyleFiles != null && !checkstyleFiles.isEmpty()) {
                 task.source = project.files(checkstyleFiles)
+            } else if (checkstyleFiles != null) {
+                task.enabled = false
             }
         }
     }
-    task.dependsOn processResources
 }
 
 configurations {
