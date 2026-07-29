@@ -64,7 +64,11 @@
              nested interfaces, final on methods of a final class or on private methods -->
         <module name="RedundantModifier"/>
 
-        <!-- Overriding a method without @Override hides typos in the signature -->
+        <!-- Only catches a method with an {@inheritDoc} Javadoc tag but no @Override
+             annotation; it does no type-hierarchy analysis, so it won't flag an override
+             that's missing @Override and has no such tag. Kept because it's free, not
+             because it protects against signature typos in general: that needs
+             compiler/IDE settings or a tool like Error Prone. -->
         <module name="MissingOverride"/>
 
         <!-- A switch "default" clause that isn't physically last -->
