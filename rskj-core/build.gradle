@@ -58,16 +58,15 @@ tasks.named('run', JavaExec) {
 // (e.g. -PratchetFrom=origin/master), unioned with any uncommitted/staged local changes, or
 // null when 'ratchetFrom' isn't provided -- meaning "no ratchet: check the full source set".
 //
-// This mirrors the ratchetFrom pattern Spotless already uses in this file (and that
-// lint-java-code.yml's checkstyleFile/spotlessJavaCheck invocations already rely on), instead
-// of approximating "changed files" via `git log --since=<a fixed date>`, whose result silently
+// This mirrors the ratchetFrom pattern Spotless already uses in this file, instead of
+// approximating "changed files" via `git log --since=<a fixed date>`, whose result silently
 // depends on how much git history the checkout has (e.g. a shallow CI clone sees every file in
 // its single commit as "added", while a full local clone only sees files touched since that
 // date) rather than on what the current branch/PR actually changed.
 // Runs a git command, keeping stderr separate from stdout. Fails loudly (GradleException) on
 // a non-zero exit instead of silently swallowing the error, so a bad/unfetched ratchetFrom ref
-// disables the check (via getRatchetedFiles() returning null further up), rather than
-// producing an empty file list that reads as "nothing changed" and disables the check.
+// fails the build with a clear message, rather than producing an empty file list that reads as
+// "nothing changed" and silently disables the check.
 def runGit(List<String> command) {
     def out = new ByteArrayOutputStream()
     def err = new ByteArrayOutputStream()

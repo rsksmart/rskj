@@ -70,7 +70,7 @@ Commands that mirror CI:
 - `./gradlew build -x test` — runs the full `build` minus the unit-test task. The per-source-set Checkstyle tasks (`checkstyleMain`, `checkstyleTest`, …) are wired into `check` by the checkstyle plugin and still run. The custom `checkstyleAll` aggregator task and `integrationTest` (a `JvmTestSuite`) are **not** wired into `check`, so this command does **not** run them — invoke `./gradlew integrationTest` and `./gradlew checkstyleAll` explicitly. A green `build -x test` does not mean integration tests passed.
 - `./gradlew test` — unit tests (JUnit 5). Filter with `--tests "FullyQualifiedClass"` or `--tests "FullyQualifiedClass.method"`.
 - `./gradlew integrationTest` — integration tests; depends on `assemble`.
-- `./gradlew checkstyleAll` — runs `checkstyleMain`, `checkstyleTest`, `checkstyleJmh`, `checkstyleIntegrationTest`, and `checkstyleFuzz`.
+- `./gradlew checkstyleAll` — runs `checkstyleMain`, `checkstyleTest`, `checkstyleJmh`, `checkstyleIntegrationTest`, and `checkstyleFuzzTest`.
 - `./gradlew checkstyleFile -PfilePath="src/main/java/A.java,src/main/java/B.java"` — checkstyle on a specific, arbitrary file set (no CI job calls this; it's for ad hoc local use). Paths must be relative to the `rskj-core` subproject, and the task resolves the list via `project.files(...)` inside `rskj-core`. Repo-relative paths (e.g. `rskj-core/src/main/java/...`) silently match nothing.
 - `./gradlew spotlessJavaCheck -PratchetFrom=origin/master` — Spotless on changed files; replace `master` with the PR base branch when applicable.
 - `./gradlew spotlessApply` — auto-fix Spotless violations.
