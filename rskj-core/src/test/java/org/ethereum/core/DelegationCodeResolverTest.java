@@ -64,7 +64,7 @@ class DelegationCodeResolverTest {
     @Test
     void getExecutionCode_returnsEmptyWhenTargetAccountDoesNotExist() {
         Repository repository = mock(Repository.class);
-        RskAddress target =  new RskAddress("0000000000000000000000000000000000000001");
+        RskAddress target = new RskAddress("0000000000000000000000000000000000000001");
 
         when(repository.isExist(target)).thenReturn(false);
 
