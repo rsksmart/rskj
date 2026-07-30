@@ -83,7 +83,6 @@ import static co.rsk.util.ListArrayUtil.getLength;
 import static co.rsk.util.ListArrayUtil.isEmpty;
 import static co.rsk.util.ListArrayUtil.nullToEmpty;
 import static java.lang.String.format;
-import static org.ethereum.core.DelegationCodeResolver.getExecutionCode;
 import static org.ethereum.util.BIUtil.isNotCovers;
 import static org.ethereum.util.BIUtil.isPositive;
 import static org.ethereum.util.BIUtil.toBI;
