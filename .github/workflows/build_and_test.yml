@@ -49,6 +49,11 @@ jobs:
 
       - name: Set ratchet base ref
         id: set-ratchet-ref
+        # Only PR builds are ratcheted (against the PR base branch); push builds to master/*-rc
+        # run Checkstyle/Spotless unratcheted against the whole tree. So a new rule can pass a
+        # ratcheted PR check yet still fail here on the push that merges it, if pre-existing
+        # violations exist outside the PR's diff. Run the full, unratcheted checkstyleAll /
+        # spotlessJavaCheck locally before adding or tightening a rule.
         if: github.event_name == 'pull_request'
         env:
           github_base_ref: ${{ github.base_ref }}
