@@ -163,7 +163,7 @@ class DelegationCodeResolverTest {
     }
 
     @Test
-    void getExecutionCode_returnsEmptyWhenDelegatedAccountCodeIsNull() {
+    void getExecutionCode_returnsEmptyWhenTargetCodeIsNull() {
         Repository repository = mock(Repository.class);
 
         RskAddress target = new RskAddress("0000000000000000000000000000000000000001");
