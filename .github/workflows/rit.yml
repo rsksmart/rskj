@@ -197,10 +197,23 @@ jobs:
             NOTIFICATION_ACTION_LABEL="View Run"
           fi
 
+          # The "View Actions Run" button always points at the Actions run page (RUN_URL).
+          # When the primary button already points there too (the schedule case above), a
+          # second button to the same URL is redundant, so only emit it when the two differ.
+          if [ "$NOTIFICATION_URL" = "$RUN_URL" ]; then
+            EXTRA_BUTTON_SUCCESS=""
+            EXTRA_BUTTON_FAILURE=""
+          else
+            EXTRA_BUTTON_SUCCESS=',{"type":"button","text":{"type":"plain_text","text":"View Actions Run"},"url":"'"$RUN_URL"'"}'
+            EXTRA_BUTTON_FAILURE=',{"type":"button","style":"danger","text":{"type":"plain_text","text":"View Actions Run"},"url":"'"$RUN_URL"'"}'
+          fi
+
           echo "NOTIFICATION_TITLE=$NOTIFICATION_TITLE" >> $GITHUB_ENV
           echo "NOTIFICATION_SUBTITLE=$NOTIFICATION_SUBTITLE" >> $GITHUB_ENV
           echo "NOTIFICATION_URL=$NOTIFICATION_URL" >> $GITHUB_ENV
           echo "NOTIFICATION_ACTION_LABEL=$NOTIFICATION_ACTION_LABEL" >> $GITHUB_ENV
+          echo "NOTIFICATION_EXTRA_BUTTON_SUCCESS=$EXTRA_BUTTON_SUCCESS" >> $GITHUB_ENV
+          echo "NOTIFICATION_EXTRA_BUTTON_FAILURE=$EXTRA_BUTTON_FAILURE" >> $GITHUB_ENV
 
       - name: Run Rootstock Integration Tests
         uses: rsksmart/rootstock-integration-tests@main
@@ -249,17 +262,7 @@ jobs:
                   - type: mrkdwn
                     text: "• rskj: `${{ env.RSKJ_BRANCH }}`\n• fed: `${{ env.POWPEG_BRANCH }}`\n• rit: `${{ env.RIT_BRANCH }}`"
               - type: actions
-                elements:
-                  - type: button
-                    text:
-                      type: plain_text
-                      text: "${{ env.NOTIFICATION_ACTION_LABEL }}"
-                    url: "${{ env.NOTIFICATION_URL }}"
-                  - type: button
-                    text:
-                      type: plain_text
-                      text: View Actions Run
-                    url: "${{ env.BUILD_URL }}"
+                elements: [{"type":"button","text":{"type":"plain_text","text":"${{ env.NOTIFICATION_ACTION_LABEL }}"},"url":"${{ env.NOTIFICATION_URL }}"}${{ env.NOTIFICATION_EXTRA_BUTTON_SUCCESS }}]
 
       - name: Send Slack Notification on Failure
         if: failure() && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart')) && steps.check-slack-token.outputs.has_token == 'true'
@@ -283,16 +286,4 @@ jobs:
                   - type: mrkdwn
                     text: "• rskj: `${{ env.RSKJ_BRANCH }}`\n• fed: `${{ env.POWPEG_BRANCH }}`\n• rit: `${{ env.RIT_BRANCH }}`"
               - type: actions
-                elements:
-                  - type: button
-                    style: danger
-                    text:
-                      type: plain_text
-                      text: "${{ env.NOTIFICATION_ACTION_LABEL }}"
-                    url: "${{ env.NOTIFICATION_URL }}"
-                  - type: button
-                    style: danger
-                    text:
-                      type: plain_text
-                      text: View Actions Run
-                    url: "${{ env.BUILD_URL }}"
+                elements: [{"type":"button","style":"danger","text":{"type":"plain_text","text":"${{ env.NOTIFICATION_ACTION_LABEL }}"},"url":"${{ env.NOTIFICATION_URL }}"}${{ env.NOTIFICATION_EXTRA_BUTTON_FAILURE }}]
