@@ -99,7 +99,7 @@ class DelegationCodeResolverTest {
         Repository repository = mock(Repository.class);
 
         RskAddress target = new RskAddress("0000000000000000000000000000000000000001");
-        RskAddress delegated  =new RskAddress("0000000000000000000000000000000000000002");
+        RskAddress delegated = new RskAddress("0000000000000000000000000000000000000002");
 
         when(repository.isExist(target)).thenReturn(true);
         when(repository.getCode(target)).thenReturn(createDelegatedCode(delegated));
