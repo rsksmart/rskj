@@ -423,7 +423,7 @@ public class TransactionExecutor {
             profiler.stop(metric);
         } else {
             byte[] code = DelegationCodeResolver.getExecutionCode(track, targetAddress, this::isPrecompile);
-            // Code can be null
+            // Code is never null; empty array means no executable code
             if (isEmpty(code)) {
                 gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
