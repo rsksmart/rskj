@@ -260,7 +260,7 @@ jobs:
                   text: "*${{ env.NOTIFICATION_SUBTITLE }}*"
                 fields:
                   - type: mrkdwn
-                    text: "• rskj: `${{ env.RSKJ_BRANCH }}`\n• fed: `${{ env.POWPEG_BRANCH }}`\n• rit: `${{ env.RIT_BRANCH }}`"
+                    text: "• rskj: `${{ env.RSKJ_BRANCH }}`\n• fed: `${{ env.POWPEG_BRANCH }}`\n• rit: `${{ env.RIT_BRANCH }}`\n• test-suite: `${{ env.TEST_SUITE }}`"
               - type: actions
                 elements: [{"type":"button","text":{"type":"plain_text","text":"${{ env.NOTIFICATION_ACTION_LABEL }}"},"url":"${{ env.NOTIFICATION_URL }}"}${{ env.NOTIFICATION_EXTRA_BUTTON_SUCCESS }}]
 
@@ -284,6 +284,6 @@ jobs:
                   text: "*${{ env.NOTIFICATION_SUBTITLE }}*"
                 fields:
                   - type: mrkdwn
-                    text: "• rskj: `${{ env.RSKJ_BRANCH }}`\n• fed: `${{ env.POWPEG_BRANCH }}`\n• rit: `${{ env.RIT_BRANCH }}`"
+                    text: "• rskj: `${{ env.RSKJ_BRANCH }}`\n• fed: `${{ env.POWPEG_BRANCH }}`\n• rit: `${{ env.RIT_BRANCH }}`\n• test-suite: `${{ env.TEST_SUITE }}`"
               - type: actions
                 elements: [{"type":"button","style":"danger","text":{"type":"plain_text","text":"${{ env.NOTIFICATION_ACTION_LABEL }}"},"url":"${{ env.NOTIFICATION_URL }}"}${{ env.NOTIFICATION_EXTRA_BUTTON_FAILURE }}]
