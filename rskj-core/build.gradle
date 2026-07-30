@@ -10,6 +10,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
 
 import java.nio.file.Paths
+import groovy.transform.Field
 
 checkstyle {
     toolVersion = '12.2.0'
@@ -86,9 +87,22 @@ def runGit(List<String> command) {
     return out.toString()
 }
 
+// getFilteredFilesForCheckstyle() below is called once per Checkstyle task (main, test,
+// integrationTest, jmh, fuzzTest, file) during configureEach, and again for
+// jmh/integrationTest/fuzzTest in the afterEvaluate block further down -- each call would
+// otherwise re-run the 3 git subprocesses above from scratch. The git diff state can't change
+// mid-build, so it's safe to compute this once per build invocation and cache it.
+@Field def ratchetedFilesComputed = false
+@Field def ratchetedFilesCache = null
+
 def getRatchetedFiles() {
+    if (ratchetedFilesComputed) {
+        return ratchetedFilesCache
+    }
+    ratchetedFilesComputed = true
+
     if (!project.hasProperty('ratchetFrom')) {
-        return null
+        return ratchetedFilesCache = null
     }
 
     def ratchetFrom = project.property('ratchetFrom')
@@ -113,7 +127,7 @@ def getRatchetedFiles() {
         return absolutePath.exists() ? absolutePath : null
     }.findAll { it != null }
 
-    return allFiles
+    return ratchetedFilesCache = allFiles
 }
 
 
