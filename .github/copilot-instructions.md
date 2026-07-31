@@ -2,13 +2,10 @@
 
 Trust these instructions. If a step is missing here or appears wrong, fall back to a focused repo search; do not perform a broad exploration before consulting this document.
 
-## Repository summary
-
-RSKj is the Java implementation of the Rootstock node — an EVM-compatible sidechain that is merge-mined with Bitcoin and operates a Bitcoin↔RSK two-way peg ("powpeg"). The repository is a single-module Gradle build; the primary module is `rskj-core` and the entry point is `co.rsk.Start`. Java 17 source/target. Gradle wrapper 8.6. License: GNU LGPL v3.0.
-
-## Versioning and release tags
-
-Published releases are tagged `<CODENAME>-<MAJOR>.<MINOR>.<PATCH>` (e.g. `VETIVER-9.0.3`, `REED-8.1.0`). The codename is the network-upgrade name and rotates with each major version. In `rskj-core/src/main/resources/version.properties`, `modifier` holds that codename on a release and is **non-empty for every release tag**; the full artifact version is `versionNumber-modifier` (e.g. `9.0.3-VETIVER`). An empty `modifier` — or `SNAPSHOT` — denotes a **development / local build only** and never appears on a release tag.
+For repo summary, versioning, build/test/run commands, project/package layout, and
+sensitive/consensus-critical areas, see `../AGENT.md` — that file is the canonical
+orientation doc for any AI agent working in this repository. This file adds
+Copilot-specific PR-review guidance on top of it.
 
 ## PR review priorities
 
@@ -26,23 +23,7 @@ Review-ability is the top priority. Use these heuristics to flag PRs and to auth
 - **Review the change holistically.** Do not raise a finding that another part of the same diff already prevents (e.g. an early validation guard that makes a later branch unreachable). Read the whole changed unit before commenting on a line in isolation.
 - **PR template compliance.** PRs targeted at **master** or a branch ending with the **-rc** sufix must populate every section of `.github/pull_request_template.md`: **Description**, **Motivation and Context**, **How Has This Been Tested?**, **Types of changes**, **Checklist**. The checklist contains a deliberate "Requires Activation Code (Hard Fork)" question — flag PRs that touch consensus, validators, VM, peg, mining, or activation logic without answering it.
 
-Java style conventions are defined in `./CONTRIBUTING.md`. Key reviewer-facing rules: prefer constructor injection with `private final` fields and `Objects.requireNonNull` on parameters; prefer `Optional<T>` over `null` (annotate nullable returns with `@Nullable`); always brace control structures; treat `@VisibleForTesting` as a design smell and flag accordingly. Standard Java naming applies: lowercase packages, `UpperCamelCase` classes, `lowerCamelCase` members, `CONSTANT_CASE` for static final immutable constants.
-
-## Rootstock coding principles
-
-Follow the coding principles documented in `./coding-principles.md`.
-
-Key rules:
-
-* Code is read more often than written. Optimize for readability and maintainability.
-* Use intention-revealing names.
-* Include units in monetary and time-related names, such as `amountInSatoshis`, `amountInWei`, `amountInRBTC`, and `timeoutMillis`.
-* Never rely on implicit monetary units.
-* Prefer focused functions and classes with clear responsibilities.
-* Eliminate duplication when practical.
-* Prefer self-explanatory code over explanatory comments.
-* Tests should be readable, independent, and cover boundary/error cases.
-* Refactors must improve clarity, maintainability, or correctness. Do not introduce abstractions, indirection, or code movement without a clear benefit.
+Java style conventions are defined in `./CONTRIBUTING.md`. Key reviewer-facing rules: prefer constructor injection with `private final` fields and `Objects.requireNonNull` on parameters; prefer `Optional<T>` over `null` (annotate nullable returns with `@Nullable`); always brace control structures; treat `@VisibleForTesting` as a design smell and flag accordingly. Standard Java naming applies: lowercase packages, `UpperCamelCase` classes, `lowerCamelCase` members, `CONSTANT_CASE` for static final immutable constants. Broader design guidance is in `./coding-principles.md` (see `../AGENT.md` for the highlights most relevant to an agent's own output).
 
 ## CI gates a reviewer must predict
 
@@ -59,62 +40,10 @@ Every build job uses JDK 17 and the in-repo Gradle wrapper 8.6. Workflows live i
 
 **Informational** (do not gate merges): `fuzz-test.yml` (Jazzer-based fuzzing on `master`/release branches), `docker-release-master-to-edge.yml`, `docker-release-tags-to-latest.yml`, `devportal-update.yml`, `scorecard.yml`.
 
-## Build and test commands
-
-Toolchain: **JDK 17** and the in-repo Gradle wrapper. Always use `./gradlew`, never a system gradle.
-
-**Bootstrap when `gradle/wrapper/gradle-wrapper.jar` is missing:** run `./configure.sh`. The script downloads the wrapper jar, verifies its SHA256, and exits non-zero on mismatch. The Dockerfile invokes it before any gradle call.
-
-Commands that mirror CI:
-
-- `./gradlew assemble` — compile production sources, no tests.
-- `./gradlew build -x test` — runs the full `build` minus the unit-test task. The per-source-set Checkstyle tasks (`checkstyleMain`, `checkstyleTest`, …) are wired into `check` by the checkstyle plugin and still run. The custom `checkstyleAll` aggregator task and `integrationTest` (a `JvmTestSuite`) are **not** wired into `check`, so this command does **not** run them — invoke `./gradlew integrationTest` and `./gradlew checkstyleAll` explicitly. A green `build -x test` does not mean integration tests passed.
-- `./gradlew test` — unit tests (JUnit 5). Filter with `--tests "FullyQualifiedClass"` or `--tests "FullyQualifiedClass.method"`.
-- `./gradlew integrationTest` — integration tests; depends on `assemble`.
-- `./gradlew checkstyleAll` — runs `checkstyleMain`, `checkstyleTest`, `checkstyleJmh`, `checkstyleIntegrationTest`, and `checkstyleFuzz`.
-- `./gradlew checkstyleFile -PfilePath="src/main/java/A.java,src/main/java/B.java"` — checkstyle on a specific file set (mirrors CI). Paths must be relative to the `rskj-core` subproject; the lint workflow strips the `rskj-core/` prefix before invocation, and the task resolves the list via `project.files(...)` inside `rskj-core`. Repo-relative paths (e.g. `rskj-core/src/main/java/...`) silently match nothing.
-- `./gradlew spotlessJavaCheck -PratchetFrom=origin/master` — Spotless on changed files; replace `master` with the PR base branch when applicable.
-- `./gradlew spotlessApply` — auto-fix Spotless violations.
-- `./gradlew fatJar` — produces `rskj-core/build/libs/rskj-core-<version>-all.jar`, where `<version>` is `versionNumber[-modifier]` from `rskj-core/src/main/resources/version.properties` (e.g. `rskj-core-9.1.0-SNAPSHOT-all.jar` for snapshot builds, `rskj-core-9.1.0-all.jar` when the modifier is empty — an empty modifier is a local/dev state only; see *Versioning and release tags*).
-
-Style configuration files (informational): checkstyle at `config/checkstyle/checkstyle.xml` and `config/checkstyle/suppressions.xml`; Spotless is declared inside `rskj-core/build.gradle` with `enforceCheck false` (not bound to the `check` lifecycle — the lint workflow invokes `spotlessJavaCheck` explicitly) and currently enforces only `endWithNewline()`, scoped by the ratchet to changed files. There is no `.editorconfig`.
-
-## Containerized build and reproducible builds
-
-`/Dockerfile` is the canonical container build for the node and the reference for "how RSKj is built in a container". It bootstraps with `./configure.sh` and verifies that script against a signed checksum with `gpg --verify --output SHA256SUMS SHA256SUMS.asc && sha256sum --check SHA256SUMS` (`SHA256SUMS.asc` is a cleartext-signed file; `--output` extracts the payload and the `&&` chain gates the build on a good signature). This exact pattern is established and working — do **not** flag it as broken or claim the output file "is never created".
-
-The workflow and templates under `.github/reproducible-build/` exist to **mirror** `/Dockerfile` for a published tag, so prefer consistency with `/Dockerfile` over alternative idioms; any change to the verify/build sequence should be made in `/Dockerfile` and the templates **together**, not in one alone. Before flagging a shell or Docker idiom here as incorrect, confirm it is not already the established, working pattern in `/Dockerfile`, `build_and_test.yml`, or `lint-java-code.yml`.
-
-## Project layout
-
-- `rskj-core/` — the only published module. Production code under `src/main/java/`. Resources under `src/main/resources/` include `reference.conf`, `expected.conf`, and per-network configs `config/{main,testnet,testnet2,regtest}.conf`. Test roots: `src/test/java`, `src/integrationTest/java`, JMH benchmarks in `src/jmh/java`.
-- Top-level packages under `co.rsk.*` and their role:
-  - `co.rsk.core` — blocks, transactions, accounts, chain state.
-  - `co.rsk.net` — P2P networking and peer management.
-  - `co.rsk.mine` — mining and merge-mining with Bitcoin (consensus-critical).
-  - `co.rsk.peg` — Bitcoin↔RSK two-way peg / powpeg bridge (consensus-critical).
-  - `co.rsk.remasc` — mining-reward distribution contract (consensus-critical).
-  - `co.rsk.vm` — EVM execution (consensus-critical).
-  - `co.rsk.trie` — Merkle trie state storage (consensus-critical).
-  - `co.rsk.validators` — block and transaction validation rules (consensus-critical).
-  - `co.rsk.pcc` — precompiled contracts invoked from the EVM (consensus-critical).
-  - `co.rsk.rpc`, `co.rsk.jsonrpc` — JSON-RPC API surface.
-  - `co.rsk.config`, `co.rsk.db`, `co.rsk.crypto`, `co.rsk.scoring`, `co.rsk.metrics`, `co.rsk.util`, `co.rsk.panic`, `co.rsk.logfilter` — configuration, storage, crypto, and supporting subsystems.
-  - `co.rsk.cli.tools.*` — standalone CLI utilities (`ImportBlocks`, `ExportBlocks`, `ConnectBlocks`, `RewindBlocks`, `ExecuteBlocks`, `ImportState`, `ExportState`, `DbMigrate`, `IndexBlooms`, `ShowStateInfo`, `StartBootstrap`, `ValidateBtcHeaders`, `GenerateOpenRpcDoc`).
-- `org.ethereum.*` — Ethereum compatibility layer inherited from the EthereumJ ancestry. The actual per-network activation **heights** live in the config resources (`rskj-core/src/main/resources/config/{main,testnet,testnet2,regtest}.conf`, under `hardforkActivationHeights` / `consensusRules`). The `org.ethereum.config.blockchain.upgrades` package (`ActivationConfig`, `ConsensusRule`, `NetworkUpgrade`) defines the RSKIP / hard-fork identifiers and the loader (`ActivationConfig.read`) that parses those heights — not the height values themselves. Treat both the config values and this package as consensus-critical.
-- `.github/CODEOWNERS` — `@rsksmart/rsk-core` owns mining-related code; `@rsksmart/rsk-fed` owns peg/bridge. Treat changes to activation heights in config resources as requiring review from both groups, even if current CODEOWNERS path coverage does not enforce that automatically.
-
-## Sensitive areas (extra scrutiny)
-
-Changes touching the following require deeper review even when the diff is small. Treat unexplained behavioural changes here as potential defects until proven otherwise.
-
-- `co.rsk.peg`, `co.rsk.mine`, `co.rsk.remasc`, `co.rsk.vm`, `co.rsk.trie`, `co.rsk.validators`, `co.rsk.pcc`.
-- The per-network activation heights in `config/*.conf` (`hardforkActivationHeights` / `consensusRules`), the `org.ethereum.config.blockchain.upgrades` loader, and any code gated by RSKIP activation flags.
-- Anything that changes consensus behaviour, persistence formats, JSON-RPC response shapes, wire-protocol messages, or block / transaction validation rules.
-- Any new or upgraded dependency (requires a companion `rsksmart/reproducible-builds` PR).
+For containerized/reproducible-build notes, project layout, and sensitive/consensus-critical areas, see `../AGENT.md`.
 
 ## Trust these instructions
 
-This document is the canonical reference for working in this repository. Trust it. Search the repo only when a step is missing here or has been proven wrong by direct observation.
+This document, together with `../AGENT.md`, is the canonical reference for working in this repository. Trust them. Search the repo only when a step is missing from both or has been proven wrong by direct observation.
 
 One scoping caveat: the "trust, don't explore" bias optimizes authoring and CI prediction. For **review correctness specifically, the bias flips** — a claim that existing code is defective, will fail, or is non-idiomatic must be backed by direct observation (an actual failing case, the real file format, or a contradicting in-repo usage), never inferred from this document's silence on a topic.
