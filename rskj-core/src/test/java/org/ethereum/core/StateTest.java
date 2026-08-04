@@ -19,31 +19,23 @@
 
 package org.ethereum.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
+import java.math.BigInteger;
+import java.util.Map;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.RskTestFactory;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 
 class StateTest {
 
     private static final Keccak256 GENESIS_STATE_ROOT = new Keccak256("7e204dc9cfb7acdf062ff0b8052f7fcb0b7e6593754773967932ce458d134af3");
-
-    private static final Logger logger = LoggerFactory.getLogger("test");
-
 
     @Disabled("//TODO #POC9")
     @Test
@@ -55,7 +47,6 @@ class StateTest {
     @Disabled("// calc state after applying first tx on genesis")
     @Test
     void test2() {
-
         // explanation:
         // 0) create genesis
         // 1) apply cost of tx to cd2a3d9f938e13cd947ec05abc7fe734df8dd826
@@ -69,27 +60,23 @@ class StateTest {
         // Get and update sender in world state
         byte[] cowAddress = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
         byte[] rlpEncodedState = trie.get(cowAddress);
-        AccountState account_1 = new AccountState(rlpEncodedState);
+        AccountState account1 = new AccountState(rlpEncodedState);
         final BigInteger value = new BigInteger("-6260000000001000");
-        account_1.addToBalance(new Coin(value));
-        account_1.incrementNonce();
-        trie = trie.put(cowAddress, account_1.getEncoded());
+        account1.addToBalance(new Coin(value));
+        account1.incrementNonce();
+        trie = trie.put(cowAddress, account1.getEncoded());
 
         // Add contract to world state
-        byte[] codeData = Hex.decode("61778e600054");
-        AccountState account_2 = new AccountState(BigInteger.ZERO, Coin.valueOf(1000));
+        AccountState account2 = new AccountState(BigInteger.ZERO, Coin.valueOf(1000));
 
         byte[] contractAddress = Hex.decode("77045e71a7a2c50903d88e564cd72fab11e82051"); // generated based on sender + nonce
-        trie = trie.put(contractAddress, account_2.getEncoded());
-
-//        this is saved in the db
-//        trie.update(HashUtil.sha3(codeData), codeData);
+        trie = trie.put(contractAddress, account2.getEncoded());
 
         // Update miner in world state
         byte[] minerAddress = Hex.decode("4c5f4d519dff3c16f0d54b6866e256fbbbc1a600");
         final BigInteger bigInteger = new BigInteger("1506260000000000000");
-        AccountState account_3 = new AccountState(BigInteger.ZERO, new Coin(bigInteger));
-        trie = trie.put(minerAddress, account_3.getEncoded());
+        AccountState account3 = new AccountState(BigInteger.ZERO, new Coin(bigInteger));
+        trie = trie.put(minerAddress, account3.getEncoded());
 
         assertEquals(expected, trie.getHash());
 
