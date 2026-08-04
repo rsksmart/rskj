@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.net.InetSocketAddress;
-import java.util.OptionalInt;
 import java.util.UUID;
 
 /**

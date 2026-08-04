@@ -32,7 +32,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class ABICallElectionTest {
-    private ABICallSpec spec_fna, spec_fnb;
+    private ABICallSpec spec_fna;
+    private ABICallSpec spec_fnb;
     private ABICallElection election;
     private AddressBasedAuthorizer authorizer;
     private Map<ABICallSpec, List<RskAddress>> votes;

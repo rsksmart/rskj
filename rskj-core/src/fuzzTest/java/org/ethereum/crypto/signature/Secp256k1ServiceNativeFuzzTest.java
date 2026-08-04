@@ -3,16 +3,12 @@ package org.ethereum.crypto.signature;
 import org.bitcoin.Secp256k1Context;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.ethereum.crypto.ECKey;
 import org.bitcoin.NativeSecp256k1;
 import org.bitcoin.NativeSecp256k1Exception;
 
-import java.math.BigInteger;
-import java.util.Arrays;
 import java.security.SignatureException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.code_intelligence.jazzer.junit.FuzzTest;
@@ -25,7 +21,7 @@ class Secp256k1ServiceNativeFuzzTest extends Secp256k1ServiceTest {
         assumeTrue(Secp256k1Context.isEnabled());
     }
 
-    public Secp256k1ServiceNativeFuzzTest() {
+    Secp256k1ServiceNativeFuzzTest() {
         super(new Secp256k1ServiceNative());
     }
 
@@ -48,11 +44,9 @@ class Secp256k1ServiceNativeFuzzTest extends Secp256k1ServiceTest {
         // for (recId = 0; recId <= 3; recId++)
         {
             try {
-                ecKey = getSecp256k1().recoverFromSignature(recId, signature, dbHash, false);    
+                ecKey = getSecp256k1().recoverFromSignature(recId, signature, dbHash, false);
             } catch (java.lang.IllegalArgumentException e) {
-                ;
             }
-            
         }
         // assertEquals(pubKeyString, Hex.toHexString(ecKey.getPubKey()));
     }
@@ -72,17 +66,14 @@ class Secp256k1ServiceNativeFuzzTest extends Secp256k1ServiceTest {
             try {
                 NativeSecp256k1.isInfinity(sigBytes, messageHash, recId);
             } catch (NativeSecp256k1Exception e) {
-                ;
             }
             try {
                 pbKey = NativeSecp256k1.ecdsaRecover(sigBytes, messageHash, recId, true);
             } catch (NativeSecp256k1Exception e) {
-                ;
             }
             try {
                 pbKey = NativeSecp256k1.ecdsaRecover(sigBytes, messageHash, recId, false);
             } catch (NativeSecp256k1Exception e) {
-                ;
             }
         }
     }

@@ -167,24 +167,28 @@ class UtilsTest {
             fail("should have failed");
         }
         catch (IllegalArgumentException e){
+            // expected
         }
         try {
             Utils.safeCopyOfRange(Bytes.of(new byte[100]), 98, 3);
             fail("should have failed");
         }
         catch (IllegalArgumentException e){
+            // expected
         }
         try {
             Utils.safeCopyOfRange(Bytes.of(new byte[0]), 0, 1);
             fail("should have failed");
         }
         catch (IllegalArgumentException e){
+            // expected
         }
         try {
             Utils.safeCopyOfRange(Bytes.of(new byte[0]), 1, 0);
             fail("should have failed");
         }
         catch (IllegalArgumentException e){
+            // expected
         }
     }
 

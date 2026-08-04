@@ -18,7 +18,7 @@ ext.timestamp = staticTimestamp
 def filteredFiles = getFilteredFiles()
 
 checkstyle {
-    toolVersion = '8.45'
+    toolVersion = '12.2.0'
     configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
 }
 
@@ -168,7 +168,7 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
             'checkstyleTest'           : 'src/test/java',
             'checkstyleIntegrationTest': 'src/integrationTest/java',
             'checkstyleJmh'            : 'src/jmh/java',
-            'checkstyleFuzz'           : 'src/fuzzTest/java',
+            'checkstyleFuzzTest'       : 'src/fuzzTest/java',
             'checkstyleFile'           : ''
     ]
 
@@ -178,9 +178,11 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
         }
     }
 
-    if (task.name in ['checkstyleJmh', 'checkstyleIntegrationTest']) {
+    if (task.name in ['checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzzTest']) {
         task.doFirst {
-            def relevantSourceDir = task.name == 'checkstyleJmh' ? 'src/jmh/java' : 'src/integrationTest/java'
+            def relevantSourceDir = task.name == 'checkstyleJmh' ? 'src/jmh/java'
+                    : task.name == 'checkstyleIntegrationTest' ? 'src/integrationTest/java'
+                    : 'src/fuzzTest/java'
             def checkstyleFiles = getFilteredFilesForCheckstyle(relevantSourceDir)
 
             if (!checkstyleFiles.isEmpty()) {
@@ -634,7 +636,7 @@ static def amendPathIfNeeded(details) {
 task checkstyleAll {
     group = 'Verification'
     description = 'Run all Checkstyle checks'
-    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzz'
+    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzzTest'
 }
 
 task checkstyleFile(type: Checkstyle) {

@@ -30,16 +30,16 @@ import static org.mockito.Mockito.when;
 
 class RemascTest {
 
-    private final static ActivationConfig genesisActivations = ActivationConfigsForTest.genesis();
-    private final static ActivationConfig orchidActivations = ActivationConfigsForTest.orchid();
-    private final static Constants mainnet = Constants.mainnet();
-    private final static Coin minimumGasPrice = Coin.valueOf(100L);
+    private static final ActivationConfig genesisActivations = ActivationConfigsForTest.genesis();
+    private static final ActivationConfig orchidActivations = ActivationConfigsForTest.orchid();
+    private static final Constants mainnet = Constants.mainnet();
+    private static final Coin minimumGasPrice = Coin.valueOf(100L);
 
     Repository repository;
     BlockStore blockStore;
     Block nextBlockToReward;
 
-    private final static RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("main");
+    private static final RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("main");
 
     RemascTransaction executionTx;
 

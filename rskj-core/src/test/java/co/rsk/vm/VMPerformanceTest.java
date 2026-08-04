@@ -72,13 +72,13 @@ public class VMPerformanceTest {
     ThreadMXBean thread;
     VM vm;
     // To measure garbage collection time, we must use 100 million in maxLoops
-    final static int million = 1000*1000;
-    final static int maxLoops = 10*million;
-    final static int maxGroups = 1;
-    final static boolean useProfiler = false;
+    static final int million = 1000*1000;
+    static final int maxLoops = 10*million;
+    static final int maxGroups = 1;
+    static final boolean useProfiler = false;
 
     // To execute as a standalone application, remove @before @after @test and run main.
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         VMPerformanceTest vmpt = new VMPerformanceTest();
         vmpt.setup();
         vmpt.testVMPerformance1();

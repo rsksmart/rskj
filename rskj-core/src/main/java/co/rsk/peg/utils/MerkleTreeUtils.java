@@ -93,7 +93,7 @@ public class MerkleTreeUtils {
         // check output 0 value
         long output0Value = Utils.readInt64(leftAndRight, _offset);
         _offset += 8;
-        long maxNumberOfSatoshis = 21000000l * 100000000l;
+        long maxNumberOfSatoshis = 21000000L * 100000000L;
         if (output0Value < 1 || output0Value > maxNumberOfSatoshis) {
             //  0 < value < 21 millions (expressed in satoshis) validation failed
             return;

@@ -857,7 +857,7 @@ class Web3HttpServerTest {
         private final List<String> rpcHosts = new ArrayList<>();
         private int maxBatchSize = DEFAULT_MAX_BATCH_SIZE;
 
-        public TestServerBuilder() {
+        TestServerBuilder() {
             this.web3Mock = createMockWeb3(MOCK_RESULT);
             this.corsConfiguration = createMockCorsConfiguration();
             this.port = getAvailablePort();

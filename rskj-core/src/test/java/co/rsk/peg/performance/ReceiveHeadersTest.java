@@ -49,7 +49,7 @@ class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     // This is here for profiling with any external tools (e.g., visualVM)
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         setupA();
         setupB();
         ReceiveHeadersTest test = new ReceiveHeadersTest();

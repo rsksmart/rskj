@@ -11,4 +11,123 @@
     <module name="NewlineAtEndOfFile">
         <property name="lineSeparator" value="lf"/>
     </module>
+
+    <module name="SuppressionFilter">
+        <property name="file" value="${config_loc}/suppressions.xml"/>
+        <property name="optional" value="false"/>
+    </module>
+
+    <module name="TreeWalker">
+        <!-- equals()/hashCode() contract must be kept in sync -->
+        <module name="EqualsHashCode"/>
+
+        <!-- equals(SpecificType) without a real equals(Object) override hides a bug -->
+        <module name="CovariantEquals"/>
+
+        <!-- == / != on a String literal instead of .equals() -->
+        <module name="StringLiteralEquality"/>
+
+        <!-- Java-style array declarations only: Type[] name, not Type name[] -->
+        <module name="ArrayTypeStyle"/>
+
+        <!-- Modifiers must appear in JLS order (public static final, not static public final) -->
+        <module name="ModifierOrder"/>
+
+        <!-- Long literals must use uppercase L (1L, not 1l) -->
+        <module name="UpperEll"/>
+
+        <!-- Stray empty statements (extra ;) -->
+        <module name="EmptyStatement"/>
+
+        <!-- Empty catch blocks must at least contain a comment explaining why -->
+        <module name="EmptyBlock">
+            <property name="id" value="EmptyCatchBlock"/>
+            <property name="option" value="text"/>
+            <property name="tokens" value="LITERAL_CATCH"/>
+        </module>
+
+        <!-- Empty if/else/for/while/do/try/finally/synchronized/switch/static-or-instance-init
+             blocks: unlike an empty catch, these usually mean dropped logic -->
+        <module name="EmptyBlock">
+            <property name="id" value="EmptyNonCatchBlock"/>
+            <property name="option" value="text"/>
+            <property name="tokens" value="LITERAL_TRY,LITERAL_FINALLY,LITERAL_IF,LITERAL_ELSE,LITERAL_FOR,LITERAL_WHILE,LITERAL_DO,LITERAL_SYNCHRONIZED,STATIC_INIT,INSTANCE_INIT,LITERAL_SWITCH"/>
+        </module>
+
+        <!-- Unused imports; an import referenced only from a Javadoc {@link}/@see tag still
+             counts as used, so it doesn't force unreadable fully-qualified-name tags -->
+        <module name="UnusedImports">
+            <property name="processJavadoc" value="true"/>
+        </module>
+
+        <!-- Modifiers that add nothing: public/abstract on interface methods, static on
+             nested interfaces, final on methods of a final class or on private methods -->
+        <module name="RedundantModifier"/>
+
+        <!-- Only catches a method with an {@inheritDoc} Javadoc tag but no @Override
+             annotation; it does no type-hierarchy analysis, so it won't flag an override
+             that's missing @Override and has no such tag. Kept because it's free, not
+             because it protects against signature typos in general: that needs
+             compiler/IDE settings or a tool like Error Prone. -->
+        <module name="MissingOverride"/>
+
+        <!-- A switch "default" clause that isn't physically last -->
+        <module name="DefaultComesLast"/>
+
+        <!-- if (x) return true; else return false; instead of return x; -->
+        <module name="SimplifyBooleanReturn"/>
+
+        <!-- Duplicate imports, or importing from java.lang / the current package -->
+        <module name="RedundantImport"/>
+
+        <!-- Overriding Object.clone()/finalize(): legacy APIs that are easy to get wrong -->
+        <module name="NoClone"/>
+        <module name="NoFinalizer"/>
+
+        <!-- Switch case falls through to the next case without a comment marking it intentional.
+             checkLastCaseGroup also requires the last group (often "default") to terminate, so a
+             case appended after it can't silently fall into a default that never returns/breaks. -->
+        <module name="FallThrough">
+            <property name="checkLastCaseGroup" value="true"/>
+        </module>
+
+        <!-- Stray empty statements EmptyStatement doesn't cover -->
+        <module name="UnnecessarySemicolonAfterOuterTypeDeclaration"/>
+        <module name="UnnecessarySemicolonInTryWithResources"/>
+        <module name="UnnecessarySemicolonInEnumeration"/>
+
+        <!-- Boolean expressions/comparisons that can be written more directly,
+             e.g. "if (b == true)" instead of "if (b)" -->
+        <module name="SimplifyBooleanExpression"/>
+
+        <!-- One variable declaration per statement: "int a, b;" -> "int a; int b;" -->
+        <module name="MultipleVariableDeclarations"/>
+
+        <!-- The top-level type must match its filename -->
+        <module name="OuterTypeFilename"/>
+
+        <!-- The package statement must match the file's directory, and must be present -->
+        <module name="PackageDeclaration"/>
+
+        <!-- Exception classes should be immutable: no non-final fields -->
+        <module name="MutableException"/>
+
+        <!-- package/import statements must not be wrapped across lines -->
+        <module name="NoLineWrap"/>
+
+        <!-- Naming conventions that are already 100% respected in this codebase -->
+        <module name="TypeName"/>
+        <module name="PackageName"/>
+        <module name="ClassTypeParameterName"/>
+        <module name="MethodTypeParameterName"/>
+        <module name="LambdaParameterName"/>
+
+        <!-- Ban identifiers that are contextual keywords in newer Java versions and would
+             break if this codebase's language level moves up. "sealed"/"permits" are excluded
+             from the ban: they're used as domain terms (e.g. BlockHeader/BlockFactory), not as
+             the sealed-classes feature, so renaming them would hurt readability for no benefit. -->
+        <module name="IllegalIdentifierName">
+            <property name="format" value="(?i)^(?!(record|yield|var|_)$).+$"/>
+        </module>
+    </module>
 </module>

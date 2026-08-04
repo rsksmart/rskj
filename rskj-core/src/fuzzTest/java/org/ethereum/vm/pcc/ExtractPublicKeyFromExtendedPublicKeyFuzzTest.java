@@ -25,12 +25,7 @@ import co.rsk.pcc.bto.HDWalletUtilsHelper;
 import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.code_intelligence.jazzer.junit.FuzzTest;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.solidity.SolidityType;
-import org.ethereum.util.ByteUtil;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 
