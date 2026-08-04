@@ -4,6 +4,15 @@
         "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
 <module name="Checker">
+    <!--
+      Adding or tightening a rule here is only validated, in CI and locally, against the files
+      changed in a pull request (ratcheted Checkstyle/Spotless runs skip the rest of the tree).
+      Push builds to master and release candidate branches run unratcheted against the whole
+      tree, so a rule that looked clean on a ratcheted PR can still fail immediately once merged,
+      if pre-existing violations exist elsewhere. Run checkstyleAll and spotlessJavaCheck
+      unratcheted (no ratchetFrom project property set) against the whole tree before merging
+      a new or tightened rule.
+    -->
     <property name="charset" value="UTF-8"/>
     <property name="fileExtensions" value="java"/>
 
