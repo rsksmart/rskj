@@ -54,7 +54,7 @@ SECTION end      (tag 0x00)   <- terminator (a bare tag byte, no chunks)
 SECTION =
   [1 byte  section tag]
   zero or more chunks:
-      [8-byte big-endian chunk length L]   (0 < L; normally L <= CHUNK_MAX)
+      [8-byte big-endian chunk length L]   (0 < L <= MAX_CHUNK_LEN; a reader rejects any larger chunk)
       [L bytes: a concatenation of whole canonical RLP elements]
   [8-byte big-endian 0]                    <- end-of-section sentinel
 ```
@@ -115,11 +115,13 @@ for pre-import validation) — but is not written or read today.
 ### Robustness
 
 Chunk length fields are validated before any allocation: a length must be positive, must not exceed
-`2 * CHUNK_MAX` (headroom over the "CHUNK_MAX plus one oversized element" worst case while rejecting a
-corrupt length), and must not exceed the bytes actually remaining in the file (catches truncation and
-corrupt lengths). A missing end-of-sections marker (EOF before `TAG_END`) is rejected as truncated. The
-import also fails fast if the blocks or the nodes section is absent or empty, rather than "succeeding"
-with no state and only crashing later at first state access.
+`MAX_CHUNK_LEN` (the format-contract ceiling — see below), and must not exceed the bytes actually remaining
+in the file (catches truncation and corrupt lengths). A missing end-of-sections marker (EOF before
+`TAG_END`) is rejected as truncated. Reading a chunk's bytes and decoding/applying its elements is wrapped
+so that corrupt data (undecodable RLP, a malformed node message, a referenced value missing) surfaces as an
+actionable `BootstrapImportException` rather than an opaque `RLPException` / `IllegalArgumentException` /
+`NullPointerException`. The import also fails fast if the blocks or the nodes section is absent or empty,
+rather than "succeeding" with no state and only crashing later at first state access.
 
 ## Constants
 
@@ -134,10 +136,15 @@ Defined in [`BootstrapV2Format.java`](./BootstrapV2Format.java):
 | `TAG_NODES`    | `0x02`           | state trie nodes section                            |
 | `TAG_VALUES`   | `0x03`           | long trie values section                            |
 | `TAG_MANIFEST` | `0x04`           | reserved (unused)                                   |
-| `CHUNK_MAX`    | `256 MiB`        | soft chunk-flush threshold (tuning only)            |
+| `CHUNK_MAX`     | `256 MiB`        | soft chunk-flush threshold (exporter tuning only)   |
+| `MAX_CHUNK_LEN` | `512 MiB`        | hard per-chunk length ceiling a reader enforces     |
 
-`CHUNK_MAX` is a tuning knob (peak memory vs. chunk count), not a hard limit — changing it does not break
-compatibility, since chunk lengths are self-describing.
+`CHUNK_MAX` is an exporter tuning knob (peak memory vs. chunk count), not part of the contract — a different
+exporter may pick a different value. `MAX_CHUNK_LEN` is the contract: readers reject any chunk longer than
+it, so it must stay fixed across versions, and every exporter must keep its chunks within it (`CHUNK_MAX`
+plus the largest single element it can emit must not exceed `MAX_CHUNK_LEN`). Deriving the reader's ceiling
+from `MAX_CHUNK_LEN` rather than from `CHUNK_MAX` is what keeps changing the tuning knob from silently making
+deployed readers reject otherwise-valid snapshots.
 
 ## v1 (legacy) format
 
