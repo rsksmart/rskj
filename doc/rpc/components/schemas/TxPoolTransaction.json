@@ -1,0 +1,42 @@
+{
+  "TxPoolTransaction": {
+    "title": "txPoolTransaction",
+    "type": "object",
+    "description": "A transaction as the pool reports it. It has not been mined, so `blockNumber` and `transactionIndex` are null and `blockHash` is zero",
+    "properties": {
+      "blockHash": {
+        "$ref": "#/components/schemas/BlockHash"
+      },
+      "blockNumber": {
+        "$ref": "#/components/schemas/BlockNumberOrNull"
+      },
+      "transactionIndex": {
+        "$ref": "#/components/schemas/IntegerOrNull"
+      },
+      "from": {
+        "$ref": "#/components/schemas/Address"
+      },
+      "gas": {
+        "$ref": "#/components/schemas/IntegerHex"
+      },
+      "gasPrice": {
+        "$ref": "#/components/schemas/IntegerHex"
+      },
+      "hash": {
+        "$ref": "#/components/schemas/TransactionHash"
+      },
+      "input": {
+        "$ref": "#/components/schemas/Bytes"
+      },
+      "nonce": {
+        "$ref": "#/components/schemas/Nonce"
+      },
+      "to": {
+        "$ref": "#/components/schemas/Address"
+      },
+      "value": {
+        "$ref": "#/components/schemas/IntegerHex"
+      }
+    }
+  }
+}

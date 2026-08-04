@@ -1,6 +1,6 @@
 {
   "name": "eth_getBalance",
-  "summary": "Returns the balance of the account of given address, 0 if not fo",
+  "summary": "Returns the balance of the account of the given address, `0x0` if the address is not found.",
   "params": [
     {
       "name": "address",

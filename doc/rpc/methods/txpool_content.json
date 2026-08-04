@@ -1,0 +1,53 @@
+{
+  "name": "txpool_content",
+  "summary": "Returns the transactions currently in the pool, in full.",
+  "description": "Returns two maps, `pending` and `queued`, keyed by sender address and then by nonce. `pending` holds transactions eligible for the next block; `queued` holds those whose nonce leaves a gap and which therefore cannot be executed yet.",
+  "params": [],
+  "result": {
+    "name": "content",
+    "description": "The pending and queued transactions, in full",
+    "schema": {
+      "title": "txPoolContent",
+      "type": "object",
+      "properties": {
+        "pending": {
+          "$ref": "#/components/schemas/TxPoolTransactionsBySender"
+        },
+        "queued": {
+          "$ref": "#/components/schemas/TxPoolTransactionsBySender"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "contentExample",
+      "params": [],
+      "result": {
+        "name": "contentResult",
+        "value": {
+          "pending": {
+            "0x7986b3df570230288501eea3d890bd66948c9b79": {
+              "12": [
+                {
+                  "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                  "blockNumber": null,
+                  "transactionIndex": null,
+                  "from": "0x7986b3df570230288501eea3d890bd66948c9b79",
+                  "gas": "0x5208",
+                  "gasPrice": "0x3b9aca00",
+                  "hash": "0xb903239f8543d04b5dc1ba6579132b143087c68db1b2168786408fcbce568238",
+                  "input": "0x",
+                  "nonce": "0xc",
+                  "to": "0x0dc4a4c0c5c9f1a6bb0d84b6b0a0d0b5d6b34d9d",
+                  "value": "0x2386f26fc10000"
+                }
+              ]
+            }
+          },
+          "queued": {}
+        }
+      }
+    }
+  ]
+}

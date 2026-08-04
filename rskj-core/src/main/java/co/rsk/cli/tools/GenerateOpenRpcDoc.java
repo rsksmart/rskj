@@ -152,6 +152,9 @@ public class GenerateOpenRpcDoc implements Callable<Integer> {
         try (Stream<Path> stream = Files.walk(Paths.get(parentPath), 1)) {
             return stream
                     .filter(file -> !Files.isDirectory(file))
+                    // Every file here is parsed as JSON, so a README, a .orig from a conflicted merge or
+                    // an editor swapfile would otherwise abort the whole generation.
+                    .filter(GenerateOpenRpcDoc::isJson)
                     .map(Path::getFileName)
                     .map(Path::toString)
                     .map(fileName -> this.loadFileAsJson(parentPath, fileName, toType))
@@ -160,6 +163,10 @@ public class GenerateOpenRpcDoc implements Callable<Integer> {
             logger.error("Error loading files under {} as json", parentPath);
             throw new GenerateOpenRpcException(e);
         }
+    }
+
+    private static boolean isJson(Path file) {
+        return file.getFileName().toString().endsWith(".json");
     }
 
     private static String buildFullPath(String basePath, String fileName) {

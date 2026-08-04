@@ -1,0 +1,209 @@
+{
+  "description": "JSON-RPC methods exposed by co.rsk.rpc.Web3RskImpl -- the class JsonRpcWeb3ServerHandler hands jsonrpc4j via service.getClass(), which is the dispatch surface and is three methods wider than the org.ethereum.rpc.Web3 interface -- that are deliberately absent from the published reference under doc/rpc/methods/. Every method must be either documented there or listed here with a reason; co.rsk.rpc.JsonRpcDocCoverageTest fails the build otherwise. The governing rule is that a method a default node does not serve does not appear in the published reference; the remaining entries are editorial judgements and say so. This file sits at doc/rpc/ root and never inside methods/, which the generator loads wholesale.",
+  "methods": [
+    {
+      "name": "db_getHex",
+      "reason": "Not served by a default node: `db` is absent from the `rpc.modules` block in reference.conf, so no enabled module descriptor matches it. The implementation is an empty stub kept for dev-environment compatibility."
+    },
+    {
+      "name": "db_getString",
+      "reason": "Not served by a default node: `db` is absent from the `rpc.modules` block in reference.conf, so no enabled module descriptor matches it. The implementation is an empty stub kept for dev-environment compatibility."
+    },
+    {
+      "name": "db_putHex",
+      "reason": "Not served by a default node: `db` is absent from the `rpc.modules` block in reference.conf, so no enabled module descriptor matches it. The implementation is an empty stub kept for dev-environment compatibility."
+    },
+    {
+      "name": "db_putString",
+      "reason": "Not served by a default node: `db` is absent from the `rpc.modules` block in reference.conf, so no enabled module descriptor matches it. The implementation is an empty stub kept for dev-environment compatibility."
+    },
+    {
+      "name": "debug_accountTransactionQuota",
+      "reason": "Not served by a default node: `debug` ships `enabled: \"false\"` in reference.conf."
+    },
+    {
+      "name": "debug_traceBlockByHash",
+      "reason": "Not served by a default node: `debug` ships `enabled: \"false\"` in reference.conf."
+    },
+    {
+      "name": "debug_traceBlockByNumber",
+      "reason": "Not served by a default node: `debug` ships `enabled: \"false\"` in reference.conf."
+    },
+    {
+      "name": "debug_traceTransaction",
+      "reason": "Not served by a default node: `debug` ships `enabled: \"false\"` in reference.conf."
+    },
+    {
+      "name": "debug_wireProtocolQueueSize",
+      "reason": "Not served by a default node: `debug` ships `enabled: \"false\"` in reference.conf."
+    },
+    {
+      "name": "eth_compileLLL",
+      "reason": "Editorial: dead. The implementation throws UnsupportedOperationException; on-node contract compilation is not something this node does."
+    },
+    {
+      "name": "eth_compileSerpent",
+      "reason": "Editorial: dead. The implementation throws UnsupportedOperationException; on-node contract compilation is not something this node does."
+    },
+    {
+      "name": "eth_compileSolidity",
+      "reason": "Editorial: dead. The implementation throws UnsupportedOperationException; on-node contract compilation is not something this node does."
+    },
+    {
+      "name": "eth_getCompilers",
+      "reason": "Editorial: dead, and misleading. It answers `[\"solidity\"]` while eth_compileSolidity throws, so documenting it would advertise a compiler that does not exist."
+    },
+    {
+      "name": "eth_netHashrate",
+      "reason": "Editorial: it answers a decimal JSON number rather than a hex quantity, unlike every other numeric result in this reference. Left out pending a decision on whether that shape is kept."
+    },
+    {
+      "name": "eth_pendingTransactions",
+      "reason": "Editorial: it overlaps txpool_content, which reports the same pool grouped by sender and nonce. One documented way to inspect the pool is enough."
+    },
+    {
+      "name": "eth_submitHashrate",
+      "reason": "Editorial: unimplemented. The implementation throws UnsupportedOperationException."
+    },
+    {
+      "name": "eth_submitWork",
+      "reason": "Editorial: unimplemented. The implementation throws UnsupportedOperationException, exactly like eth_submitHashrate beside it. A fragment documented it under the name mnr_submitWork, which has never existed in any Java source; recover that prose with `git log --diff-filter=D -p -- doc/rpc/methods/`."
+    },
+    {
+      "name": "ext_dumpBlockchain",
+      "reason": "Not served by a default node: `ext` is absent from the `rpc.modules` block in reference.conf, so no enabled module descriptor matches it. It is declared on the Web3RskImpl implementation rather than on the Web3 interface, which is why it reaches the dispatch surface at all."
+    },
+    {
+      "name": "ext_dumpState",
+      "reason": "Not served by a default node: `ext` is absent from the `rpc.modules` block in reference.conf, so no enabled module descriptor matches it. It is declared on the Web3RskImpl implementation rather than on the Web3 interface, which is why it reaches the dispatch surface at all."
+    },
+    {
+      "name": "evm_increaseTime",
+      "reason": "Editorial: a development helper. The `evm` namespace exists to drive regtest and is not part of a public integration reference."
+    },
+    {
+      "name": "evm_mine",
+      "reason": "Editorial: a development helper. The `evm` namespace exists to drive regtest and is not part of a public integration reference."
+    },
+    {
+      "name": "evm_reset",
+      "reason": "Editorial: a development helper. The `evm` namespace exists to drive regtest and is not part of a public integration reference."
+    },
+    {
+      "name": "evm_revert",
+      "reason": "Editorial: a development helper. The `evm` namespace exists to drive regtest and is not part of a public integration reference."
+    },
+    {
+      "name": "evm_snapshot",
+      "reason": "Editorial: a development helper. The `evm` namespace exists to drive regtest and is not part of a public integration reference."
+    },
+    {
+      "name": "evm_startMining",
+      "reason": "Editorial: a development helper. The `evm` namespace exists to drive regtest and is not part of a public integration reference."
+    },
+    {
+      "name": "evm_stopMining",
+      "reason": "Editorial: a development helper. The `evm` namespace exists to drive regtest and is not part of a public integration reference."
+    },
+    {
+      "name": "mnr_getWork",
+      "reason": "Not served by a default node: `mnr` is absent from the `rpc.modules` block in reference.conf, so no enabled module descriptor matches it. Its hand-written fragment was removed alongside this entry; recover the prose with `git log --diff-filter=D -p -- doc/rpc/methods/`."
+    },
+    {
+      "name": "mnr_submitBitcoinBlock",
+      "reason": "Not served by a default node: `mnr` is absent from the `rpc.modules` block in reference.conf, so no enabled module descriptor matches it. Merge-mining pools enable it explicitly."
+    },
+    {
+      "name": "mnr_submitBitcoinBlockPartialMerkle",
+      "reason": "Not served by a default node: `mnr` is absent from the `rpc.modules` block in reference.conf, so no enabled module descriptor matches it. Merge-mining pools enable it explicitly."
+    },
+    {
+      "name": "mnr_submitBitcoinBlockTransactions",
+      "reason": "Not served by a default node: `mnr` is absent from the `rpc.modules` block in reference.conf, so no enabled module descriptor matches it. Merge-mining pools enable it explicitly."
+    },
+    {
+      "name": "personal_dumpRawKey",
+      "reason": "Editorial: node-side key management. Promoting `personal` into the primary integration reference is a product call that has not been made."
+    },
+    {
+      "name": "personal_importRawKey",
+      "reason": "Editorial: node-side key management. Promoting `personal` into the primary integration reference is a product call that has not been made."
+    },
+    {
+      "name": "personal_listAccounts",
+      "reason": "Editorial: node-side key management. Promoting `personal` into the primary integration reference is a product call that has not been made."
+    },
+    {
+      "name": "personal_lockAccount",
+      "reason": "Editorial: node-side key management. Promoting `personal` into the primary integration reference is a product call that has not been made."
+    },
+    {
+      "name": "personal_newAccount",
+      "reason": "Editorial: node-side key management. Promoting `personal` into the primary integration reference is a product call that has not been made."
+    },
+    {
+      "name": "personal_newAccountWithSeed",
+      "reason": "Editorial: node-side key management. Promoting `personal` into the primary integration reference is a product call that has not been made."
+    },
+    {
+      "name": "personal_sendTransaction",
+      "reason": "Editorial: node-side key management. Promoting `personal` into the primary integration reference is a product call that has not been made."
+    },
+    {
+      "name": "personal_unlockAccount",
+      "reason": "Editorial: node-side key management. Promoting `personal` into the primary integration reference is a product call that has not been made."
+    },
+    {
+      "name": "rsk_flush",
+      "reason": "Not served by a default node: named in `rsk.methods.disabled` in reference.conf, so the filter rejects it even though `rsk` is enabled."
+    },
+    {
+      "name": "rsk_getStorageBytesAt",
+      "reason": "Not served by a default node: named in `rsk.methods.disabled` in reference.conf, so the filter rejects it even though `rsk` is enabled."
+    },
+    {
+      "name": "rsk_shutdown",
+      "reason": "Not served by a default node: named in `rsk.methods.disabled` in reference.conf, so the filter rejects it even though `rsk` is enabled."
+    },
+    {
+      "name": "sco_banAddress",
+      "reason": "Not served by a default node: `sco` ships `enabled: \"false\"` in reference.conf. Its hand-written fragment was removed alongside this entry; recover the prose with `git log --diff-filter=D -p -- doc/rpc/methods/`."
+    },
+    {
+      "name": "sco_bannedAddresses",
+      "reason": "Not served by a default node: `sco` ships `enabled: \"false\"` in reference.conf. Its hand-written fragment was removed alongside this entry; recover the prose with `git log --diff-filter=D -p -- doc/rpc/methods/`."
+    },
+    {
+      "name": "sco_clearPeerScoring",
+      "reason": "Not served by a default node: `sco` ships `enabled: \"false\"` in reference.conf. Its hand-written fragment was removed alongside this entry; recover the prose with `git log --diff-filter=D -p -- doc/rpc/methods/`."
+    },
+    {
+      "name": "sco_peerList",
+      "reason": "Not served by a default node: `sco` ships `enabled: \"false\"` in reference.conf. Its hand-written fragment was removed alongside this entry; recover the prose with `git log --diff-filter=D -p -- doc/rpc/methods/`."
+    },
+    {
+      "name": "sco_reputationSummary",
+      "reason": "Not served by a default node: `sco` ships `enabled: \"false\"` in reference.conf. Its hand-written fragment was removed alongside this entry; recover the prose with `git log --diff-filter=D -p -- doc/rpc/methods/`."
+    },
+    {
+      "name": "sco_unbanAddress",
+      "reason": "Not served by a default node: `sco` ships `enabled: \"false\"` in reference.conf. Its hand-written fragment was removed alongside this entry; recover the prose with `git log --diff-filter=D -p -- doc/rpc/methods/`."
+    },
+    {
+      "name": "trace_block",
+      "reason": "Not served by a default node: `trace` ships `enabled: \"false\"` in reference.conf."
+    },
+    {
+      "name": "trace_filter",
+      "reason": "Not served by a default node: `trace` ships `enabled: \"false\"` in reference.conf."
+    },
+    {
+      "name": "trace_get",
+      "reason": "Not served by a default node: `trace` ships `enabled: \"false\"` in reference.conf."
+    },
+    {
+      "name": "trace_transaction",
+      "reason": "Not served by a default node: `trace` ships `enabled: \"false\"` in reference.conf."
+    }
+  ]
+}

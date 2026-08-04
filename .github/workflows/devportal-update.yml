@@ -7,8 +7,10 @@ on:
   push:
     paths:
       - "docs/**"
+      - "doc/rpc/**"
     branches:
       - master
+  workflow_dispatch:
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -31,10 +33,23 @@ jobs:
           pip install PyYAML
           chmod -R +x ${{ env.DEV_PORTAL_SCRIPT_PATH }}/process_docs.py
 
+      - name: Set up Java
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 #v5.4.0
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
       - name: Extract version from gradle.properties
         run: |
           VERSION=$(tr -d "'\"" < rskj-core/src/main/resources/version.properties | cut -d = -f 2- | paste -sd - -)
           echo "RSK_VERSION=${VERSION}" >> $GITHUB_ENV
+
+      # The Gradle wrapper jar is not checked in; configure.sh fetches and hash-verifies it.
+      - name: Generate the OpenRPC document
+        run: |
+          ./configure.sh
+          ./gradlew --no-daemon :rskj-core:genRpcDocs -PrpcDocVersion="${{ env.RSK_VERSION }}"
 
       # Step 1: Generate GitHub App Token
       - name: Generate GitHub App Token
@@ -68,14 +83,24 @@ jobs:
           # Copy processed files to devportal directory
           cp -R transformed/* devportal/docs/
 
+          # Docusaurus serves static/ verbatim, so the OpenRPC document is fetchable at a stable
+          # URL whether or not a renderer consumes it.
+          mkdir -p devportal/static/openrpc
+          cp rskj-core/build/rpc-docs/rskj-openrpc.json devportal/static/openrpc/rskj-openrpc.json
+
       # Step 4: Commit and Push Changes to DevPortal Repository
       - name: Commit and Push Changes
         run: |
           cd devportal
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs
-          git commit -m "Automated update from rskj repository"
+          git add docs static/openrpc
+          # A run whose inputs produced no change must not fail the job on `git commit`.
+          if git diff --cached --quiet; then
+            echo "Nothing to commit: devportal already matches this rskj revision."
+          else
+            git commit -m "Automated update from rskj repository"
+          fi
           git remote set-url origin https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/rsksmart/devportal.git
           echo "Pushing branch: ${{ env.BRANCH_NAME }}"
           git push -u  -f origin ${{ env.BRANCH_NAME }}
