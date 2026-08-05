@@ -23,9 +23,9 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
+import co.rsk.net.handler.quota.TxQuotaContext;
 import co.rsk.net.handler.quota.NoOpTxQuotaChecker;
 import co.rsk.net.handler.quota.TxQuotaChecker;
-import co.rsk.net.handler.quota.TxQuotaCheckerImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -96,7 +96,7 @@ public class TransactionPoolImpl implements TransactionPool {
                                SignatureCache signatureCache,
                                int outdatedThreshold,
                                int outdatedTimeout,
-                               TxQuotaCheckerImpl txQuotaChecker,
+                               TxQuotaChecker txQuotaChecker,
                                GasPriceTracker gasPriceTracker) {
         this.config = Objects.requireNonNull(config, "config must not be null");
         this.repositoryLocator = Objects.requireNonNull(repositoryLocator, "repositoryLocator must not be null");
@@ -416,12 +416,7 @@ public class TransactionPoolImpl implements TransactionPool {
         if (!config.isAccountTxRateLimitEnabled()) {
             return false;
         }
-        TxQuotaCheckerImpl.CurrentContext context =
-                new TxQuotaCheckerImpl.CurrentContext(
-                        this.bestBlock,
-                        pendingState,
-                        repository,
-                        this.gasPriceTracker
+        TxQuotaContext context = new TxQuotaContext(this.bestBlock, pendingState, repository, this.gasPriceTracker
                 );
 
         return !quotaChecker.acceptTx(tx, existingTx.orElse(null), context);

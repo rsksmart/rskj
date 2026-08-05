@@ -4,16 +4,14 @@ import org.ethereum.core.Transaction;
 
 import javax.annotation.Nullable;
 
-public class NoOpTxQuotaChecker implements TxQuotaChecker {
+public final class NoOpTxQuotaChecker implements TxQuotaChecker {
 
     public static final NoOpTxQuotaChecker INSTANCE = new NoOpTxQuotaChecker();
 
-    private NoOpTxQuotaChecker(){
-
-    }
+    private NoOpTxQuotaChecker(){}
 
     @Override
-    public boolean acceptTx(Transaction newTx, @Nullable Transaction replacedTx, TxQuotaCheckerImpl.CurrentContext currentContext) {
+    public boolean acceptTx(Transaction newTx, @Nullable Transaction replacedTx, TxQuotaContext txQuotaContext) {
         // Quota enforcement is disabled; accept all transactions.
         return true;
     }

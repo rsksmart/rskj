@@ -23,7 +23,7 @@ import javax.annotation.Nullable;
 
 public interface TxQuotaChecker {
 
-    boolean acceptTx(Transaction newTx, @Nullable Transaction replacedTx, TxQuotaCheckerImpl.CurrentContext currentContext);
+    boolean acceptTx(Transaction newTx, @Nullable Transaction replacedTx, TxQuotaContext txQuotaContext);
 
     void cleanMaxQuotas();
 }

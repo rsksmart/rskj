@@ -18,14 +18,11 @@
 package co.rsk.net.handler.quota;
 
 import co.rsk.core.RskAddress;
-import co.rsk.core.bc.PendingState;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.util.MaxSizeHashMap;
 import co.rsk.util.TimeProvider;
-import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
-import org.ethereum.listener.GasPriceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,22 +66,22 @@ public class TxQuotaCheckerImpl implements TxQuotaChecker {
      *
      * @param newTx          The tx to accept
      * @param replacedTx     The tx being replaced by <code>newTx</code>, if any
-     * @param currentContext Some contextual information of the time <code>newTx</code> is being processed
+     * @param txQuotaContext Some contextual information of the time <code>newTx</code> is being processed
      * @return true if the <code>newTx</code> was accepted, false otherwise
      */
     @Override
-    public synchronized boolean acceptTx(Transaction newTx, @Nullable Transaction replacedTx, CurrentContext currentContext) {
+    public synchronized boolean acceptTx(Transaction newTx, @Nullable Transaction replacedTx, TxQuotaContext txQuotaContext) {
         // keep track of lastBlockGasLimit on each processed transaction, so we can use it from cleanMaxQuotas were we lack this context
-        this.lastBlockGasLimit = currentContext.bestBlock.getGasLimitAsInteger().longValue();
+        this.lastBlockGasLimit = txQuotaContext.bestBlock().getGasLimitAsInteger().longValue();
 
         // doing this before creating quota
-        boolean isFirstTxFromSender = isFirstTxFromSender(newTx, currentContext);
+        boolean isFirstTxFromSender = isFirstTxFromSender(newTx, txQuotaContext);
 
-        TxQuota senderQuota = updateSenderQuota(newTx, currentContext);
+        TxQuota senderQuota = updateSenderQuota(newTx, txQuotaContext);
 
-        updateReceiverQuotaIfRequired(newTx, currentContext);
+        updateReceiverQuotaIfRequired(newTx, txQuotaContext);
 
-        double consumedVirtualGas = calculateConsumedVirtualGas(newTx, replacedTx, currentContext);
+        double consumedVirtualGas = calculateConsumedVirtualGas(newTx, replacedTx, txQuotaContext);
 
         // "isFirstTxFromSender" check is used to prevent the account first tx from taking hours to be propagated due to the minimum gas that is granted the first time account is added to node's quota map
         // let's imagine a scenario with a tx [tx1] from sender [s1], nodes [n1, n2] and different time moments [t1, t2, t3]:
@@ -96,18 +93,18 @@ public class TxQuotaCheckerImpl implements TxQuotaChecker {
         // by accepting the very first transaction regardless gas consumption we avoid this problem that won't occur with greater nonce
         // this won't be a problem since this first tx has a cost, all available gas will be subtracted and account starts accumulating again for next tx
         if (isFirstTxFromSender) {
-            senderQuota.forceVirtualGasSubtraction(consumedVirtualGas, newTx, currentContext.bestBlock.getNumber());
+            senderQuota.forceVirtualGasSubtraction(consumedVirtualGas, newTx, txQuotaContext.bestBlock().getNumber());
             return true;
         }
 
-        return senderQuota.acceptVirtualGasConsumption(consumedVirtualGas, newTx, currentContext.bestBlock.getNumber());
+        return senderQuota.acceptVirtualGasConsumption(consumedVirtualGas, newTx, txQuotaContext.bestBlock().getNumber());
     }
 
-    private TxQuota updateSenderQuota(Transaction newTx, CurrentContext currentContext) {
-        return updateQuota(newTx, true, currentContext);
+    private TxQuota updateSenderQuota(Transaction newTx, TxQuotaContext txQuotaContext) {
+        return updateQuota(newTx, true, txQuotaContext);
     }
 
-    private void updateReceiverQuotaIfRequired(Transaction newTx, CurrentContext currentContext) {
+    private void updateReceiverQuotaIfRequired(Transaction newTx, TxQuotaContext txQuotaContext) {
         // updating receiver quota for it to start accumulating virtual gas as soon as we now of its existence
         // with the following check we can face two scenarios if account is already in the map; we know that it is either:
         // 1) an EOA => we want to now its existence the sooner, the better, so it starts accumulating virtual gas
@@ -115,17 +112,17 @@ public class TxQuotaCheckerImpl implements TxQuotaChecker {
         //      in this case we don't care about quotas, a contract will never be a sender, but still we will be storing some contracts in the map
         //      we have decided to accept this caveat in our own benefit, since the map works as a cache that helps to avoid repository calls
         //      furthermore, quota map is cleaned up periodically and, later, when the CF exists on-chain, it won't be added ever again
-        boolean receiverIsEOAorCF = accountQuotas.get(newTx.getReceiveAddress()) != null || isEOA(newTx.getReceiveAddress(), currentContext.repository);
-        if (receiverIsEOAorCF || newAccountInRepository(newTx.getReceiveAddress(), currentContext.repository)) {
-            updateQuota(newTx, false, currentContext);
+        boolean receiverIsEOAorCF = accountQuotas.get(newTx.getReceiveAddress()) != null || isEOA(newTx.getReceiveAddress(), txQuotaContext.repository());
+        if (receiverIsEOAorCF || newAccountInRepository(newTx.getReceiveAddress(), txQuotaContext.repository())) {
+            updateQuota(newTx, false, txQuotaContext);
         }
     }
 
-    private boolean isFirstTxFromSender(Transaction newTx, CurrentContext currentContext) {
+    private boolean isFirstTxFromSender(Transaction newTx, TxQuotaContext txQuotaContext) {
         RskAddress senderAddress = newTx.getSender(signatureCache);
 
         TxQuota quotaForSender = this.accountQuotas.get(senderAddress);
-        long accountNonce = currentContext.state.getNonce(senderAddress).longValue();
+        long accountNonce = txQuotaContext.pendingState().getNonce(senderAddress).longValue();
         long txNonce = newTx.getNonceAsInteger().longValue();
 
         // need to check that account it's not in the map to ensure it is not a resend or a gasPrice bump
@@ -176,8 +173,8 @@ public class TxQuotaCheckerImpl implements TxQuotaChecker {
         return this.accountQuotas.get(address);
     }
 
-    private TxQuota updateQuota(Transaction newTx, boolean isTxSource, CurrentContext currentContext) {
-        BigInteger blockGasLimit = currentContext.bestBlock.getGasLimitAsInteger();
+    private TxQuota updateQuota(Transaction newTx, boolean isTxSource, TxQuotaContext txQuotaContext) {
+        BigInteger blockGasLimit = txQuotaContext.bestBlock().getGasLimitAsInteger();
         long maxGasPerSecond = getMaxGasPerSecond(blockGasLimit.longValue());
         long maxQuota = getMaxQuota(maxGasPerSecond);
 
@@ -185,7 +182,7 @@ public class TxQuotaCheckerImpl implements TxQuotaChecker {
 
         TxQuota quotaForAddress = this.accountQuotas.get(address);
         if (quotaForAddress == null) {
-            long accountNonce = currentContext.state.getNonce(address).longValue();
+            long accountNonce = txQuotaContext.pendingState().getNonce(address).longValue();
             long initialQuota = calculateNewItemQuota(accountNonce, isTxSource, maxGasPerSecond, maxQuota);
             quotaForAddress = TxQuota.createNew(address, newTx.getHash(), initialQuota, timeProvider);
             this.accountQuotas.put(address, quotaForAddress);
@@ -210,14 +207,14 @@ public class TxQuotaCheckerImpl implements TxQuotaChecker {
         return maxGasPerSecond * TxQuotaCheckerImpl.MAX_QUOTA_GAS_MULTIPLIER;
     }
 
-    private double calculateConsumedVirtualGas(Transaction newTx, @Nullable Transaction replacedTx, CurrentContext currentContext) {
-        long accountNonce = currentContext.state.getNonce(newTx.getSender(signatureCache)).longValue();
-        long blockGasLimit = currentContext.bestBlock.getGasLimitAsInteger().longValue();
-        long blockMinGasPrice = currentContext.bestBlock.getMinimumGasPrice().asBigInteger().longValue();
+    private double calculateConsumedVirtualGas(Transaction newTx, @Nullable Transaction replacedTx, TxQuotaContext txQuotaContext) {
+        long accountNonce = txQuotaContext.pendingState().getNonce(newTx.getSender(signatureCache)).longValue();
+        long blockGasLimit = txQuotaContext.bestBlock().getGasLimitAsInteger().longValue();
+        long blockMinGasPrice = txQuotaContext.bestBlock().getMinimumGasPrice().asBigInteger().longValue();
 
         TxVirtualGasCalculator calculator;
-        if (currentContext.gasPriceTracker.isFeeMarketWorking()) {
-            long avgGasPrice = currentContext.gasPriceTracker.getGasPrice().asBigInteger().longValue();
+        if (txQuotaContext.gasPriceTracker().isFeeMarketWorking()) {
+            long avgGasPrice = txQuotaContext.gasPriceTracker().getGasPrice().asBigInteger().longValue();
             calculator = TxVirtualGasCalculator.createWithAllFactors(accountNonce, blockGasLimit, blockMinGasPrice, avgGasPrice);
         } else {
             calculator = TxVirtualGasCalculator.createSkippingGasPriceFactor(accountNonce, blockGasLimit, blockMinGasPrice);
@@ -225,22 +222,4 @@ public class TxQuotaCheckerImpl implements TxQuotaChecker {
 
         return calculator.calculate(newTx, replacedTx);
     }
-
-    /**
-     * Helper class holding contextual information of the time the tx is being processed (bestBlock, state, repository, etc)
-     */
-    public static class CurrentContext {
-        private final Block bestBlock;
-        private final PendingState state;
-        private final RepositorySnapshot repository;
-        private final GasPriceTracker gasPriceTracker;
-
-        public CurrentContext(Block bestBlock, PendingState state, RepositorySnapshot repository, GasPriceTracker gasPriceTracker) {
-            this.bestBlock = bestBlock;
-            this.state = state;
-            this.repository = repository;
-            this.gasPriceTracker = gasPriceTracker;
-        }
-    }
-
 }
