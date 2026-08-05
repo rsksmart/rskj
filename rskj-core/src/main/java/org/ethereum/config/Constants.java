@@ -24,6 +24,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeTestNet2Constants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -301,7 +302,7 @@ public class Constants {
             new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
             DIFFICULTY_BOUND_DIVISOR,
             NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
-            BridgeTestNetConstants.getInstance(),
+            BridgeTestNet2Constants.getInstance(),
             activationConfig,
             new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
             MIN_SEQUENTIAL_SET_GAS_LIMIT
