@@ -29,6 +29,7 @@ import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
+import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.util.RskTestContext;
 import org.ethereum.vm.DataWord;
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -68,7 +70,7 @@ class TransactionPoolImplTest {
     private TxQuotaCheckerImpl quotaChecker;
     private int outdatedThreshold;
 
-   @BeforeEach
+    @BeforeEach
     void setUp() {
         rskTestContext = new RskTestContext(tempDir, "--regtest") {
             @Override
@@ -89,7 +91,7 @@ class TransactionPoolImplTest {
 
         RskSystemProperties rskSystemProperties = spy(rskTestContext.getRskSystemProperties());
         when(rskSystemProperties.isAccountTxRateLimitEnabled()).thenReturn(true);
-        outdatedThreshold= 10;
+        outdatedThreshold = 10;
         transactionPool = new TransactionPoolImpl(
                 rskSystemProperties,
                 repositoryLocator,
@@ -967,9 +969,14 @@ class TransactionPoolImplTest {
         Assertions.assertTrue(result.queuedTransactionsWereAdded());
         Assertions.assertFalse(result.pendingTransactionsWereAdded());
 
+
+        Assertions.assertEquals(1, result.getQueuedTransactionsAdded().size());
+        Assertions.assertEquals(tx, result.getQueuedTransactionsAdded().get(0));
+        Assertions.assertTrue(result.getPendingTransactionsAdded().isEmpty());
+
         Assertions.assertTrue(transactionPool.getPendingTransactions().isEmpty());
         Assertions.assertEquals(1, transactionPool.getQueuedTransactions().size());
-        Assertions.assertTrue(transactionPool.getQueuedTransactions().contains(tx));
+        Assertions.assertEquals(tx, transactionPool.getQueuedTransactions().get(0));
     }
 
     @Test
@@ -1186,10 +1193,331 @@ class TransactionPoolImplTest {
         );
     }
 
+
     @Test
-    void addTransaction_doesNotCheckQuotaAgainWhenQueuedTransactionIsPromoted() {
+    void addTransaction_withoutNonceGap_addsTransactionToPendingAndReturnsIt() {
         Coin balance = Coin.valueOf(1000000);
-        createTestAccounts(1, balance);
+        createTestAccounts(2, balance);
+
+        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assertions.assertTrue(result.transactionsWereAdded());
+        Assertions.assertTrue(result.pendingTransactionsWereAdded());
+        Assertions.assertFalse(result.queuedTransactionsWereAdded());
+
+        Assertions.assertEquals(1, result.getPendingTransactionsAdded().size());
+        Assertions.assertEquals(tx, result.getPendingTransactionsAdded().get(0));
+
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertEquals(tx, transactionPool.getPendingTransactions().get(0));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void addTransaction_fillingNonceGap_promotesQueuedToPending() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Transaction tx0 = createSampleTransaction(1, 2, 1000, 0);
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
+
+        TransactionPoolAddResult queuedResult = transactionPool.addTransaction(tx1);
+
+        Assertions.assertTrue(queuedResult.queuedTransactionsWereAdded());
+        Assertions.assertFalse(queuedResult.pendingTransactionsWereAdded());
+        Assertions.assertEquals(List.of(tx1), transactionPool.getQueuedTransactions());
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx0);
+
+        Assertions.assertTrue(result.transactionsWereAdded());
+        Assertions.assertTrue(result.pendingTransactionsWereAdded());
+        Assertions.assertFalse(result.queuedTransactionsWereAdded());
+
+        Assertions.assertEquals(List.of(tx0, tx1), result.getPendingTransactionsAdded());
+
+        List<Transaction> pendingTransactions = transactionPool.getPendingTransactions();
+
+        Assertions.assertEquals(2, pendingTransactions.size());
+        Assertions.assertTrue(pendingTransactions.contains(tx0));
+        Assertions.assertTrue(pendingTransactions.contains(tx1));
+
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void addTransaction_fillingNonceGap_promotesAllConsecutiveQueuedTxs() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Transaction tx0 = createSampleTransaction(1, 2, 1000, 0);
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
+        Transaction tx2 = createSampleTransaction(1, 2, 1000, 2);
+        Transaction tx3 = createSampleTransaction(1, 2, 1000, 3);
+
+        Assertions.assertTrue(transactionPool.addTransaction(tx3).queuedTransactionsWereAdded());
+        Assertions.assertTrue(transactionPool.addTransaction(tx2).queuedTransactionsWereAdded());
+        Assertions.assertTrue(transactionPool.addTransaction(tx1).queuedTransactionsWereAdded());
+
+        Assertions.assertEquals(3, transactionPool.getQueuedTransactions().size());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx0);
+
+        Assertions.assertTrue(result.pendingTransactionsWereAdded());
+        Assertions.assertEquals(List.of(tx0, tx1, tx2, tx3), result.getPendingTransactionsAdded());
+        List<Transaction> pendingTransactions = transactionPool.getPendingTransactions();
+
+        Assertions.assertEquals(4, pendingTransactions.size());
+        Assertions.assertTrue(pendingTransactions.contains(tx0));
+        Assertions.assertTrue(pendingTransactions.contains(tx1));
+        Assertions.assertTrue(pendingTransactions.contains(tx2));
+        Assertions.assertTrue(pendingTransactions.contains(tx3));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void addTransaction_whenFirstQueuedTxFailsQuota_stopsPromotion() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Transaction tx0 = createSampleTransaction(1, 2, 1000, 0);
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
+        Transaction tx2 = createSampleTransaction(1, 2, 1000, 2);
+
+        transactionPool.addTransaction(tx2);
+        transactionPool.addTransaction(tx1);
+
+        reset(quotaChecker);
+
+        when(quotaChecker.acceptTx(eq(tx0), any(), any())).thenReturn(true);
+        when(quotaChecker.acceptTx(eq(tx1), any(), any())).thenReturn(false);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx0);
+
+        Assertions.assertTrue(result.pendingTransactionsWereAdded());
+        Assertions.assertEquals(List.of(tx0), result.getPendingTransactionsAdded());
+        Assertions.assertEquals(List.of(tx0), transactionPool.getPendingTransactions());
+        Assertions.assertFalse(transactionPool.getQueuedTransactions().contains(tx1));
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().contains(tx2));
+        verify(quotaChecker, times(1)).acceptTx(eq(tx0), any(), any());
+        verify(quotaChecker, times(1)).acceptTx(eq(tx1), any(), any());
+        verify(quotaChecker, never()).acceptTx(eq(tx2), any(), any());
+    }
+
+    @Test
+    void addTransactions_returnsOnlyTransactionsAddedToPending() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(3, balance);
+
+        Transaction pendingTx = createSampleTransaction(1, 2, 1000, 0);
+        Transaction queuedTx = createSampleTransaction(3, 2, 1000, 1);
+
+        List<Transaction> result = transactionPool.addTransactions(List.of(pendingTx, queuedTx));
+
+        Assertions.assertEquals(List.of(pendingTx), result);
+        Assertions.assertEquals(List.of(pendingTx), transactionPool.getPendingTransactions());
+        Assertions.assertEquals(List.of(queuedTx), transactionPool.getQueuedTransactions());
+    }
+
+    @Test
+    void addTransactions_whenOneTransactionIsRejected_continuesProcessingRemainingTransactions() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(3, balance);
+
+        Transaction invalidTx = createSampleTransaction(1, 2, 1000, 16);
+        Transaction validTx = createSampleTransaction(3, 2, 1000, 0);
+
+        List<Transaction> result = transactionPool.addTransactions(List.of(invalidTx, validTx));
+
+        Assertions.assertEquals(List.of(validTx), result);
+        Assertions.assertEquals(List.of(validTx), transactionPool.getPendingTransactions());
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void addTransactions_returnsEachPendingTransactionFollowedByItsPromotedTxs() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(4, balance);
+
+        Transaction senderOneTx0 = createSampleTransaction(1, 2, 1000, 0);
+        Transaction senderOneTx1 = createSampleTransaction(1, 2, 1000, 1);
+        Transaction senderThreeTx0 = createSampleTransaction(3, 4, 1000, 0);
+
+        transactionPool.addTransaction(senderOneTx1);
+
+        List<Transaction> result = transactionPool.addTransactions(List.of(senderOneTx0, senderThreeTx0));
+        Assertions.assertEquals(List.of(senderOneTx0, senderOneTx1, senderThreeTx0), result);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void addTransaction_whenTransactionBecomesPending_notifiesOnce() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        EthereumListener listener = buildMockListener();
+        ArgumentCaptor<List<Transaction>> captor = ArgumentCaptor.forClass(List.class);
+        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
+
+        transactionPool.addTransaction(tx);
+
+        verify(listener, timeout(1000).times(1)).onPendingTransactionsReceived(captor.capture());
+        verify(listener, timeout(1000).times(1)).onTransactionPoolChanged(transactionPool);
+        Assertions.assertEquals(List.of(tx), captor.getValue());
+    }
+
+    @Test
+    void addTransaction_whenTransactionIsOnlyQueued_doesNotNotifyListener() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        EthereumListener listener = buildMockListener();
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
+        transactionPool.addTransaction(tx1);
+
+        verify(listener, after(300).never()).onPendingTransactionsReceived(anyList());
+        verify(listener, after(300).never()).onTransactionPoolChanged(any());
+    }
+
+    @Test
+    void addTransaction_whenTransactionIsRejected_doesNotNotifyListener() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        EthereumListener listener = buildMockListener();
+
+        Transaction invalidTx = createSampleTransaction(1, 2, 1000, 16);
+        TransactionPoolAddResult result = transactionPool.addTransaction(invalidTx);
+
+        Assertions.assertFalse(result.transactionsWereAdded());
+        verify(listener, after(300).never()).onPendingTransactionsReceived(anyList());
+        verify(listener, after(300).never()).onTransactionPoolChanged(any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void addTransaction_whenQueuedTxsArePromoted_notifiesOnceWithAllPendingTransactions() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Transaction tx0 = createSampleTransaction(1, 2, 1000, 0);
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
+        Transaction tx2 = createSampleTransaction(1, 2, 1000, 2);
+
+        transactionPool.addTransaction(tx2);
+        transactionPool.addTransaction(tx1);
+
+        EthereumListener listener = buildMockListener();
+
+        transactionPool.addTransaction(tx0);
+
+        ArgumentCaptor<List<Transaction>> captor = ArgumentCaptor.forClass(List.class);
+        verify(listener, timeout(1000).times(1)).onPendingTransactionsReceived(captor.capture());
+        verify(listener, timeout(1000).times(1)).onTransactionPoolChanged(transactionPool);
+        Assertions.assertEquals(List.of(tx0, tx1, tx2), captor.getValue());
+    }
+
+    @Test
+    void addTransactions_withMultiplePendingTransactions_notifiesOnceForWholeBatch() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(4, balance);
+
+        EthereumListener listener = buildMockListener();
+
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
+        Transaction tx2 = createSampleTransaction(3, 4, 1000, 0);
+
+        transactionPool.addTransactions(List.of(tx1, tx2));
+
+        ArgumentCaptor<List<Transaction>> captor = pendingTransactionsCaptor();
+
+        verify(listener, timeout(1000).times(1)).onPendingTransactionsReceived(captor.capture());
+        verify(listener, timeout(1000).times(1)).onTransactionPoolChanged(transactionPool);
+        Assertions.assertEquals(List.of(tx1, tx2), captor.getValue());
+        verify(listener, after(300).times(1)).onPendingTransactionsReceived(anyList());
+        verify(listener, after(300).times(1)).onTransactionPoolChanged(transactionPool);
+    }
+
+    @Test
+    void addTransactions_whenQueuedSuccessorsArePromoted_notifiesOncePreservingOrder() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(4, balance);
+
+        Transaction senderOneTx0 = createSampleTransaction(1, 2, 1000, 0);
+
+        Transaction senderOneTx1 = createSampleTransaction(1, 2, 1000, 1);
+
+        Transaction senderThreeTx0 = createSampleTransaction(3, 4, 1000, 0);
+
+        transactionPool.addTransaction(senderOneTx1);
+
+        EthereumListener listener = buildMockListener();
+
+        transactionPool.addTransactions(List.of(senderOneTx0, senderThreeTx0));
+
+        ArgumentCaptor<List<Transaction>> captor = pendingTransactionsCaptor();
+
+        verify(listener, timeout(1000).times(1)).onPendingTransactionsReceived(captor.capture());
+        verify(listener, timeout(1000).times(1)).onTransactionPoolChanged(transactionPool);
+        Assertions.assertEquals(List.of(senderOneTx0, senderOneTx1, senderThreeTx0), captor.getValue());
+
+
+        verify(listener, after(300).times(1)).onPendingTransactionsReceived(anyList());
+        verify(listener, after(300).times(1)).onTransactionPoolChanged(transactionPool);
+    }
+
+    @Test
+    void addTransactions_whenAllTransactionsRemainQueued_doesNotNotifyListener() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(4, balance);
+
+        EthereumListener listener = buildMockListener();
+
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
+        Transaction tx2 = createSampleTransaction(3, 4, 1000, 1);
+
+        List<Transaction> result = transactionPool.addTransactions(List.of(tx1, tx2));
+
+        Assertions.assertTrue(result.isEmpty());
+
+        verify(listener, after(300).never()).onPendingTransactionsReceived(anyList());
+        verify(listener, after(300).never()).onTransactionPoolChanged(any());
+    }
+
+    @Test
+    void addTransaction_whenTransactionDirectlyEntersPending_checksQuotaOnce() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
+
+        when(quotaChecker.acceptTx(eq(tx), any(), any())).thenReturn(true);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assertions.assertTrue(result.pendingTransactionsWereAdded());
+        verify(quotaChecker, times(1)).acceptTx(eq(tx), isNull(), any());
+    }
+
+    @Test
+    void addTransaction_whenTransactionHasNonceGap_doesNotCheckQuota() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx1);
+
+        Assertions.assertTrue(result.queuedTransactionsWereAdded());
+        verify(quotaChecker, never()).acceptTx(eq(tx1), any(), any());
+    }
+
+    @Test
+    void addTransaction_whenQueuedTransactionIsPromoted_checksQuotaExactlyOnce() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
 
         Transaction tx0 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
@@ -1199,50 +1527,119 @@ class TransactionPoolImplTest {
         TransactionPoolAddResult queuedResult = transactionPool.addTransaction(tx1);
 
         Assertions.assertTrue(queuedResult.queuedTransactionsWereAdded());
-        Assertions.assertEquals(1, transactionPool.getQueuedTransactions().size());
-        verify(quotaChecker, times(1)).acceptTx(eq(tx1), any(), any());
 
-        TransactionPoolAddResult pendingResult = transactionPool.addTransaction(tx0);
+        verify(quotaChecker, never()).acceptTx(eq(tx1), any(), any());
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx0);
 
-        Assertions.assertTrue(pendingResult.pendingTransactionsWereAdded());
-        Assertions.assertEquals(2, pendingResult.getPendingTransactionsAdded().size());
-        Assertions.assertTrue(pendingResult.getPendingTransactionsAdded().contains(tx0));
-        Assertions.assertTrue(pendingResult.getPendingTransactionsAdded().contains(tx1));
-
-        Assertions.assertEquals(2, transactionPool.getPendingTransactions().size());
-        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+        Assertions.assertTrue(result.pendingTransactionsWereAdded());
+        Assertions.assertEquals(List.of(tx0, tx1), result.getPendingTransactionsAdded());
 
         verify(quotaChecker, times(1)).acceptTx(eq(tx0), any(), any());
         verify(quotaChecker, times(1)).acceptTx(eq(tx1), any(), any());
     }
 
     @Test
-    void addTransaction_promotesQueuedTransactionEvenIfQuotaWouldRejectSecondCheck() {
+    void addTransaction_whenMultipleQueuedTransactionsArePromoted_checksQuotaOncePerTransaction() {
         Coin balance = Coin.valueOf(1000000);
-        createTestAccounts(1, balance);
+        createTestAccounts(2, balance);
+
+        Transaction tx0 = createSampleTransaction(1, 2, 1000, 0);
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
+        Transaction tx2 = createSampleTransaction(1, 2, 1000, 2);
+
+        when(quotaChecker.acceptTx(any(), any(), any())).thenReturn(true);
+
+        transactionPool.addTransaction(tx2);
+        transactionPool.addTransaction(tx1);
+
+        verifyNoInteractions(quotaChecker);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx0);
+
+        Assertions.assertEquals(List.of(tx0, tx1, tx2), result.getPendingTransactionsAdded());
+
+        verify(quotaChecker, times(1)).acceptTx(eq(tx0), any(), any());
+
+        verify(quotaChecker, times(1)).acceptTx(eq(tx1), any(), any());
+
+        verify(quotaChecker, times(1)).acceptTx(eq(tx2), any(), any());
+
+        verify(quotaChecker, times(3)).acceptTx(any(), any(), any());
+    }
+
+    @Test
+    void addTransaction_whenQuotaRejectsPromotedTransaction_discardsTx() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
 
         Transaction tx0 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
 
-        when(quotaChecker.acceptTx(eq(tx1), any(), any()))
-                .thenReturn(true)
-                .thenReturn(false);
+        transactionPool.addTransaction(tx1);
+
         when(quotaChecker.acceptTx(eq(tx0), any(), any())).thenReturn(true);
 
-        TransactionPoolAddResult queuedResult = transactionPool.addTransaction(tx1);
+        when(quotaChecker.acceptTx(eq(tx1), any(), any())).thenReturn(false);
 
-        Assertions.assertTrue(queuedResult.queuedTransactionsWereAdded());
-        Assertions.assertEquals(1, transactionPool.getQueuedTransactions().size());
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx0);
 
-        TransactionPoolAddResult pendingResult = transactionPool.addTransaction(tx0);
+        Assertions.assertTrue(result.pendingTransactionsWereAdded());
+        Assertions.assertEquals(List.of(tx0), result.getPendingTransactionsAdded());
 
-        Assertions.assertTrue(pendingResult.pendingTransactionsWereAdded());
-        Assertions.assertTrue(pendingResult.getPendingTransactionsAdded().contains(tx1));
-        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+        Assertions.assertEquals(List.of(tx0), transactionPool.getPendingTransactions());
 
+
+        Assertions.assertFalse(transactionPool.getQueuedTransactions().contains(tx1));
+        verify(quotaChecker, times(1)).acceptTx(eq(tx0), any(), any());
         verify(quotaChecker, times(1)).acceptTx(eq(tx1), any(), any());
     }
 
+    @Test
+    void addTransaction_whenQuotaRejectsDirectPendingTransaction_returnsQuotaError() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
+
+        when(quotaChecker.acceptTx(eq(tx), any(), any())).thenReturn(false);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assertions.assertFalse(result.transactionsWereAdded());
+        Assertions.assertEquals("account exceeds quota", result.getErrorMessage());
+
+        Assertions.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+
+        verify(quotaChecker, times(1)).acceptTx(eq(tx), any(), any());
+    }
+
+    @Test
+    void addTransaction_whenReplacingPendingTransaction_passesReplacedTxToQuotaChecker() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Transaction originalTx = createSampleTransactionWithGasPrice(1, 2, 1000, 0, 1);
+        Transaction replacementTx = createSampleTransactionWithGasPrice(1, 2, 1000, 0, 2);
+
+        when(quotaChecker.acceptTx(any(), any(), any())).thenReturn(true);
+
+        Assertions.assertTrue(transactionPool.addTransaction(originalTx).pendingTransactionsWereAdded());
+        Assertions.assertTrue(transactionPool.addTransaction(replacementTx).pendingTransactionsWereAdded());
+
+        verify(quotaChecker, times(1)).acceptTx(eq(replacementTx), eq(originalTx), any());
+    }
+
+    @SuppressWarnings("unchecked")
+    private ArgumentCaptor<List<Transaction>> pendingTransactionsCaptor() {
+        return ArgumentCaptor.forClass(List.class);
+    }
+
+    private EthereumListener buildMockListener() {
+        EthereumListener listener = mock(EthereumListener.class);
+        TestUtils.setInternalState(transactionPool, "listener", listener);
+        return listener;
+    }
 
     private TransactionPoolImpl buildTransactionPool(
             RskSystemProperties config,

@@ -120,7 +120,7 @@ public class TransactionPoolValidator {
         return oldGasPrice.compareTo(newTx.getGasPrice()) < 0 && gasPriceBumped.compareTo(newTx.getGasPrice()) <= 0;
     }
 
-    private Coin getTxBaseCost(Transaction tx,   Block bestBlock) {
+    private Coin getTxBaseCost(Transaction tx, Block bestBlock) {
         Coin gasCost = tx.getValue();
         if (bestBlock == null || getTransactionCost(tx, bestBlock.getNumber()) > 0) {
             BigInteger gasLimit = BigInteger.valueOf(GasCost.toGas(tx.getGasLimit()));

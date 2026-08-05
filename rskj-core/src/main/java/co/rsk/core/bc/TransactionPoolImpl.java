@@ -194,13 +194,13 @@ public class TransactionPoolImpl implements TransactionPool {
     @Override
     public synchronized List<Transaction> addTransactions(final List<Transaction> txs) {
         List<Transaction> pendingTransactionsAdded = new ArrayList<>();
-
         for (Transaction tx : txs) {
-            TransactionPoolAddResult result = addTransaction(tx);
-            if (result.hasPendingTransactions()) {
-                pendingTransactionsAdded.addAll(result.getPendingTransactionsAdded());
+            TransactionPoolAddResult result = addTransactionToPoolIfValid(tx);
+            if(result.hasPendingTransactions()) {
+                pendingTransactionsAdded.addAll(collectPendingTransactionsUnlockedBy(tx));
             }
         }
+        notifyTransactionPoolUpdated(pendingTransactionsAdded);
         return pendingTransactionsAdded;
     }
 
@@ -215,19 +215,16 @@ public class TransactionPoolImpl implements TransactionPool {
      */
     @Override
     public synchronized TransactionPoolAddResult addTransaction(final Transaction tx) {
-        TransactionPoolAddResult result = addTransactionToPoolIfValid(tx, true);
-
+        TransactionPoolAddResult result = addTransactionToPoolIfValid(tx);
         if (!result.transactionsWereAdded()) {
             return result;
         }
-
         List<Transaction> pendingTransactionsAdded = new ArrayList<>();
         if(result.hasPendingTransactions()) {
             pendingTransactionsAdded.addAll(collectPendingTransactionsUnlockedBy(tx));
         }
 
         this.notifyTransactionPoolUpdated(pendingTransactionsAdded);
-
         return TransactionPoolAddResult.ok(result.getQueuedTransactionsAdded(), pendingTransactionsAdded);
     }
 
@@ -272,7 +269,7 @@ public class TransactionPoolImpl implements TransactionPool {
             Transaction nextTx = nextTxOpt.get();
             queuedTransactions.removeTransactionByHash(nextTx.getHash());
 
-            TransactionPoolAddResult result = addTransactionToPoolIfValid(nextTx, false);
+            TransactionPoolAddResult result = addTransactionToPoolIfValid(nextTx);
 
             if (!result.hasPendingTransactions()) {
                 break;
@@ -319,24 +316,62 @@ public class TransactionPoolImpl implements TransactionPool {
      * If valid:
      * - Transactions with nonce gaps are added to the queued set
      * - Otherwise, they are added to the pending set
+     * Applies validation rules before admitting a transaction into the pool.
+     *      * Includes checks for:
+     *        - duplicate transactions
+     *        - consensus validation
+     *        - sufficient gas price bump for replacement
+     *        - account quota limits
+     *        - sufficient balance to cover pending and new transactions
      *
      * @param tx the transaction to process
-     * @param checkQuota whether quota should be checked
      * @return the result of the admission attempt
      */
-    private TransactionPoolAddResult addTransactionToPoolIfValid(final Transaction tx,  boolean checkQuota) {
+    private TransactionPoolAddResult addTransactionToPoolIfValid(final Transaction tx) {
+        Optional<TransactionPoolAddResult> duplicateResult = transactionPoolValidator.rejectIfTransactionAlreadyKnown(tx, pendingTransactions, queuedTransactions);
+        if (duplicateResult.isPresent()) {
+            return duplicateResult.get();
+        }
+
         var repository = getRepositoryAtBestBlock();
         var sender = tx.getSender(signatureCache);
+        var senderState = repository.getAccountState(sender);
+
+        Optional<TransactionPoolAddResult> validationResult = transactionPoolValidator.validateTransaction(tx, bestBlock, senderState);
+
+        if (validationResult.isPresent()) {
+            return validationResult.get();
+        }
+
+        Optional<Transaction> existingTx = pendingTransactions.getTransactionsWithSameNonce(sender, tx.getNonceAsInteger())
+                        .stream()
+                        .findFirst();
+
+        if (transactionPoolValidator.hasInsufficientGasPriceBump(tx, existingTx)) {
+            return TransactionPoolAddResult.withError(ERROR_MESSAGE_INSUFFICIENT_GAS_PRICE_BUMP);
+        }
+
         var pendingState = getPendingState(repository);
 
-        Optional<TransactionPoolAddResult> rejection =  validateTransactionBeforeAddingToPool(tx, sender, repository, pendingState, checkQuota);
-        if (rejection.isPresent()) {
-            return rejection.get();
-        }
         if (hasNonceGap(tx, sender, pendingState)) {
             return addQueuedTransaction(tx);
         }
-        return addPendingTransaction(tx);
+
+        if (isAccountQuotaExceeded(tx, existingTx, repository, pendingState)) {
+            return TransactionPoolAddResult.withError(ERROR_MESSAGE_ACCOUNT_EXCEEDS_QUOTA);
+        }
+
+        if (!transactionPoolValidator.canSenderAffordPendingTransactionsIncludingNew(
+                tx,
+                pendingTransactions.getTransactionsWithSender(sender),
+                repository,
+                bestBlock
+        )) {
+            return TransactionPoolAddResult.withError(
+                    ERROR_MESSAGE_INSUFFICIENT_FUNDS_TO_PAY_FOR_PENDING_AND_NEW_TRANSACTIONS
+            );
+        }
+       return addPendingTransaction(tx);
     }
 
     private boolean hasNonceGap(Transaction tx, RskAddress sender, PendingState pendingState) {
@@ -369,63 +404,6 @@ public class TransactionPoolImpl implements TransactionPool {
         trackTransaction(tx);
         signatureCache.storeSender(tx);
         return TransactionPoolAddResult.okPendingTransaction(tx);
-    }
-
-    /**
-     * Applies validation rules before admitting a transaction into the pool.
-     * Includes checks for:
-     * - duplicate transactions
-     * - consensus validation
-     * - sufficient gas price bump for replacement
-     * - account quota limits
-     * - sufficient balance to cover pending and new transactions
-     *
-     * @return an error result if validation fails, otherwise empty
-     */
-    private Optional<TransactionPoolAddResult> validateTransactionBeforeAddingToPool(
-            Transaction tx,
-            RskAddress sender,
-            RepositorySnapshot repository,
-            PendingState pendingState,
-            boolean checkQuota
-    ) {
-        Optional<TransactionPoolAddResult> duplicateResult = transactionPoolValidator.rejectIfTransactionAlreadyKnown(tx, pendingTransactions, queuedTransactions);
-
-        if (duplicateResult.isPresent()) {
-            return duplicateResult;
-        }
-
-        AccountState senderState = repository.getAccountState(sender);
-        Optional<TransactionPoolAddResult> validationResult = transactionPoolValidator.validateTransaction(tx, bestBlock, senderState);
-
-        if (validationResult.isPresent()) {
-            return validationResult;
-        }
-
-        Optional<Transaction> existingTx =
-                pendingTransactions.getTransactionsWithSameNonce(sender, tx.getNonceAsInteger())
-                        .stream()
-                        .findFirst();
-
-        if (transactionPoolValidator.hasInsufficientGasPriceBump(tx, existingTx)) {
-            return Optional.of(TransactionPoolAddResult.withError(ERROR_MESSAGE_INSUFFICIENT_GAS_PRICE_BUMP));
-        }
-
-        if (checkQuota && isAccountQuotaExceeded(tx, existingTx, repository, pendingState)) {
-            return Optional.of(TransactionPoolAddResult.withError(ERROR_MESSAGE_ACCOUNT_EXCEEDS_QUOTA));
-        }
-
-        if (!transactionPoolValidator.canSenderAffordPendingTransactionsIncludingNew(
-                tx,
-                pendingTransactions.getTransactionsWithSender(sender),
-                repository,
-                bestBlock
-        )) {
-            return Optional.of(TransactionPoolAddResult.withError(
-                    ERROR_MESSAGE_INSUFFICIENT_FUNDS_TO_PAY_FOR_PENDING_AND_NEW_TRANSACTIONS
-            ));
-        }
-        return Optional.empty();
     }
 
     private void trackTransaction(Transaction tx) {
@@ -508,7 +486,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private long getBestBlockNumber() {
-        return bestBlock == null ? -1 :bestBlock.getNumber();
+        return bestBlock == null ? -1 : bestBlock.getNumber();
     }
 
     private Block createFakePendingBlock(Block best) {
