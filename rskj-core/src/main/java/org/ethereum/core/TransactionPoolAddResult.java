@@ -51,7 +51,6 @@ public class TransactionPoolAddResult {
         return pendingTransactionsAdded != null && !pendingTransactionsAdded.isEmpty();
     }
 
-    //rename for later change it
     public boolean hasPendingTransactions() {
         return pendingTransactionsWereAdded();
     }
