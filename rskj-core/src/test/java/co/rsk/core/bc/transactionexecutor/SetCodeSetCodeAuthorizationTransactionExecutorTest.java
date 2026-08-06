@@ -18,34 +18,59 @@
 package co.rsk.core.bc.transactionexecutor;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.IReadWrittenKeysTracker;
+import co.rsk.core.bc.ParallelizeTransactionHandler;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.test.builders.AccountBuilder;
+import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.Constants;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
 import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.Repository;
 import org.ethereum.core.SetCodeAuthorizationTransactionExecutor;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.MutableRepository;
+import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.util.RLP;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.GasCost;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 import static java.math.BigInteger.ONE;
 import static java.math.BigInteger.ZERO;
 import static org.ethereum.config.Constants.MAINNET_CHAIN_ID;
 import static org.ethereum.config.Constants.REGTEST_CHAIN_ID;
 import static org.ethereum.config.Constants.TESTNET_CHAIN_ID;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -58,8 +83,8 @@ import static org.mockito.Mockito.when;
     private static final BigInteger ONE_CHAIN_ID = ONE;
 
     private static final BigInteger NONCE_ONE_VALUE = ONE;
-    private static final byte[] NONCE_ONE = NONCE_ONE_VALUE.toByteArray();
-    private static final byte[] EMPTY_CODE =  new byte[0];
+    private static final byte[] NONCE_ONE = new byte[] { 0x01 };
+    private static final byte[] EMPTY_CODE = new byte[0];
 
     private Repository repository;
     private SetCodeAuthorizationTransactionExecutor executor;
@@ -537,6 +562,227 @@ import static org.mockito.Mockito.when;
         verify(repository).increaseNonce(eq(authority));
     }
 
+     @Test
+     void processAuthorizationTuple_shouldInitializeDelegatedAuthorityAsCodeBearingAccount() {
+         final BigInteger CHAIN_ID = BigInteger.valueOf(Constants.REGTEST_CHAIN_ID);
+         SetCodeAuthorizationTransactionExecutor executor = new SetCodeAuthorizationTransactionExecutor();
+         Repository repository = newRepository();
+
+         ECKey authorityKey = new ECKey();
+         RskAddress authority = new RskAddress(authorityKey.getAddress());
+
+         RskAddress delegatedAddress = randomAddress();
+
+         SetCodeAuthorization authorization = createValidAuthorizationTuple(delegatedAddress, new byte[] { 0x00 }, CHAIN_ID, authorityKey);
+
+         executor.processAuthorizationTuple(repository, CHAIN_ID, authorization);
+
+         byte[] expectedDelegationCode = DelegationCodeResolver.createDelegatedCode(delegatedAddress);
+
+        assertArrayEquals(expectedDelegationCode, repository.getCode(authority), "The delegation indicator should be stored as the authority code");
+        assertEquals(expectedDelegationCode.length, repository.getCodeLength(authority), "The authority should expose the delegation indicator code size");
+        assertTrue(repository.isContract(authority), "The authority should have the repository storage-prefix marker");
+        assertEquals(new Keccak256(HashUtil.keccak256(expectedDelegationCode)), repository.getCodeHashStandard(authority), "The standard code hash should match the delegation indicator");
+     }
+
+     @Test
+     void processAuthorizationTuple_shouldTrackAuthorityRepositoryKeys() {
+         final BigInteger chainId = BigInteger.valueOf(Constants.REGTEST_CHAIN_ID);
+
+         IReadWrittenKeysTracker tracker = mock(IReadWrittenKeysTracker.class);
+
+         MutableRepository repository = newRepository(tracker);
+
+         SetCodeAuthorizationTransactionExecutor executor = new SetCodeAuthorizationTransactionExecutor();
+
+         ECKey authorityKey = new ECKey();
+         RskAddress authority = new RskAddress(authorityKey.getAddress());
+
+         RskAddress delegatedAddress = randomAddress();
+
+         SetCodeAuthorization authorization =
+                 createValidAuthorizationTuple(
+                         delegatedAddress,
+                         new byte[] { 0x00 },
+                         chainId,
+                         authorityKey
+                 );
+
+         executor.processAuthorizationTuple(repository, chainId, authorization);
+
+         TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+         ByteArrayWrapper accountKey = new ByteArrayWrapper(trieKeyMapper.getAccountKey(authority));
+         ByteArrayWrapper codeKey = new ByteArrayWrapper(trieKeyMapper.getCodeKey(authority));
+         ByteArrayWrapper storagePrefixKey = new ByteArrayWrapper(trieKeyMapper.getAccountStoragePrefixKey(authority));
+
+         verify(tracker, atLeastOnce()).addNewReadKey(accountKey);
+         verify(tracker, atLeastOnce()).addNewWrittenKey(accountKey);
+         verify(tracker, atLeastOnce()).addNewWrittenKey(codeKey);
+         verify(tracker, atLeastOnce()).addNewWrittenKey(storagePrefixKey);
+
+         assertEquals(BigInteger.ONE, repository.getNonce(authority), "The authority nonce should be incremented after processing the authorization");
+     }
+
+     @Test
+     void twoSetCodeTransactionsForSameAuthority_shouldNotExecuteInIndependentParallelSublists() {
+         final BigInteger chainId = BigInteger.valueOf(Constants.REGTEST_CHAIN_ID);
+
+         final short parallelSublists = 2;
+         final short sequentialSublistNumber = parallelSublists;
+         final long blockGasLimit = 8_160_000L;
+
+         Block executionBlock = mock(Block.class);
+         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(blockGasLimit).toByteArray());
+
+         ParallelizeTransactionHandler handler = ParallelizeTransactionHandler.create(parallelSublists, executionBlock, Constants.regtest().getMinSequentialSetGasLimit());
+
+         ECKey authorityKey = new ECKey();
+         RskAddress authority = new RskAddress(authorityKey.getAddress());
+         RskAddress delegatedAddress = randomAddress();
+
+         // Execute a real delegation installation and capture the repository dependencies reported to the tracker.
+         IReadWrittenKeysTracker installTracker = mock(IReadWrittenKeysTracker.class);
+
+         MutableRepository installRepository = newRepository(installTracker);
+
+         SetCodeAuthorization installAuthorization = createValidAuthorizationTuple(delegatedAddress, new byte[] { 0x00 }, chainId, authorityKey);
+         executor.processAuthorizationTuple(installRepository, chainId, installAuthorization);
+
+         Set<ByteArrayWrapper> installReadKeys = captureReadKeys(installTracker);
+         Set<ByteArrayWrapper> installWrittenKeys = captureWrittenKeys(installTracker);
+
+         /*
+          * Prepare the repository state required before clearing delegation:
+          *
+          * nonce                 = 1
+          * delegation code       = present
+          * storage-prefix marker = present
+          */
+         MutableTrieImpl clearTrie = new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie());
+         Repository preparationRepository = new MutableRepository(clearTrie);
+         preparationRepository.createAccount(authority);
+         preparationRepository.setupContract(authority);
+         preparationRepository.saveCode(authority, DelegationCodeResolver.createDelegatedCode(delegatedAddress));
+         preparationRepository.setNonce(authority, BigInteger.ONE);
+
+         /*
+          * Execute a real clear authorization and capture only the keys
+          * touched by the clear operation.
+          */
+         IReadWrittenKeysTracker clearTracker = mock(IReadWrittenKeysTracker.class);
+         MutableRepository clearRepository = new MutableRepository(clearTrie, clearTracker);
+
+         SetCodeAuthorization clearAuthorization = createValidAuthorizationTuple(RskAddress.ZERO_ADDRESS, new byte[] { 0x01 }, chainId, authorityKey);
+
+         executor.processAuthorizationTuple(clearRepository, chainId, clearAuthorization);
+
+         Set<ByteArrayWrapper> clearReadKeys = captureReadKeys(clearTracker);
+         Set<ByteArrayWrapper> clearWrittenKeys = captureWrittenKeys(clearTracker);
+
+
+         Account outerSender1 = new AccountBuilder().name("outer-sender-1").build();
+         Account outerSender2 = new AccountBuilder().name("outer-sender-2").build();
+
+         Transaction installTransaction =
+                 new TransactionBuilder()
+                         .nonce(1)
+                         .sender(outerSender1)
+                         .value(BigInteger.ZERO)
+                         .gasLimit(BigInteger.valueOf(100_000))
+                         .build();
+
+         Transaction clearTransaction =
+                 new TransactionBuilder()
+                         .nonce(1)
+                         .sender(outerSender2)
+                         .value(BigInteger.ZERO)
+                         .gasLimit(BigInteger.valueOf(100_000))
+                         .build();
+
+         long installGasUsed = GasCost.toGas(installTransaction.getGasLimit());
+         long clearGasUsed = GasCost.toGas(clearTransaction.getGasLimit());
+
+         Optional<Long> installSublistGas = handler.addTransaction(installTransaction, installReadKeys, installWrittenKeys, installGasUsed);
+
+         Optional<Long> clearSublistGas = handler.addTransaction(clearTransaction, clearReadKeys, clearWrittenKeys, clearGasUsed);
+
+         assertTrue(installSublistGas.isPresent(), "The delegation installation transaction should be accepted");
+         assertTrue(clearSublistGas.isPresent(), "The delegation clearing transaction should be accepted");
+
+         /*
+          * {2} means both transactions were assigned to one parallel sublist.
+          *
+          * {1, 1} would mean that they were assigned to independent parallel
+          * sublists and could execute concurrently.
+          */
+         assertArrayEquals(new short[] { 2 }, handler.getTransactionsPerSublistInOrder(), "Transactions modifying the same authority must not execute in independent parallel sublists");
+         assertEquals(Arrays.asList(installTransaction, clearTransaction), handler.getTransactionsInOrder(), "Delegation installation should remain ordered before delegation clearing");
+         assertEquals(installGasUsed + clearGasUsed, clearSublistGas.get(), "Both transactions should accumulate gas in the same sublist");
+         assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber), "The transactions may share a parallel sublist without using the global sequential sublist");
+     }
+
+     @Test
+     void processAuthorizationTuple_shouldPreserveExistingStorageSubtreeWhenDelegationIsCleared() {
+         final BigInteger chainId = BigInteger.valueOf(Constants.REGTEST_CHAIN_ID);
+
+         MutableRepository repository =  new MutableRepository(new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie()));
+
+         ECKey authorityKey = new ECKey();
+         RskAddress authority = new RskAddress(authorityKey.getAddress());
+         RskAddress delegatedAddress = randomAddress();
+
+         SetCodeAuthorization installAuthorization = createValidAuthorizationTuple(delegatedAddress, new byte[] { 0x00 }, chainId, authorityKey);
+         executor.processAuthorizationTuple(repository, chainId, installAuthorization);
+
+         DataWord firstStorageKey = DataWord.valueOf(1);
+         DataWord firstStorageValue = DataWord.valueOf(42);
+
+         DataWord secondStorageKey = DataWord.valueOf(2);
+         DataWord secondStorageValue = DataWord.valueOf(100);
+
+         DataWord thirdStorageKey = DataWord.valueOf(3);
+         DataWord thirdStorageValue = DataWord.valueOf(999);
+
+         repository.addStorageRow(authority, firstStorageKey, firstStorageValue);
+         repository.addStorageRow(authority, secondStorageKey, secondStorageValue);
+         repository.addStorageRow(authority, thirdStorageKey, thirdStorageValue);
+
+         byte[] storageRootBeforeClear = repository.getStorageStateRoot(authority);
+
+         assertEquals(3, repository.getStorageKeysCount(authority), "The authority should have three storage slots before clearing delegation");
+
+         SetCodeAuthorization clearAuthorization = createValidAuthorizationTuple(RskAddress.ZERO_ADDRESS, new byte[] { 0x01 }, chainId, authorityKey);
+         executor.processAuthorizationTuple(repository, chainId, clearAuthorization);
+
+         assertNull(repository.getCode(authority), "Clearing delegation should remove the delegation code entry");
+         assertEquals(MutableRepository.KECCAK_256_OF_EMPTY_ARRAY, repository.getCodeHashStandard(authority), "The cleared authority should expose the empty-code hash");
+         assertEquals(0, repository.getCodeLength(authority), "The cleared authority should expose zero code length");
+         assertTrue(repository.isContract(authority), "The storage-prefix marker should remain while the authority owns persistent storage");
+
+         assertEquals(firstStorageValue, repository.getStorageValue(authority, firstStorageKey), "Clearing delegation should preserve the first storage slot");
+         assertEquals(secondStorageValue, repository.getStorageValue(authority, secondStorageKey), "Clearing delegation should preserve the second storage slot");
+         assertEquals(thirdStorageValue, repository.getStorageValue(authority, thirdStorageKey), "Clearing delegation should preserve the third storage slot");
+         assertEquals(3, repository.getStorageKeysCount(authority), "Clearing delegation should preserve every slot in the authority storage subtree");
+
+         assertArrayEquals(storageRootBeforeClear, repository.getStorageStateRoot(authority), "Clearing delegation should leave the complete authority storage subtree unchanged");
+         assertEquals(BigInteger.TWO, repository.getNonce(authority), "Installing and clearing delegation should increment the authority nonce twice");
+     }
+
+     private Set<ByteArrayWrapper> captureReadKeys(IReadWrittenKeysTracker tracker) {
+         ArgumentCaptor<ByteArrayWrapper> captor = ArgumentCaptor.forClass(ByteArrayWrapper.class);
+         verify(tracker, atLeastOnce()).addNewReadKey(captor.capture());
+         return new HashSet<>(captor.getAllValues());
+     }
+
+     private Set<ByteArrayWrapper> captureWrittenKeys(IReadWrittenKeysTracker tracker) {
+         ArgumentCaptor<ByteArrayWrapper> captor = ArgumentCaptor.forClass(ByteArrayWrapper.class);
+         verify(tracker, atLeastOnce()).addNewWrittenKey(captor.capture());
+         return new HashSet<>(captor.getAllValues());
+     }
+
+
+
     private SetCodeAuthorization createValidAuthorizationTuple(
             RskAddress delegatedAddress,
             byte[] nonce,
@@ -564,6 +810,19 @@ import static org.mockito.Mockito.when;
                         signature
                 );
     }
+
+     private Repository newRepository() {
+         return new MutableRepository(
+                 new MutableTrieImpl(
+                         new TrieStoreImpl(new HashMapDB()),
+                         new Trie()
+                 )
+         );
+     }
+
+     private MutableRepository newRepository(IReadWrittenKeysTracker tracker) {
+         return new MutableRepository(new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie()), tracker);
+     }
 
     private byte[] createDelegatedCode(RskAddress delegatedAddress) {
         byte[] delegatedAddressBytes = delegatedAddress.getBytes();
