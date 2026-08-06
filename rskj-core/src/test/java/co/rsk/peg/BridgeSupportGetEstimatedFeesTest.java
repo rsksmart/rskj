@@ -430,7 +430,7 @@ class BridgeSupportGetEstimatedFeesTest {
     }
 
     @Nested
-    class PostVetiverPreTBD1000Activations {
+    class PostVetiverPreCardamom1000Activations {
 
         @BeforeEach
         void setUp() {
@@ -474,7 +474,7 @@ class BridgeSupportGetEstimatedFeesTest {
     }
 
     @Nested
-    class PostTBD1000Activations {
+    class PostCardamom1000Activations {
         @BeforeEach
         void setUp() {
             setUpBridgeAndFederationSupport(ALL_ACTIVATIONS, FEE_PER_KB);
