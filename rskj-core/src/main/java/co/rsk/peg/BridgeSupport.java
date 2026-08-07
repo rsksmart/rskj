@@ -1333,7 +1333,7 @@ public class BridgeSupport {
      * In the future, we are performing tests to see whether any migration transactions ever hit
      * that federation's balance <= feePerKb/2. If not, this guard can be removed entirely.
      */
-    @Deprecated(since="TBD1000")
+    @Deprecated(since="CARDAMOM-10.0.0")
     private boolean hasMinimumFundsToMigrate(Wallet retiringFederationWallet) {
         if (activations.isActive(RSKIP455)) {
             return true;
@@ -3156,7 +3156,7 @@ public class BridgeSupport {
     /**
      * @deprecated Use {@link #createMigrationTransaction(Wallet, Address)} instead.
      */
-    @Deprecated(since="TBD1000")
+    @Deprecated(since="CARDAMOM-10.0.0")
     private ReleaseTransactionBuilder.BuildResult createMigrationTransactionLegacy(Wallet retiringFederationWallet, Address destinationAddress) {
         Coin expectedMigrationValue = retiringFederationWallet.getBalance();
         logger.debug("[createMigrationTransactionLegacy] Balance to migrate: {}", expectedMigrationValue);
