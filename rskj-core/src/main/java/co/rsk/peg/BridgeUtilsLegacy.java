@@ -40,7 +40,7 @@ public class BridgeUtilsLegacy {
             return simulatePegoutTxSizePreHOP(federation, inputsCount, outputsCount);
         }
 
-        return simulatePegoutTxSizePreTBD1000(federation, inputsCount, outputsCount);
+        return simulatePegoutTxSizePreCardamom1000(federation, inputsCount, outputsCount);
     }
 
     private static int simulatePegoutTxSizePreHOP(Federation federation, int inputsCount, int outputsCount) {
@@ -60,15 +60,15 @@ public class BridgeUtilsLegacy {
             (OUTPUT_SIZE + 1 + OUTPUT_ADDITIONAL_DATA_SIZE) * outputsCount;
     }
 
-    private static int simulatePegoutTxSizePreTBD1000(Federation federation, int inputsCount, int outputsCount) {
+    private static int simulatePegoutTxSizePreCardamom1000(Federation federation, int inputsCount, int outputsCount) {
         boolean isLegacyFed = federation.getFormatVersion() != FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion();
 
         return isLegacyFed
-            ? simulateLegacyTxSizePreTBD1000(federation, inputsCount, outputsCount)
-            : simulateSegwitTxSizePreTBD1000(federation, inputsCount, outputsCount);
+            ? simulateLegacyTxSizePreCardamom1000(federation, inputsCount, outputsCount)
+            : simulateSegwitTxSizePreCardamom1000(federation, inputsCount, outputsCount);
     }
 
-    private static int simulateLegacyTxSizePreTBD1000(Federation federation, int inputsCount, int outputsCount) {
+    private static int simulateLegacyTxSizePreCardamom1000(Federation federation, int inputsCount, int outputsCount) {
         BtcTransaction tx = new BtcTransaction(federation.getBtcParams());
 
         for (int i = 0; i < inputsCount; i++) {
@@ -86,7 +86,7 @@ public class BridgeUtilsLegacy {
 
     // this old calculation had a bug: it wasn't adding inputs to simulate the size,
     // and in calculateTxBaseSize we were just adding the bytes from the script sig
-    private static int simulateSegwitTxSizePreTBD1000(Federation federation, int inputsCount, int outputsCount) {
+    private static int simulateSegwitTxSizePreCardamom1000(Federation federation, int inputsCount, int outputsCount) {
         BtcTransaction tx = new BtcTransaction(federation.getBtcParams());
 
         for (int i = 0; i < outputsCount; i++) {
