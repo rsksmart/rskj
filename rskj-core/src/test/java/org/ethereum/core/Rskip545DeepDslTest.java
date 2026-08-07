@@ -480,7 +480,7 @@ class Rskip545DeepDslTest {
         SetCodeAuthorization second = tx.getAuthorizationList().get(1);
         assertEquals(first.getChainId(), second.getChainId());
         assertEquals(first.getAddress(), second.getAddress());
-        assertArrayEquals(first.getNonce(), second.getNonce());
+        assertArrayEquals(first.getNonceBytes(), second.getNonceBytes());
         assertEquals(first.getSignature().getR(), second.getSignature().getR());
         assertEquals(first.getSignature().getS(), second.getSignature().getS());
     }
