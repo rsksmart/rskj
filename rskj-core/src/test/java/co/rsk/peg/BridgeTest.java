@@ -1028,15 +1028,10 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
-        // The internal (contract) transaction is crafted so its sender is a legitimate
-        // active federation member (member with PK 100 has RSK key derived from PK 101).
-        // Even so, it must be rejected because it originates from a contract (e.g. through
-        // a delegate call) rather than an externally signed transaction.
-        byte[] federationMemberRskAddress = ECKey.fromPrivate(BigInteger.valueOf(101)).getAddress();
-        Transaction contractTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(), 0, 0, null, null, null,
-            federationMemberRskAddress, null, null, null, null, null
-        );
+        // Even though the sender is a legitimate active federation member, the call must be
+        // rejected because it originates from a contract (e.g. through a delegate call)
+        // rather than an externally signed transaction.
+        Transaction contractTx = createContractTxFromFederationMember();
 
         ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
 
@@ -1071,11 +1066,7 @@ class BridgeTest {
 
         // Sender is a legitimate active federation member, but the call originates from a
         // contract (internal transaction), so it must be rejected all the same.
-        byte[] federationMemberRskAddress = ECKey.fromPrivate(BigInteger.valueOf(101)).getAddress();
-        Transaction contractTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(), 0, 0, null, null, null,
-            federationMemberRskAddress, null, null, null, null, null
-        );
+        Transaction contractTx = createContractTxFromFederationMember();
 
         ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
 
@@ -1132,6 +1123,20 @@ class BridgeTest {
 
         // Then
         verify(decorate, times(1)).execute(any(), any());
+    }
+
+    /**
+     * Builds an internal (contract-originated) transaction whose sender is a legitimate
+     * active federation member. The member with BTC PK 100 has its RSK key derived from
+     * PK 101 (see {@link FederationTestUtils#getFederationMembersFromPks}), so this
+     * address belongs to the federation built from PKs {100, 200, 300, 400, 500, 600}.
+     */
+    private static Transaction createContractTxFromFederationMember() {
+        byte[] federationMemberRskAddress = ECKey.fromPrivate(BigInteger.valueOf(101)).getAddress();
+        return new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(), 0, 0, null, null, null,
+            federationMemberRskAddress, null, null, null, null, null
+        );
     }
 
     @Test
