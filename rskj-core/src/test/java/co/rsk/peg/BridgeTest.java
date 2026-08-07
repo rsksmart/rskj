@@ -46,6 +46,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.exception.VMException;
+import org.ethereum.vm.program.InternalTransaction;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
@@ -1011,6 +1012,125 @@ class BridgeTest {
         // Then
         verify(bridgeSupportMock, times(1)).getActiveFederation();
         verify(bridgeSupportMock, times(1)).getRetiringFederation();
+        verify(decorate, times(1)).execute(any(), any());
+    }
+
+    @Test
+    void activeAndRetiringFederationOnly_calledFromContract_evenWhenSenderIsFederationMember_throwsVMException() throws Exception {
+        // Given
+        BridgeMethods.BridgeMethodExecutor decorate = mock(
+            BridgeMethods.BridgeMethodExecutor.class
+        );
+        BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
+            decorate,
+            "updateCollections"
+        );
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+
+        // The internal (contract) transaction is crafted so its sender is a legitimate
+        // active federation member (member with PK 100 has RSK key derived from PK 101).
+        // Even so, it must be rejected because it originates from a contract (e.g. through
+        // a delegate call) rather than an externally signed transaction.
+        byte[] federationMemberRskAddress = ECKey.fromPrivate(BigInteger.valueOf(101)).getAddress();
+        Transaction contractTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(), 0, 0, null, null, null,
+            federationMemberRskAddress, null, null, null, null, null
+        );
+
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+
+        Bridge bridge = bridgeBuilder
+            .transaction(contractTx)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        // When / Then
+        assertThrows(VMException.class, () -> executor.execute(bridge, null));
+
+        // The contract check short-circuits before the federation membership check runs
+        // and the decorated method is never executed.
+        verify(bridgeSupportMock, never()).getActiveFederation();
+        verify(bridgeSupportMock, never()).getRetiringFederation();
+        verify(decorate, never()).execute(any(), any());
+    }
+
+    @Test
+    void activeRetiringAndProposedFederationOnly_calledFromContract_evenWhenSenderIsFederationMember_throwsVMException() throws Exception {
+        // Given
+        BridgeMethods.BridgeMethodExecutor decorate = mock(
+            BridgeMethods.BridgeMethodExecutor.class
+        );
+        BridgeMethods.BridgeMethodExecutor executor = Bridge.activeRetiringAndProposedFederationOnly(
+            decorate,
+            "addSignature"
+        );
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+
+        // Sender is a legitimate active federation member, but the call originates from a
+        // contract (internal transaction), so it must be rejected all the same.
+        byte[] federationMemberRskAddress = ECKey.fromPrivate(BigInteger.valueOf(101)).getAddress();
+        Transaction contractTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(), 0, 0, null, null, null,
+            federationMemberRskAddress, null, null, null, null, null
+        );
+
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+
+        Bridge bridge = bridgeBuilder
+            .transaction(contractTx)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        // When / Then
+        assertThrows(VMException.class, () -> executor.execute(bridge, null));
+
+        verify(bridgeSupportMock, never()).getActiveFederation();
+        verify(bridgeSupportMock, never()).getRetiringFederation();
+        verify(bridgeSupportMock, never()).getProposedFederation();
+        verify(decorate, never()).execute(any(), any());
+    }
+
+    @Test
+    void activeRetiringAndProposedFederationOnly_calledFromExternalTxByFederationMember_OK() throws Exception {
+        // Given
+        BridgeMethods.BridgeMethodExecutor decorate = mock(
+            BridgeMethods.BridgeMethodExecutor.class
+        );
+        BridgeMethods.BridgeMethodExecutor executor = Bridge.activeRetiringAndProposedFederationOnly(
+            decorate,
+            "addSignature"
+        );
+
+        int senderPK = 101; // Sender PK belongs to active federation member PKs
+        Integer[] memberPKs = new Integer[]{ 100, 200, 300, 400, 500, 600 };
+        Federation activeFederation = FederationTestUtils.getFederation(memberPKs);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
+        doReturn(Optional.empty()).when(bridgeSupportMock).getRetiringFederation();
+        doReturn(Optional.empty()).when(bridgeSupportMock).getProposedFederation();
+
+        ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
+        RskAddress txSender = new RskAddress(key.getAddress());
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(txSender).when(rskTxMock).getSender(any(SignatureCache.class));
+
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        // When
+        executor.execute(bridge, null);
+
+        // Then
         verify(decorate, times(1)).execute(any(), any());
     }
 
