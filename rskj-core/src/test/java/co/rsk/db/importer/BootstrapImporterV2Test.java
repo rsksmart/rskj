@@ -415,6 +415,115 @@ class BootstrapImporterV2Test {
         assertTrue(ex.getMessage().toLowerCase().contains("trailing"), ex.getMessage());
     }
 
+    @Test
+    void rejectsChunkLengthAbovePerChunkCeilingBeforeAllocating() throws IOException {
+        // A declared chunk length above the absolute per-chunk ceiling (MAX_CHUNK_BYTES = 2 * CHUNK_MAX =
+        // 512 MiB). validateChunkLength checks this range guard BEFORE the remaining-bytes guard, so a
+        // corrupt length that would otherwise allocate a > 512 MiB byte[] is rejected in a tiny file without
+        // any allocation. This is the absolute-ceiling branch, distinct from the remaining-bytes branch that
+        // rejectsChunkLengthExceedingFileSize exercises.
+        long overCeiling = 2L * BootstrapV2Format.CHUNK_MAX + 1; // 512 MiB + 1, > MAX_CHUNK_BYTES
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(bos);
+        out.write(BootstrapV2Format.magic());
+        out.writeByte(BootstrapV2Format.VERSION);
+        out.writeByte(BootstrapV2Format.TAG_BLOCKS);
+        out.writeLong(overCeiling); // corrupt length above the per-chunk ceiling; no payload follows
+        out.flush();
+
+        BootstrapImporter importer = newImporter(bos.toByteArray(), "over-ceiling-length.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("out of range"), ex.getMessage());
+    }
+
+    @Test
+    void rejectsNegativeChunkLengthBeforeAllocating() throws IOException {
+        // A negative declared chunk length must be rejected up front by the range guard: it could never be
+        // used as a byte[] size, and the check precedes any allocation or remaining-bytes comparison.
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(bos);
+        out.write(BootstrapV2Format.magic());
+        out.writeByte(BootstrapV2Format.VERSION);
+        out.writeByte(BootstrapV2Format.TAG_BLOCKS);
+        out.writeLong(-1L); // negative declared length
+        out.flush();
+
+        BootstrapImporter importer = newImporter(bos.toByteArray(), "negative-length.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("out of range"), ex.getMessage());
+    }
+
+    @Test
+    void rejectsEmptyFile() throws IOException {
+        // A zero-length bootstrap-data file cannot be classified as v1 or v2; the format probe reads EOF on
+        // the first byte and must reject it with an actionable error rather than an opaque downstream failure.
+        BootstrapImporter importer = newImporter(new byte[0], "empty.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("empty"), ex.getMessage());
+    }
+
+    @Test
+    void rejectsV2WithBadMagic() throws IOException {
+        // First byte is 'R' (so the probe dispatches to the v2 path), but the remaining magic bytes are
+        // wrong. The header check must reject the mismatched magic instead of proceeding to read sections.
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(bos);
+        out.write('R'); // v2 first byte -> isV2() sends this down the v2 header verification
+        out.write("XXXXXXX".getBytes(StandardCharsets.US_ASCII)); // 7 bytes: 8-byte magic total, but wrong
+        out.writeByte(BootstrapV2Format.VERSION);
+        out.flush();
+
+        BootstrapImporter importer = newImporter(bos.toByteArray(), "bad-magic.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("magic"), ex.getMessage());
+    }
+
+    @Test
+    void rejectsV2WithUnsupportedVersion() throws IOException {
+        // Correct magic but a version byte the reader does not support: the header check must reject it up
+        // front so a future/corrupt version is not parsed with this reader's section assumptions.
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(bos);
+        out.write(BootstrapV2Format.magic());
+        out.writeByte(0x7F); // not VERSION (0x02)
+        out.flush();
+
+        BootstrapImporter importer = newImporter(bos.toByteArray(), "bad-version.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("version"), ex.getMessage());
+    }
+
+    @Test
+    void rejectsTruncatedV2MissingEndMarker() throws IOException {
+        // A valid header with complete sections, but the file ends right after the last section's
+        // end-of-section sentinel with no TAG_END. Distinct from the trailing-bytes case: here the canonical
+        // terminator is absent, so the reader hits EOF where a section tag must be and reports truncation.
+        StateFixture fixture = buildState();
+        List<byte[]> blocks = syntheticBlockElements();
+        List<byte[]> values = collectValueElements(fixture.store, fixture.stateRoot);
+        List<byte[]> nodes = collectNodeElements(fixture.store, fixture.stateRoot);
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(bos);
+        out.write(BootstrapV2Format.magic());
+        out.writeByte(BootstrapV2Format.VERSION);
+        writeSection(out, BootstrapV2Format.TAG_BLOCKS, blocks, 1024);
+        writeSection(out, BootstrapV2Format.TAG_VALUES, values, 1024);
+        writeSection(out, BootstrapV2Format.TAG_NODES, nodes, 1024);
+        // deliberately NO out.writeByte(TAG_END): the end-of-sections marker is missing
+        out.flush();
+
+        BootstrapImporter importer = newImporter(bos.toByteArray(), "truncated-no-end.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("truncated"), ex.getMessage());
+    }
+
     /** An origin store plus the hash of a saved state trie that mixes short and long values. */
     private static final class StateFixture {
         final TrieStore store;
