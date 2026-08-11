@@ -84,7 +84,7 @@ public class SetCodeAuthorizationTransactionExecutor {
 
         RskAddress authority = new RskAddress(key.getAddress());
 
-        if (authority.equals(RskAddress.nullAddress())) {
+        if (RskAddress.nullAddress().equals(authority) || RskAddress.ZERO_ADDRESS.equals(authority)) {
             throw new IllegalStateException("Recovered authority is zero address");
         }
 

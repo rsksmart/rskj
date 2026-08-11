@@ -53,7 +53,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
- class SetCodeSetCodeAuthorizationTransactionExecutorTest {
+ class SetCodeAuthorizationTransactionExecutorTest {
 
     private static final BigInteger ZERO_CHAIN_ID = ZERO;
     private static final BigInteger ONE_CHAIN_ID = ONE;
