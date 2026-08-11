@@ -422,8 +422,8 @@ public class TransactionExecutor {
             result.spendGas(gasUsed);
             profiler.stop(metric);
         } else {
-            byte[] code = getExecutionCode(track, targetAddress);
-            // Code can be null
+            byte[] code = DelegationCodeResolver.getExecutionCode(track, targetAddress, this::isPrecompile);
+            // Code is never null; empty array means no executable code
             if (isEmpty(code)) {
                 gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
@@ -797,23 +797,6 @@ public class TransactionExecutor {
     @Nonnull
     public Set<RskAddress> precompiledContractsCalled() {
         return this.precompiledContractsCalled.isEmpty() ? Collections.emptySet() : new HashSet<>(this.precompiledContractsCalled);
-    }
-
-    private byte[] getExecutionCode(Repository track, RskAddress targetAddress) {
-        byte[] code = track.getCode(targetAddress);
-
-        if (!isDelegatedCode(code)) {
-            return code;
-        }
-
-        RskAddress delegatedAddress = DelegationCodeResolver
-                .extractDelegatedAddress(code);
-
-        if (isPrecompile(delegatedAddress)) {
-            return ByteUtil.EMPTY_BYTE_ARRAY;
-        }
-
-        return track.getCode(delegatedAddress);
     }
 
     private boolean isPrecompile(RskAddress address) {
