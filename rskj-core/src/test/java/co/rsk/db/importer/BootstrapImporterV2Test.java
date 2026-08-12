@@ -415,6 +415,77 @@ class BootstrapImporterV2Test {
         assertTrue(ex.getMessage().toLowerCase().contains("trailing"), ex.getMessage());
     }
 
+    @Test
+    void rejectsAnEmptyBootstrapDataFile() throws IOException {
+        // a zero-byte bootstrap-data.bin (an interrupted download or a failed unzip) has no first byte to
+        // dispatch on. It must be named as empty rather than guessed at as one format or the other.
+        BootstrapImporter importer = newImporter(new byte[0], "empty.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("empty"), ex.getMessage());
+    }
+
+    @Test
+    void rejectsV2WithACorruptMagic() throws IOException {
+        // the first byte is the v2 magic's 'R', so the file is dispatched down the v2 path, but the rest of
+        // the magic is wrong. Without the full-magic check a corrupt file would be read as v2 and fail later
+        // with an opaque error about whatever the following bytes happened to look like.
+        byte[] corruptMagic = BootstrapV2Format.magic();
+        corruptMagic[corruptMagic.length - 1] ^= 0x01; // keep the leading 'R', break the tail
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(bos);
+        out.write(corruptMagic);
+        out.writeByte(BootstrapV2Format.VERSION);
+        out.flush();
+
+        BootstrapImporter importer = newImporter(bos.toByteArray(), "corrupt-magic.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("magic"), ex.getMessage());
+    }
+
+    @Test
+    void rejectsAnUnsupportedV2Version() throws IOException {
+        // a snapshot written by a newer exporter: the framing may have changed, so an older reader must
+        // refuse it by version rather than misread its sections.
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(bos);
+        out.write(BootstrapV2Format.magic());
+        out.writeByte(BootstrapV2Format.VERSION + 1);
+        out.flush();
+
+        BootstrapImporter importer = newImporter(bos.toByteArray(), "future-version.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("version"), ex.getMessage());
+    }
+
+    @Test
+    void rejectsV2TruncatedBeforeTheEndOfSectionsMarker() throws IOException {
+        // every section is complete and well-formed, but the file simply stops: the end-of-sections marker
+        // never arrives. That is a truncated download, and the counterpart of the trailing-bytes case — the
+        // reader must not treat "ran out of file" as a successfully finished import.
+        StateFixture fixture = buildState();
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(bos);
+        out.write(BootstrapV2Format.magic());
+        out.writeByte(BootstrapV2Format.VERSION);
+        writeSection(out, BootstrapV2Format.TAG_BLOCKS, syntheticBlockElements(), 1024);
+        writeSection(out, BootstrapV2Format.TAG_VALUES,
+                collectValueElements(fixture.store, fixture.stateRoot), 1024);
+        writeSection(out, BootstrapV2Format.TAG_NODES,
+                collectNodeElements(fixture.store, fixture.stateRoot), 1024);
+        // no TAG_END byte: the file ends here
+        out.flush();
+
+        BootstrapImporter importer = newImporter(bos.toByteArray(), "truncated-no-end-marker.bin");
+
+        BootstrapImportException ex = assertThrows(BootstrapImportException.class, importer::importData);
+        assertTrue(ex.getMessage().toLowerCase().contains("end-of-sections"), ex.getMessage());
+    }
+
     /** An origin store plus the hash of a saved state trie that mixes short and long values. */
     private static final class StateFixture {
         final TrieStore store;

@@ -7,6 +7,8 @@ import co.rsk.db.importer.provider.index.data.BootstrapDataEntry;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,7 +36,7 @@ class BootstrapDataProviderTest {
                 2
         );
 
-        Assertions.assertThrows(BootstrapImportException.class, () -> bootstrapDataProvider.retrieveData());
+        Assertions.assertThrows(BootstrapImportException.class, bootstrapDataProvider::retrieveData);
     }
 
     @Test
@@ -56,5 +58,22 @@ class BootstrapDataProviderTest {
         );
         bootstrapDataProvider.retrieveData();
 
+    }
+
+    @Test
+    void getBootstrapDataPathDelegatesToFileHandler() {
+        BootstrapFileHandler bootstrapFileHandler = mock(BootstrapFileHandler.class);
+        Path bootstrapDataPath = Paths.get("/tmp/bootstrap/bootstrap-data.bin");
+        when(bootstrapFileHandler.getBootstrapDataPath()).thenReturn(bootstrapDataPath);
+
+        BootstrapDataProvider bootstrapDataProvider = new BootstrapDataProvider(
+                mock(BootstrapDataVerifier.class),
+                bootstrapFileHandler,
+                mock(BootstrapIndexCandidateSelector.class),
+                mock(BootstrapIndexRetriever.class),
+                2
+        );
+
+        Assertions.assertEquals(bootstrapDataPath, bootstrapDataProvider.getBootstrapDataPath());
     }
 }
