@@ -1665,7 +1665,7 @@ class BridgeSupportReleaseBtcTest {
     // simultaneously eligible, and checks WHICH one is moved to pegoutsWaitingForSignatures.
 
     private static final ActivationConfig.ForBlock ACTIVATIONS_RSKIP559_OFF = ActivationConfigsForTest.vetiver900().forBlock(0L);
-    private static final ActivationConfig.ForBlock ACTIVATIONS_RSKIP559_ON = ActivationConfigsForTest.nextRelease().forBlock(0L);
+    private static final ActivationConfig.ForBlock ACTIVATIONS_RSKIP559_ON = ActivationConfigsForTest.tbd1000().forBlock(0L);
 
     // Pre-fork (HashSet-order) selection. Captured on Java 17; must reproduce on Java 21.
     private static final String PROCESS_CONFIRMED_OFF_GOLDEN = "2b5bbcb852ee544e3a758cafb2403cda0241b110f5a486a39389cd1024f0b8eb";
@@ -1699,7 +1699,7 @@ class BridgeSupportReleaseBtcTest {
     @Test
     void processConfirmedPegouts_selectionFlipsAtRskip559ActivationHeight() throws IOException {
         long activationBlock = 500L;
-        ActivationConfig config = ActivationConfigsForTest.nextReleaseWithRskip559ActivatingAt(activationBlock);
+        ActivationConfig config = ActivationConfigsForTest.tbd1000WithRskip559ActivatingAt(activationBlock);
 
         List<PegoutsWaitingForConfirmations.Entry> entries = buildPegoutEntries(6);
         Sha256Hash comparatorMin = comparatorMinBtcTxHash(entries);
