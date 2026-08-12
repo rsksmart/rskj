@@ -236,6 +236,11 @@ class PegoutsWaitingForConfirmationsTest {
 
     // ----- Mechanism B (RSKIP559 on): deterministic sorted selection -----
 
+    // Expected post-fork pick for the 6-tx pool below. Pinned as a literal rather than recomputed with
+    // BTC_TX_COMPARATOR: an assertion that re-derives the expectation from the production comparator would
+    // mirror any bug in it and pass regardless. The comparator's own semantics are covered by entryComparators().
+    private static final String POSTFORK_SELECTION_GOLDEN = "f368eb190ff2479803b5ca8fe19978a91dcbf4ccaf7b9b91153bb6c85c5197e9";
+
     @Test
     void getNextPegoutWithEnoughConfirmations_rskip559On_picksComparatorMinAndIsOrderIndependent() {
         // All created at block 5; with current=10, min=5 every entry has enough confirmations,
@@ -248,12 +253,8 @@ class PegoutsWaitingForConfirmationsTest {
             createTransaction(21, Coin.COIN),
             createTransaction(34, Coin.SATOSHI)
         );
-        BtcTransaction expected = txs.stream()
-            .min((a, b) -> com.google.common.primitives.UnsignedBytes.lexicographicalComparator()
-                .compare(a.bitcoinSerialize(), b.bitcoinSerialize()))
-            .orElseThrow();
 
-        // Build with two different insertion orders; selection must be identical and equal to expected.
+        // Build with two different insertion orders; selection must be identical and equal to the pinned tx.
         List<BtcTransaction> reversed = new ArrayList<>(txs);
         Collections.reverse(reversed);
         for (List<BtcTransaction> order : Arrays.asList(txs, reversed)) {
@@ -264,7 +265,7 @@ class PegoutsWaitingForConfirmationsTest {
                 pegouts.getNextPegoutWithEnoughConfirmations(10L, 5, ACTIVATIONS_RSKIP559_ON);
 
             Assertions.assertTrue(selected.isPresent());
-            Assertions.assertEquals(expected, selected.get().getBtcTransaction(),
+            Assertions.assertEquals(POSTFORK_SELECTION_GOLDEN, selected.get().getBtcTransaction().getHash().toString(),
                 "Post-fork selection must be the comparator minimum, independent of insertion order");
         }
     }
@@ -335,7 +336,7 @@ class PegoutsWaitingForConfirmationsTest {
     @Test
     void selectionFlipsExactlyAtRskip559ActivationHeight() {
         long activationBlock = 500L;
-        ActivationConfig config = ActivationConfigsForTest.nextReleaseWithRskip559ActivatingAt(activationBlock);
+        ActivationConfig config = ActivationConfigsForTest.tbd1000WithRskip559ActivatingAt(activationBlock);
 
         // Sanity: the rule is off one block before the fork and on at the fork height.
         Assertions.assertFalse(config.forBlock(activationBlock - 1).isActive(ConsensusRule.RSKIP559));
@@ -356,10 +357,19 @@ class PegoutsWaitingForConfirmationsTest {
             atActivation.orElseThrow().getBtcTransaction().getHash().toString(),
             "At activation height: deterministic sorted (post-fork) selection");
 
-        // Querying does not mutate the set; it is identical across the boundary (no entry lost/duplicated).
-        Assertions.assertEquals(
-            set.getEntries(config.forBlock(activationBlock - 1)).size(),
-            set.getEntries(config.forBlock(activationBlock)).size());
+        // Querying does not mutate the set, so the same entries are visible on both sides of the boundary --
+        // what changes is their ORDER. Asserting sizes alone would hold before and after the fork and prove
+        // nothing, so assert the ordering itself: only post-fork is BTC_TX_COMPARATOR-sorted.
+        List<PegoutsWaitingForConfirmations.Entry> preForkOrder =
+            new ArrayList<>(set.getEntries(config.forBlock(activationBlock - 1)));
+        List<PegoutsWaitingForConfirmations.Entry> postForkOrder =
+            new ArrayList<>(set.getEntries(config.forBlock(activationBlock)));
+
+        Assertions.assertEquals(new HashSet<>(preForkOrder), new HashSet<>(postForkOrder),
+            "The boundary must not add, drop or duplicate entries");
+        assertSortedByComparator(postForkOrder);
+        Assertions.assertNotEquals(preForkOrder, postForkOrder,
+            "Pre-fork (HashSet) order must differ from the sorted order for this pool, else the test proves nothing");
     }
 
     // ----- Mechanism A (RSKIP559 off): Java-17 HashSet iteration order must be reproduced on every JVM -----
@@ -409,6 +419,50 @@ class PegoutsWaitingForConfirmationsTest {
         // To refresh the golden: temporarily print `drainOrder`, run on Java 17, and paste it into PREFORK_GOLDEN_ORDER.
         Assertions.assertEquals(PREFORK_GOLDEN_ORDER, drainOrder,
             "Pre-fork HashSet iteration order diverged from the Java-17 golden (Java 17/21 mismatch?)");
+    }
+
+    // The golden above grows the set with add() from empty, which is JVM-invariant on its own and therefore
+    // cannot detect an emulation regression. EntriesStore.setOfEntries(Collection) -- the part that actually
+    // hardcodes the Java-17 sizing -- is only reachable through the collection constructor, which is the real
+    // deserialization path (BridgeStorageProvider#getPegoutsWaitingForConfirmations). This golden goes through
+    // it with 12 entries, a size where a plain `new HashSet<>(c)` sizes differently on Java 17 (capacity 17 ->
+    // table 32) and Java 21 (capacity 16 -> table 16), so dropping the emulation flips this order on Java 21.
+    private static final List<String> PREFORK_CONSTRUCTOR_GOLDEN_ORDER = Arrays.asList(
+        // Captured on Java 17 (Zulu 17.0.15). Must reproduce identically on Java 21.
+        "e6d81cdde8b4bf0a143a14efe8277602cd0072155f5029c97b0ed0b837186113",
+        "d439506d196d92b64a2c461626984de87f048c678e77b8097582bf66b1d26eeb",
+        "cd4b89582929354b12b4b6112435cc73fc99fa74176311bbacb2511d28a9db13",
+        "1172bad965e8a860230001d86d4ea990c4fd85343149fbaffa55850cae0b2c88",
+        "75edd101c5a4407d9027bcf34225861cf0abf153a7bc03c2b3c47b2c7dbdd5eb",
+        "21c1b88438f9597c0245e0a33ced5ce33ee9406b78a2dfff836ee8f70c8dc823",
+        "4ad909d983d7e55f1723ee800237a0f14ce9feca270868b420e96cbd871409a1",
+        "5a780b9bbbf0e8a272268536c330d9982b9920798a5db2c0161af7220ed743ae",
+        "c8fa82bc043c30fabe3213658f7dc0174dbcf63af6784154dd3a41fc64f18852",
+        "e693d78465aea00509a6dde3a73fbb0c45852896c891702f208c28355106ab47",
+        "998477d0a8195f0649f7b8f84313acd4e37fed5d373a2d0ac1869c5bfdfbd89d",
+        "8fe7ee429e03e66d81950dbed40d2767f4c251f9566b280e03665de83d15cef3"
+    );
+
+    @Test
+    void getNextPegoutWithEnoughConfirmations_rskip559Off_constructorDrainOrderMatchesJava17Golden() {
+        // LinkedHashSet so the input order fed to the constructor is itself deterministic.
+        Set<PegoutsWaitingForConfirmations.Entry> seed = new LinkedHashSet<>();
+        for (int i = 1; i <= 12; i++) {
+            seed.add(new PegoutsWaitingForConfirmations.Entry(createTransaction(2, Coin.valueOf(i * 13L + 1)), 5L));
+        }
+        PegoutsWaitingForConfirmations pegouts = new PegoutsWaitingForConfirmations(seed);
+
+        List<String> drainOrder = new ArrayList<>();
+        Optional<PegoutsWaitingForConfirmations.Entry> next;
+        while ((next = pegouts.getNextPegoutWithEnoughConfirmations(1000L, 5, ACTIVATIONS_RSKIP559_OFF)).isPresent()) {
+            drainOrder.add(next.get().getBtcTransaction().getHash().toString());
+            pegouts.removeEntry(next.get());
+        }
+
+        // To refresh the golden: temporarily print `drainOrder`, run on Java 17, and paste it in.
+        Assertions.assertEquals(PREFORK_CONSTRUCTOR_GOLDEN_ORDER, drainOrder,
+            "Pre-fork order through the collection constructor diverged from the Java-17 golden "
+                + "(EntriesStore.setOfEntries(Collection) no longer emulates Java-17 HashSet sizing?)");
     }
 
     private static void assertSortedByComparator(List<PegoutsWaitingForConfirmations.Entry> entries) {
