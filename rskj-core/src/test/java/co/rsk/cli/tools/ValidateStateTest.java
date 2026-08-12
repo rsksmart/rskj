@@ -402,7 +402,7 @@ class ValidateStateTest {
         return count;
     }
 
-    /**
+        /**
          * Delegates to a real store but fails reading one designated long value, standing in for a datasource
          * that throws rather than reporting the key as absent.
          */

@@ -26,6 +26,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Created by SDL on 12/4/2017.
  */
@@ -36,7 +38,7 @@ public class BlockTxsFieldsValidationRule implements BlockParentDependantValidat
     private final byte chainId;
 
     public BlockTxsFieldsValidationRule(SignatureCache signatureCache, byte chainId) {
-        this.signatureCache = signatureCache;
+        this.signatureCache = requireNonNull(signatureCache, "signatureCache must not be null");
         this.chainId = chainId;
     }
 

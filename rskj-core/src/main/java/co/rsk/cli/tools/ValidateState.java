@@ -22,7 +22,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.NodeReference;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
@@ -80,7 +79,6 @@ public class ValidateState extends PicoCliToolRskContextAware {
         this(ValidateState::printInfo);
     }
 
-    @VisibleForTesting
     ValidateState(@Nonnull Printer printer) {
         this.printer = Objects.requireNonNull(printer);
     }
