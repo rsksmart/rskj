@@ -21,6 +21,7 @@ package org.ethereum.rpc.converters;
 import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.core.transaction.parser.util.Rskip546FeeValidation;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
@@ -58,16 +59,18 @@ public class CallArgumentsToByteArray {
         }
         boolean hasMaxFee = !isAbsent(args.getMaxFeePerGas());
         boolean hasMaxPriority = !isAbsent(args.getMaxPriorityFeePerGas());
-        if (hasMaxFee && hasMaxPriority) {
+
+        if (hasMaxFee || hasMaxPriority) {
+            if (!hasMaxPriority) {
+                throw invalidParamError(Rskip546FeeValidation.ERR_MAX_FEE_REQUIRES_PRIORITY);
+            }
+            if (!hasMaxFee) {
+                throw invalidParamError(Rskip546FeeValidation.ERR_PRIORITY_REQUIRES_MAX_FEE);
+            }
             BigInteger maxFee = HexUtils.strHexOrStrNumberToBigInteger(args.getMaxFeePerGas());
             BigInteger maxPriority = HexUtils.strHexOrStrNumberToBigInteger(args.getMaxPriorityFeePerGas());
+            Rskip546FeeValidation.requireFeeCapRelationshipInvalidParam(maxPriority, maxFee);
             return maxPriority.min(maxFee);
-        }
-        if (hasMaxFee) {
-            return HexUtils.strHexOrStrNumberToBigInteger(args.getMaxFeePerGas());
-        }
-        if (hasMaxPriority) {
-            throw invalidParamError("maxPriorityFeePerGas requires maxFeePerGas");
         }
         return null;
     }

@@ -26,6 +26,7 @@ import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AccessListCodec;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
+import org.ethereum.core.transaction.parser.util.Rskip546FeeValidation;
 import org.ethereum.core.transaction.parser.util.TypedTransactionCodec;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -65,7 +66,7 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
         Coin maxPriorityFeePerGas = Objects.requireNonNull(RLP.parseCoinNonNullZero(txFields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData()), "Type 2 maxPriorityFeePerGas");
         Coin maxFeePerGas = Objects.requireNonNull(RLP.parseCoinNonNullZero(txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData()), "Type 2 maxFeePerGas");
 
-        validateFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
+        Rskip546FeeValidation.requireFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
         CommonParsingUtils.requireTypedScalarFields(nonce, gasLimit, value, maxPriorityFeePerGas, maxFeePerGas);
 
         return new ParsedType2Transaction(
@@ -111,7 +112,7 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
                 "Type 2 transaction requires maxFeePerGas"
         );
 
-        validateFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
+        Rskip546FeeValidation.requireFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
         byte[] gasLimitBytes = CommonParsingUtils.unsignedBytes(gasLimit);
         CommonParsingUtils.requireTypedScalarFields(nonce, gasLimitBytes, value, maxPriorityFeePerGas, maxFeePerGas);
 
@@ -127,15 +128,6 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
                 maxPriorityFeePerGas,
                 maxFeePerGas
         );
-    }
-
-    private void validateFeeCapRelationship(Coin maxPriorityFeePerGas, Coin maxFeePerGas) {
-        if (maxPriorityFeePerGas.compareTo(maxFeePerGas) > 0) {
-            throw new IllegalArgumentException(
-                    "Type 2 transaction maxPriorityFeePerGas (" + maxPriorityFeePerGas
-                            + ") must not exceed maxFeePerGas (" + maxFeePerGas + ")"
-            );
-        }
     }
 
     private Coin parseRequiredCoin(Coin value, String errorMessage) {
