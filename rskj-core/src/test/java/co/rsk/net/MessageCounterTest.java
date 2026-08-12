@@ -127,7 +127,7 @@ class MessageCounterTest {
         private ScheduledThreadPoolExecutor executor;
         private ConcurrentLinkedQueue<String> queue;
 
-        public Incrementer(MessageCounter counter, SimplePeer sender, ScheduledThreadPoolExecutor executor, ConcurrentLinkedQueue<String> queue) {
+        Incrementer(MessageCounter counter, SimplePeer sender, ScheduledThreadPoolExecutor executor, ConcurrentLinkedQueue<String> queue) {
             this.counter = counter;
             this.sender = sender;
             this.executor = executor;

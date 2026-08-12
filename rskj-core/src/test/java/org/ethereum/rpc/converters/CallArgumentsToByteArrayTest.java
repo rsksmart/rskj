@@ -124,7 +124,7 @@ class CallArgumentsToByteArrayTest {
 
     @Test
     void gasLimitForGasExceedingGasCap() {
-        long hugeAmountOfGas = 900000000000000l;
+        long hugeAmountOfGas = 900000000000000L;
         long callGasCap = config.getCallGasCap();
 
         CallArguments callArguments = new CallArguments();

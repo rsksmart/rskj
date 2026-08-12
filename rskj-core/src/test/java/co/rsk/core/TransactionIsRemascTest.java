@@ -151,4 +151,3 @@ class TransactionIsRemascTest {
         assertIsNotRemascTransaction(destination, data, value, gasPrice, gasLimit, txPosition, txsSize);
     }
 }
-

@@ -189,7 +189,7 @@ class DownloadingHeadersSyncStateTest {
         List<BlockHeader> chunk = new ArrayList<>();
         BlockHeader header = mock(BlockHeader.class, Mockito.RETURNS_DEEP_STUBS);
         byte[] headerHash = TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class,"headerHash",32);
-        when(header.getHash().getBytes()).thenReturn(headerHash);; // different from chunkHash
+        when(header.getHash().getBytes()).thenReturn(headerHash); // different from chunkHash
         chunk.add(header);
         syncState.newBlockHeaders(selectedPeer, chunk);
 

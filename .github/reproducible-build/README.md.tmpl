@@ -1,0 +1,32 @@
+# rskj __TAG__
+
+* Source: https://github.com/rsksmart/rskj
+* Tag: `__TAG__`
+
+## Build
+
+```
+$ docker build -t rskj/__VERSION__-__MODIFIER_LC__ .
+```
+
+## Verify
+
+Run the following command to verify the sha256sum of the built artifacts matches the expected values:
+
+```
+$ docker run --rm rskj/__VERSION__-__MODIFIER_LC__ sh -c 'sha256sum * | grep -v javadoc.jar'
+__HASHES__
+```
+
+## (Optional) Run RSK Node
+```
+$ docker run -d rskj/__VERSION__-__MODIFIER_LC__
+```
+
+## (Optional) Extract JAR from image
+
+```
+$ cid=$(docker run -d rskj/__VERSION__-__MODIFIER_LC__ /bin/true)
+$ docker cp "$cid":/home/rsk/ ./libs/
+$ docker rm "$cid"
+```

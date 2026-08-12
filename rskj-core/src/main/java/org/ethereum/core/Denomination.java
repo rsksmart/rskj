@@ -31,7 +31,7 @@ public enum Denomination {
 
     private BigInteger amount;
 
-    private Denomination(BigInteger value) {
+    Denomination(BigInteger value) {
         this.amount = value;
     }
 

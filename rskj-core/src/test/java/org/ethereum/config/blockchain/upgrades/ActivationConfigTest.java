@@ -57,7 +57,7 @@ class ActivationConfigTest {
         "    reed800: 0",
         "    reed810: 0",
         "    vetiver900: 0",
-        "    tbd1000: 0",
+        "    cardamom1000: 0",
         "},",
         "consensusRules: {",
         "    areBridgeTxsPaid: afterBridgeSync,",
@@ -129,6 +129,7 @@ class ActivationConfigTest {
         "    rskip375: fingerroot500",
         "    rskip376: arrowhead600",
         "    rskip377: fingerroot500",
+        "    rskip378: cardamom1000",
         "    rskip379: arrowhead600",
         "    rskip383: fingerroot500",
         "    rskip385: fingerroot500",
@@ -157,7 +158,7 @@ class ActivationConfigTest {
         "    rskip544: vetiver900",
         "    rskip551: vetiver900",
         "    rskip552: vetiver900",
-        "    rskip559: tbd1000",
+        "    rskip559: cardamom1000",
         "}"
     ));
 

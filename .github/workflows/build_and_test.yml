@@ -18,9 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
+        with:
+          # Needed so checkstyle/spotless below can ratchet against the PR base branch.
+          fetch-depth: 0
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 #v5.2.0
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 #v5.4.0
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -31,7 +34,7 @@ jobs:
           curl -sSL https://secchannel.rsk.co/SUPPORT.asc | gpg2 --import -
           gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
 
-      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 #v6.1.0
         name: Cache Gradle Wrapper
         id: cache-gradle-wrapper
         with:
@@ -44,9 +47,36 @@ jobs:
         run: |
           ./configure.sh
 
+      - name: Set ratchet base ref
+        id: set-ratchet-ref
+        # Only PR builds are ratcheted (against the PR base branch); push builds to master/*-rc
+        # run Checkstyle/Spotless unratcheted against the whole tree. So a new rule can pass a
+        # ratcheted PR check yet still fail here on the push that merges it, if pre-existing
+        # violations exist outside the PR's diff. Run the full, unratcheted checkstyleAll /
+        # spotlessJavaCheck locally before adding or tightening a rule.
+        if: github.event_name == 'pull_request'
+        env:
+          github_base_ref: ${{ github.base_ref }}
+        run: |
+          ALLOWED_BRANCH_CHARACTERS='[-+./0-9A-Z_a-z]'
+
+          is_valid_branch_name()
+          {
+            echo "$1" | grep -qx "$ALLOWED_BRANCH_CHARACTERS\\{1,\\}"
+          }
+
+          BASE_REF="${github_base_ref}"
+
+          if ! is_valid_branch_name "$BASE_REF"; then
+            echo "base_ref: invalid branch name: $BASE_REF" >&2
+            exit 1
+          fi
+
+          echo "ratchet_arg=-PratchetFrom=origin/$BASE_REF" >> "$GITHUB_OUTPUT"
+
       - name: Build
         run: |
-          ./gradlew --no-daemon --stacktrace build -x test
+          ./gradlew --no-daemon --stacktrace build -x test ${{ steps.set-ratchet-ref.outputs.ratchet_arg }}
 
       - name: Archive build artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
@@ -64,14 +94,14 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 #v5.2.0
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 #v5.4.0
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: 'gradle'
 
       # TODO: Remove cache/restore + configure.sh fallback once gradle-wrapper.jar is committed
-      - uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 #v6.1.0
         name: Restore Gradle Wrapper
         id: cache-gradle-wrapper
         with:
@@ -192,14 +222,14 @@ jobs:
           node --unhandled-rejections=strict generateBtcBlocks.js
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 #v5.2.0
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 #v5.4.0
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: 'gradle'
 
       # TODO: Remove cache/restore + configure.sh fallback once gradle-wrapper.jar is committed
-      - uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 #v6.1.0
         name: Restore Gradle Wrapper
         id: cache-gradle-wrapper
         with:
@@ -251,14 +281,14 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 #v5.2.0
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 #v5.4.0
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: 'gradle'
 
       # TODO: Remove cache/restore + configure.sh fallback once gradle-wrapper.jar is committed
-      - uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 #v6.1.0
         name: Restore Gradle Wrapper
         id: cache-gradle-wrapper
         with:
@@ -305,14 +335,14 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 #v5.2.0
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 #v5.4.0
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: 'gradle'
 
       # TODO: Remove cache/restore + configure.sh fallback once gradle-wrapper.jar is committed
-      - uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 #v6.1.0
         name: Restore Gradle Wrapper
         id: cache-gradle-wrapper
         with:

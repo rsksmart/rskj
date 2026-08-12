@@ -93,7 +93,7 @@ public enum P2pMessageCodes {
         }
     }
 
-    private P2pMessageCodes(int cmd) {
+    P2pMessageCodes(int cmd) {
         this.cmd = cmd;
     }
 

@@ -2325,7 +2325,7 @@ public class BridgeSupportIT {
         private final Transaction tx;
         private ABICallSpec winner;
 
-        public VotingMocksProvider(String function, byte[][] arguments, boolean mockVoteResult) {
+        VotingMocksProvider(String function, byte[][] arguments, boolean mockVoteResult) {
             byte[] voterBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of an authorized voter in regtest, taken from BridgeRegTestConstants
                 "04dde17c5fab31ffc53c91c2390136c325bb8690dc135b0840075dd7b86910d8ab9e88baad0c32f3eea8833446a6bc5ff1cd2efa99ecb17801bcb65fc16fc7d991"

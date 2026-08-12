@@ -38,15 +38,15 @@ public final class VMUtils {
 
     public static void saveProgramTraceFile(Path basePath, String txHash, boolean compress, ProgramTrace trace) throws IOException {
         if (compress) {
-            try(final FileOutputStream fos = new FileOutputStream(basePath.resolve(txHash + ".zip").toFile());
-                final ZipOutputStream zos = new ZipOutputStream(fos)
+            try(FileOutputStream fos = new FileOutputStream(basePath.resolve(txHash + ".zip").toFile());
+                ZipOutputStream zos = new ZipOutputStream(fos)
             ) {
                 ZipEntry zipEntry = new ZipEntry(txHash + ".json");
                 zos.putNextEntry(zipEntry);
                 Serializers.serializeFieldsOnly(trace, true, zos);
             }
         } else {
-            try (final OutputStream out = Files.newOutputStream(basePath.resolve(txHash + ".json"))) {
+            try (OutputStream out = Files.newOutputStream(basePath.resolve(txHash + ".json"))) {
                 Serializers.serializeFieldsOnly(trace, true, out);
             }
         }

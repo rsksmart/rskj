@@ -16,6 +16,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.RskTestUtils;
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
@@ -64,6 +65,16 @@ import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 
 public final class BridgeSupportTestUtil {
+
+    public static final int STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE = 277;
+    public static final int STANDARD_MULTISIG_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = STANDARD_MULTISIG_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
+    public static final int P2SH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE = 196;
+    public static final int P2SH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = P2SH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
+    public static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER = 2438;
+    public static final int P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE_VETIVER = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE_VETIVER - 1;
+    public static final int P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE = 204;
+    public static final int P2SH_P2WSH_ERP_UTXO_COUNT_JUST_UNDER_MAX_STANDARD_TX_SIZE = P2SH_P2WSH_ERP_UTXO_COUNT_OVER_MAX_TX_SIZE - 1;
+
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
 
     private BridgeSupportTestUtil() {}
@@ -212,6 +223,19 @@ public final class BridgeSupportTestUtil {
 
     public static boolean shouldMarkRejectedPeginAsProcessed(ActivationConfig.ForBlock activations) {
         return activations.isActive(ConsensusRule.RSKIP459) && !activations.isActive(ConsensusRule.RSKIP551);
+    }
+
+    public static ReleaseRequestQueue addPegoutRequestsToQueue(
+        ReleaseRequestQueue releaseRequestQueue,
+        int pegoutRequestCount,
+        Coin value,
+        NetworkParameters networkParameters
+    ) {
+        for (int i = 0; i < pegoutRequestCount; i++) {
+            Address receiver = BitcoinTestUtils.createP2PKHAddress(networkParameters, "receiver" + i);
+            releaseRequestQueue.add(receiver, value, RskTestUtils.createHash(i));
+        }
+        return releaseRequestQueue;
     }
 
     public static void assertWitnessAndScriptSigHaveExpectedInputRedeemData(TransactionWitness witness, TransactionInput input, Script expectedRedeemScript) {

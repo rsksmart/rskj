@@ -89,7 +89,7 @@ abstract class KeccakCore extends DigestEngine {
 	 * @param buf   the destination buffer
 	 * @param off   the destination offset
 	 */
-	private static final void encodeLELong(long val, byte[] buf, int off)
+	private static void encodeLELong(long val, byte[] buf, int off)
 	{
 		buf[off + 0] = (byte)val;
 		buf[off + 1] = (byte)(val >>> 8);
@@ -109,7 +109,7 @@ abstract class KeccakCore extends DigestEngine {
 	 * @param off   the source offset
 	 * @return  the decoded value
 	 */
-	private static final long decodeLELong(byte[] buf, int off)
+	private static long decodeLELong(byte[] buf, int off)
 	{
 		return (buf[off + 0] & 0xFFL)
 			| ((buf[off + 1] & 0xFFL) << 8)
@@ -594,7 +594,7 @@ abstract class KeccakCore extends DigestEngine {
 		return 200 - 2 * getDigestLength();
 	}
 
-	private final void doReset()
+	private void doReset()
 	{
 		for (int i = 0; i < 25; i ++) {
             a[i] = 0;

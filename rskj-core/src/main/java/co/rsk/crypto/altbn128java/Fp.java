@@ -31,11 +31,11 @@ import static co.rsk.crypto.altbn128java.Params.P;
  */
 public class Fp implements Field<Fp> {
 
-    static public final Fp ZERO = new Fp(BigInteger.ZERO);
-    static public final Fp _1 = new Fp(BigInteger.ONE);
-    static public final Fp NON_RESIDUE = new Fp(new BigInteger("21888242871839275222246405745257275088696311157297823662689037894645226208582"));
+    public static final Fp ZERO = new Fp(BigInteger.ZERO);
+    public static final Fp _1 = new Fp(BigInteger.ONE);
+    public static final Fp NON_RESIDUE = new Fp(new BigInteger("21888242871839275222246405745257275088696311157297823662689037894645226208582"));
 
-    static public final Fp _2_INV = new Fp(BigInteger.valueOf(2).modInverse(P));
+    public static final Fp _2_INV = new Fp(BigInteger.valueOf(2).modInverse(P));
 
     private BigInteger v;
 

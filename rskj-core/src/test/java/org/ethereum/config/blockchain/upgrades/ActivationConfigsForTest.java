@@ -216,8 +216,9 @@ public class ActivationConfigsForTest {
         ));
     }
 
-    private static List<ConsensusRule> getTbd1000Rskips() {
+    private static List<ConsensusRule> getCardamom1000Rskips() {
         return new ArrayList<>(List.of(
+            ConsensusRule.RSKIP378,
             ConsensusRule.RSKIP559
         ));
     }
@@ -492,18 +493,18 @@ public class ActivationConfigsForTest {
         return rskips;
     }
 
-    public static List<ConsensusRule> tbd1000AllRskips() {
+    public static List<ConsensusRule> cardamom1000AllRskips() {
         var rskips = vetiver900AllRskips();
-        rskips.addAll(getTbd1000Rskips());
+        rskips.addAll(getCardamom1000Rskips());
         return rskips;
     }
 
-    public static ActivationConfig tbd1000() {
-        return tbd1000(Collections.emptyList());
+    public static ActivationConfig cardamom1000() {
+        return cardamom1000(Collections.emptyList());
     }
 
-    public static ActivationConfig tbd1000(List<ConsensusRule> except) {
-        return enableTheseDisableThose(tbd1000AllRskips(), except);
+    public static ActivationConfig cardamom1000(List<ConsensusRule> except) {
+        return enableTheseDisableThose(cardamom1000AllRskips(), except);
     }
 
     public static ActivationConfig regtest() {

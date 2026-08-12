@@ -61,7 +61,7 @@ class NettyTest {
             @Override
             protected void decode(ChannelHandlerContext ctx, Object msg, List<Object> out) throws Exception {
                 System.out.println("NettyTest.decode: msg = [" + msg + "]");
-                if (msg == "aaa") {
+                if ("aaa".equals(msg)) {
                     throw new RuntimeException("Test exception 3");
                 }
             }

@@ -250,7 +250,8 @@ class MemoryTest {
 
         memoryBuffer.extendAndWrite(0, 256, data1);
 
-        int ones = 0; int zeroes = 0;
+        int ones = 0;
+        int zeroes = 0;
         for (int i = 0; i < memoryBuffer.size(); ++i){
             if (memoryBuffer.readByte(i) == 1) ++ones;
             if (memoryBuffer.readByte(i) == 0) ++zeroes;
@@ -400,7 +401,8 @@ class MemoryTest {
 
         byte[] data = memoryBuffer.read(0, 2048);
 
-        int ones = 0; int twos = 0;
+        int ones = 0;
+        int twos = 0;
         for (int i = 0; i < data.length; ++i){
             if (data[i] == 1) ++ones;
             if (data[i] == 2) ++twos;
@@ -426,7 +428,9 @@ class MemoryTest {
 
         byte[] data = memoryBuffer.read(0, 2049);
 
-        int ones = 0; int twos = 0; int zero = 0;
+        int ones = 0;
+        int twos = 0;
+        int zero = 0;
         for (int i = 0; i < data.length; ++i){
             if (data[i] == 1) ++ones;
             if (data[i] == 2) ++twos;
@@ -459,7 +463,8 @@ class MemoryTest {
 
         byte[] data = memoryBuffer.read(2720, 352);
 
-        int ones = 0; int zero = 0;
+        int ones = 0;
+        int zero = 0;
         for (int i = 0; i < data.length; ++i){
             if (data[i] == 1) ++ones;
             if (data[i] == 0) ++zero;
@@ -489,7 +494,8 @@ class MemoryTest {
 
         byte[] data = memoryBuffer.read(2720, 352);
 
-        int ones = 0; int zero = 0;
+        int ones = 0;
+        int zero = 0;
         for (int i = 0; i < data.length; ++i){
             if (data[i] == 1) ++ones;
             if (data[i] == 0) ++zero;
@@ -519,7 +525,8 @@ class MemoryTest {
 
         byte[] data = memoryBuffer.read(10, 30);
 
-        int ones = 0; int zero = 0;
+        int ones = 0;
+        int zero = 0;
         for (int i = 0; i < data.length; ++i){
             if (data[i] == 1) ++ones;
             if (data[i] == 0) ++zero;

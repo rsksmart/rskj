@@ -55,10 +55,10 @@ public interface ChannelManager extends InternalService {
      * @return a set containing the ids of the peers that received the block.
      */
     @Nonnull
-    Set<NodeID> broadcastBlock(@Nonnull final Block block);
+    Set<NodeID> broadcastBlock(@Nonnull Block block);
 
     @Nonnull
-    Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, @Nullable final Set<NodeID> targets);
+    Set<NodeID> broadcastBlockHash(@Nonnull List<BlockIdentifier> identifiers, @Nullable Set<NodeID> targets);
 
     /**
      * broadcastTransaction Propagates a transaction message across active peers with exclusion of
@@ -69,9 +69,9 @@ public interface ChannelManager extends InternalService {
      * @return a set containing the ids of the peers that received the transaction.
      */
     @Nonnull
-    Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, @Nonnull final Set<NodeID> skip);
+    Set<NodeID> broadcastTransaction(@Nonnull Transaction transaction, @Nonnull Set<NodeID> skip);
 
-    int broadcastStatus(@Nonnull final Status status);
+    int broadcastStatus(@Nonnull Status status);
 
     void add(Channel peer);
 

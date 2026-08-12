@@ -21,7 +21,6 @@ import java.util.concurrent.*;
 
 import static org.mockito.Mockito.mock;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;

@@ -19,22 +19,14 @@
 
 package org.ethereum.vm.pcc;
 
-import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.bto.GetMultisigScriptHash;
 import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.code_intelligence.jazzer.junit.FuzzTest;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.solidity.SolidityType;
-import org.ethereum.util.ByteUtil;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.util.function.Consumer;
 
 import static org.mockito.Mockito.mock;
 

@@ -86,7 +86,16 @@ class Fp12 implements Field<Fp12> {
         Fp2 x2 = ellVV;
         Fp2 x4 = ellVW;
 
-        Fp2 t0, t1, t2, s0, t3, t4, d0, d2, d4, s1;
+        Fp2 t0;
+        Fp2 t1;
+        Fp2 t2;
+        Fp2 s0;
+        Fp2 t3;
+        Fp2 t4;
+        Fp2 d0;
+        Fp2 d2;
+        Fp2 d4;
+        Fp2 s1;
 
         d0 = z0.mul(x0);
         d2 = z2.mul(x2);
@@ -154,8 +163,10 @@ class Fp12 implements Field<Fp12> {
     @Override
     public Fp12 mul(Fp12 o) {
 
-        Fp6 a2 = o.a, b2 = o.b;
-        Fp6 a1 = a,   b1 = b;
+        Fp6 a2 = o.a;
+        Fp6 b2 = o.b;
+        Fp6 a1 = a;
+        Fp6 b1 = b;
 
         Fp6 a1a2 = a1.mul(a2);
         Fp6 b1b2 = b1.mul(b2);
@@ -217,7 +228,13 @@ class Fp12 implements Field<Fp12> {
         Fp2 z1 = b.b();
         Fp2 z5 = b.c();
 
-        Fp2 t0, t1, t2, t3, t4, t5, tmp;
+        Fp2 t0;
+        Fp2 t1;
+        Fp2 t2;
+        Fp2 t3;
+        Fp2 t4;
+        Fp2 t5;
+        Fp2 tmp;
 
         // t0 + t1*y = (z0 + z1*y)^2 = a^2
         tmp = z0.mul(z1);

@@ -406,7 +406,7 @@ class VMComplexTest {
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractB_addr);
-        pi.setGasLimit(10000000000000l);
+        pi.setGasLimit(10000000000000L);
 
         Repository repository = pi.getRepository();
         repository.createAccount(contractA_addr);

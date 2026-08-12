@@ -59,4 +59,3 @@ public class SimpleFileWriter {
         Files.move(tempFile.toPath(), filePath, REPLACE_EXISTING);
     }
 }
-

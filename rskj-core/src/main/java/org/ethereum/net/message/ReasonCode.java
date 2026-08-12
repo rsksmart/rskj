@@ -99,7 +99,7 @@ public enum ReasonCode {
         }
     }
 
-    private ReasonCode(int reason) {
+    ReasonCode(int reason) {
         this.reason = reason;
     }
 
