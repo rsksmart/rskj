@@ -328,7 +328,7 @@ public class Transaction {
         }
 
         long authorizationListGas = 0;
-        if (isType4()) {
+        if (isType4() && authorizationList != null) {
             authorizationListGas = Math.multiplyExact(GasCost.PER_EMPTY_ACCOUNT_COST, authorizationList.size());
         }
 
@@ -343,7 +343,9 @@ public class Transaction {
             return true;
         }
         TransactionType type = typePrefix.type();
-        if ((type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2)
+        // Type 1 / 2 / 4 all depend on RSKIP-546 fields (access_list, and for type 2/4 fee caps).
+        // Type 4 additionally requires RSKIP-545 (set-code / authorization_list).
+        if ((type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2 || type == TransactionType.TYPE_4)
                 && !activations.isActive(ConsensusRule.RSKIP546)) {
             return true;
         }

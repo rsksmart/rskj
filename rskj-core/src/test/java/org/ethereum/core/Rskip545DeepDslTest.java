@@ -460,12 +460,21 @@ class Rskip545DeepDslTest {
         org.mockito.Mockito.when(allInactive.isActive(ConsensusRule.RSKIP543)).thenReturn(false);
         assertTrue(tx.isTypedTransactionNotAllowed(allInactive));
 
-        var only545 = org.mockito.Mockito.mock(
+        var without546 = org.mockito.Mockito.mock(
                 org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock.class);
-        org.mockito.Mockito.when(only545.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
-        org.mockito.Mockito.when(only545.isActive(ConsensusRule.RSKIP546)).thenReturn(true);
-        org.mockito.Mockito.when(only545.isActive(ConsensusRule.RSKIP545)).thenReturn(false);
-        assertTrue(tx.isTypedTransactionNotAllowed(only545));
+        org.mockito.Mockito.when(without546.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
+        org.mockito.Mockito.when(without546.isActive(ConsensusRule.RSKIP546)).thenReturn(false);
+        org.mockito.Mockito.when(without546.isActive(ConsensusRule.RSKIP545)).thenReturn(true);
+        assertTrue(tx.isTypedTransactionNotAllowed(without546),
+                "Type 4 must be rejected when RSKIP-546 is inactive");
+
+        var without545 = org.mockito.Mockito.mock(
+                org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock.class);
+        org.mockito.Mockito.when(without545.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
+        org.mockito.Mockito.when(without545.isActive(ConsensusRule.RSKIP546)).thenReturn(true);
+        org.mockito.Mockito.when(without545.isActive(ConsensusRule.RSKIP545)).thenReturn(false);
+        assertTrue(tx.isTypedTransactionNotAllowed(without545),
+                "Type 4 must be rejected when RSKIP-545 is inactive");
     }
 
     // =========================================================================

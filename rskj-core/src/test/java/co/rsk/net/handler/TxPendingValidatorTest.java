@@ -30,8 +30,13 @@ import org.ethereum.core.*;
 import org.ethereum.core.transaction.TransactionType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.BigInteger;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -189,8 +194,6 @@ class TxPendingValidatorTest {
     void isValid_ShouldBeInvalid_WhenTypedTransactionAndRSKIP543IsNotActivated() {
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
-        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(10L).toByteArray());
-        when(executionBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
 
         Transaction tx = mock(Transaction.class);
         when(tx.getTypePrefix()).thenReturn(TransactionTypePrefix.typed(TransactionType.TYPE_1));
@@ -213,13 +216,17 @@ class TxPendingValidatorTest {
         assertFalse(result.transactionIsValid());
         assertTrue(result.getErrorMessage().contains("is not supported before its activation"));
         verify(tx).isTypedTransactionNotAllowed(forBlock);
+        verify(executionBlock, never()).getGasLimit();
+        verify(executionBlock, never()).getMinimumGasPrice();
         verify(tx, never()).transactionCost(any(), any(), any());
         verify(tx, never()).isInitCodeSizeInvalidForTx(any());
         verify(tx, never()).getSize();
     }
 
-    @Test
-    void isValid_ShouldRejectRealTypedTransactionBeforeFurtherValidation_WhenRSKIP543IsNotActivated() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("realTypedTransactionsBlockedBeforeRskip543")
+    void isValid_ShouldRejectRealTypedTransaction_WhenRSKIP543IsNotActivated(
+            String typeLabel, Supplier<Transaction> txSupplier) {
         long executionBlockNumber = 10L;
         TestSystemProperties config = new TestSystemProperties(baseConfig -> baseConfig.withValue(
                 "blockchain.config.hardforkActivationHeights.vetiver900",
@@ -227,10 +234,11 @@ class TxPendingValidatorTest {
         ));
         ActivationConfig activationConfig = config.getActivationConfig();
         ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlockNumber);
-        Transaction tx = Rskip546TestSupport.unsignedType1();
+        Transaction tx = txSupplier.get();
 
         assertFalse(activations.isActive(ConsensusRule.RSKIP543));
-        assertTrue(tx.isTypedTransactionNotAllowed(activations));
+        assertTrue(tx.isTypedTransactionNotAllowed(activations),
+                typeLabel + " must be blocked by isTypedTransactionNotAllowed before RSKIP543");
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(executionBlockNumber);
@@ -244,7 +252,16 @@ class TxPendingValidatorTest {
         TransactionValidationResult result = validator.isValid(tx, executionBlock, mock(AccountState.class));
 
         assertFalse(result.transactionIsValid());
-        assertTrue(result.getErrorMessage().contains("is not supported before its activation"));
+        assertTrue(result.getErrorMessage().contains("is not supported before its activation"),
+                typeLabel + " rejection message should indicate the activation requirement, got: "
+                        + result.getErrorMessage());
+    }
+
+    private static Stream<Arguments> realTypedTransactionsBlockedBeforeRskip543() {
+        return Stream.of(
+                Arguments.of("type1", (Supplier<Transaction>) Rskip546TestSupport::unsignedType1),
+                Arguments.of("type4", (Supplier<Transaction>) Rskip545TestSupport::unsignedType4)
+        );
     }
 
     @Test

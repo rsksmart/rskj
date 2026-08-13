@@ -30,6 +30,7 @@ import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.vm.GasCost;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -334,6 +335,26 @@ class TransactionRskip545InvariantTest {
         ActivationConfig.ForBlock activations = Mockito.mock(ActivationConfig.ForBlock.class);
 
         assertTrue(tx.transactionCost(constants, activations, new ReceivedTxSignatureCache()) > 0);
+    }
+
+    @Test
+    void transactionCost_type4WithNullAuthorizationList_doesNotThrow() throws Exception {
+        Transaction tx = signedType4();
+        // Warm encode/hash while authorization_list is still present (encoder rejects null).
+        tx.getHash();
+
+        java.lang.reflect.Field authorizationListField = Transaction.class.getDeclaredField("authorizationList");
+        authorizationListField.setAccessible(true);
+        authorizationListField.set(tx, null);
+
+        Constants constants = Mockito.mock(Constants.class);
+        Mockito.doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
+        ActivationConfig.ForBlock activations = Mockito.mock(ActivationConfig.ForBlock.class);
+
+        assertEquals(
+                GasCost.TRANSACTION,
+                tx.transactionCost(constants, activations, new ReceivedTxSignatureCache()),
+                "Null authorization_list must not NPE; charge no PER_EMPTY_ACCOUNT_COST");
     }
 
     @Test
