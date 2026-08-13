@@ -88,7 +88,7 @@ public class TraceTransformer {
     }
 
     public static TransactionTrace toTrace(TraceType traceType, InvokeData invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, CreationData creationData, String creationMethod, String err, int nsubtraces, DataWord codeAddress) {
-        TraceAction action = toAction(traceType, invoke, callType, creationData == null ? null : creationData.getCreationInput(), creationMethod, codeAddress, txInfo);
+        TraceAction action = toAction(traceType, invoke, callType, creationData == null ? null : creationData.getCreationInput(), creationMethod, codeAddress);
         TraceResult result = null;
         String error = null;
 
@@ -143,7 +143,7 @@ public class TraceTransformer {
         return new TraceResult(gasUsed, output, code, address);
     }
 
-    public static TraceAction toAction(TraceType traceType, InvokeData invoke, CallType callType, byte[] creationInput, String creationMethod, DataWord codeAddress, TransactionInfo txInfo) {
+    public static TraceAction toAction(TraceType traceType, InvokeData invoke, CallType callType, byte[] creationInput, String creationMethod, DataWord codeAddress) {
         String from;
 
         if (callType == CallType.DELEGATECALL) {
@@ -171,8 +171,7 @@ public class TraceTransformer {
         }
 
         if (traceType == TraceType.CALL) {
-            byte[] txData = txInfo.getReceipt().getTransaction().getData();
-            input = HexUtils.toUnformattedJsonHex(txData);
+            input = HexUtils.toUnformattedJsonHex(invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize()));
             value = HexUtils.toQuantityJsonHex(callValue.getData());
 
             if (callType == CallType.DELEGATECALL) {

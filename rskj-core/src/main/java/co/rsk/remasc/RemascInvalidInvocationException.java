@@ -23,7 +23,7 @@ package co.rsk.remasc;
  */
 class RemascInvalidInvocationException extends RuntimeException {
 
-    public RemascInvalidInvocationException(String s) {
+    RemascInvalidInvocationException(String s) {
         super(s);
     }
 }

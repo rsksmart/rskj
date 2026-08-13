@@ -52,4 +52,3 @@ class PingPongMessageTest {
         assertEquals(null, pongMessage.getAnswerMessage());
     }
 }
-

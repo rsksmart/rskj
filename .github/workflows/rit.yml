@@ -18,18 +18,33 @@ on:
         description: 'Branch for PowPeg Node'
         required: false
         default: 'master'
+      test-suite:
+        description: 'Test suite to run: short (fast PR subset) or full (short + extra tests)'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+          - short
+          - full
 
 # Declare default permissions as read only.
 permissions: read-all
+
+# Cancel a still-running PR run when a new commit lands on the same PR, so a superseded commit
+# doesn't keep occupying a runner. Push/schedule/workflow_dispatch runs are only serialized (queued),
+# not cancelled, since those represent completed states worth validating to completion.
+concurrency:
+  group: rit-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   rootstock-integration-tests:
     name: Rootstock Integration Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Checkout Repository # Step needed to access the PR description using github CLI
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
 
       - name: Set Branch Variables
         id: set-branch-variables
@@ -37,6 +52,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           github_event_inputs_powpeg_branch: ${{ github.event.inputs.powpeg-branch }}
           github_event_inputs_rit_branch: ${{ github.event.inputs.rit-branch }}
+          github_event_inputs_test_suite: ${{ github.event.inputs.test-suite }}
           github_event_name: ${{ github.event_name }}
           github_event_pull_request_number: ${{ github.event.pull_request.number }}
           github_head_ref: ${{ github.head_ref }}
@@ -51,6 +67,7 @@ jobs:
           default_rskj_branch=master
           default_powpeg_branch=master
           default_rit_branch=main
+          default_test_suite=full
 
           get_branch_from_description()
           {
@@ -73,6 +90,7 @@ jobs:
             RSKJ_BRANCH=$github_ref_name
             POWPEG_BRANCH=${github_event_inputs_powpeg_branch:-$default_powpeg_branch}
             RIT_BRANCH=${github_event_inputs_rit_branch:-$default_rit_branch}
+            TEST_SUITE=${github_event_inputs_test_suite:-$default_test_suite}
           elif [ "$github_event_name" = pull_request ]; then
             gh pr view "$github_event_pull_request_number" --json body -q .body >"$PR_DESCRIPTION"
 
@@ -84,10 +102,23 @@ jobs:
 
             RIT_BRANCH=$(get_branch_from_description rit)
             : ${RIT_BRANCH:=$default_rit_branch}
+
+            # PRs default to the short suite for fast feedback, but can opt into the full suite
+            # via a `test-suite:full` tag in the PR description (e.g. before merging into master).
+            TEST_SUITE=$(get_branch_from_description test-suite)
+            : ${TEST_SUITE:=short}
+          elif [ "$github_event_name" = push ]; then
+            # A push targets a specific branch (master or a *-rc release branch), so test
+            # against that branch rather than defaulting to master.
+            RSKJ_BRANCH=$github_ref_name
+            POWPEG_BRANCH=$default_powpeg_branch
+            RIT_BRANCH=$default_rit_branch
+            TEST_SUITE=$default_test_suite
           else
             RSKJ_BRANCH=$default_rskj_branch
             POWPEG_BRANCH=$default_powpeg_branch
             RIT_BRANCH=$default_rit_branch
+            TEST_SUITE=$default_test_suite
           fi
 
           if ! is_valid_branch_name "$RSKJ_BRANCH"; then
@@ -102,6 +133,10 @@ jobs:
             echo "rit: invalid branch name: $RIT_BRANCH" >&2
             exit 1
           fi
+          if [ "$TEST_SUITE" != "short" ] && [ "$TEST_SUITE" != "full" ]; then
+            echo "test-suite: invalid value: $TEST_SUITE, must be 'short' or 'full'" >&2
+            exit 1
+          fi
 
           # Set the Repo Owner
           REPO_OWNER="${github_event_pull_request_head_repo_owner_login:-$github_repository_owner}"
@@ -110,6 +145,7 @@ jobs:
           echo "RSKJ_BRANCH=$RSKJ_BRANCH" >> $GITHUB_ENV
           echo "RIT_BRANCH=$RIT_BRANCH" >> $GITHUB_ENV
           echo "POWPEG_BRANCH=$POWPEG_BRANCH" >> $GITHUB_ENV
+          echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_ENV
 
       - name: Set Build URL
         id: set-build-url
@@ -117,15 +153,54 @@ jobs:
           BUILD_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "BUILD_URL=$BUILD_URL" >> $GITHUB_ENV
 
-      - name: Sanitize Github Variables
-        id: sanitize-github-variables
-        if: github.event_name == 'pull_request'
+      - name: Set Notification Context
+        id: set-notification-context
         env:
-          GITHUB_EVENT_PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number || '' }}
+          GITHUB_EVENT_PULL_REQUEST_TITLE: ${{ github.event.pull_request.title || '' }}
+          GITHUB_EVENT_PULL_REQUEST_HTML_URL: ${{ github.event.pull_request.html_url || '' }}
+          GITHUB_EVENT_HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message || '' }}
+          GITHUB_EVENT_HEAD_COMMIT_URL: ${{ github.event.head_commit.url || '' }}
+          GITHUB_REF_NAME: ${{ github.ref_name || '' }}
+          GITHUB_SHA: ${{ github.sha }}
+          RUN_URL: ${{ env.BUILD_URL }}
         run: |
-          # Delete non-alphanumeric characters and limit to 75 chars which is the branch title limit in GitHub
-          SAFE_PULL_REQUEST_TITLE=$(echo "${GITHUB_EVENT_PULL_REQUEST_TITLE}" | tr -cd '[:alnum:]_ -' | cut -c1-75)
-          echo "SAFE_PULL_REQUEST_TITLE=$SAFE_PULL_REQUEST_TITLE" >> $GITHUB_ENV
+          # Replace (not delete) non-alphanumeric characters so stripped punctuation never welds
+          # two words together (e.g. "rsksmart/rit-update" must not become "rsksmartrit-update"),
+          # then squeeze runs of spaces and trim, and cap length to keep the Slack message concise.
+          sanitize() {
+            printf '%s' "$1" | tr -c '[:alnum:]_ -' ' ' | tr -s ' ' | sed 's/^ *//;s/ *$//' | cut -c1-75
+          }
+
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            NOTIFICATION_TITLE="PR #${GITHUB_EVENT_PULL_REQUEST_NUMBER}"
+            NOTIFICATION_SUBTITLE=$(sanitize "$GITHUB_EVENT_PULL_REQUEST_TITLE")
+            # A PR title made up entirely of characters sanitize() strips (e.g. only emoji)
+            # would otherwise produce an empty string, which Slack's Block Kit rejects (text
+            # objects require a minimum length of 1), failing this step and misreporting a
+            # successful run as failed.
+            : "${NOTIFICATION_SUBTITLE:=PR #${GITHUB_EVENT_PULL_REQUEST_NUMBER}}"
+            NOTIFICATION_URL="$GITHUB_EVENT_PULL_REQUEST_HTML_URL"
+            NOTIFICATION_ACTION_LABEL="Open PR"
+          elif [ "$GITHUB_EVENT_NAME" = push ]; then
+            NOTIFICATION_TITLE="Push to ${GITHUB_REF_NAME}"
+            NOTIFICATION_SUBTITLE=$(sanitize "$(printf '%s' "$GITHUB_EVENT_HEAD_COMMIT_MESSAGE" | head -n1)")
+            # Same empty-string risk as above, for commit messages.
+            : "${NOTIFICATION_SUBTITLE:=Commit ${GITHUB_SHA:0:7}}"
+            NOTIFICATION_URL="$GITHUB_EVENT_HEAD_COMMIT_URL"
+            NOTIFICATION_ACTION_LABEL="View Commit"
+          else
+            NOTIFICATION_TITLE="Scheduled run on ${GITHUB_REF_NAME}"
+            NOTIFICATION_SUBTITLE="Nightly Rootstock Integration Tests run"
+            NOTIFICATION_URL="$RUN_URL"
+            NOTIFICATION_ACTION_LABEL="View Run"
+          fi
+
+          echo "NOTIFICATION_TITLE=$NOTIFICATION_TITLE" >> $GITHUB_ENV
+          echo "NOTIFICATION_SUBTITLE=$NOTIFICATION_SUBTITLE" >> $GITHUB_ENV
+          echo "NOTIFICATION_URL=$NOTIFICATION_URL" >> $GITHUB_ENV
+          echo "NOTIFICATION_ACTION_LABEL=$NOTIFICATION_ACTION_LABEL" >> $GITHUB_ENV
 
       - name: Run Rootstock Integration Tests
         uses: rsksmart/rootstock-integration-tests@main
@@ -134,43 +209,26 @@ jobs:
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
           rit-branch: ${{ env.RIT_BRANCH }}
           repo-owner: ${{ env.REPO_OWNER }}
+          test-suite: ${{ env.TEST_SUITE }}
+
+      - name: Check Slack Token
+        id: check-slack-token
+        # always() so this still runs (and the failure-notification step can gate on its output)
+        # even if the RIT action step above failed.
+        if: always()
+        # Kept in its own step-scoped env (not job-level) so the token itself is never exposed
+        # to other steps (e.g. the RIT action above); only a boolean flag is exposed as an output.
+        env:
+          SLACK_NOTIFICATION_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
+        run: |
+          if [ -n "$SLACK_NOTIFICATION_TOKEN" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Send Slack Notification on Success
-        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart'
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
-        with:
-          token: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
-          method: chat.postMessage
-          payload: |
-            channel: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
-            blocks:
-            - type: header
-              text:
-                type: plain_text
-                text: "✅ PASSED — ${{ github.repository }} – PR #${{ github.event.pull_request.number }}"
-                emoji: true
-            - type: section
-              text:
-                type: mrkdwn
-                text: "*${{ env.SAFE_PULL_REQUEST_TITLE }}*"
-              fields:
-                - type: mrkdwn
-                  text: "• rskj: `${{ env.RSKJ_BRANCH }}`\n• fed: `${{ env.POWPEG_BRANCH }}`\n• rit: `${{ env.RIT_BRANCH }}`"
-            - type: actions
-              elements:
-                - type: button
-                  text:
-                    type: plain_text
-                    text: Open PR
-                  url: "${{ github.event.pull_request.html_url }}"
-                - type: button
-                  text:
-                    type: plain_text
-                    text: View Actions Run
-                  url: "${{ env.BUILD_URL }}"
-
-      - name: Send Slack Notification on Failure
-        if: failure() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart'
+        if: success() && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart')) && steps.check-slack-token.outputs.has_token == 'true'
         uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           token: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
@@ -181,12 +239,46 @@ jobs:
               - type: header
                 text:
                   type: plain_text
-                  text: "❌ FAILED — ${{ github.repository }} – PR #${{ github.event.pull_request.number }}"
+                  text: "✅ PASSED — ${{ github.repository }} – ${{ env.NOTIFICATION_TITLE }}"
                   emoji: true
               - type: section
                 text:
                   type: mrkdwn
-                  text: "*${{ env.SAFE_PULL_REQUEST_TITLE }}*"
+                  text: "*${{ env.NOTIFICATION_SUBTITLE }}*"
+                fields:
+                  - type: mrkdwn
+                    text: "• rskj: `${{ env.RSKJ_BRANCH }}`\n• fed: `${{ env.POWPEG_BRANCH }}`\n• rit: `${{ env.RIT_BRANCH }}`"
+              - type: actions
+                elements:
+                  - type: button
+                    text:
+                      type: plain_text
+                      text: "${{ env.NOTIFICATION_ACTION_LABEL }}"
+                    url: "${{ env.NOTIFICATION_URL }}"
+                  - type: button
+                    text:
+                      type: plain_text
+                      text: View Actions Run
+                    url: "${{ env.BUILD_URL }}"
+
+      - name: Send Slack Notification on Failure
+        if: failure() && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'rsksmart')) && steps.check-slack-token.outputs.has_token == 'true'
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        with:
+          token: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
+          method: chat.postMessage
+          payload: |
+            channel: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
+            blocks:
+              - type: header
+                text:
+                  type: plain_text
+                  text: "❌ FAILED — ${{ github.repository }} – ${{ env.NOTIFICATION_TITLE }}"
+                  emoji: true
+              - type: section
+                text:
+                  type: mrkdwn
+                  text: "*${{ env.NOTIFICATION_SUBTITLE }}*"
                 fields:
                   - type: mrkdwn
                     text: "• rskj: `${{ env.RSKJ_BRANCH }}`\n• fed: `${{ env.POWPEG_BRANCH }}`\n• rit: `${{ env.RIT_BRANCH }}`"
@@ -196,8 +288,8 @@ jobs:
                     style: danger
                     text:
                       type: plain_text
-                      text: Open PR
-                    url: "${{ github.event.pull_request.html_url }}"
+                      text: "${{ env.NOTIFICATION_ACTION_LABEL }}"
+                    url: "${{ env.NOTIFICATION_URL }}"
                   - type: button
                     style: danger
                     text:

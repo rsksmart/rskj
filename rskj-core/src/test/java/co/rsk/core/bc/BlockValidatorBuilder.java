@@ -75,7 +75,8 @@ public class BlockValidatorBuilder {
 
     public BlockValidatorBuilder addBlockTxsFieldsValidationRule() {
         this.blockTxsFieldsValidationRule = new BlockTxsFieldsValidationRule(
-                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()),
+                config.getNetworkConstants().getChainId());
         return this;
     }
 

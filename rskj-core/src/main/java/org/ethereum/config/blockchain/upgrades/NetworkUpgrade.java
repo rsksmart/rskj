@@ -37,7 +37,7 @@ public enum NetworkUpgrade {
     REED800("reed800"),
     REED810("reed810"),
     VETIVER900("vetiver900"),
-    TBD1000("tbd1000");
+    CARDAMOM1000("cardamom1000");
 
     private final String name;
 

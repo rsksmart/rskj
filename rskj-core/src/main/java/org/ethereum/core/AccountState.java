@@ -123,7 +123,7 @@ public class AccountState {
         return deleted;
     }
 
-    public AccountState clone() {
+    public AccountState copy() {
         AccountState accountState = new AccountState(nonce, balance);
         accountState.setStateFlags(this.stateFlags);
         return accountState;

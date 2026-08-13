@@ -10,24 +10,21 @@ apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
 
 import java.nio.file.Paths
-
-// Define static timestamp
-def staticTimestamp = '2024-10-31T10:24:00'
-ext.timestamp = staticTimestamp
-
-def filteredFiles = getFilteredFiles()
+import groovy.transform.Field
 
 checkstyle {
-    toolVersion = '8.45'
+    toolVersion = '12.2.0'
     configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
 }
 
 spotless {
-    enforceCheck false
+    // Wire spotlessJavaCheck into the `check` lifecycle task (and hence `./gradlew build`),
+    // so it actually runs instead of silently being a no-op the ratchet plumbing sets up but
+    // never invokes. Already passes clean unratcheted against the whole tree.
+    enforceCheck true
     java {
         // Only check for newline at end of file
         endWithNewline()
-        target filteredFiles
         // Enable ratchet mode to only check files changed from the target branch
         if (project.hasProperty('ratchetFrom')) {
             ratchetFrom project.property('ratchetFrom')
@@ -57,50 +54,66 @@ tasks.named('run', JavaExec) {
     }
  }
 
-def getFilteredFiles() {
-    def timestamp = ext.timestamp
-
-    def commandLog = [
-            'git', 'log', '--since=' + timestamp, '--name-only', '--pretty=format:', '--abbrev-commit'
-    ]
-    def commandDiff = [
-            'git', 'diff', '--name-only'
-    ]
-    def commandStaged = [
-            'git', 'diff', '--cached', '--name-only'
-    ]
-
-    def outputLog = new ByteArrayOutputStream()
-    def outputDiff = new ByteArrayOutputStream()
-    def outputStaged = new ByteArrayOutputStream()
-
-    exec {
-        commandLine commandLog
-        standardOutput = outputLog
-        errorOutput = outputLog
+// Returns the list of changed *.java files relative to the 'ratchetFrom' project property
+// (e.g. -PratchetFrom=origin/master), unioned with any uncommitted/staged local changes, or
+// null when 'ratchetFrom' isn't provided -- meaning "no ratchet: check the full source set".
+//
+// This mirrors the ratchetFrom pattern Spotless already uses in this file, instead of
+// approximating "changed files" via `git log --since=<a fixed date>`, whose result silently
+// depends on how much git history the checkout has (e.g. a shallow CI clone sees every file in
+// its single commit as "added", while a full local clone only sees files touched since that
+// date) rather than on what the current branch/PR actually changed.
+// Runs a git command, keeping stderr separate from stdout. Fails loudly (GradleException) on
+// a non-zero exit instead of silently swallowing the error, so a bad/unfetched ratchetFrom ref
+// fails the build with a clear message, rather than producing an empty file list that reads as
+// "nothing changed" and silently disables the check.
+def runGit(List<String> command) {
+    def out = new ByteArrayOutputStream()
+    def err = new ByteArrayOutputStream()
+    def result = exec {
+        commandLine command
+        standardOutput = out
+        errorOutput = err
         ignoreExitValue = true
     }
+    if (result.exitValue != 0) {
+        throw new GradleException(
+                "Cannot determine the ratcheted file set: '${command.join(' ')}' exited " +
+                "${result.exitValue}. This usually means the -PratchetFrom ref isn't available " +
+                "locally (e.g. the base branch wasn't fetched, or the ref is invalid).\nstderr:\n${err}"
+        )
+    }
+    return out.toString()
+}
 
-    exec {
-        commandLine commandDiff
-        standardOutput = outputDiff
-        errorOutput = outputDiff
-        ignoreExitValue = true
+// getFilteredFilesForCheckstyle() below is called once per Checkstyle task (main, test,
+// integrationTest, jmh, fuzzTest, file) during configureEach, and again for
+// jmh/integrationTest/fuzzTest in the afterEvaluate block further down -- each call would
+// otherwise re-run the 3 git subprocesses above from scratch. The git diff state can't change
+// mid-build, so it's safe to compute this once per build invocation and cache it.
+@Field def ratchetedFilesComputed = false
+@Field def ratchetedFilesCache = null
+
+def getRatchetedFiles() {
+    if (ratchetedFilesComputed) {
+        return ratchetedFilesCache
+    }
+    ratchetedFilesComputed = true
+
+    if (!project.hasProperty('ratchetFrom')) {
+        return ratchetedFilesCache = null
     }
 
-    exec {
-        commandLine commandStaged
-        standardOutput = outputStaged
-        errorOutput = outputStaged
-        ignoreExitValue = true
-    }
+    def ratchetFrom = project.property('ratchetFrom')
 
-    def committedFiles = outputLog.toString().trim().split('\n').toList().unique()
-    def uncommittedFiles = outputDiff.toString().trim().split('\n').toList().unique()
-    def stagedFiles = outputStaged.toString().trim().split('\n').toList().unique()
-    def allFiles = committedFiles + uncommittedFiles + stagedFiles
+    def baseDiffOutput = runGit(['git', 'diff', '--name-only', "${ratchetFrom}...HEAD"])
+    def uncommittedOutput = runGit(['git', 'diff', '--name-only'])
+    def stagedOutput = runGit(['git', 'diff', '--cached', '--name-only'])
 
-    allFiles = allFiles.unique().findAll { file -> file }
+    def baseDiffFiles = baseDiffOutput.trim().split('\n').toList()
+    def uncommittedFiles = uncommittedOutput.trim().split('\n').toList()
+    def stagedFiles = stagedOutput.trim().split('\n').toList()
+    def allFiles = (baseDiffFiles + uncommittedFiles + stagedFiles).unique().findAll { file -> file }
 
     def projectRoot = project.projectDir.toPath().toAbsolutePath()
 
@@ -113,27 +126,30 @@ def getFilteredFiles() {
         return absolutePath.exists() ? absolutePath : null
     }.findAll { it != null }
 
-    return allFiles
+    return ratchetedFilesCache = allFiles
 }
 
 
 def configureCheckstyleTask(Checkstyle task, String sourceDir) {
     // For checkstyleFile task, the sources are set via -PfilePath parameter in task definition
-    if (task.name == 'checkstyleFile' && !project.hasProperty('filePath')) {
-        println "No filePath property provided. Skipping task ${task.name}"
-        task.enabled = false
-        return
-    }
-
-    def filteredFilesCheckstyle = task.name == 'checkstyleFile'
-        ? project.property('filePath').split(',').collect { it.trim() }
-        : getFilteredFilesForCheckstyle(sourceDir)
-
-    if (!filteredFilesCheckstyle.isEmpty()) {
-        task.source = project.files(filteredFilesCheckstyle)
+    if (task.name == 'checkstyleFile') {
+        if (!project.hasProperty('filePath')) {
+            println "No filePath property provided. Skipping task ${task.name}"
+            task.enabled = false
+        } else {
+            def filePaths = project.property('filePath').split(',').collect { it.trim() }
+            task.source = project.files(filePaths)
+        }
     } else {
-        println "No files to assign to Checkstyle for ${sourceDir}. Skipping task."
-        task.enabled = false
+        def ratchetedFiles = getFilteredFilesForCheckstyle(sourceDir)
+        if (ratchetedFiles == null) {
+            // No -PratchetFrom provided: leave the task's default (full) source set untouched.
+        } else if (!ratchetedFiles.isEmpty()) {
+            task.source = project.files(ratchetedFiles)
+        } else {
+            println "No changed files under ${sourceDir} relative to ratchetFrom. Skipping task ${task.name}."
+            task.enabled = false
+        }
     }
 
     task.classpath = project.files(
@@ -144,13 +160,13 @@ def configureCheckstyleTask(Checkstyle task, String sourceDir) {
         xml.required.set(true)
         html.required.set(true)
     }
-    task.onlyIf {
-        !filteredFilesCheckstyle.isEmpty()
-    }
 }
 
 def getFilteredFilesForCheckstyle(String sourceDir) {
-    def files = getFilteredFiles()
+    def files = getRatchetedFiles()
+    if (files == null) {
+        return null
+    }
     return files.findAll { file ->
         def filePath = file.toPath().normalize()
         def isJavaFile = filePath.toString().endsWith('.java')
@@ -168,7 +184,7 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
             'checkstyleTest'           : 'src/test/java',
             'checkstyleIntegrationTest': 'src/integrationTest/java',
             'checkstyleJmh'            : 'src/jmh/java',
-            'checkstyleFuzz'           : 'src/fuzzTest/java',
+            'checkstyleFuzzTest'       : 'src/fuzzTest/java',
             'checkstyleFile'           : ''
     ]
 
@@ -178,17 +194,34 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
         }
     }
 
-    if (task.name in ['checkstyleJmh', 'checkstyleIntegrationTest']) {
-        task.doFirst {
-            def relevantSourceDir = task.name == 'checkstyleJmh' ? 'src/jmh/java' : 'src/integrationTest/java'
+    task.dependsOn processResources
+}
+
+// jmh/integrationTest/fuzzTest are wired up later in this file (see sourceSets{}/testing{}
+// below), which resets task.source after the configureEach block above runs. Re-applying the
+// filter in a task.doFirst {} used to "win" that race, but doFirst runs at task EXECUTION
+// time, after Gradle has already snapshotted task.source for its up-to-date check -- so the
+// task's recorded inputs stay the full (unfiltered) source set forever, and a later run with a
+// *different* -PratchetFrom value is wrongly reported UP-TO-DATE, serving a stale report from
+// whatever scope happened to run first. project.afterEvaluate {} still runs during the
+// CONFIGURATION phase (after all source-set wiring has settled, guaranteed by Gradle to
+// complete before any task executes), so reassigning task.source here is seen by the
+// up-to-date check like any other configuration-time input.
+project.afterEvaluate {
+    tasks.withType(Checkstyle).configureEach { Checkstyle task ->
+        if (task.name in ['checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzzTest']) {
+            def relevantSourceDir = task.name == 'checkstyleJmh' ? 'src/jmh/java'
+                    : task.name == 'checkstyleIntegrationTest' ? 'src/integrationTest/java'
+                    : 'src/fuzzTest/java'
             def checkstyleFiles = getFilteredFilesForCheckstyle(relevantSourceDir)
 
-            if (!checkstyleFiles.isEmpty()) {
+            if (checkstyleFiles != null && !checkstyleFiles.isEmpty()) {
                 task.source = project.files(checkstyleFiles)
+            } else if (checkstyleFiles != null) {
+                task.enabled = false
             }
         }
     }
-    task.dependsOn processResources
 }
 
 configurations {
@@ -615,13 +648,25 @@ artifacts {
 }
 
 static def gitCurrentBranch() {
-    def process = "git rev-parse --abbrev-ref HEAD".execute()
-    return process.text.trim()
+    return resolveGitValue("COMMIT_BRANCH", "git rev-parse --abbrev-ref HEAD")
 }
 
 static def gitCommitHash() {
-    def process = "git rev-parse --short HEAD".execute()
-    return process.text.trim()
+    return resolveGitValue("COMMIT_HASH", "git rev-parse --short HEAD")
+}
+
+static def resolveGitValue(String envVar, String gitCommand) {
+    def envValue = System.getenv(envVar)?.trim()
+    if (envValue) return envValue
+    try {
+        def process = gitCommand.execute()
+        process.waitFor()
+        if (process.exitValue() == 0) {
+            def result = process.text.trim()
+            if (result) return result
+        }
+    } catch (Exception ignored) {}
+    return "unknown"
 }
 
 static def amendPathIfNeeded(details) {
@@ -637,7 +682,7 @@ static def amendPathIfNeeded(details) {
 task checkstyleAll {
     group = 'Verification'
     description = 'Run all Checkstyle checks'
-    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzz'
+    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzzTest'
 }
 
 task checkstyleFile(type: Checkstyle) {

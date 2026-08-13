@@ -14,7 +14,7 @@ class MigratorConfiguration {
     private final Properties migrationConfiguration;
     private final Path destinationConfiguration;
 
-    public MigratorConfiguration(String sourceConfiguration, String migrationConfiguration, String destinationConfiguration, boolean replaceSource) {
+    MigratorConfiguration(String sourceConfiguration, String migrationConfiguration, String destinationConfiguration, boolean replaceSource) {
         this.sourceConfiguration = Paths.get(sourceConfiguration);
         if (!Files.isRegularFile(this.sourceConfiguration)) {
             throw new IllegalArgumentException(String.format("%s is not a valid input file", sourceConfiguration));

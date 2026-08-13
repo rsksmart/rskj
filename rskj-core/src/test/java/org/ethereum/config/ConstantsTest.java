@@ -60,7 +60,7 @@ class ConstantsTest {
     }
 
     @Test
-    void devnetWithFederationTest() {
+    void testnetWithFederationTest() {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstants);
 
         assertThat(genesisFederation.hasBtcPublicKey(GENESIS_FEDERATION_PUBLIC_KEYS_TESTNET.get(0)), is(true));
@@ -98,7 +98,6 @@ class ConstantsTest {
         assertEquals(10_000_000L, Constants.mainnet().getMinSequentialSetGasLimit());
         assertEquals(10_000_000L, Constants.testnet(mock(ActivationConfig.class)).getMinSequentialSetGasLimit());
         assertEquals(10_000_000L, Constants.testnet2(mock(ActivationConfig.class)).getMinSequentialSetGasLimit());
-        assertEquals(10_000_000L, Constants.devnetWithFederation().getMinSequentialSetGasLimit());
         assertEquals(6_800_000L, Constants.regtest().getMinSequentialSetGasLimit());
     }
 }

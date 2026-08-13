@@ -36,7 +36,6 @@ import org.bouncycastle.crypto.params.*;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.util.Utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

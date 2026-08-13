@@ -20,6 +20,7 @@ package co.rsk.peg.federation;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -2127,22 +2128,22 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getPendingFederatorBtcPublicKey")
-        void getPendingFederatorBtcPublicKey_returnsNull() {
+        void getPendingFederatorBtcPublicKey_returnsEmpty() {
             byte[] pendingFederatorBtcPublicKey = federationSupport.getPendingFederatorBtcPublicKey(0);
-            assertThat(pendingFederatorBtcPublicKey, is(nullValue()));
+            assertArrayEquals(EMPTY_BYTE_ARRAY, pendingFederatorBtcPublicKey);
         }
 
         @Test
         @Tag("getPendingFederatorPublicKeyOfType")
-        void getPendingFederatorPublicKeyOfType_returnsNull() {
+        void getPendingFederatorPublicKeyOfType_returnsEmpty() {
             byte[] pendingFederatorBtcPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.BTC);
-            assertThat(pendingFederatorBtcPublicKey, is(nullValue()));
+            assertArrayEquals(EMPTY_BYTE_ARRAY, pendingFederatorBtcPublicKey);
 
             byte[] pendingFederatorRskPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.RSK);
-            assertThat(pendingFederatorRskPublicKey, is(nullValue()));
+            assertArrayEquals(EMPTY_BYTE_ARRAY, pendingFederatorRskPublicKey);
 
             byte[] pendingFederatorMstPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(pendingFederatorMstPublicKey, is(nullValue()));
+            assertArrayEquals(EMPTY_BYTE_ARRAY, pendingFederatorMstPublicKey);
         }
     }
 

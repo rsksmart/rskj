@@ -57,4 +57,3 @@ public class TraceResult {
         return this.address;
     }
 }
-

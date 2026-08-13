@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class StatusResolverTest {

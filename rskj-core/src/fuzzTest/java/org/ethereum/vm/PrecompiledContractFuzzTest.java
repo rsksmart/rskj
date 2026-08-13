@@ -7,7 +7,6 @@ import com.code_intelligence.jazzer.junit.FuzzTest;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.vm.exception.VMException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Assumptions;
 import org.opentest4j.TestAbortedException;
 import org.spongycastle.util.Arrays;

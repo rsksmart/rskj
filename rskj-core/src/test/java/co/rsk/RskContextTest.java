@@ -19,14 +19,27 @@
 package co.rsk;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.*;
+import co.rsk.config.GarbageCollectorConfig;
+import co.rsk.config.InternalService;
+import co.rsk.config.NodeCliFlags;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.net.AsyncNodeBlockProcessor;
 import co.rsk.net.NodeBlockProcessor;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.net.discovery.KnownPeersHandler;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.trie.MultiTrieStore;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import co.rsk.validators.BlockDifficultyRule;
+import co.rsk.validators.BlockParentCompositeRule;
+import co.rsk.validators.BlockParentDependantValidationRule;
+import co.rsk.validators.BlockParentGasLimitRule;
+import co.rsk.validators.BlockParentNumberRule;
+import co.rsk.validators.BlockTxsFieldsValidationRule;
+import co.rsk.validators.BlockTxsValidationRule;
+import co.rsk.validators.PrevMinGasPriceRule;
+import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -46,13 +59,30 @@ import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class RskContextTest {
 
@@ -62,7 +92,7 @@ class RskContextTest {
     private RskContext rskContext;
 
     @BeforeEach
-    void setUp(@TempDir Path tempDir) throws IOException {
+    void setUp(@TempDir Path tempDir) {
         databaseDir = tempDir.resolve("database");
 
         testProperties = spy(new TestSystemProperties());
@@ -76,10 +106,10 @@ class RskContextTest {
 
     @Test
     void getCliArgsSmokeTest() {
-        RskTestContext devnetContext = new RskTestContext(databaseDir, "--devnet");
-        MatcherAssert.assertThat(devnetContext.getCliArgs(), notNullValue());
-        MatcherAssert.assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
-        devnetContext.close();
+        RskTestContext testnetContext = new RskTestContext(databaseDir, "--testnet");
+        MatcherAssert.assertThat(testnetContext.getCliArgs(), notNullValue());
+        MatcherAssert.assertThat(testnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_TESTNET));
+        testnetContext.close();
     }
 
     @Test
@@ -238,7 +268,7 @@ class RskContextTest {
 
         rskContext.close();
 
-        Set<String> methodsToSkip = new HashSet<String>() {{
+        Set<String> methodsToSkip = new HashSet<>() {{
             add("getCliArgs");
             add("resolveCacheSnapshotPath");
             add("isClosed");
@@ -288,6 +318,103 @@ class RskContextTest {
         assertNotNull(initialBootNodes);
         assertEquals(3, initialBootNodes.size(), "Initial nodes should be 3");
         assertEquals(initialBootNodes.stream().distinct().count(), initialBootNodes.size(), "Initial nodes should not have duplicates");
+    }
+
+    /**
+     * How much work a rule costs on a block that is going to be rejected anyway.
+     * <p>
+     * {@link BlockParentCompositeRule} evaluates in order and short-circuits on the first failure, so the
+     * position of a rule decides what an invalid block costs before it is dropped. Tier 0 rules read a
+     * handful of header fields. Tier 1 walks every transaction in the block and validates its signature —
+     * work whose size an unauthenticated peer chooses. Tier 2 does that *and* opens a repository snapshot
+     * at the parent to read sender nonces.
+     * <p>
+     * Rules are classified rather than pinned to a fixed sequence so that adding a rule does not "fail the
+     * order test" mechanically: a new rule has to be given a tier, and the composite still has to be built
+     * cheap-tier-first.
+     */
+    private static final Map<Class<? extends BlockParentDependantValidationRule>, Integer> RULE_COST_TIER =
+            Collections.unmodifiableMap(new LinkedHashMap<>() {{
+                put(BlockParentNumberRule.class, 0);
+                put(BlockDifficultyRule.class, 0);
+                put(BlockParentGasLimitRule.class, 0);
+                put(PrevMinGasPriceRule.class, 0);
+                put(BlockTxsFieldsValidationRule.class, 1); // per-transaction signature validation
+                put(BlockTxsValidationRule.class, 2);       // per-transaction + repository snapshot reads
+            }});
+
+    @Test
+    void blockParentDependantValidationRunsCheapRulesBeforeExpensiveOnes() {
+        assertCheapRulesFirst(rskContext.getBlockParentDependantValidationRule());
+    }
+
+    @Test
+    void snapBlockParentDependantValidationRunsCheapRulesBeforeExpensiveOnes() {
+        assertCheapRulesFirst(rskContext.getSnapBlockParentDependantValidationRule());
+    }
+
+    @Test
+    void blockParentDependantValidationKeepsItsFullSetOfRules() {
+        // ordering must not be achieved by dropping a rule: the set itself is consensus-relevant
+        assertRuleSet(rskContext.getBlockParentDependantValidationRule(),
+                BlockParentNumberRule.class,
+                BlockDifficultyRule.class,
+                BlockParentGasLimitRule.class,
+                PrevMinGasPriceRule.class,
+                BlockTxsFieldsValidationRule.class,
+                BlockTxsValidationRule.class);
+    }
+
+    @Test
+    void snapBlockParentDependantValidationKeepsItsFullSetOfRules() {
+        // the snap variant deliberately omits BlockTxsValidationRule (no state at the parent to read yet)
+        assertRuleSet(rskContext.getSnapBlockParentDependantValidationRule(),
+                BlockParentNumberRule.class,
+                BlockDifficultyRule.class,
+                BlockParentGasLimitRule.class,
+                PrevMinGasPriceRule.class,
+                BlockTxsFieldsValidationRule.class);
+    }
+
+    /**
+     * Asserts the composite is ordered by non-decreasing cost, so the first rule that rejects a block is
+     * always the cheapest one that can.
+     */
+    private static void assertCheapRulesFirst(BlockParentDependantValidationRule composite) {
+        List<Class<?>> order = ruleClassesOf(composite);
+
+        List<String> unclassified = order.stream()
+                .filter(rule -> !RULE_COST_TIER.containsKey(rule))
+                .map(Class::getSimpleName)
+                .toList();
+        assertTrue(unclassified.isEmpty(),
+                "give these rules a cost tier in RULE_COST_TIER and place them accordingly: " + unclassified);
+
+        for (int i = 1; i < order.size(); i++) {
+            int previousTier = RULE_COST_TIER.get(order.get(i - 1));
+            int currentTier = RULE_COST_TIER.get(order.get(i));
+
+            assertTrue(previousTier <= currentTier,
+                    String.format("%s (cost tier %d) runs after %s (cost tier %d): an invalid block pays the"
+                                    + " more expensive rule before the cheaper one can reject it. Order was %s",
+                            order.get(i - 1).getSimpleName(), previousTier,
+                            order.get(i).getSimpleName(), currentTier,
+                            order.stream().map(Class::getSimpleName).toList()));
+        }
+    }
+
+    @SafeVarargs
+    private static void assertRuleSet(BlockParentDependantValidationRule composite,
+                                      Class<? extends BlockParentDependantValidationRule>... expected) {
+        assertEquals(new HashSet<>(Arrays.asList(expected)), new HashSet<>(ruleClassesOf(composite)));
+    }
+
+    private static List<Class<?>> ruleClassesOf(BlockParentDependantValidationRule composite) {
+        MatcherAssert.assertThat(composite, is(instanceOf(BlockParentCompositeRule.class)));
+
+        List<BlockParentDependantValidationRule> rules = TestUtils.getInternalState(composite, "rules");
+
+        return rules.stream().map(Object::getClass).toList();
     }
 
     private RskContext makeRskContext() {

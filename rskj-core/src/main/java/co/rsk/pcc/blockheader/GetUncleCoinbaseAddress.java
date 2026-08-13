@@ -80,4 +80,3 @@ public class GetUncleCoinbaseAddress extends BlockHeaderContractMethod {
         return uncle.getCoinbase().getBytes();
     }
 }
-

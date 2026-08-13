@@ -562,7 +562,7 @@ public class MinerServerImpl implements MinerServer {
         
         private final boolean updateWorkOnNewTransaction;
         
-        public NewBlockTxListener(MiningMainchainView mainchainView, Consumer<Boolean> buildBlock, BlockProcessor nodeBlockProcessor, boolean updateWorkOnNewTransaction) {
+        NewBlockTxListener(MiningMainchainView mainchainView, Consumer<Boolean> buildBlock, BlockProcessor nodeBlockProcessor, boolean updateWorkOnNewTransaction) {
             this.mainchainView = mainchainView;
             this.buildBlock = buildBlock;
             this.nodeBlockProcessor = nodeBlockProcessor;

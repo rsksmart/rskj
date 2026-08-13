@@ -247,4 +247,3 @@ class NetBlockStoreTest {
         Assertions.assertFalse(store.hasHeader(blockHeader.getHash()));
     }
 }
-

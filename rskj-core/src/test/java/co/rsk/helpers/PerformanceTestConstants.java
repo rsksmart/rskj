@@ -5,7 +5,7 @@ package co.rsk.helpers;
  */
 public class PerformanceTestConstants {
     // We aim for blocks with 7M gas units top (without parallel processing)
-    final public static int blockGasLimit = 7 * 1000 * 1000;
-    final public static int maxBlockProcessingTimeMillis = 550;
-    final public static int maxMegabytesConsumedPerBlock = 100;
+    public static final int blockGasLimit = 7 * 1000 * 1000;
+    public static final int maxBlockProcessingTimeMillis = 550;
+    public static final int maxMegabytesConsumedPerBlock = 100;
 }

@@ -1,25 +1,15 @@
 package co.rsk.net.discovery;
 
-import co.rsk.RskContext;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.net.eth.RskMessage;
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.code_intelligence.jazzer.junit.FuzzTest;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
-import org.ethereum.listener.EthereumListener;
-import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.eth.message.Eth62MessageFactory;
-import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.Message;
-import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.p2p.P2pMessageFactory;
-import org.ethereum.net.rlpx.MessageCodec;
-import org.ethereum.net.rlpx.Node;
-import org.ethereum.net.server.Channel;
 
 import java.lang.reflect.Method;
-import java.util.List;
 
 import org.junit.jupiter.api.Tag;
 

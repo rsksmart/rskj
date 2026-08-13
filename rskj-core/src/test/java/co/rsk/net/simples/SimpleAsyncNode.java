@@ -94,6 +94,7 @@ public class SimpleAsyncNode extends SimpleNode {
             ex.printStackTrace();
             Assertions.fail();
         } catch (InterruptedException ignored) {
+            // expected
         }
     }
 

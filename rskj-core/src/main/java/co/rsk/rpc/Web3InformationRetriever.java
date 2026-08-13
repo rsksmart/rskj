@@ -99,6 +99,7 @@ public class Web3InformationRetriever {
                 } else {
                     throw invalidParamError(String.format("invalid block identifier %s", StringUtils.trim(identifier)));
                 }
+                break;
         }
 
         return Optional.ofNullable(block);

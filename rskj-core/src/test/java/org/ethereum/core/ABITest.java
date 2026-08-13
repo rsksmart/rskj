@@ -67,12 +67,16 @@ class ABITest {
         try {
             ByteUtil.toHexString(function.encode("0xa1234567890abcdef1234567890abcdef12345678"));
             Assertions.assertTrue(false);
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            // expected
+        }
 
         try {
             ByteUtil.toHexString(function.encode("blabla"));
             Assertions.assertTrue(false);
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            // expected
+        }
     }
 
     static String funcJson2 = "{\n" +

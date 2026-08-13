@@ -255,9 +255,9 @@ public abstract class Secp256k1ServiceTest {
     @Test
     void testRecoverFromSignature_invalid_params() {
 
-        BigInteger validBigInt = BigInteger.valueOf(0l);
+        BigInteger validBigInt = BigInteger.valueOf(0L);
         byte[] validBytes = validBigInt.toByteArray();
-        BigInteger invalidBigInt = BigInteger.valueOf(-1l);
+        BigInteger invalidBigInt = BigInteger.valueOf(-1L);
         byte[] invalidNullBytes = null;
         boolean validBoolean = false;
         int validRecId = 0;

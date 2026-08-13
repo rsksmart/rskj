@@ -516,7 +516,6 @@ class VMExecutionTest {
 
     @Test
     void swapnTooManyItemsWithOverflow() {
-        ;
         Assertions.assertThrows(Program.StackTooSmallException.class, () -> executeCode("PUSH1 0x01 PUSH1 0x01 PUSH4 0x7f 0xff 0xff 0xff SWAPN", 4));
     }
 

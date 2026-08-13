@@ -168,7 +168,7 @@ public interface FederationSupport {
     int getPendingFederationSize();
 
     /**
-     * Returns the currently pending federation federator's public key at the given index, or null if none exists
+     * Returns the currently pending federation federator's public key at the given index, or EMPTY_BYTE_ARRAY if none exists
      * @param index the federator's index (zero-based)
      * @return the pending federation's federator public key
      */

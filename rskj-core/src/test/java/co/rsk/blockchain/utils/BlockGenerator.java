@@ -471,7 +471,7 @@ public class BlockGenerator {
             }
 
             if (difficulty == null) {
-                difficulty = 0l;
+                difficulty = 0L;
             }
 
             Block newblock = createChildBlock(parent, txs, uncles, difficulty, MIN_GAS_PRICE);
@@ -514,7 +514,7 @@ public class BlockGenerator {
             }
 
             if (difficulty == null) {
-                difficulty = 0l;
+                difficulty = 0L;
             }
 
             Block childBlock = createChildBlockUsingCoinbase(parent, txs, uncles, difficulty, MIN_GAS_PRICE, parent.getGasLimit(), coinbase);

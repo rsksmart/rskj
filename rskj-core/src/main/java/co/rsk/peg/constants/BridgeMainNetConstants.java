@@ -24,8 +24,6 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
 
-        maxBtcHeadersPerRskBlock = 500;
-
         legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
         legacyMinimumPegoutTxValue = Coin.valueOf(800_000);
         minimumPeginTxValue = Coin.valueOf(500_000);
