@@ -11,10 +11,16 @@ RskJ is a Java implementation of the Rootstock node. For more information about 
 # Generate reproducible build from branch
 To be able to generate a reproducible build from the current branch, we can use the Dockerfile in the root to do so.
 For example, let's consider that we are using the version 9.0.0 and version name `vetiver`.
+
+The `.git` directory is excluded from the Docker build context (via `.dockerignore`), so the commit hash and branch must be passed explicitly as build arguments to be embedded in the produced jars:
 ```bash
-$ docker build -t rskj/9.0.0-vetiver .
-$ docker run -d --name rskj-temp rskj/9.0.0-vetiver
+$ docker build \
+    --build-arg COMMIT_HASH=$(git rev-parse --short HEAD) \
+    --build-arg COMMIT_BRANCH=$(git rev-parse --abbrev-ref HEAD) \
+    -t rskj/9.0.0-vetiver .
+$ docker create --name rskj-temp rskj/9.0.0-vetiver
 $ docker cp rskj-temp:/var/lib/rsk/. ./artifacts/
+$ docker rm -f rskj-temp
 $ cd artifacts/
 $ sha256sum *.jar *.pom
 ```

@@ -137,6 +137,86 @@ class BootstrapFileHandlerTest {
         assertThrows(BootstrapImportException.class, () -> handler.retrieveAndUnpack(entries));
     }
 
+    /**
+     * The hash check digests the download incrementally instead of reading it into one {@code byte[]},
+     * so it has to keep working across buffer boundaries. The other hash tests use files far smaller
+     * than the 64 KiB read buffer and would pass even if the loop only ever digested its first chunk,
+     * which would turn the integrity check on a real (multi-gigabyte) bootstrap into a check over its
+     * first 64 KiB.
+     */
+    @Test
+    void retrieveAndUnpack_checksHashOfContentSpanningSeveralReadBuffers() throws Exception {
+        byte[] fileContent = contentSpanningSeveralReadBuffers();
+        Path sourceFile = tempDir.resolve("source-large.zip");
+        Files.write(sourceFile, fileContent);
+        String expectedHash = Hex.toHexString(HashUtil.sha256(fileContent));
+
+        URL fileUrl = sourceFile.toUri().toURL();
+        BootstrapURLProvider urlProvider = mock(BootstrapURLProvider.class);
+        when(urlProvider.getFullURL(any())).thenReturn(fileUrl);
+
+        Unzipper unzipper = mock(Unzipper.class);
+
+        Path downloadDir = tempDir.resolve("download-large");
+        Files.createDirectories(downloadDir);
+        BootstrapFileHandler handler = createHandlerWithTempPath(urlProvider, unzipper, downloadDir);
+
+        BootstrapDataEntry entry = new BootstrapDataEntry(1L, "2024-01-01", "path/to/db", expectedHash, null);
+        Map<String, BootstrapDataEntry> entries = new HashMap<>();
+        entries.put("pubkey1", entry);
+
+        assertDoesNotThrow(() -> handler.retrieveAndUnpack(entries));
+        verify(unzipper).unzip(any(InputStream.class), eq(downloadDir));
+    }
+
+    @Test
+    void retrieveAndUnpack_throwsWhenAByteChangesPastTheFirstReadBuffer() throws Exception {
+        byte[] fileContent = contentSpanningSeveralReadBuffers();
+        Path sourceFile = tempDir.resolve("source-tampered.zip");
+        Files.write(sourceFile, fileContent);
+
+        // the hash of the same content with a single byte flipped well past the first buffer: only a
+        // digest that covers the whole file can tell the two apart
+        byte[] tamperedContent = fileContent.clone();
+        tamperedContent[tamperedContent.length - 1] ^= 0x01;
+        String hashOfTamperedContent = Hex.toHexString(HashUtil.sha256(tamperedContent));
+
+        URL fileUrl = sourceFile.toUri().toURL();
+        BootstrapURLProvider urlProvider = mock(BootstrapURLProvider.class);
+        when(urlProvider.getFullURL(any())).thenReturn(fileUrl);
+
+        Path downloadDir = tempDir.resolve("download-tampered");
+        Files.createDirectories(downloadDir);
+        BootstrapFileHandler handler = createHandlerWithTempPath(urlProvider, mock(Unzipper.class), downloadDir);
+
+        BootstrapDataEntry entry = new BootstrapDataEntry(1L, "2024-01-01", "path/to/db", hashOfTamperedContent, null);
+        Map<String, BootstrapDataEntry> entries = new HashMap<>();
+        entries.put("pubkey1", entry);
+
+        assertThrows(BootstrapImportException.class, () -> handler.retrieveAndUnpack(entries));
+    }
+
+    @Test
+    void getBootstrapDataPath_pointsAtTheExtractedBinFile() throws Exception {
+        // the v2 importer streams this path instead of calling getBootstrapData(), which cannot hold
+        // a file larger than Integer.MAX_VALUE in a single array
+        BootstrapFileHandler handler = createHandlerWithTempPath(mock(BootstrapURLProvider.class), mock(Unzipper.class), tempDir);
+
+        assertEquals(tempDir.resolve("bootstrap-data.bin"), handler.getBootstrapDataPath());
+    }
+
+    /**
+     * Content a few bytes over three times the handler's 64 KiB read buffer, so the digest loop runs
+     * several full reads plus a short final one.
+     */
+    private static byte[] contentSpanningSeveralReadBuffers() {
+        byte[] content = new byte[3 * 64 * 1024 + 17];
+        for (int i = 0; i < content.length; i++) {
+            content[i] = (byte) i;
+        }
+        return content;
+    }
+
     @Test
     void retrieveAndUnpack_throwsOnUnzipFailure() throws Exception {
         byte[] fileContent = "fake zip bytes".getBytes();

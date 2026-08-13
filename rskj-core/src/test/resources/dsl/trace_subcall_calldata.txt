@@ -1,0 +1,54 @@
+
+# Drives TraceModuleImplTest.subCallReportsItsOwnCalldataNotTopLevelInput.
+# The sub-call calldata (0xb63e800d) and top-level tx input (0x1688f0b9) below
+# must match SUB_CALL_CALLDATA / TOP_LEVEL_CALLDATA asserted by that test.
+
+account_new acc1 10000000
+
+# callee contract: simple return, ignores its input
+# code
+# PUSH1 0x00
+# PUSH1 0x00
+# RETURN
+
+account_new called 0 60006000f3
+
+# caller contract: places a 32-byte marker in memory whose first 4 bytes are
+# 0xb63e800d, then CALLs `called` passing those 4 bytes as the sub-call input.
+# This sub-call calldata is intentionally different from the top-level tx input.
+#
+# code
+# PUSH32 0xb63e800d000...000   (marker word)
+# PUSH1 0x00                   (memory offset)
+# MSTORE                       (memory[0..32] = marker)
+# PUSH1 0x00                   (out data size)
+# PUSH1 0x00                   (out data offset)
+# PUSH1 0x04                   (in data size = 4 bytes -> 0xb63e800d)
+# PUSH1 0x00                   (in data offset)
+# PUSH1 0x00                   (value to transfer)
+# PUSH20 <called contract address>
+# PUSH2 0x1000                 (gas to use)
+# CALL
+# STOP
+
+account_new call 0 7fb63e800d000000000000000000000000000000000000000000000000000000006000526000600060046000600073[called]611000f100
+
+# invoke the caller contract with a DISTINCT top-level calldata (0x1688f0b9)
+
+transaction_build tx02
+    sender acc1
+    receiver call
+    value 0
+    data 1688f0b9
+    gas 1200000
+    build
+
+block_build b02
+    parent g00
+    gasLimit 6800000
+    transactions tx02
+    build
+
+block_connect b02
+
+assert_best b02

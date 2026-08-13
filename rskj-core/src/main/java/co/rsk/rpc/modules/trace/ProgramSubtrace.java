@@ -56,7 +56,7 @@ public class ProgramSubtrace {
         this.invokeData = invokeData;
         this.programResult = programResult;
         this.codeAddress = codeAddress;
-        this.subtraces = subtraces == null ? null : Collections.unmodifiableList(subtraces);
+        this.subtraces = subtraces == null ? Collections.emptyList() : Collections.unmodifiableList(subtraces);
     }
 
     public TraceType getTraceType() { return this.traceType; }
@@ -77,5 +77,5 @@ public class ProgramSubtrace {
 
     public DataWord getCodeAddress() { return this.codeAddress; }
 
-    public List<ProgramSubtrace> getSubtraces() { return this.subtraces == null ? null : Collections.unmodifiableList(this.subtraces); }
+    public List<ProgramSubtrace> getSubtraces() { return this.subtraces; }
 }
