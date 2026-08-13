@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -43,6 +44,25 @@ class TrieStoreImplTest {
     void setUp() {
         this.map = spy(new HashMapDB());
         this.store = new TrieStoreImpl(map);
+    }
+
+    @Test
+    void saveValue_persistsValueRetrievableByItsHash() {
+        byte[] value = "a-long-value-over-thirty-two-bytes-xx".getBytes(StandardCharsets.UTF_8);
+        byte[] valueHash = Keccak256Helper.keccak256(value);
+
+        store.saveValue(value);
+
+        verify(map, times(1)).put(valueHash, value);
+        assertArrayEquals(value, store.retrieveValue(valueHash));
+    }
+
+    @Test
+    void saveValue_rejectsNull() {
+        // new public API: a null value would NPE deep inside hashing; fail fast with a clear message.
+        NullPointerException ex = Assertions.assertThrows(NullPointerException.class, () -> store.saveValue(null));
+        assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("value"),
+                String.valueOf(ex.getMessage()));
     }
 
     @Test

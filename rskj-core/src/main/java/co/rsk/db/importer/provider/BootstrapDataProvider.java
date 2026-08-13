@@ -24,6 +24,7 @@ import co.rsk.db.importer.provider.index.BootstrapIndexRetriever;
 import co.rsk.db.importer.provider.index.data.BootstrapDataEntry;
 import co.rsk.db.importer.provider.index.data.BootstrapDataIndex;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -81,6 +82,10 @@ public class BootstrapDataProvider {
 
     public byte[] getBootstrapData() {
         return bootstrapFileHandler.getBootstrapData();
+    }
+
+    public Path getBootstrapDataPath() {
+        return bootstrapFileHandler.getBootstrapDataPath();
     }
 
     public long getSelectedHeight() {

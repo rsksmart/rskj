@@ -32,6 +32,16 @@ public interface TrieStore {
     Optional<Trie> retrieve(byte[] hash);
     byte[] retrieveValue(byte[] hash);
 
+    /**
+     * Stores a long value, keyed by its keccak256 hash — the inverse of {@link #retrieveValue(byte[])}.
+     * The store computes the key, so the hash/value invariant is enforced in one place. Used to pre-stage
+     * long values ahead of the nodes that reference them (e.g. a co-located bootstrap import), so a node
+     * can be saved in a single pass without a separate value-staging store.
+     *
+     * @param value the long value bytes
+     */
+    void saveValue(byte[] value);
+
     void dispose();
 
     Optional<TrieDTO> retrieveDTO(byte[] hash);

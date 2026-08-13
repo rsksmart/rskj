@@ -85,6 +85,22 @@ public class NodeReference {
      * If the node could not be retrieved from the store, the Node is stopped using System.exit(1)
      */
     public Optional<Trie> getNode() {
+        return getNode(true);
+    }
+
+    /**
+     * The node or empty if this is an empty reference.
+     * If the node is not present but its hash is known, it will be retrieved from the store.
+     * If the node could not be retrieved from the store, the Node is stopped using System.exit(1)
+     *
+     * @param shouldCache when {@code true} the retrieved node is memoized in {@code lazyNode}
+     *                    (the default behaviour). When {@code false} the node is returned without
+     *                    being memoized, so it is not retained by this reference once the caller
+     *                    drops it. A non-memoizing traversal keeps memory bounded to the active
+     *                    path instead of retaining the whole visited sub-trie (see bootstrap state
+     *                    export, which would otherwise pin the entire trie via the held root).
+     */
+    public Optional<Trie> getNode(boolean shouldCache) {
         if (lazyNode != null) {
             return Optional.of(lazyNode);
         }
@@ -102,7 +118,9 @@ public class NodeReference {
             return Optional.empty();
         }
 
-        lazyNode = node.get();
+        if (shouldCache) {
+            lazyNode = node.get();
+        }
 
         return node;
     }
