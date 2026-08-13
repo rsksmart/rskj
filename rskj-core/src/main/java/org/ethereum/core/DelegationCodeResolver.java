@@ -18,6 +18,8 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.util.ByteUtil;
 
 import java.util.Arrays;
@@ -60,7 +62,8 @@ public class DelegationCodeResolver {
     public static byte[] getExecutionCode(
             Repository repository,
             RskAddress address,
-            Predicate<RskAddress> isPrecompile) {
+            Predicate<RskAddress> isPrecompile,
+            ActivationConfig.ForBlock activationConfig) {
 
         if (!repository.isExist(address)) {
             return ByteUtil.EMPTY_BYTE_ARRAY;
@@ -72,7 +75,7 @@ public class DelegationCodeResolver {
             return ByteUtil.EMPTY_BYTE_ARRAY;
         }
 
-        if (!isDelegatedCode(code)) {
+        if (!activationConfig.isActive(ConsensusRule.RSKIP545) || !isDelegatedCode(code)) {
             return code;
         }
 
