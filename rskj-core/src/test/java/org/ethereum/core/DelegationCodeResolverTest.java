@@ -19,7 +19,6 @@ package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.BeforeEach;
