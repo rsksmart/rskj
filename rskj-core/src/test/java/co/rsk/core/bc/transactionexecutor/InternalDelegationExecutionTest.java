@@ -136,7 +136,7 @@ class InternalDelegationExecutionTest {
         Block block = createBlock(config, track, createLegacyCall(config, sender, caller.getAddress(), track.getNonce(sender.getAddress())));
         Assertions.assertEquals(1L, block.getNumber());
 
-        Assertions.assertTrue(config.getActivationConfig().isActive(org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP545, block.getNumber()));
+        Assertions.assertTrue(config.getActivationConfig().isActive(ConsensusRule.RSKIP545, block.getNumber()));
 
         TransactionExecutorFactory factory = getTransactionExecutorFactory(config);
         Transaction tx = block.getTransactionsList().get(0);
