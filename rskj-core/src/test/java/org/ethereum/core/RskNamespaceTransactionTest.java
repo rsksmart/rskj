@@ -24,6 +24,8 @@ import org.ethereum.core.transaction.parser.RawTransactionEnvelopeParser;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,17 +33,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * RSKIP-543 reserves the RSK namespace envelope, but no subtype transaction payload is defined.
+ * RSKIP-543 reserves the RSK namespace envelope ({@code 0x02 || subtype}), but no subtype
+ * transaction payload is defined. Unassigned subtypes must be rejected at raw and
+ * structured ingress so they are not aliased as legacy transactions.
  */
 class RskNamespaceTransactionTest {
 
     private static final byte REGTEST_CHAIN_ID = 33;
 
-    @Test
-    void rawNamespaceEnvelope_isRejectedBeforePayloadDecoding() {
-        byte[] malformedPayload = {TransactionType.RSK_NAMESPACE_PREFIX, 0x03, 0x00};
+    @ParameterizedTest(name = "raw subtype 0x{0}")
+    @ValueSource(bytes = {0x00, 0x05, 0x7f})
+    void rawNamespaceEnvelope_isRejectedBeforePayloadDecoding(byte subtype) {
+        byte[] malformedPayload = {TransactionType.RSK_NAMESPACE_PREFIX, subtype, 0x00};
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
@@ -50,9 +56,10 @@ class RskNamespaceTransactionTest {
         assertEquals(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE, ex.getMessage());
     }
 
-    @Test
-    void namespaceReceipt_isRejectedBeforePayloadDecoding() {
-        byte[] malformedPayload = {TransactionType.RSK_NAMESPACE_PREFIX, 0x03, 0x00};
+    @ParameterizedTest(name = "receipt subtype 0x{0}")
+    @ValueSource(bytes = {0x00, 0x05, 0x7f})
+    void namespaceReceipt_isRejectedBeforePayloadDecoding(byte subtype) {
+        byte[] malformedPayload = {TransactionType.RSK_NAMESPACE_PREFIX, subtype, 0x00};
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
@@ -61,11 +68,12 @@ class RskNamespaceTransactionTest {
         assertEquals(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE, ex.getMessage());
     }
 
-    @Test
-    void callArgumentsNamespace_isRejectedBeforeNonceResolution() {
+    @ParameterizedTest(name = "callArguments subtype {0}")
+    @ValueSource(strings = {"0x0", "0x5", "0x7f"})
+    void callArgumentsNamespace_isRejectedBeforeNonceResolution(String rskSubtype) {
         CallArguments args = new CallArguments();
         args.setType("0x2");
-        args.setRskSubtype("0x3");
+        args.setRskSubtype(rskSubtype);
         AtomicBoolean nonceRequested = new AtomicBoolean();
 
         RskJsonRpcRequestException ex = assertThrows(
@@ -79,13 +87,14 @@ class RskNamespaceTransactionTest {
         assertFalse(nonceRequested.get());
     }
 
-    @Test
-    void builderNamespace_isRejected() {
+    @ParameterizedTest(name = "builder subtype 0x{0}")
+    @ValueSource(bytes = {0x00, 0x05, 0x7f})
+    void builderNamespace_isRejected(byte subtype) {
         byte[] nonce = BigInteger.ZERO.toByteArray();
         Coin gasPrice = Coin.valueOf(10);
         byte[] gasLimit = BigInteger.valueOf(21_000).toByteArray();
         RskAddress receiveAddress = new RskAddress("0x1234567890123456789012345678901234567890");
-        TransactionTypePrefix typePrefix = TransactionTypePrefix.rskNamespace((byte) 0x03);
+        TransactionTypePrefix typePrefix = TransactionTypePrefix.rskNamespace(subtype);
 
         TransactionBuilder builder = Transaction.builder()
                 .typePrefix(typePrefix)
@@ -103,14 +112,15 @@ class RskNamespaceTransactionTest {
         assertEquals(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE, ex.getMessage());
     }
 
-    @Test
-    void directTransactionConstructionWithNamespace_isRejected() {
+    @ParameterizedTest(name = "constructor subtype 0x{0}")
+    @ValueSource(bytes = {0x00, 0x05, 0x7f})
+    void directTransactionConstructionWithNamespace_isRejected(byte subtype) {
         byte[] nonce = new byte[]{0x00};
         Coin gasPrice = Coin.valueOf(10);
         byte[] gasLimit = BigInteger.valueOf(21_000).toByteArray();
         RskAddress receiveAddress = new RskAddress("0x1234567890123456789012345678901234567890");
         byte[] data = new byte[0];
-        TransactionTypePrefix typePrefix = TransactionTypePrefix.rskNamespace((byte) 0x03);
+        TransactionTypePrefix typePrefix = TransactionTypePrefix.rskNamespace(subtype);
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
@@ -132,13 +142,15 @@ class RskNamespaceTransactionTest {
         assertEquals(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE, ex.getMessage());
     }
 
-    @Test
-    void namespacePrefix_remainsRecognizable() {
+    @ParameterizedTest(name = "fromRawData subtype 0x{0}")
+    @ValueSource(bytes = {0x00, 0x05, 0x7f})
+    void namespacePrefix_remainsRecognizable(byte subtype) {
         TransactionTypePrefix prefix =
-                TransactionTypePrefix.fromRawData(new byte[]{TransactionType.RSK_NAMESPACE_PREFIX, 0x03});
+                TransactionTypePrefix.fromRawData(new byte[]{TransactionType.RSK_NAMESPACE_PREFIX, subtype});
 
-        assertEquals("0x0203", prefix.toFullString());
-        assertEquals((byte) 0x03, prefix.subtype());
+        assertTrue(prefix.isRskNamespace());
+        assertEquals(subtype, prefix.subtype());
+        assertEquals(String.format("0x02%02x", subtype & 0xFF), prefix.toFullString());
     }
 
     @Test
