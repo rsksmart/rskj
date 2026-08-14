@@ -19,6 +19,7 @@ package org.ethereum.core.transaction.encoder;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Transaction;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -38,28 +39,41 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Pins {@code encodeForSigning} and {@code encodeSigned} output for every supported
- * transaction type against golden vectors produced by {@link ReferenceRlpEncoder}, an
- * independent RLP implementation following the canonical RSKIP-543 typed-transaction
- * envelope (RSKIP-546 for type 1/2, RSKIP-545 for type 4; legacy per EIP-155).
+ * transaction type against immutable golden hex in {@link GoldenTransactionVectors}
+ * (originally produced by {@link ReferenceRlpEncoder}).
  *
  * <p>Round-trip tests stay green when the encoder and parser drift from the spec together;
  * this test is the only one that fails in that case. If it fails, the encoder output no
- * longer matches what other compliant clients would produce - fix the encoder, do not
- * "sync" {@link ReferenceRlpEncoder} to the production output.
+ * longer matches what other compliant clients would produce — fix the encoder, do not
+ * rewrite the pinned vectors from production output.
+ *
+ * <p>{@link #referenceEncoder_matchesPinnedGoldenVectors()} separately pins
+ * {@link ReferenceRlpEncoder} to the same constants so an accidental edit of the reference
+ * implementation also fails.
  */
 class GoldenTransactionEncoderTest {
-
-    private static final Map<String, String[]> VECTORS = ReferenceRlpEncoder.goldenVectors();
 
     private static Stream<Arguments> goldenCases() {
         return Stream.of(
                 Arguments.of("legacy-chain0", (Supplier<Transaction>) () -> unsignedLegacy((byte) 0), FIXED_V),
                 Arguments.of("legacy-chain33", (Supplier<Transaction>) () -> unsignedLegacy(CHAIN_ID), FIXED_V),
+                Arguments.of("legacy-chain200", (Supplier<Transaction>) () -> unsignedLegacy(HIGH_CHAIN_ID), FIXED_V),
+                Arguments.of("legacy-contract-creation",
+                        (Supplier<Transaction>) EncoderTestSupport::unsignedLegacyContractCreation, FIXED_V),
+                Arguments.of("legacy-long-data",
+                        (Supplier<Transaction>) EncoderTestSupport::unsignedLegacyWithLongData, FIXED_V),
+                Arguments.of("type1-chain0", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType1((byte) 0), FIXED_V),
                 Arguments.of("type1-chain33", (Supplier<Transaction>) EncoderTestSupport::unsignedType1, FIXED_V),
+                Arguments.of("type1-chain200", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType1(HIGH_CHAIN_ID), FIXED_V),
+                Arguments.of("type1-access-list",
+                        (Supplier<Transaction>) EncoderTestSupport::unsignedType1WithAccessList, FIXED_V),
+                Arguments.of("type2-chain0", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType2((byte) 0), FIXED_V),
                 Arguments.of("type2-chain33", (Supplier<Transaction>) EncoderTestSupport::unsignedType2, FIXED_V),
                 Arguments.of("type2-chain33-yParity0", (Supplier<Transaction>) EncoderTestSupport::unsignedType2, FIXED_V_Y_PARITY_0),
                 Arguments.of("type2-chain200", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType2(HIGH_CHAIN_ID), FIXED_V),
-                Arguments.of("type4-chain33", (Supplier<Transaction>) EncoderTestSupport::unsignedType4, FIXED_V)
+                Arguments.of("type4-chain0", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType4((byte) 0), FIXED_V),
+                Arguments.of("type4-chain33", (Supplier<Transaction>) EncoderTestSupport::unsignedType4, FIXED_V),
+                Arguments.of("type4-chain200", (Supplier<Transaction>) () -> EncoderTestSupport.unsignedType4(HIGH_CHAIN_ID), FIXED_V)
         );
     }
 
@@ -83,7 +97,21 @@ class GoldenTransactionEncoderTest {
                 "wire encoding deviates from the canonical wire format");
     }
 
+    @Test
+    void referenceEncoder_matchesPinnedGoldenVectors() {
+        Map<String, String[]> computed = ReferenceRlpEncoder.goldenVectors();
+        assertEquals(GoldenTransactionVectors.VECTORS.keySet(), computed.keySet(),
+                "reference encoder case ids drifted from pinned golden vectors");
+        for (Map.Entry<String, String[]> pinned : GoldenTransactionVectors.VECTORS.entrySet()) {
+            String[] actual = computed.get(pinned.getKey());
+            assertEquals(pinned.getValue()[0], actual[0],
+                    "reference encodeForSigning drifted for " + pinned.getKey());
+            assertEquals(pinned.getValue()[1], actual[1],
+                    "reference encodeSigned drifted for " + pinned.getKey());
+        }
+    }
+
     private static String[] vector(String id) {
-        return Objects.requireNonNull(VECTORS.get(id), "missing golden vector: " + id);
+        return Objects.requireNonNull(GoldenTransactionVectors.VECTORS.get(id), "missing golden vector: " + id);
     }
 }

@@ -25,6 +25,7 @@ import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.util.RLP;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -36,7 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Shared deterministic fixtures for transaction encoder tests.
  *
- * <p>Field values must stay in sync with {@link ReferenceRlpEncoder}.
+ * <p>Field values are mirrored independently in {@link ReferenceRlpEncoder}. Changing a fixture
+ * here requires updating that mirror and deliberately regenerating
+ * {@link GoldenTransactionVectors} — do not treat the pinned hex as a peer field source.
  */
 public final class EncoderTestSupport {
 
@@ -56,7 +59,21 @@ public final class EncoderTestSupport {
     public static final RskAddress RECEIVER = new RskAddress("0x1234567890123456789012345678901234567890");
     public static final Coin VALUE = Coin.valueOf(1_000_000_000_000_000_000L);
     public static final byte[] EMPTY_DATA = new byte[0];
+    /**
+     * 56-byte data so RLP item length uses the long form ({@code 0xb8…}), which short fixtures never hit.
+     */
+    public static final byte[] LONG_DATA = repeat((byte) 0xaa, 56);
     public static final byte[] EMPTY_ACCESS_LIST = {(byte) 0xc0};
+    /**
+     * One access-list entry: address {@code 0x00…00} with a single storage key {@code 0x00…00}.
+     * Pins nesting and item order for type-1 encoding.
+     */
+    public static final byte[] NON_EMPTY_ACCESS_LIST = RLP.encodeList(
+            RLP.encodeList(
+                    RLP.encodeElement(new byte[20]),
+                    RLP.encodeList(RLP.encodeElement(new byte[32]))
+            )
+    );
     public static final RskAddress AUTH_DELEGATE =
             new RskAddress("0x0000000000000000000000000000000000000003");
 
@@ -75,22 +92,40 @@ public final class EncoderTestSupport {
     }
 
     public static Transaction unsignedLegacy(byte chainId) {
-        return build(TransactionTypePrefix.legacy(), chainId, null, null, null, null);
+        return build(TransactionTypePrefix.legacy(), chainId, null, null, null, null,
+                RECEIVER, EMPTY_DATA);
+    }
+
+    /** Contract-creation legacy tx: null {@code to} encodes as empty RLP element. */
+    public static Transaction unsignedLegacyContractCreation() {
+        return build(TransactionTypePrefix.legacy(), CHAIN_ID, null, null, null, null,
+                null, EMPTY_DATA);
+    }
+
+    /** Legacy tx whose data field is long enough to exercise RLP long-form item length. */
+    public static Transaction unsignedLegacyWithLongData() {
+        return build(TransactionTypePrefix.legacy(), CHAIN_ID, null, null, null, null,
+                RECEIVER, LONG_DATA);
     }
 
     public static Transaction unsignedType1() {
         return build(TransactionTypePrefix.typed(TransactionType.TYPE_1), CHAIN_ID,
-                EMPTY_ACCESS_LIST, null, null, null);
+                EMPTY_ACCESS_LIST, null, null, null, RECEIVER, EMPTY_DATA);
     }
 
     public static Transaction unsignedType1(byte[] accessListBytes) {
         return build(TransactionTypePrefix.typed(TransactionType.TYPE_1), CHAIN_ID,
-                accessListBytes, null, null, null);
+                accessListBytes, null, null, null, RECEIVER, EMPTY_DATA);
     }
 
     public static Transaction unsignedType1(byte chainId) {
         return build(TransactionTypePrefix.typed(TransactionType.TYPE_1), chainId,
-                EMPTY_ACCESS_LIST, null, null, null);
+                EMPTY_ACCESS_LIST, null, null, null, RECEIVER, EMPTY_DATA);
+    }
+
+    /** Type-1 with one address and one storage key in the access list. */
+    public static Transaction unsignedType1WithAccessList() {
+        return unsignedType1(NON_EMPTY_ACCESS_LIST);
     }
 
     public static Transaction unsignedType2() {
@@ -99,7 +134,7 @@ public final class EncoderTestSupport {
 
     public static Transaction unsignedType2(byte chainId) {
         return build(TransactionTypePrefix.typed(TransactionType.TYPE_2), chainId,
-                EMPTY_ACCESS_LIST, MAX_PRIORITY_FEE, MAX_FEE, null);
+                EMPTY_ACCESS_LIST, MAX_PRIORITY_FEE, MAX_FEE, null, RECEIVER, EMPTY_DATA);
     }
 
     public static Transaction unsignedType4() {
@@ -108,7 +143,8 @@ public final class EncoderTestSupport {
 
     public static Transaction unsignedType4(byte chainId) {
         return build(TransactionTypePrefix.typed(TransactionType.TYPE_4), chainId,
-                EMPTY_ACCESS_LIST, MAX_PRIORITY_FEE, MAX_FEE, List.of(deterministicAuthorization(chainId)));
+                EMPTY_ACCESS_LIST, MAX_PRIORITY_FEE, MAX_FEE, List.of(deterministicAuthorization(chainId)),
+                RECEIVER, EMPTY_DATA);
     }
 
     /**
@@ -162,15 +198,17 @@ public final class EncoderTestSupport {
             byte[] accessListBytes,
             Coin maxPriorityFeePerGas,
             Coin maxFeePerGas,
-            List<SetCodeAuthorization> authorizationList
+            List<SetCodeAuthorization> authorizationList,
+            RskAddress receiveAddress,
+            byte[] data
     ) {
         return new Transaction(
                 NONCE,
                 GAS_PRICE,
                 GAS_LIMIT,
-                RECEIVER,
+                receiveAddress,
                 VALUE,
-                EMPTY_DATA,
+                data,
                 chainId,
                 false,
                 typePrefix,

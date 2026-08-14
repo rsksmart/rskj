@@ -23,19 +23,19 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Independent RLP + typed-envelope encoder used only by {@link GoldenTransactionEncoderTest}
- * to derive the golden {@code encodeForSigning}/{@code encodeSigned} bytes for each transaction
- * type, following the canonical RSKIP-543 typed-transaction envelope: legacy (EIP-155),
- * RSKIP-546 (type 1 and type 2) and RSKIP-545 (type 4).
+ * Independent RLP + typed-envelope encoder used to (re)generate the pinned hex in
+ * {@link GoldenTransactionVectors}, following the canonical RSKIP-543 typed-transaction
+ * envelope: legacy (EIP-155), RSKIP-546 (type 1 and type 2) and RSKIP-545 (type 4).
  *
  * <p>This is a deliberate second implementation written straight from the specs. It MUST NOT
- * delegate to production code ({@code org.ethereum.util.RLP} or the {@code *TransactionEncoder}s):
- * its whole purpose is to fail if the production encoder drifts from the bytes other compliant
- * clients would accept. A round-trip test cannot catch that, because encoder and parser can drift
- * together and stay self-consistent.
+ * delegate to production code ({@code org.ethereum.util.RLP} or the {@code *TransactionEncoder}s).
+ * Expected wire bytes live as immutable constants in {@link GoldenTransactionVectors};
+ * {@link GoldenTransactionEncoderTest} asserts both production encoders and this class against
+ * those constants so either drifting fails the suite.
  *
  * <p>The field values mirror {@link EncoderTestSupport}; if you change a fixture there, change it
- * here too - do not make this class read from the production encoders to "sync" them.
+ * here too, re-run {@link #goldenVectors()} offline, and update {@link GoldenTransactionVectors}
+ * deliberately — do not sync either side from production encoder output.
  */
 final class ReferenceRlpEncoder {
 
@@ -47,9 +47,14 @@ final class ReferenceRlpEncoder {
     private static final long MAX_FEE = 2_000_000_000L;
     private static final long GAS_LIMIT = 21_000L;
     private static final byte[] TO = hex("1234567890123456789012345678901234567890");
+    private static final byte[] EMPTY_TO = new byte[0];
     private static final BigInteger VALUE = BigInteger.TEN.pow(18);
     private static final byte[] DATA = new byte[0];
+    private static final byte[] LONG_DATA = repeat((byte) 0xaa, 56);
     private static final byte[] EMPTY_ACCESS_LIST = list();
+    // One entry: zero address + one zero storage key (mirrors EncoderTestSupport.NON_EMPTY_ACCESS_LIST).
+    private static final byte[] NON_EMPTY_ACCESS_LIST = list(list(
+            bytes(new byte[20]), list(bytes(new byte[32]))));
 
     // Fixed outer signature shared with EncoderTestSupport: r=0x11*32, s=0x22*32.
     private static final byte[] SIG_R = repeat((byte) 0x11, 32);
@@ -69,18 +74,32 @@ final class ReferenceRlpEncoder {
         Map<String, String[]> vectors = new LinkedHashMap<>();
         vectors.put("legacy-chain0", legacy(0));
         vectors.put("legacy-chain33", legacy(CHAIN_ID));
+        vectors.put("legacy-chain200", legacy(HIGH_CHAIN_ID));
+        vectors.put("legacy-contract-creation", legacy(CHAIN_ID, EMPTY_TO, DATA));
+        vectors.put("legacy-long-data", legacy(CHAIN_ID, TO, LONG_DATA));
+        vectors.put("type1-chain0", type1(0));
         vectors.put("type1-chain33", type1(CHAIN_ID));
+        vectors.put("type1-chain200", type1(HIGH_CHAIN_ID));
+        vectors.put("type1-access-list", type1(CHAIN_ID, NON_EMPTY_ACCESS_LIST));
+        vectors.put("type2-chain0", type2(0));
         vectors.put("type2-chain33", type2(CHAIN_ID));
         vectors.put("type2-chain33-yParity0", type2(CHAIN_ID, Y_PARITY_0));
         vectors.put("type2-chain200", type2(HIGH_CHAIN_ID));
+        // Type4 auth list uses the same chainId as the transaction body.
+        vectors.put("type4-chain0", type4(0));
         vectors.put("type4-chain33", type4(CHAIN_ID));
+        vectors.put("type4-chain200", type4(HIGH_CHAIN_ID));
         return vectors;
     }
 
     private static String[] legacy(int chainId) {
+        return legacy(chainId, TO, DATA);
+    }
+
+    private static String[] legacy(int chainId, byte[] to, byte[] data) {
         byte[][] body = {
                 bytes(NONCE), integer(GAS_PRICE), integer(GAS_LIMIT),
-                bytes(TO), integer(VALUE), bytes(DATA)
+                bytes(to), integer(VALUE), bytes(data)
         };
         byte[] forSigning = chainId == 0
                 ? list(body)
@@ -91,9 +110,13 @@ final class ReferenceRlpEncoder {
     }
 
     private static String[] type1(int chainId) {
+        return type1(chainId, EMPTY_ACCESS_LIST);
+    }
+
+    private static String[] type1(int chainId, byte[] accessList) {
         byte[][] body = {
                 integer(chainId), bytes(NONCE), integer(GAS_PRICE), integer(GAS_LIMIT),
-                bytes(TO), integer(VALUE), bytes(DATA), EMPTY_ACCESS_LIST
+                bytes(TO), integer(VALUE), bytes(DATA), accessList
         };
         return typed(0x01, body);
     }
