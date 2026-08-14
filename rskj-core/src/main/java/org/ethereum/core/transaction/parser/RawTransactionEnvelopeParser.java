@@ -18,8 +18,6 @@
 package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.types.bytes.BytesSlice;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.rpc.CallArguments;
@@ -51,20 +49,6 @@ public final class RawTransactionEnvelopeParser {
         return resolveParser(typePrefix).parse(typePrefix, txFields);
     }
 
-    /**
-     * Parses raw transaction bytes and validates fork activation rules for the transaction type.
-     */
-    public static ParsedRawTransaction parse(
-            byte[] rawData,
-            long bestBlock,
-            ActivationConfig activationConfig,
-            Constants constants
-    ) {
-        ParsedRawTransaction parsed = parse(rawData);
-        validateActivation(parsed, bestBlock, activationConfig, constants);
-        return parsed;
-    }
-
     public static ParsedRawTransaction parse(CallArguments argsParam, Supplier<String> nonceSupplier, byte defaultChainId) {
         if (argsParam == null ) {
             throw new IllegalArgumentException("Transaction argsParam cannot be null or empty");
@@ -77,46 +61,6 @@ public final class RawTransactionEnvelopeParser {
         TransactionTypePrefix typePrefix = input.typePrefix();
         rejectUnsupportedNamespace(typePrefix);
         return resolveParser(typePrefix).parse(typePrefix, input, defaultChainId);
-    }
-
-    /**
-     * Parses JSON-RPC call arguments and validates fork activation rules for the transaction type.
-     */
-    public static ParsedRawTransaction parse(
-            CallArguments argsParam,
-            Supplier<String> nonceSupplier,
-            byte defaultChainId,
-            long bestBlock,
-            ActivationConfig activationConfig,
-            Constants constants
-    ) {
-        ParsedRawTransaction parsed = parse(argsParam, nonceSupplier, defaultChainId);
-        validateActivation(parsed, bestBlock, activationConfig, constants);
-        return parsed;
-    }
-
-    /**
-     * Parses structured transaction input and validates fork activation rules for the transaction type.
-     */
-    public static ParsedRawTransaction parse(
-            TransactionInput input,
-            byte defaultChainId,
-            long bestBlock,
-            ActivationConfig activationConfig,
-            Constants constants
-    ) {
-        ParsedRawTransaction parsed = parse(input, defaultChainId);
-        validateActivation(parsed, bestBlock, activationConfig, constants);
-        return parsed;
-    }
-
-    private static void validateActivation(
-            ParsedRawTransaction parsed,
-            long bestBlock,
-            ActivationConfig activationConfig,
-            Constants constants
-    ) {
-        resolveParser(parsed.typePrefix()).validate(bestBlock, activationConfig, constants);
     }
 
     private static RawTransactionTypeParser<? extends ParsedRawTransaction> resolveParser(TransactionTypePrefix typePrefix) {

@@ -105,11 +105,6 @@ public final class AuthorizationListCodec {
         );
     }
 
-    public static List<SetCodeAuthorization> decodeList(byte[] authorizationListBytes) {
-        requireAuthorizationListBytes(authorizationListBytes);
-        return decodeListUnchecked(authorizationListBytes);
-    }
-
     public static List<SetCodeAuthorization> decodeListUnchecked(byte[] authorizationListBytes) {
         RLPList outer = RLP.decodeList(authorizationListBytes);
         List<SetCodeAuthorization> result = new ArrayList<>(outer.size());

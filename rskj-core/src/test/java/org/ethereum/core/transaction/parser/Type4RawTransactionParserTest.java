@@ -21,8 +21,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionTypePrefix;
@@ -53,9 +51,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link Type4RawTransactionParser} (RSKIP-545 / EIP-7702 set-code).
@@ -75,50 +70,6 @@ class Type4RawTransactionParserTest {
     }
 
     private final Type4RawTransactionParser parser = new Type4RawTransactionParser();
-
-    // -------------------------------------------------------------------------
-    // validate() — fork gates
-    // -------------------------------------------------------------------------
-
-    @Test
-    void validate_beforeRskip543_throws() {
-        ActivationConfig activationConfig = mockActivationConfig(false, false, false);
-
-        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
-                () -> parser.validate(1L, activationConfig, Constants.regtest()));
-
-        assertTrue(ex.getMessage().contains("RSKIP-543"),
-                "Expected RSKIP-543 gate, got: " + ex.getMessage());
-    }
-
-    @Test
-    void validate_rskip543Only_throwsRskip546() {
-        ActivationConfig activationConfig = mockActivationConfig(true, false, false);
-
-        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
-                () -> parser.validate(1L, activationConfig, Constants.regtest()));
-
-        assertTrue(ex.getMessage().contains("RSKIP-546"),
-                "Expected RSKIP-546 gate, got: " + ex.getMessage());
-    }
-
-    @Test
-    void validate_rskip543And546Without545_throwsRskip545() {
-        ActivationConfig activationConfig = mockActivationConfig(true, true, false);
-
-        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
-                () -> parser.validate(1L, activationConfig, Constants.regtest()));
-
-        assertTrue(ex.getMessage().contains("RSKIP-545"),
-                "Expected RSKIP-545 gate, got: " + ex.getMessage());
-    }
-
-    @Test
-    void validate_allRequiredForksActive_doesNotThrow() {
-        ActivationConfig activationConfig = mockActivationConfig(true, true, true);
-
-        parser.validate(1L, activationConfig, Constants.regtest());
-    }
 
     // -------------------------------------------------------------------------
     // parse(CallArguments)
@@ -463,17 +414,6 @@ class Type4RawTransactionParserTest {
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
-
-    private static ActivationConfig mockActivationConfig(boolean rskip543, boolean rskip546, boolean rskip545) {
-        ActivationConfig.ForBlock forBlock = mock(ActivationConfig.ForBlock.class);
-        when(forBlock.isActive(ConsensusRule.RSKIP543)).thenReturn(rskip543);
-        when(forBlock.isActive(ConsensusRule.RSKIP546)).thenReturn(rskip546);
-        when(forBlock.isActive(ConsensusRule.RSKIP545)).thenReturn(rskip545);
-
-        ActivationConfig activationConfig = mock(ActivationConfig.class);
-        when(activationConfig.forBlock(anyLong())).thenReturn(forBlock);
-        return activationConfig;
-    }
 
     private static RLPList decodePayload(Transaction tx) {
         byte[] encoded = tx.getEncoded();

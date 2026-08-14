@@ -21,7 +21,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Rskip546TestSupport;
 import org.ethereum.core.Transaction;
@@ -41,6 +40,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.ethereum.core.Rskip545TestSupport.DEFAULT_MAX_FEE;
@@ -328,7 +328,7 @@ class RawTransactionEnvelopeParserTest {
         Transaction tx = Transaction.fromCallArguments(args, null, REGTEST_CHAIN_ID);
 
         assertEquals(TransactionType.TYPE_4, tx.getTypePrefix().type());
-        assertEquals(1, tx.getAuthorizationList().size());
+        assertEquals(1, Objects.requireNonNull(tx.getAuthorizationList()).size());
         assertEquals(Coin.valueOf(10), tx.getMaxPriorityFeePerGas());
         assertEquals(Coin.valueOf(100), tx.getMaxFeePerGas());
     }
@@ -342,7 +342,7 @@ class RawTransactionEnvelopeParserTest {
 
         assertEquals(TransactionType.TYPE_4, rebuilt.getType());
         assertEquals(original.getMaxFeePerGas(), rebuilt.getMaxFeePerGas());
-        assertEquals(1, rebuilt.getAuthorizationList().size());
+        assertEquals(1, Objects.requireNonNull(rebuilt.getAuthorizationList()).size());
     }
 
     @Test
@@ -376,38 +376,6 @@ class RawTransactionEnvelopeParserTest {
 
         assertDoesNotThrow(() -> RawTransactionEnvelopeParser.parse(raw));
         assertEquals(13, RLP.decodeList(java.util.Arrays.copyOfRange(raw, 1, raw.length)).size());
-    }
-
-    @Test
-    void parseRawWithActivation_validType4_doesNotThrow() {
-        Transaction tx = buildSignedType4Tx();
-        byte[] raw = tx.getEncoded();
-
-        assertDoesNotThrow(() -> RawTransactionEnvelopeParser.parse(
-                raw, 1L, ActivationConfigsForTest.all(), Constants.regtest()));
-    }
-
-    @Test
-    void parseCallArgumentsWithActivation_validType1_doesNotThrow() {
-        CallArguments args = legacyArgs();
-        args.setType("0x1");
-        args.setChainId("0x21");
-
-        assertDoesNotThrow(() -> RawTransactionEnvelopeParser.parse(
-                args, () -> "0x1", REGTEST_CHAIN_ID, 1L, ActivationConfigsForTest.all(), Constants.regtest()));
-    }
-
-    @Test
-    void parseInputWithActivation_validType2_doesNotThrow() {
-        CallArguments args = legacyArgs();
-        args.setType("0x2");
-        args.setChainId("0x21");
-        args.setMaxPriorityFeePerGas("0xa");
-        args.setMaxFeePerGas("0x64");
-        TransactionInput input = TransactionInput.fromCallArguments(args, () -> "0x1");
-
-        assertDoesNotThrow(() -> RawTransactionEnvelopeParser.parse(
-                input, REGTEST_CHAIN_ID, 1L, ActivationConfigsForTest.all(), Constants.regtest()));
     }
 
     // -------------------------------------------------------------------------

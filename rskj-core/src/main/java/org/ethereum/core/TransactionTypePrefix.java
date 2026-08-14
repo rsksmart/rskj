@@ -30,6 +30,10 @@ import java.util.Objects;
  * Type-safe representation of transaction/receipt prefixes:
  * legacy (no prefix), standard typed (1 byte), and the reserved RSK-namespace
  * prefix ({@code 0x02 || subtype}, 2 bytes).
+ *
+ * <p>The 2-byte RSK-namespace form is recognized for identification only.
+ * Transactions and receipts using it are currently unsupported and must be
+ * rejected at parse/construction time (see {@link #RSK_NAMESPACE_UNSUPPORTED_MESSAGE}).
  */
 public sealed interface TransactionTypePrefix
         permits LegacyPrefix, StandardTypedPrefix, RskNamespacePrefix {
@@ -179,10 +183,6 @@ public sealed interface TransactionTypePrefix
                              "; explicit type 0x00 is not allowed, omit the type field for legacy transactions");
          }
          Byte rskSubtype = hexToRskSubtype(rskSubType);
-         if (rskSubtype != null && transactionType != TransactionType.TYPE_2) {
-             throw RskJsonRpcRequestException.invalidParamError(
-                     "rskSubtype can only be used with type 0x02 (RSK namespace), got type: " + type);
-         }
 
          try {
              return TransactionTypePrefix.of(transactionType, rskSubtype);

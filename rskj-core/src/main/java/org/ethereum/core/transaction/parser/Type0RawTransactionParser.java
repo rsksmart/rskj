@@ -19,8 +19,6 @@ package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.core.transaction.parser.util.Type0SignatureUtils;
@@ -66,12 +64,6 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
                 data,
                 Type0SignatureUtils.parseType0SignatureState(txFields, V_INDEX, R_INDEX, S_INDEX)
         );
-    }
-
-    @Override
-    public void validate(long bestBlock, ActivationConfig activationConfig, Constants constants) {
-
-
     }
 
     @Override
