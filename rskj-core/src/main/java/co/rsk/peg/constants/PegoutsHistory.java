@@ -36,7 +36,7 @@ public class PegoutsHistory {
     /**
      * Represent hardcoded reference to pegout
      */
-    public static record Ref(Sha256Hash btcTxHash, long rskBlock) {
+    public record Ref(Sha256Hash btcTxHash, long rskBlock) {
 
         public static Ref from(String hash, long rskBlock) {
             return new Ref(Sha256Hash.wrap(hash), rskBlock);
