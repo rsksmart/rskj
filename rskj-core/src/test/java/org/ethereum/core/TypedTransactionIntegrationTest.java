@@ -21,12 +21,14 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.net.messages.Message;
+import co.rsk.net.messages.MessageType;
 import co.rsk.net.messages.TransactionsMessage;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.parser.util.AuthorizationListCodec;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -43,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -246,6 +249,66 @@ class TypedTransactionIntegrationTest {
         Transaction decodedTx = decoded.getTransactions().get(0);
         assertEquals(Coin.ZERO, decodedTx.getMaxPriorityFeePerGas());
         assertEquals(Coin.ZERO, decodedTx.getMaxFeePerGas());
+    }
+
+    @Test
+    void type4CanonicalZeroFees_decodesViaTransactionsMessageP2pPath() {
+        byte[] authList = AuthorizationListCodec.encodeList(
+                List.of(Rskip545TestSupport.minimalAuthorization(CHAIN_ID)));
+        byte[][] fields = new byte[][] {
+                RLP.encodeByte(CHAIN_ID),
+                RLP.encodeElement(new byte[]{0x01}),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null),
+                RLP.encodeElement(org.bouncycastle.util.BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21_000))),
+                RLP.encodeElement(receiver.getAddress().getBytes()),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                Rskip545TestSupport.EMPTY_ACCESS_LIST,
+                authList,
+                RLP.encodeElement(null),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null)
+        };
+        byte[] raw = ByteUtil.merge(
+                new byte[] { TransactionType.TYPE_4.getByteCode() },
+                RLP.encodeList(fields)
+        );
+
+        TransactionsMessage original = new TransactionsMessage(List.of(new ImmutableTransaction(raw)));
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+        RLPList paramsList = (RLPList) RLP.decode2(original.getEncoded()).get(0);
+        TransactionsMessage decoded = (TransactionsMessage) Message.create(blockFactory, paramsList);
+
+        assertEquals(1, decoded.getTransactions().size());
+        Transaction decodedTx = decoded.getTransactions().get(0);
+        assertEquals(TransactionType.TYPE_4, decodedTx.getType());
+        assertEquals(Coin.ZERO, decodedTx.getMaxPriorityFeePerGas());
+        assertEquals(Coin.ZERO, decodedTx.getMaxFeePerGas());
+    }
+
+    @Test
+    void malformedType4_isRejectedViaTransactionsMessageP2pPath() {
+        byte[] invalidRaw = ByteUtil.merge(
+                new byte[] { TransactionType.TYPE_4.getByteCode() },
+                RLP.encodeList(
+                        RLP.encodeByte(CHAIN_ID),
+                        RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY),
+                        RLP.encodeElement(null),
+                        RLP.encodeElement(null)
+                )
+        );
+        byte[] body = RLP.encodeList(RLP.encodeElement(invalidRaw));
+        byte[] encoded = RLP.encodeList(
+                RLP.encodeByte(MessageType.TRANSACTIONS.getTypeAsByte()),
+                RLP.encodeElement(body)
+        );
+
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+        RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> Message.create(blockFactory, paramsList));
     }
 
     @Test
