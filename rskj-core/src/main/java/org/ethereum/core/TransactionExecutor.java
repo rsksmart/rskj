@@ -729,12 +729,13 @@ public class TransactionExecutor {
     }
 
     private long refundGas() {
-        // Accumulate refunds for suicides
+        // Accumulate refunds for deleted accounts and authorizations before applying the refund cap
         result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
+        result.addFutureRefund(authorizationRefund);
 
-        // The actual gas subtracted is equal to half of the future refund
+        // The actual refund is capped to half of the gas used
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
-        gasRefund = GasCost.add(gasRefund, authorizationRefund);
+
         result.addDeductedRefund(gasRefund);
         result.setGasUsedBeforeRefunds(result.getGasUsed());
 
