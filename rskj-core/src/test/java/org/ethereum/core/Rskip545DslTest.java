@@ -499,11 +499,11 @@ class Rskip545DslTest {
     @Test
     void type4_blockedWhenRskip546Inactive() {
         Transaction tx = world.getTransactionByName("txType4SelfAuth");
-        var without546 = org.mockito.Mockito.mock(
+        var without546 = mock(
                 org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock.class);
-        org.mockito.Mockito.when(without546.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
-        org.mockito.Mockito.when(without546.isActive(ConsensusRule.RSKIP546)).thenReturn(false);
-        org.mockito.Mockito.when(without546.isActive(ConsensusRule.RSKIP545)).thenReturn(true);
+        when(without546.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
+        when(without546.isActive(ConsensusRule.RSKIP546)).thenReturn(false);
+        when(without546.isActive(ConsensusRule.RSKIP545)).thenReturn(true);
 
         assertTrue(tx.isTypedTransactionNotAllowed(without546),
                 "Type 4 must be rejected when RSKIP-546 is inactive");
