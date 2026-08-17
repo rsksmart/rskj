@@ -20,6 +20,7 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.constants.BridgeMainNetConstants;
+import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.exception.TransactionException;
@@ -31,7 +32,6 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.GasCost;
-import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -46,6 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 /**
  * Covers RSKIP-545 / Type 4 invariants on {@link Transaction#verify} and four-field typed
@@ -330,9 +332,9 @@ class TransactionRskip545InvariantTest {
         dataField.setAccessible(true);
         dataField.set(tx, null);
 
-        Constants constants = Mockito.mock(Constants.class);
-        Mockito.doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
-        ActivationConfig.ForBlock activations = Mockito.mock(ActivationConfig.ForBlock.class);
+        Constants constants = mock(Constants.class);
+        doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         assertTrue(tx.transactionCost(constants, activations, new ReceivedTxSignatureCache()) > 0);
     }
