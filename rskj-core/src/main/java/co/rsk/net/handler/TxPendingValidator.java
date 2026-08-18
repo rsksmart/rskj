@@ -77,11 +77,7 @@ public class TxPendingValidator {
             return TransactionValidationResult.withError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
         }
 
-        BigInteger gasLimit = resolveGasLimit(executionBlock, executionBlockNumber);
-        Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
-
         long basicTxCost = tx.transactionCost(constants, activations, signatureCache);
-
         if (state == null && basicTxCost != 0) {
             if (logger.isTraceEnabled()) {
                 logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender(signatureCache));
@@ -97,6 +93,8 @@ public class TxPendingValidator {
             return TransactionValidationResult.withError(String.format("transaction's size is higher than defined maximum: %s > %s", tx.getSize(), TX_MAX_SIZE));
         }
 
+        BigInteger gasLimit = resolveGasLimit(executionBlock, executionBlockNumber);
+        Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         for (TxValidatorStep step : validatorSteps) {
             TransactionValidationResult validationResult = step.validate(tx, state, gasLimit, minimumGasPrice, executionBlockNumber, basicTxCost == 0);
             if (!validationResult.transactionIsValid()) {
