@@ -31,7 +31,6 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
-import java.util.Objects;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
@@ -62,8 +61,8 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
         Coin value = CommonParsingUtils.defaultValue(RLP.parseCoinNullZero(txFields.get(VALUE_INDEX).getRLPData()));
         byte[] data = CommonParsingUtils.nullToEmpty(txFields.get(DATA_INDEX).getRLPData());
         byte[] accessListBytes = AccessListCodec.defaultAccessListBytes(txFields.get(ACCESS_LIST_INDEX).getRLPRawData());
-        Coin maxPriorityFeePerGas = Objects.requireNonNull(RLP.parseCoinNonNullZero(txFields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData()), "Type 2 maxPriorityFeePerGas");
-        Coin maxFeePerGas = Objects.requireNonNull(RLP.parseCoinNonNullZero(txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData()), "Type 2 maxFeePerGas");
+        Coin maxPriorityFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData()));
+        Coin maxFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData()));
 
         validateFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
         CommonParsingUtils.requireTypedScalarFields(nonce, gasLimit, value, maxPriorityFeePerGas, maxFeePerGas);
