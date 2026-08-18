@@ -737,7 +737,7 @@ public class Transaction {
     }
 
     private static byte[] nullToZeroArray(byte[] data) {
-        return data == null ? ZERO_BYTE_ARRAY.clone() : data;
+        return data == null ? ZERO_BYTE_ARRAY.clone() : data.clone();
     }
 
     public boolean isLocalCallTransaction() {
