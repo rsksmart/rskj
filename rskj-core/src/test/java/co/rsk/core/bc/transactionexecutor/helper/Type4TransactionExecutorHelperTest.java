@@ -248,6 +248,7 @@ public abstract class Type4TransactionExecutorHelperTest {
 
     protected void mockAccountWithCode(Repository repository, RskAddress address, byte[] code)  {
         when(repository.getCode(address)).thenReturn(code);
+        when(repository.isExist(address)).thenReturn(true);
     }
 
     protected void verifyTransactionCostBiggerOrEqualThan(Transaction tx, long expectedAuthorizationCost) {
