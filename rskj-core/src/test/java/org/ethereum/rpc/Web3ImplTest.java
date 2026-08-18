@@ -80,7 +80,6 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderBuilder;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.Blockchain;
-import org.ethereum.core.Bloom;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.ReceivedTxSignatureCache;
@@ -88,10 +87,8 @@ import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionPoolAddResult;
-import org.ethereum.core.TransactionReceipt;
-import org.ethereum.core.TransactionTypePrefix;
-import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
@@ -151,6 +148,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.TransactionReceipt;
+import org.ethereum.core.TransactionTypePrefix;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -3506,7 +3506,7 @@ class Web3ImplTest {
     }
 
     @Test
-    void eth_getTransactionReceipt_nonPositiveDerivedGasUsed_fallsBackToSublistCumulativeNotZero() {
+    void eth_getTransactionReceipt_nonPositiveDerivedGasUsed_doesNotInflateToSublistCumulative() {
         long prevCumulative = 42_000L;
         long inconsistentCumulative = 21_000L;
         Keccak256 hash0 = new Keccak256(TestUtils.generateBytes("typed-nonpos-tx0", 32));
@@ -3523,8 +3523,8 @@ class Web3ImplTest {
 
         TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hash1.toHexString()));
         assertNotNull(dto);
-        // Must not fall back to empty on-disk gasUsed (0x0); use sublist cumulative instead.
-        assertEquals(HexUtils.toQuantityJsonHex(inconsistentCumulative), dto.getGasUsed());
+        // Mid-sublist inconsistency: do not report sublist cumulative as per-tx gasUsed.
+        assertEquals("0x0", dto.getGasUsed());
     }
 
     @Test
@@ -3658,7 +3658,7 @@ class Web3ImplTest {
     }
 
     @Test
-    void eth_getTransactionReceipt_prevTxReceiptMissing_fallsBackToFullCumulative() {
+    void eth_getTransactionReceipt_prevTxReceiptMissing_doesNotInflateToFullCumulative() {
         long txCumulative = 42_000L;
         Keccak256 hash0 = new Keccak256(TestUtils.generateBytes("missing-prev-tx0", 32));
         Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("missing-prev-tx1", 32));
@@ -3683,7 +3683,8 @@ class Web3ImplTest {
 
         TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hash1.toHexString()));
         assertNotNull(dto);
-        assertEquals(HexUtils.toQuantityJsonHex(txCumulative), dto.getGasUsed());
+        // Unknown prev baseline: do not treat as 0 and report full sublist cumulative as gasUsed.
+        assertEquals("0x0", dto.getGasUsed());
     }
 
     @Test
@@ -3692,29 +3693,42 @@ class Web3ImplTest {
         Keccak256 otherHash = new Keccak256(TestUtils.generateBytes("missing-from-block-other", 32));
         byte[] blockHash = TestUtils.generateBytes("missing-from-block", 32);
 
-        Transaction otherTx = mock(Transaction.class);
-        when(otherTx.getHash()).thenReturn(otherHash);
+        Transaction otherTx = mockTypedTx(otherHash, TransactionType.TYPE_1, "0x1");
+        Transaction storedTx = mockTypedTx(storedHash, TransactionType.TYPE_1, "0x1");
+        TransactionInfo otherInfo = new TransactionInfo(fourFieldReceipt(otherTx, 21_000L), blockHash, 0);
+        TransactionInfo storedInfo = new TransactionInfo(fourFieldReceipt(storedTx, 21_000L), blockHash, 0);
 
-        TransactionReceipt receipt = new TransactionReceipt();
-        receipt.setStatus(new byte[]{0x01});
-        receipt.setCumulativeGas(21_000L);
-        receipt.setGasUsed(new byte[0]);
-        receipt.setLogInfoList(Collections.emptyList());
-
-        TransactionInfo info = new TransactionInfo(receipt, blockHash, 0);
         Block block = mockBlock(blockHash, new short[0], Collections.singletonList(otherTx));
-
         Blockchain blockchain = mock(Blockchain.class);
-        when(blockchain.getTransactionInfoByBlock(otherTx, blockHash)).thenReturn(info);
+        when(blockchain.getTransactionInfoByBlock(otherTx, blockHash)).thenReturn(otherInfo);
 
         BlockStore blockStore = mock(BlockStore.class);
         when(blockStore.getBlockByHash(blockHash)).thenReturn(block);
 
         ReceiptStore receiptStore = mock(ReceiptStore.class);
-        when(receiptStore.getInMainChain(storedHash.getBytes(), blockStore)).thenReturn(Optional.of(info));
+        when(receiptStore.getInMainChain(storedHash.getBytes(), blockStore)).thenReturn(Optional.of(storedInfo));
 
         Web3Impl web3 = createWeb3ForReceiptGasUsedTest(blockchain, blockStore, receiptStore);
         assertNull(web3.eth_getTransactionReceipt(new TxHashParam(storedHash.toHexString())));
+    }
+
+    @Test
+    void eth_getTransactionReceipt_blockMissingFromStore_returnsNull() {
+        Keccak256 txHash = new Keccak256(TestUtils.generateBytes("missing-block-tx", 32));
+        byte[] blockHash = TestUtils.generateBytes("missing-block", 32);
+
+        Transaction tx = mockTypedTx(txHash, TransactionType.TYPE_1, "0x1");
+        TransactionInfo info = new TransactionInfo(fourFieldReceipt(tx, 21_000L), blockHash, 0);
+
+        Blockchain blockchain = mock(Blockchain.class);
+        BlockStore blockStore = mock(BlockStore.class);
+        when(blockStore.getBlockByHash(blockHash)).thenReturn(null);
+
+        ReceiptStore receiptStore = mock(ReceiptStore.class);
+        when(receiptStore.getInMainChain(txHash.getBytes(), blockStore)).thenReturn(Optional.of(info));
+
+        Web3Impl web3 = createWeb3ForReceiptGasUsedTest(blockchain, blockStore, receiptStore);
+        assertNull(web3.eth_getTransactionReceipt(new TxHashParam(txHash.toHexString())));
     }
 
     @Test
@@ -3786,7 +3800,7 @@ class Web3ImplTest {
     }
 
     @Test
-    void eth_getTransactionReceipt_equalCumulativesInSameSublist_fallsBackToCumulative() {
+    void eth_getTransactionReceipt_equalCumulativesInSameSublist_doesNotInflateToCumulative() {
         long sameCumulative = 21_000L;
         Keccak256 hash0 = new Keccak256(TestUtils.generateBytes("equal-cum-tx0", 32));
         Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("equal-cum-tx1", 32));
@@ -3802,7 +3816,8 @@ class Web3ImplTest {
 
         TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hash1.toHexString()));
         assertNotNull(dto);
-        assertEquals(HexUtils.toQuantityJsonHex(sameCumulative), dto.getGasUsed());
+        // derived == 0: do not report the shared cumulative as this tx's gasUsed.
+        assertEquals("0x0", dto.getGasUsed());
     }
 
     @Test
@@ -3832,6 +3847,52 @@ class Web3ImplTest {
         TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hash1.toHexString()));
         assertNotNull(dto);
         assertEquals(HexUtils.toQuantityJsonHex(21_000L), dto.getGasUsed());
+    }
+
+    @Test
+    void eth_getBlockByNumber_returnsBaseEventInJsonResponse() {
+        // given
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        // when
+        createBlockWithBaseEvent(world, new byte[]{0x01, 0x02, 0x03});
+        BlockResultDTO result = web3.eth_getBlockByNumber(new BlockIdentifierParam("latest"), false);
+
+        // then
+        assertNotNull(result.getBaseEvent());
+        assertEquals("0x010203", result.getBaseEvent());
+    }
+
+    @Test
+    void eth_getBlockByHash_returnsBaseEventInJsonResponse() {
+        // given
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+        Block block = createBlockWithBaseEvent(world, new byte[]{0x04, 0x05, 0x06});
+        String blockHash = block.getHashJsonString();
+
+        // when
+        BlockHashParam blockHashParam = new BlockHashParam(blockHash);
+        BlockResultDTO result = web3.eth_getBlockByHash(blockHashParam, false);
+
+        // then
+        assertNotNull(result.getBaseEvent());
+        assertEquals("0x040506", result.getBaseEvent());
+    }
+
+    @Test
+    void eth_getBlockByNumber_returnsNullWhenBaseEventNotSet() {
+        // given
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        // when
+        createBlockWithBaseEvent(world, new byte[0]);
+        BlockResultDTO result = web3.eth_getBlockByNumber(new BlockIdentifierParam("latest"), false);
+
+        // then
+        assertNull(result.getBaseEvent());
     }
 
     private Web3Impl createWeb3ForReceiptGasUsedTest(
@@ -3914,52 +3975,6 @@ class Web3ImplTest {
         receipt.setLogInfoList(Collections.emptyList());
         receipt.setTransaction(tx);
         return receipt;
-    }
-
-    @Test
-    void eth_getBlockByNumber_returnsBaseEventInJsonResponse() {
-        // given
-        World world = new World();
-        Web3Impl web3 = createWeb3(world);
-
-        // when
-        createBlockWithBaseEvent(world, new byte[]{0x01, 0x02, 0x03});
-        BlockResultDTO result = web3.eth_getBlockByNumber(new BlockIdentifierParam("latest"), false);
-
-        // then
-        assertNotNull(result.getBaseEvent());
-        assertEquals("0x010203", result.getBaseEvent());
-    }
-
-    @Test
-    void eth_getBlockByHash_returnsBaseEventInJsonResponse() {
-        // given
-        World world = new World();
-        Web3Impl web3 = createWeb3(world);
-        Block block = createBlockWithBaseEvent(world, new byte[]{0x04, 0x05, 0x06});
-        String blockHash = block.getHashJsonString();
-
-        // when
-        BlockHashParam blockHashParam = new BlockHashParam(blockHash);
-        BlockResultDTO result = web3.eth_getBlockByHash(blockHashParam, false);
-
-        // then
-        assertNotNull(result.getBaseEvent());
-        assertEquals("0x040506", result.getBaseEvent());
-    }
-
-    @Test
-    void eth_getBlockByNumber_returnsNullWhenBaseEventNotSet() {
-        // given
-        World world = new World();
-        Web3Impl web3 = createWeb3(world);
-
-        // when
-        createBlockWithBaseEvent(world, new byte[0]);
-        BlockResultDTO result = web3.eth_getBlockByNumber(new BlockIdentifierParam("latest"), false);
-
-        // then
-        assertNull(result.getBaseEvent());
     }
 
     private Block createBlockWithBaseEvent(World world, byte[] baseEvent) {
