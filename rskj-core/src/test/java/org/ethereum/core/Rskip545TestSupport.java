@@ -105,7 +105,7 @@ public final class Rskip545TestSupport {
         return new SetCodeAuthorization(
                 chainId,
                 base.getAddress(),
-                base.getNonce(),
+                base.getNonceBytes(),
                 base.getSignature());
     }
 
@@ -241,7 +241,7 @@ public final class Rskip545TestSupport {
                 org.bouncycastle.util.BigIntegers.asUnsignedByteArray(highS),
                 valid.getSignature().getV()
         );
-        return new SetCodeAuthorization(valid.getChainId(), valid.getAddress(), valid.getNonce(), highSig);
+        return new SetCodeAuthorization(valid.getChainId(), valid.getAddress(), valid.getNonceBytes(), highSig);
     }
 
     /**

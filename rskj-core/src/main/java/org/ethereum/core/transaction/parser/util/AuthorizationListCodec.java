@@ -98,7 +98,7 @@ public final class AuthorizationListCodec {
         return RLP.encodeList(
                 RLP.encodeBigInteger(auth.getChainId()),
                 RLP.encodeRskAddress(auth.getAddress()),
-                RLP.encodeElement(auth.getNonce()),
+                RLP.encodeElement(auth.getNonceBytes()),
                 RLP.encodeByte(yParity),
                 RLP.encodeElement(BigIntegers.asUnsignedByteArray(auth.getSignature().getR())),
                 RLP.encodeElement(BigIntegers.asUnsignedByteArray(auth.getSignature().getS()))
@@ -262,7 +262,7 @@ public final class AuthorizationListCodec {
         if (auth.getChainId().signum() < 0 || auth.getChainId().compareTo(MAX_CHAIN_ID) >= 0) {
             throw new IllegalArgumentException("Authorization chain_id must be non-negative and less than 2^256");
         }
-        validateNonceValue(decodeNonce(auth.getNonce()));
+        validateNonceValue(decodeNonce(auth.getNonceBytes()));
 
         ECDSASignature signature = auth.getSignature();
         BigInteger r = signature.getR();

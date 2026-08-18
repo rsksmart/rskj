@@ -73,17 +73,11 @@ public class TxPendingValidator {
     public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {
         long executionBlockNumber = executionBlock.getNumber();
         ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlockNumber);
-        BigInteger gasLimit = activationConfig.areActive(executionBlockNumber, ConsensusRule.RSKIP351, ConsensusRule.RSKIP144)
-                ? BigInteger.valueOf(Math.max(BlockUtils.getSublistGasLimit(executionBlock, true, constants.getMinSequentialSetGasLimit()), BlockUtils.getSublistGasLimit(executionBlock, false, constants.getMinSequentialSetGasLimit())))
-                : BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
-        Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
-        long bestBlockNumber = executionBlock.getNumber();
         if (tx.isTypedTransactionNotAllowed(activations)) {
             return TransactionValidationResult.withError("transaction type " + tx.getTypePrefix() + " is not supported before its activation");
         }
 
         long basicTxCost = tx.transactionCost(constants, activations, signatureCache);
-
         if (state == null && basicTxCost != 0) {
             if (logger.isTraceEnabled()) {
                 logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender(signatureCache));
@@ -91,11 +85,7 @@ public class TxPendingValidator {
             return TransactionValidationResult.withError("the sender account doesn't exist");
         }
 
-        if (tx.getTypePrefix().isTyped() && !activations.isActive(ConsensusRule.RSKIP543)) {
-            return TransactionValidationResult.withError("typed transactions are not supported before RSKIP543 activation");
-        }
-
-        if (tx.isInitCodeSizeInvalidForTx(activationConfig.forBlock(bestBlockNumber))) {
+        if (tx.isInitCodeSizeInvalidForTx(activations)) {
             return TransactionValidationResult.withError("transaction's init code size is invalid");
         }
 
@@ -103,6 +93,8 @@ public class TxPendingValidator {
             return TransactionValidationResult.withError(String.format("transaction's size is higher than defined maximum: %s > %s", tx.getSize(), TX_MAX_SIZE));
         }
 
+        BigInteger gasLimit = resolveGasLimit(executionBlock, executionBlockNumber);
+        Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         for (TxValidatorStep step : validatorSteps) {
             TransactionValidationResult validationResult = step.validate(tx, state, gasLimit, minimumGasPrice, executionBlockNumber, basicTxCost == 0);
             if (!validationResult.transactionIsValid()) {
@@ -112,5 +104,15 @@ public class TxPendingValidator {
         }
 
         return TransactionValidationResult.ok();
+    }
+
+    private BigInteger resolveGasLimit(Block executionBlock, long executionBlockNumber) {
+        if (activationConfig.areActive(executionBlockNumber, ConsensusRule.RSKIP351, ConsensusRule.RSKIP144)) {
+            long minSequentialSetGasLimit = constants.getMinSequentialSetGasLimit();
+            long sequentialGasLimit = BlockUtils.getSublistGasLimit(executionBlock, true, minSequentialSetGasLimit);
+            long parallelGasLimit = BlockUtils.getSublistGasLimit(executionBlock, false, minSequentialSetGasLimit);
+            return BigInteger.valueOf(Math.max(sequentialGasLimit, parallelGasLimit));
+        }
+        return BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
     }
 }
