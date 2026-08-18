@@ -144,6 +144,7 @@ public class TransactionResultDTO {
             }
         } else if (txType == TransactionType.TYPE_4) {
             chainId = HexUtils.toQuantityJsonHex(tx.getChainId() & 0xFF);
+            accessList = decodeAccessList(tx.getAccessListBytes());
             yParity = HexUtils.toQuantityJsonHex(tx.getEncodedV() & 0xFF);
             Coin maxP = tx.getMaxPriorityFeePerGas();
             Coin maxF = tx.getMaxFeePerGas();
@@ -167,7 +168,7 @@ public class TransactionResultDTO {
             result.add(new AuthorizationListEntryDTO(
                     HexUtils.toQuantityJsonHex(auth.getChainId()),
                     auth.getAddress().toJsonString(),
-                    HexUtils.toQuantityJsonHex(auth.getNonce()),
+                    HexUtils.toQuantityJsonHex(auth.getNonceBytes()),
                     HexUtils.toQuantityJsonHex((long) signature.getV() - Transaction.LOWER_REAL_V),
                     HexUtils.toQuantityJsonHex(signature.getR()),
                     HexUtils.toQuantityJsonHex(signature.getS())

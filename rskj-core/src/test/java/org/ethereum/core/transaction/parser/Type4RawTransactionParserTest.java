@@ -283,6 +283,33 @@ class Type4RawTransactionParserTest {
     }
 
     @Test
+    void parse_rlp_canonicalRlpZeroFees_accepted() {
+        byte[] authList = AuthorizationListCodec.encodeList(
+                List.of(Rskip545TestSupport.minimalAuthorization(REGTEST_CHAIN_ID)));
+        byte[][] fields = new byte[][]{
+                RLP.encodeByte(REGTEST_CHAIN_ID),
+                RLP.encodeElement(new byte[]{0x01}),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null),
+                RLP.encodeBigInteger(BigInteger.valueOf(21_000)),
+                RLP.encodeRskAddress(RECEIVER),
+                RLP.encodeBigInteger(BigInteger.ZERO),
+                RLP.encodeElement(new byte[0]),
+                RLP.encodeList(),
+                authList,
+                RLP.encodeElement(null),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null),
+        };
+        RLPList payload = RLP.decodeList(RLP.encodeList(fields));
+
+        ParsedType4Transaction parsed = parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), payload);
+
+        assertEquals(Coin.ZERO, parsed.maxPriorityFeePerGas());
+        assertEquals(Coin.ZERO, parsed.maxFeePerGas());
+    }
+
+    @Test
     void parse_rlp_truncatedAccessList_throws() {
         byte[][] base = Rskip545TestSupport.defaultSignedType4Fields(RECEIVER, Rskip545TestSupport.defaultAuthListBytes());
         base[8] = new byte[]{(byte) 0xC4, 0x01};

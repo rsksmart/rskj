@@ -24,13 +24,13 @@ import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AccessListCodec;
 import org.ethereum.core.transaction.parser.util.AuthorizationListCodec;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
+import org.ethereum.core.transaction.parser.util.Rskip546FeeValidation;
 import org.ethereum.core.transaction.parser.util.Type4TransactionValidation;
 import org.ethereum.core.transaction.parser.util.TypedTransactionCodec;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
-import java.util.Objects;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
@@ -74,9 +74,9 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
                 txFields.get(AUTHORIZATION_LIST_INDEX).getRLPRawData());
         var authorizationList = AuthorizationListCodec.decodeListUnchecked(authorizationListBytes);
         // max priority fee per gas and max fee per gas
-        Coin maxPriorityFeePerGas = Objects.requireNonNull(RLP.parseCoinNonNullZero(txFields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData()), "Type 4 maxPriorityFeePerGas");
-        Coin maxFeePerGas = Objects.requireNonNull(RLP.parseCoinNonNullZero(txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData()), "Type 4 maxFeePerGas");
-        validateFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
+        Coin maxPriorityFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(MAX_PRIORITY_FEE_PER_GAS_INDEX).getRLPData()));
+        Coin maxFeePerGas = CommonParsingUtils.defaultValue(RLP.parseCoinNonNullZero(txFields.get(MAX_FEE_PER_GAS_INDEX).getRLPData()));
+        Rskip546FeeValidation.requireFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
         CommonParsingUtils.requireTypedScalarFields(nonce, gasLimit, value, maxPriorityFeePerGas, maxFeePerGas);
 
         ParsedType4Transaction parsed = new ParsedType4Transaction(
@@ -116,7 +116,7 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
                 input.maxFeePerGas(),
                 "Type 4 transaction requires maxFeePerGas"
         );
-        validateFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
+        Rskip546FeeValidation.requireFeeCapRelationship(maxPriorityFeePerGas, maxFeePerGas);
         byte[] gasLimitBytes = CommonParsingUtils.unsignedBytes(gasLimit);
         CommonParsingUtils.requireTypedScalarFields(nonce, gasLimitBytes, value, maxPriorityFeePerGas, maxFeePerGas);
 
@@ -140,15 +140,6 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
         );
         Type4TransactionValidation.validateParsed(parsed);
         return parsed;
-    }
-
-    private void validateFeeCapRelationship(Coin maxPriorityFeePerGas, Coin maxFeePerGas) {
-        if (maxPriorityFeePerGas.compareTo(maxFeePerGas) > 0) {
-            throw new IllegalArgumentException(
-                    "Type 4 transaction maxPriorityFeePerGas (" + maxPriorityFeePerGas
-                            + ") must not exceed maxFeePerGas (" + maxFeePerGas + ")"
-            );
-        }
     }
 
     private Coin parseRequiredCoin(Coin value, String errorMessage) {

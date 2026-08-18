@@ -2619,6 +2619,116 @@ class Web3ImplTest {
         assertEquals(estimatedCost, result);
     }
 
+    @Test
+    void eth_call_whenOnlyMaxPriorityFeePerGas_returnsInvalidParams() {
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        CallArguments args = new CallArguments();
+        args.setTo("0x0000000000000000000000000000000000000001");
+        args.setMaxPriorityFeePerGas("0x64");
+        CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> web3.eth_call(argsParam, new BlockRefParam("latest")));
+
+        assertEquals(-32602, ex.getCode());
+        assertEquals("maxPriorityFeePerGas requires maxFeePerGas", ex.getMessage());
+    }
+
+    @Test
+    void eth_estimateGas_whenOnlyMaxPriorityFeePerGas_returnsInvalidParams() {
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        CallArguments args = new CallArguments();
+        args.setTo("0x0000000000000000000000000000000000000001");
+        args.setMaxPriorityFeePerGas("0x64");
+        CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> web3.eth_estimateGas(argsParam));
+
+        assertEquals(-32602, ex.getCode());
+        assertEquals("maxPriorityFeePerGas requires maxFeePerGas", ex.getMessage());
+    }
+
+    @Test
+    void eth_call_whenOnlyMaxFeePerGas_returnsInvalidParams() {
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        CallArguments args = new CallArguments();
+        args.setTo("0x0000000000000000000000000000000000000001");
+        args.setMaxFeePerGas("0x64");
+        CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> web3.eth_call(argsParam, new BlockRefParam("latest")));
+
+        assertEquals(-32602, ex.getCode());
+        assertEquals("maxFeePerGas requires maxPriorityFeePerGas", ex.getMessage());
+    }
+
+    @Test
+    void eth_estimateGas_whenOnlyMaxFeePerGas_returnsInvalidParams() {
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        CallArguments args = new CallArguments();
+        args.setTo("0x0000000000000000000000000000000000000001");
+        args.setMaxFeePerGas("0x64");
+        CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> web3.eth_estimateGas(argsParam));
+
+        assertEquals(-32602, ex.getCode());
+        assertEquals("maxFeePerGas requires maxPriorityFeePerGas", ex.getMessage());
+    }
+
+    @Test
+    void eth_call_whenMaxPriorityFeeExceedsMaxFee_returnsInvalidParams() {
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        CallArguments args = new CallArguments();
+        args.setTo("0x0000000000000000000000000000000000000001");
+        args.setMaxFeePerGas("0x1");
+        args.setMaxPriorityFeePerGas("0x64");
+        CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> web3.eth_call(argsParam, new BlockRefParam("latest")));
+
+        assertEquals(-32602, ex.getCode());
+        assertEquals("maxPriorityFeePerGas (100) must not exceed maxFeePerGas (1)", ex.getMessage());
+    }
+
+    @Test
+    void eth_estimateGas_whenMaxPriorityFeeExceedsMaxFee_returnsInvalidParams() {
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        CallArguments args = new CallArguments();
+        args.setTo("0x0000000000000000000000000000000000000001");
+        args.setMaxFeePerGas("0x1");
+        args.setMaxPriorityFeePerGas("0x64");
+        CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> web3.eth_estimateGas(argsParam));
+
+        assertEquals(-32602, ex.getCode());
+        assertEquals("maxPriorityFeePerGas (100) must not exceed maxFeePerGas (1)", ex.getMessage());
+    }
+
     private void checkSendTransaction(Byte chainId) {
         BigInteger nonce = BigInteger.ONE;
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());

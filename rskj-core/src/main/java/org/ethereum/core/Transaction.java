@@ -192,6 +192,9 @@ public class Transaction {
         return parsed.accept(new ParsedRawTransactionToTransaction(isLocalCall));
     }
 
+    // Rootstock has no EIP-1559 base fee. The effective gas price is therefore
+    // min(maxPriorityFeePerGas, maxFeePerGas). For valid transactions,
+    // maxPriorityFeePerGas <= maxFeePerGas, so this resolves to the priority fee.
     private static Coin effectiveGasPrice(Coin maxPriorityFeePerGas, Coin maxFeePerGas) {
         return maxPriorityFeePerGas.compareTo(maxFeePerGas) <= 0 ? maxPriorityFeePerGas : maxFeePerGas;
     }
@@ -326,7 +329,7 @@ public class Transaction {
         }
 
         long authorizationListGas = 0;
-        if (isType4()) {
+        if (isType4() && authorizationList != null) {
             authorizationListGas = Math.multiplyExact(GasCost.PER_EMPTY_ACCOUNT_COST, authorizationList.size());
         }
 
@@ -341,7 +344,9 @@ public class Transaction {
             return true;
         }
         TransactionType type = typePrefix.type();
-        if ((type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2)
+        // Type 1 / 2 / 4 all depend on RSKIP-546 fields (access_list, and for type 2/4 fee caps).
+        // Type 4 additionally requires RSKIP-545 (set-code / authorization_list).
+        if ((type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2 || type == TransactionType.TYPE_4)
                 && !activations.isActive(ConsensusRule.RSKIP546)) {
             return true;
         }
@@ -438,10 +443,8 @@ public class Transaction {
     }
 
     public Coin getGasPrice() {
-        // some blocks have zero encoded as null, but if we altered the internal field then re-encoding the value would
-        // give a different value than the original.
         if (usesRskip546FeeFields() && maxPriorityFeePerGas != null && maxFeePerGas != null) {
-            return maxPriorityFeePerGas.compareTo(maxFeePerGas) <= 0 ? maxPriorityFeePerGas : maxFeePerGas;
+            return effectiveGasPrice(maxPriorityFeePerGas, maxFeePerGas);
         }
         if (gasPrice == null) {
             return Coin.ZERO;
@@ -724,7 +727,7 @@ public class Transaction {
     }
 
     private static byte[] nullToZeroArray(byte[] data) {
-        return data == null ? ZERO_BYTE_ARRAY.clone() : data;
+        return data == null ? ZERO_BYTE_ARRAY.clone() : data.clone();
     }
 
     public boolean isLocalCallTransaction() {
