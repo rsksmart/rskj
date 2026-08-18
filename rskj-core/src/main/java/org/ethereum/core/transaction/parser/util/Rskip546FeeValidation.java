@@ -38,7 +38,7 @@ public final class Rskip546FeeValidation {
     }
 
     /**
-     * Rejects tip &gt; fee cap. Used by Type 2 / Type 4 parsers (RLP and call-args ingress).
+     * Rejects maxPriorityFeePerGas > maxFeePerGas. Used by Type 2 / Type 4 parsers (RLP and call-args ingress).
      */
     public static void requireFeeCapRelationship(Coin maxPriorityFeePerGas, Coin maxFeePerGas) {
         if (maxPriorityFeePerGas.compareTo(maxFeePerGas) > 0) {
@@ -47,7 +47,7 @@ public final class Rskip546FeeValidation {
     }
 
     /**
-     * Rejects tip &gt; fee cap with JSON-RPC invalid params. Used by eth_call / eth_estimateGas.
+     * Rejects maxPriorityFeePerGas >  maxFeePerGas. Used by eth_call / eth_estimateGas.
      */
     public static void requireFeeCapRelationshipInvalidParam(BigInteger maxPriorityFeePerGas, BigInteger maxFeePerGas) {
         if (maxPriorityFeePerGas.compareTo(maxFeePerGas) > 0) {
