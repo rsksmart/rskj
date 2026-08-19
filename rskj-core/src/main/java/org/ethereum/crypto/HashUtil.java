@@ -37,6 +37,10 @@ import static java.util.Arrays.copyOfRange;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class HashUtil {
+    // Must be declared before EMPTY_TRIE_HASH: its static initializer calls keccak256(),
+    // which reads this ThreadLocal.
+    private static final ThreadLocal<Keccak256> KECCAK_256 = ThreadLocal.withInitial(Keccak256::new);
+
     public static final byte[] EMPTY_TRIE_HASH = keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY));
 
     private static final MessageDigest sha256digest = makeMessageDigest();
@@ -65,7 +69,9 @@ public class HashUtil {
     }
 
     public static byte[] keccak256(BytesSlice input) {
-        Keccak256 digest =  new Keccak256();
+        // digest() auto-resets the Keccak256 instance after producing its output (see
+        // Digest's contract), so a single per-thread instance is safe to reuse across calls.
+        Keccak256 digest = KECCAK_256.get();
         digest.update(input);
         return digest.digest();
     }

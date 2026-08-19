@@ -30,20 +30,25 @@ public class Keccak256Helper {
     public static final int DEFAULT_SIZE = 256;
     public static final int DEFAULT_SIZE_BYTES = DEFAULT_SIZE / 8;
 
+    // doFinal() always resets a BouncyCastle Digest's internal state before returning, so a
+    // single per-thread instance is safe to reuse across calls for the common (256-bit) case.
+    private static final ThreadLocal<KeccakDigest> DEFAULT_DIGEST =
+            ThreadLocal.withInitial(() -> new KeccakDigest(DEFAULT_SIZE));
+
     public static String keccak256String(String message) {
-        return keccak256String(message, new KeccakDigest(DEFAULT_SIZE), true);
+        return keccak256String(message, DEFAULT_DIGEST.get(), true);
     }
 
     public static String keccak256String(byte[] message) {
-        return keccak256String(message, new KeccakDigest(DEFAULT_SIZE), true);
+        return keccak256String(message, DEFAULT_DIGEST.get(), true);
     }
 
     public static byte[] keccak256(String message) {
-        return keccak256(Hex.decode(message), new KeccakDigest(DEFAULT_SIZE), true);
+        return keccak256(Hex.decode(message), DEFAULT_DIGEST.get(), true);
     }
 
     public static byte[] keccak256(byte[] message) {
-        return keccak256(message, new KeccakDigest(DEFAULT_SIZE), true);
+        return keccak256(message, DEFAULT_DIGEST.get(), true);
     }
 
     public static byte[] keccak256(byte[] message, Size sz) {
@@ -51,11 +56,11 @@ public class Keccak256Helper {
     }
 
     public static byte[] keccak256(byte[] m1, byte[] m2) {
-        return keccak256(m1, m2, new KeccakDigest(DEFAULT_SIZE), true);
+        return keccak256(m1, m2, DEFAULT_DIGEST.get(), true);
     }
 
     public static byte[] keccak256(byte[] message, int start, int length) {
-        return keccak256(message, start, length, new KeccakDigest(DEFAULT_SIZE), true);
+        return keccak256(message, start, length, DEFAULT_DIGEST.get(), true);
     }
 
     protected static String keccak256String(String message, Size bitSize) {
