@@ -94,6 +94,12 @@ public class Transaction {
      * input [data] of the message call or
      * Initialization code for a new contract */
     private final byte[] data;
+    // Memoizes nonZeroDataBytes(), a pure function of `data` alone (immutable) -- transactionCost()
+    // is called repeatedly for the same tx across its lifecycle (mempool admission checks, block
+    // execution, and TransactionPoolImpl re-scanning a sender's whole pending queue on every new
+    // admission), and each call re-scanned the full calldata. -1 means "not yet computed"; a benign
+    // race recomputes the same deterministic value at worst, so no synchronization is needed.
+    private long nonZeroDataBytesCache = -1L;
     private final byte chainId;
     /* the elliptic curve signature
      * (including public key recovery bits) */
@@ -367,7 +373,12 @@ public class Transaction {
     }
 
     private long nonZeroDataBytes() {
+        if (nonZeroDataBytesCache >= 0) {
+            return nonZeroDataBytesCache;
+        }
+
         if (data == null) {
+            nonZeroDataBytesCache = 0;
             return 0;
         }
 
@@ -377,6 +388,8 @@ public class Transaction {
                 ++counter;
             }
         }
+
+        nonZeroDataBytesCache = counter;
         return counter;
     }
 
