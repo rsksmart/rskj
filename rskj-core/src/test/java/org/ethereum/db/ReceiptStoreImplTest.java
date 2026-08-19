@@ -37,10 +37,13 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import java.util.ArrayList;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -51,6 +54,32 @@ import static org.mockito.Mockito.when;
  * Created by ajlopez on 3/1/2016.
  */
 class ReceiptStoreImplTest {
+
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void saveMultipleInV2BatchesWritesAndKeepsReceiptLookup(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+        if (!(store instanceof ReceiptStoreImplV2)) {
+            return;
+        }
+
+        byte[] blockHash = Hex.decode("0102030405060708");
+        TransactionReceipt receipt1 = createReceipt();
+        receipt1.setTransaction(Transaction.builder().nonce(BigInteger.ONE).build());
+        TransactionReceipt receipt2 = createReceipt();
+        receipt2.setTransaction(Transaction.builder().nonce(BigInteger.TWO).build());
+
+        store.saveMultiple(blockHash, List.of(receipt1, receipt2));
+
+        verify(baseDataSource, times(1)).updateBatch(anyMap(), anySet());
+
+        TransactionInfo txInfo1 = store.get(receipt1.getTransaction().getHash().getBytes(), blockHash).orElse(null);
+        Assertions.assertNotNull(txInfo1);
+        Assertions.assertEquals(0, txInfo1.getIndex());
+
+        TransactionInfo txInfo2 = store.get(receipt2.getTransaction().getHash().getBytes(), blockHash).orElse(null);
+        Assertions.assertNotNull(txInfo2);
+        Assertions.assertEquals(1, txInfo2.getIndex());
+    }
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)

@@ -84,6 +84,69 @@ public class ReceiptStoreImplV2 extends ReceiptStoreImpl {
     }
 
     @Override
+    public void saveMultiple(byte[] blockHash, List<TransactionReceipt> receipts) {
+        if (receipts.isEmpty()) {
+            return;
+        }
+
+        // Preserve tx order for deterministic tx index assignment.
+        Map<ByteArrayWrapper, List<TransactionInfo>> txInfosByHash = new LinkedHashMap<>();
+        int txIndex = 0;
+        for (TransactionReceipt receipt : receipts) {
+            byte[] txHash = receipt.getTransaction().getHash().getBytes();
+            ByteArrayWrapper txHashWrapper = new ByteArrayWrapper(txHash);
+            txInfosByHash.computeIfAbsent(txHashWrapper, ignored -> new ArrayList<>())
+                    .add(new TransactionInfo(receipt, blockHash, txIndex++));
+        }
+
+        Map<ByteArrayWrapper, byte[]> entriesToUpdate = new HashMap<>();
+        List<TransactionInfo> legacyFormatEntries = new ArrayList<>();
+
+        for (Map.Entry<ByteArrayWrapper, List<TransactionInfo>> txInfoEntry : txInfosByHash.entrySet()) {
+            byte[] txHash = txInfoEntry.getKey().getData();
+            byte[] txInfoBytes = receiptsDS.get(txHash);
+
+            RLPList txList = null;
+            int txListSize = 0;
+            if (txInfoBytes != null && txInfoBytes.length > 0) {
+                txList = (RLPList) RLP.decode2(txInfoBytes).get(0);
+                txListSize = txList.size();
+            }
+
+            if (txListSize > 0 && txList.get(0) instanceof RLPList) {
+                legacyFormatEntries.addAll(txInfoEntry.getValue());
+                continue;
+            }
+
+            List<TransactionInfo> transactionInfos = txInfoEntry.getValue();
+            for (TransactionInfo txInfo : transactionInfos) {
+                entriesToUpdate.put(
+                        new ByteArrayWrapper(getCombinedKey(txHash, txInfo.getBlockHash())),
+                        txInfo.getEncoded()
+                );
+            }
+
+            byte[][] blockHashArr = new byte[txListSize + transactionInfos.size()][];
+            for (int i = 0; i < txListSize; ++i) {
+                blockHashArr[i] = RLP.encodeElement(txList.get(i).getRLPData());
+            }
+            for (int i = 0; i < transactionInfos.size(); i++) {
+                blockHashArr[txListSize + i] = RLP.encodeElement(transactionInfos.get(i).getBlockHash());
+            }
+
+            entriesToUpdate.put(new ByteArrayWrapper(txHash), RLP.encodeList(blockHashArr));
+        }
+
+        if (!entriesToUpdate.isEmpty()) {
+            receiptsDS.updateBatch(entriesToUpdate, Collections.emptySet());
+        }
+
+        for (TransactionInfo txInfo : legacyFormatEntries) {
+            super.add(txInfo.getBlockHash(), txInfo.getIndex(), txInfo.getReceipt());
+        }
+    }
+
+    @Override
     public Optional<TransactionInfo> getInMainChain(byte[] transactionHash, BlockStore store) {
         // try first a new data format
         byte[] txInfoBytes = receiptsDS.get(transactionHash);
