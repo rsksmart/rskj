@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
@@ -433,6 +434,99 @@ class DataSourceWithCacheTest {
             if (!unlocked) {
                 lock.readLock().unlock();
             }
+        }
+    }
+
+    @Test
+    void asyncFlushBackpressureBlocksProducerWhenQueueIsFull() throws Exception {
+        DataSourceWithCache asyncDataSource = new DataSourceWithCache(baseDataSource, CACHE_SIZE, null, true);
+
+        // Stall every batch the background worker tries to write, simulating a RocksDB
+        // write that is slower than the rate block processing is producing writes.
+        CountDownLatch startGate = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            startGate.await();
+            return invocation.callRealMethod();
+        }).when(baseDataSource).updateBatch(any(), any());
+
+        int totalBatches = 40; // comfortably larger than any reasonable queue cap
+        AtomicInteger completedEnqueues = new AtomicInteger(0);
+        ExecutorService producer = Executors.newSingleThreadExecutor();
+        try {
+            Future<?> producerTask = producer.submit(() -> {
+                for (int i = 0; i < totalBatches; i++) {
+                    byte[] key = TestUtils.generateBytes(getClass(), "backpressureKey" + i, 20);
+                    byte[] value = TestUtils.generateBytes(getClass(), "backpressureValue" + i, 20);
+                    asyncDataSource.put(key, value);
+                    asyncDataSource.flush();
+                    completedEnqueues.incrementAndGet();
+                }
+            });
+
+            // With the writer fully stuck and no bound, all totalBatches would enqueue
+            // almost instantly (they're trivial in-memory map operations). With
+            // backpressure in place, the producer must stall well before finishing.
+            try {
+                producerTask.get(500, TimeUnit.MILLISECONDS);
+                fail("producer should have blocked on async-flush backpressure, but it finished all "
+                        + totalBatches + " batches while the writer was stuck (completed=" + completedEnqueues.get() + ")");
+            } catch (TimeoutException expected) {
+                // expected: the producer is blocked waiting for queue room
+            }
+            assertTrue(completedEnqueues.get() < totalBatches,
+                    "producer should not have completed all batches while the writer was stuck");
+
+            startGate.countDown();
+            producerTask.get(5, TimeUnit.SECONDS);
+
+            assertEquals(totalBatches, completedEnqueues.get());
+            verify(baseDataSource, timeout(5000).times(totalBatches)).updateBatch(any(), any());
+        } finally {
+            producer.shutdownNow();
+        }
+    }
+
+    @Test
+    void getReturnsPendingValueEvenIfEvictedFromCommittedCacheBeforeFlushCompletes() throws Exception {
+        int smallCacheSize = 2;
+        DataSourceWithCache asyncDataSource = new DataSourceWithCache(baseDataSource, smallCacheSize, null, true);
+
+        // Stall the flush so pendingKey's batch never reaches base.
+        CountDownLatch startGate = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            startGate.await();
+            return invocation.callRealMethod();
+        }).when(baseDataSource).updateBatch(any(), any());
+
+        try {
+            byte[] pendingKey = TestUtils.generateBytes(getClass(), "pendingKey", 20);
+            byte[] pendingValue = TestUtils.generateBytes(getClass(), "pendingValue", 20);
+
+            asyncDataSource.put(pendingKey, pendingValue);
+            asyncDataSource.flush(); // enqueues a batch containing pendingKey; the worker gets stuck on it
+
+            Map<ByteArrayWrapper, byte[]> committedCache = TestUtils.getInternalState(asyncDataSource, "committedCache");
+            assertTrue(committedCache.containsKey(ByteUtil.wrap(pendingKey)));
+
+            // Push pendingKey out of the small, LRU-bounded committedCache purely via
+            // eviction pressure from other keys, without ever touching pendingKey again
+            // and without unblocking the stuck flush.
+            for (int i = 0; i < smallCacheSize + 5; i++) {
+                byte[] key = TestUtils.generateBytes(getClass(), "evictionKey" + i, 20);
+                byte[] value = TestUtils.generateBytes(getClass(), "evictionValue" + i, 20);
+                baseDataSource.put(key, value);
+                asyncDataSource.get(key);
+            }
+
+            assertFalse(committedCache.containsKey(ByteUtil.wrap(pendingKey)),
+                    "test setup requires pendingKey to actually be evicted from committedCache");
+
+            // pendingKey is not in base yet either (the flush is still stuck). Without
+            // falling back to the pending-flush index, this would incorrectly read
+            // through to base.get() and return null instead of the in-flight value.
+            assertArrayEquals(pendingValue, asyncDataSource.get(pendingKey));
+        } finally {
+            startGate.countDown();
         }
     }
 

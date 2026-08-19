@@ -28,7 +28,11 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,10 +41,42 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("datasourcewithcache");
 
+    // Caps how many flushed-but-not-yet-persisted batches may sit in the async flush
+    // queue at once. Without a cap, a producer (block processing) that outruns the
+    // consumer (the single background writer thread) grows the queue -- and the full
+    // key/value maps each PendingBatch retains -- without bound, which is a direct path
+    // to an OOM under sustained heavy load. Once the cap is hit, the enqueuing thread
+    // blocks until the background writer frees a slot, which throttles block processing
+    // to the DB's actual write throughput instead of letting heap absorb the backlog.
+    private static final int DEFAULT_MAX_PENDING_FLUSH_BATCHES = 4;
+    private static final int MAX_PENDING_FLUSH_BATCHES =
+            Integer.getInteger("datasourcewithcache.asyncFlush.maxQueueDepth", DEFAULT_MAX_PENDING_FLUSH_BATCHES);
+
     private final int cacheSize;
     private final KeyValueDataSource base;
     private final Map<ByteArrayWrapper, byte[]> uncommittedCache;
     private final Map<ByteArrayWrapper, byte[]> committedCache;
+    private final boolean asyncFlushEnabled;
+    private final ExecutorService asyncFlushExecutor;
+    private final Deque<PendingBatch> pendingFlushBatches;
+    private final Object pendingFlushMonitor;
+    // Index of keys touched by any batch still sitting in pendingFlushBatches (enqueued
+    // but not yet durably written to `base`), mapped to their most-recently-enqueued
+    // value (null means "pending delete"). Without this, get() could see a key evicted
+    // from the bounded committedCache while it is still only in the pending queue, fall
+    // through to base.get(key), and return a stale/absent value. Guarded by
+    // pendingFlushMonitor, same as pendingFlushBatches. pendingFlushKeyRefCounts tracks
+    // how many still-pending batches reference each key, so a key is only removed from
+    // the index once every batch that touched it -- including newer ones enqueued after
+    // an older one already flushed -- has actually been persisted.
+    private final Map<ByteArrayWrapper, byte[]> pendingFlushIndex;
+    private final Map<ByteArrayWrapper, Integer> pendingFlushKeyRefCounts;
+    private final AtomicReference<RuntimeException> asyncFlushFailure;
+    private final AtomicLong asyncFlushBatchesEnqueued;
+    private final AtomicLong asyncFlushBatchesFlushed;
+    private final AtomicLong asyncFlushEntriesEnqueued;
+    private final AtomicLong asyncFlushEntriesFlushed;
+    private final AtomicInteger asyncFlushMaxQueueDepth;
 
     private final AtomicInteger numOfPuts = new AtomicInteger();
     private final AtomicInteger numOfGets = new AtomicInteger();
@@ -52,21 +88,50 @@ public class DataSourceWithCache implements KeyValueDataSource {
     private final CacheSnapshotHandler cacheSnapshotHandler;
 
     public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize) {
-        this(base, cacheSize, null);
+        this(base, cacheSize, null, false);
+    }
+
+    public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize, boolean asyncFlushEnabled) {
+        this(base, cacheSize, null, asyncFlushEnabled);
     }
 
     public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize,
                                @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
+        this(base, cacheSize, cacheSnapshotHandler, false);
+    }
+
+    public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize,
+                               @Nullable CacheSnapshotHandler cacheSnapshotHandler,
+                               boolean asyncFlushEnabled) {
         this.cacheSize = cacheSize;
         this.base = Objects.requireNonNull(base);
         this.uncommittedCache = new LinkedHashMap<>(cacheSize / 8, (float) 0.75, false);
         this.committedCache = Collections.synchronizedMap(makeCommittedCache(cacheSize, cacheSnapshotHandler));
         this.cacheSnapshotHandler = cacheSnapshotHandler;
+        this.asyncFlushEnabled = asyncFlushEnabled;
+        this.pendingFlushBatches = asyncFlushEnabled ? new ArrayDeque<>() : null;
+        this.pendingFlushMonitor = asyncFlushEnabled ? new Object() : null;
+        this.pendingFlushIndex = asyncFlushEnabled ? new HashMap<>() : null;
+        this.pendingFlushKeyRefCounts = asyncFlushEnabled ? new HashMap<>() : null;
+        this.asyncFlushFailure = asyncFlushEnabled ? new AtomicReference<>() : null;
+        this.asyncFlushBatchesEnqueued = asyncFlushEnabled ? new AtomicLong() : null;
+        this.asyncFlushBatchesFlushed = asyncFlushEnabled ? new AtomicLong() : null;
+        this.asyncFlushEntriesEnqueued = asyncFlushEnabled ? new AtomicLong() : null;
+        this.asyncFlushEntriesFlushed = asyncFlushEnabled ? new AtomicLong() : null;
+        this.asyncFlushMaxQueueDepth = asyncFlushEnabled ? new AtomicInteger() : null;
+        this.asyncFlushExecutor = asyncFlushEnabled
+                ? Executors.newSingleThreadExecutor(runnable -> {
+                    Thread thread = new Thread(runnable, getName() + "-async-flush");
+                    thread.setDaemon(true);
+                    return thread;
+                })
+                : null;
     }
 
     @Override
     public byte[] get(byte[] key) {
         Objects.requireNonNull(key);
+        ensureNoAsyncFlushFailure();
 
         boolean traceEnabled = logger.isTraceEnabled();
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
@@ -81,6 +146,16 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
             if (uncommittedCache.containsKey(wrappedKey)) {
                 return uncommittedCache.get(wrappedKey);
+            }
+
+            if (asyncFlushEnabled) {
+                synchronized (pendingFlushMonitor) {
+                    if (pendingFlushIndex.containsKey(wrappedKey)) {
+                        value = pendingFlushIndex.get(wrappedKey);
+                        committedCache.put(wrappedKey, value);
+                        return value;
+                    }
+                }
             }
 
             value = base.get(key);
@@ -111,6 +186,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     private byte[] put(ByteArrayWrapper wrappedKey, byte[] value) {
         Objects.requireNonNull(value);
+        ensureNoAsyncFlushFailure();
 
         this.lock.writeLock().lock();
 
@@ -149,6 +225,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     private void delete(ByteArrayWrapper wrappedKey) {
+        ensureNoAsyncFlushFailure();
         this.lock.writeLock().lock();
 
         try {
@@ -172,6 +249,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     @Override
     public Set<ByteArrayWrapper> keys() {
+        ensureNoAsyncFlushFailure();
         Stream<ByteArrayWrapper> baseKeys;
         Stream<ByteArrayWrapper> committedKeys;
         Stream<ByteArrayWrapper> uncommittedKeys;
@@ -211,6 +289,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     @Override
     public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
+        ensureNoAsyncFlushFailure();
         if (rows.containsKey(null) || rows.containsValue(null)) {
             throw new IllegalArgumentException("Cannot update null values");
         }
@@ -230,6 +309,17 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     @Override
     public void flush() {
+        ensureNoAsyncFlushFailure();
+
+        if (asyncFlushEnabled) {
+            flushAsync();
+            return;
+        }
+
+        flushSync();
+    }
+
+    private void flushSync() {
         Map<ByteArrayWrapper, byte[]> uncommittedBatch = new LinkedHashMap<>();
 
         this.lock.writeLock().lock();
@@ -259,6 +349,167 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
     }
 
+    private void flushAsync() {
+        this.lock.writeLock().lock();
+
+        try {
+            enqueuePendingBatchLocked();
+        } finally {
+            this.lock.writeLock().unlock();
+        }
+
+        submitAsyncFlushWorker();
+    }
+
+    private void enqueuePendingBatchLocked() {
+        if (uncommittedCache.isEmpty()) {
+            return;
+        }
+
+        Map<ByteArrayWrapper, byte[]> uncommittedBatch = new LinkedHashMap<>();
+        Set<ByteArrayWrapper> uncommittedKeysToRemove = new HashSet<>();
+
+        for (Map.Entry<ByteArrayWrapper, byte[]> entry : uncommittedCache.entrySet()) {
+            if (entry.getValue() != null) {
+                uncommittedBatch.put(entry.getKey(), entry.getValue());
+            } else {
+                uncommittedKeysToRemove.add(entry.getKey());
+            }
+        }
+
+        committedCache.putAll(uncommittedCache);
+        uncommittedCache.clear();
+
+        if (uncommittedBatch.isEmpty() && uncommittedKeysToRemove.isEmpty()) {
+            return;
+        }
+
+        synchronized (pendingFlushMonitor) {
+            while (pendingFlushBatches.size() >= MAX_PENDING_FLUSH_BATCHES && asyncFlushFailure.get() == null) {
+                try {
+                    pendingFlushMonitor.wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while applying async flush backpressure", e);
+                }
+            }
+            ensureNoAsyncFlushFailure();
+
+            for (ByteArrayWrapper key : uncommittedBatch.keySet()) {
+                pendingFlushKeyRefCounts.merge(key, 1, Integer::sum);
+                pendingFlushIndex.put(key, uncommittedBatch.get(key));
+            }
+            for (ByteArrayWrapper key : uncommittedKeysToRemove) {
+                pendingFlushKeyRefCounts.merge(key, 1, Integer::sum);
+                pendingFlushIndex.put(key, null);
+            }
+
+            pendingFlushBatches.addLast(new PendingBatch(uncommittedBatch, uncommittedKeysToRemove));
+            asyncFlushBatchesEnqueued.incrementAndGet();
+            asyncFlushEntriesEnqueued.addAndGet((long) uncommittedBatch.size() + uncommittedKeysToRemove.size());
+            int queueDepth = pendingFlushBatches.size();
+            while (true) {
+                int currentMax = asyncFlushMaxQueueDepth.get();
+                if (queueDepth <= currentMax || asyncFlushMaxQueueDepth.compareAndSet(currentMax, queueDepth)) {
+                    break;
+                }
+            }
+
+            if (logger.isTraceEnabled()) {
+                logger.trace(
+                        "Async flush enqueue: dataSource={} queueDepth={} maxQueueDepth={} enqueuedBatches={} flushedBatches={} enqueuedEntries={} flushedEntries={} batchUpdates={} batchDeletes={}",
+                        getName(),
+                        queueDepth,
+                        asyncFlushMaxQueueDepth.get(),
+                        asyncFlushBatchesEnqueued.get(),
+                        asyncFlushBatchesFlushed.get(),
+                        asyncFlushEntriesEnqueued.get(),
+                        asyncFlushEntriesFlushed.get(),
+                        uncommittedBatch.size(),
+                        uncommittedKeysToRemove.size()
+                );
+            }
+
+            pendingFlushMonitor.notifyAll();
+        }
+    }
+
+    // Must be called while holding pendingFlushMonitor. Decrements each flushed key's
+    // pending-batch reference count and removes it from pendingFlushIndex once no
+    // still-pending batch (including one enqueued after this one, with a newer value)
+    // references it anymore. Batches are always flushed in enqueue (FIFO) order by the
+    // single worker thread, so once a key's ref count reaches zero, `base` is guaranteed
+    // to hold at least as fresh a value for that key as pendingFlushIndex's last entry.
+    private void releasePendingFlushIndexEntriesLocked(PendingBatch pendingBatch) {
+        for (ByteArrayWrapper key : pendingBatch.entriesToUpdate.keySet()) {
+            decrementPendingFlushRefCountLocked(key);
+        }
+        for (ByteArrayWrapper key : pendingBatch.keysToRemove) {
+            decrementPendingFlushRefCountLocked(key);
+        }
+    }
+
+    private void decrementPendingFlushRefCountLocked(ByteArrayWrapper key) {
+        Integer remaining = pendingFlushKeyRefCounts.merge(key, -1, Integer::sum);
+        if (remaining <= 0) {
+            pendingFlushKeyRefCounts.remove(key);
+            pendingFlushIndex.remove(key);
+        }
+    }
+
+    private void submitAsyncFlushWorker() {
+        asyncFlushExecutor.submit(() -> {
+            while (true) {
+                PendingBatch pendingBatch;
+                synchronized (pendingFlushMonitor) {
+                    pendingBatch = pendingFlushBatches.pollFirst();
+                    if (pendingBatch == null) {
+                        pendingFlushMonitor.notifyAll();
+                        return;
+                    }
+                }
+
+                try {
+                    base.updateBatch(pendingBatch.entriesToUpdate, pendingBatch.keysToRemove);
+                    base.flush();
+                    asyncFlushBatchesFlushed.incrementAndGet();
+                    asyncFlushEntriesFlushed.addAndGet((long) pendingBatch.entriesToUpdate.size() + pendingBatch.keysToRemove.size());
+
+                    boolean traceEnabled = logger.isTraceEnabled();
+                    int queueDepthAfterFlush;
+                    synchronized (pendingFlushMonitor) {
+                        releasePendingFlushIndexEntriesLocked(pendingBatch);
+                        queueDepthAfterFlush = pendingFlushBatches.size();
+                        // Wake both a backpressure-blocked producer (a freed slot below
+                        // MAX_PENDING_FLUSH_BATCHES) and close()'s awaitPendingAsyncFlush.
+                        pendingFlushMonitor.notifyAll();
+                    }
+
+                    if (traceEnabled) {
+                        logger.trace(
+                                "Async flush drain: dataSource={} queueDepth={} maxQueueDepth={} enqueuedBatches={} flushedBatches={} enqueuedEntries={} flushedEntries={} batchUpdates={} batchDeletes={}",
+                                getName(),
+                                queueDepthAfterFlush,
+                                asyncFlushMaxQueueDepth.get(),
+                                asyncFlushBatchesEnqueued.get(),
+                                asyncFlushBatchesFlushed.get(),
+                                asyncFlushEntriesEnqueued.get(),
+                                asyncFlushEntriesFlushed.get(),
+                                pendingBatch.entriesToUpdate.size(),
+                                pendingBatch.keysToRemove.size()
+                        );
+                    }
+                } catch (RuntimeException e) {
+                    asyncFlushFailure.compareAndSet(null, e);
+                    synchronized (pendingFlushMonitor) {
+                        pendingFlushMonitor.notifyAll();
+                    }
+                    throw e;
+                }
+            }
+        });
+    }
+
     public String getName() {
         return base.getName() + "-with-uncommittedCache";
     }
@@ -276,6 +527,10 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
         try {
             flush();
+            if (asyncFlushEnabled) {
+                awaitPendingAsyncFlush();
+                asyncFlushExecutor.shutdown();
+            }
             base.close();
             if (cacheSnapshotHandler != null) {
                 cacheSnapshotHandler.save(committedCache);
@@ -287,6 +542,38 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
     }
 
+    private void awaitPendingAsyncFlush() {
+        long timeoutAt = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(30);
+        synchronized (pendingFlushMonitor) {
+            while (!pendingFlushBatches.isEmpty() && asyncFlushFailure.get() == null) {
+                long remainingNanos = timeoutAt - System.nanoTime();
+                if (remainingNanos <= 0) {
+                    break;
+                }
+
+                try {
+                    pendingFlushMonitor.wait(Math.max(1L, remainingNanos / 1_000_000));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while waiting for asynchronous flush completion", e);
+                }
+            }
+        }
+
+        ensureNoAsyncFlushFailure();
+    }
+
+    private void ensureNoAsyncFlushFailure() {
+        if (!asyncFlushEnabled) {
+            return;
+        }
+
+        RuntimeException flushException = asyncFlushFailure.get();
+        if (flushException != null) {
+            throw new IllegalStateException("Asynchronous flush failed", flushException);
+        }
+    }
+
     public void emitLogs() {
         if (!logger.isTraceEnabled()) {
             return;
@@ -295,10 +582,25 @@ public class DataSourceWithCache implements KeyValueDataSource {
         this.lock.writeLock().lock();
 
         try {
+            ensureNoAsyncFlushFailure();
+
+            int pendingQueueSize = asyncFlushEnabled ? pendingFlushBatches.size() : 0;
             logger.trace("Activity: No. Gets: {}. No. Puts: {}. No. Gets from Store: {}",
                     numOfGets.getAndSet(0),
                     numOfPuts.getAndSet(0),
                     numOfGetsFromStore.getAndSet(0));
+
+            if (asyncFlushEnabled) {
+                logger.trace(
+                        "Async flush activity: queueDepth={} maxQueueDepth={} enqueuedBatches={} flushedBatches={} enqueuedEntries={} flushedEntries={}",
+                        pendingQueueSize,
+                        asyncFlushMaxQueueDepth.getAndSet(pendingQueueSize),
+                        asyncFlushBatchesEnqueued.getAndSet(0),
+                        asyncFlushBatchesFlushed.getAndSet(0),
+                        asyncFlushEntriesEnqueued.getAndSet(0),
+                        asyncFlushEntriesFlushed.getAndSet(0)
+                );
+            }
         } finally {
             this.lock.writeLock().unlock();
         }
@@ -314,5 +616,15 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
 
         return cache;
+    }
+
+    private static final class PendingBatch {
+        private final Map<ByteArrayWrapper, byte[]> entriesToUpdate;
+        private final Set<ByteArrayWrapper> keysToRemove;
+
+        private PendingBatch(Map<ByteArrayWrapper, byte[]> entriesToUpdate, Set<ByteArrayWrapper> keysToRemove) {
+            this.entriesToUpdate = entriesToUpdate;
+            this.keysToRemove = keysToRemove;
+        }
     }
 }
