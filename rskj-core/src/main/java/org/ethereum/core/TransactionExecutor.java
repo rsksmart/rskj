@@ -672,7 +672,7 @@ public class TransactionExecutor {
 
         logger.trace("Finalize transaction gas estimation, txHash: {}, nonce:{},", tx.getHash(), toBI(tx.getNonce()));
 
-    refundGas();
+        refundGas();
         result.setGasUsed(getGasConsumed());
 
         if (logger.isTraceEnabled()) {
