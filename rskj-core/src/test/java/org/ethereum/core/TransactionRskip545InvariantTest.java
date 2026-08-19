@@ -20,6 +20,7 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.constants.BridgeMainNetConstants;
+import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.exception.TransactionException;
@@ -30,7 +31,7 @@ import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
-import org.apache.commons.lang3.ArrayUtils;
+import org.ethereum.vm.GasCost;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -45,6 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 /**
  * Covers RSKIP-545 / Type 4 invariants on {@link Transaction#verify} and four-field typed
@@ -346,11 +349,31 @@ class TransactionRskip545InvariantTest {
         dataField.setAccessible(true);
         dataField.set(tx, null);
 
+        Constants constants = mock(Constants.class);
+        doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        assertTrue(tx.transactionCost(constants, activations, new ReceivedTxSignatureCache()) > 0);
+    }
+
+    @Test
+    void transactionCost_type4WithNullAuthorizationList_doesNotThrow() throws Exception {
+        Transaction tx = signedType4();
+        // Warm encode/hash while authorization_list is still present (encoder rejects null).
+        tx.getHash();
+
+        java.lang.reflect.Field authorizationListField = Transaction.class.getDeclaredField("authorizationList");
+        authorizationListField.setAccessible(true);
+        authorizationListField.set(tx, null);
+
         Constants constants = Mockito.mock(Constants.class);
         Mockito.doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
         ActivationConfig.ForBlock activations = Mockito.mock(ActivationConfig.ForBlock.class);
 
-        assertTrue(tx.transactionCost(constants, activations, new ReceivedTxSignatureCache()) > 0);
+        assertEquals(
+                GasCost.TRANSACTION,
+                tx.transactionCost(constants, activations, new ReceivedTxSignatureCache()),
+                "Null authorization_list must not NPE; charge no PER_EMPTY_ACCOUNT_COST");
     }
 
     @Test

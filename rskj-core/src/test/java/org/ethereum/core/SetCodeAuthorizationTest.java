@@ -1,5 +1,11 @@
 package org.ethereum.core;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import co.rsk.core.RskAddress;
 import org.ethereum.config.Constants;
 import org.ethereum.core.transaction.SetCodeAuthorization;
@@ -10,20 +16,14 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-public class SetCodeAuthorizationTest {
+class SetCodeAuthorizationTest {
 
     private static final BigInteger CHAIN_ID = BigInteger.valueOf(31);
     private static final RskAddress ADDRESS = new RskAddress("0000000000000000000000000000000000000001");
     private static final byte[] NONCE = new byte[] {0x01};
 
     @Test
-    public void constructorShouldRejectNullValues() {
+    void constructorShouldRejectNullValues() {
         assertThrows(NullPointerException.class, () -> new SetCodeAuthorization(null, ADDRESS, NONCE, validSignature()));
         assertThrows(NullPointerException.class, () -> new SetCodeAuthorization(CHAIN_ID, null, NONCE, validSignature()));
         assertThrows(NullPointerException.class, () -> new SetCodeAuthorization(CHAIN_ID, ADDRESS, null, validSignature()));
@@ -31,23 +31,23 @@ public class SetCodeAuthorizationTest {
     }
 
     @Test
-    public void getNonceShouldReturnDefensiveCopy() {
+    void getNonceShouldReturnDefensiveCopy() {
         SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, NONCE, validSignature());
-        byte[] returnedNonce = authorization.getNonce();
+        byte[] returnedNonce = authorization.getNonceBytes();
         returnedNonce[0] = 0x02;
-        assertArrayEquals(NONCE, authorization.getNonce());
+        assertArrayEquals(NONCE, authorization.getNonceBytes());
     }
 
     @Test
-    public void constructorShouldDefensivelyCopyNonce() {
+    void constructorShouldDefensivelyCopyNonce() {
         byte[] nonce = new byte[] {0x01};
         SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, nonce, validSignature());
         nonce[0] = 0x02;
-        assertArrayEquals(new byte[] {0x01}, authorization.getNonce());
+        assertArrayEquals(new byte[] {0x01}, authorization.getNonceBytes());
     }
 
     @Test
-    public void getSigningHashShouldReturnExpectedHash() {
+    void getSigningHashShouldReturnExpectedHash() {
         SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, NONCE, validSignature());
 
         byte[] rlpEncoded = RLP.encodeList(
@@ -66,20 +66,13 @@ public class SetCodeAuthorizationTest {
     }
 
     @Test
-    public void verifyNonceRangeShouldAcceptValidNonce() {
+    void verifyNonceRangeShouldAcceptValidNonce() {
         SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[] {0x01}, validSignature());
         authorization.verifyNonceRange();
     }
 
     @Test
-    public void verifyNonceRangeShouldRejectEmptyNonce() {
-        SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[0], validSignature());
-        IllegalStateException exception = assertThrows(IllegalStateException.class, authorization::verifyNonceRange);
-        assertEquals("Nonce is empty", exception.getMessage());
-    }
-
-    @Test
-    public void verifyNonceRangeShouldRejectNonceGreaterThanOrEqualToMaxNonce() {
+    void verifyNonceRangeShouldRejectNonceGreaterThanOrEqualToMaxNonce() {
         byte[] maxNonce = new BigInteger("FFFFFFFFFFFFFFFF", 16).toByteArray();
 
         SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, maxNonce, validSignature());
@@ -89,7 +82,7 @@ public class SetCodeAuthorizationTest {
     }
 
     @Test
-    public void verifyNonceRangeShouldAcceptMaxAllowedNonce() {
+    void verifyNonceRangeShouldAcceptMaxAllowedNonce() {
         byte[] maxAllowedNonce = new BigInteger("FFFFFFFFFFFFFFFE", 16).toByteArray();
 
         SetCodeAuthorization authorization = new SetCodeAuthorization(
@@ -103,7 +96,7 @@ public class SetCodeAuthorizationTest {
     }
 
     @Test
-    public void verifyLowSShouldAcceptLowS() {
+    void verifyLowSShouldAcceptLowS() {
         SetCodeAuthorization authorization = new SetCodeAuthorization(
                 CHAIN_ID,
                 ADDRESS,
@@ -115,7 +108,7 @@ public class SetCodeAuthorizationTest {
     }
 
     @Test
-    public void verifyLowSShouldAcceptJustBelowHalfCurveOrderS() {
+    void verifyLowSShouldAcceptJustBelowHalfCurveOrderS() {
         BigInteger justBelowHalf = Constants.getSECP256K1N().divide(BigInteger.valueOf(2)).subtract(BigInteger.ONE);
 
         SetCodeAuthorization authorization = new SetCodeAuthorization(
@@ -129,7 +122,7 @@ public class SetCodeAuthorizationTest {
     }
 
     @Test
-    public void verifyLowSShouldAcceptHalfCurveOrderS() {
+    void verifyLowSShouldAcceptHalfCurveOrderS() {
         BigInteger halfCurveOrder = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
         SetCodeAuthorization authorization = new SetCodeAuthorization(
@@ -143,7 +136,7 @@ public class SetCodeAuthorizationTest {
     }
 
     @Test
-    public void verifyLowSShouldRejectHighS() {
+    void verifyLowSShouldRejectHighS() {
         BigInteger highS = Constants.getSECP256K1N().divide(BigInteger.valueOf(2)).add(BigInteger.ONE);
 
         SetCodeAuthorization authorization = new SetCodeAuthorization(
@@ -162,7 +155,7 @@ public class SetCodeAuthorizationTest {
     }
 
     @Test
-    public void equalsShouldReturnTrueForSameValues() {
+    void equalsShouldReturnTrueForSameValues() {
         ECDSASignature signature = validSignature();
 
         SetCodeAuthorization first = new SetCodeAuthorization(CHAIN_ID, ADDRESS, NONCE, signature);
@@ -173,11 +166,113 @@ public class SetCodeAuthorizationTest {
     }
 
     @Test
-    public void equalsShouldReturnFalseForDifferentNonce() {
+    void equalsShouldReturnFalseForDifferentNonce() {
         SetCodeAuthorization first = new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[] {0x01}, validSignature());
         SetCodeAuthorization second = new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[] {0x02}, validSignature());
-
         assertNotEquals(first, second);
+    }
+
+    @Test
+    void getNonceAsIntegerShouldTreatEmptyNonceAsZero() {
+        SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[0], validSignature());
+        assertEquals(BigInteger.ZERO, authorization.getNonceAsInteger());
+    }
+
+    @Test
+    void verifyNonceRangeShouldAcceptEmptyNonceAsZero() {
+        SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[0], validSignature());
+        assertDoesNotThrow(authorization::verifyNonceRange);
+    }
+
+    @Test
+    void getNonceAsIntegerShouldDecodeUnsignedNonceWithTopBitSet() {
+        SetCodeAuthorization authorization =
+                new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[] {(byte) 0x80}, validSignature());
+
+        assertEquals(BigInteger.valueOf(128), authorization.getNonceAsInteger());
+    }
+
+    @Test
+    void verifyNonceRangeShouldAcceptNonce128() {
+        SetCodeAuthorization authorization =
+                new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[] {(byte) 0x80}, validSignature());
+        authorization.verifyNonceRange();
+    }
+
+    @Test
+    void verifyNonceRangeShouldAcceptNonce255() {
+        SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[] {(byte) 0xff}, validSignature());
+        authorization.verifyNonceRange();
+    }
+
+    @Test
+    void verifyNonceRangeShouldAcceptNonce256() {
+        SetCodeAuthorization authorization =
+                new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[] {0x01, 0x00}, validSignature());
+
+        assertDoesNotThrow(authorization::verifyNonceRange);
+    }
+
+    @Test
+    void verifyNonceRangeShouldRejectMaxNonce() {
+        byte[] maxNonce = new byte[] {
+                (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
+                (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff
+        };
+
+        SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, maxNonce, validSignature());
+        IllegalStateException exception = assertThrows(IllegalStateException.class, authorization::verifyNonceRange);
+        assertEquals("Nonce must be < 2^64 - 1", exception.getMessage());
+    }
+
+    @Test
+    void verifyNonceRangeShouldRejectNonceLargerThanMaxNonce() {
+        byte[] tooLargeNonce = new byte[] {
+                0x01,
+                0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00
+        };
+
+        SetCodeAuthorization authorization =
+                new SetCodeAuthorization(CHAIN_ID, ADDRESS, tooLargeNonce, validSignature());
+
+        IllegalStateException ex =
+                assertThrows(IllegalStateException.class, authorization::verifyNonceRange);
+
+        assertEquals("Nonce must be < 2^64 - 1", ex.getMessage());
+    }
+
+    @Test
+    void getNonceAsIntegerShouldTreatZeroByteAndEmptyByteArrayAsZero() {
+        SetCodeAuthorization empty =
+                new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[0], validSignature());
+
+        SetCodeAuthorization zeroByte =
+                new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[] {0x00}, validSignature());
+
+        assertEquals(BigInteger.ZERO, empty.getNonceAsInteger());
+        assertEquals(BigInteger.ZERO, zeroByte.getNonceAsInteger());
+    }
+
+    @Test
+    void verifyNonceRangeShouldAcceptMaxAllowedNonceUsingByteArray() {
+        byte[] maxAllowedNonce = new byte[] {
+                (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
+                (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xfe
+        };
+
+        SetCodeAuthorization authorization =
+                new SetCodeAuthorization(CHAIN_ID, ADDRESS, maxAllowedNonce, validSignature());
+
+        authorization.verifyNonceRange();
+    }
+
+    @Test
+    void getNonceAsIntegerShouldIgnoreLeadingZeroBytes() {
+        SetCodeAuthorization authorization =
+                new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[] {0x00, 0x00, 0x01}, validSignature());
+
+        assertEquals(BigInteger.ONE, authorization.getNonceAsInteger());
     }
 
     private static ECDSASignature validSignature() {

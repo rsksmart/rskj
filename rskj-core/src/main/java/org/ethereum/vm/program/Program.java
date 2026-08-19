@@ -856,8 +856,9 @@ public class Program {
         }
 
         // FETCH THE CODE
-        byte[] programCode = getExecutionCode(codeAddress);
-        // programCode can be null
+        byte[] programCode = DelegationCodeResolver
+                .getExecutionCode(getStorage(), codeAddress, this::isPrecompile);
+        // programCode is never null; empty array means no executable code
 
         // Always first remove funds from sender
         track.addBalance(senderAddress, endowment.negate());
@@ -910,33 +911,6 @@ public class Program {
         } else {
             stackPushZero();
         }
-    }
-
-    private byte[] getExecutionCode(RskAddress codeAddress) {
-        if (!getStorage().isExist(codeAddress)) {
-            return EMPTY_BYTE_ARRAY;
-        }
-        byte[] code = getStorage().getCode(codeAddress);
-
-        if (code == null || code.length == 0) {
-            return EMPTY_BYTE_ARRAY;
-        }
-
-        if (!DelegationCodeResolver.isDelegatedCode(code)) {
-            return code;
-        }
-
-        RskAddress delegatedAddress = DelegationCodeResolver.extractDelegatedAddress(code);
-
-        if (isPrecompile(delegatedAddress)) {
-            return EMPTY_BYTE_ARRAY;
-        }
-
-        byte[] delegatedCode = getStorage().isExist(delegatedAddress)
-                ? getStorage().getCode(delegatedAddress)
-                : EMPTY_BYTE_ARRAY;
-
-        return delegatedCode == null ? EMPTY_BYTE_ARRAY : delegatedCode;
     }
 
     private boolean isPrecompile(RskAddress address) {
