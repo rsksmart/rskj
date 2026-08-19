@@ -494,7 +494,7 @@ public class Transaction {
     }
 
     public boolean acceptTransactionSignature(byte currentChainId) {
-        if (signature == null || !signature.validateComponents() || signature.getS().compareTo(SECP256K1N_HALF) >= 0) {
+        if (signature == null || !signature.validateComponents() || isSignatureSAboveLowSBound()) {
             return false;
         }
 
@@ -503,6 +503,15 @@ public class Transaction {
         }
 
         return this.getChainId() == 0 || this.getChainId() == currentChainId;
+    }
+
+    /**
+     * EIP-2 admits {@code s == secp256k1n/2}. Legacy transactions keep the historical exclusive bound
+     * so consensus over already-validated blocks is unchanged; typed transactions use the spec bound.
+     */
+    private boolean isSignatureSAboveLowSBound() {
+        int comparison = signature.getS().compareTo(SECP256K1N_HALF);
+        return typePrefix.isTyped() ? comparison > 0 : comparison >= 0;
     }
 
     public void sign(byte[] privKeyBytes) throws MissingPrivateKeyException {

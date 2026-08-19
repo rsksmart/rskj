@@ -19,6 +19,8 @@ package org.ethereum.core.transaction.parser.util;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.bouncycastle.util.BigIntegers;
+import org.ethereum.config.Constants;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Rskip545TestSupport;
@@ -80,6 +82,42 @@ class Type4TransactionValidationTest {
                 () -> Type4TransactionValidation.validateOuterSignatureFormat(invalid));
 
         assertTrue(ex.getMessage().contains("signature components are invalid"), ex.getMessage());
+    }
+
+    @Test
+    void validateOuterSignatureFormat_justBelowHalfCurveOrderS_succeeds() {
+        BigInteger half = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
+        ECDSASignature justBelowHalfS = ECDSASignature.fromComponents(
+                BigIntegers.asUnsignedByteArray(BigInteger.ONE),
+                BigIntegers.asUnsignedByteArray(half.subtract(BigInteger.ONE)),
+                (byte) 27);
+
+        assertDoesNotThrow(() -> Type4TransactionValidation.validateOuterSignatureFormat(justBelowHalfS));
+    }
+
+    @Test
+    void validateOuterSignatureFormat_halfCurveOrderS_succeeds() {
+        BigInteger half = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
+        ECDSASignature halfS = ECDSASignature.fromComponents(
+                BigIntegers.asUnsignedByteArray(BigInteger.ONE),
+                BigIntegers.asUnsignedByteArray(half),
+                (byte) 27);
+
+        assertDoesNotThrow(() -> Type4TransactionValidation.validateOuterSignatureFormat(halfS));
+    }
+
+    @Test
+    void validateOuterSignatureFormat_highS_throws() {
+        BigInteger half = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
+        ECDSASignature highS = ECDSASignature.fromComponents(
+                BigIntegers.asUnsignedByteArray(BigInteger.ONE),
+                BigIntegers.asUnsignedByteArray(half.add(BigInteger.ONE)),
+                (byte) 27);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Type4TransactionValidation.validateOuterSignatureFormat(highS));
+
+        assertTrue(ex.getMessage().contains("secp256k1n/2"), ex.getMessage());
     }
 
     @Test

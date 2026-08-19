@@ -36,6 +36,7 @@ import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Repository;
+import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
@@ -264,7 +265,7 @@ class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionEx
         mockSuccessfulProgramInvokeForAnyRepository(tx);
 
         TransactionExecutor executor = newExecutorWithRealSignatureCache(tx, repository);
-        assertTrue(executor.executeTransaction(), () -> "Type 4 tx with delegated sender must execute");
+        assertTrue(executor.executeTransaction(), "Type 4 tx with delegated sender must execute");
         assertEquals(ONE_NONCE, repository.getNonce(sender));
         assertArrayEquals(senderDelegation, normalizeCode(repository.getCode(sender)));
         assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
@@ -483,6 +484,60 @@ class Type4TransactionExecutorWithRealRepositoryTests extends Type4TransactionEx
         assertEquals(ONE_NONCE, repository.getNonce(authorityAddress));
         assertEquals(ONE_NONCE, repository.getNonce(sender),
                 "Outer transaction must still execute despite invalid authorization");
+    }
+
+    /**
+     * High-{@code s} must be skipped per tuple without sinking the transaction, so a following
+     * valid authorization still applies. Pins that low-{@code s} is enforced at execution, not
+     * decode time — otherwise this payload could not be constructed as a type-4 transaction.
+     */
+    @Test
+    void highSAuthorizationIsSkippedAndFollowingValidAuthorizationIsApplied() {
+        MutableRepository repository = createRepository();
+
+        prepareAuthority(repository, authorityAddress, ZERO_NONCE, EMPTY_CODE);
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+        prepareReceiver(repository);
+        mockExecutionBlockForRealVm();
+
+        RskAddress highSDelegate = createRandomAddress();
+        SetCodeAuthorization highSAuthorization = Rskip545TestSupport.createHighSAuthorization(
+                authorityKey,
+                highSDelegate,
+                ZERO_NONCE,
+                constants.getChainId()
+        );
+        SetCodeAuthorization validAuthorization = createValidAuthorizationTuple(
+                delegatedAddress,
+                ZERO_NONCE,
+                constants.getChainId(),
+                authorityKey
+        );
+
+        Transaction tx = createSignedType4Transaction(
+                senderKey,
+                constants.getChainId(),
+                ZERO_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                0,
+                EMPTY_BYTE_ARRAY,
+                highSAuthorization,
+                validAuthorization
+        );
+
+        assertEquals(GasCost.TRANSACTION + 2 * GasCost.PER_EMPTY_ACCOUNT_COST, intrinsicGasCost(tx));
+
+        TransactionExecutor executor = newRealVmExecutor(tx, repository);
+
+        assertTrue(executor.executeTransaction(),
+                "Outer transaction must still execute when a high-s authorization is skipped");
+        assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
+        assertEquals(ONE_NONCE, repository.getNonce(authorityAddress),
+                "Only the valid second tuple may bump the authority nonce");
+        assertEquals(ONE_NONCE, repository.getNonce(sender));
     }
 
     // -------------------------------------------------------------------------

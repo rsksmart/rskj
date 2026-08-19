@@ -56,6 +56,8 @@ class TransactionRskip545InvariantTest {
     private static final byte[] EMPTY_ACCESS_LIST = RLP.encodeList();
     private static final RskAddress RECEIVER =
             new RskAddress("0x0000000000000000000000000000000000000002");
+    private static final BigInteger SECP256K1N_HALF =
+            Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
     @Test
     void builder_type4WithoutAuthorizationList_rejectedAtBuild() {
@@ -162,6 +164,21 @@ class TransactionRskip545InvariantTest {
         assertDoesNotThrow(() -> tx.verify(cache));
         assertNotNull(tx.getSender(cache));
         assertTrue(tx.acceptTransactionSignature(CHAIN_ID));
+    }
+
+    @Test
+    void acceptTransactionSignature_type4_acceptsSUpToHalfCurveOrderAndRejectsAbove() {
+        assertTrue(type4WithS(SECP256K1N_HALF.subtract(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
+        assertTrue(type4WithS(SECP256K1N_HALF).acceptTransactionSignature(CHAIN_ID));
+        assertFalse(type4WithS(SECP256K1N_HALF.add(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
+    }
+
+    /** Legacy transactions keep the historical exclusive bound so past blocks stay valid. */
+    @Test
+    void acceptTransactionSignature_legacy_stillRejectsSEqualToHalfCurveOrder() {
+        assertTrue(legacyWithS(SECP256K1N_HALF.subtract(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
+        assertFalse(legacyWithS(SECP256K1N_HALF).acceptTransactionSignature(CHAIN_ID));
+        assertFalse(legacyWithS(SECP256K1N_HALF.add(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
     }
 
     @Test
@@ -384,6 +401,33 @@ class TransactionRskip545InvariantTest {
         byte[] word = new byte[33];
         word[0] = 0x01;
         return word;
+    }
+
+    private static Transaction type4WithS(BigInteger s) {
+        Transaction signed = signedType4();
+        signed.setSignature(withS(signed.getSignature(), s));
+        return signed;
+    }
+
+    private static Transaction legacyWithS(BigInteger s) {
+        Transaction tx = Transaction.builder()
+                .nonce(BigInteger.ONE.toByteArray())
+                .gasPrice(Coin.valueOf(10))
+                .gasLimit(BigInteger.valueOf(21_000))
+                .receiveAddress(RECEIVER)
+                .value(Coin.ZERO)
+                .chainId(CHAIN_ID)
+                .build();
+        tx.sign(new ECKey().getPrivKeyBytes());
+        tx.setSignature(withS(tx.getSignature(), s));
+        return tx;
+    }
+
+    private static ECDSASignature withS(ECDSASignature signature, BigInteger s) {
+        return ECDSASignature.fromComponents(
+                org.bouncycastle.util.BigIntegers.asUnsignedByteArray(signature.getR()),
+                org.bouncycastle.util.BigIntegers.asUnsignedByteArray(s),
+                signature.getV());
     }
 
     private static Transaction copyType4(

@@ -129,7 +129,7 @@ public class SetCodeAuthorizationTest {
     }
 
     @Test
-    public void verifyLowSShouldRejectHalfCurveOrderS() {
+    public void verifyLowSShouldAcceptHalfCurveOrderS() {
         BigInteger halfCurveOrder = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
         SetCodeAuthorization authorization = new SetCodeAuthorization(
@@ -139,12 +139,7 @@ public class SetCodeAuthorizationTest {
                 signatureWithS(halfCurveOrder)
         );
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
-                authorization::verifyLowS
-        );
-
-        assertEquals("Signature s exceeds secp256k1n / 2", exception.getMessage());
+        assertDoesNotThrow(authorization::verifyLowS);
     }
 
     @Test

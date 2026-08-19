@@ -20,7 +20,7 @@ package org.ethereum.core.transaction.parser.util;
 import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.BigIntegers;
-import org.ethereum.config.Constants;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.rpc.CallArguments;
@@ -43,11 +43,9 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
 public final class AuthorizationListCodec {
 
     private static final int TUPLE_FIELD_COUNT = 6;
-    private static final byte LOWER_REAL_V = 27;
     private static final BigInteger MAX_CHAIN_ID = BigInteger.ONE.shiftLeft(256);
     private static final BigInteger MAX_NONCE = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
     private static final BigInteger MAX_SIGNATURE_COMPONENT = BigInteger.ONE.shiftLeft(256);
-    private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
     private AuthorizationListCodec() {}
 
@@ -94,7 +92,7 @@ public final class AuthorizationListCodec {
 
     public static byte[] encodeTuple(SetCodeAuthorization auth) {
         validateAuthorization(auth);
-        byte yParity = (byte) (auth.getSignature().getV() - LOWER_REAL_V);
+        byte yParity = (byte) (auth.getSignature().getV() - Transaction.LOWER_REAL_V);
         return RLP.encodeList(
                 RLP.encodeBigInteger(auth.getChainId()),
                 RLP.encodeRskAddress(auth.getAddress()),
@@ -149,7 +147,7 @@ public final class AuthorizationListCodec {
         }
         CommonParsingUtils.requireSignatureComponent(r, "Authorization signature r is not valid");
         CommonParsingUtils.requireSignatureComponent(s, "Authorization signature s is not valid");
-        byte v = (byte) (LOWER_REAL_V + yParity);
+        byte v = (byte) (Transaction.LOWER_REAL_V + yParity);
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
 
         SetCodeAuthorization auth = new SetCodeAuthorization(chainId, address, nonce, signature);
@@ -201,7 +199,7 @@ public final class AuthorizationListCodec {
         }
         CommonParsingUtils.requireSignatureComponent(r, "Authorization signature r is not valid");
         CommonParsingUtils.requireSignatureComponent(s, "Authorization signature s is not valid");
-        byte v = (byte) (LOWER_REAL_V + yParity);
+        byte v = (byte) (Transaction.LOWER_REAL_V + yParity);
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
 
         SetCodeAuthorization auth = new SetCodeAuthorization(
@@ -272,9 +270,6 @@ public final class AuthorizationListCodec {
         }
         if (r.compareTo(MAX_SIGNATURE_COMPONENT) >= 0 || s.compareTo(MAX_SIGNATURE_COMPONENT) >= 0) {
             throw new IllegalArgumentException("Authorization signature r and s must be less than 2^256");
-        }
-        if (s.compareTo(SECP256K1N_HALF) >= 0) {
-            throw new IllegalArgumentException("Authorization signature s must be at most secp256k1n/2");
         }
     }
 }
