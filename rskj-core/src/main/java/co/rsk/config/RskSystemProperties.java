@@ -445,8 +445,18 @@ public class RskSystemProperties extends SystemProperties {
         return CHUNK_SIZE;
     }
 
+    private VmConfig vmConfig;
+
+    // vm.structured.* and dump.* can only change via a node restart, so the underlying
+    // com.typesafe.config lookups (5 merged-tree traversals) only need to happen once,
+    // not on every call -- this used to be re-resolved on every single transaction via
+    // TransactionExecutorFactory.newInstance().
     public VmConfig getVmConfig() {
-        return new VmConfig(vmTrace(), vmTraceOptions(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle(), getNetworkConstants().getChainId());
+        if (vmConfig == null) {
+            vmConfig = new VmConfig(vmTrace(), vmTraceOptions(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle(), getNetworkConstants().getChainId());
+        }
+
+        return vmConfig;
     }
 
     public long peerDiscoveryCleanPeriod() {
