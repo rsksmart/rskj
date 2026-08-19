@@ -55,6 +55,16 @@ public class TrieStoreImpl implements TrieStore {
      */
     @Override
     public void save(Trie trie) {
+        if (trie.wasSaved()) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("trie store save root: durationMs=0 action=skipAlreadySaved");
+            }
+            return;
+        }
+
+        boolean debugEnabled = logger.isDebugEnabled();
+        long saveStartNanos = debugEnabled ? System.nanoTime() : 0;
+
         TraceInfo traceInfo = null;
         if (logger.isTraceEnabled()) {
             traceInfo = traceInfoLocal.get();
@@ -84,6 +94,10 @@ public class TrieStoreImpl implements TrieStore {
 
             traceInfoLocal.remove();
         }
+
+        if (debugEnabled) {
+            logger.debug("trie store save root: durationMs={}", (System.nanoTime() - saveStartNanos) / 1_000_000);
+        }
     }
 
     /**
@@ -94,9 +108,9 @@ public class TrieStoreImpl implements TrieStore {
             return;
         }
 
-        logger.trace("Start saving trie, level : {}", level);
-
-        byte[] trieKeyBytes = trie.getHash().getBytes();
+        if (traceInfo != null) {
+            logger.trace("Start saving trie, level : {}", level);
+        }
 
         if (traceInfo != null) {
             traceInfo.numOfSavesInSaveTrie++;
@@ -106,14 +120,18 @@ public class TrieStoreImpl implements TrieStore {
         NodeReference leftNodeReference = trie.getLeft();
 
         if (leftNodeReference.wasLoaded()) {
-            logger.trace("Start left trie. Level: {}", level);
+            if (traceInfo != null) {
+                logger.trace("Start left trie. Level: {}", level);
+            }
             leftNodeReference.getNode().ifPresent(t -> save(t, false, level + 1, traceInfo));
         }
 
         NodeReference rightNodeReference = trie.getRight();
 
         if (rightNodeReference.wasLoaded()) {
-            logger.trace("Start right trie. Level: {}", level);
+            if (traceInfo != null) {
+                logger.trace("Start right trie. Level: {}", level);
+            }
             rightNodeReference.getNode().ifPresent(t -> save(t, false, level + 1, traceInfo));
         }
 
@@ -127,21 +145,33 @@ public class TrieStoreImpl implements TrieStore {
             // In particular our levelDB driver has not method to test for the existence of a key without retrieving the
             // value also, so manually checking pre-existence here seems it will add overhead on the average case,
             // instead of reducing it.
-            logger.trace("Putting in store, hasLongValue. Level: {}", level);
+            if (traceInfo != null) {
+                logger.trace("Putting in store, hasLongValue. Level: {}", level);
+            }
             this.store.put(trie.getValueHash().getBytes(), trie.getValue());
-            logger.trace("End Putting in store, hasLongValue. Level: {}", level);
+            if (traceInfo != null) {
+                logger.trace("End Putting in store, hasLongValue. Level: {}", level);
+            }
         }
 
         if (trie.isEmbeddable() && !isRootNode) {
-            logger.trace("End Saving. Level: {}", level);
+            if (traceInfo != null) {
+                logger.trace("End Saving. Level: {}", level);
+            }
             return;
         }
 
-        logger.trace("Putting in store trie root.");
+        byte[] trieKeyBytes = trie.getHash().getBytes();
+
+        if (traceInfo != null) {
+            logger.trace("Putting in store trie root.");
+        }
         this.store.put(trieKeyBytes, trie.toMessage());
         trie.markAsSaved();
-        logger.trace("End putting in store trie root.");
-        logger.trace("End Saving trie, level: {}.", level);
+        if (traceInfo != null) {
+            logger.trace("End putting in store trie root.");
+            logger.trace("End Saving trie, level: {}.", level);
+        }
     }
 
     @Override
