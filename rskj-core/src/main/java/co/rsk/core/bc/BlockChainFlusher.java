@@ -37,6 +37,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Flushes the repository and block store after every flushNumberOfBlocks invocations
@@ -55,6 +58,16 @@ public class BlockChainFlusher implements InternalService, Flusher {
     private final StateRootsStore stateRootsStore;
 
     private final OnBestBlockListener listener = new OnBestBlockListener();
+
+    // blockStore.flush() is the only one of the five stores below that isn't already
+    // backed by an async-enqueuing DataSourceWithCache, so it's the one paying a real
+    // synchronous RocksDB flush cost on this thread. Running all five concurrently lets
+    // that cost overlap with the others instead of padding onBestBlockMs sequentially.
+    private final ExecutorService flushExecutor = Executors.newFixedThreadPool(5, runnable -> {
+        Thread thread = new Thread(runnable, "blockchain-flush-worker");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     private int nFlush = 1;
 
@@ -103,47 +116,27 @@ public class BlockChainFlusher implements InternalService, Flusher {
     private void flushAll() {
         Metric metric = profiler.start(MetricKind.BLOCKCHAIN_FLUSH);
 
-        long saveTime = System.nanoTime();
-        trieStore.flush();
-        long totalTime = System.nanoTime() - saveTime;
+        CompletableFuture<Void> trieStoreFlush = timedFlushAsync("repository", trieStore::flush);
+        CompletableFuture<Void> stateRootsFlush = timedFlushAsync("stateRootsStore", stateRootsStore::flush);
+        CompletableFuture<Void> receiptFlush = timedFlushAsync("receiptstore", receiptStore::flush);
+        CompletableFuture<Void> blockStoreFlush = timedFlushAsync("blockstore", blockStore::flush);
+        CompletableFuture<Void> bloomFlush = timedFlushAsync("bloomBlocksStore", blocksBloomStore::flush);
 
-        if (logger.isTraceEnabled()) {
-            logger.trace("repository flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
-        }
-
-        saveTime = System.nanoTime();
-        stateRootsStore.flush();
-        totalTime = System.nanoTime() - saveTime;
-
-        if (logger.isTraceEnabled()) {
-            logger.trace("stateRootsStore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
-        }
-
-        saveTime = System.nanoTime();
-        receiptStore.flush();
-        totalTime = System.nanoTime() - saveTime;
-
-        if (logger.isTraceEnabled()) {
-            logger.trace("receiptstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
-        }
-
-        saveTime = System.nanoTime();
-        blockStore.flush();
-        totalTime = System.nanoTime() - saveTime;
-
-        if (logger.isTraceEnabled()) {
-            logger.trace("blockstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
-        }
-
-        saveTime = System.nanoTime();
-        blocksBloomStore.flush();
-        totalTime = System.nanoTime() - saveTime;
-
-        if (logger.isTraceEnabled()) {
-            logger.trace("bloomBlocksStore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
-        }
+        CompletableFuture.allOf(trieStoreFlush, stateRootsFlush, receiptFlush, blockStoreFlush, bloomFlush).join();
 
         profiler.stop(metric);
+    }
+
+    private CompletableFuture<Void> timedFlushAsync(String label, Runnable flushCall) {
+        return CompletableFuture.runAsync(() -> {
+            long saveTime = System.nanoTime();
+            flushCall.run();
+            long totalTime = System.nanoTime() - saveTime;
+
+            if (logger.isTraceEnabled()) {
+                logger.trace("{} flush: [{}]seconds", label, FormatUtils.formatNanosecondsToSeconds(totalTime));
+            }
+        }, flushExecutor);
     }
 
     private class OnBestBlockListener extends EthereumListenerAdapter {
