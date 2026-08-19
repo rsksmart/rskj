@@ -451,8 +451,10 @@ public class TransactionExecutor {
         Metric metric = profiler.start(MetricKind.VM_EXECUTE);
         try {
 
-            // Charge basic cost of the transaction
-            program.spendGas(tx.transactionCost(constants, activations, signatureCache), "TRANSACTION COST");
+            // Charge basic cost of the transaction. Already computed once in init() (same
+            // tx/constants/activations/signatureCache, nothing in between can change them) --
+            // reuse it instead of re-scanning the tx data for non-zero bytes a second time.
+            program.spendGas(basicTxCost, "TRANSACTION COST");
 
             vm.play(program);
 
@@ -576,8 +578,6 @@ public class TransactionExecutor {
         }
 
         logger.trace("Finalize transaction {} {}", toBI(tx.getNonce()), tx.getHash());
-
-        cacheTrack.commit();
 
         //Transaction sender is stored in cache
         signatureCache.storeSender(tx);
