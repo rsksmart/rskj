@@ -905,7 +905,7 @@ public class Web3Impl implements Web3 {
         TxBlockContext ctx = buildTxBlockContext(block, transactionHash.getHash());
         if (ctx.tx() == null) {
             logger.error("eth_getTransactionReceipt: tx {} not found in block {}", transactionHash,
-                    HexUtils.toUnformattedJsonHex(block.getHash().getBytes()));
+                    block.getHash());
             return null;
         }
         txInfo.setTransaction(ctx.tx());
@@ -931,14 +931,14 @@ public class Web3Impl implements Web3 {
         for (int i = 0; i < txList.size(); i++) {
             Transaction tx = txList.get(i);
             if (tx.getHash().equals(txHash)) {
-                return new TxBlockContext(i, logIndexAcc, prevTxInfo, tx, blockHash);
+                return new TxBlockContext(i, logIndexAcc, prevTxInfo, tx);
             }
             prevTxInfo = blockchain.getTransactionInfoByBlock(tx, blockHash);
             if (prevTxInfo != null) {
                 logIndexAcc += Optional.ofNullable(prevTxInfo.getReceipt().getLogInfoList()).map(List::size).orElse(0);
             }
         }
-        return new TxBlockContext(0, logIndexAcc, prevTxInfo, null, blockHash);
+        return new TxBlockContext(0, logIndexAcc, prevTxInfo, null);
     }
 
     /**
@@ -961,7 +961,7 @@ public class Web3Impl implements Web3 {
         long cumulativeGas = receipt.getCumulativeGasLong();
         OptionalLong prevCumulativeGas = prevCumulativeGasInSublist(
                 ctx.txIndex(), block.getHeader().getTxExecutionSublistsEdges(),
-                ctx.prevTxInfo(), ctx.blockHash());
+                ctx.prevTxInfo(), block);
 
         if (!prevCumulativeGas.isPresent()) {
             logger.warn("eth_getTransactionReceipt: cannot derive gasUsed for tx {} — " +
@@ -989,14 +989,13 @@ public class Web3Impl implements Web3 {
      * Carries the per-transaction context extracted by {@link #buildTxBlockContext}: the
      * transaction's position in the block, the accumulated log count from all preceding
      * transactions, the {@link TransactionInfo} of the immediately preceding transaction,
-     * the transaction object itself, and the block hash (needed for storage look-ups).
+     * and the transaction object itself.
      */
     private record TxBlockContext(
             int txIndex,
             int logIndexAcc,
             @Nullable TransactionInfo prevTxInfo,
-            @Nullable Transaction tx,
-            byte[] blockHash) {
+            @Nullable Transaction tx) {
     }
 
     /**
@@ -1007,13 +1006,13 @@ public class Web3Impl implements Web3 {
      */
     private OptionalLong prevCumulativeGasInSublist(
             int txIndex, @Nullable short[] edges,
-            @Nullable TransactionInfo prevTxInfoInBlock, byte[] blockHash) {
+            @Nullable TransactionInfo prevTxInfoInBlock, Block block) {
         if (txIndex == 0 || isSublistStart(txIndex, edges)) {
             return OptionalLong.of(0L);
         }
         if (prevTxInfoInBlock == null) {
             logger.warn("eth_getTransactionReceipt: receipt not found for tx preceding index {} in block {}",
-                    txIndex, HexUtils.toUnformattedJsonHex(blockHash));
+                    txIndex, block.getHash());
             return OptionalLong.empty();
         }
         return OptionalLong.of(prevTxInfoInBlock.getReceipt().getCumulativeGasLong());
