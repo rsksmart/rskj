@@ -126,6 +126,37 @@ class MutableTrieCacheTest {
     }
 
     @Test
+    void testKeyClearedAfterRecursiveDeleteIsNotLeftStale() {
+        // Reproduces: deleteRecursive(account) -> put(key, nonNull) -> put(key, null)
+        // (e.g. a contract redeployed at the same address whose constructor writes a
+        // slot that is later cleared back to zero, all before commit()). The key must
+        // read as deleted both before and after commit -- a stale non-null value must
+        // never survive into the persisted trie.
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
+        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+
+        StringBuilder accountLikeKey = new StringBuilder("HAL");
+        int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.domainPrefix().length + TrieKeyMapper.SECURE_KEY_SIZE;
+        for (; accountLikeKey.length() < keySize;) accountLikeKey.append("0");
+        byte[] accountKey = toBytes(accountLikeKey.toString());
+        byte[] storageKey = toBytes(accountLikeKey.toString() + "125");
+
+        mtCache.put(storageKey, toBytes("HAL"));
+        mtCache.deleteRecursive(accountKey);
+
+        // Redeploy-like write after the delete, then clear it back before commit.
+        mtCache.put(storageKey, toBytes("NEW"));
+        assertArrayEquals(toBytes("NEW"), mtCache.get(storageKey));
+
+        mtCache.put(storageKey, null);
+        assertNull(mtCache.get(storageKey), "cleared key must read as deleted, not the stale pre-clear value");
+
+        mtCache.commit();
+        assertNull(mtCache.get(storageKey), "cleared key must still read as deleted after commit");
+        assertNull(baseMutableTrie.get(storageKey), "stale value must not have been persisted into the underlying trie");
+    }
+
+    @Test
     void testNestedCaches() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);

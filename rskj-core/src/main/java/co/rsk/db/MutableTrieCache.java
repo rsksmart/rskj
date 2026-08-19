@@ -28,28 +28,41 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 public class MutableTrieCache implements MutableTrie {
+
+    private static final Logger logger = LoggerFactory.getLogger("state");
+    private static final long SLOW_COMMIT_LOG_THRESHOLD_MILLIS = Long.getLong("logging.state.slowCommitThresholdMillis", 10L);
+    private static final int LARGE_COMMIT_KEY_UPDATE_THRESHOLD = Integer.getInteger("logging.state.largeCommitKeyUpdateThreshold", 100);
 
     private final TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
 
     private MutableTrie trie;
     // We use a single cache to mark both changed elements and removed elements.
     // null value means the element has been removed.
+    // Plain HashMap, not thread-safe by design: a MutableTrieCache instance is written
+    // by exactly one thread at a time. BlockExecutor.executeParallel() relies on this --
+    // each parallel sublist gets its own private MutableTrieCache created and fully
+    // populated single-threaded before worker threads are fanned out, and the parent
+    // cache is only mutated again by the single-threaded merge loop after all workers
+    // finish. Do not share a MutableTrieCache across concurrently-writing threads.
     private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, Optional<byte[]>>> cache;
 
     // this logs recursive delete operations to be performed at commit time
     private final Set<ByteArrayWrapper> deleteRecursiveLog;
+    private int cachedEntryCount;
 
     public MutableTrieCache(MutableTrie parentTrie) {
         trie = parentTrie;
-        cache = new ConcurrentHashMap<>();
+        cache = new HashMap<>();
         deleteRecursiveLog = new HashSet<>();
+        cachedEntryCount = 0;
     }
 
     @Override
@@ -140,8 +153,33 @@ public class MutableTrieCache implements MutableTrie {
         // in cache with null or in deleteCache. Here we have the choice to
         // to add it to cache with null value or to deleteCache.
         ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
-        Map<ByteArrayWrapper, Optional<byte[]>> accountMap = cache.computeIfAbsent(accountWrapper, k -> new ConcurrentHashMap<>());
-        accountMap.put(wrapper, Optional.ofNullable(value));
+        if (value == null && deleteRecursiveLog.contains(accountWrapper)) {
+            // The account is scheduled for recursive deletion, so a key with no cache
+            // override already reads as deleted (see internalGet's isDeletedAccount
+            // branch) -- writing a tombstone for it would be redundant. But this same
+            // key may already have a non-null override recorded *after* the
+            // deleteRecursive (e.g. a constructor SSTORE on a contract redeployed at
+            // the same address, later cleared back to zero before commit). That stale
+            // override must be removed here, or commit() would persist the wrong,
+            // non-deleted value into the trie.
+            Map<ByteArrayWrapper, Optional<byte[]>> accountMap = cache.get(accountWrapper);
+            if (accountMap != null && accountMap.remove(wrapper) != null) {
+                cachedEntryCount--;
+            }
+            return;
+        }
+
+        Map<ByteArrayWrapper, Optional<byte[]>> accountMap = cache.computeIfAbsent(accountWrapper, k -> new HashMap<>());
+        Optional<byte[]> newValue = Optional.ofNullable(value);
+        Optional<byte[]> previousValue = accountMap.get(wrapper);
+        if (newValue.equals(previousValue)) {
+            return;
+        }
+
+        previousValue = accountMap.put(wrapper, newValue);
+        if (previousValue == null) {
+            cachedEntryCount++;
+        }
     }
 
     @Override
@@ -170,34 +208,125 @@ public class MutableTrieCache implements MutableTrie {
         // See TransactionExecutor.finalization(), when it iterates the list with getDeleteAccounts().forEach()
         ByteArrayWrapper wrap = new ByteArrayWrapper(key);
         deleteRecursiveLog.add(wrap);
-        cache.remove(wrap);
+        Map<ByteArrayWrapper, Optional<byte[]>> removedAccountItems = cache.remove(wrap);
+        if (removedAccountItems != null) {
+            cachedEntryCount -= removedAccountItems.size();
+        }
     }
 
     @Override
     public void commit() {
+        if (deleteRecursiveLog.isEmpty() && cache.isEmpty()) {
+            return;
+        }
+
+        boolean debugEnabled = logger.isDebugEnabled();
+        long commitStartNanos = debugEnabled ? System.nanoTime() : 0;
+        int deleteRecursiveCount = debugEnabled ? deleteRecursiveLog.size() : 0;
+        int accountCacheCount = debugEnabled ? cache.size() : 0;
+        int keyUpdateCount = debugEnabled ? cachedEntryCount : 0;
+
         // in case something was deleted and then put again, we first have to delete all the previous data
-        deleteRecursiveLog.forEach(item -> trie.deleteRecursive(item.getData()));
-        cache.forEach((accountKey, accountData) -> {
-            if (accountData != null) {
-                // cached account
-                accountData.forEach((realKey, value) -> this.trie.put(realKey, value.orElse(null)));
+        for (ByteArrayWrapper item : deleteRecursiveLog) {
+            trie.deleteRecursive(item.getData());
+        }
+
+        if (deleteRecursiveLog.isEmpty()) {
+            for (Map<ByteArrayWrapper, Optional<byte[]>> accountData : cache.values()) {
+                for (Map.Entry<ByteArrayWrapper, Optional<byte[]>> cacheEntry : accountData.entrySet()) {
+                    this.trie.put(cacheEntry.getKey(), cacheEntry.getValue().orElse(null));
+                }
             }
-        });
+
+            deleteRecursiveLog.clear();
+            cache.clear();
+            cachedEntryCount = 0;
+
+            if (debugEnabled) {
+                long durationMillis = (System.nanoTime() - commitStartNanos) / 1_000_000;
+                if (durationMillis >= SLOW_COMMIT_LOG_THRESHOLD_MILLIS || keyUpdateCount >= LARGE_COMMIT_KEY_UPDATE_THRESHOLD) {
+                    logger.debug(
+                            "mutable trie cache commit: durationMs={} deleteRecursiveCount={} accountCacheCount={} keyUpdateCount={} slowThresholdMs={} largeKeyThreshold={}",
+                            durationMillis,
+                            deleteRecursiveCount,
+                            accountCacheCount,
+                            keyUpdateCount,
+                            SLOW_COMMIT_LOG_THRESHOLD_MILLIS,
+                            LARGE_COMMIT_KEY_UPDATE_THRESHOLD
+                    );
+                }
+            }
+            return;
+        }
+
+        for (Map.Entry<ByteArrayWrapper, Map<ByteArrayWrapper, Optional<byte[]>>> accountCacheEntry : cache.entrySet()) {
+            ByteArrayWrapper accountKey = accountCacheEntry.getKey();
+            Map<ByteArrayWrapper, Optional<byte[]>> accountData = accountCacheEntry.getValue();
+            boolean accountDeleted = deleteRecursiveLog.contains(accountKey);
+
+            if (!accountDeleted) {
+                for (Map.Entry<ByteArrayWrapper, Optional<byte[]>> cacheEntry : accountData.entrySet()) {
+                    Optional<byte[]> value = cacheEntry.getValue();
+                    this.trie.put(cacheEntry.getKey(), value.orElse(null));
+                }
+                continue;
+            }
+
+            // cached account
+            for (Map.Entry<ByteArrayWrapper, Optional<byte[]>> cacheEntry : accountData.entrySet()) {
+                Optional<byte[]> value = cacheEntry.getValue();
+                if (!value.isPresent()) {
+                    // No-op: recursive delete already removed this account subtree.
+                    continue;
+                }
+                this.trie.put(cacheEntry.getKey(), value.orElse(null));
+            }
+        }
 
         deleteRecursiveLog.clear();
         cache.clear();
+        cachedEntryCount = 0;
+
+        if (debugEnabled) {
+            long durationMillis = (System.nanoTime() - commitStartNanos) / 1_000_000;
+            if (durationMillis >= SLOW_COMMIT_LOG_THRESHOLD_MILLIS || keyUpdateCount >= LARGE_COMMIT_KEY_UPDATE_THRESHOLD) {
+                logger.debug(
+                        "mutable trie cache commit: durationMs={} deleteRecursiveCount={} accountCacheCount={} keyUpdateCount={} slowThresholdMs={} largeKeyThreshold={}",
+                        durationMillis,
+                        deleteRecursiveCount,
+                        accountCacheCount,
+                        keyUpdateCount,
+                        SLOW_COMMIT_LOG_THRESHOLD_MILLIS,
+                        LARGE_COMMIT_KEY_UPDATE_THRESHOLD
+                );
+            }
+        }
     }
 
     @Override
     public void save() {
+        boolean debugEnabled = logger.isDebugEnabled();
+        long saveStartNanos = debugEnabled ? System.nanoTime() : 0;
+
         commit();
+        long commitDoneNanos = debugEnabled ? System.nanoTime() : 0;
         trie.save();
+
+        if (debugEnabled) {
+            logger.debug(
+                    "mutable trie cache save: commitMs={} trieSaveMs={} totalMs={}",
+                    (commitDoneNanos - saveStartNanos) / 1_000_000,
+                    (System.nanoTime() - commitDoneNanos) / 1_000_000,
+                    (System.nanoTime() - saveStartNanos) / 1_000_000
+            );
+        }
     }
 
     @Override
     public void rollback() {
         cache.clear();
         deleteRecursiveLog.clear();
+        cachedEntryCount = 0;
     }
 
     @Override
