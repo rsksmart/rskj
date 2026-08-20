@@ -97,6 +97,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.db.TransactionInfo;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.client.ConfigCapabilities;
@@ -143,9 +144,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.TransactionReceipt;
+import org.ethereum.core.TransactionTypePrefix;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -3567,6 +3572,394 @@ class Web3ImplTest {
     }
 
     @Test
+    void eth_getTransactionReceipt_type1AtSublistBoundary_returnsCorrectGasUsed() {
+        long perTxGas = 21_000L;
+        Keccak256 hash0 = new Keccak256(TestUtils.generateBytes("typed-receipt-tx0", 32));
+        Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("typed-receipt-tx1", 32));
+        byte[] blockHash = TestUtils.generateBytes("typed-receipt-block", 32);
+
+        Transaction tx0 = mockTypedTx(hash0, TransactionType.TYPE_1, "0x1");
+        Transaction tx1 = mockTypedTx(hash1, TransactionType.TYPE_1, "0x1");
+        TransactionInfo info0 = new TransactionInfo(fourFieldReceipt(tx0, perTxGas), blockHash, 0);
+        TransactionInfo info1 = new TransactionInfo(fourFieldReceipt(tx1, perTxGas), blockHash, 1);
+
+        Web3Impl web3 = createWeb3ForTypedReceiptBlock(
+                blockHash, new short[]{1}, Arrays.asList(tx0, tx1), Arrays.asList(info0, info1), hash1, info1);
+
+        TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hash1.toHexString()));
+        assertNotNull(dto);
+        assertEquals("0x1", dto.getType());
+        assertEquals(HexUtils.toQuantityJsonHex(perTxGas), dto.getGasUsed());
+    }
+
+    @Test
+    void eth_getTransactionReceipt_type1AtSublistBoundary_unequalCumulatives_avoidsGarbageHex() {
+        long prevSublistCumulative = 63_000L;
+        long typedCumulative = 21_000L;
+        Keccak256 hash0 = new Keccak256(TestUtils.generateBytes("typed-unequal-tx0", 32));
+        Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("typed-unequal-tx1", 32));
+        byte[] blockHash = TestUtils.generateBytes("typed-unequal-block", 32);
+
+        Transaction tx0 = mockTypedTx(hash0, TransactionType.TYPE_1, "0x1");
+        Transaction tx1 = mockTypedTx(hash1, TransactionType.TYPE_1, "0x1");
+        TransactionInfo info0 = new TransactionInfo(fourFieldReceipt(tx0, prevSublistCumulative), blockHash, 0);
+        TransactionInfo info1 = new TransactionInfo(fourFieldReceipt(tx1, typedCumulative), blockHash, 1);
+
+        Web3Impl web3 = createWeb3ForTypedReceiptBlock(
+                blockHash, new short[]{1}, Arrays.asList(tx0, tx1), Arrays.asList(info0, info1), hash1, info1);
+
+        TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hash1.toHexString()));
+        assertNotNull(dto);
+        // Regression: naive prev-in-block delta yields a negative long that serializes as 0xffffffff…
+        assertEquals(HexUtils.toQuantityJsonHex(typedCumulative), dto.getGasUsed());
+        assertFalse(dto.getGasUsed().startsWith("0xffffffff"));
+    }
+
+    @Test
+    void eth_getTransactionReceipt_nonPositiveDerivedGasUsed_doesNotInflateToSublistCumulative() {
+        long prevCumulative = 42_000L;
+        long inconsistentCumulative = 21_000L;
+        Keccak256 hash0 = new Keccak256(TestUtils.generateBytes("typed-nonpos-tx0", 32));
+        Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("typed-nonpos-tx1", 32));
+        byte[] blockHash = TestUtils.generateBytes("typed-nonpos-block", 32);
+
+        Transaction tx0 = mockTypedTx(hash0, TransactionType.TYPE_1, "0x1");
+        Transaction tx1 = mockTypedTx(hash1, TransactionType.TYPE_1, "0x1");
+        TransactionInfo info0 = new TransactionInfo(fourFieldReceipt(tx0, prevCumulative), blockHash, 0);
+        TransactionInfo info1 = new TransactionInfo(fourFieldReceipt(tx1, inconsistentCumulative), blockHash, 1);
+
+        Web3Impl web3 = createWeb3ForTypedReceiptBlock(
+                blockHash, new short[0], Arrays.asList(tx0, tx1), Arrays.asList(info0, info1), hash1, info1);
+
+        TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hash1.toHexString()));
+        assertNotNull(dto);
+        // Mid-sublist inconsistency: do not report sublist cumulative as per-tx gasUsed.
+        assertEquals("0x0", dto.getGasUsed());
+    }
+
+    @Test
+    void eth_getTransactionReceipt_type1SameSublist_usesPreviousCumulativeDelta() {
+        TestSystemProperties typedConfig = new TestSystemProperties(rawConfig ->
+                rawConfig
+                        .withValue("blockchain.config.consensusRules.rskip144",
+                                ConfigValueFactory.fromAnyRef(0))
+                        .withValue("blockchain.config.consensusRules.rskip351",
+                                ConfigValueFactory.fromAnyRef(0))
+                        .withValue("blockchain.config.consensusRules.rskip543",
+                                ConfigValueFactory.fromAnyRef(0))
+                        .withValue("blockchain.config.consensusRules.rskip546",
+                                ConfigValueFactory.fromAnyRef(0))
+        );
+
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore, typedConfig);
+        Web3Impl web3 = createWeb3(world, receiptStore);
+
+        Coin funded = Coin.valueOf(1_000_000_000_000_000_000L);
+        Account sender = new AccountBuilder(world).name("s1").balance(funded).build();
+        Account receiver = new AccountBuilder(world).name("recv").balance(Coin.ZERO).build();
+
+        byte chainId = typedConfig.getNetworkConstants().getChainId();
+        Transaction tx1 = new TransactionBuilder()
+                .sender(sender)
+                .receiver(receiver)
+                .nonce(0)
+                .value(BigInteger.valueOf(1000))
+                .gasLimit(BigInteger.valueOf(21_000))
+                .gasPrice(BigInteger.ONE)
+                .transactionType((byte) 0x01)
+                .chainId(chainId)
+                .build();
+        Transaction tx2 = new TransactionBuilder()
+                .sender(sender)
+                .receiver(receiver)
+                .nonce(1)
+                .value(BigInteger.valueOf(2000))
+                .gasLimit(BigInteger.valueOf(21_000))
+                .gasPrice(BigInteger.ONE)
+                .transactionType((byte) 0x01)
+                .chainId(chainId)
+                .build();
+
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block block = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                world.getBlockStore())
+                .trieStore(world.getTrieStore())
+                .parent(genesis)
+                .transactions(Arrays.asList(tx1, tx2))
+                .build(typedConfig);
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block));
+        assertEquals(2, block.getTransactionsList().size());
+
+        String expectedGas = HexUtils.toQuantityJsonHex(21_000L);
+        TransactionReceiptDTO dto1 = web3.eth_getTransactionReceipt(
+                new TxHashParam(tx1.getHash().toHexString()));
+        TransactionReceiptDTO dto2 = web3.eth_getTransactionReceipt(
+                new TxHashParam(tx2.getHash().toHexString()));
+
+        assertNotNull(dto1);
+        assertNotNull(dto2);
+        assertEquals(expectedGas, dto1.getGasUsed());
+        assertEquals(expectedGas, dto2.getGasUsed());
+        assertEquals(HexUtils.toQuantityJsonHex(42_000L), dto2.getCumulativeGasUsed());
+    }
+
+    @Test
+    void eth_getTransactionReceipt_type4AtSublistBoundary_returnsCorrectGasUsed() {
+        long perTxGas = 21_000L;
+        Keccak256 hash0 = new Keccak256(TestUtils.generateBytes("type4-receipt-tx0", 32));
+        Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("type4-receipt-tx1", 32));
+        byte[] blockHash = TestUtils.generateBytes("type4-receipt-block", 32);
+
+        Transaction tx0 = mockTypedTx(hash0, TransactionType.TYPE_4, "0x4");
+        Transaction tx1 = mockTypedTx(hash1, TransactionType.TYPE_4, "0x4");
+        TransactionInfo info0 = new TransactionInfo(fourFieldReceipt(tx0, perTxGas), blockHash, 0);
+        TransactionInfo info1 = new TransactionInfo(fourFieldReceipt(tx1, perTxGas), blockHash, 1);
+
+        Web3Impl web3 = createWeb3ForTypedReceiptBlock(
+                blockHash, new short[]{1}, Arrays.asList(tx0, tx1), Arrays.asList(info0, info1), hash1, info1);
+
+        TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hash1.toHexString()));
+        assertNotNull(dto);
+        assertEquals("0x4", dto.getType());
+        assertEquals(HexUtils.toQuantityJsonHex(perTxGas), dto.getGasUsed());
+    }
+
+    @Test
+    void eth_getTransactionReceipt_singleTypedTxInBlock_firstTxUsesZeroPrevCumulative() {
+        long txGas = 21_000L;
+        Keccak256 txHash = new Keccak256(TestUtils.generateBytes("single-typed-tx", 32));
+        byte[] blockHash = TestUtils.generateBytes("single-typed-block", 32);
+
+        Transaction tx = mockTypedTx(txHash, TransactionType.TYPE_1, "0x1");
+        TransactionInfo info = new TransactionInfo(fourFieldReceipt(tx, txGas), blockHash, 0);
+
+        Web3Impl web3 = createWeb3ForTypedReceiptBlock(
+                blockHash, new short[0], Collections.singletonList(tx), Collections.singletonList(info), txHash, info);
+
+        TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(txHash.toHexString()));
+        assertNotNull(dto);
+        assertEquals(HexUtils.toQuantityJsonHex(txGas), dto.getGasUsed());
+    }
+
+    @Test
+    void eth_getTransactionReceipt_legacyThenTypedInSameSublist_usesLegacyCumulativeAsDelta() {
+        long legacyGas = 21_000L;
+        long typedCumulative = 42_000L;
+
+        Keccak256 hashLegacy = new Keccak256(TestUtils.generateBytes("mixed-receipt-legacy", 32));
+        Keccak256 hashTyped = new Keccak256(TestUtils.generateBytes("mixed-receipt-typed", 32));
+        byte[] blockHash = TestUtils.generateBytes("mixed-receipt-block", 32);
+
+        Transaction txLegacy = mockLegacyTx(hashLegacy);
+        Transaction txTyped = mockTypedTx(hashTyped, TransactionType.TYPE_1, "0x1");
+
+        TransactionInfo infoLegacy = new TransactionInfo(legacyReceipt(txLegacy, legacyGas), blockHash, 0);
+        TransactionInfo infoTyped = new TransactionInfo(fourFieldReceipt(txTyped, typedCumulative), blockHash, 1);
+
+        Web3Impl web3 = createWeb3ForTypedReceiptBlock(
+                blockHash, null, Arrays.asList(txLegacy, txTyped), Arrays.asList(infoLegacy, infoTyped),
+                hashTyped, infoTyped);
+
+        TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hashTyped.toHexString()));
+        assertNotNull(dto);
+        assertEquals("0x1", dto.getType());
+        assertEquals(HexUtils.toQuantityJsonHex(typedCumulative - legacyGas), dto.getGasUsed());
+    }
+
+    @Test
+    void eth_getTransactionReceipt_prevTxReceiptMissing_doesNotInflateToFullCumulative() {
+        long txCumulative = 42_000L;
+        Keccak256 hash0 = new Keccak256(TestUtils.generateBytes("missing-prev-tx0", 32));
+        Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("missing-prev-tx1", 32));
+        byte[] blockHash = TestUtils.generateBytes("missing-prev-block", 32);
+
+        Transaction tx0 = mockTypedTx(hash0, TransactionType.TYPE_1, "0x1");
+        Transaction tx1 = mockTypedTx(hash1, TransactionType.TYPE_1, "0x1");
+        TransactionInfo info1 = new TransactionInfo(fourFieldReceipt(tx1, txCumulative), blockHash, 1);
+
+        Block block = mockBlock(blockHash, new short[0], Arrays.asList(tx0, tx1));
+        Blockchain blockchain = mock(Blockchain.class);
+        when(blockchain.getTransactionInfoByBlock(tx0, blockHash)).thenReturn(null);
+        when(blockchain.getTransactionInfoByBlock(tx1, blockHash)).thenReturn(info1);
+
+        BlockStore blockStore = mock(BlockStore.class);
+        when(blockStore.getBlockByHash(blockHash)).thenReturn(block);
+
+        ReceiptStore receiptStore = mock(ReceiptStore.class);
+        when(receiptStore.getInMainChain(hash1.getBytes(), blockStore)).thenReturn(Optional.of(info1));
+
+        Web3Impl web3 = createWeb3ForReceiptGasUsedTest(blockchain, blockStore, receiptStore);
+
+        TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hash1.toHexString()));
+        assertNotNull(dto);
+        // Unknown prev baseline: do not treat as 0 and report full sublist cumulative as gasUsed.
+        assertEquals("0x0", dto.getGasUsed());
+    }
+
+    @Test
+    void eth_getTransactionReceipt_txMissingFromBlock_returnsNull() {
+        Keccak256 storedHash = new Keccak256(TestUtils.generateBytes("missing-from-block-stored", 32));
+        Keccak256 otherHash = new Keccak256(TestUtils.generateBytes("missing-from-block-other", 32));
+        byte[] blockHash = TestUtils.generateBytes("missing-from-block", 32);
+
+        Transaction otherTx = mockTypedTx(otherHash, TransactionType.TYPE_1, "0x1");
+        Transaction storedTx = mockTypedTx(storedHash, TransactionType.TYPE_1, "0x1");
+        TransactionInfo otherInfo = new TransactionInfo(fourFieldReceipt(otherTx, 21_000L), blockHash, 0);
+        TransactionInfo storedInfo = new TransactionInfo(fourFieldReceipt(storedTx, 21_000L), blockHash, 0);
+
+        Block block = mockBlock(blockHash, new short[0], Collections.singletonList(otherTx));
+        Blockchain blockchain = mock(Blockchain.class);
+        when(blockchain.getTransactionInfoByBlock(otherTx, blockHash)).thenReturn(otherInfo);
+
+        BlockStore blockStore = mock(BlockStore.class);
+        when(blockStore.getBlockByHash(blockHash)).thenReturn(block);
+
+        ReceiptStore receiptStore = mock(ReceiptStore.class);
+        when(receiptStore.getInMainChain(storedHash.getBytes(), blockStore)).thenReturn(Optional.of(storedInfo));
+
+        Web3Impl web3 = createWeb3ForReceiptGasUsedTest(blockchain, blockStore, receiptStore);
+        assertNull(web3.eth_getTransactionReceipt(new TxHashParam(storedHash.toHexString())));
+    }
+
+    @Test
+    void eth_getTransactionReceipt_blockMissingFromStore_returnsNull() {
+        Keccak256 txHash = new Keccak256(TestUtils.generateBytes("missing-block-tx", 32));
+        byte[] blockHash = TestUtils.generateBytes("missing-block", 32);
+
+        Transaction tx = mockTypedTx(txHash, TransactionType.TYPE_1, "0x1");
+        TransactionInfo info = new TransactionInfo(fourFieldReceipt(tx, 21_000L), blockHash, 0);
+
+        Blockchain blockchain = mock(Blockchain.class);
+        BlockStore blockStore = mock(BlockStore.class);
+        when(blockStore.getBlockByHash(blockHash)).thenReturn(null);
+
+        ReceiptStore receiptStore = mock(ReceiptStore.class);
+        when(receiptStore.getInMainChain(txHash.getBytes(), blockStore)).thenReturn(Optional.of(info));
+
+        Web3Impl web3 = createWeb3ForReceiptGasUsedTest(blockchain, blockStore, receiptStore);
+        assertNull(web3.eth_getTransactionReceipt(new TxHashParam(txHash.toHexString())));
+    }
+
+    @Test
+    void eth_getTransactionReceipt_legacyReceipt_doesNotOverrideGasUsed() {
+        long storedGasUsed = 21_000L;
+        Keccak256 txHash = new Keccak256(TestUtils.generateBytes("legacy-no-override", 32));
+        byte[] blockHash = TestUtils.generateBytes("legacy-no-override-block", 32);
+
+        Transaction tx = mockLegacyTx(txHash);
+        TransactionInfo info = new TransactionInfo(legacyReceipt(tx, storedGasUsed), blockHash, 0);
+        Web3Impl web3 = createWeb3ForTypedReceiptBlock(
+                blockHash, null, Collections.singletonList(tx), Collections.singletonList(info), txHash, info);
+
+        TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(txHash.toHexString()));
+        assertNotNull(dto);
+        assertEquals(HexUtils.toQuantityJsonHex(storedGasUsed), dto.getGasUsed());
+    }
+
+    @Test
+    void eth_getTransactionReceipt_type2MidSublistWithEdges_usesPreviousCumulativeDelta() {
+        long gas0 = 21_000L;
+        long gas1 = 42_000L;
+        long gas2 = 63_000L;
+        Keccak256 hash0 = new Keccak256(TestUtils.generateBytes("mid-sublist-tx0", 32));
+        Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("mid-sublist-tx1", 32));
+        Keccak256 hash2 = new Keccak256(TestUtils.generateBytes("mid-sublist-tx2", 32));
+        byte[] blockHash = TestUtils.generateBytes("mid-sublist-block", 32);
+
+        Transaction tx0 = mockTypedTx(hash0, TransactionType.TYPE_2, "0x2");
+        Transaction tx1 = mockTypedTx(hash1, TransactionType.TYPE_2, "0x2");
+        Transaction tx2 = mockTypedTx(hash2, TransactionType.TYPE_2, "0x2");
+        TransactionInfo info0 = new TransactionInfo(fourFieldReceipt(tx0, gas0), blockHash, 0);
+        TransactionInfo info1 = new TransactionInfo(fourFieldReceipt(tx1, gas1), blockHash, 1);
+        TransactionInfo info2 = new TransactionInfo(fourFieldReceipt(tx2, gas2), blockHash, 2);
+
+        Web3Impl web3 = createWeb3ForTypedReceiptBlock(
+                blockHash, new short[]{3}, Arrays.asList(tx0, tx1, tx2), Arrays.asList(info0, info1, info2),
+                hash2, info2);
+
+        TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hash2.toHexString()));
+        assertNotNull(dto);
+        assertEquals("0x2", dto.getType());
+        assertEquals(HexUtils.toQuantityJsonHex(gas2 - gas1), dto.getGasUsed());
+    }
+
+    @Test
+    void eth_getTransactionReceipt_type1BetweenMultipleEdges_isNotSublistStart() {
+        long gas1 = 21_000L;
+        long gas2 = 42_000L;
+        Keccak256 hash0 = new Keccak256(TestUtils.generateBytes("between-edges-tx0", 32));
+        Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("between-edges-tx1", 32));
+        Keccak256 hash2 = new Keccak256(TestUtils.generateBytes("between-edges-tx2", 32));
+        byte[] blockHash = TestUtils.generateBytes("between-edges-block", 32);
+
+        Transaction tx0 = mockTypedTx(hash0, TransactionType.TYPE_1, "0x1");
+        Transaction tx1 = mockTypedTx(hash1, TransactionType.TYPE_1, "0x1");
+        Transaction tx2 = mockTypedTx(hash2, TransactionType.TYPE_1, "0x1");
+        TransactionInfo info0 = new TransactionInfo(fourFieldReceipt(tx0, gas1), blockHash, 0);
+        TransactionInfo info1 = new TransactionInfo(fourFieldReceipt(tx1, gas1), blockHash, 1);
+        TransactionInfo info2 = new TransactionInfo(fourFieldReceipt(tx2, gas2), blockHash, 2);
+
+        Web3Impl web3 = createWeb3ForTypedReceiptBlock(
+                blockHash, new short[]{1, 3}, Arrays.asList(tx0, tx1, tx2), Arrays.asList(info0, info1, info2),
+                hash2, info2);
+
+        TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hash2.toHexString()));
+        assertNotNull(dto);
+        assertEquals(HexUtils.toQuantityJsonHex(gas2 - gas1), dto.getGasUsed());
+    }
+
+    @Test
+    void eth_getTransactionReceipt_equalCumulativesInSameSublist_doesNotInflateToCumulative() {
+        long sameCumulative = 21_000L;
+        Keccak256 hash0 = new Keccak256(TestUtils.generateBytes("equal-cum-tx0", 32));
+        Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("equal-cum-tx1", 32));
+        byte[] blockHash = TestUtils.generateBytes("equal-cum-block", 32);
+
+        Transaction tx0 = mockTypedTx(hash0, TransactionType.TYPE_1, "0x1");
+        Transaction tx1 = mockTypedTx(hash1, TransactionType.TYPE_1, "0x1");
+        TransactionInfo info0 = new TransactionInfo(fourFieldReceipt(tx0, sameCumulative), blockHash, 0);
+        TransactionInfo info1 = new TransactionInfo(fourFieldReceipt(tx1, sameCumulative), blockHash, 1);
+
+        Web3Impl web3 = createWeb3ForTypedReceiptBlock(
+                blockHash, new short[0], Arrays.asList(tx0, tx1), Arrays.asList(info0, info1), hash1, info1);
+
+        TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hash1.toHexString()));
+        assertNotNull(dto);
+        // derived == 0: do not report the shared cumulative as this tx's gasUsed.
+        assertEquals("0x0", dto.getGasUsed());
+    }
+
+    @Test
+    void eth_getTransactionReceipt_precedingTxWithNullLogs_accumulatesZeroLogIndex() {
+        Keccak256 hash0 = new Keccak256(TestUtils.generateBytes("null-logs-tx0", 32));
+        Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("null-logs-tx1", 32));
+        byte[] blockHash = TestUtils.generateBytes("null-logs-block", 32);
+
+        Transaction tx0 = mockTypedTx(hash0, TransactionType.TYPE_1, "0x1");
+        Transaction tx1 = mockTypedTx(hash1, TransactionType.TYPE_1, "0x1");
+
+        TransactionReceipt receipt0 = mock(TransactionReceipt.class);
+        when(receipt0.getLogInfoList()).thenReturn(null);
+        when(receipt0.getCumulativeGasLong()).thenReturn(21_000L);
+        when(receipt0.getCumulativeGas()).thenReturn(new byte[]{0x52, 0x08});
+        when(receipt0.getGasUsed()).thenReturn(new byte[0]);
+        when(receipt0.getStatus()).thenReturn(new byte[]{0x01});
+        when(receipt0.getTransaction()).thenReturn(tx0);
+        when(receipt0.getBloomFilter()).thenReturn(new Bloom());
+
+        TransactionInfo info0 = new TransactionInfo(receipt0, blockHash, 0);
+        TransactionInfo info1 = new TransactionInfo(fourFieldReceipt(tx1, 42_000L), blockHash, 1);
+
+        Web3Impl web3 = createWeb3ForTypedReceiptBlock(
+                blockHash, null, Arrays.asList(tx0, tx1), Arrays.asList(info0, info1), hash1, info1);
+
+        TransactionReceiptDTO dto = web3.eth_getTransactionReceipt(new TxHashParam(hash1.toHexString()));
+        assertNotNull(dto);
+        assertEquals(HexUtils.toQuantityJsonHex(21_000L), dto.getGasUsed());
+    }
+
+    @Test
     void eth_getBlockByNumber_returnsBaseEventInJsonResponse() {
         // given
         World world = new World();
@@ -3610,6 +4003,88 @@ class Web3ImplTest {
 
         // then
         assertNull(result.getBaseEvent());
+    }
+
+    private Web3Impl createWeb3ForReceiptGasUsedTest(
+            Blockchain blockchain, BlockStore blockStore, ReceiptStore receiptStore) {
+        Ethereum eth = mock(Ethereum.class);
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+        TransactionPool transactionPool = mock(TransactionPool.class);
+        return createWeb3(
+                eth, blockchain, repositoryLocator, transactionPool, blockStore,
+                null, new SimpleConfigCapabilities(), receiptStore, signatureCache,
+                Web3Mocks.getMockFlusher(), Web3Mocks.getMockNodeStopper()
+        );
+    }
+
+    private Web3Impl createWeb3ForTypedReceiptBlock(
+            byte[] blockHash,
+            short[] edges,
+            List<Transaction> txs,
+            List<TransactionInfo> infos,
+            Keccak256 queriedHash,
+            TransactionInfo queriedInfo) {
+        Block block = mockBlock(blockHash, edges, txs);
+        Blockchain blockchain = mock(Blockchain.class);
+        for (int i = 0; i < txs.size(); i++) {
+            when(blockchain.getTransactionInfoByBlock(txs.get(i), blockHash)).thenReturn(infos.get(i));
+        }
+        BlockStore blockStore = mock(BlockStore.class);
+        when(blockStore.getBlockByHash(blockHash)).thenReturn(block);
+        ReceiptStore receiptStore = mock(ReceiptStore.class);
+        when(receiptStore.getInMainChain(queriedHash.getBytes(), blockStore)).thenReturn(Optional.of(queriedInfo));
+        return createWeb3ForReceiptGasUsedTest(blockchain, blockStore, receiptStore);
+    }
+
+    private static Block mockBlock(byte[] blockHash, short[] edges, List<Transaction> txs) {
+        BlockHeader header = mock(BlockHeader.class);
+        when(header.getTxExecutionSublistsEdges()).thenReturn(edges);
+        Block block = mock(Block.class);
+        when(block.getHash()).thenReturn(new Keccak256(blockHash));
+        when(block.getNumber()).thenReturn(1L);
+        when(block.getHeader()).thenReturn(header);
+        when(block.getTransactionsList()).thenReturn(txs);
+        return block;
+    }
+
+    private static Transaction mockTypedTx(Keccak256 hash, TransactionType type, String typeHex) {
+        return mockTx(hash, TransactionTypePrefix.typed(type), typeHex);
+    }
+
+    private static Transaction mockLegacyTx(Keccak256 hash) {
+        return mockTx(hash, TransactionTypePrefix.legacy(), "0x0");
+    }
+
+    private static Transaction mockTx(Keccak256 hash, TransactionTypePrefix prefix, String typeHex) {
+        Transaction tx = mock(Transaction.class);
+        when(tx.getHash()).thenReturn(hash);
+        when(tx.getTypePrefix()).thenReturn(prefix);
+        when(tx.getTypeAsHex()).thenReturn(typeHex);
+        when(tx.getSender(any(SignatureCache.class))).thenReturn(RskAddress.nullAddress());
+        when(tx.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
+        when(tx.getGasPrice()).thenReturn(Coin.valueOf(1));
+        when(tx.getContractAddress()).thenReturn(null);
+        return tx;
+    }
+
+    private static TransactionReceipt fourFieldReceipt(Transaction tx, long cumulativeGas) {
+        TransactionReceipt receipt = new TransactionReceipt();
+        receipt.setStatus(new byte[]{0x01});
+        receipt.setCumulativeGas(cumulativeGas);
+        receipt.setGasUsed(new byte[0]);
+        receipt.setLogInfoList(Collections.emptyList());
+        receipt.setTransaction(tx);
+        return receipt;
+    }
+
+    private static TransactionReceipt legacyReceipt(Transaction tx, long gasUsed) {
+        TransactionReceipt receipt = new TransactionReceipt();
+        receipt.setStatus(new byte[]{0x01});
+        receipt.setCumulativeGas(gasUsed);
+        receipt.setGasUsed(gasUsed);
+        receipt.setLogInfoList(Collections.emptyList());
+        receipt.setTransaction(tx);
+        return receipt;
     }
 
     private Block createBlockWithBaseEvent(World world, byte[] baseEvent) {
