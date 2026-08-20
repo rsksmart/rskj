@@ -761,19 +761,19 @@ public class BridgeSupport {
 
     private void markTxAsProcessed(BtcTransaction btcTx) throws IOException {
         // Mark tx as processed on this block (and use the txid without the witness)
-        long rskHeight = rskExecutionBlock.getNumber();
-        Sha256Hash btcTxId = btcTx.getHash(false);
-        markTxIdAsProcessed(btcTxId, rskHeight);
+        Sha256Hash btcTxHash = btcTx.getHash(false);
+        markBtcTxHashAsProcessed(btcTxHash);
         logger.debug(
             "[markTxAsProcessed] Mark btc transaction {} (wtxid: {}) as processed at height {}",
-            btcTxId,
+            btcTxHash,
             btcTx.getHash(true),
-            rskHeight
+            rskExecutionBlock.getNumber()
         );
     }
 
-    private void markTxIdAsProcessed(Sha256Hash btcTxId, long rskHeight) throws IOException {
-        provider.setHeightBtcTxhashAlreadyProcessed(btcTxId, rskHeight);
+    private void markBtcTxHashAsProcessed(Sha256Hash btcTxHash) throws IOException {
+        long rskHeight = rskExecutionBlock.getNumber();
+        provider.setHeightBtcTxhashAlreadyProcessed(btcTxHash, rskHeight);
     }
 
     private boolean shouldProcessPegInVersionLegacy(
