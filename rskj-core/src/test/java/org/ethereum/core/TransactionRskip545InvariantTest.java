@@ -170,15 +170,14 @@ class TransactionRskip545InvariantTest {
     }
 
     @Test
-    void acceptTransactionSignature_type4_acceptsSUpToHalfCurveOrderAndRejectsAbove() {
+    void acceptTransactionSignature_type4_rejectsSFromHalfCurveOrderUp() {
         assertTrue(type4WithS(SECP256K1N_HALF.subtract(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
-        assertTrue(type4WithS(SECP256K1N_HALF).acceptTransactionSignature(CHAIN_ID));
+        assertFalse(type4WithS(SECP256K1N_HALF).acceptTransactionSignature(CHAIN_ID));
         assertFalse(type4WithS(SECP256K1N_HALF.add(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
     }
 
-    /** Legacy transactions keep the historical exclusive bound so past blocks stay valid. */
     @Test
-    void acceptTransactionSignature_legacy_stillRejectsSEqualToHalfCurveOrder() {
+    void acceptTransactionSignature_legacy_rejectsSFromHalfCurveOrderUp() {
         assertTrue(legacyWithS(SECP256K1N_HALF.subtract(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
         assertFalse(legacyWithS(SECP256K1N_HALF).acceptTransactionSignature(CHAIN_ID));
         assertFalse(legacyWithS(SECP256K1N_HALF.add(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));

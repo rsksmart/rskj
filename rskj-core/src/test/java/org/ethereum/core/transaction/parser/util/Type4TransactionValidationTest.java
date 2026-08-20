@@ -96,14 +96,17 @@ class Type4TransactionValidationTest {
     }
 
     @Test
-    void validateOuterSignatureFormat_halfCurveOrderS_succeeds() {
+    void validateOuterSignatureFormat_halfCurveOrderS_throws() {
         BigInteger half = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
         ECDSASignature halfS = ECDSASignature.fromComponents(
                 BigIntegers.asUnsignedByteArray(BigInteger.ONE),
                 BigIntegers.asUnsignedByteArray(half),
                 (byte) 27);
 
-        assertDoesNotThrow(() -> Type4TransactionValidation.validateOuterSignatureFormat(halfS));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Type4TransactionValidation.validateOuterSignatureFormat(halfS));
+
+        assertTrue(ex.getMessage().contains("secp256k1n/2"), ex.getMessage());
     }
 
     @Test

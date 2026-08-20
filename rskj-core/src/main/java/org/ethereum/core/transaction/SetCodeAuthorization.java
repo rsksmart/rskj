@@ -86,6 +86,10 @@ public class SetCodeAuthorization {
         return BigIntegers.fromUnsignedByteArray(nonce);
     }
 
+    /**
+     * RSKIP-545 / EIP-7702 admit {@code s == secp256k1n/2} for authorization tuples.
+     * The outer type 4 transaction signature keeps the exclusive bound shared by all types.
+     */
     public void verifyLowS() {
         if (signature.getS().compareTo(SECP256K1N_HALF) > 0) {
             throw new IllegalStateException("Signature s exceeds secp256k1n / 2");

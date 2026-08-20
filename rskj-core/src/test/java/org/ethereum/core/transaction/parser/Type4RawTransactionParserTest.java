@@ -496,18 +496,21 @@ class Type4RawTransactionParserTest {
     }
 
     @Test
-    void validateOuterSignatureFormat_acceptsHalfCurveOrderS() {
+    void validateOuterSignatureFormat_rejectsHalfCurveOrderS() {
         ECDSASignature halfS = ECDSASignature.fromComponents(
                 BigIntegers.asUnsignedByteArray(BigInteger.ONE),
                 BigIntegers.asUnsignedByteArray(SECP256K1N_HALF),
                 (byte) 27);
 
-        assertDoesNotThrow(() -> Type4TransactionValidation.validateOuterSignatureFormat(halfS));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Type4TransactionValidation.validateOuterSignatureFormat(halfS));
+
+        assertTrue(ex.getMessage().contains("secp256k1n/2"));
     }
 
     @Test
-    void parse_rlp_halfCurveOrderOuterSignature_succeeds() {
-        assertDoesNotThrow(() -> parser.parse(
+    void parse_rlp_halfCurveOrderOuterSignature_throws() {
+        assertThrows(IllegalArgumentException.class, () -> parser.parse(
                 TransactionTypePrefix.typed(TransactionType.TYPE_4), type4FieldsWithOuterS(SECP256K1N_HALF)));
     }
 
