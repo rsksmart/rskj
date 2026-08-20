@@ -43,8 +43,7 @@ public class TrieKeySlice {
     }
 
     public byte[] encode() {
-        // TODO(mc) avoid copying by passing the indices to PathEncoder.encode
-        return PathEncoder.encode(Arrays.copyOfRange(expandedKey, offset, limit));
+        return PathEncoder.encode(expandedKey, offset, limit);
     }
 
     public TrieKeySlice slice(int from, int to) {

@@ -32,7 +32,23 @@ public class PathEncoder {
             throw new IllegalArgumentException("path");
         }
 
-        return encodeBinaryPath(path);
+        return encodeBinaryPath(path, 0, path.length);
+    }
+
+    /**
+     * Same as encode(byte[]), but reads directly from a [offset, limit) sub-range of a
+     * shared array instead of requiring the caller to pass an already-copied sub-array.
+     * Callers holding a slice of a larger array (e.g. TrieKeySlice) can encode without an
+     * intermediate Arrays.copyOfRange -- this is called once per trie node during
+     * serialization, so avoiding that allocation+copy matters.
+     */
+    @Nonnull
+    public static byte[] encode(byte[] path, int offset, int limit) {
+        if (path == null) {
+            throw new IllegalArgumentException("path");
+        }
+
+        return encodeBinaryPath(path, offset, limit);
     }
 
     @Nonnull
@@ -46,8 +62,8 @@ public class PathEncoder {
 
     @Nonnull
     // First bit is MOST SIGNIFICANT
-    private static byte[] encodeBinaryPath(byte[] path) {
-        int lpath = path.length;
+    private static byte[] encodeBinaryPath(byte[] path, int start, int limit) {
+        int lpath = limit - start;
         int lencoded = calculateEncodedLength(lpath);
 
         byte[] encoded = new byte[lencoded];
@@ -59,7 +75,7 @@ public class PathEncoder {
                 nbyte++;
             }
 
-            if (path[k] == 0) {
+            if (path[start + k] == 0) {
                 continue;
             }
 

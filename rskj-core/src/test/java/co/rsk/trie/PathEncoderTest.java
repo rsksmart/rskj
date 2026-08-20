@@ -77,6 +77,29 @@ class PathEncoderTest {
     }
 
     @Test
+    void encodeBinaryPathWithOffsetAndLimitMatchesEquivalentStandaloneArray() {
+        // the [2, 10) sub-range below is exactly { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01 },
+        // the same bits as encodeBinaryPathOneByte()'s standalone array
+        byte[] path = new byte[] { 0x01, 0x00, 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00 };
+
+        byte[] encoded = PathEncoder.encode(path, 2, 10);
+
+        Assertions.assertNotNull(encoded);
+        Assertions.assertArrayEquals(new byte[] { 0x6d }, encoded);
+    }
+
+    @Test
+    void encodeBinaryPathWithOffsetAndLimitNullPath() {
+        try {
+            PathEncoder.encode(null, 0, 3);
+            Assertions.fail();
+        }
+        catch (Exception ex) {
+            Assertions.assertTrue(ex instanceof IllegalArgumentException);
+        }
+    }
+
+    @Test
     void decodeNullBinaryPath() {
         try {
             PathEncoder.decode(null, 0);
