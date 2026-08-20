@@ -26,7 +26,6 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.PegoutsWaitingForConfirmations.EntriesStore;
 import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.vote.ABICallElection;
@@ -820,7 +819,7 @@ public class BridgeSerializationUtils {
 
     // For the serialization format, see BridgeSerializationUtils::serializePegoutsWaitingForConfirmations
     private static PegoutsWaitingForConfirmations deserializePegoutsWaitingForConfirmationsWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
-        var entries = EntriesStore.setOfEntries();
+        var entries = new HashSet<PegoutsWaitingForConfirmations.Entry>();
 
         int n = rlpList.size() / 2;
         for (int k = 0; k < n; k++) {
@@ -836,7 +835,7 @@ public class BridgeSerializationUtils {
     }
 
     private static PegoutsWaitingForConfirmations deserializePegoutWaitingForConfirmationsWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
-        var entries = EntriesStore.setOfEntries();
+        var entries = new HashSet<PegoutsWaitingForConfirmations.Entry>();
 
         int n = rlpList.size() / 3;
         for (int k = 0; k < n; k++) {
