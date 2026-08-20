@@ -1600,7 +1600,9 @@ public class BridgeSupport {
             .getNextPegoutWithEnoughConfirmations(
                 rskExecutionBlock.getNumber(),
                 bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(),
-                activations
+                activations,
+                rskTx.getHash(),
+                bridgeConstants
             );
 
         if (nextPegoutWithEnoughConfirmations.isEmpty()) {
