@@ -23,6 +23,7 @@ import co.rsk.peg.constants.BridgeConstants;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -144,6 +145,8 @@ public final class HistoricalPegoutSelections {
      * testnet have a canonical, pre-RSKIP559 chain whose HashSet-order selections must be reproduced.
      */
     public static boolean hasHistoricalData(BridgeConstants bridgeConstants) {
+        Objects.requireNonNull(bridgeConstants, "bridgeConstants must not be null");
+
         String networkId = bridgeConstants.getBtcParams().getId();
         return NetworkParameters.ID_MAINNET.equals(networkId) || NetworkParameters.ID_TESTNET.equals(networkId);
     }
@@ -157,6 +160,9 @@ public final class HistoricalPegoutSelections {
      * @param bridgeConstants the network's bridge constants; must be a network with historical data.
      */
     public static Optional<String> getSelectedBtcTxHash(String rskTxHash, BridgeConstants bridgeConstants) {
+        Objects.requireNonNull(rskTxHash, "rskTxHash must not be null");
+        Objects.requireNonNull(bridgeConstants, "bridgeConstants must not be null");
+
         return Optional.ofNullable(selectMap(bridgeConstants).get(normalize(rskTxHash)));
     }
 

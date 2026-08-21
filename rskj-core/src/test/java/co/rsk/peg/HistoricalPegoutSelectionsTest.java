@@ -46,6 +46,7 @@ class HistoricalPegoutSelectionsTest {
     private static final String TESTNET_FIRST_BTC_TX = "a9bdc4e4a48a3e3754b2722b3e61eeca9ae4009379a62a8313acf485c79171c1";
     private static final String TESTNET_LAST_RSK_TX = "d3e94aac06e45556359d3d42a7d8eeca3e6fa89972bc921245f9d1892b1da9eb";
     private static final String TESTNET_LAST_BTC_TX = "5bd422c96cabc0c4adecc4d7a2a23dd7c18ace92fb86348910e596449570a45f";
+    private static final String UNKNOWN_RSK_TX = "0000000000000000000000000000000000000000000000000000000000000000";
 
     @Test
     void hasHistoricalData_mainnet_isTrue() {
@@ -87,9 +88,8 @@ class HistoricalPegoutSelectionsTest {
 
     @Test
     void getSelectedBtcTxHash_unknownKey_returnsEmpty() {
-        String unknown = "0000000000000000000000000000000000000000000000000000000000000000";
         assertEquals(Optional.empty(),
-            HistoricalPegoutSelections.getSelectedBtcTxHash(unknown, MAINNET));
+            HistoricalPegoutSelections.getSelectedBtcTxHash(UNKNOWN_RSK_TX, MAINNET));
     }
 
     @Test
@@ -110,7 +110,24 @@ class HistoricalPegoutSelectionsTest {
     void getSelectedBtcTxHash_unsupportedNetwork_throws() {
         // regtest has no historical dataset; a direct lookup must fail loudly rather than silently miss.
         assertThrows(IllegalStateException.class,
-            () -> HistoricalPegoutSelections.getSelectedBtcTxHash(MAINNET_FIRST_RSK_TX, REGTEST));
+            () -> HistoricalPegoutSelections.getSelectedBtcTxHash(UNKNOWN_RSK_TX, REGTEST));
+    }
+
+    @Test
+    void getSelectedBtcTxHash_nullRskTxHash_throws() {
+        assertThrows(NullPointerException.class,
+            () -> HistoricalPegoutSelections.getSelectedBtcTxHash(null, MAINNET));
+    }
+
+    @Test
+    void getSelectedBtcTxHash_nullBridgeConstants_throws() {
+        assertThrows(NullPointerException.class,
+            () -> HistoricalPegoutSelections.getSelectedBtcTxHash(MAINNET_FIRST_RSK_TX, null));
+    }
+
+    @Test
+    void hasHistoricalData_nullBridgeConstants_throws() {
+        assertThrows(NullPointerException.class, () -> HistoricalPegoutSelections.hasHistoricalData(null));
     }
 
     @Test
