@@ -2568,7 +2568,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("common_args")
-    void pegout_no_change_output(
+    void registerBtcTransaction_withPegoutTxWithNoChangeOutput_shouldRegisterPegoutTx(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         boolean existsRetiringFederation
@@ -2619,7 +2619,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     @Test
-    void pegout_sighash_no_exists_in_provider() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerBtcTransaction_withPegoutTxFromFederationWithChangeOutputNotInPegoutTxIndex_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
         int height = heightAtWhichToStartUsingPegoutIndex;
 
@@ -2662,7 +2662,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("common_args")
-    void pegout_many_outputs_and_inputs_with_change_output(
+    void registerBtcTransaction_withPegoutTxWithManyOutputsAndInputsAndChangeOutput_shouldRegisterPegoutTx(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         boolean existsRetiringFederation
@@ -2745,7 +2745,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("common_args")
-    void pegout_many_outputs_and_one_input(
+    void registerBtcTransaction_withPegoutTxWithManyOutputsAndOneInputAndChangeOutput_shouldRegisterPegoutTx(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         boolean existsRetiringFederation
@@ -2826,7 +2826,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("common_args")
-    void pegout_one_output_and_many_input(
+    void registerBtcTransaction_withPegoutTxWithOneOutputAndManyInputs_shouldRegisterPegoutTx(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         boolean existsRetiringFederation
@@ -2894,7 +2894,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("activationsAndShouldUsePegoutIndexArgs")
-    void migration_ok(
+    void registerBtcTransaction_withMigrationTxWithOneInputAndOutput_shouldRegisterMigrationTx(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
@@ -2944,7 +2944,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     @Test
-    void migration_sighash_no_exists_in_provider() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerBtcTransaction_withMigrationTxNotInPegoutTxIndex_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
         int height = heightAtWhichToStartUsingPegoutIndex;
 
@@ -2986,7 +2986,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("activationsAndShouldUsePegoutIndexArgs")
-    void migration_many_outputs_and_inputs(
+    void registerBtcTransaction_withMigrationTxWithManyOutputsAndInputs_shouldRegisterMigrationTx(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
@@ -3054,7 +3054,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("activationsAndShouldUsePegoutIndexArgs")
-    void migration_many_outputs_and_one_input(
+    void registerBtcTransaction_withMigrationTxWithManyOutputsAndOneInput_shouldRegisterMigrationTx(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
@@ -3123,7 +3123,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("activationsAndShouldUsePegoutIndexArgs")
-    void migration_one_outputs_and_many_input(
+    void registerBtcTransaction_withMigrationTxWithOneOutputAndManyInputs_shouldRegisterMigrationTx(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
@@ -3176,7 +3176,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("activationsAndShouldUsePegoutIndexArgs")
-    void flyover_segwit_as_migration_utxo(
+    void registerBtcTransaction_withMigrationTxWithFlyoverUtxoWithOneInputAndOutput_shouldRegisterMigrationTx(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
@@ -3253,7 +3253,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("activationsAndShouldUsePegoutIndexArgs")
-    void flyover_segwit_as_migration_utxo_with_many_outputs_and_inputs(
+    void registerBtcTransaction_withMigrationTxWithFlyoverUtxoWithManyOutputsAndInputs_shouldRegisterMigrationTx(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
@@ -3339,7 +3339,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     // old fed
     @ParameterizedTest
     @MethodSource("activationsAndShouldUsePegoutIndexArgs")
-    void old_fed_migration(
+    void registerBtcTransaction_withMigrationTxSignedByOldFederation_shouldDependOnPegoutTxIndexActivation(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
@@ -3516,7 +3516,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("activationsAndShouldUsePegoutIndexArgs")
-    void last_retired_fed_to_active_fed(
+    void registerBtcTransaction_withMigrationTxFromLastRetiredFederation_shouldRegisterPegoutTx(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
@@ -3565,7 +3565,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("activationsAndShouldUsePegoutIndexArgs")
-    void no_last_retired_fed_in_storage_sending_funds_to_active_fed(
+    void registerBtcTransaction_withMigrationTxFromRetiredFederationNotInStorage_shouldDependOnPegoutTxIndexActivation(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
