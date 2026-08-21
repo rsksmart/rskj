@@ -76,11 +76,15 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         }
 
         List<BlockHeader> uncles = block.getUncleList();
-        if (!uncles.isEmpty() && !validateUncleList(block.getNumber(), uncles,
-                        FamilyUtils.getAncestors(blockStore, block, uncleGenerationLimit),
-                        FamilyUtils.getUsedUncles(blockStore, block, uncleGenerationLimit))) {
-            logger.warn("Uncles list validation failed");
-            return false;
+        if (!uncles.isEmpty()) {
+            FamilyUtils.AncestorsAndUsedUncles ancestorsAndUsedUncles =
+                    FamilyUtils.getAncestorsAndUsedUncles(blockStore, block, uncleGenerationLimit);
+            if (!validateUncleList(block.getNumber(), uncles,
+                            ancestorsAndUsedUncles.getAncestors(),
+                            ancestorsAndUsedUncles.getUsedUncles())) {
+                logger.warn("Uncles list validation failed");
+                return false;
+            }
         }
 
         return true;

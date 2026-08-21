@@ -50,6 +50,57 @@ public class FamilyUtils {
         return getAncestors(blockStore, block.getNumber(), block.getParentHash(), limitNum);
     }
 
+    /**
+     * Ancestors and used-uncles are both computed by walking the exact same parent-hash
+     * chain from the same starting point to the same limit (BlockUnclesValidationRule
+     * needs both together on every block that has a non-empty uncle list) -- this does
+     * that walk once instead of twice, halving the (synchronized, cache-backed but not
+     * free) BlockStore.getBlockByHash() calls for that case.
+     */
+    public static AncestorsAndUsedUncles getAncestorsAndUsedUncles(BlockStore blockStore, Block block, int limitNum) {
+        return getAncestorsAndUsedUncles(blockStore, block.getNumber(), block.getParentHash(), limitNum);
+    }
+
+    public static AncestorsAndUsedUncles getAncestorsAndUsedUncles(BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
+        Set<Keccak256> ancestors = new HashSet<>();
+        Set<Keccak256> usedUncles = new HashSet<>();
+
+        if (blockStore == null) {
+            return new AncestorsAndUsedUncles(ancestors, usedUncles);
+        }
+
+        long minNumber = max(0, blockNumber - limitNum);
+        Block it = blockStore.getBlockByHash(parentHash.getBytes());
+
+        while (it != null && it.getNumber() >= minNumber) {
+            ancestors.add(it.getHash());
+            for (BlockHeader uncle : it.getUncleList()) {
+                usedUncles.add(uncle.getHash());
+            }
+            it = blockStore.getBlockByHash(it.getParentHash().getBytes());
+        }
+
+        return new AncestorsAndUsedUncles(ancestors, usedUncles);
+    }
+
+    public static final class AncestorsAndUsedUncles {
+        private final Set<Keccak256> ancestors;
+        private final Set<Keccak256> usedUncles;
+
+        private AncestorsAndUsedUncles(Set<Keccak256> ancestors, Set<Keccak256> usedUncles) {
+            this.ancestors = ancestors;
+            this.usedUncles = usedUncles;
+        }
+
+        public Set<Keccak256> getAncestors() {
+            return ancestors;
+        }
+
+        public Set<Keccak256> getUsedUncles() {
+            return usedUncles;
+        }
+    }
+
     public static Set<Keccak256> getAncestors(BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
         Set<Keccak256> ret = new HashSet<>();
 
