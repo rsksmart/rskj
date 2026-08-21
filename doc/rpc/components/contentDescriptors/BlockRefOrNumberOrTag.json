@@ -12,6 +12,9 @@
           "$ref": "#/components/schemas/BlockNumberHex"
         },
         {
+          "$ref": "#/components/schemas/BlockNumberDec"
+        },
+        {
           "$ref": "#/components/schemas/BlockNumberTag"
         }
       ]

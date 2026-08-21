@@ -9,7 +9,7 @@
       "$ref": "#/components/contentDescriptors/Position"
     },
     {
-      "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
+      "$ref": "#/components/contentDescriptors/BlockRefOrNumberOrTag"
     }
   ],
   "result": {

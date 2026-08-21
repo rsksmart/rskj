@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import co.rsk.cli.tools.GenerateOpenRpcDoc;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.parameters.BlockRefParam;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -64,6 +65,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  * a fragment documenting a method the node no longer exposes. The document itself is then assembled and
  * checked in both directions too — no {@code $ref} may dangle and no component may be left unreferenced —
  * because the generator merges fragments without validating references and exits zero either way.
+ *
+ * <p>Each fragment is separately held to carrying at least one example, and to every example passing as many
+ * parameters as the fragment declares — coverage and arity only, never that an example is realistic or that
+ * it shows the branch of a union a reader most needs.
  */
 class JsonRpcDocCoverageTest {
 
@@ -79,6 +84,27 @@ class JsonRpcDocCoverageTest {
      * makes or breaks this guard is visible in one place rather than inlined in a stream.
      */
     private static final Class<?> DISPATCH_SURFACE = Web3RskImpl.class;
+
+    /**
+     * The node-side type of a block reference: the parameter that accepts a tag, a block number in hex or in
+     * decimal, <em>and</em> the {@code {"blockHash": ...}} object. Methods are found by reflecting for this
+     * type rather than by listing their names, so a method that starts or stops taking a block reference is
+     * carried into the check by the same reflection the rest of this guard runs on.
+     */
+    private static final Class<?> BLOCK_REFERENCE_PARAMETER = BlockRefParam.class;
+
+    /**
+     * The schema for the object form of a block reference, and the part a narrowly documented parameter drops.
+     * The object form has been in the fragments since 2022; a method documented without it tells the reader
+     * the node will reject a block hash it in fact accepts.
+     */
+    private static final String BLOCK_REFERENCE_OBJECT = "#/components/schemas/BlockRef";
+
+    /**
+     * The one descriptor every block-reference parameter is meant to resolve through, named here only so the
+     * failure message can point at it.
+     */
+    private static final String BLOCK_REFERENCE_DESCRIPTOR = "#/components/contentDescriptors/BlockRefOrNumberOrTag";
 
     private static final String DOC_RPC_DIR = "doc/rpc";
     private static final String METHODS_DIR = "methods";
@@ -183,6 +209,49 @@ class JsonRpcDocCoverageTest {
                 DOC_RPC_DIR, METHODS_DIR, String.join(System.lineSeparator() + "  - ", duplicates)));
     }
 
+    /**
+     * A fragment with no example, or with an example passing a different number of arguments than the
+     * fragment declares parameters, misleads exactly the reader who skims examples instead of schemas. Both
+     * halves held across all 54 fragments when checked by hand; they are asserted here so they stop being
+     * facts someone has to re-verify.
+     *
+     * <p>What this buys is coverage and arity and nothing beyond them. It does not hold that an example is
+     * realistic, nor that it demonstrates the branch of a union a reader most needs to see: every one of the
+     * 54 fragments passed this assertion while not one of them showed the object form of a block reference.
+     */
+    @Test
+    void everyFragmentCarriesAnExampleMatchingItsDeclaredArity() {
+        List<String> problems = new ArrayList<>();
+
+        for (Path fragment : methodFragments()) {
+            JsonNode method = readJson(fragment);
+            int declared = method.path("params").size();
+            JsonNode examples = method.path("examples");
+
+            if (!examples.isArray() || examples.isEmpty()) {
+                problems.add(fragment.getFileName() + " — carries no example; add one to \"examples\" passing "
+                        + declared + " parameter(s)");
+                continue;
+            }
+
+            for (JsonNode example : examples) {
+                int passed = example.path("params").size();
+                if (passed != declared) {
+                    problems.add(fragment.getFileName() + " — example \"" + example.path("name").asText()
+                            + "\" passes " + passed + " parameter(s) but the fragment declares " + declared
+                            + "; give the example a value for every declared parameter, or drop the parameter");
+                }
+            }
+        }
+
+        assertTrue(problems.isEmpty(), () -> String.format(
+                "%d fragment(s) under %s/%s carry no example, or an example that disagrees with the parameters "
+                        + "it is meant to illustrate. A reader who skims examples rather than schemas reads the "
+                        + "example as the whole call:%n  - %s",
+                problems.size(), DOC_RPC_DIR, METHODS_DIR,
+                String.join(System.lineSeparator() + "  - ", problems)));
+    }
+
     @Test
     void everyReferenceInTheAssembledDocumentResolves(@TempDir Path tempDir) {
         JsonNode document = assembleDocument(tempDir);
@@ -214,6 +283,130 @@ class JsonRpcDocCoverageTest {
                         + "one sweep. Delete them, or add them to KNOWN_UNREFERENCED_COMPONENTS with a "
                         + "reason:%n  - %s",
                 unreferenced.size(), String.join(System.lineSeparator() + "  - ", unreferenced)));
+    }
+
+    /**
+     * A parameter the node reads as a block reference must be documented as one. Four of the five methods
+     * taking {@link BlockRefParam} resolved to a schema carrying the object form and one declared
+     * hex-number-or-tag only, so its reference stated the node would reject a block hash it accepts — a gap a
+     * user hit despite the object form being documented elsewhere since 2022.
+     *
+     * <p>The methods are found by reflection over {@link #DISPATCH_SURFACE}, not from a list kept here, and
+     * each is resolved through whatever its fragment declares: a shared descriptor, an inline union, or a
+     * chain of {@code $ref}s between them. That is what makes an inline redefinition of the parameter
+     * answerable to the same check as a reference to the shared descriptor.
+     */
+    @Test
+    void everyMethodTakingABlockReferenceDocumentsTheObjectForm(@TempDir Path tempDir) {
+        Set<String> takingBlockReference = methodsTakingABlockReference();
+        assertTrue(!takingBlockReference.isEmpty(), () -> String.format(
+                "No method on %s takes %s, so this guard checks nothing. Either the parameter type was renamed "
+                        + "and BLOCK_REFERENCE_PARAMETER needs to follow it, or block references are no longer "
+                        + "a parameter type and this test should go.",
+                DISPATCH_SURFACE.getSimpleName(), BLOCK_REFERENCE_PARAMETER.getSimpleName()));
+
+        JsonNode document = assembleDocument(tempDir);
+        Map<String, JsonNode> documented = documentedMethodsInDocument(document);
+
+        List<String> problems = new ArrayList<>();
+        for (String name : takingBlockReference) {
+            JsonNode method = documented.get(name);
+            if (method == null) {
+                // Allowlisted rather than documented; everyExposedMethodIsDocumentedOrAllowlisted owns that case.
+                continue;
+            }
+            boolean documentsObjectForm = false;
+            for (JsonNode param : method.path("params")) {
+                if (resolvesTo(document, param, BLOCK_REFERENCE_OBJECT, new TreeSet<>())) {
+                    documentsObjectForm = true;
+                    break;
+                }
+            }
+            if (!documentsObjectForm) {
+                problems.add(name + " — no parameter of it resolves to " + BLOCK_REFERENCE_OBJECT);
+            }
+        }
+
+        assertTrue(problems.isEmpty(), () -> String.format(
+                "%d documented method(s) take %s, which accepts a block hash object, but document no parameter "
+                        + "that resolves to %s. A reader is told the node will reject an input it accepts. Point "
+                        + "the parameter at %s, the descriptor the other block-reference methods share, rather "
+                        + "than widening a second definition of it:%n  - %s",
+                problems.size(), BLOCK_REFERENCE_PARAMETER.getSimpleName(), BLOCK_REFERENCE_OBJECT,
+                BLOCK_REFERENCE_DESCRIPTOR, String.join(System.lineSeparator() + "  - ", problems)));
+    }
+
+    /**
+     * Every JSON-RPC method the node dispatches that takes a block reference, deduplicated across overloads.
+     */
+    private static Set<String> methodsTakingABlockReference() {
+        return Stream.of(DISPATCH_SURFACE.getMethods())
+                .filter(method -> RPC_METHOD_NAME.matcher(method.getName()).matches())
+                .filter(method -> Stream.of(method.getParameterTypes()).anyMatch(BLOCK_REFERENCE_PARAMETER::equals))
+                .map(Method::getName)
+                .collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    /**
+     * The methods of the assembled document, by the name each declares.
+     */
+    private static Map<String, JsonNode> documentedMethodsInDocument(JsonNode document) {
+        Map<String, JsonNode> methods = new TreeMap<>();
+        document.path("methods").forEach(method -> methods.putIfAbsent(method.path("name").asText(), method));
+        return methods;
+    }
+
+    /**
+     * Whether {@code node} reaches {@code target}, following every {@code $ref} it carries through the
+     * components of the document. {@code visited} keeps a component that references itself, directly or in a
+     * cycle, from looping forever.
+     */
+    private static boolean resolvesTo(JsonNode document, JsonNode node, String target, Set<String> visited) {
+        if (node == null) {
+            return false;
+        }
+        if (node.isArray()) {
+            for (JsonNode element : node) {
+                if (resolvesTo(document, element, target, visited)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (!node.isObject()) {
+            return false;
+        }
+
+        JsonNode ref = node.get("$ref");
+        if (ref != null && ref.isTextual()) {
+            String reference = ref.asText();
+            if (target.equals(reference)) {
+                return true;
+            }
+            if (visited.add(reference) && resolvesTo(document, componentAt(document, reference), target, visited)) {
+                return true;
+            }
+        }
+
+        for (JsonNode value : node) {
+            if (resolvesTo(document, value, target, visited)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The component a {@code #/components/<kind>/<name>} reference points at, or {@code null} if the document
+     * defines none — a dangling reference, which everyReferenceInTheAssembledDocumentResolves reports.
+     */
+    private static JsonNode componentAt(JsonNode document, String reference) {
+        String[] segments = reference.split("/");
+        if (segments.length != 4 || !"#".equals(segments[0]) || !"components".equals(segments[1])) {
+            return null;
+        }
+        JsonNode component = document.path("components").path(segments[2]).get(segments[3]);
+        return component == null || component.isNull() ? null : component;
     }
 
     /**

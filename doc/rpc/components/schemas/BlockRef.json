@@ -2,14 +2,35 @@
   "BlockRef": {
     "title": "blockRef",
     "type": "object",
-    "description": "Object defining block references",
+    "description": "Object defining block references. At least one of `blockHash` or `blockNumber` must be present; the node rejects an object carrying neither with `Invalid block input`.",
     "properties": {
       "blockHash": {
         "$ref": "#/components/schemas/BlockHash"
       },
       "blockNumber": {
         "$ref": "#/components/schemas/BlockNumberHex"
+      },
+      "requireCanonical": {
+        "title": "requireCanonical",
+        "type": "string",
+        "description": "Whether a block that is not on the canonical chain is acceptable. Send it as the JSON string `\"true\"` or `\"false\"`, not as a JSON boolean: the node reads the object as a map of strings and compares this value against those two words (case-insensitively), so any other value is rejected with `Invalid input: requireCanonical must be a String \"true\" or \"false\"`. It is only consulted alongside `blockHash`; when it is `\"true\"` and the referenced block is not on the canonical chain, the node answers with a block-not-found error stating the block is not canonical.",
+        "enum": [
+          "true",
+          "false"
+        ]
       }
-    }
+    },
+    "anyOf": [
+      {
+        "required": [
+          "blockHash"
+        ]
+      },
+      {
+        "required": [
+          "blockNumber"
+        ]
+      }
+    ]
   }
 }
