@@ -45,8 +45,13 @@ import java.util.Optional;
  *
  * <p>Only calls with more than one eligible entry are recorded — with zero or one eligible entry the
  * selection is already deterministic. The dataset is complete for {@code [genesis, RSKIP559 activation]}
- * on mainnet (17 entries) and testnet (53 entries). See the RSKCORE-5239 / RSKCORE-5283 analysis for
- * how it was collected and validated.</p>
+ * on mainnet (17 entries) and testnet (53 entries).</p>
+ *
+ * <p>The dataset is chosen from the bitcoin network of the given {@link BridgeConstants}, so both the
+ * {@code testnet} and {@code testnet2} rsk networks resolve to the testnet dataset — they share
+ * {@link co.rsk.peg.constants.BridgeTestNetConstants}. This is intentional and harmless: entries are keyed
+ * by the rsk tx hash of the confirming {@code updateCollections}, so a chain that never made a given call
+ * simply misses the lookup and falls back to the regular selection.</p>
  */
 public final class HistoricalPegoutSelections {
 
