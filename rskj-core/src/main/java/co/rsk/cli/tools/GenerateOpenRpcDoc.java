@@ -152,9 +152,7 @@ public class GenerateOpenRpcDoc implements Callable<Integer> {
         try (Stream<Path> stream = Files.walk(Paths.get(parentPath), 1)) {
             return stream
                     .filter(file -> !Files.isDirectory(file))
-                    // Every file here is parsed as JSON, so a README, a .orig from a conflicted merge or
-                    // an editor swapfile would otherwise abort the whole generation.
-                    .filter(GenerateOpenRpcDoc::isJson)
+                    .filter(GenerateOpenRpcDoc::isFragment)
                     .map(Path::getFileName)
                     .map(Path::toString)
                     .map(fileName -> this.loadFileAsJson(parentPath, fileName, toType))
@@ -165,7 +163,17 @@ public class GenerateOpenRpcDoc implements Callable<Integer> {
         }
     }
 
-    private static boolean isJson(Path file) {
+    /**
+     * Whether a file under the reference tree is a fragment this tool assembles into the published
+     * document. Every fragment is parsed as JSON, so a README, a {@code .orig} from a conflicted merge
+     * or an editor swapfile would otherwise abort the whole generation.
+     *
+     * <p>This is the one definition of what counts as a fragment: what the generator accepts is what
+     * actually ships, so anything checking the reference -- the drift guard in the test sources, for one
+     * -- asks here rather than keeping a parallel copy that can quietly disagree. Matching is
+     * case-sensitive, as the filesystems that carry this repository are.
+     */
+    public static boolean isFragment(Path file) {
         return file.getFileName().toString().endsWith(".json");
     }
 

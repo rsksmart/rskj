@@ -298,21 +298,22 @@ class JsonRpcDocCoverageTest {
         return allowlisted;
     }
 
+    /**
+     * The fragments under {@code doc/rpc/methods/}, as {@link GenerateOpenRpcDoc} counts them -- what the
+     * generator assembles is what ships, so this guard reads from that definition instead of keeping a
+     * second one that could drift away from it.
+     */
     private static List<Path> methodFragments() {
         Path methodsDir = docRpcDir().resolve(METHODS_DIR);
 
         try (Stream<Path> files = Files.list(methodsDir)) {
             return files.filter(Files::isRegularFile)
-                    .filter(JsonRpcDocCoverageTest::isJson)
+                    .filter(GenerateOpenRpcDoc::isFragment)
                     .sorted()
                     .toList();
         } catch (IOException e) {
             throw new UncheckedIOException("Could not list the fragments under " + methodsDir, e);
         }
-    }
-
-    private static boolean isJson(Path path) {
-        return path.getFileName().toString().endsWith(".json");
     }
 
     private static String readMethodName(Path fragment) {
