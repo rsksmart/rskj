@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -79,11 +80,11 @@ class BridgeSupportRegisterBtcTransactionTest {
     private static final int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
     private static final int heightBeforeUsingPegoutIndex = 1;
 
-
     private static final int FIRST_OUTPUT_INDEX = 0;
     private static final int FIRST_INPUT_INDEX = 0;
+    private static final Sha256Hash BTC_TX_HASH = BitcoinTestUtils.createHash(1);
 
-    private final RskAddress destinationRskAddress = PegTestUtils.createRandomRskAddress();
+    private final RskAddress destinationRskAddress = RskTestUtils.generateAddress("rskAddress");
     private final Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(
         1,
         destinationRskAddress,
@@ -540,7 +541,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
             btcMainnetParams,
             1,
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             blockMerkleRoot,
             1,
             1,
@@ -572,7 +573,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
             btcMainnetParams,
             1,
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             blockMerkleRoot,
             1,
             1,
@@ -648,7 +649,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         ECKey senderRskKey = ECKey.fromPublicOnly(senderBtcKey.getPubKey());
         RskAddress rskAddress = new RskAddress(senderRskKey.getAddress());
 
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
         Coin amountToSend = shouldSendAmountBelowMinimum ? belowMinimumPeginTxValue : minimumPeginTxValue;
         btcTransaction.addOutput(amountToSend, userAddress);
@@ -700,7 +701,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         ECKey senderRskKey = ECKey.fromPublicOnly(senderBtcKey.getPubKey());
         RskAddress rskAddress = new RskAddress(senderRskKey.getAddress());
 
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
         Coin amountToSend = shouldSendAmountBelowMinimum ? belowMinimumPeginTxValue : minimumPeginTxValue;
         btcTransaction.addOutput(amountToSend, userAddress);
@@ -760,7 +761,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         ECKey senderRskKey = ECKey.fromPublicOnly(senderBtcKey.getPubKey());
         RskAddress rskAddress = new RskAddress(senderRskKey.getAddress());
 
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
         Coin amountToSend = shouldSendAmountBelowMinimum ? belowMinimumPeginTxValue : minimumPeginTxValue;
 
@@ -813,7 +814,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(amountToSend, activeFederation.getAddress());
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
@@ -852,7 +853,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         for (int i = 0; i < 10; i++) {
             btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
         }
@@ -893,7 +894,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(amountToSend, activeFederation.getAddress());
         btcTransaction.addOutput(PegTestUtils.createBech32Output(btcMainnetParams, Coin.COIN));
 
@@ -932,7 +933,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
         btcTransaction.addOutput(PegTestUtils.createBech32Output(btcMainnetParams, belowMinimumPeginTxValue));
         btcTransaction.addOutput(belowMinimumPeginTxValue, userAddress);
@@ -972,7 +973,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(belowMinimumPeginTxValue, activeFederation.getAddress());
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
@@ -1009,7 +1010,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
         btcTransaction.addOutput(belowMinimumPeginTxValue, activeFederation.getAddress());
 
@@ -1047,7 +1048,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
 
         Coin amountPerOutput = minimumPeginTxValue.div(10);
 
@@ -1088,7 +1089,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
         btcTransaction.addOutput(minimumPeginTxValue, retiringFederation.getAddress());
 
@@ -1125,7 +1126,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
 
         btcTransaction.addOutput(belowMinimumPeginTxValue, activeFederation.getAddress());
         btcTransaction.addOutput(minimumPeginTxValue, retiringFederation.getAddress());
@@ -1161,7 +1162,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
         btcTransaction.addOutput(minimumPeginTxValue, retiringFederation.getAddress());
         btcTransaction.addOutput(Coin.COIN, userAddress);
@@ -1200,7 +1201,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(amountToSend, retiringFederation.getAddress());
         btcTransaction.addOutput(
             Coin.ZERO,
@@ -1244,7 +1245,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(amountToSend, retiringFederation.getAddress());
         btcTransaction.addOutput(
             Coin.ZERO,
@@ -1296,7 +1297,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(amountToSend, activeFederation.getAddress());
         btcTransaction.addOutput(
             Coin.ZERO,
@@ -1339,7 +1340,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(amountToSend, activeFederation.getAddress());
         btcTransaction.addOutput(
             Coin.ZERO,
@@ -1382,7 +1383,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(amountToSend, retiringFederation.getAddress());
         btcTransaction.addOutput(
             Coin.ZERO,
@@ -1440,7 +1441,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             FIRST_OUTPUT_INDEX,
             new Script(new byte[]{})
         );
@@ -1485,7 +1486,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             FIRST_OUTPUT_INDEX,
             ScriptBuilder.createP2SHMultiSigInputScript(null, unknownFed.getRedeemScript())
         );
@@ -1529,7 +1530,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             FIRST_OUTPUT_INDEX,
             ScriptBuilder.createP2SHMultiSigInputScript(null, unknownFed.getRedeemScript())
         );
@@ -1577,7 +1578,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         BtcTransaction fundingTx = new BtcTransaction(btcMainnetParams);
 
         fundingTx.addInput(
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             FIRST_OUTPUT_INDEX,
             ScriptBuilder.createP2SHMultiSigInputScript(null, unknownFed.getRedeemScript())
         );
@@ -1627,7 +1628,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             FIRST_OUTPUT_INDEX,
             ScriptBuilder.createP2SHMultiSigInputScript(null, unknownFed.getRedeemScript())
         );
@@ -2153,7 +2154,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     private BtcTransaction buildLegacyPegin(Federation federation, Script userScriptPubKey) {
         BtcTransaction pegin = new BtcTransaction(networkParameters);
-        pegin.addInput(BitcoinTestUtils.createHash(1), 0, userScriptPubKey);
+        pegin.addInput(BTC_TX_HASH, 0, userScriptPubKey);
 
         pegin.addOutput(Coin.COIN, federation.getAddress());
 
@@ -2162,7 +2163,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     private BtcTransaction buildPeginV1(Federation federation, Script userScriptPubKey) {
         BtcTransaction pegin = new BtcTransaction(networkParameters);
-        pegin.addInput(BitcoinTestUtils.createHash(1), 0, userScriptPubKey);
+        pegin.addInput(BTC_TX_HASH, 0, userScriptPubKey);
 
         pegin.addOutput(Coin.ZERO, opReturnScript);
         pegin.addOutput(Coin.COIN, federation.getAddress());
@@ -2459,7 +2460,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         BtcECKey senderBtcKey = new BtcECKey();
         ECKey senderRskKey = ECKey.fromPublicOnly(senderBtcKey.getPubKey());
         RskAddress rskAddress = new RskAddress(senderRskKey.getAddress());
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
         Coin amountToSend = shouldSendAmountBelowMinimum ? belowMinimumPeginTxValue : minimumPeginTxValue;
         btcTransaction.addOutput(amountToSend, flyoverFederationAddress);
@@ -2528,7 +2529,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         BtcECKey senderBtcKey = new BtcECKey();
         ECKey senderRskKey = ECKey.fromPublicOnly(senderBtcKey.getPubKey());
         RskAddress rskAddress = new RskAddress(senderRskKey.getAddress());
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
         Coin amountToSend = shouldSendAmountBelowMinimum ? belowMinimumPeginTxValue : minimumPeginTxValue;
         btcTransaction.addOutput(amountToSend, flyoverFederationAddress);
@@ -2577,7 +2578,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             FIRST_OUTPUT_INDEX,
             ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
         );
@@ -2624,7 +2625,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         Coin amountToSend = Coin.COIN;
         btcTransaction.addInput(
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             FIRST_OUTPUT_INDEX,
             ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
         );
@@ -2652,7 +2653,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(eq(rskTx.getHash().getBytes()), any(BtcTransaction.class), eq(amountToSend));
 
         verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-
         assertTrue(activeFederationUtxos.isEmpty());
         assertTrue(retiringFederationUtxos.isEmpty());
     }
@@ -2752,7 +2752,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             FIRST_OUTPUT_INDEX,
             ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
         );
@@ -2899,8 +2899,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        Sha256Hash fundTxHash = BitcoinTestUtils.createHash(1);
-        btcTransaction.addInput(fundTxHash, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiringFederation.getRedeemScript());
@@ -2947,7 +2946,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         Coin amountToSend = Coin.COIN;
         btcTransaction.addInput(
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             FIRST_OUTPUT_INDEX,
             ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
         );
@@ -3059,7 +3058,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
         btcTransaction.addInput(
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             FIRST_OUTPUT_INDEX,
             ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
         );
@@ -3202,7 +3201,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         BtcTransaction fundingTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
         BtcECKey senderBtcKey = new BtcECKey();
-        fundingTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
+        fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
         Coin amountToSend = minimumPeginTxValue;
         fundingTx.addOutput(amountToSend, flyoverFederationAddress);
@@ -3279,7 +3278,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         BtcTransaction fundingTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
         BtcECKey senderBtcKey = new BtcECKey();
-        fundingTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
+        fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
         Coin amountToSend = minimumPeginTxValue;
         fundingTx.addOutput(amountToSend, flyoverFederationAddress);
@@ -3378,7 +3377,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
         Script inputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, oldFederation.getRedeemScript());
         migrationTx.addInput(
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             FIRST_OUTPUT_INDEX,
             inputScript
         );
@@ -3394,7 +3393,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
             btcRegTestsParams,
             1,
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             blockMerkleRoot,
             1,
             1,
@@ -3430,7 +3429,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
             btcRegTestsParams,
             1,
-            BitcoinTestUtils.createHash(1),
+            BTC_TX_HASH,
             blockMerkleRoot,
             1,
             1,
@@ -3519,7 +3518,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiredFed.getRedeemScript());
@@ -3562,7 +3561,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     void registerBtcTransaction_withMigrationTxFromRetiredFederationNotInStorage_forFingerroot_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiredFed.getRedeemScript());
@@ -3590,7 +3589,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     void registerBtcTransaction_withMigrationTxFromRetiredFederationNotInStorage_withoutPegoutIndex_forArrowhead_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiredFed.getRedeemScript());
@@ -3618,7 +3617,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     void registerBtcTransaction_withMigrationTxFromRetiredFederationNotInStorage_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+        btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiredFed.getRedeemScript());
