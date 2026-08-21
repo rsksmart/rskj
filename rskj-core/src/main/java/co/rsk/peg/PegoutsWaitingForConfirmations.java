@@ -104,33 +104,10 @@ public class PegoutsWaitingForConfirmations {
      */
     public static class EntriesStore {
 
-        // From java SDK
-        private static final float DEFAULT_LOAD_FACTOR = 0.75f;
-
         private final HashSet<Entry> entriesSet;
 
-        /**
-         * Must be equal to new HashSet() call in Java 17.
-         * Uset it to preserve old behaviour in Java21+.
-         */
-        public static HashSet<Entry> setOfEntries() {
-            return new HashSet<>(16, DEFAULT_LOAD_FACTOR);
-        }
-
-        /**
-         * This is a standard code for `new HashSet<>(entries);` in Java 17.
-         * Coefficients were changed in Java 21.
-         * Use it to prserve old behaviour in Java21+. 
-         */
-        public static HashSet<Entry> setOfEntries(Collection<Entry> entries) {
-            // Need to hardcode Java 17 init params here to preserve old behaviour in Java 21+
-            var ehs = new HashSet<Entry>(Math.max((int) (entries.size()/DEFAULT_LOAD_FACTOR) + 1, 16));
-            ehs.addAll(entries);
-            return ehs;
-        }
-
         private EntriesStore(Collection<Entry> entries) {
-            this.entriesSet = EntriesStore.setOfEntries(entries);
+            this.entriesSet = new HashSet<>(entries);
         }
 
         private boolean hasEnoughConfirmations(Entry entry, Long currentBlockNumber, Integer minimumConfirmations) {
