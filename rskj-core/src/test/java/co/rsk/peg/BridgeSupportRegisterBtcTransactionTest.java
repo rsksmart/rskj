@@ -518,8 +518,6 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         rskTx = mock(Transaction.class);
         when(rskTx.getHash()).thenReturn(PegTestUtils.createHash3(1));
-
-
     }
 
     private PartialMerkleTree createPmtWithWitness(BtcTransaction btcTx) {
@@ -2621,8 +2619,6 @@ class BridgeSupportRegisterBtcTransactionTest {
     @Test
     void registerBtcTransaction_withPegoutTxFromFederationWithChangeOutputNotInPegoutTxIndex_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = heightAtWhichToStartUsingPegoutIndex;
-
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
         Coin amountToSend = Coin.COIN;
@@ -2636,7 +2632,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
 
-        PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
+        PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
         when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
 
@@ -2645,7 +2641,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         bridgeSupport.registerBtcTransaction(
             rskTx,
             btcTransaction.bitcoinSerialize(),
-            height,
+            heightAtWhichToStartUsingPegoutIndex,
             pmt.bitcoinSerialize()
         );
 
@@ -2946,8 +2942,6 @@ class BridgeSupportRegisterBtcTransactionTest {
     @Test
     void registerBtcTransaction_withMigrationTxNotInPegoutTxIndex_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = heightAtWhichToStartUsingPegoutIndex;
-
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
         Coin amountToSend = Coin.COIN;
@@ -2960,7 +2954,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
 
-        PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
+        PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
         when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
 
@@ -2969,7 +2963,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         bridgeSupport.registerBtcTransaction(
             rskTx,
             btcTransaction.bitcoinSerialize(),
-            height,
+            heightAtWhichToStartUsingPegoutIndex,
             pmt.bitcoinSerialize()
         );
 
