@@ -282,6 +282,12 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
     }
 
+    private void assertBtcTxWasProcessedAndUtxoAddedInActiveFed(BtcTransaction btcTransaction) throws IOException {
+        verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
+        assertEquals(1, activeFederationUtxos.size());
+        assertTrue(retiringFederationUtxos.isEmpty());
+    }
+
     private static Stream<Arguments> common_args() {
         // before RSKIP379 activation
         return Stream.of(
@@ -837,9 +843,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
         verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
-        verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        assertEquals(1, activeFederationUtxos.size());
-        assertTrue(retiringFederationUtxos.isEmpty());
+        assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
     }
 
     @ParameterizedTest
@@ -1367,9 +1371,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
         verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
-        verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        assertEquals(1, activeFederationUtxos.size());
-        assertTrue(retiringFederationUtxos.isEmpty());
+        assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
     }
 
     @ParameterizedTest
@@ -2735,9 +2737,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        assertEquals(1, activeFederationUtxos.size());
-        assertTrue(retiringFederationUtxos.isEmpty());
+        assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
     }
 
     @ParameterizedTest
@@ -2816,9 +2816,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        assertEquals(1, activeFederationUtxos.size());
-        assertTrue(retiringFederationUtxos.isEmpty());
+        assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
     }
 
     @ParameterizedTest
@@ -2934,9 +2932,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        assertEquals(1, activeFederationUtxos.size());
-        assertTrue(retiringFederationUtxos.isEmpty());
+        assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
     }
 
     @Test
@@ -3163,9 +3159,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        assertEquals(1, activeFederationUtxos.size());
-        assertTrue(retiringFederationUtxos.isEmpty());
+        assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
     }
 
     @ParameterizedTest
@@ -3240,9 +3234,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        assertEquals(1, activeFederationUtxos.size());
-        assertTrue(retiringFederationUtxos.isEmpty());
+        assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
     }
 
     @ParameterizedTest
@@ -3552,9 +3544,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        assertEquals(1, activeFederationUtxos.size());
-        assertTrue(retiringFederationUtxos.isEmpty());
+        assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
     }
 
     @Test
@@ -3650,8 +3640,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
         verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
         verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
-        verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        assertEquals(1, activeFederationUtxos.size());
-        assertTrue(retiringFederationUtxos.isEmpty());
+        assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
     }
 }
