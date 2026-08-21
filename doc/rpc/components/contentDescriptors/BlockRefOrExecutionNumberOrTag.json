@@ -1,0 +1,18 @@
+{
+  "BlockRefOrExecutionNumberOrTag": {
+    "name": "blockRefOrNumberOrTag",
+    "description": "The block to execute against, given as its height in hex or in decimal, as a tag, or as a block reference object",
+    "required": true,
+    "schema": {
+      "title": "blockRefOrExecutionNumberOrTag",
+      "oneOf": [
+        {
+          "$ref": "#/components/schemas/BlockRef"
+        },
+        {
+          "$ref": "#/components/schemas/ExecutionBlockNumberOrTag"
+        }
+      ]
+    }
+  }
+}

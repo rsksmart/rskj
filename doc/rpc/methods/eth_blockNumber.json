@@ -3,7 +3,7 @@
   "summary": "Returns the number of most recent block.",
   "params": [],
   "result": {
-    "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
+    "$ref": "#/components/contentDescriptors/BlockNumberResult"
   },
   "examples": [
     {

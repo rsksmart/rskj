@@ -3,12 +3,7 @@
   "summary": "Returns information about a uncle of a block by hash and uncle index position.",
   "params": [
     {
-      "name": "uncleBlockNumber",
-      "description": "The block in which the uncle was included",
-      "required": true,
-      "schema": {
-        "$ref": "#/components/schemas/BlockNumberHex"
-      }
+      "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
     },
     {
       "name": "index",

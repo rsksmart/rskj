@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import co.rsk.cli.tools.GenerateOpenRpcDoc;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.BlockRefParam;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -100,25 +101,53 @@ class JsonRpcDocCoverageTest {
     private static final Set<String> ALLOWLIST_BASES = Set.of("configuration", "editorial");
 
     /**
-     * The node-side type of a block reference: the parameter that accepts a tag, a block number in hex or in
-     * decimal, <em>and</em> the {@code {"blockHash": ...}} object. Methods are found by reflecting for this
-     * type rather than by listing their names, so a method that starts or stops taking a block reference is
-     * carried into the check by the same reflection the rest of this guard runs on.
+     * A node-side parameter type that carries a block, the form of block its methods must be documented as
+     * accepting, and the descriptor that already says so. One entry per parameter type: the check below reads
+     * this mapping rather than naming a type, so a third block-taking type is an entry here and not a third
+     * copy of the same test.
+     *
+     * <p>{@code form} is deliberately the part a narrow description drops rather than the whole union. For
+     * {@link BlockRefParam} that is the {@code {"blockHash": ...}} object, documented since 2022 and still
+     * missing from one method until it was pointed at the shared descriptor. For
+     * {@link BlockIdentifierParam} it is the tag, which {@code eth_getUncleByBlockNumberAndIndex} declared
+     * away by describing its parameter as a hex number, telling a reader {@code latest} would be rejected.
+     *
+     * <p>What {@code form} is <em>not</em> is the decimal number, and that is the trap this mapping exists to
+     * stay out of. Both parameter types accept a decimal string at deserialisation, by the same
+     * {@code BlockTag.fromString} / {@code Utils.isDecimalString} / {@code Utils.isHexadecimalString} check —
+     * so reading the parameter classes alone says every one of these methods takes it. The method then
+     * resolves the block, and only {@code eth_call} and {@code eth_estimateGas} resolve it through
+     * {@code ExecutionBlockRetriever}, which parses both bases; every other method goes through
+     * {@code Web3InformationRetriever}, whose {@code HexUtils.stringHexToBigInteger} demands the {@code 0x}
+     * prefix and answers {@code -32602 invalid blocknumber}. Which forms a method takes is therefore a
+     * property of its retrieval path, not of its parameter type, and a mapping keyed on the type can only
+     * hold the forms every method of that type shares.
+     *
+     * @param parameterType the type the node deserialises the parameter into
+     * @param form          the schema a method taking it must reach through its parameters
+     * @param descriptor    the descriptor to point an offending method at, named so the failure can say it
      */
-    private static final Class<?> BLOCK_REFERENCE_PARAMETER = BlockRefParam.class;
+    private record BlockParameterContract(Class<?> parameterType, String form, String descriptor) {
+    }
 
     /**
-     * The schema for the object form of a block reference, and the part a narrowly documented parameter drops.
-     * The object form has been in the fragments since 2022; a method documented without it tells the reader
-     * the node will reject a block hash it in fact accepts.
+     * Every node-side block parameter type, mapped to what documenting it honestly requires. Methods are found
+     * by reflecting for each type rather than by listing their names, so a method that starts or stops taking
+     * a block parameter is carried into the check by the same reflection the rest of this guard runs on.
+     *
+     * <p>What a mapping keyed on a parameter type cannot reach is a method that takes its block as a bare
+     * {@code String}: {@code rsk_getRawBlockHeaderByNumber} does exactly that, and reflection cannot tell its
+     * {@code String} from any other. It documents the same shared descriptor as the
+     * {@link BlockIdentifierParam} methods, so it is correct today by sharing their descriptor and by nothing
+     * else — if it were repointed at a narrower definition, nothing here would notice.
      */
-    private static final String BLOCK_REFERENCE_OBJECT = "#/components/schemas/BlockRef";
-
-    /**
-     * The one descriptor every block-reference parameter is meant to resolve through, named here only so the
-     * failure message can point at it.
-     */
-    private static final String BLOCK_REFERENCE_DESCRIPTOR = "#/components/contentDescriptors/BlockRefOrNumberOrTag";
+    private static final List<BlockParameterContract> BLOCK_PARAMETER_CONTRACTS = List.of(
+            new BlockParameterContract(BlockRefParam.class,
+                    "#/components/schemas/BlockRef",
+                    "#/components/contentDescriptors/BlockRefOrNumberOrTag"),
+            new BlockParameterContract(BlockIdentifierParam.class,
+                    "#/components/schemas/BlockNumberTag",
+                    "#/components/contentDescriptors/BlockNumberOrTag"));
 
     private static final String DOC_RPC_DIR = "doc/rpc";
     private static final String METHODS_DIR = "methods";
@@ -324,63 +353,88 @@ class JsonRpcDocCoverageTest {
     }
 
     /**
-     * A parameter the node reads as a block reference must be documented as one. Four of the five methods
-     * taking {@link BlockRefParam} resolved to a schema carrying the object form and one declared
+     * A parameter the node reads as a block must be documented as accepting the blocks it accepts. Four of the
+     * five methods taking {@link BlockRefParam} resolved to a schema carrying the object form and one declared
      * hex-number-or-tag only, so its reference stated the node would reject a block hash it accepts — a gap a
-     * user hit despite the object form being documented elsewhere since 2022.
+     * user hit despite the object form being documented elsewhere since 2022. The six taking
+     * {@link BlockIdentifierParam} described that parameter three different ways, one of which dropped the
+     * tag the node accepts and one of which documented no block parameter at all.
      *
-     * <p>The methods are found by reflection over {@link #DISPATCH_SURFACE}, not from a list kept here, and
-     * each is resolved through whatever its fragment declares: a shared descriptor, an inline union, or a
-     * chain of {@code $ref}s between them. That is what makes an inline redefinition of the parameter
-     * answerable to the same check as a reference to the shared descriptor.
+     * <p>Both are held by one piece of logic over {@link #BLOCK_PARAMETER_CONTRACTS}. The methods are found by
+     * reflection over {@link #DISPATCH_SURFACE}, not from a list kept here, and each is resolved through
+     * whatever its fragment declares: a shared descriptor, an inline union, or a chain of {@code $ref}s
+     * between them. That is what makes an inline redefinition of the parameter answerable to the same check as
+     * a reference to the shared descriptor.
+     *
+     * <p>A mapped type that matches no method fails rather than passing quietly, so renaming a parameter type
+     * out from under an entry cannot leave it vacuously green. What the mapping cannot cover at all is a
+     * method taking its block as a bare {@code String}; see {@link #BLOCK_PARAMETER_CONTRACTS}.
      */
     @Test
-    void everyMethodTakingABlockReferenceDocumentsTheObjectForm(@TempDir Path tempDir) {
-        Set<String> takingBlockReference = methodsTakingABlockReference();
-        assertTrue(!takingBlockReference.isEmpty(), () -> String.format(
-                "No method on %s takes %s, so this guard checks nothing. Either the parameter type was renamed "
-                        + "and BLOCK_REFERENCE_PARAMETER needs to follow it, or block references are no longer "
-                        + "a parameter type and this test should go.",
-                DISPATCH_SURFACE.getSimpleName(), BLOCK_REFERENCE_PARAMETER.getSimpleName()));
-
+    void everyMethodTakingABlockParameterDocumentsTheFormItAccepts(@TempDir Path tempDir) {
         JsonNode document = assembleDocument(tempDir);
         Map<String, JsonNode> documented = documentedMethodsInDocument(document);
 
         List<String> problems = new ArrayList<>();
-        for (String name : takingBlockReference) {
-            JsonNode method = documented.get(name);
-            if (method == null) {
-                // Allowlisted rather than documented; everyExposedMethodIsDocumentedOrAllowlisted owns that case.
+        for (BlockParameterContract contract : BLOCK_PARAMETER_CONTRACTS) {
+            Set<String> taking = methodsTaking(contract.parameterType());
+
+            if (taking.isEmpty()) {
+                problems.add(contract.parameterType().getSimpleName() + " — no method on "
+                        + DISPATCH_SURFACE.getSimpleName() + " takes it, so this entry checks nothing. Either the "
+                        + "type was renamed and the entry needs to follow it, or it is no longer a parameter type "
+                        + "and the entry should go");
                 continue;
             }
-            boolean documentsObjectForm = false;
-            for (JsonNode param : method.path("params")) {
-                if (resolvesTo(document, param, BLOCK_REFERENCE_OBJECT, new TreeSet<>())) {
-                    documentsObjectForm = true;
-                    break;
+
+            for (String name : taking) {
+                JsonNode method = documented.get(name);
+                if (method == null) {
+                    // Allowlisted rather than documented; everyExposedMethodIsDocumentedOrAllowlisted owns that case.
+                    continue;
                 }
-            }
-            if (!documentsObjectForm) {
-                problems.add(name + " — no parameter of it resolves to " + BLOCK_REFERENCE_OBJECT);
+                if (!anyParameterResolvesTo(document, method, contract.form())) {
+                    problems.add(name + " — takes " + contract.parameterType().getSimpleName()
+                            + " but no parameter of it resolves to " + contract.form()
+                            + "; point it at " + contract.descriptor());
+                }
             }
         }
 
         assertTrue(problems.isEmpty(), () -> String.format(
-                "%d documented method(s) take %s, which accepts a block hash object, but document no parameter "
-                        + "that resolves to %s. A reader is told the node will reject an input it accepts. Point "
-                        + "the parameter at %s, the descriptor the other block-reference methods share, rather "
-                        + "than widening a second definition of it:%n  - %s",
-                problems.size(), BLOCK_REFERENCE_PARAMETER.getSimpleName(), BLOCK_REFERENCE_OBJECT,
-                BLOCK_REFERENCE_DESCRIPTOR, String.join(System.lineSeparator() + "  - ", problems)));
+                "%d block parameter(s) are documented less widely than the node reads them, or are mapped to a "
+                        + "parameter type no method takes. A method documented too narrowly tells a reader the node "
+                        + "will reject an input it accepts: point its parameter at the descriptor the other methods "
+                        + "of its type share, rather than widening a second definition of it. A mapping that matches "
+                        + "no method holds nothing, and is reported here rather than passing quietly:%n  - %s%n%n"
+                        + "The named descriptor is the one the block-reading methods of that type share. A method "
+                        + "that resolves its block through ExecutionBlockRetriever -- eth_call and eth_estimateGas, "
+                        + "and only those -- takes a decimal height the reading methods reject, so it belongs on the "
+                        + "wider Execution variant of that descriptor rather than on the one named here.",
+                problems.size(), String.join(System.lineSeparator() + "  - ", problems)));
     }
 
     /**
-     * Every JSON-RPC method the node dispatches that takes a block reference, deduplicated across overloads.
+     * Whether any parameter the method declares reaches {@code form}, however it declares it.
      */
-    private static Set<String> methodsTakingABlockReference() {
+    private static boolean anyParameterResolvesTo(JsonNode document, JsonNode method, String form) {
+        for (JsonNode param : method.path("params")) {
+            if (resolvesTo(document, param, form, new TreeSet<>())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Every JSON-RPC method the node dispatches that takes {@code parameterType}, deduplicated across
+     * overloads — so a method that takes the parameter in one overload and omits it in another, as
+     * {@code eth_estimateGas} does, is checked once and under the overload that carries it.
+     */
+    private static Set<String> methodsTaking(Class<?> parameterType) {
         return Stream.of(DISPATCH_SURFACE.getMethods())
                 .filter(method -> RPC_METHOD_NAME.matcher(method.getName()).matches())
-                .filter(method -> Stream.of(method.getParameterTypes()).anyMatch(BLOCK_REFERENCE_PARAMETER::equals))
+                .filter(method -> Stream.of(method.getParameterTypes()).anyMatch(parameterType::equals))
                 .map(Method::getName)
                 .collect(Collectors.toCollection(TreeSet::new));
     }

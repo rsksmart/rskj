@@ -1,0 +1,14 @@
+{
+  "BlockNumberOrTag": {
+    "title": "blockNumberOrTag",
+    "description": "A block, given as its height in hex or as a tag. A height in decimal is rejected: the block is looked up by `Web3InformationRetriever`, which parses the number as hex and requires the `0x` prefix.",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/BlockNumberHex"
+      },
+      {
+        "$ref": "#/components/schemas/BlockNumberTag"
+      }
+    ]
+  }
+}

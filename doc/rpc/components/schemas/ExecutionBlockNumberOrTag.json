@@ -1,0 +1,17 @@
+{
+  "ExecutionBlockNumberOrTag": {
+    "title": "executionBlockNumberOrTag",
+    "description": "A block to execute against, given as its height in hex or in decimal, or as a tag. The decimal form is accepted here and nowhere else: the block is resolved by `ExecutionBlockRetriever`, which parses both bases, while the block-reading methods parse hex only.",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/BlockNumberHex"
+      },
+      {
+        "$ref": "#/components/schemas/BlockNumberDec"
+      },
+      {
+        "$ref": "#/components/schemas/BlockNumberTag"
+      }
+    ]
+  }
+}

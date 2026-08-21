@@ -1,0 +1,10 @@
+{
+  "ExecutionBlockNumberOrTag": {
+    "name": "blockNumberOrTag",
+    "description": "The block to execute against, given as its height in hex or in decimal, or as a tag. Optional: the call is executed against the best block when it is omitted.",
+    "required": false,
+    "schema": {
+      "$ref": "#/components/schemas/ExecutionBlockNumberOrTag"
+    }
+  }
+}
