@@ -54,7 +54,7 @@ class AuthorizationListCodecTest {
             Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
     // -------------------------------------------------------------------------
-    // encodeList / decodeList
+    // encodeList / decodeListUnchecked
     // -------------------------------------------------------------------------
 
     @Test
@@ -62,7 +62,7 @@ class AuthorizationListCodecTest {
         SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
         byte[] encoded = AuthorizationListCodec.encodeList(List.of(auth));
 
-        List<SetCodeAuthorization> decoded = AuthorizationListCodec.decodeList(encoded);
+        List<SetCodeAuthorization> decoded = AuthorizationListCodec.decodeListUnchecked(encoded);
 
         assertEquals(1, decoded.size());
         assertEquals(auth, decoded.get(0));
@@ -266,7 +266,7 @@ class AuthorizationListCodecTest {
         byte[] list = RLP.encodeList(badTuple);
 
         assertThrows(IllegalArgumentException.class,
-                () -> AuthorizationListCodec.decodeList(list));
+                () -> AuthorizationListCodec.decodeListUnchecked(list));
     }
 
     @Test

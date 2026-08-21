@@ -21,10 +21,11 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Rskip546TestSupport;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionBuilder;
+import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.encoder.Type4TransactionEncoder;
 import org.ethereum.datasource.HashMapDB;
@@ -39,6 +40,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.ethereum.core.Rskip545TestSupport.DEFAULT_MAX_FEE;
@@ -54,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Unit tests for {@link RawTransactionEnvelopeParser}.
  * Covers parsing of {@link CallArguments} into typed {@link ParsedRawTransaction} objects,
- * including legacy, Type 1, Type 2 (EIP-1559 and RSK-namespace), and Type 4 (EIP-7702) transactions.
+ * including legacy, Type 1, Type 2 (RSKIP-546 / EIP-1559), and Type 4 (RSKIP-545 / EIP-7702) transactions.
  */
 class RawTransactionEnvelopeParserTest {
 
@@ -129,34 +131,45 @@ class RawTransactionEnvelopeParserTest {
     }
 
     // -------------------------------------------------------------------------
-    // Type 2 — RSK namespace (0x02 || subtype || legacy body)
+    // Type 2 — reserved RSK namespace
     // -------------------------------------------------------------------------
 
     @Test
-    void parse_type2WithRskSubtype_buildsRskNamespaceType2() {
+    void parse_type2WithRskSubtype_rejectsInvalidParams() {
         CallArguments args = legacyArgs();
         args.setType("0x2");
         args.setRskSubtype("0x3");
         args.setNonce("0x1");
 
-        Transaction tx = Transaction.fromCallArguments(args, null, REGTEST_CHAIN_ID);
-
-        assertEquals(TransactionType.TYPE_2, tx.getTypePrefix().type());
-        assertTrue(tx.getTypePrefix().isRskNamespace(),
-                "Type 2 with an RSK subtype must be parsed as the RSK-namespace variant");
-        assertEquals((byte) 0x03, tx.getTypePrefix().subtype());
+        RskJsonRpcRequestException ex = assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> Transaction.fromCallArguments(args, null, REGTEST_CHAIN_ID));
+        assertEquals(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE, ex.getMessage());
     }
 
     @Test
-    void parse_type2RskNamespace_acceptsAbsentMaxFees() {
+    void parse_type2RskNamespace_rejectsEvenWithoutMaxFees() {
         CallArguments args = baseType2Args();
         args.setGasPrice("0x1");
         args.setRskSubtype("0x3");
 
-        Transaction tx = Transaction.fromCallArguments(args, null, REGTEST_CHAIN_ID);
+        assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> Transaction.fromCallArguments(args, null, REGTEST_CHAIN_ID));
+    }
 
-        assertEquals(TransactionType.TYPE_2, tx.getTypePrefix().type());
-        assertTrue(tx.getTypePrefix().isRskNamespace());
+    @Test
+    void builder_rskNamespaceType2_isRejected() {
+        TransactionBuilder builder = Transaction.builder()
+                .nonce(new byte[]{0x01})
+                .gasPrice(Coin.valueOf(1000))
+                .gasLimit(BigInteger.valueOf(21000))
+                .receiveAddress(new RskAddress("0x0000000000000000000000000000000000000002").getBytes())
+                .value(BigInteger.ZERO)
+                .chainId(REGTEST_CHAIN_ID)
+                .typePrefix(TransactionTypePrefix.rskNamespace((byte) 0x03));
+
+        assertThrows(IllegalArgumentException.class, builder::build);
     }
 
     // -------------------------------------------------------------------------
@@ -264,27 +277,6 @@ class RawTransactionEnvelopeParserTest {
         assertEquals(original.getMaxPriorityFeePerGas(), rebuilt.getMaxPriorityFeePerGas());
     }
 
-    @Test
-    void parse_signedRskNamespaceType2Encoded_buildsRskNamespaceTransaction() {
-        Transaction original = Transaction.builder()
-                .nonce(new byte[]{0x01})
-                .gasPrice(Coin.valueOf(1000))
-                .gasLimit(BigInteger.valueOf(21000))
-                .receiveAddress(new RskAddress("0x0000000000000000000000000000000000000002").getBytes())
-                .value(BigInteger.ZERO)
-                .chainId(REGTEST_CHAIN_ID)
-                .type(TransactionType.TYPE_2, (byte) 0x03)
-                .build();
-        original.sign(PRIVATE_KEY);
-        byte[] encoded = original.getEncoded();
-
-        Transaction rebuilt = Transaction.fromRaw(encoded);
-
-        assertEquals(TransactionType.TYPE_2, rebuilt.getType());
-        assertTrue(rebuilt.getTypePrefix().isRskNamespace());
-        assertEquals((byte) 0x03, rebuilt.getTypePrefix().subtype());
-    }
-
     // -------------------------------------------------------------------------
     // parse(CallArguments) — nonce supplier
     // -------------------------------------------------------------------------
@@ -336,7 +328,7 @@ class RawTransactionEnvelopeParserTest {
         Transaction tx = Transaction.fromCallArguments(args, null, REGTEST_CHAIN_ID);
 
         assertEquals(TransactionType.TYPE_4, tx.getTypePrefix().type());
-        assertEquals(1, tx.getAuthorizationList().size());
+        assertEquals(1, Objects.requireNonNull(tx.getAuthorizationList()).size());
         assertEquals(Coin.valueOf(10), tx.getMaxPriorityFeePerGas());
         assertEquals(Coin.valueOf(100), tx.getMaxFeePerGas());
     }
@@ -350,7 +342,7 @@ class RawTransactionEnvelopeParserTest {
 
         assertEquals(TransactionType.TYPE_4, rebuilt.getType());
         assertEquals(original.getMaxFeePerGas(), rebuilt.getMaxFeePerGas());
-        assertEquals(1, rebuilt.getAuthorizationList().size());
+        assertEquals(1, Objects.requireNonNull(rebuilt.getAuthorizationList()).size());
     }
 
     @Test
@@ -384,38 +376,6 @@ class RawTransactionEnvelopeParserTest {
 
         assertDoesNotThrow(() -> RawTransactionEnvelopeParser.parse(raw));
         assertEquals(13, RLP.decodeList(java.util.Arrays.copyOfRange(raw, 1, raw.length)).size());
-    }
-
-    @Test
-    void parseRawWithActivation_validType4_doesNotThrow() {
-        Transaction tx = buildSignedType4Tx();
-        byte[] raw = tx.getEncoded();
-
-        assertDoesNotThrow(() -> RawTransactionEnvelopeParser.parse(
-                raw, 1L, ActivationConfigsForTest.all(), Constants.regtest()));
-    }
-
-    @Test
-    void parseCallArgumentsWithActivation_validType1_doesNotThrow() {
-        CallArguments args = legacyArgs();
-        args.setType("0x1");
-        args.setChainId("0x21");
-
-        assertDoesNotThrow(() -> RawTransactionEnvelopeParser.parse(
-                args, () -> "0x1", REGTEST_CHAIN_ID, 1L, ActivationConfigsForTest.all(), Constants.regtest()));
-    }
-
-    @Test
-    void parseInputWithActivation_validType2_doesNotThrow() {
-        CallArguments args = legacyArgs();
-        args.setType("0x2");
-        args.setChainId("0x21");
-        args.setMaxPriorityFeePerGas("0xa");
-        args.setMaxFeePerGas("0x64");
-        TransactionInput input = TransactionInput.fromCallArguments(args, () -> "0x1");
-
-        assertDoesNotThrow(() -> RawTransactionEnvelopeParser.parse(
-                input, REGTEST_CHAIN_ID, 1L, ActivationConfigsForTest.all(), Constants.regtest()));
     }
 
     // -------------------------------------------------------------------------

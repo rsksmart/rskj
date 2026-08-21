@@ -54,7 +54,6 @@ class ParsedType2TransactionTest {
             @Override public String visitType0(ParsedType0Transaction transaction) { return "type0"; }
             @Override public String visitType1(ParsedType1Transaction transaction) { return "type1"; }
             @Override public String visitType2(ParsedType2Transaction transaction) { return "type2"; }
-            @Override public String visitType2Rsk(ParsedType2RSKTransaction transaction) { return "type2rsk"; }
             @Override public String visitType4(ParsedType4Transaction transaction) { return "type4"; }
         }));
 

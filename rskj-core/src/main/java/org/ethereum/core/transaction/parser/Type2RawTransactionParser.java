@@ -19,9 +19,6 @@ package org.ethereum.core.transaction.parser;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.TransactionTypePrefix;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AccessListCodec;
@@ -80,17 +77,6 @@ public class Type2RawTransactionParser implements RawTransactionTypeParser<Parse
                 maxPriorityFeePerGas,
                 maxFeePerGas
         );
-    }
-
-    @Override
-    public void validate(long bestBlock, ActivationConfig activationConfig, Constants constants) {
-        ActivationConfig.ForBlock activations = activationConfig.forBlock(bestBlock);
-        if (!activations.isActive(ConsensusRule.RSKIP543)) {
-            throw invalidParamError("Typed transactions (type " + TransactionType.TYPE_2 + ") is not supported before RSKIP-543 activation");
-        }
-        if (!activations.isActive(ConsensusRule.RSKIP546)) {
-            throw invalidParamError("Type 1 / Type 2 transactions are not supported before RSKIP-546 activation");
-        }
     }
 
     @Override

@@ -152,7 +152,7 @@ class TransactionResultDTOTest {
     }
 
     @Test
-    void type1Transaction_populatesChainIdAccessListAndYParity_omitsMaxFeeFields() throws Exception {
+    void type1Transaction_populatesChainIdAccessListAndYParity_omitsMaxFeeFields() {
         Transaction tx = Rskip546TestSupport.unsignedType1(
                 (byte) 33,
                 new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"),
@@ -181,7 +181,7 @@ class TransactionResultDTOTest {
     }
 
     @Test
-    void type2StandardTransaction_populatesAllTypedFieldsIncludingMaxFees() throws Exception {
+    void type2StandardTransaction_populatesAllTypedFieldsIncludingMaxFees() {
         Coin maxPriority = Coin.valueOf(10L);
         Coin maxFee = Coin.valueOf(100L);
         Transaction tx = Rskip546TestSupport.unsignedType2(
@@ -216,7 +216,7 @@ class TransactionResultDTOTest {
     }
 
     @Test
-    void type4Transaction_populatesAuthorizationListAndMaxFeeFields() throws Exception {
+    void type4Transaction_populatesAuthorizationListAndMaxFeeFields() {
         RskAddress delegate = new RskAddress("0x0000000000000000000000000000000000000003");
         SetCodeAuthorization auth1 = Rskip545TestSupport.createSignedAuthorization(
                 new org.ethereum.crypto.ECKey(), delegate, BigInteger.ZERO, (byte) 33);
@@ -249,7 +249,7 @@ class TransactionResultDTOTest {
     }
 
     @Test
-    void legacyTransaction_omitsAuthorizationListFromDtoAndJson() throws Exception {
+    void legacyTransaction_omitsAuthorizationListFromDtoAndJson() {
         Transaction originalTransaction = CallTransaction.createCallTransaction(
                 1, 0, 100000000000000L,
                 new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
@@ -265,7 +265,7 @@ class TransactionResultDTOTest {
     }
 
     @Test
-    void pendingLegacyTransaction_serializesBlockFieldsAsJsonNull() throws Exception {
+    void pendingLegacyTransaction_serializesBlockFieldsAsJsonNull() {
         Transaction originalTransaction = CallTransaction.createCallTransaction(
                 1, 0, 100000000000000L,
                 new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
