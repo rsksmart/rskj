@@ -74,6 +74,10 @@ class BridgeSupportRegisterBtcTransactionTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(ActivationConfigsForTest.all().forBlock(0));
     private static final Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
+    private static final int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
+    private static final int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+    private static final int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+
 
     private static final int FIRST_OUTPUT_INDEX = 0;
     private static final int FIRST_INPUT_INDEX = 0;
@@ -116,8 +120,6 @@ class BridgeSupportRegisterBtcTransactionTest {
     private long rskExecutionBlockNumber;
     private Block rskExecutionBlock;
     private Transaction rskTx;
-
-    private int heightAtWhichToStartUsingPegoutIndex;
 
     private co.rsk.bitcoinj.core.BtcBlock registerHeader;
 
@@ -517,10 +519,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         rskTx = mock(Transaction.class);
         when(rskTx.getHash()).thenReturn(PegTestUtils.createHash3(1));
 
-        int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
-        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
 
-        heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
     }
 
     private PartialMerkleTree createPmtWithWitness(BtcTransaction btcTx) {
