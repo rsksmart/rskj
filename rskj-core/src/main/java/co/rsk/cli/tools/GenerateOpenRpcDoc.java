@@ -153,6 +153,10 @@ public class GenerateOpenRpcDoc implements Callable<Integer> {
             return stream
                     .filter(file -> !Files.isDirectory(file))
                     .filter(GenerateOpenRpcDoc::isFragment)
+                    // Files.walk yields directory order, which no filesystem promises to keep stable. The
+                    // assembled document is synced to the docs site, so an unordered read would surface
+                    // there as a diff nobody made.
+                    .sorted()
                     .map(Path::getFileName)
                     .map(Path::toString)
                     .map(fileName -> this.loadFileAsJson(parentPath, fileName, toType))
@@ -170,11 +174,18 @@ public class GenerateOpenRpcDoc implements Callable<Integer> {
      *
      * <p>This is the one definition of what counts as a fragment: what the generator accepts is what
      * actually ships, so anything checking the reference -- the drift guard in the test sources, for one
-     * -- asks here rather than keeping a parallel copy that can quietly disagree. Matching is
-     * case-sensitive, as the filesystems that carry this repository are.
+     * -- asks here rather than keeping a parallel copy that can quietly disagree.
+     *
+     * <p>The extension is matched case-insensitively: a fragment added as {@code .JSON} is a fragment,
+     * and on a case-insensitive filesystem it is the same file besides. Other JSON dialects are
+     * deliberately not accepted -- {@code .json5} parses under different rules than the mapper here
+     * applies, so treating one as a fragment would fail at load rather than at this filter.
      */
     public static boolean isFragment(Path file) {
-        return file.getFileName().toString().endsWith(".json");
+        String fileName = file.getFileName().toString();
+        int extension = fileName.lastIndexOf('.');
+
+        return extension >= 0 && fileName.substring(extension).equalsIgnoreCase(".json");
     }
 
     private static String buildFullPath(String basePath, String fileName) {
