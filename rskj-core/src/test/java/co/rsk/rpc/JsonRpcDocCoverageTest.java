@@ -59,7 +59,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>The documented set is read from the {@code name} field of every fragment under {@code doc/rpc/methods/}
  * — the field is what reaches the published document, so a fragment whose {@code name} disagreed with its
  * filename would otherwise be checked under a name that never ships. Methods deliberately left out of the
- * reference are listed in {@code doc/rpc/undocumented.json}, each with a reason.
+ * reference are listed in {@code doc/rpc/undocumented.json}, each with a reason and the basis that reason
+ * rests on: {@code configuration} for a method shipped node configuration does not serve, {@code editorial}
+ * for one left out by judgement. The basis is a label and nothing more — the guard checks that every entry
+ * declares a recognised one, never that the reason written beside it is still true.
  *
  * <p>Both directions are checked: a method exposed but neither documented nor allowlisted fails, and so does
  * a fragment documenting a method the node no longer exposes. The document itself is then assembled and
@@ -84,6 +87,17 @@ class JsonRpcDocCoverageTest {
      * makes or breaks this guard is visible in one place rather than inlined in a stream.
      */
     private static final Class<?> DISPATCH_SURFACE = Web3RskImpl.class;
+
+    /**
+     * The bases an allowlist entry may declare. {@code configuration} says shipped node configuration does
+     * not serve the method, so a configuration change could invalidate the entry; {@code editorial} says the
+     * method was left out by judgement, which no configuration change can touch. The guard checks the label
+     * is present and recognised and stops there: deliberately, nothing here resolves the node configuration
+     * to confirm a {@code configuration} entry, because doing so would encode which node the reference
+     * documents into this class and turn the next re-litigation of that question into a code change rather
+     * than a data edit.
+     */
+    private static final Set<String> ALLOWLIST_BASES = Set.of("configuration", "editorial");
 
     /**
      * The node-side type of a block reference: the parameter that accepts a tag, a block number in hex or in
@@ -127,7 +141,7 @@ class JsonRpcDocCoverageTest {
     void everyExposedMethodIsDocumentedOrAllowlisted() {
         Set<String> exposed = exposedMethods();
         Map<String, Path> documented = documentedMethods();
-        Map<String, String> allowlisted = allowlistedMethods();
+        Map<String, AllowlistEntry> allowlisted = allowlistedMethods();
 
         Set<String> undocumented = new TreeSet<>(exposed);
         undocumented.removeAll(documented.keySet());
@@ -168,11 +182,12 @@ class JsonRpcDocCoverageTest {
     void everyAllowlistEntryIsExposedUndocumentedAndJustified() {
         Set<String> exposed = exposedMethods();
         Set<String> documented = documentedMethods().keySet();
-        Map<String, String> allowlisted = allowlistedMethods();
+        Map<String, AllowlistEntry> allowlisted = allowlistedMethods();
 
         List<String> problems = new ArrayList<>();
 
-        allowlisted.forEach((name, reason) -> {
+        allowlisted.forEach((name, entry) -> {
+            String reason = entry.reason();
             if (reason == null || reason.trim().isEmpty()) {
                 problems.add(name + " — carries no reason");
             }
@@ -186,6 +201,29 @@ class JsonRpcDocCoverageTest {
 
         assertTrue(problems.isEmpty(), () -> String.format("%s/%s is stale:%n  - %s",
                 DOC_RPC_DIR, UNDOCUMENTED_FILE, String.join(System.lineSeparator() + "  - ", problems)));
+    }
+
+    /**
+     * A reader auditing the allowlist needs to know which entries a configuration change could invalidate and
+     * which rest on judgement no configuration change can touch. The basis is that label, and it is checked
+     * for presence and for being one of {@link #ALLOWLIST_BASES} — not against the resolved node
+     * configuration, which is a deliberate limit rather than an omission; see {@link #ALLOWLIST_BASES}.
+     */
+    @Test
+    void everyAllowlistEntryDeclaresARecognisedBasis() {
+        List<String> problems = allowlistedMethods().entrySet().stream()
+                .filter(entry -> !isRecognisedBasis(entry.getValue().basis()))
+                .map(entry -> isBlank(entry.getValue().basis())
+                        ? entry.getKey() + " — declares no basis"
+                        : entry.getKey() + " — declares basis \"" + entry.getValue().basis() + "\"")
+                .toList();
+
+        assertTrue(problems.isEmpty(), () -> String.format(
+                "%d entr(ies) in %s/%s declare no basis, or one that is not recognised. Every entry must carry "
+                        + "a \"basis\" of %s, matching the reason already written on it:%n  - %s",
+                problems.size(), DOC_RPC_DIR, UNDOCUMENTED_FILE,
+                String.join(" or ", new TreeSet<>(ALLOWLIST_BASES)),
+                String.join(System.lineSeparator() + "  - ", problems)));
     }
 
     @Test
@@ -476,18 +514,39 @@ class JsonRpcDocCoverageTest {
         return documented;
     }
 
+    private static boolean isRecognisedBasis(String basis) {
+        return !isBlank(basis) && ALLOWLIST_BASES.contains(basis);
+    }
+
     /**
-     * Methods deliberately left out of the published reference, mapped to the reason each was left out.
+     * An absent field and an empty one are the same mistake here, and they do not arrive the same way: a
+     * missing {@code basis} reads back as {@code ""} rather than {@code null}, because {@code path()} answers
+     * a missing node and its {@code asText(default)} ignores the default. Both are reported as no basis at
+     * all, which is what the maintainer who left it out needs to read.
      */
-    private static Map<String, String> allowlistedMethods() {
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    /**
+     * An entry in the allowlist: why the method is absent from the reference, and what that reason rests on.
+     */
+    private record AllowlistEntry(String reason, String basis) {
+    }
+
+    /**
+     * Methods deliberately left out of the published reference, mapped to the entry that excuses each.
+     */
+    private static Map<String, AllowlistEntry> allowlistedMethods() {
         Path allowlist = docRpcDir().resolve(UNDOCUMENTED_FILE);
         JsonNode methods = readJson(allowlist).path("methods");
         if (!methods.isArray()) {
             throw new IllegalStateException(allowlist + " must hold a \"methods\" array");
         }
 
-        Map<String, String> allowlisted = new TreeMap<>();
-        methods.forEach(entry -> allowlisted.put(entry.path("name").asText(), entry.path("reason").asText(null)));
+        Map<String, AllowlistEntry> allowlisted = new TreeMap<>();
+        methods.forEach(entry -> allowlisted.put(entry.path("name").asText(),
+                new AllowlistEntry(entry.path("reason").asText(null), entry.path("basis").asText(null))));
         return allowlisted;
     }
 
