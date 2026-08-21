@@ -857,7 +857,7 @@ public class Program {
 
         // FETCH THE CODE
         byte[] programCode = DelegationCodeResolver
-                .getExecutionCode(getStorage(), codeAddress, this::isPrecompile);
+                .getExecutionCode(getStorage(), codeAddress, this::isPrecompile, this.activations);
         // programCode is never null; empty array means no executable code
 
         // Always first remove funds from sender
