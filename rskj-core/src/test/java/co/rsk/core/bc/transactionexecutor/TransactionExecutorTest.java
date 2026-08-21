@@ -38,6 +38,8 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
+import org.ethereum.vm.exception.VMException;
+import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -440,6 +442,119 @@ class TransactionExecutorTest {
 
         assertTrue(message.contains("Invalid operation code"));
         assertTrue(message.contains("opcode[ef]"));
+    }
+
+
+    @Test
+    void precompiledContractExceptionShouldConsumeFullTransactionGasLimit() throws VMException {
+
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache( mock(ReceivedTxSignatureCache.class));
+
+        MutableRepository cacheTrack = mock(MutableRepository.class);
+        PrecompiledContracts.PrecompiledContract precompiledContract = mock(PrecompiledContracts.PrecompiledContract.class);
+
+        long txGasLimit = 100_000L;
+        long requiredGas = 10_000L;
+
+        when(repository.startTracking()).thenReturn(cacheTrack);
+
+        when(precompiledContracts.getContractForAddress(any(ActivationConfig.ForBlock.class), eq(DataWord.valueOf(receiver.getBytes())))).thenReturn(precompiledContract);
+        when(precompiledContract.getGasForData(any())).thenReturn(requiredGas);
+        when(precompiledContract.execute(any())).thenThrow(new RuntimeException("precompile failure"));
+
+        when(repository.getNonce(sender)).thenReturn(BigInteger.ONE);
+        when(repository.getBalance(sender)).thenReturn(Coin.valueOf(1_000_000L));
+
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6_800_000L).toByteArray());
+
+        Transaction transaction = getTransaction(sender, receiver, BigInteger.valueOf(txGasLimit).toByteArray(), BigInteger.ONE.toByteArray(), Coin.valueOf(1), Coin.ZERO, 1);
+
+        TransactionExecutorFactory transactionExecutorFactory =
+                new TransactionExecutorFactory(
+                        config,
+                        blockStore,
+                        receiptStore,
+                        blockFactory,
+                        programInvokeFactory,
+                        precompiledContracts,
+                        blockTxSignatureCache
+                );
+
+        TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
+                transaction,
+                txIndex,
+                executionBlock.getCoinbase(),
+                repository,
+                executionBlock,
+                0L
+        );
+
+        assertTrue(txExecutor.executeTransaction());
+
+        ProgramResult result = txExecutor.getResult();
+
+        assertNotNull(result.getException());
+
+        assertEquals(txGasLimit, result.getGasUsed());
+        assertEquals(txGasLimit, txExecutor.getGasConsumed());
+    }
+
+    @Test
+    void successfulPrecompiledContractShouldConsumeOnlyRequiredGas() throws VMException {
+
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(mock(ReceivedTxSignatureCache.class));
+
+        MutableRepository cacheTrack = mock(MutableRepository.class);
+        PrecompiledContracts.PrecompiledContract precompiledContract = mock(PrecompiledContracts.PrecompiledContract.class);
+
+        long txGasLimit = 100_000L;
+        long requiredGas = 10_000L;
+
+        when(repository.startTracking()).thenReturn(cacheTrack);
+        when(precompiledContracts.getContractForAddress(any(ActivationConfig.ForBlock.class), eq(DataWord.valueOf(receiver.getBytes())))).thenReturn(precompiledContract);
+
+        when(precompiledContract.getGasForData(any())).thenReturn(requiredGas);
+        when(precompiledContract.execute(any())).thenReturn(new byte[0]);
+
+        when(repository.getNonce(sender)).thenReturn(BigInteger.ONE);
+        when(repository.getBalance(sender)).thenReturn(Coin.valueOf(1_000_000L));
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6_800_000L).toByteArray());
+
+        Transaction transaction = getTransaction(
+                sender,
+                receiver,
+                BigInteger.valueOf(txGasLimit).toByteArray(),
+                BigInteger.ONE.toByteArray(),
+                Coin.valueOf(1),
+                Coin.ZERO,
+                1
+        );
+
+        TransactionExecutorFactory transactionExecutorFactory =
+                new TransactionExecutorFactory(
+                        config,
+                        blockStore,
+                        receiptStore,
+                        blockFactory,
+                        programInvokeFactory,
+                        precompiledContracts,
+                        blockTxSignatureCache
+                );
+
+        TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
+                transaction,
+                txIndex,
+                executionBlock.getCoinbase(),
+                repository,
+                executionBlock,
+                0L
+        );
+
+        assertTrue(txExecutor.executeTransaction());
+        assertNull(txExecutor.getResult().getException());
+
+        assertEquals(requiredGas, txExecutor.getResult().getGasUsed());
+        assertEquals(requiredGas, txExecutor.getGasConsumed());
     }
 
     private void mockRepositoryForAnAccountWithBalance(RskAddress sender, long val) {
