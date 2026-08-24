@@ -2621,7 +2621,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     @Test
-    void registerBtcTransaction_withPegoutTxFromFederationWithChangeOutputNotInPegoutTxIndex_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerBtcTransaction_withPegoutTxNotInPegoutTxIndexWithChangeOutputFromFederation_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
