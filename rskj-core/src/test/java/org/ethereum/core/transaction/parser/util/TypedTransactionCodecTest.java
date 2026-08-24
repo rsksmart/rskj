@@ -28,6 +28,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -52,6 +53,35 @@ class TypedTransactionCodecTest {
 
         assertInstanceOf(UnsignedSignature.class, state);
         assertEquals(33, ((UnsignedSignature) state).chainId() & 0xFF);
+    }
+
+    /** yParity is validated on the unsigned path too, not only when r and s are present. */
+    @Test
+    void parseTypedSignatureState_unsignedWithMultiByteYParity_throws() {
+        byte[] encoded = RLP.encodeList(
+                RLP.encodeElement(new byte[]{33}),      // chainId = 33
+                RLP.encodeElement(new byte[]{0, 1}),    // yParity spans two bytes
+                RLP.encodeElement(null),                // r absent
+                RLP.encodeElement(null)                 // s absent
+        );
+        RLPList list = (RLPList) RLP.decode2(encoded).get(0);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> TypedTransactionCodec.parseTypedSignatureState(list, 0, 1, 2, 3));
+    }
+
+    @Test
+    void parseTypedSignatureState_unsignedWithYParityOutOfRange_throws() {
+        byte[] encoded = RLP.encodeList(
+                RLP.encodeElement(new byte[]{33}),
+                RLP.encodeElement(new byte[]{2}),   // invalid yParity
+                RLP.encodeElement(null),
+                RLP.encodeElement(null)
+        );
+        RLPList list = (RLPList) RLP.decode2(encoded).get(0);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> TypedTransactionCodec.parseTypedSignatureState(list, 0, 1, 2, 3));
     }
 
     @Test
@@ -100,12 +130,49 @@ class TypedTransactionCodecTest {
         assertEquals(33, ((SignedSignature) state).chainId() & 0xFF);
     }
 
+    /**
+     * RLP encodes the integer 0 as an empty item, so an absent yParity field is the canonical
+     * encoding of yParity 0 — not a missing field. It must decode to {@code v = 27}.
+     */
+    @Test
+    void parseTypedSignatureState_emptyYParity_decodesAsZero() {
+        byte[] dummyRS = new byte[32];
+        byte[] encoded = RLP.encodeList(
+                RLP.encodeElement(new byte[]{33}),  // chainId = 33
+                RLP.encodeByte((byte) 0),           // yParity = 0, canonically encoded as empty
+                RLP.encodeElement(dummyRS),         // r
+                RLP.encodeElement(dummyRS)          // s
+        );
+        RLPList list = (RLPList) RLP.decode2(encoded).get(0);
+        assertNull(list.get(1).getRLPData(), "yParity 0 must be encoded as an empty RLP item");
+
+        SignatureState state = TypedTransactionCodec.parseTypedSignatureState(list, 0, 1, 2, 3);
+
+        assertInstanceOf(SignedSignature.class, state);
+        assertEquals((byte) 27, ((SignedSignature) state).signature().getV());
+    }
+
     @Test
     void parseTypedSignatureState_yParityOutOfRange_throws() {
         byte[] dummyRS = new byte[32];
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(new byte[]{33}),
                 RLP.encodeElement(new byte[]{2}),   // invalid yParity
+                RLP.encodeElement(dummyRS),
+                RLP.encodeElement(dummyRS)
+        );
+        RLPList list = (RLPList) RLP.decode2(encoded).get(0);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> TypedTransactionCodec.parseTypedSignatureState(list, 0, 1, 2, 3));
+    }
+
+    @Test
+    void parseTypedSignatureState_yParityMultiByte_throws() {
+        byte[] dummyRS = new byte[32];
+        byte[] encoded = RLP.encodeList(
+                RLP.encodeElement(new byte[]{33}),
+                RLP.encodeElement(new byte[]{0, 1}),
                 RLP.encodeElement(dummyRS),
                 RLP.encodeElement(dummyRS)
         );
