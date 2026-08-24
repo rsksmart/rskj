@@ -404,13 +404,21 @@ class Type4RawTransactionParserTest {
                 () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
     }
 
-    @Test
-    void parse_rlp_authOversizedS_throws() {
-        byte[] oversizedS = BigIntegers.asUnsignedByteArray(SECP256K1N_HALF.add(BigInteger.ONE));
-        byte[] authList = Rskip545TestSupport.authListWithModifiedTupleField(5, RLP.encodeElement(oversizedS));
-        RLPList fields = Rskip545TestSupport.buildType4RlpList(RECEIVER, authList);
+    /**
+     * Authorization low-s is enforced per tuple at execution, so parsing must accept every s value
+     * around the bound and leave the verdict to {@code SetCodeAuthorizationTransactionExecutor}.
+     */
+    @ParameterizedTest(name = "parse_rlp accepts auth s = half{0}")
+    @ValueSource(ints = {-1, 0, 1})
+    void parse_rlp_authSAroundHalfCurveOrder_succeeds(int offsetFromHalf) {
+        byte[] s = BigIntegers.asUnsignedByteArray(SECP256K1N_HALF.add(BigInteger.valueOf(offsetFromHalf)));
+        byte[] authList = Rskip545TestSupport.authListWithModifiedTupleField(5, RLP.encodeElement(s));
+        byte[][] encodedFields = Rskip545TestSupport.defaultSignedType4Fields(RECEIVER, authList);
+        encodedFields[11] = RLP.encodeElement(BigIntegers.asUnsignedByteArray(BigInteger.ONE));
+        encodedFields[12] = RLP.encodeElement(BigIntegers.asUnsignedByteArray(BigInteger.ONE));
+        RLPList fields = RLP.decodeList(RLP.encodeList(encodedFields));
 
-        assertThrows(IllegalArgumentException.class,
+        assertDoesNotThrow(
                 () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
     }
 
@@ -436,6 +444,39 @@ class Type4RawTransactionParserTest {
                 () -> Type4TransactionValidation.validateOuterSignatureFormat(highS));
 
         assertTrue(ex.getMessage().contains("secp256k1n/2"));
+    }
+
+    @Test
+    void validateOuterSignatureFormat_rejectsHalfCurveOrderS() {
+        ECDSASignature halfS = ECDSASignature.fromComponents(
+                BigIntegers.asUnsignedByteArray(BigInteger.ONE),
+                BigIntegers.asUnsignedByteArray(SECP256K1N_HALF),
+                (byte) 27);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Type4TransactionValidation.validateOuterSignatureFormat(halfS));
+
+        assertTrue(ex.getMessage().contains("secp256k1n/2"));
+    }
+
+    @Test
+    void parse_rlp_halfCurveOrderOuterSignature_throws() {
+        assertThrows(IllegalArgumentException.class, () -> parser.parse(
+                TransactionTypePrefix.typed(TransactionType.TYPE_4), type4FieldsWithOuterS(SECP256K1N_HALF)));
+    }
+
+    @Test
+    void parse_rlp_justBelowHalfCurveOrderOuterSignature_succeeds() {
+        assertDoesNotThrow(() -> parser.parse(
+                TransactionTypePrefix.typed(TransactionType.TYPE_4),
+                type4FieldsWithOuterS(SECP256K1N_HALF.subtract(BigInteger.ONE))));
+    }
+
+    private static RLPList type4FieldsWithOuterS(BigInteger s) {
+        byte[][] base = Rskip545TestSupport.defaultSignedType4Fields(RECEIVER, Rskip545TestSupport.defaultAuthListBytes());
+        base[11] = RLP.encodeElement(BigIntegers.asUnsignedByteArray(BigInteger.ONE));
+        base[12] = RLP.encodeElement(BigIntegers.asUnsignedByteArray(s));
+        return RLP.decodeList(RLP.encodeList(base));
     }
 
     // -------------------------------------------------------------------------

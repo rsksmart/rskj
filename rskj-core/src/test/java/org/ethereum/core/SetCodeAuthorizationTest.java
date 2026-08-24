@@ -104,7 +104,21 @@ class SetCodeAuthorizationTest {
                 signatureWithS(BigInteger.ONE)
         );
 
-        authorization.verifyLowS();
+        assertDoesNotThrow(authorization::verifyLowS);
+    }
+
+    @Test
+    void verifyLowSShouldAcceptJustBelowHalfCurveOrderS() {
+        BigInteger justBelowHalf = Constants.getSECP256K1N().divide(BigInteger.valueOf(2)).subtract(BigInteger.ONE);
+
+        SetCodeAuthorization authorization = new SetCodeAuthorization(
+                CHAIN_ID,
+                ADDRESS,
+                NONCE,
+                signatureWithS(justBelowHalf)
+        );
+
+        assertDoesNotThrow(authorization::verifyLowS);
     }
 
     @Test
@@ -118,7 +132,7 @@ class SetCodeAuthorizationTest {
                 signatureWithS(halfCurveOrder)
         );
 
-        authorization.verifyLowS();
+        assertDoesNotThrow(authorization::verifyLowS);
     }
 
     @Test
@@ -163,6 +177,7 @@ class SetCodeAuthorizationTest {
         SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[0], validSignature());
         assertEquals(BigInteger.ZERO, authorization.getNonceAsInteger());
     }
+
     @Test
     void verifyNonceRangeShouldAcceptEmptyNonceAsZero() {
         SetCodeAuthorization authorization = new SetCodeAuthorization(CHAIN_ID, ADDRESS, new byte[0], validSignature());
@@ -251,6 +266,7 @@ class SetCodeAuthorizationTest {
 
         authorization.verifyNonceRange();
     }
+
     @Test
     void getNonceAsIntegerShouldIgnoreLeadingZeroBytes() {
         SetCodeAuthorization authorization =

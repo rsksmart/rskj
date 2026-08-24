@@ -412,10 +412,10 @@ class AuthorizationListCodecTest {
     }
 
     @Test
-    void encodeTuple_highSignatureS_throws() {
+    void encodeTuple_highSignatureS_succeeds() {
         SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
         BigInteger highS = SECP256K1N_HALF.add(BigInteger.ONE);
-        SetCodeAuthorization bad = new SetCodeAuthorization(
+        SetCodeAuthorization authorization = new SetCodeAuthorization(
                 auth.getChainId(),
                 auth.getAddress(),
                 auth.getNonceBytes(),
@@ -424,8 +424,88 @@ class AuthorizationListCodecTest {
                         BigIntegers.asUnsignedByteArray(highS),
                         auth.getSignature().getV()));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> AuthorizationListCodec.encodeTuple(bad));
+        byte[] encoded = AuthorizationListCodec.encodeTuple(authorization);
+        SetCodeAuthorization decoded = AuthorizationListCodec.decodeTuple(RLP.decode2(encoded).get(0));
+
+        assertEquals(highS, decoded.getSignature().getS());
+    }
+
+    @Test
+    void encodeTuple_halfCurveOrderS_succeeds() {
+        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        SetCodeAuthorization boundary = new SetCodeAuthorization(
+                auth.getChainId(),
+                auth.getAddress(),
+                auth.getNonceBytes(),
+                ECDSASignature.fromComponents(
+                        BigIntegers.asUnsignedByteArray(auth.getSignature().getR()),
+                        BigIntegers.asUnsignedByteArray(SECP256K1N_HALF),
+                        auth.getSignature().getV()));
+
+        byte[] encoded = AuthorizationListCodec.encodeTuple(boundary);
+        SetCodeAuthorization decoded = AuthorizationListCodec.decodeTuple(RLP.decode2(encoded).get(0));
+
+        assertEquals(SECP256K1N_HALF, decoded.getSignature().getS());
+    }
+
+    @Test
+    void encodeTuple_justBelowHalfCurveOrderS_succeeds() {
+        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger justBelowHalf = SECP256K1N_HALF.subtract(BigInteger.ONE);
+        SetCodeAuthorization boundary = new SetCodeAuthorization(
+                auth.getChainId(),
+                auth.getAddress(),
+                auth.getNonceBytes(),
+                ECDSASignature.fromComponents(
+                        BigIntegers.asUnsignedByteArray(auth.getSignature().getR()),
+                        BigIntegers.asUnsignedByteArray(justBelowHalf),
+                        auth.getSignature().getV()));
+
+        byte[] encoded = AuthorizationListCodec.encodeTuple(boundary);
+        SetCodeAuthorization decoded = AuthorizationListCodec.decodeTuple(RLP.decode2(encoded).get(0));
+
+        assertEquals(justBelowHalf, decoded.getSignature().getS());
+    }
+
+    @Test
+    void decodeTuple_halfCurveOrderS_succeeds() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(
+                reference,
+                5,
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(SECP256K1N_HALF)));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(SECP256K1N_HALF, decoded.getSignature().getS());
+    }
+
+    @Test
+    void decodeTuple_highSignatureS_succeeds() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger highS = SECP256K1N_HALF.add(BigInteger.ONE);
+        byte[] tuple = rebuildTupleField(
+                reference,
+                5,
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(highS)));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(highS, decoded.getSignature().getS());
+    }
+
+    @Test
+    void decodeTuple_justBelowHalfCurveOrderS_succeeds() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger justBelowHalf = SECP256K1N_HALF.subtract(BigInteger.ONE);
+        byte[] tuple = rebuildTupleField(
+                reference,
+                5,
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(justBelowHalf)));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(justBelowHalf, decoded.getSignature().getS());
     }
 
     @Test

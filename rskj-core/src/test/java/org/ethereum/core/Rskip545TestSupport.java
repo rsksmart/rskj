@@ -226,7 +226,7 @@ public final class Rskip545TestSupport {
 
     /**
      * Builds a valid authorization then replaces {@code s} with the high-{@code s} malleated counterpart
-     * ({@code n - s}), which must be rejected per EIP-2 during tuple processing.
+     * ({@code n - s}), which must be rejected per EIP-2 / RSKIP-545 during tuple processing.
      */
     public static SetCodeAuthorization createHighSAuthorization(
             ECKey authorityKey,
