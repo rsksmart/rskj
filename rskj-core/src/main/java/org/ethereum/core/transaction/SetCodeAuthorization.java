@@ -18,6 +18,7 @@
 package org.ethereum.core.transaction;
 
 import co.rsk.core.RskAddress;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
@@ -53,7 +54,7 @@ public class SetCodeAuthorization {
         return address;
     }
 
-    public byte[] getNonce() {
+    public byte[] getNonceBytes() {
         return  nonce.clone();
     }
 
@@ -76,15 +77,19 @@ public class SetCodeAuthorization {
     }
 
     public void verifyNonceRange() {
-        if (nonce.length == 0) {
-            throw new IllegalStateException("Nonce is empty");
-        }
-        BigInteger nonceValue = new BigInteger(1, nonce);
-        if (nonceValue.compareTo(MAX_NONCE) >= 0) {
+        if (getNonceAsInteger().compareTo(MAX_NONCE) >= 0) {
             throw new IllegalStateException("Nonce must be < 2^64 - 1");
         }
     }
 
+    public BigInteger getNonceAsInteger() {
+        return BigIntegers.fromUnsignedByteArray(nonce);
+    }
+
+    /**
+     * RSKIP-545 / EIP-7702 admit {@code s == secp256k1n/2} for authorization tuples.
+     * The outer type 4 transaction signature keeps the exclusive bound shared by all types.
+     */
     public void verifyLowS() {
         if (signature.getS().compareTo(SECP256K1N_HALF) > 0) {
             throw new IllegalStateException("Signature s exceeds secp256k1n / 2");

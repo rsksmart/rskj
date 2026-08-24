@@ -20,7 +20,6 @@ package org.ethereum.core.transaction.parser.util;
 import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.BigIntegers;
-import org.ethereum.config.Constants;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.signature.ECDSASignature;
@@ -47,7 +46,6 @@ public final class AuthorizationListCodec {
     private static final BigInteger MAX_CHAIN_ID = BigInteger.ONE.shiftLeft(256);
     private static final BigInteger MAX_NONCE = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
     private static final BigInteger MAX_SIGNATURE_COMPONENT = BigInteger.ONE.shiftLeft(256);
-    private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
     private AuthorizationListCodec() {}
 
@@ -98,16 +96,11 @@ public final class AuthorizationListCodec {
         return RLP.encodeList(
                 RLP.encodeBigInteger(auth.getChainId()),
                 RLP.encodeRskAddress(auth.getAddress()),
-                RLP.encodeElement(auth.getNonce()),
+                RLP.encodeElement(auth.getNonceBytes()),
                 RLP.encodeByte(yParity),
                 RLP.encodeElement(BigIntegers.asUnsignedByteArray(auth.getSignature().getR())),
                 RLP.encodeElement(BigIntegers.asUnsignedByteArray(auth.getSignature().getS()))
         );
-    }
-
-    public static List<SetCodeAuthorization> decodeList(byte[] authorizationListBytes) {
-        requireAuthorizationListBytes(authorizationListBytes);
-        return decodeListUnchecked(authorizationListBytes);
     }
 
     public static List<SetCodeAuthorization> decodeListUnchecked(byte[] authorizationListBytes) {
@@ -262,7 +255,7 @@ public final class AuthorizationListCodec {
         if (auth.getChainId().signum() < 0 || auth.getChainId().compareTo(MAX_CHAIN_ID) >= 0) {
             throw new IllegalArgumentException("Authorization chain_id must be non-negative and less than 2^256");
         }
-        validateNonceValue(decodeNonce(auth.getNonce()));
+        validateNonceValue(decodeNonce(auth.getNonceBytes()));
 
         ECDSASignature signature = auth.getSignature();
         BigInteger r = signature.getR();
@@ -272,9 +265,6 @@ public final class AuthorizationListCodec {
         }
         if (r.compareTo(MAX_SIGNATURE_COMPONENT) >= 0 || s.compareTo(MAX_SIGNATURE_COMPONENT) >= 0) {
             throw new IllegalArgumentException("Authorization signature r and s must be less than 2^256");
-        }
-        if (s.compareTo(SECP256K1N_HALF) >= 0) {
-            throw new IllegalArgumentException("Authorization signature s must be at most secp256k1n/2");
         }
     }
 }

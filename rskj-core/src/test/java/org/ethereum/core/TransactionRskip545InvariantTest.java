@@ -20,6 +20,7 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.constants.BridgeMainNetConstants;
+import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.exception.TransactionException;
@@ -30,7 +31,7 @@ import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
-import org.apache.commons.lang3.ArrayUtils;
+import org.ethereum.vm.GasCost;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -45,6 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 /**
  * Covers RSKIP-545 / Type 4 invariants on {@link Transaction#verify} and four-field typed
@@ -56,6 +59,8 @@ class TransactionRskip545InvariantTest {
     private static final byte[] EMPTY_ACCESS_LIST = RLP.encodeList();
     private static final RskAddress RECEIVER =
             new RskAddress("0x0000000000000000000000000000000000000002");
+    private static final BigInteger SECP256K1N_HALF =
+            Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
     @Test
     void builder_type4WithoutAuthorizationList_rejectedAtBuild() {
@@ -162,6 +167,20 @@ class TransactionRskip545InvariantTest {
         assertDoesNotThrow(() -> tx.verify(cache));
         assertNotNull(tx.getSender(cache));
         assertTrue(tx.acceptTransactionSignature(CHAIN_ID));
+    }
+
+    @Test
+    void acceptTransactionSignature_type4_rejectsSFromHalfCurveOrderUp() {
+        assertTrue(type4WithS(SECP256K1N_HALF.subtract(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
+        assertFalse(type4WithS(SECP256K1N_HALF).acceptTransactionSignature(CHAIN_ID));
+        assertFalse(type4WithS(SECP256K1N_HALF.add(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
+    }
+
+    @Test
+    void acceptTransactionSignature_legacy_rejectsSFromHalfCurveOrderUp() {
+        assertTrue(legacyWithS(SECP256K1N_HALF.subtract(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
+        assertFalse(legacyWithS(SECP256K1N_HALF).acceptTransactionSignature(CHAIN_ID));
+        assertFalse(legacyWithS(SECP256K1N_HALF.add(BigInteger.ONE)).acceptTransactionSignature(CHAIN_ID));
     }
 
     @Test
@@ -329,11 +348,31 @@ class TransactionRskip545InvariantTest {
         dataField.setAccessible(true);
         dataField.set(tx, null);
 
+        Constants constants = mock(Constants.class);
+        doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        assertTrue(tx.transactionCost(constants, activations, new ReceivedTxSignatureCache()) > 0);
+    }
+
+    @Test
+    void transactionCost_type4WithNullAuthorizationList_doesNotThrow() throws Exception {
+        Transaction tx = signedType4();
+        // Warm encode/hash while authorization_list is still present (encoder rejects null).
+        tx.getHash();
+
+        java.lang.reflect.Field authorizationListField = Transaction.class.getDeclaredField("authorizationList");
+        authorizationListField.setAccessible(true);
+        authorizationListField.set(tx, null);
+
         Constants constants = Mockito.mock(Constants.class);
         Mockito.doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
         ActivationConfig.ForBlock activations = Mockito.mock(ActivationConfig.ForBlock.class);
 
-        assertTrue(tx.transactionCost(constants, activations, new ReceivedTxSignatureCache()) > 0);
+        assertEquals(
+                GasCost.TRANSACTION,
+                tx.transactionCost(constants, activations, new ReceivedTxSignatureCache()),
+                "Null authorization_list must not NPE; charge no PER_EMPTY_ACCOUNT_COST");
     }
 
     @Test
@@ -384,6 +423,33 @@ class TransactionRskip545InvariantTest {
         byte[] word = new byte[33];
         word[0] = 0x01;
         return word;
+    }
+
+    private static Transaction type4WithS(BigInteger s) {
+        Transaction signed = signedType4();
+        signed.setSignature(withS(signed.getSignature(), s));
+        return signed;
+    }
+
+    private static Transaction legacyWithS(BigInteger s) {
+        Transaction tx = Transaction.builder()
+                .nonce(BigInteger.ONE.toByteArray())
+                .gasPrice(Coin.valueOf(10))
+                .gasLimit(BigInteger.valueOf(21_000))
+                .receiveAddress(RECEIVER)
+                .value(Coin.ZERO)
+                .chainId(CHAIN_ID)
+                .build();
+        tx.sign(new ECKey().getPrivKeyBytes());
+        tx.setSignature(withS(tx.getSignature(), s));
+        return tx;
+    }
+
+    private static ECDSASignature withS(ECDSASignature signature, BigInteger s) {
+        return ECDSASignature.fromComponents(
+                org.bouncycastle.util.BigIntegers.asUnsignedByteArray(signature.getR()),
+                org.bouncycastle.util.BigIntegers.asUnsignedByteArray(s),
+                signature.getV());
     }
 
     private static Transaction copyType4(

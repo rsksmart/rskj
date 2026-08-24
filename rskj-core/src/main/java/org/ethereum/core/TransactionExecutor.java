@@ -422,8 +422,8 @@ public class TransactionExecutor {
             result.spendGas(gasUsed);
             profiler.stop(metric);
         } else {
-            byte[] code = getExecutionCode(track, targetAddress);
-            // Code can be null
+            byte[] code = DelegationCodeResolver.getExecutionCode(track, targetAddress, this::isPrecompile, this.activations);
+            // Code is never null; empty array means no executable code
             if (isEmpty(code)) {
                 gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
@@ -729,12 +729,13 @@ public class TransactionExecutor {
     }
 
     private long refundGas() {
-        // Accumulate refunds for suicides
+        // Accumulate refunds for deleted accounts and authorizations before applying the refund cap
         result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
+        result.addFutureRefund(authorizationRefund);
 
-        // The actual gas subtracted is equal to half of the future refund
+        // The actual refund is capped to half of the gas used
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
-        gasRefund = GasCost.add(gasRefund, authorizationRefund);
+
         result.addDeductedRefund(gasRefund);
         result.setGasUsedBeforeRefunds(result.getGasUsed());
 
@@ -797,23 +798,6 @@ public class TransactionExecutor {
     @Nonnull
     public Set<RskAddress> precompiledContractsCalled() {
         return this.precompiledContractsCalled.isEmpty() ? Collections.emptySet() : new HashSet<>(this.precompiledContractsCalled);
-    }
-
-    private byte[] getExecutionCode(Repository track, RskAddress targetAddress) {
-        byte[] code = track.getCode(targetAddress);
-
-        if (!isDelegatedCode(code)) {
-            return code;
-        }
-
-        RskAddress delegatedAddress = DelegationCodeResolver
-                .extractDelegatedAddress(code);
-
-        if (isPrecompile(delegatedAddress)) {
-            return ByteUtil.EMPTY_BYTE_ARRAY;
-        }
-
-        return track.getCode(delegatedAddress);
     }
 
     private boolean isPrecompile(RskAddress address) {

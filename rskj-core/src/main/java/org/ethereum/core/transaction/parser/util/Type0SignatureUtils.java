@@ -58,14 +58,14 @@ public final class Type0SignatureUtils {
         return new SignedSignature(chainId, ECDSASignature.fromComponents(r, s, getRealV(v)));
     }
 
-    public static byte extractChainIdFromV(byte v) {
+    private static byte extractChainIdFromV(byte v) {
         if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1)) {
             return 0;
         }
         return (byte) (((0x00FF & v) - CHAIN_ID_INC) / 2);
     }
 
-    public static byte getRealV(byte v) {
+    private static byte getRealV(byte v) {
         if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1)) {
             return v;
         }

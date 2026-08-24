@@ -17,7 +17,6 @@
  */
 package org.ethereum.core.transaction.parser.util;
 
-import co.rsk.util.HexUtils;
 import org.ethereum.core.transaction.parser.SignatureState;
 import org.ethereum.core.transaction.parser.SignedSignature;
 import org.ethereum.core.transaction.parser.UnsignedSignature;
@@ -25,8 +24,6 @@ import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
-
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public final class TypedTransactionCodec {
 
@@ -59,14 +56,6 @@ public final class TypedTransactionCodec {
         byte v = (byte) (LOWER_REAL_V + yParity);
         byte chainId = parseTypedTxChainId(txFields.get(chainIdIndex).getRLPData());
         return new SignedSignature(chainId, ECDSASignature.fromComponents(r, s, v));
-    }
-
-    public static byte parseRequiredTypedChainId(String chainIdHex) {
-        if (chainIdHex == null) {
-            throw invalidParamError("Typed transaction requires chainId");
-        }
-
-        return parseTypedTxChainId(HexUtils.strHexOrStrNumberToByteArray(chainIdHex));
     }
 
     /**

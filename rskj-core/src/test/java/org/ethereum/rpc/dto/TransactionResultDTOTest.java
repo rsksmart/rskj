@@ -152,7 +152,7 @@ class TransactionResultDTOTest {
     }
 
     @Test
-    void type1Transaction_populatesChainIdAccessListAndYParity_omitsMaxFeeFields() throws Exception {
+    void type1Transaction_populatesChainIdAccessListAndYParity_omitsMaxFeeFields() {
         Transaction tx = Rskip546TestSupport.unsignedType1(
                 (byte) 33,
                 new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"),
@@ -181,7 +181,7 @@ class TransactionResultDTOTest {
     }
 
     @Test
-    void type2StandardTransaction_populatesAllTypedFieldsIncludingMaxFees() throws Exception {
+    void type2StandardTransaction_populatesAllTypedFieldsIncludingMaxFees() {
         Coin maxPriority = Coin.valueOf(10L);
         Coin maxFee = Coin.valueOf(100L);
         Transaction tx = Rskip546TestSupport.unsignedType2(
@@ -216,7 +216,7 @@ class TransactionResultDTOTest {
     }
 
     @Test
-    void type4Transaction_populatesAuthorizationListAndMaxFeeFields() throws Exception {
+    void type4Transaction_populatesAuthorizationListAndMaxFeeFields() {
         RskAddress delegate = new RskAddress("0x0000000000000000000000000000000000000003");
         SetCodeAuthorization auth1 = Rskip545TestSupport.createSignedAuthorization(
                 new org.ethereum.crypto.ECKey(), delegate, BigInteger.ZERO, (byte) 33);
@@ -237,6 +237,7 @@ class TransactionResultDTOTest {
         Assertions.assertNotNull(dto.getAuthorizationList());
         Assertions.assertEquals(3, dto.getAuthorizationList().size());
         Assertions.assertEquals(delegate.toJsonString(), dto.getAuthorizationList().get(0).getAddress());
+        Assertions.assertNotNull(dto.getAccessList(), "accessList must be present for Type 4 tx");
         Assertions.assertNotNull(dto.getMaxFeePerGas());
         Assertions.assertNotNull(dto.getMaxPriorityFeePerGas());
         Assertions.assertNotNull(dto.getChainId());
@@ -244,10 +245,11 @@ class TransactionResultDTOTest {
         JsonNode json = new ObjectMapper().valueToTree(dto);
         Assertions.assertTrue(json.has("authorizationList"));
         Assertions.assertEquals(3, json.get("authorizationList").size());
+        Assertions.assertTrue(json.has("accessList"), "accessList must appear in JSON for Type 4");
     }
 
     @Test
-    void legacyTransaction_omitsAuthorizationListFromDtoAndJson() throws Exception {
+    void legacyTransaction_omitsAuthorizationListFromDtoAndJson() {
         Transaction originalTransaction = CallTransaction.createCallTransaction(
                 1, 0, 100000000000000L,
                 new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
@@ -263,7 +265,7 @@ class TransactionResultDTOTest {
     }
 
     @Test
-    void pendingLegacyTransaction_serializesBlockFieldsAsJsonNull() throws Exception {
+    void pendingLegacyTransaction_serializesBlockFieldsAsJsonNull() {
         Transaction originalTransaction = CallTransaction.createCallTransaction(
                 1, 0, 100000000000000L,
                 new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
@@ -315,6 +317,36 @@ class TransactionResultDTOTest {
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 0, tx, false,
                 new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
+        Assertions.assertEquals(1, dto.getAccessList().size());
+        TransactionResultDTO.AccessListEntryDTO entry = dto.getAccessList().get(0);
+        Assertions.assertTrue(entry.getAddress().startsWith("0x"));
+        Assertions.assertEquals(1, entry.getStorageKeys().size());
+        Assertions.assertTrue(entry.getStorageKeys().get(0).startsWith("0x"));
+    }
+
+    @Test
+    void type4Transaction_decodesNonemptyAccessList() {
+        byte[] address = new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87").getBytes();
+        byte[] storageKey = new byte[32];
+        storageKey[31] = 0x01;
+        byte[] accessList = RLP.encodeList(
+                RLP.encodeList(
+                        RLP.encodeElement(address),
+                        RLP.encodeList(RLP.encodeElement(storageKey))
+                )
+        );
+        Transaction tx = Rskip545TestSupport.unsignedType4(
+                new RskAddress("0x095e7baea6a6c7c4c2dfeb977efac326af552d87"),
+                Coin.valueOf(10L),
+                Coin.valueOf(100L),
+                new byte[0],
+                accessList);
+        tx.sign(new byte[]{});
+
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 0, tx, false,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertEquals("0x4", dto.getType());
         Assertions.assertEquals(1, dto.getAccessList().size());
         TransactionResultDTO.AccessListEntryDTO entry = dto.getAccessList().get(0);
         Assertions.assertTrue(entry.getAddress().startsWith("0x"));

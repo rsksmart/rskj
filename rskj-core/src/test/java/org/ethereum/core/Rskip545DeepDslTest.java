@@ -53,6 +53,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Deep RSKIP-545 DSL integration tests mapped to the specification sections in
@@ -455,17 +457,26 @@ class Rskip545DeepDslTest {
     @Test
     void activation_requiresRskip543And546And545() {
         Transaction tx = world.getTransactionByName("txMultiAuthLastWins");
-        var allInactive = org.mockito.Mockito.mock(
+        var allInactive = mock(
                 org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock.class);
-        org.mockito.Mockito.when(allInactive.isActive(ConsensusRule.RSKIP543)).thenReturn(false);
+        when(allInactive.isActive(ConsensusRule.RSKIP543)).thenReturn(false);
         assertTrue(tx.isTypedTransactionNotAllowed(allInactive));
 
-        var only545 = org.mockito.Mockito.mock(
+        var without546 = mock(
                 org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock.class);
-        org.mockito.Mockito.when(only545.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
-        org.mockito.Mockito.when(only545.isActive(ConsensusRule.RSKIP546)).thenReturn(true);
-        org.mockito.Mockito.when(only545.isActive(ConsensusRule.RSKIP545)).thenReturn(false);
-        assertTrue(tx.isTypedTransactionNotAllowed(only545));
+        when(without546.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
+        when(without546.isActive(ConsensusRule.RSKIP546)).thenReturn(false);
+        when(without546.isActive(ConsensusRule.RSKIP545)).thenReturn(true);
+        assertTrue(tx.isTypedTransactionNotAllowed(without546),
+                "Type 4 must be rejected when RSKIP-546 is inactive");
+
+        var without545 = mock(
+                org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock.class);
+        when(without545.isActive(ConsensusRule.RSKIP543)).thenReturn(true);
+        when(without545.isActive(ConsensusRule.RSKIP546)).thenReturn(true);
+        when(without545.isActive(ConsensusRule.RSKIP545)).thenReturn(false);
+        assertTrue(tx.isTypedTransactionNotAllowed(without545),
+                "Type 4 must be rejected when RSKIP-545 is inactive");
     }
 
     // =========================================================================
@@ -480,7 +491,7 @@ class Rskip545DeepDslTest {
         SetCodeAuthorization second = tx.getAuthorizationList().get(1);
         assertEquals(first.getChainId(), second.getChainId());
         assertEquals(first.getAddress(), second.getAddress());
-        assertArrayEquals(first.getNonce(), second.getNonce());
+        assertArrayEquals(first.getNonceBytes(), second.getNonceBytes());
         assertEquals(first.getSignature().getR(), second.getSignature().getR());
         assertEquals(first.getSignature().getS(), second.getSignature().getS());
     }
