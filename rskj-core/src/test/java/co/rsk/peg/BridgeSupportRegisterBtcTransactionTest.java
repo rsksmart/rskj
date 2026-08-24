@@ -2570,7 +2570,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     class PegoutTests {
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithNoChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withNoChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(
@@ -2602,7 +2602,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithNoChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withNoChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(
@@ -2632,7 +2632,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithNoChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withNoChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(
@@ -2664,7 +2664,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithNoChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withNoChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(
@@ -2694,7 +2694,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithNoChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withNoChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(
@@ -2734,7 +2734,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithNoChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withNoChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(
@@ -2772,7 +2772,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxNotInPegoutTxIndexWithChangeOutputFromFederation_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_notInPegoutTxIndexWithChangeOutputFromFederation_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -2811,7 +2811,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithManyOutputsAndInputsAndChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -2862,7 +2862,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithManyOutputsAndInputsAndChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -2911,7 +2911,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithManyOutputsAndInputsAndChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -2962,7 +2962,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithManyOutputsAndInputsAndChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3011,7 +3011,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithManyOutputsAndInputsAndChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3070,7 +3070,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithManyOutputsAndInputsAndChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3127,7 +3127,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithManyOutputsAndOneInputAndChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(
@@ -3176,7 +3176,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithManyOutputsAndOneInputAndChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(
@@ -3223,7 +3223,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithManyOutputsAndOneInputAndChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(
@@ -3272,7 +3272,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithManyOutputsAndOneInputAndChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(
@@ -3319,7 +3319,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithManyOutputsAndOneInputAndChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(
@@ -3376,7 +3376,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithManyOutputsAndOneInputAndChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(
@@ -3431,7 +3431,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithOneOutputAndManyInputs_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3467,7 +3467,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithOneOutputAndManyInputs_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3501,7 +3501,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3537,7 +3537,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3571,7 +3571,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithOneOutputAndManyInputs_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withOneOutputAndManyInputs_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3615,7 +3615,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withPegoutTxWithOneOutputAndManyInputs_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withOneOutputAndManyInputs_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3661,7 +3661,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     class MigrationTests {
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithOneInputAndOutput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withOneInputAndOutput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -3692,7 +3692,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithOneInputAndOutput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withOneInputAndOutput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -3723,7 +3723,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithOneInputAndOutput_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withOneInputAndOutput_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -3759,7 +3759,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxNotInPegoutTxIndex_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_notInPegoutTxIndex_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -3798,7 +3798,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithManyOutputsAndInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3849,7 +3849,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithManyOutputsAndInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3900,7 +3900,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithManyOutputsAndInputs_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndInputs_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3957,7 +3957,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithManyOutputsAndOneInput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndOneInput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -4007,7 +4007,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithManyOutputsAndOneInput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndOneInput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -4057,7 +4057,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithManyOutputsAndOneInput_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withManyOutputsAndOneInput_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -4113,7 +4113,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithOneOutputAndManyInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -4147,7 +4147,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -4181,7 +4181,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithOneOutputAndManyInputs_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withOneOutputAndManyInputs_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -4221,7 +4221,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithFlyoverUtxoWithOneInputAndOutput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             when(federationStorageProvider.getOldFederation(federationMainnetConstants, fingerrootActivations)).thenReturn(retiringFederation);
 
@@ -4280,7 +4280,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithFlyoverUtxoWithOneInputAndOutput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
 
@@ -4339,7 +4339,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithFlyoverUtxoWithOneInputAndOutput_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
             Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
@@ -4404,7 +4404,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithFlyoverUtxoWithManyOutputsAndInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             when(federationStorageProvider.getOldFederation(federationMainnetConstants, fingerrootActivations)).thenReturn(retiringFederation);
 
@@ -4473,7 +4473,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithFlyoverUtxoWithManyOutputsAndInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
 
@@ -4542,7 +4542,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxWithFlyoverUtxoWithManyOutputsAndInputs_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
             Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
@@ -4618,7 +4618,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // old fed
         @Test
-        void registerBtcTransaction_withMigrationTxSignedByOldFederation_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_signedByOldFederation_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
             FederationConstants federationRegTestConstants = bridgeRegTestConstants.getFederationConstants();
@@ -4765,7 +4765,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxSignedByOldFederation_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_signedByOldFederation_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
             FederationConstants federationRegTestConstants = bridgeRegTestConstants.getFederationConstants();
@@ -4913,7 +4913,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxSignedByOldFederation_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_signedByOldFederation_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
             FederationConstants federationRegTestConstants = bridgeRegTestConstants.getFederationConstants();
@@ -5057,7 +5057,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         // retired fed
 
         @Test
-        void registerBtcTransaction_withMigrationTxFromLastRetiredFederation_forFingerroot_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_fromLastRetiredFederation_forFingerroot_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -5087,7 +5087,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxFromLastRetiredFederation_withoutPegoutIndex_forArrowhead_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_fromLastRetiredFederation_withoutPegoutIndex_forArrowhead_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -5117,7 +5117,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxFromLastRetiredFederation_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_fromLastRetiredFederation_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -5153,7 +5153,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxFromRetiredFederationNotInStorage_forFingerroot_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_fromRetiredFederationNotInStorage_forFingerroot_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -5181,7 +5181,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxFromRetiredFederationNotInStorage_withoutPegoutIndex_forArrowhead_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_fromRetiredFederationNotInStorage_withoutPegoutIndex_forArrowhead_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -5209,7 +5209,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_withMigrationTxFromRetiredFederationNotInStorage_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_fromRetiredFederationNotInStorage_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
