@@ -4267,7 +4267,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             BtcECKey senderBtcKey = new BtcECKey();
             fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
-            Coin amountToSend = minimumPeginTxValue;
+            Coin amountToSend = bridgeMainnetConstants.getMinimumPeginTxValue(fingerrootActivations);
             fundingTx.addOutput(amountToSend, flyoverFederationAddress);
             fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
 
@@ -4326,7 +4326,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             BtcECKey senderBtcKey = new BtcECKey();
             fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
-            Coin amountToSend = minimumPeginTxValue;
+            Coin amountToSend = bridgeMainnetConstants.getMinimumPeginTxValue(arrowhead600Activations);
             fundingTx.addOutput(amountToSend, flyoverFederationAddress);
             fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
 
@@ -4385,9 +4385,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             BtcECKey senderBtcKey = new BtcECKey();
             fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
-            Coin amountToSend = minimumPeginTxValue;
-            fundingTx.addOutput(amountToSend, flyoverFederationAddress);
-            fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
+            fundingTx.addOutput(minimumPeginTxValue, flyoverFederationAddress);
+            fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), minimumPeginTxValue));
 
             BtcTransaction btcTransaction = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
             btcTransaction.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
@@ -4452,7 +4451,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             BtcECKey senderBtcKey = new BtcECKey();
             fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
-            Coin amountToSend = minimumPeginTxValue;
+            Coin amountToSend = bridgeMainnetConstants.getMinimumPeginTxValue(fingerrootActivations);
             fundingTx.addOutput(amountToSend, flyoverFederationAddress);
             fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
 
@@ -4521,7 +4520,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             BtcECKey senderBtcKey = new BtcECKey();
             fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
-            Coin amountToSend = minimumPeginTxValue;
+            Coin amountToSend = bridgeMainnetConstants.getMinimumPeginTxValue(arrowhead600Activations);
             fundingTx.addOutput(amountToSend, flyoverFederationAddress);
             fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
 
@@ -4590,9 +4589,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             BtcECKey senderBtcKey = new BtcECKey();
             fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
-            Coin amountToSend = minimumPeginTxValue;
-            fundingTx.addOutput(amountToSend, flyoverFederationAddress);
-            fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
+            fundingTx.addOutput(minimumPeginTxValue, flyoverFederationAddress);
+            fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), minimumPeginTxValue));
 
             BtcTransaction btcTransaction = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
             btcTransaction.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
