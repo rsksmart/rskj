@@ -2567,7 +2567,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     @Nested
-    class PegoutTests {
+    class PegoutTransaction {
 
         @Test
         void registerBtcTransaction_withNoChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
@@ -3658,7 +3658,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     @Nested
-    class MigrationTests {
+    class MigrationTransaction {
 
         @Test
         void registerBtcTransaction_withOneInputAndOutput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
