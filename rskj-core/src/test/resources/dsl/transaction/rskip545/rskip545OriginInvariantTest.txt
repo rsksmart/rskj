@@ -1,0 +1,81 @@
+comment
+
+// RSKIP-545 / EIP-7702 transaction-origin invariant scenarios.
+//
+// Self-sponsoring (authority delegates to itself and executes delegated bytecode) breaks the
+// pre-7702 assumption that msg.sender == tx.origin only occurs in the topmost frame.
+//
+// Accounts originUser, originProbe, originCallDelegate, originGuard, and originRelay are
+// created in Rskip545OriginInvariantDslTest (call bytecode embeds probe/guard addresses).
+//
+// Self-auth rule: when authority == sender, auth tuple nonce = outer tx nonce + 1.
+
+end
+
+# b01: Self-sponsored top frame — delegate to originProbe, call self (originUser nonce 0, auth 1)
+
+transaction_build txOriginTopFrame
+    sender originUser
+    receiver originUser
+    value 0
+    gas 300000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization originUser originProbe 1
+    build
+
+block_build b01
+    parent g00
+    transactions txOriginTopFrame
+    build
+
+block_connect b01
+
+assert_best b01
+assert_tx_success txOriginTopFrame
+
+# b02: Nested CALL — delegate to originCallDelegate (CALLs originProbe), call self (nonce 2, auth 3)
+
+transaction_build txOriginNestedCall
+    sender originUser
+    nonce 2
+    receiver originUser
+    value 0
+    gas 400000
+    maxPriorityFeePerGas 1000000000
+    maxFeePerGas 2000000000
+    transactionType 04
+    authorization originUser originCallDelegate 3
+    build
+
+block_build b02
+    parent b01
+    transactions txOriginNestedCall
+    build
+
+block_connect b02
+
+assert_best b02
+assert_tx_success txOriginNestedCall
+
+# b03: Contract relay — legacy call to originRelay (CALLs originGuard); guard must not arm
+
+transaction_build txOriginRelay
+    sender originUser
+    nonce 4
+    receiver originRelay
+    value 0
+    gas 200000
+    gasPrice 1000000000
+    build
+
+block_build b03
+    parent b02
+    transactions txOriginRelay
+    build
+
+block_connect b03
+
+assert_best b03
+assert_tx_success txOriginRelay

@@ -119,7 +119,7 @@ class BlockHeaderContractTest {
             .nonce(NONCE)
             .gasPrice(GAS_PRICE)
             .gasLimit(GAS_LIMIT)
-            .destination(BLOCK_HEADER_CONTRACT_ADDRESS.getBytes())
+            .receiveAddress(BLOCK_HEADER_CONTRACT_ADDRESS.getBytes())
             .data(Hex.decode(DATA))
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(AMOUNT)

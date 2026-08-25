@@ -1,20 +1,19 @@
 package org.ethereum.util;
 
-import java.math.BigInteger;
-import java.util.Optional;
-
-import org.ethereum.core.Account;
-import org.ethereum.core.Transaction;
-import org.ethereum.rpc.CallArguments;
-
 import co.rsk.core.RskAddress;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
+import org.ethereum.core.Account;
+import org.ethereum.core.Transaction;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.rpc.parameters.HexNumberParam;
+
+import java.math.BigInteger;
+import java.util.Optional;
 
 /**
  * Created by ajlopez on 28/02/2018.
@@ -112,7 +111,7 @@ public class TransactionFactoryHelper {
                 .nonce(HexUtils.stringHexToByteArray(args.getNonce()))
                 .gasPrice(HexUtils.strHexOrStrNumberToBigInteger(args.getGasPrice()))
                 .gasLimit(HexUtils.strHexOrStrNumberToBigInteger(args.getGasLimit()))
-                .destination(HexUtils.strHexOrStrNumberToByteArray(args.getTo()))
+                .receiveAddress(HexUtils.strHexOrStrNumberToByteArray(args.getTo()))
                 .chainId(chainId)
                 .value(HexUtils.strHexOrStrNumberToBigInteger(args.getValue()))
                 .build();
@@ -127,6 +126,8 @@ public class TransactionFactoryHelper {
                 Optional.ofNullable(args.getTo()).filter(p -> !p.isEmpty()).map(HexAddressParam::new).orElse(null),
                 Optional.ofNullable(args.getGas()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
                 Optional.ofNullable(args.getGasPrice()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
+                Optional.ofNullable(args.getMaxPriorityFeePerGas()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
+                Optional.ofNullable(args.getMaxFeePerGas()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
                 Optional.ofNullable(args.getGasLimit()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
                 Optional.ofNullable(args.getNonce()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
                 Optional.ofNullable(args.getChainId()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
@@ -134,7 +135,9 @@ public class TransactionFactoryHelper {
                 Optional.ofNullable(args.getData()).filter(p -> !p.isEmpty()).map(HexDataParam::new).orElse(null),
                 Optional.ofNullable(args.getInput()).filter(p -> !p.isEmpty()).map(HexDataParam::new).orElse(null),
                 Optional.ofNullable(args.getType()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
-                Optional.ofNullable(args.getRskSubtype()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null)
+                Optional.ofNullable(args.getRskSubtype()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
+                args.getAccessList(),
+                args.getAuthorizationList()
         );
     }
 

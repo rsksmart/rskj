@@ -19,6 +19,7 @@ package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -27,7 +28,15 @@ import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.net.handler.quota.TxQuotaChecker;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.DelegationCodeResolver;
+import org.ethereum.core.EventDispatchThread;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionPoolAddResult;
+import org.ethereum.core.TransactionSet;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
@@ -37,7 +46,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -243,8 +258,16 @@ public class TransactionPoolImpl implements TransactionPool {
         RepositorySnapshot currentRepository = getCurrentRepository();
         TransactionValidationResult validationResult = shouldAcceptTx(tx, currentRepository);
 
+
         if (!validationResult.transactionIsValid()) {
             return TransactionPoolAddResult.withError(validationResult.getErrorMessage());
+        }
+        PendingState pendingState = getPendingState(currentRepository);
+
+        Optional<TransactionPoolAddResult> delegatedAccountResult = rejectIfDelegatedAccountCannotBeAccepted(tx, tx.getSender(signatureCache), currentRepository, pendingState);
+
+        if (delegatedAccountResult.isPresent()) {
+            return delegatedAccountResult.get();
         }
 
         Keccak256 hash = tx.getHash();
@@ -260,7 +283,7 @@ public class TransactionPoolImpl implements TransactionPool {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
         transactionTimes.put(hash, timestampSeconds);
 
-        BigInteger currentNonce = getPendingState(currentRepository).getNonce(tx.getSender(signatureCache));
+        BigInteger currentNonce = pendingState.getNonce(tx.getSender(signatureCache));
         BigInteger txNonce = tx.getNonceAsInteger();
         if (txNonce.compareTo(currentNonce) > 0) {
             this.addQueuedTransaction(tx);
@@ -506,4 +529,30 @@ public class TransactionPoolImpl implements TransactionPool {
         return tx.transactionCost(config.getNetworkConstants(), config.getActivationConfig().forBlock(number), signatureCache);
     }
 
+    private Optional<TransactionPoolAddResult> rejectIfDelegatedAccountCannotBeAccepted(
+            Transaction tx,
+            RskAddress sender,
+            RepositorySnapshot repository,
+            PendingState pendingState
+    ) {
+        byte[] code = repository.getCode(sender);
+
+        if (!DelegationCodeResolver.isDelegatedCode(code)) {
+            return Optional.empty();
+        }
+
+        boolean alreadyHasTransaction = !pendingTransactions.getTransactionsWithSender(sender).isEmpty() || !queuedTransactions.getTransactionsWithSender(sender).isEmpty();
+
+        if (alreadyHasTransaction) {
+            return Optional.of(TransactionPoolAddResult.withError("delegated account already has a transaction in the pool"));
+        }
+
+        BigInteger expectedNonce = pendingState.getNonce(sender);
+        boolean hasNonceGap = tx.getNonceAsInteger().compareTo(expectedNonce) > 0;
+
+        if (hasNonceGap) {
+            return Optional.of(TransactionPoolAddResult.withError("gapped-nonce transaction from delegated account"));
+        }
+        return Optional.empty();
+    }
 }

@@ -641,7 +641,7 @@ class RemascProcessMinerFeesTest {
                 .nonce(Coin.valueOf(1))
                 .gasPrice(Coin.valueOf(1))
                 .gasLimit(Coin.valueOf(minerFee))
-                .destination(PrecompiledContracts.REMASC_ADDR)
+                .receiveAddress(PrecompiledContracts.REMASC_ADDR)
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(Coin.valueOf(txValue * 2))
                 .build();
@@ -730,7 +730,7 @@ class RemascProcessMinerFeesTest {
                 .nonce(Coin.valueOf(2))
                 .gasPrice(Coin.valueOf(1))
                 .gasLimit(Coin.valueOf(txCallRemascGasLimit))
-                .destination(Hex.decode("da7ce79725418f4f6e13bf5f520c89cec5f6a974"))
+                .receiveAddress(Hex.decode("da7ce79725418f4f6e13bf5f520c89cec5f6a974"))
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(Coin.ZERO)
                 .build();

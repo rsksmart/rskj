@@ -18,9 +18,12 @@
 
 package co.rsk.test.dsl;
 
+import co.rsk.core.RskAddress;
 import co.rsk.test.World;
 import co.rsk.test.builders.TransactionBuilder;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
+import org.ethereum.core.Account;
 import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
@@ -74,9 +77,64 @@ public class TransactionBuildDslProcessor {
             this.builder.transactionType(Byte.parseByte(cmd.getArgument(0), 16));
         else if (cmd.isCommand("rskSubtype"))
             this.builder.rskSubtype(Byte.parseByte(cmd.getArgument(0), 16));
+        else if (cmd.isCommand("maxFeePerGas"))
+            this.builder.maxFeePerGas(new BigInteger(cmd.getArgument(0)));
+        else if (cmd.isCommand("maxPriorityFeePerGas"))
+            this.builder.maxPriorityFeePerGas(new BigInteger(cmd.getArgument(0)));
+        else if (cmd.isCommand("authorization"))
+            processAuthorizationCommand(cmd);
         else if (cmd.isCommand("build"))
             this.world.saveTransaction(this.name, this.builder.build());
         else
             throw new DslProcessorException(String.format("Unknown command '%s'", cmd.getVerb()));
+    }
+
+    private void processAuthorizationCommand(DslCommand cmd) throws DslProcessorException {
+        if (cmd.getArity() < 3) {
+            throw new DslProcessorException(
+                    "authorization requires: authorityAccount delegateAddress authNonce [authChainId]");
+        }
+        RskAddress delegate = parseDelegateAddress(cmd.getArgument(1));
+        BigInteger authNonce = new BigInteger(cmd.getArgument(2));
+        byte authChainId = cmd.getArity() > 3
+                ? Byte.parseByte(cmd.getArgument(3), 16)
+                : Constants.REGTEST_CHAIN_ID;
+        this.builder.authorization(
+                this.world.getAccountByName(cmd.getArgument(0)),
+                delegate,
+                authNonce,
+                authChainId);
+    }
+
+    private RskAddress parseDelegateAddress(String ref) throws DslProcessorException {
+        if (ref.equals("0") || ref.equals("00")) {
+            return RskAddress.ZERO_ADDRESS;
+        }
+        if (ref.length() != 40 || !isHexString(ref)) {
+            Account delegateAccount = world.getAccountByName(ref);
+            if (delegateAccount == null) {
+                throw new DslProcessorException("Unknown delegate account: " + ref);
+            }
+            return delegateAccount.getAddress();
+        }
+        byte[] bytes = Hex.decode(ref);
+        if (bytes.length != 20) {
+            throw new DslProcessorException(
+                    "authorization delegate address must be 20 bytes (40 hex chars), an account name, or 00");
+        }
+        return new RskAddress(bytes);
+    }
+
+    private static boolean isHexString(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            boolean digit = c >= '0' && c <= '9';
+            boolean lower = c >= 'a' && c <= 'f';
+            boolean upper = c >= 'A' && c <= 'F';
+            if (!digit && !lower && !upper) {
+                return false;
+            }
+        }
+        return true;
     }
 }

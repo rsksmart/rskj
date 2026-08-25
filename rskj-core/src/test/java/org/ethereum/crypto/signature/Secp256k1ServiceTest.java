@@ -32,6 +32,7 @@ import java.math.BigInteger;
 import java.security.SignatureException;
 import java.util.stream.Stream;
 
+import co.rsk.core.Coin;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -200,8 +201,8 @@ public abstract class Secp256k1ServiceTest {
                 .builder()
                 .nonce(BigInteger.valueOf(2L))
                 .gasPrice(BigInteger.valueOf(2L))
-                .gasLimit(BigInteger.valueOf(2L))
-                .destination(Hex.decode(receiver))
+                .gasLimit(Coin.valueOf(2L))
+                .receiveAddress(Hex.decode(receiver))
                 .data(messageHash)
                 .value(BigInteger.valueOf(2L))
                 .build();

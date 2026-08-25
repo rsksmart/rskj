@@ -208,7 +208,7 @@ class BlockToMineBuilderEvictionEndToEndTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21_000))
-                .destination(TestUtils.generateAddress("destination").getBytes())
+                .receiveAddress(TestUtils.generateAddress("destination").getBytes())
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.ZERO)
                 .build();

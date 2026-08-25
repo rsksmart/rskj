@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -317,9 +318,10 @@ class ReceiptStoreImplTest {
 
         // TODO calculate cumulative gas
         TransactionReceipt receipt = new TransactionReceipt(stateRoot, gasUsed, gasUsed, bloom, logs, new byte[]{0x01});
-        receipt.setTransaction(Transaction.builder().build());
+        receipt.setTransaction(Transaction.builder().gasPrice(Coin.valueOf(1)).gasLimit(Coin.valueOf(1)).value(Coin.valueOf(1)).build());
         return receipt;
     }
+
 
     private static class ReceiptStoreArgumentsProvider implements ArgumentsProvider {
 

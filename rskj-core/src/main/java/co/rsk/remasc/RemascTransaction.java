@@ -17,16 +17,14 @@
  */
 package co.rsk.remasc;
 
+import co.rsk.core.RskAddress;
+import co.rsk.util.HexUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionType;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
-
-import co.rsk.core.RskAddress;
-import co.rsk.util.HexUtils;
 
 /**
  * <p>
@@ -83,9 +81,7 @@ public class RemascTransaction extends Transaction {
                 ZERO_BYTE_ARRAY,
                 PrecompiledContracts.REMASC_ADDR.getBytes(),
                 ZERO_BYTE_ARRAY,
-                null,
-                (byte) 0,
-                TransactionType.LEGACY);
+                null);
     }
 
     @Override

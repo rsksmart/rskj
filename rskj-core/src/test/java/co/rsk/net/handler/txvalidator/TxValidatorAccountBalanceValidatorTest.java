@@ -79,7 +79,7 @@ class TxValidatorAccountBalanceValidatorTest {
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21071))
-                .destination(new ECKey().getAddress())
+                .receiveAddress(new ECKey().getAddress())
                 .data(Hex.decode("0001"))
                 .chainId(Constants.REGTEST_CHAIN_ID)
                 .value(BigInteger.ZERO)

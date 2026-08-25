@@ -17,17 +17,28 @@
  */
 package org.ethereum.core;
 
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
-import org.ethereum.util.ByteUtil;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BlockBodyCodecTest {
+
+    private static final ECKey TEST_KEY = new ECKey();
+    private static final RskAddress TEST_ADDRESS = new RskAddress("0x1234567890123456789012345678901234567890");
 
     @Test
     void decodeTransactions_legacyRemascAtLastPosition_succeeds() {
@@ -44,20 +55,19 @@ class BlockBodyCodecTest {
     }
 
     @Test
-    void decodeTransactions_typedRemascAtLastPosition_throwsException() {
-        RemascTransaction remascTx = new RemascTransaction(1);
-        byte[] legacyEncoded = remascTx.getEncoded();
+    void decodeTransactions_typedTxAtLastPosition_isNotTreatedAsRemasc() {
+        Transaction typedTx = buildSignedType1();
+        byte[] encoded = BlockBodyCodec.encodeTransaction(typedTx);
 
-        byte[] typedCanonical = ByteUtil.merge(new byte[]{TransactionType.TYPE_1.getByteCode()}, legacyEncoded);
-        byte[] wrappedTyped = RLP.encodeElement(typedCanonical);
-        byte[] rlpList = RLP.encodeList(wrappedTyped);
+        byte[] rlpList = RLP.encodeList(encoded);
         RLPList txList = RLP.decodeList(rlpList);
 
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> BlockBodyCodec.decodeTransactions(txList)
-        );
-        assertTrue(ex.getMessage().contains("Remasc transaction must be legacy"));
+        List<Transaction> decoded = BlockBodyCodec.decodeTransactions(txList);
+
+        assertEquals(1, decoded.size());
+        assertFalse(decoded.get(0) instanceof RemascTransaction,
+                "A typed transaction at the last position must not be treated as a remasc transaction");
+        assertTrue(decoded.get(0).getType().isTyped());
     }
 
     @Test
@@ -68,16 +78,24 @@ class BlockBodyCodecTest {
 
     @Test
     void validateRemascIsLegacy_typedTransaction_throwsException() {
-        RemascTransaction legacyRemasc = new RemascTransaction(1);
-        byte[] legacyEncoded = legacyRemasc.getEncoded();
-
-        byte[] typedCanonical = ByteUtil.merge(new byte[]{TransactionType.TYPE_1.getByteCode()}, legacyEncoded);
-        Transaction typedTx = new ImmutableTransaction(typedCanonical);
+        Transaction typedTx = buildSignedType1();
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> BlockBodyCodec.validateRemascIsLegacy(typedTx)
         );
         assertTrue(ex.getMessage().contains("Remasc transaction must be legacy"));
+    }
+
+    private static Transaction buildSignedType1() {
+        Transaction tx = Rskip546TestSupport.unsignedType1(
+                (byte) 33,
+                TEST_ADDRESS,
+                Coin.valueOf(1_000_000_000),
+                BigInteger.ONE.toByteArray(),
+                new byte[0],
+                Rskip546TestSupport.EMPTY_ACCESS_LIST);
+        tx.sign(TEST_KEY.getPrivKeyBytes());
+        return tx;
     }
 }

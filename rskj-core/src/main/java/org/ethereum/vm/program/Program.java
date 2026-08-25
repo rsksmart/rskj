@@ -37,6 +37,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.Repository;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -855,7 +856,7 @@ public class Program {
         }
 
         // FETCH THE CODE
-        byte[] programCode = getStorage().isExist(codeAddress) ? getStorage().getCode(codeAddress) : EMPTY_BYTE_ARRAY;
+        byte[] programCode = getExecutionCode(codeAddress);
         // programCode can be null
 
         // Always first remove funds from sender
@@ -909,6 +910,37 @@ public class Program {
         } else {
             stackPushZero();
         }
+    }
+
+    private byte[] getExecutionCode(RskAddress codeAddress) {
+        if (!getStorage().isExist(codeAddress)) {
+            return EMPTY_BYTE_ARRAY;
+        }
+        byte[] code = getStorage().getCode(codeAddress);
+
+        if (code == null || code.length == 0) {
+            return EMPTY_BYTE_ARRAY;
+        }
+
+        if (!DelegationCodeResolver.isDelegatedCode(code)) {
+            return code;
+        }
+
+        RskAddress delegatedAddress = DelegationCodeResolver.extractDelegatedAddress(code);
+
+        if (isPrecompile(delegatedAddress)) {
+            return EMPTY_BYTE_ARRAY;
+        }
+
+        byte[] delegatedCode = getStorage().isExist(delegatedAddress)
+                ? getStorage().getCode(delegatedAddress)
+                : EMPTY_BYTE_ARRAY;
+
+        return delegatedCode == null ? EMPTY_BYTE_ARRAY : delegatedCode;
+    }
+
+    private boolean isPrecompile(RskAddress address) {
+        return precompiledContracts.getContractForAddress(activations, DataWord.valueOf(address.getBytes())) != null;
     }
 
     private void cleanReturnDataBuffer() {
