@@ -83,6 +83,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     private static final int FIRST_OUTPUT_INDEX = 0;
     private static final int FIRST_INPUT_INDEX = 0;
     private static final Sha256Hash BTC_TX_HASH = BitcoinTestUtils.createHash(1);
+    private static final Sha256Hash BTC_BLOCK_HASH = BitcoinTestUtils.createHash(999);
 
     private final RskAddress destinationRskAddress = RskTestUtils.generateAddress("rskAddress");
     private final Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(
@@ -547,7 +548,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
             btcMainnetParams,
             1,
-            BTC_TX_HASH,
+            BTC_BLOCK_HASH,
             blockMerkleRoot,
             1,
             1,
@@ -579,7 +580,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
             btcMainnetParams,
             1,
-            BTC_TX_HASH,
+            BTC_BLOCK_HASH,
             blockMerkleRoot,
             1,
             1,
@@ -4686,7 +4687,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
                 btcRegTestsParams,
                 1,
-                BTC_TX_HASH,
+                BTC_BLOCK_HASH,
                 blockMerkleRoot,
                 1,
                 1,
@@ -4722,7 +4723,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
                 btcRegTestsParams,
                 1,
-                BTC_TX_HASH,
+                BTC_BLOCK_HASH,
                 blockMerkleRoot,
                 1,
                 1,
@@ -4833,7 +4834,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
                 btcRegTestsParams,
                 1,
-                BTC_TX_HASH,
+                BTC_BLOCK_HASH,
                 blockMerkleRoot,
                 1,
                 1,
@@ -4870,7 +4871,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
                 btcRegTestsParams,
                 1,
-                BTC_TX_HASH,
+                BTC_BLOCK_HASH,
                 blockMerkleRoot,
                 1,
                 1,
@@ -4981,7 +4982,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
                 btcRegTestsParams,
                 1,
-                BTC_TX_HASH,
+                BTC_BLOCK_HASH,
                 blockMerkleRoot,
                 1,
                 1,
@@ -5123,7 +5124,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
                 btcRegTestsParams,
                 1,
-                BTC_TX_HASH,
+                BTC_BLOCK_HASH,
                 blockMerkleRoot,
                 1,
                 1,
@@ -5160,7 +5161,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
                 btcRegTestsParams,
                 1,
-                BTC_TX_HASH,
+                BTC_BLOCK_HASH,
                 blockMerkleRoot,
                 1,
                 1,
