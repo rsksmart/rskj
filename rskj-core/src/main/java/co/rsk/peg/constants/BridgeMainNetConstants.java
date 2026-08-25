@@ -17,6 +17,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         whitelistConstants = WhitelistMainNetConstants.getInstance();
         federationConstants = FederationMainNetConstants.getInstance();
         lockingCapConstants = LockingCapMainNetConstants.getInstance();
+        historicalPegoutSelectionsConstants = HistoricalPegoutSelectionsMainNetConstants.getInstance();
         unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
 
         btc2RskMinimumAcceptableConfirmations = 100;
