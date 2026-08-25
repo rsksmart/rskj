@@ -2,6 +2,7 @@ package co.rsk.peg.federation.constants;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.federation.FederationFormatVersion;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ public abstract class FederationConstants {
 
     protected List<BtcECKey> genesisFederationPublicKeys;
     protected Instant genesisFederationCreationTime;
+    protected FederationFormatVersion genesisFederationType;
 
     protected AddressBasedAuthorizer federationChangeAuthorizer;
     protected String oldFederationAddress;
@@ -35,6 +37,10 @@ public abstract class FederationConstants {
 
     public Instant getGenesisFederationCreationTime() {
         return genesisFederationCreationTime;
+    }
+
+    public FederationFormatVersion getGenesisFederationType() {
+        return genesisFederationType;
     }
 
     public long getValidationPeriodDurationInBlocks() { return validationPeriodDurationInBlocks; }

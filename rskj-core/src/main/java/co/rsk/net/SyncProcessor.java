@@ -552,7 +552,7 @@ public class SyncProcessor implements SyncEventsHandler {
         private final MessageType type;
         private final long creationTime;
 
-        public MessageInfo(MessageType type) {
+        MessageInfo(MessageType type) {
             this.type = type;
             this.creationTime = System.currentTimeMillis();
         }

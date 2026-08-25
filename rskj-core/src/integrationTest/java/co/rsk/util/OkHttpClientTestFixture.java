@@ -129,6 +129,15 @@ public class OkHttpClientTestFixture {
         }
         """;
 
+    public static final String ETH_GET_TRANSACTION_BY_HASH = """
+        {
+            "jsonrpc": "2.0",
+            "method": "eth_getTransactionByHash",
+            "id": 1,
+            "params": ["<TX_HASH>"]
+        }
+        """;
+
     private OkHttpClientTestFixture() {
     }
 
@@ -231,6 +240,17 @@ public class OkHttpClientTestFixture {
 
     public static JsonNode getJsonResponseForGetTransactionReceipt(int port, String txHash) throws IOException {
         Response response = sendJsonRpcGetTransactionReceiptMessage(port, txHash);
+        try {
+            return new ObjectMapper().readTree(response.body().string());
+        } finally {
+            if (response.body() != null) {
+                response.body().close();
+            }
+        }
+    }
+
+    public static JsonNode getJsonResponseForGetTransactionByHash(int port, String txHash) throws IOException {
+        Response response = sendJsonRpcMessage(ETH_GET_TRANSACTION_BY_HASH.replace("<TX_HASH>", txHash), port);
         try {
             return new ObjectMapper().readTree(response.body().string());
         } finally {

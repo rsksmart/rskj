@@ -165,7 +165,8 @@ public class GitHubJSONTestSuite {
         logger.info("Summary: ");
         logger.info("=========");
 
-        int fails = 0; int pass = 0;
+        int fails = 0;
+        int pass = 0;
         for (String key : summary.keySet()){
 
             if (summary.get(key)) ++pass; else ++fails;
@@ -285,7 +286,8 @@ public class GitHubJSONTestSuite {
         logger.info("Summary: ");
         logger.info("=========");
 
-        int fails = 0; int pass = 0;
+        int fails = 0;
+        int pass = 0;
         for (String key : summary.keySet()){
 
             if (summary.get(key)) ++pass; else ++fails;

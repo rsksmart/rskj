@@ -42,7 +42,7 @@ public class OpActions {
             WRITE,
             PUT,
             REMOVE,
-            CLEAR;
+            CLEAR
         }
 
         private Name name;

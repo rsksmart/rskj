@@ -377,7 +377,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (blockFactory == null) {
-            blockFactory = new BlockFactory(getRskSystemProperties().getActivationConfig());
+            blockFactory = new BlockFactory(
+                    getRskSystemProperties().getActivationConfig(),
+                    getRskSystemProperties().getNetworkConstants().getChainId());
         }
 
         return blockFactory;
@@ -1192,13 +1194,14 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (blockParentDependantValidationRule == null) {
             Constants commonConstants = getRskSystemProperties().getNetworkConstants();
+            byte chainId = commonConstants.getChainId();
             blockParentDependantValidationRule = new BlockParentCompositeRule(
-                    new BlockTxsFieldsValidationRule(getBlockTxSignatureCache()),
-                    new BlockTxsValidationRule(getRepositoryLocator(), getBlockTxSignatureCache()),
-                    new PrevMinGasPriceRule(),
                     new BlockParentNumberRule(),
                     new BlockDifficultyRule(getDifficultyCalculator()),
-                    new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
+                    new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor()),
+                    new PrevMinGasPriceRule(),
+                    new BlockTxsFieldsValidationRule(getBlockTxSignatureCache(), chainId),
+                    new BlockTxsValidationRule(getRepositoryLocator(), getBlockTxSignatureCache())
             );
         }
 
@@ -1210,12 +1213,13 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (snapBlockParentDependantValidationRule == null) {
             Constants commonConstants = getRskSystemProperties().getNetworkConstants();
+            byte chainId = commonConstants.getChainId();
             snapBlockParentDependantValidationRule = new BlockParentCompositeRule(
-                    new BlockTxsFieldsValidationRule(getBlockTxSignatureCache()),
-                    new PrevMinGasPriceRule(),
                     new BlockParentNumberRule(),
                     new BlockDifficultyRule(getDifficultyCalculator()),
-                    new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
+                    new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor()),
+                    new PrevMinGasPriceRule(),
+                    new BlockTxsFieldsValidationRule(getBlockTxSignatureCache(), chainId)
             );
         }
 

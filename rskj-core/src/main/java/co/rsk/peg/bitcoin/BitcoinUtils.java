@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 public class BitcoinUtils {
     public static final int BTC_TX_VERSION_1 = 1;
     public static final int BTC_TX_VERSION_2 = 2;
-
     protected static final byte[] WITNESS_COMMITMENT_HEADER = Hex.decode("aa21a9ed");
     protected static final int WITNESS_COMMITMENT_LENGTH = WITNESS_COMMITMENT_HEADER.length + Sha256Hash.LENGTH;
 

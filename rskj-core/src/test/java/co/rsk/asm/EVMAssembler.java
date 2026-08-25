@@ -22,7 +22,6 @@ import co.rsk.lll.asm.CodeBlock;
 import co.rsk.lll.asm.EVMAssemblerHelper;
 import org.ethereum.vm.OpCode;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.StringTokenizer;

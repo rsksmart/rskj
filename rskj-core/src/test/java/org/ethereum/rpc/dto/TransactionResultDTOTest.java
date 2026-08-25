@@ -130,4 +130,3 @@ class TransactionResultDTOTest {
         Assertions.assertEquals("0x0", dto.getType());
     }
 }
-

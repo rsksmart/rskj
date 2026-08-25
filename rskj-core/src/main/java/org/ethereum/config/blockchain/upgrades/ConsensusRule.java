@@ -88,6 +88,7 @@ public enum ConsensusRule {
     RSKIP375("rskip375"),
     RSKIP376("rskip376"),
     RSKIP377("rskip377"),
+    RSKIP378("rskip378"), // Enforce release transaction size limit
     RSKIP379("rskip379"),
     RSKIP383("rskip383"),
     RSKIP385("rskip385"),
@@ -117,7 +118,7 @@ public enum ConsensusRule {
     RSKIP544("rskip544"), // From EIP-3541 Reject new contract code starting with the 0xEF byte
     RSKIP551("rskip551"), // Disable RSKIP459
     RSKIP552("rskip552"), // Blake2F improvements in data handling
-
+    RSKIP559("rskip559"), // Pegouts deterministic sorting
     ;
 
     private final String configKey;

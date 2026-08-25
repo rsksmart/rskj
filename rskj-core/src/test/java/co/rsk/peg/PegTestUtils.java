@@ -22,17 +22,16 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.federation.*;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationArgs;
+import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.simples.SimpleRskTransaction;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.Keccak256Helper;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,12 +39,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * Created by oscar on 05/08/2016.
- */
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.Keccak256Helper;
+
 public final class PegTestUtils {
 
-    public static final int BTC_TX_LEGACY_VERSION = 1;
     private static int nhash = 0;
 
     /**
@@ -56,6 +56,10 @@ public final class PegTestUtils {
         return createHash3(nhash++);
     }
 
+    /**
+     * @deprecated Use co.rsk.RskTestUtils.createHash(int) instead
+     */
+    @Deprecated
     public static Keccak256 createHash3(int nHash) {
         byte[] bytes = new byte[32];
         bytes[0] = (byte) (nHash & 0xFF);
@@ -74,6 +78,7 @@ public final class PegTestUtils {
     /**
      * @deprecated Use co.rsk.peg.bitcoin.BitcoinTestUtils#createHash(int) instead.
      */
+    @Deprecated
     public static Sha256Hash createHash(int nHash) {
         byte[] bytes = new byte[32];
         bytes[0] = (byte) (0xFF & nHash);
@@ -219,6 +224,11 @@ public final class PegTestUtils {
         return key.toAddress(networkParameters);
     }
 
+    /**
+     * @deprecated Use co.rsk.peg.bitcoin.BitcoinTestUtils#getBtcEcKeys(int amount) instead.
+     * Avoid using random values in tests
+     */
+    @Deprecated
     public static List<BtcECKey> createRandomBtcECKeys(int keysCount) {
         List<BtcECKey> keys = new ArrayList<>();
         for (int i = 0; i < keysCount; i++) {
@@ -227,6 +237,11 @@ public final class PegTestUtils {
         return keys;
     }
 
+    /**
+     * @deprecated Use co.rsk.RskTestUtils#generateAddress(String seed) instead.
+     * Avoid using random values in tests
+     */
+    @Deprecated
     public static RskAddress createRandomRskAddress() {
         ECKey key = new ECKey();
         return new RskAddress(key.getAddress());

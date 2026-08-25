@@ -107,6 +107,10 @@ public final class ContractDeployer {
             }
         }
 
+        // The node mines only on demand (autonomous miner disabled), so mine the
+        // block that includes this deployment transaction before polling for it.
+        RPCBlockRequests.mineBlock(rpcPort);
+
         // 2) poll for receipt
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (System.currentTimeMillis() < deadline) {

@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 class CompactEncoderTest {
 
-    private final static byte T = 16; // terminator
+    private static final byte T = 16; // terminator
 
     @Test
     void testCompactEncodeOddCompact() {

@@ -358,7 +358,7 @@ class BridgeSupportRejectedPeginTest {
 
         Assertions.assertTrue(activeFederationUtxos.isEmpty());
         Assertions.assertTrue(retiringFederationUtxos.isEmpty());
-        Assertions.assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
+        Assertions.assertTrue(pegoutsWaitingForConfirmations.getEntries(activations).isEmpty());
     }
 
     @ParameterizedTest
@@ -426,7 +426,7 @@ class BridgeSupportRejectedPeginTest {
 
         assertTrue(activeFederationUtxos.isEmpty());
         assertTrue(retiringFederationUtxos.isEmpty());
-        assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
+        assertTrue(pegoutsWaitingForConfirmations.getEntries(activations).isEmpty());
     }
 
     @ParameterizedTest

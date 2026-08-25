@@ -68,4 +68,3 @@ public class MigrationTool implements Callable<Integer> {
         return 0;
     }
 }
-

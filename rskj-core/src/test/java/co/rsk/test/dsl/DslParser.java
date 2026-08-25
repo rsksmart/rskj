@@ -59,8 +59,9 @@ public class DslParser {
     public DslCommand nextCommand() {
         String[] words;
 
-        for (words = nextWords(); words != null && words.length == 0; words = nextWords())
-            ;
+        for (words = nextWords(); words != null && words.length == 0; words = nextWords()) {
+            // skip blank lines
+        }
 
         if (words == null)
             return null;

@@ -8,9 +8,7 @@ on:
     types: [opened, synchronize, reopened]
 
 # Declare default permissions as read only.
-permissions:
-  contents: read
-  actions: read
+permissions: read-all
 
 jobs:
   docker:
@@ -19,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #v5.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
 
       - name: Validate Docker container
         run: |

@@ -2,6 +2,7 @@ package co.rsk.peg.federation.constants;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.federation.FederationFormatVersion;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -20,6 +21,7 @@ public class FederationRegTestConstants extends FederationConstants {
         // Change upon implementation of the <INSERT FORK NAME HERE> fork.
         genesisFederationPublicKeys = federationPublicKeys;
         genesisFederationCreationTime = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
+        genesisFederationType = FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION;
 
         // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'
         List<ECKey> federationChangeAuthorizedKeys = Stream.of(

@@ -76,11 +76,11 @@ class RemascProcessMinerFeesTest {
     private final long txValue = 10000;
     private final ECKey cowKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()));
     private final byte[] cowAddress = cowKey.getAddress();
-    private final static RskAddress coinbaseA = TestUtils.generateAddress("coinbaseA");
-    private final static RskAddress coinbaseB = TestUtils.generateAddress("coinbaseB");
-    private final static RskAddress coinbaseC = TestUtils.generateAddress("coinbaseC");
-    private final static RskAddress coinbaseD = TestUtils.generateAddress("coinbaseD");
-    private final static RskAddress coinbaseE = TestUtils.generateAddress("coinbaseE");
+    private static final RskAddress coinbaseA = TestUtils.generateAddress("coinbaseA");
+    private static final RskAddress coinbaseB = TestUtils.generateAddress("coinbaseB");
+    private static final RskAddress coinbaseC = TestUtils.generateAddress("coinbaseC");
+    private static final RskAddress coinbaseD = TestUtils.generateAddress("coinbaseD");
+    private static final RskAddress coinbaseE = TestUtils.generateAddress("coinbaseE");
     private static List<byte[]> accountsAddressesUpToD;
 
     private final Map<byte[], BigInteger> preMineMap = Collections.singletonMap(cowAddress, cowInitialBalance.asBigInteger());
@@ -309,17 +309,17 @@ class RemascProcessMinerFeesTest {
 
         Block blockAtHeightThree = blocks.get(blocks.size() - 1);
         Block blockWithOneTxA = RemascTestRunner.createBlock(this.genesisBlock, blockAtHeightThree,
-                PegTestUtils.createHash3(), coinbaseA, Collections.emptyList(), minerFee, 0, txValue, cowKey, 2l);
+                PegTestUtils.createHash3(), coinbaseA, Collections.emptyList(), minerFee, 0, txValue, cowKey, 2L);
         blocks.add(blockWithOneTxA);
 
         Block blockWithOneTxC = RemascTestRunner.createBlock(this.genesisBlock, blockWithOneTxA,
-                PegTestUtils.createHash3(), coinbaseC, Collections.emptyList(), minerFee, 1, txValue, cowKey, 2l);
+                PegTestUtils.createHash3(), coinbaseC, Collections.emptyList(), minerFee, 1, txValue, cowKey, 2L);
         blocks.add(blockWithOneTxC);
 
         Block blockWithOneTxD = RemascTestRunner.createBlock(this.genesisBlock, blockWithOneTxA,
-                PegTestUtils.createHash3(), coinbaseD, Collections.emptyList(), minerFee, 1, txValue, cowKey, 2l);
+                PegTestUtils.createHash3(), coinbaseD, Collections.emptyList(), minerFee, 1, txValue, cowKey, 2L);
         Block blockWithOneTxB = RemascTestRunner.createBlock(this.genesisBlock, blockAtHeightThree,
-                PegTestUtils.createHash3(), coinbaseB, Collections.emptyList(), 3 * minerFee, 0, txValue, cowKey, 2l);
+                PegTestUtils.createHash3(), coinbaseB, Collections.emptyList(), 3 * minerFee, 0, txValue, cowKey, 2L);
 
         Block blockThatIncludesUnclesE = RemascTestRunner.createBlock(this.genesisBlock, blockWithOneTxC,
                 PegTestUtils.createHash3(), coinbaseE, Arrays.asList(blockWithOneTxB.getHeader(),

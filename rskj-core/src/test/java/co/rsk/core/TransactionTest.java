@@ -517,4 +517,3 @@ class TransactionTest {
         assertEquals(53000, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
     }
 }
-

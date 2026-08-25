@@ -165,7 +165,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_before_tbd_600() {
+    void test_getTransactionType_before_rskip379() {
         // Arrange
         ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
         Wallet liveFederationWallet = mock(Wallet.class);

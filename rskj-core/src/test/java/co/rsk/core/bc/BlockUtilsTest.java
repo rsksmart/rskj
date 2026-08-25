@@ -77,8 +77,8 @@ class BlockUtilsTest {
 
         Block genesis = blockChain.getBestBlock();
 
-        Block block1 = new BlockBuilder(null, null, null).difficulty(2l).parent(genesis).build();
-        Block block1b = new BlockBuilder(null, null, null).difficulty(1l).parent(genesis).build();
+        Block block1 = new BlockBuilder(null, null, null).difficulty(2L).parent(genesis).build();
+        Block block1b = new BlockBuilder(null, null, null).difficulty(1L).parent(genesis).build();
         Block block2 = new BlockBuilder(null, null, null).parent(block1).build();
         Block block3 = new BlockBuilder(null, null, null).parent(block2).build();
 

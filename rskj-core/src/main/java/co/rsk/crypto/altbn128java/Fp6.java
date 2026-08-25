@@ -90,8 +90,12 @@ class Fp6 implements Field<Fp6> {
     @Override
     public Fp6 mul(Fp6 o) {
 
-        Fp2 a1 = a,   b1 = b,   c1 = c;
-        Fp2 a2 = o.a, b2 = o.b, c2 = o.c;
+        Fp2 a1 = a;
+        Fp2 b1 = b;
+        Fp2 c1 = c;
+        Fp2 a2 = o.a;
+        Fp2 b2 = o.b;
+        Fp2 c2 = o.c;
 
         Fp2 a1a2 = a1.mul(a2);
         Fp2 b1b2 = b1.mul(b2);

@@ -45,7 +45,7 @@ public class NodeFilter {
         private NodeID nodeId;
         private String hostIpPattern;
 
-        public Entry(byte[] nodeId, String hostIpPattern) {
+        Entry(byte[] nodeId, String hostIpPattern) {
             this.nodeId = new NodeID(nodeId);
             if (hostIpPattern != null) {
                 int idx = hostIpPattern.indexOf("*");

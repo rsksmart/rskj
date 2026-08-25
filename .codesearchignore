@@ -1,0 +1,26 @@
+.claude
+.gradle
+.idea
+.local
+.settings
+.vscode
+
+credentials.properties
+
+bin
+build
+classes/
+logs
+log/
+*.log
+target/
+
+# Does not have usable info
+gradle
+
+# These are extremely huge files
+# not possible to index them :(
+rskj-core/src/test/resources/json/VMTests/vmInputLimits.json
+rskj-core/src/test/resources/json/VMTests/vmInputLimitsLight.json
+rskj-core/src/test/resources/json/
+rskj-core/src/test/resources/state/

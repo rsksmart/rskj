@@ -99,7 +99,7 @@ public class WorldDslProcessor {
 
     private static void processComment(DslParser parser) {
         for (String line = parser.nextLine(); line != null && !line.trim().toLowerCase().equals("end"); line = parser.nextLine()) {
-
+            // skip every line until the closing "end"
         }
     }
 

@@ -1,5 +1,13 @@
 <?xml version="1.0"?>
-<!DOCTYPE suppressions PUBLIC "-//Puppy Crawl//DTD Suppressions 1.0//EN" "suppressions_1_0.dtd">
+<!DOCTYPE suppressions PUBLIC "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 <suppressions>
     <!-- Custom checkstyle suppressions -->
+
+    <!-- Fuzz tests intentionally catch-and-ignore the exception a malformed/random
+         input is expected to throw during decoding; that's the fuzzing idiom, not a
+         swallowed error, so don't force a "why is this empty" comment here. Suppressed
+         by id (not by check name) so it only exempts the catch idiom, not every other
+         empty-block token EmptyNonCatchBlock now also checks in this source set. -->
+    <suppress id="EmptyCatchBlock" files="[\\/]src[\\/]fuzzTest[\\/]"/>
 </suppressions>

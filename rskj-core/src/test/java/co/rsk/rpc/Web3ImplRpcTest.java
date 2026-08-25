@@ -19,11 +19,9 @@
 package co.rsk.rpc;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.db.RepositoryLocator;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import org.ethereum.core.Blockchain;
-import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.Web3Impl;
 import org.ethereum.rpc.Web3Mocks;
@@ -32,7 +30,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 20/04/2017.

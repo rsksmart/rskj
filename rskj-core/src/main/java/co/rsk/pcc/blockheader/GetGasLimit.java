@@ -50,4 +50,3 @@ public class GetGasLimit extends BlockHeaderContractMethod {
         return block.getGasLimit();
     }
 }
-

@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -215,6 +216,12 @@ public class TrieStoreImpl implements TrieStore {
         }
 
         return this.store.get(hash);
+    }
+
+    @Override
+    public void saveValue(byte[] value) {
+        Objects.requireNonNull(value, "value must not be null");
+        this.store.put(getValueHash(value), value);
     }
 
     @Override

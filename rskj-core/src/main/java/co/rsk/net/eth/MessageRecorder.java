@@ -25,5 +25,5 @@ import org.ethereum.net.message.Message;
  * Created by ajlopez on 26/04/2017.
  */
 public interface MessageRecorder {
-    public void recordMessage(NodeID sender, Message message);
+    void recordMessage(NodeID sender, Message message);
 }

@@ -20,6 +20,8 @@ package co.rsk.trie;
 
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -63,6 +65,26 @@ class MultiTrieStoreTest {
         verify(store1, never()).save(trie);
         verify(store2, never()).save(trie);
         verify(store3).save(trie);
+    }
+
+    @Test
+    void callsSaveValueOnlyOnNewestStore() {
+        TrieStore store1 = mock(TrieStore.class);
+        TrieStore store2 = mock(TrieStore.class);
+        TrieStore store3 = mock(TrieStore.class);
+        TrieStoreFactory storeFactory = mock(TrieStoreFactory.class);
+        when(storeFactory.newInstance("46")).thenReturn(store1);
+        when(storeFactory.newInstance("47")).thenReturn(store2);
+        when(storeFactory.newInstance("48")).thenReturn(store3);
+        MultiTrieStore store = new MultiTrieStore(49, 3, storeFactory, null);
+
+        byte[] value = "a-long-value-over-thirty-two-bytes-xx".getBytes(StandardCharsets.UTF_8);
+        store.saveValue(value);
+
+        // long values follow the same epoch rule as nodes: they belong to the current epoch only
+        verify(store1, never()).saveValue(value);
+        verify(store2, never()).saveValue(value);
+        verify(store3).saveValue(value);
     }
 
     @Test

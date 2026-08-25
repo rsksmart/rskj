@@ -222,3 +222,4 @@ For automatic formatting in IntelliJ IDEA, the following `xml` files can be plac
   </code_scheme>
 </component>
 ```
+See [coding principle](./coding-principles.md) for more guidelines.
