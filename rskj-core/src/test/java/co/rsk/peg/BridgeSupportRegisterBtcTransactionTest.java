@@ -4652,7 +4652,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             LockWhitelist lockWhitelist = mock(LockWhitelist.class);
             when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
-            when(whitelistStorageProvider.getLockWhitelist(allActivations, btcRegTestsParams)).thenReturn(lockWhitelist);
+            when(whitelistStorageProvider.getLockWhitelist(fingerrootActivations, btcRegTestsParams)).thenReturn(lockWhitelist);
 
             when(federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestsParams, fingerrootActivations)).thenReturn(activeFederationUtxos);
 
@@ -4799,7 +4799,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             LockWhitelist lockWhitelist = mock(LockWhitelist.class);
             when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
-            when(whitelistStorageProvider.getLockWhitelist(allActivations, btcRegTestsParams)).thenReturn(lockWhitelist);
+            when(whitelistStorageProvider.getLockWhitelist(arrowhead600Activations, btcRegTestsParams)).thenReturn(lockWhitelist);
 
             when(federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestsParams, arrowhead600Activations)).thenReturn(activeFederationUtxos);
 
