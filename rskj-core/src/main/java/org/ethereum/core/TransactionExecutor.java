@@ -415,13 +415,15 @@ public class TransactionExecutor {
                 } else if (!track.isContract(targetAddress)) {
                     track.setupContract(targetAddress);
                 }
-                result.spendGas(gasUsed);
             } catch (VMException | RuntimeException e) {
-                gasLeftover = 0;
+                if(activations.isActive(ConsensusRule.RSKIP560)) {
+                    gasLeftover = 0;
+                    gasUsed = txGasLimit;
+                    execError(e);
+                }
                 result.setException(e);
-                result.spendGas(txGasLimit);
             }
-
+            result.spendGas(gasUsed);
             profiler.stop(metric);
         } else {
             byte[] code = DelegationCodeResolver.getExecutionCode(track, targetAddress, this::isPrecompile, this.activations);
