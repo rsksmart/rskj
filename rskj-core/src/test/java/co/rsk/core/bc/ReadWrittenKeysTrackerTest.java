@@ -514,7 +514,7 @@ class ReadWrittenKeysTrackerTest {
         private final IReadWrittenKeysTracker tracker;
         private long threadId;
 
-        public ReadWrittenKeysHelper(IReadWrittenKeysTracker tracker, Set<ByteArrayWrapper> writtenKeys, Set<ByteArrayWrapper> readKeys) {
+        ReadWrittenKeysHelper(IReadWrittenKeysTracker tracker, Set<ByteArrayWrapper> writtenKeys, Set<ByteArrayWrapper> readKeys) {
             this.tracker = tracker;
             this.readKeys = readKeys;
             this.writtenKeys = writtenKeys;

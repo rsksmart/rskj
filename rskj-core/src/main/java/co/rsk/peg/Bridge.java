@@ -335,7 +335,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         } else {
             byte[] functionSignature = Arrays.copyOfRange(data, 0, 4);
             Optional<BridgeMethods> invokedMethod = BridgeMethods.findBySignature(functionSignature);
-            if (!invokedMethod.isPresent()) {
+            if (invokedMethod.isEmpty()) {
                 logger.warn("Invalid function signature {}.", Bytes.of(functionSignature));
                 return null;
             }
@@ -1019,14 +1019,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getPendingFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
-        byte[] publicKey = bridgeSupport.getPendingFederatorBtcPublicKey(index);
-
-        if (publicKey == null) {
-            // Empty array is returned when public key is not found
-            return EMPTY_BYTE_ARRAY;
-        }
-
-        return publicKey;
+        return bridgeSupport.getPendingFederatorBtcPublicKey(index);
     }
 
     public byte[] getPendingFederatorPublicKeyOfType(Object[] args) throws VMException {
@@ -1042,14 +1035,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw new VMException("Exception in getPendingFederatorPublicKeyOfType", e);
         }
 
-        byte[] publicKey = bridgeSupport.getPendingFederatorPublicKeyOfType(index, keyType);
-
-        if (publicKey == null) {
-            // Empty array is returned when public key is not found
-            return EMPTY_BYTE_ARRAY;
-        }
-
-        return publicKey;
+        return bridgeSupport.getPendingFederatorPublicKeyOfType(index, keyType);
     }
 
     /**

@@ -25,6 +25,7 @@ import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.Storage;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 
+import java.util.Collections;
 import java.util.List;
 
 public class EmptyProgramTrace implements ProgramTrace {
@@ -50,7 +51,7 @@ public class EmptyProgramTrace implements ProgramTrace {
 
     @Override
     public List<ProgramSubtrace> getSubtraces() {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override

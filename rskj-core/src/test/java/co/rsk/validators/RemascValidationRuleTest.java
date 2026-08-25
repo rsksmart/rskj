@@ -19,7 +19,6 @@
 package co.rsk.validators;
 
 import co.rsk.remasc.RemascTransaction;
-import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;

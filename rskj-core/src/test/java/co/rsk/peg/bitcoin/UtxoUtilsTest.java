@@ -32,7 +32,7 @@ import org.spongycastle.util.encoders.Hex;
 
 class UtxoUtilsTest {
 
-    private final static Coin MAX_BTC = BridgeMainNetConstants.getInstance().getMaxRbtc();
+    private static final Coin MAX_BTC = BridgeMainNetConstants.getInstance().getMaxRbtc();
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final ErpFederation TEST_ERP_FEDERATION = FederationTestUtils.getErpFederation(btcMainnetParams);

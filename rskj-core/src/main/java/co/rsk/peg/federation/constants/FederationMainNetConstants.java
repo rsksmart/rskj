@@ -2,6 +2,7 @@ package co.rsk.peg.federation.constants;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.federation.FederationFormatVersion;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -34,6 +35,7 @@ public class FederationMainNetConstants extends FederationConstants {
             "03b65694ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6"
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
         genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant();
+        genesisFederationType = FederationFormatVersion.STANDARD_MULTISIG_FEDERATION;
 
         List<ECKey> federationChangeAuthorizedKeys = Stream.of(
             "04e593d4cde25137b13f19462bc4c02e97ba2ed5a3860813497abf9b4eeb9259e37e0384d12cfd2d9a7a0ba606b31ee34317a9d7f4a8591c6bcf5dfd5563248b2f",

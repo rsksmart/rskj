@@ -272,4 +272,3 @@ public class EVMDissasembler {
         return sb.toString();
     }
 }
-

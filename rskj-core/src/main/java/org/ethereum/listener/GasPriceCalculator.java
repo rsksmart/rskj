@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface GasPriceCalculator {
-    public enum GasCalculatorType {
+    enum GasCalculatorType {
         PLAIN_PERCENTILE,
         WEIGHTED_PERCENTILE;
 

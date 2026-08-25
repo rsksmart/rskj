@@ -198,9 +198,6 @@ public abstract class SystemProperties {
                 case TESTNET2:
                     constants = Constants.testnet2(getActivationConfig());
                     break;
-                case DEVNET:
-                    constants = Constants.devnetWithFederation();
-                    break;
                 case REGTEST:
                     constants = getGenesisFederationPublicKeys()
                             .map(Constants::regtestWithFederation)
@@ -221,7 +218,7 @@ public abstract class SystemProperties {
                 case MAINNET:
                     networkParameters = MainNetParams.get();
                     break;
-                case TESTNET, TESTNET2, DEVNET:
+                case TESTNET, TESTNET2:
                     networkParameters = TestNet2Params.get();
                     break;
                 case REGTEST:

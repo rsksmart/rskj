@@ -273,7 +273,7 @@ public class PrecompiledContractHasBeenCalledTest {
 
         //Deploy Proxy to Bridge precompiled contract
         BigInteger nonce = track.getNonce(sender.getAddress());
-        RskAddress proxyAddress = getContractAddress(sender, nonce);;
+        RskAddress proxyAddress = getContractAddress(sender, nonce);
         Transaction tx = buildTransaction(config, getDeployDataWithAddressAsParameterToProxyConstructor(PROXY_SMART_CONTRACT_BYTECODE, PrecompiledContracts.BRIDGE_ADDR), 0, NULL_ADDRESS, sender, nonce);
         txs.add(tx);
 

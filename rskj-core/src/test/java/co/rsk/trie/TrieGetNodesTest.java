@@ -18,7 +18,6 @@
 
 package co.rsk.trie;
 
-import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.Keccak256Helper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

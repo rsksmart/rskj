@@ -19,18 +19,17 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.TestSystemProperties;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
+import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @Disabled
@@ -38,17 +37,6 @@ class GitHubStateTest {
 
     //SHACOMMIT of tested commit, ethereum/tests.git
     public String shacommit = "f28ac81493281feec0b17290565cf74042893677";
-
-
-    private long oldForkValue;
-    private static TestSystemProperties config;
-
-    @BeforeAll
-     static void setup() {
-        // TODO remove this after Homestead launch and shacommit update with actual block number
-        // for this JSON test commit the Homestead block was defined as 900000
-        config = new TestSystemProperties();
-    }
 
     @Disabled ("this method is mostly for hands-on convenient testing")
     @Test
@@ -59,7 +47,6 @@ class GitHubStateTest {
 
     @Test
     void stExample() throws IOException {
-
         Set<String> excluded = new HashSet<>();
         String json = JSONReader.loadJSONFromCommit("StateTests/stExample.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
@@ -67,11 +54,9 @@ class GitHubStateTest {
 
     @Test
     void stCallCodes() throws IOException {
-
         Set<String> excluded = new HashSet<>();
         String json = JSONReader.loadJSONFromCommit("StateTests/stCallCodes.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -84,7 +69,6 @@ class GitHubStateTest {
 
     @Test
     void stCallDelegateCodesCallCode() throws IOException {
-
         Set<String> excluded = new HashSet<>();
         String json = JSONReader.loadJSONFromCommit("StateTests/stCallDelegateCodesCallCode.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
@@ -92,7 +76,6 @@ class GitHubStateTest {
 
     @Test
     void stHomeSteadSpecific() throws IOException {
-
         Set<String> excluded = new HashSet<>();
         String json = JSONReader.loadJSONFromCommit("StateTests/stHomeSteadSpecific.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
@@ -100,7 +83,6 @@ class GitHubStateTest {
 
     @Test
     void stCallCreateCallCodeTest() throws IOException {
-
         Set<String> excluded = new HashSet<>();
         String json = JSONReader.loadJSONFromCommit("StateTests/stCallCreateCallCodeTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
@@ -111,7 +93,6 @@ class GitHubStateTest {
 
     @Test
     void stDelegatecallTest() throws IOException {
-
         Set<String> excluded = new HashSet<>();
         String json = JSONReader.loadJSONFromCommit("StateTests/stDelegatecallTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
@@ -122,7 +103,6 @@ class GitHubStateTest {
         Set<String> excluded = new HashSet<>();
         String json = JSONReader.loadJSONFromCommit("StateTests/stInitCodeTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -130,7 +110,6 @@ class GitHubStateTest {
         Set<String> excluded = new HashSet<>();
         String json = JSONReader.loadJSONFromCommit("StateTests/stLogTests.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -139,7 +118,6 @@ class GitHubStateTest {
 
         String json = JSONReader.loadJSONFromCommit("StateTests/stPreCompiledContracts.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -150,7 +128,6 @@ class GitHubStateTest {
         excluded.add("mload32bitBound_Msize"); // The test extends memory to 4Gb which can't be handled with Java arrays
         String json = JSONReader.loadJSONFromCommit("StateTests/stMemoryStressTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -159,7 +136,6 @@ class GitHubStateTest {
 
         String json = JSONReader.loadJSONFromCommit("StateTests/stMemoryTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -182,7 +158,6 @@ class GitHubStateTest {
         Set<String> excluded = new HashSet<>();
         String json = JSONReader.loadJSONFromCommit("StateTests/stRecursiveCreate.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -191,7 +166,6 @@ class GitHubStateTest {
 
         String json = JSONReader.loadJSONFromCommit("StateTests/stRefundTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -200,7 +174,6 @@ class GitHubStateTest {
 
         String json = JSONReader.loadJSONFromCommit("StateTests/stSpecialTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -226,7 +199,6 @@ class GitHubStateTest {
 
         String json = JSONReader.loadJSONFromCommit("StateTests/stTransactionTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -243,20 +215,17 @@ class GitHubStateTest {
 
         String json = JSONReader.loadJSONFromCommit("StateTests/stWalletTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test // testing full suite
     void testRandomStateGitHub() throws IOException {
-
         String sha = "99db6f4f5fea3aa5cfbe8436feba8e213d06d1e8";
         List<String> fileNames = getFileNamesForTreeSha(sha);
-        List<String> includedFiles =
-                Arrays.asList(
-                        "st201504081841JAVA.json",
-                        "st201504081842JAVA.json",
-                        "st201504081843JAVA.json"
-                );
+        List<String> includedFiles = Arrays.asList(
+            "st201504081841JAVA.json",
+            "st201504081842JAVA.json",
+            "st201504081843JAVA.json"
+        );
 
         for (String fileName : fileNames) {
             if (includedFiles.contains(fileName)) {
@@ -265,7 +234,5 @@ class GitHubStateTest {
               GitHubJSONTestSuite.runStateTest(json);
             }
         }
-
     }
 }
-

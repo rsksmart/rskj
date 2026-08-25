@@ -135,6 +135,7 @@ class CallTracerTest {
 
         TxTraceResult level1 = traceResult.getCalls().get(0);
         assertEquals("CALL", level1.getType());
+        assertNotNull(level1.getCalls(), "First internal call should itself contain nested calls");
         assertEquals(1, level1.getCalls().size());
 
         TxTraceResult level2 = level1.getCalls().get(0);

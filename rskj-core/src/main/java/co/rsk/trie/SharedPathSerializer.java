@@ -194,4 +194,3 @@ public class SharedPathSerializer {
         return lsharedSize(sharedPath) + PathEncoder.calculateEncodedLength(sharedPath.length());
     }
 }
-

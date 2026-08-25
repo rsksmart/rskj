@@ -37,6 +37,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.test.builders.PegoutTransactionBuilder;
 import co.rsk.test.builders.UTXOBuilder;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -52,6 +53,8 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -63,6 +66,7 @@ import java.util.List;
 
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
+import static co.rsk.peg.ReleaseTransactionBuilder.MAX_STANDARD_TX_SIZE_ALLOWED;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateSignerEncodedSignatures;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateTransactionInputsSigHashes;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
@@ -138,7 +142,7 @@ class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, sign2), 1);
+        BtcTransaction btcTx = createPegOutTxLegacy(Arrays.asList(sign1, sign2), 1);
         Assertions.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
@@ -147,13 +151,13 @@ class BridgeUtilsTest {
         // Create 2 signatures
         byte[] sign1 = new byte[]{0x79};
 
-        BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, MISSING_SIGNATURE), 1);
+        BtcTransaction btcTx = createPegOutTxLegacy(Arrays.asList(sign1, MISSING_SIGNATURE), 1);
         Assertions.assertFalse(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
     void hasEnoughSignatures_no_signatures() {
-        BtcTransaction btcTx = createPegOutTx(Collections.emptyList(), 1);
+        BtcTransaction btcTx = createPegOutTxLegacy(Collections.emptyList(), 1);
         Assertions.assertFalse(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
@@ -163,7 +167,7 @@ class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, sign2), 3);
+        BtcTransaction btcTx = createPegOutTxLegacy(Arrays.asList(sign1, sign2), 3);
         Assertions.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
@@ -174,7 +178,7 @@ class BridgeUtilsTest {
         byte[] sign2 = new byte[]{0x78};
 
         ErpFederation nonStandardErpFederation = createNonStandardErpFederation();
-        BtcTransaction btcTx = createPegOutTx(
+        BtcTransaction btcTx = createPegOutTxLegacy(
             Arrays.asList(sign1, sign2),
             3,
             nonStandardErpFederation,
@@ -220,7 +224,7 @@ class BridgeUtilsTest {
         // Create 1 signature
         byte[] sign1 = new byte[]{0x79};
 
-        BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, MISSING_SIGNATURE), 3);
+        BtcTransaction btcTx = createPegOutTxLegacy(Arrays.asList(sign1, MISSING_SIGNATURE), 3);
         Assertions.assertFalse(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
@@ -230,7 +234,7 @@ class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, sign2), 1);
+        BtcTransaction btcTx = createPegOutTxLegacy(Arrays.asList(sign1, sign2), 1);
         Assertions.assertEquals(0, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
@@ -239,14 +243,14 @@ class BridgeUtilsTest {
         // Add 1 signature
         byte[] sign1 = new byte[]{0x79};
 
-        BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, MISSING_SIGNATURE), 1);
+        BtcTransaction btcTx = createPegOutTxLegacy(Arrays.asList(sign1, MISSING_SIGNATURE), 1);
         Assertions.assertEquals(1, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
     @Test
     void countMissingSignatures_no_signatures() {
         // As no signature was added, missing signatures is 2
-        BtcTransaction btcTx = createPegOutTx(Collections.emptyList(), 1);
+        BtcTransaction btcTx = createPegOutTxLegacy(Collections.emptyList(), 1);
         Assertions.assertEquals(2, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
@@ -256,7 +260,7 @@ class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, sign2), 3);
+        BtcTransaction btcTx = createPegOutTxLegacy(Arrays.asList(sign1, sign2), 3);
         Assertions.assertEquals(0, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
@@ -267,7 +271,7 @@ class BridgeUtilsTest {
         byte[] sign2 = new byte[]{0x78};
 
         ErpFederation nonStandardErpFederation = createNonStandardErpFederation();
-        BtcTransaction btcTx = createPegOutTx(
+        BtcTransaction btcTx = createPegOutTxLegacy(
             Arrays.asList(sign1, sign2),
             3,
             nonStandardErpFederation,
@@ -313,7 +317,7 @@ class BridgeUtilsTest {
         // Create 1 signature
         byte[] sign1 = new byte[]{0x79};
 
-        BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, MISSING_SIGNATURE), 3);
+        BtcTransaction btcTx = createPegOutTxLegacy(Arrays.asList(sign1, MISSING_SIGNATURE), 3);
         Assertions.assertEquals(1, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
@@ -920,7 +924,7 @@ class BridgeUtilsTest {
     }
 
     @Test
-    void deserializeBtcAddressWithVersion_p2sh_mainnet_wrong_network() throws BridgeIllegalArgumentException {
+    void deserializeBtcAddressWithVersion_p2sh_mainnet_wrong_network() {
         String addressVersionHex = "05"; // Mainnet script hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
@@ -983,7 +987,7 @@ class BridgeUtilsTest {
             federationArgs
         );
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtils.calculatePegoutTxSize(activations, federation, 0, 0));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtils.simulatePegoutTxSize(activations, federation, 0, 0));
     }
 
     @Test
@@ -1003,7 +1007,7 @@ class BridgeUtilsTest {
 
         int inputSize = 2;
         int outputSize = 2;
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+        int pegoutTxSize = BridgeUtils.simulatePegoutTxSize(activations, federation, inputSize, outputSize);
 
         assertEquals(2058, pegoutTxSize);
 
@@ -1018,7 +1022,7 @@ class BridgeUtilsTest {
             .withMembersBtcPublicKeys(keys)
             .build();
 
-        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+        int pegoutTxSizeSegwit = BridgeUtils.simulatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
 
         assertEquals(694, pegoutTxSizeSegwit);
 
@@ -1045,7 +1049,7 @@ class BridgeUtilsTest {
 
         int inputSize = 9;
         int outputSize = 2;
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+        int pegoutTxSize = BridgeUtils.simulatePegoutTxSize(activations, federation, inputSize, outputSize);
 
         assertEquals(9002, pegoutTxSize);
 
@@ -1060,7 +1064,7 @@ class BridgeUtilsTest {
             .withMembersBtcPublicKeys(keys)
             .build();
 
-        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+        int pegoutTxSizeSegwit = BridgeUtils.simulatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
 
         assertEquals(2866, pegoutTxSizeSegwit);
 
@@ -1089,9 +1093,9 @@ class BridgeUtilsTest {
         // Create a pegout tx with 10 inputs and 20 outputs
         int inputSize = 10;
         int outputSize = 20;
-        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
+        BtcTransaction pegoutTx = createPegOutTxLegacy(inputSize, outputSize, federation, keys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+        int pegoutTxSize = BridgeUtils.simulatePegoutTxSize(activations, federation, inputSize, outputSize);
 
         assertEquals(10570, pegoutTxSize);
 
@@ -1106,7 +1110,7 @@ class BridgeUtilsTest {
             .withMembersBtcPublicKeys(keys)
             .build();
 
-        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+        int pegoutTxSizeSegwit = BridgeUtils.simulatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
 
         assertEquals(3752, pegoutTxSizeSegwit);
 
@@ -1134,9 +1138,9 @@ class BridgeUtilsTest {
         // Create a pegout tx with 50 inputs and 200 outputs
         int inputSize = 50;
         int outputSize = 200;
-        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
+        BtcTransaction pegoutTx = createPegOutTxLegacy(inputSize, outputSize, federation, keys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+        int pegoutTxSize = BridgeUtils.simulatePegoutTxSize(activations, federation, inputSize, outputSize);
 
         assertEquals(56010, pegoutTxSize);
 
@@ -1151,7 +1155,7 @@ class BridgeUtilsTest {
             .withMembersBtcPublicKeys(keys)
             .build();
 
-        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+        int pegoutTxSizeSegwit = BridgeUtils.simulatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
 
         assertEquals(21922, pegoutTxSizeSegwit);
 
@@ -1191,9 +1195,9 @@ class BridgeUtilsTest {
         // Create a pegout tx with 50 inputs and 200 outputs
         int inputSize = 50;
         int outputSize = 200;
-        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, nonStandardErpFederation, defaultFederationKeys);
+        BtcTransaction pegoutTx = createPegOutTxLegacy(inputSize, outputSize, nonStandardErpFederation, defaultFederationKeys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
+        int pegoutTxSize = BridgeUtils.simulatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
 
         assertEquals(26510, pegoutTxSize);
 
@@ -1208,13 +1212,87 @@ class BridgeUtilsTest {
             .withMembersBtcPublicKeys(defaultFederationKeys)
             .build();
 
-        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+        int pegoutTxSizeSegwit = BridgeUtils.simulatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
 
         assertEquals(13172, pegoutTxSizeSegwit);
 
         double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
 
         assertTrue(segWitSavingPercentage >= 49);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "183, 14",
+        "182, 29",
+        "181, 43",
+        "180, 57"
+    })
+    void estimateUnsignedSegwitTxVSize_forRecreatedTx_almostExceedingMaxTxSizeAllowed_shouldReturnLessThanMaximumAllowed(int inputsCount, int outputsCount) {
+        // arrange
+        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+
+        PegoutTransactionBuilder pegoutTxBuilder = PegoutTransactionBuilder.builder()
+            .withActiveFederation(federation)
+            .withoutChange();
+        Sha256Hash prevTxHash = Sha256Hash.ZERO_HASH;
+        Coin inputValue = Coin.COIN;
+        for (int i = 0; i < inputsCount; i++) {
+            pegoutTxBuilder.withInput(prevTxHash, i, inputValue);
+        }
+        Coin outputValue = Coin.COIN;
+        for (int i = 0; i < outputsCount; i++) {
+            Address userAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, String.valueOf(i));
+            pegoutTxBuilder.withOutput(outputValue, userAddress);
+        }
+
+        BtcTransaction pegoutTx = pegoutTxBuilder.build();
+
+        // act & assert
+        int pegoutTxSize = BridgeUtils.estimateUnsignedSegwitTxVSize(pegoutTx, federation);
+        assertTrue(pegoutTxSize < MAX_STANDARD_TX_SIZE_ALLOWED);
+    }
+
+    @Test
+    void estimateUnsignedSegwitTxVSize_forRealTx_200inputs50outputs() {
+        // https://mempool.space/testnet/tx/aa46df617eeabd5a0c1f82dde9d7a9383f698b4ef3bf15141aefd2add562c750
+        // arrange
+        int realVSize = 96980;
+        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+
+        PegoutTransactionBuilder pegoutTxBuilder = PegoutTransactionBuilder.builder()
+            .withActiveFederation(federation)
+            .withoutChange();
+        int inputsCount = 200;
+        Sha256Hash prevTxHash = Sha256Hash.ZERO_HASH;
+        Coin inputValue  = Coin.valueOf(5_000);
+        for (int i = 0; i < inputsCount; i++) {
+            pegoutTxBuilder.withInput(prevTxHash, i, inputValue);
+        }
+
+        int outputsCount = 50;
+        Coin outputValue = Coin.valueOf(20_000);
+        for (int i = 0; i < outputsCount; i++) {
+            Address userAddress = Address.fromBase58(networkParameters, "mi2KEWHb9WUBLBm4LCTUx75jWCSr68uxRr");
+            pegoutTxBuilder.withOutput(outputValue, userAddress);
+        }
+
+        BtcTransaction pegoutTx = pegoutTxBuilder.build();
+
+        // act
+        int calculatedPegoutTxSize = BridgeUtils.estimateUnsignedSegwitTxVSize(pegoutTx, federation);
+
+        // assert
+        assertEquals(inputsCount, pegoutTx.getInputs().size());
+        assertEquals(outputsCount, pegoutTx.getOutputs().size());
+
+        int expectedCalculatedPegoutTxSize = 99510;
+        assertEquals(expectedCalculatedPegoutTxSize, calculatedPegoutTxSize);
+        // we expect calculated size to be greater than real one
+        assertTrue(calculatedPegoutTxSize > realVSize);
+        double diff = calculatedPegoutTxSize - realVSize;
+        // and the diff to be less than 3%
+        assertTrue(diff < realVSize * 0.03);
     }
 
     @Test
@@ -1247,9 +1325,9 @@ class BridgeUtilsTest {
         // Create a pegout tx with 100 inputs and 50 outputs
         int inputSize = 100;
         int outputSize = 50;
-        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, nonStandardErpFederation, defaultFederationKeys);
+        BtcTransaction pegoutTx = createPegOutTxLegacy(inputSize, outputSize, nonStandardErpFederation, defaultFederationKeys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
+        int pegoutTxSize = BridgeUtils.simulatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
 
         assertEquals(41810, pegoutTxSize);
 
@@ -1264,7 +1342,7 @@ class BridgeUtilsTest {
             .withMembersBtcPublicKeys(defaultFederationKeys)
             .build();
 
-        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+        int pegoutTxSizeSegwit = BridgeUtils.simulatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
 
         assertEquals(15135, pegoutTxSizeSegwit);
 
@@ -1294,7 +1372,7 @@ class BridgeUtilsTest {
 
         // Create a pegout tx with two inputs and two outputs
         int inputs = 2;
-        BtcTransaction pegoutTx = createPegOutTx(Collections.emptyList(), inputs, fed, false);
+        BtcTransaction pegoutTx = createPegOutTxLegacy(Collections.emptyList(), inputs, fed, false);
 
         for (int inputIndex = 0; inputIndex < inputs; inputIndex++) {
             Script inputScript = pegoutTx.getInput(inputIndex).getScriptSig();
@@ -1600,7 +1678,7 @@ class BridgeUtilsTest {
     }
 
     private ErpFederation createNonStandardErpFederation() {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest.getFederationConstants());
+        Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(bridgeConstantsRegtest.getFederationConstants());
         FederationArgs genesisFederationArgs = genesisFederation.getArgs();
         List<BtcECKey> erpPubKeys = bridgeConstantsRegtest.getFederationConstants().getErpFedPubKeysList();
         long activationDelay = bridgeConstantsRegtest.getFederationConstants().getErpFedActivationDelay();
@@ -1608,7 +1686,7 @@ class BridgeUtilsTest {
         return FederationFactory.buildNonStandardErpFederation(genesisFederationArgs, erpPubKeys, activationDelay, activations);
     }
 
-    private BtcTransaction createPegOutTx(
+    private BtcTransaction createPegOutTxLegacy(
         List<byte[]> signatures,
         int inputsToAdd,
         Federation federation,
@@ -1619,7 +1697,7 @@ class BridgeUtilsTest {
         byte[] program;
 
         if (federation == null) {
-            federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest.getFederationConstants());
+            federation = FederationTestUtils.getGenesisFederationLegacy(bridgeConstantsRegtest.getFederationConstants());
         }
 
         if (isFlyover) {
@@ -1684,7 +1762,7 @@ class BridgeUtilsTest {
         return btcTx;
     }
 
-    private BtcTransaction createPegOutTx(int inputSize, int outputSize, Federation federation, List<BtcECKey> keys) {
+    private BtcTransaction createPegOutTxLegacy(int inputSize, int outputSize, Federation federation, List<BtcECKey> keys) {
         Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
@@ -1711,12 +1789,12 @@ class BridgeUtilsTest {
         return btcTx;
     }
 
-    private BtcTransaction createPegOutTx(List<byte[]> signatures, int inputsToAdd) {
-        return createPegOutTx(signatures, inputsToAdd, null, false);
+    private BtcTransaction createPegOutTxLegacy(List<byte[]> signatures, int inputsToAdd) {
+        return createPegOutTxLegacy(signatures, inputsToAdd, null, false);
     }
 
     private BtcTransaction createPegOutTxForFlyover(List<byte[]> signatures, int inputsToAdd, Federation federation) {
-        return createPegOutTx(signatures, inputsToAdd, federation, true);
+        return createPegOutTxLegacy(signatures, inputsToAdd, federation, true);
     }
 
     private byte[] generatePrivKey() {

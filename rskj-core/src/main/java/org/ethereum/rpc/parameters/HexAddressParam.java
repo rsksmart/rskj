@@ -35,7 +35,7 @@ public class HexAddressParam implements Serializable {
     public static final int MIN_HEX_ADDR_LEN = 2 * HEX_ADDR_BYTE_LENGTH; // 2 hex characters per byte
     public static final int MAX_HEX_ADDR_LEN = MIN_HEX_ADDR_LEN + 2; // 2 bytes for 0x prefix
 
-    private transient final RskAddress address;
+    private final transient RskAddress address;
 
     public HexAddressParam(String hexAddress) {
         if (!isHexAddressLengthValid(hexAddress)) {

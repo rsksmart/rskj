@@ -45,7 +45,7 @@ class RemascFeesPayer {
     private final RskAddress contractAddress;
     private final List<ProgramSubtrace> subtraces = new ArrayList<>();
 
-    public RemascFeesPayer(Repository repository, RskAddress contractAddress) {
+    RemascFeesPayer(Repository repository, RskAddress contractAddress) {
         this.repository = repository;
         this.contractAddress = contractAddress;
     }

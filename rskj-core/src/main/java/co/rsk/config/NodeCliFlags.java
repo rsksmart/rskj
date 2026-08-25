@@ -35,7 +35,6 @@ public enum NodeCliFlags implements CliArg {
     NETWORK_TESTNET("testnet", SystemProperties.PROPERTY_BC_CONFIG_NAME, "testnet"),
     NETWORK_TESTNET2("testnet2", SystemProperties.PROPERTY_BC_CONFIG_NAME, "testnet2"),
     NETWORK_REGTEST("regtest", SystemProperties.PROPERTY_BC_CONFIG_NAME, "regtest"),
-    NETWORK_DEVNET("devnet", SystemProperties.PROPERTY_BC_CONFIG_NAME, "devnet"),
     NETWORK_MAINNET("main", SystemProperties.PROPERTY_BC_CONFIG_NAME, "main"),
     HELP("help", "help", true),
     VERSION("version", "version", true)

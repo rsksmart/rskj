@@ -684,7 +684,7 @@ class NodeMessageHandlerTest {
             protected final NewBlockHashesMessage message;
             protected final List<Block> expected;
 
-            public TestCase(@Nonnull final NewBlockHashesMessage message, final List<Block> expected) {
+            TestCase(@Nonnull final NewBlockHashesMessage message, final List<Block> expected) {
                 this.message = message;
                 this.expected = expected;
             }

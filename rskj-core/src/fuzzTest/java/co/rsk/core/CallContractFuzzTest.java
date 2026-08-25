@@ -27,13 +27,9 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.code_intelligence.jazzer.junit.FuzzTest;
 import org.ethereum.core.*;
 import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.spongycastle.util.encoders.Hex;
 
-import java.math.BigInteger;
 
 import org.junit.jupiter.api.Tag;
 

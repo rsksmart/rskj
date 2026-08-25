@@ -81,4 +81,3 @@ class BlockProcessResultTest {
         MatcherAssert.assertThat(result.wasBlockAdded(mock), Matchers.is(true));
     }
 }
-

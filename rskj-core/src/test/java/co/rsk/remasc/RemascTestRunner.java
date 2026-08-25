@@ -74,7 +74,7 @@ class RemascTestRunner {
     private Block genesis;
     private RskAddress fixedCoinbase;
 
-    public RemascTestRunner(BlockChainBuilder blockchainBuilder, Block genesis) {
+    RemascTestRunner(BlockChainBuilder blockchainBuilder, Block genesis) {
         this.builder = blockchainBuilder;
         this.genesis = genesis;
     }
@@ -179,7 +179,7 @@ class RemascTestRunner {
             }
 
             long txNonce = i;
-            RskAddress coinbase = fixedCoinbase != null ? fixedCoinbase : new RskAddress(TestUtils.generateBytesFromRandom(random,20));;
+            RskAddress coinbase = fixedCoinbase != null ? fixedCoinbase : new RskAddress(TestUtils.generateBytesFromRandom(random,20));
             Block block = createBlock(this.genesis, this.blockchain.getBestBlock(), PegTestUtils.createHash3(),
                                       coinbase, blockSiblings, minerFee, this.gasPrice, txNonce, this.txValue, this.txSigningKey, null);
             mainChainBlocks.add(block);
@@ -285,7 +285,7 @@ class RemascTestRunner {
     private static class HardcodedHashBlockHeader extends BlockHeaderV0 {
         private final Keccak256 blockHash;
 
-        public HardcodedHashBlockHeader(
+        HardcodedHashBlockHeader(
                 Block parentBlock, RskAddress coinbase, Block genesis, List<Transaction> txs,
                 BlockDifficulty finalDifficulty, Coin paidFees, List<BlockHeader> uncles, Keccak256 blockHash) {
             super(

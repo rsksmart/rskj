@@ -59,7 +59,7 @@ public class DbMigrate extends PicoCliToolRskContextAware {
         private final KeyValueDataSource keyValueDataSource;
         private final String indexPath;
 
-        public DbInformation(KeyValueDataSource keyValueDataSource, String indexPath) {
+        DbInformation(KeyValueDataSource keyValueDataSource, String indexPath) {
             this.keyValueDataSource = keyValueDataSource;
             this.indexPath = indexPath;
         }
@@ -77,7 +77,7 @@ public class DbMigrate extends PicoCliToolRskContextAware {
         private final DbInformation targetDbInformation;
         private final DbInformation sourceDbInformation;
 
-        public DbMigrationInformation(DbInformation targetDbInformation, DbInformation sourceDbInformation) {
+        DbMigrationInformation(DbInformation targetDbInformation, DbInformation sourceDbInformation) {
             this.targetDbInformation = targetDbInformation;
             this.sourceDbInformation = sourceDbInformation;
         }

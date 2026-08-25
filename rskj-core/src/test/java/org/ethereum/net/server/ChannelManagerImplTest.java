@@ -55,7 +55,7 @@ class ChannelManagerImplTest {
 
     @Test
     void getNumberOfPeersToSendStatusTo() {
-        ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null);;
+        ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null);
 
         assertEquals(1, channelManagerImpl.getNumberOfPeersToSendStatusTo(1));
         assertEquals(2, channelManagerImpl.getNumberOfPeersToSendStatusTo(2));

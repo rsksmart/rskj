@@ -7,11 +7,9 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.code_intelligence.jazzer.junit.FuzzTest;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
-import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import javax.xml.bind.DatatypeConverter;
 import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;

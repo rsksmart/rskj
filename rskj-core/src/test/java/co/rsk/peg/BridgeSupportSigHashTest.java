@@ -102,10 +102,10 @@ class BridgeSupportSigHashTest {
         // Assertions
 
         // Assert one pegout tx was added to pegoutsWaitingForConfirmations from the creation of a pegout batch
-        assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
+        assertEquals(1, pegoutsWaitingForConfirmations.getEntries(activations).size());
 
         if (activations.isActive(ConsensusRule.RSKIP379)){
-            PegoutsWaitingForConfirmations.Entry pegoutBatchTx = pegoutsWaitingForConfirmations.getEntries().stream().findFirst().get();
+            PegoutsWaitingForConfirmations.Entry pegoutBatchTx = pegoutsWaitingForConfirmations.getEntries(activations).stream().findFirst().get();
             Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(pegoutBatchTx.getBtcTransaction());
             assertTrue(firstInputSigHash.isPresent());
             verify(provider, times(1)).setPegoutTxSigHash(firstInputSigHash.get());
@@ -180,11 +180,11 @@ class BridgeSupportSigHashTest {
         // Assertions
 
         // Assert one migration tx was added to pegoutsWaitingForConfirmations from the creation of a pegout batch
-        assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
+        assertEquals(1, pegoutsWaitingForConfirmations.getEntries(activations).size());
 
         if (activations.isActive(ConsensusRule.RSKIP379)){
             PegoutsWaitingForConfirmations.Entry migrationTx = pegoutsWaitingForConfirmations.
-                getEntries().
+                getEntries(activations).
                 stream().
                 findFirst().
                 get();
@@ -269,7 +269,7 @@ class BridgeSupportSigHashTest {
         // Assertions
 
         // Assert two pegouts was added to pegoutsWaitingForConfirmations from the creation of each pegout batch for the migration and pegout
-        assertEquals(2, pegoutsWaitingForConfirmations.getEntries().size());
+        assertEquals(2, pegoutsWaitingForConfirmations.getEntries(activations).size());
 
         if (activations.isActive(ConsensusRule.RSKIP379)){
             Optional<PegoutsWaitingForConfirmations.Entry> migrationTx = Optional.empty();
@@ -284,7 +284,7 @@ class BridgeSupportSigHashTest {
             );
 
             // If all outputs are sent to the active fed then it's the migration tx; if not, it's the peg-out batch
-            for (PegoutsWaitingForConfirmations.Entry entry : pegoutsWaitingForConfirmations.getEntries()) {
+            for (PegoutsWaitingForConfirmations.Entry entry : pegoutsWaitingForConfirmations.getEntries(activations)) {
                 List<TransactionOutput> walletOutputs = entry.getBtcTransaction().getWalletOutputs(newFedWallet);
                 if (walletOutputs.size() == entry.getBtcTransaction().getOutputs().size()){
                     migrationTx = Optional.of(entry);

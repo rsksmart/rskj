@@ -43,9 +43,6 @@ public class RskCli implements Runnable {
         @CommandLine.Option(names = {"--regtest"}, description = "Use regtest configuration")
         private boolean networkRegtest;
 
-        @CommandLine.Option(names = {"--devnet"}, description = "Use devnet configuration")
-        private boolean networkDevnet;
-
         @CommandLine.Option(names = {"--main"}, description = "Use mainnet configuration")
         private boolean networkMainnet;
     }
@@ -158,8 +155,6 @@ public class RskCli implements Runnable {
                 activatedFlags.add(NodeCliFlags.NETWORK_TESTNET2);
             } else if (networkFlags.networkRegtest) {
                 activatedFlags.add(NodeCliFlags.NETWORK_REGTEST);
-            } else if (networkFlags.networkDevnet) {
-                activatedFlags.add(NodeCliFlags.NETWORK_DEVNET);
             } else if (networkFlags.networkMainnet) {
                 activatedFlags.add(NodeCliFlags.NETWORK_MAINNET);
             }

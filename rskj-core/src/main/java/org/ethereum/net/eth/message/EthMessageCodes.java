@@ -163,7 +163,7 @@ public enum EthMessageCodes {
         }
     }
 
-    private EthMessageCodes(int cmd) {
+    EthMessageCodes(int cmd) {
         this.cmd = cmd;
     }
 

@@ -74,7 +74,7 @@ class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
             }
 
             int numTxs = Helper.randomInRange(minNumTxs, maxNumTxs);
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
+            Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(bridgeConstants.getFederationConstants());
             for (int i = 0; i < numTxs; i++) {
                 BtcTransaction releaseTx = new BtcTransaction(networkParameters);
 
