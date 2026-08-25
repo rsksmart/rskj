@@ -4913,7 +4913,151 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
-        void registerBtcTransaction_signedByOldFederation_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_signedByOldFederation_notInPegoutTxIndex_withPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
+            FederationConstants federationRegTestConstants = bridgeRegTestConstants.getFederationConstants();
+            NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
+            Context.propagate(new Context(btcRegTestsParams));
+
+            final List<BtcECKey> regtestOldFederationPrivateKeys = Arrays.asList(
+                BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
+                BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
+                BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
+            );
+            when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
+
+            LockWhitelist lockWhitelist = mock(LockWhitelist.class);
+            when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
+            when(whitelistStorageProvider.getLockWhitelist(allActivations, btcRegTestsParams)).thenReturn(lockWhitelist);
+
+            when(federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestsParams, arrowhead600Activations)).thenReturn(activeFederationUtxos);
+
+            pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
+            when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
+
+            Federation oldFederation = createFederation(bridgeRegTestConstants, regtestOldFederationPrivateKeys);
+
+            // we need to recreate the active fed since we are in regtest
+            List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFedSigners);
+            long activeFedCreationBlockNumber = 2L;
+            Instant creationTime = Instant.ofEpochMilli(1000L);
+            List<BtcECKey> erpPubKeys = federationRegTestConstants.getErpFedPubKeysList();
+            long activationDelay = federationRegTestConstants.getErpFedActivationDelay();
+            FederationArgs activeFedArgs =
+                new FederationArgs(activeFedMembers, creationTime, activeFedCreationBlockNumber, btcRegTestsParams);
+            activeFederation = FederationFactory.buildP2shErpFederation(activeFedArgs, erpPubKeys, activationDelay);
+            when(federationStorageProvider.getNewFederation(any(), any())).thenReturn(activeFederation);
+
+            BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
+            Script inputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, oldFederation.getRedeemScript());
+            migrationTx.addInput(
+                BTC_TX_HASH,
+                FIRST_OUTPUT_INDEX,
+                inputScript
+            );
+            migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
+
+            when(federationStorageProvider.getLastRetiredFederationP2SHScript(arrowhead600Activations)).thenReturn(Optional.ofNullable(inputScript));
+
+            FederationTestUtils.addSignatures(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
+
+            PartialMerkleTree pmt = new PartialMerkleTree(btcRegTestsParams, new byte[]{0x3f}, Collections.singletonList(migrationTx.getHash()), 1);
+            Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
+
+            registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcRegTestsParams,
+                1,
+                BTC_TX_HASH,
+                blockMerkleRoot,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+            );
+
+            StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), heightAtWhichToStartUsingPegoutIndex);
+
+            BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+
+            co.rsk.bitcoinj.core.BtcBlock headBlock = new co.rsk.bitcoinj.core.BtcBlock(
+                btcRegTestsParams,
+                1,
+                BitcoinTestUtils.createHash(2),
+                Sha256Hash.of(new byte[]{1}),
+                1,
+                1,
+                1,
+                new ArrayList<>()
+            );
+
+            int heightWithEnoughConfirmations = heightAtWhichToStartUsingPegoutIndex + bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations();
+            StoredBlock chainHead = new StoredBlock(
+                headBlock,
+                new BigInteger("0"),
+                heightWithEnoughConfirmations
+            );
+            when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+
+            when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
+            when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
+
+            co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
+                btcRegTestsParams,
+                1,
+                BTC_TX_HASH,
+                blockMerkleRoot,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+            );
+
+            mockChainOfStoredBlocks(
+                btcBlockStore,
+                btcBlock,
+                heightWithEnoughConfirmations,
+                heightAtWhichToStartUsingPegoutIndex
+            );
+
+            FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
+            when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
+
+            federationSupport = FederationSupportBuilder.builder()
+                .withFederationConstants(bridgeRegTestConstants.getFederationConstants())
+                .withFederationStorageProvider(federationStorageProvider)
+                .withRskExecutionBlock(rskExecutionBlock)
+                .withActivations(arrowhead600Activations)
+                .build();
+
+            // act
+            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+                .withBtcBlockStoreFactory(mockFactory)
+                .withBridgeConstants(bridgeRegTestConstants)
+                .withProvider(bridgeStorageProvider)
+                .withActivations(arrowhead600Activations)
+                .withSignatureCache(signatureCache)
+                .withEventLogger(bridgeEventLogger)
+                .withBtcLockSenderProvider(btcLockSenderProvider)
+                .withPeginInstructionsProvider(peginInstructionsProvider)
+                .withExecutionBlock(rskExecutionBlock)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withFederationSupport(federationSupport)
+                .build();
+
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                migrationTx.bitcoinSerialize(),
+                heightAtWhichToStartUsingPegoutIndex,
+                pmt.bitcoinSerialize()
+            );
+
+            // assert
+            assertPeginIsRejectedAndRefunded(arrowhead600Activations, migrationTx, Coin.COIN, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER);
+        }
+
+        @Test
+        void registerBtcTransaction_notInPegoutTxIndex_signedByOldFederation_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
             FederationConstants federationRegTestConstants = bridgeRegTestConstants.getFederationConstants();
