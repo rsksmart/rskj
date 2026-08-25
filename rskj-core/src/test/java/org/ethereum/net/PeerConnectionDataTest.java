@@ -73,4 +73,3 @@ class PeerConnectionDataTest {
         assertEquals(-1218913009, peer.hashCode());
     }
 }
-

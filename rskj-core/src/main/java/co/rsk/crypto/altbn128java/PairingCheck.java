@@ -161,8 +161,11 @@ public class PairingCheck {
 
     private static Precomputed flippedMillerLoopMixedAddition(BN128G2 base, BN128G2 addend) {
         
-        Fp2 x1 = addend.x, y1 = addend.y, z1 = addend.z;
-        Fp2 x2 = base.x, y2 = base.y;
+        Fp2 x1 = addend.x;
+        Fp2 y1 = addend.y;
+        Fp2 z1 = addend.z;
+        Fp2 x2 = base.x;
+        Fp2 y2 = base.y;
 
         Fp2 d = x1.sub(x2.mul(z1));             // d = x1 - x2 * z1
         Fp2 e = y1.sub(y2.mul(z1));             // e = y1 - y2 * z1
@@ -188,7 +191,9 @@ public class PairingCheck {
 
     private static Precomputed flippedMillerLoopDoubling(BN128G2 g2) {
 
-        Fp2 x = g2.x, y = g2.y, z = g2.z;
+        Fp2 x = g2.x;
+        Fp2 y = g2.y;
+        Fp2 z = g2.z;
 
         Fp2 a = Fp._2_INV.mul(x.mul(y));            // a = x * y / 2
         Fp2 b = y.squared();                        // b = y^2

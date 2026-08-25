@@ -26,6 +26,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Created by SDL on 12/4/2017.
  */
@@ -33,9 +35,11 @@ public class BlockTxsFieldsValidationRule implements BlockParentDependantValidat
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
     private final SignatureCache signatureCache;
-    
-    public BlockTxsFieldsValidationRule(SignatureCache signatureCache) {
-        this.signatureCache = signatureCache;
+    private final byte chainId;
+
+    public BlockTxsFieldsValidationRule(SignatureCache signatureCache, byte chainId) {
+        this.signatureCache = requireNonNull(signatureCache, "signatureCache must not be null");
+        this.chainId = chainId;
     }
 
     @Override
@@ -47,6 +51,11 @@ public class BlockTxsFieldsValidationRule implements BlockParentDependantValidat
 
         List<Transaction> txs = block.getTransactionsList();
         for (Transaction tx : txs) {
+            if (!tx.acceptTransactionSignature(chainId)) {
+                logger.warn("Transaction signature not accepted for chain id {}", chainId);
+                return false;
+            }
+
             try {
                 tx.verify(signatureCache);
             } catch (RuntimeException e) {

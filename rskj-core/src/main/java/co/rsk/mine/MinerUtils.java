@@ -49,15 +49,14 @@ import java.util.function.Function;
 
 public class MinerUtils {
     private static final Logger logger = LoggerFactory.getLogger("minerserver");
+    private static final SecureRandom random = new SecureRandom();
 
     public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, MinerWork work) {
         return getBitcoinMergedMiningCoinbaseTransaction(params, HexUtils.stringHexToByteArray(work.getBlockHashForMergedMining()));
     }
 
     public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, byte[] blockHashForMergedMining) {
-        SecureRandom random = new SecureRandom();
-        byte[] prefix = new byte[random.nextInt(1000)];
-        random.nextBytes(prefix);
+        byte[] prefix = generateRandomPrefix();
         byte[] bytes = Arrays.concatenate(prefix, RskMiningConstants.RSK_TAG, blockHashForMergedMining);
 
         return getBitcoinCoinbaseTransaction(params, bytes);
@@ -71,15 +70,7 @@ public class MinerUtils {
         co.rsk.bitcoinj.core.TransactionInput ti = new co.rsk.bitcoinj.core.TransactionInput(params, coinbaseTransaction, new byte[0]);
         coinbaseTransaction.addInput(ti);
 
-        ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();
-        co.rsk.bitcoinj.core.BtcECKey key = new co.rsk.bitcoinj.core.BtcECKey();
-        try {
-            co.rsk.bitcoinj.script.Script.writeBytes(scriptPubKeyBytes, key.getPubKey());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        scriptPubKeyBytes.write(co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKSIG);
-        coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(50, 0), scriptPubKeyBytes.toByteArray()));
+        coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(50, 0), buildScriptPubKeyBytes().toByteArray()));
 
         coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(0), additionalData));
 
@@ -101,10 +92,7 @@ public class MinerUtils {
             byte[] blockHashForMergedMining1,
             byte[] blockHashForMergedMining2) {
         co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction = new co.rsk.bitcoinj.core.BtcTransaction(params);
-        //Add a random number of random bytes before the RSK tag
-        SecureRandom random = new SecureRandom();
-        byte[] prefix = new byte[random.nextInt(1000)];
-        random.nextBytes(prefix);
+        byte[] prefix = generateRandomPrefix();
 
         byte[] bytes0 = Arrays.concatenate(RskMiningConstants.RSK_TAG, blockHashForMergedMining1);
         // addsecond tag
@@ -112,15 +100,7 @@ public class MinerUtils {
 
         co.rsk.bitcoinj.core.TransactionInput ti = new co.rsk.bitcoinj.core.TransactionInput(params, coinbaseTransaction, prefix);
         coinbaseTransaction.addInput(ti);
-        ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();
-        co.rsk.bitcoinj.core.BtcECKey key = new co.rsk.bitcoinj.core.BtcECKey();
-        try {
-            co.rsk.bitcoinj.script.Script.writeBytes(scriptPubKeyBytes, key.getPubKey());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        scriptPubKeyBytes.write(co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKSIG);
-        coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(50, 0), scriptPubKeyBytes.toByteArray()));
+        coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(50, 0), buildScriptPubKeyBytes().toByteArray()));
         // add opreturn output with two tags
         ByteArrayOutputStream output2Bytes = new ByteArrayOutputStream();
         output2Bytes.write(co.rsk.bitcoinj.script.ScriptOpCodes.OP_RETURN);
@@ -128,6 +108,7 @@ public class MinerUtils {
         try {
             co.rsk.bitcoinj.script.Script.writeBytes(output2Bytes, bytes1);
         } catch (IOException e) {
+            logger.error("Script write error", e);
             throw new RuntimeException(e);
         }
         coinbaseTransaction.addOutput(
@@ -163,10 +144,12 @@ public class MinerUtils {
     }
 
     public List<org.ethereum.core.Transaction> getAllTransactions(TransactionPool transactionPool, SignatureCache signatureCache) {
+        return getAllTransactions(transactionPool, signatureCache, null);
+    }
 
-        List<Transaction> txs = transactionPool.getPendingTransactions();
-
-        return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs, signatureCache);
+    public List<org.ethereum.core.Transaction> getAllTransactions(TransactionPool transactionPool, SignatureCache signatureCache, List<Transaction> txsToRemove) {
+        List<Transaction> txs = new ArrayList<>(transactionPool.getPendingTransactions());
+        return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs, signatureCache, txsToRemove);
     }
 
     public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled, SignatureCache signatureCache) {
@@ -220,6 +203,25 @@ public class MinerUtils {
         logger.debug("Ending getTransactions {}", txsResult.size());
 
         return txsResult;
+    }
+
+    private static byte[] generateRandomPrefix() {
+        byte[] prefix = new byte[random.nextInt(1000)];
+        random.nextBytes(prefix);
+        return prefix;
+    }
+
+    private static ByteArrayOutputStream buildScriptPubKeyBytes() {
+        ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();
+        co.rsk.bitcoinj.core.BtcECKey key = new co.rsk.bitcoinj.core.BtcECKey();
+        try {
+            co.rsk.bitcoinj.script.Script.writeBytes(scriptPubKeyBytes, key.getPubKey());
+        } catch (IOException e) {
+            logger.error("Script write error", e);
+            throw new RuntimeException(e);
+        }
+        scriptPubKeyBytes.write(co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKSIG);
+        return scriptPubKeyBytes;
     }
 
     private boolean isLowGasPriced(Coin minGasPrice, Transaction tx) {

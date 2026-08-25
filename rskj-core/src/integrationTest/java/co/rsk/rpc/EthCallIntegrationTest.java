@@ -34,6 +34,9 @@ import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -61,6 +64,12 @@ class EthCallIntegrationTest {
     // Generous client-side HTTP timeout for expensive calls.
     private static final long EXPENSIVE_CALL_TIMEOUT_MS = 120_000;
     private static final long BATCH_CALL_TIMEOUT_MS = 300_000;
+
+    // Health-probe budget used by concurrentHighGasCalls_shouldTestRpcResponsiveness. It is
+    // derived at runtime from a calibration call rather than hard-coded -- see that test.
+    private static final long MIN_PROBE_TIMEOUT_MS = 2_000;
+    private static final long MAX_PROBE_TIMEOUT_MS = 15_000;
+    private static final int PROBE_TIMEOUT_FACTOR = 6;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -244,13 +253,25 @@ class EthCallIntegrationTest {
      * hold a Netty thread briefly. Brief transient probe failures under peak
      * saturation are expected — the defense against individual-call flooding
      * is network-level rate limiting, not thread availability.
+     * <p>
+     * The per-probe timeout is calibrated at runtime instead of hard-coded. eth_call is
+     * handled on the Netty event-loop thread that owns the connection (see
+     * {@code Web3HttpServer}, which adds the JSON-RPC handler with no separate executor
+     * group), so the worst case for a health probe is waiting out the call currently
+     * occupying its event loop. That wait is a multiple of how long one capped call takes
+     * on this machine, and machines vary: a CI runner with half the cores runs the same
+     * call ~1.5x slower and gives the node half the event-loop threads to absorb them.
+     * An absolute wall-clock budget therefore encodes the speed of whichever runner it was
+     * tuned on. The success-rate requirement below is unchanged (60% of probes answered);
+     * only the budget each probe is given now scales with the host.
      */
     @Test
     void concurrentHighGasCalls_shouldTestRpcResponsiveness() throws Exception {
         String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s",
                 baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
 
-        int totalProbes = 5;
+        int totalProbes = 10;
+        int minSuccessfulProbes = 6;
 
         Process proc = startNode(cmd);
         try {
@@ -260,6 +281,20 @@ class EthCallIntegrationTest {
             Response baselineResponse = sendHealthProbe(rpcPort, 5000);
             Assertions.assertEquals(200, baselineResponse.code(),
                     "Baseline health probe should succeed without heavy load");
+
+            // Calibrate the probe budget against this machine: time one capped eth_call
+            // with the node otherwise idle.
+            long calibrationStart = System.currentTimeMillis();
+            sendJsonRpcMessage(buildEthCallPayload(SHA3_LOOP_BYTECODE, GAS_10M, 0), rpcPort, EXPENSIVE_CALL_TIMEOUT_MS);
+            long singleCallMs = System.currentTimeMillis() - calibrationStart;
+
+            // A probe arriving at a saturated event loop waits for the call ahead of it, and
+            // every in-flight call is itself slower than the idle measurement because the
+            // worker threads oversubscribe the cores. PROBE_TIMEOUT_FACTOR covers both.
+            long probeTimeoutMs = Math.min(MAX_PROBE_TIMEOUT_MS,
+                    Math.max(MIN_PROBE_TIMEOUT_MS, singleCallMs * PROBE_TIMEOUT_FACTOR));
+            System.out.printf("Idle eth_call took %dms on %d cores; probe timeout set to %dms%n",
+                    singleCallMs, Runtime.getRuntime().availableProcessors(), probeTimeoutMs);
 
             // Launch concurrent high-gas calls to stress the RPC layer.
             // Each call is capped at callGasCap (10M, ~0.5s per call).
@@ -289,14 +324,17 @@ class EthCallIntegrationTest {
 
             tasksStarted.await(10, TimeUnit.SECONDS);
 
-            // Send sequential health probes with short timeout.
-            // In a normal state, eth_blockNumber responds quickly.
-            // Probes failing indicates high load saturation.
+            // Send sequential health probes. In a normal state eth_blockNumber responds
+            // quickly; probes exceeding the calibrated budget indicate load saturation.
             AtomicInteger failedProbes = new AtomicInteger(0);
+            List<Long> probeLatencies = new ArrayList<>();
             for (int i = 0; i < totalProbes; i++) {
+                long probeStart = System.currentTimeMillis();
                 try {
-                    Response probeResponse = sendHealthProbe(rpcPort, 2000);
-                    if (probeResponse.code() != 200) {
+                    Response probeResponse = sendHealthProbe(rpcPort, probeTimeoutMs);
+                    if (probeResponse.code() == 200) {
+                        probeLatencies.add(System.currentTimeMillis() - probeStart);
+                    } else {
                         failedProbes.incrementAndGet();
                     }
                 } catch (IOException e) {
@@ -307,12 +345,28 @@ class EthCallIntegrationTest {
 
             executor.shutdownNow();
 
-            Assertions.assertTrue(failedProbes.get() <= 2,
-                    String.format("Expected at most 2 out of %d health probes to timeout due to load, but %d failed",
-                            totalProbes, failedProbes.get()));
+            Collections.sort(probeLatencies);
+            String latencySummary = probeLatencies.isEmpty()
+                    ? "none answered"
+                    : String.format("median=%dms max=%dms", probeLatencies.get(probeLatencies.size() / 2),
+                            probeLatencies.get(probeLatencies.size() - 1));
 
-            System.out.printf("Load test: %d out of %d health probes failed during concurrent execution%n",
-                    failedProbes.get(), totalProbes);
+            Assertions.assertTrue(probeLatencies.size() >= minSuccessfulProbes,
+                    String.format("Expected at least %d of %d health probes to be answered within %dms "
+                                    + "(calibrated from a %dms idle eth_call), but only %d were. Answered: %s",
+                            minSuccessfulProbes, totalProbes, probeTimeoutMs, singleCallMs,
+                            probeLatencies.size(), latencySummary));
+
+            // The regression this test really guards: saturation must be transient, never a
+            // permanent wedge. Once the concurrent load drains, the RPC has to answer again.
+            await().atMost(30, TimeUnit.SECONDS)
+                    .pollInterval(1, TimeUnit.SECONDS)
+                    .ignoreExceptions()
+                    .alias("RPC did not recover after the concurrent load drained")
+                    .until(() -> sendHealthProbe(rpcPort, 5_000).code() == 200);
+
+            System.out.printf("Load test: %d of %d health probes answered within %dms (%s), %d failed%n",
+                    probeLatencies.size(), totalProbes, probeTimeoutMs, latencySummary, failedProbes.get());
         } finally {
             destroyNode(proc);
         }

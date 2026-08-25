@@ -39,7 +39,6 @@ public class ConfigLoader {
     private static final String TESTNET_RESOURCE_PATH = "config/testnet";
     private static final String TESTNET2_RESOURCE_PATH = "config/testnet2";
     private static final String REGTEST_RESOURCE_PATH = "config/regtest";
-    private static final String DEVNET_RESOURCE_PATH = "config/devnet";
     private static final String EXPECTED_RESOURCE_PATH = "expected";
     private static final String YES = "yes";
     private static final String NO = "no";
@@ -163,8 +162,6 @@ public class ConfigLoader {
                 return ConfigFactory.load(TESTNET2_RESOURCE_PATH);
             } else if (NodeCliFlags.NETWORK_REGTEST.getName().equals(network)) {
                 return ConfigFactory.load(REGTEST_RESOURCE_PATH);
-            } else if (NodeCliFlags.NETWORK_DEVNET.getName().equals(network)) {
-                return ConfigFactory.load(DEVNET_RESOURCE_PATH);
             } else if (NodeCliFlags.NETWORK_MAINNET.getName().equals(network)) {
                 return ConfigFactory.load(MAINNET_RESOURCE_PATH);
             } else {

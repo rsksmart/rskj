@@ -18,21 +18,10 @@
 
 package co.rsk.db;
 
-import co.rsk.core.RskAddress;
-import co.rsk.core.types.ints.Uint24;
-import co.rsk.crypto.Keccak256;
-import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.code_intelligence.jazzer.junit.FuzzTest;
-import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.db.MutableRepository;
-import org.ethereum.db.TrieKeyMapper;
-import org.ethereum.vm.DataWord;
-import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;

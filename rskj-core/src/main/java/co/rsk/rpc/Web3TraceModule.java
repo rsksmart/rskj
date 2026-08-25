@@ -44,4 +44,3 @@ public interface Web3TraceModule {
 
     TraceModule getTraceModule();
 }
-

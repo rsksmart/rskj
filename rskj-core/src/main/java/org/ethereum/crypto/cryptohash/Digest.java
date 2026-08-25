@@ -83,14 +83,14 @@ public interface Digest {
 	 *
 	 * @param in   the input byte
 	 */
-	public void update(byte in);
+	void update(byte in);
 
 	/**
 	 * Insert some more bytes.
 	 *
 	 * @param inbuf   the data bytes
 	 */
-	public void update(BytesSlice inbuf);
+	void update(BytesSlice inbuf);
 
 	/**
 	 * Insert some more bytes.
@@ -99,7 +99,7 @@ public interface Digest {
 	 * @param off     the data offset in {@code inbuf}
 	 * @param len     the data length (in bytes)
 	 */
-	public void update(BytesSlice inbuf, int off, int len);
+	void update(BytesSlice inbuf, int off, int len);
 
 	/**
 	 * Finalize the current hash computation and return the hash value
@@ -107,7 +107,7 @@ public interface Digest {
 	 *
 	 * @return  the hash output
 	 */
-	public byte[] digest();
+	byte[] digest();
 
 	/**
 	 * Input some bytes, then finalize the current hash computation
@@ -117,7 +117,7 @@ public interface Digest {
 	 * @param inbuf   the input data
 	 * @return  the hash output
 	 */
-	public byte[] digest(byte[] inbuf);
+	byte[] digest(byte[] inbuf);
 
 	/**
 	 * Finalize the current hash computation and store the hash value
@@ -133,20 +133,20 @@ public interface Digest {
 	 * @param len      the requested hash output length (in bytes)
 	 * @return  the number of bytes actually written in {@code outbuf}
 	 */
-	public int digest(byte[] outbuf, int off, int len);
+	int digest(byte[] outbuf, int off, int len);
 
 	/**
 	 * Get the natural hash function output length (in bytes).
 	 *
 	 * @return  the digest output length (in bytes)
 	 */
-	public int getDigestLength();
+	int getDigestLength();
 
 	/**
 	 * Reset the object: this makes it suitable for a new hash
 	 * computation. The current computation, if any, is discarded.
 	 */
-	public void reset();
+	void reset();
 
 	/**
 	 * Clone the current state. The returned object evolves independantly
@@ -154,7 +154,7 @@ public interface Digest {
 	 *
 	 * @return  the clone
 	 */
-	public Digest copy();
+	Digest copy();
 
 	/**
 	 * <p>Return the "block length" for the hash function. This
@@ -174,7 +174,7 @@ public interface Digest {
 	 *
 	 * @return  the internal block length (in bytes), or {@code -n}
 	 */
-	public int getBlockLength();
+	int getBlockLength();
 
 	/**
 	 * <p>Get the display name for this function (e.g. {@code "SHA-1"}
@@ -182,5 +182,6 @@ public interface Digest {
 	 *
 	 * @see Object
 	 */
-	public String toString();
+    @Override
+	String toString();
 }

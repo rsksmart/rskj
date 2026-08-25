@@ -8,7 +8,8 @@ import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.peg.constants.*;
+import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.peg.federation.FederationFormatVersion;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -104,6 +105,20 @@ class FederationConstantsTest {
             Arguments.of(MAINNET, genesisFedCreationTimeMainnet),
             Arguments.of(TESTNET, genesisFedCreationTimeTestnet),
             Arguments.of(REGTEST, genesisFedCreationTimeRegtest)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("genesisFederationTypeArgs")
+    void getGenesisFederationType(FederationConstants constants, FederationFormatVersion expectedType) {
+        assertEquals(expectedType, constants.getGenesisFederationType());
+    }
+
+    private static Stream<Arguments> genesisFederationTypeArgs() {
+        return Stream.of(
+            Arguments.of(MAINNET, FederationFormatVersion.STANDARD_MULTISIG_FEDERATION),
+            Arguments.of(TESTNET, FederationFormatVersion.STANDARD_MULTISIG_FEDERATION),
+            Arguments.of(REGTEST, FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION)
         );
     }
 

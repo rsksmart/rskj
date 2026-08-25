@@ -2032,7 +2032,7 @@ public abstract class VMTest {
             Assertions.assertTrue(false);
         }
 
-        byte code[] = outputStream.toByteArray();
+        byte[] code = outputStream.toByteArray();
 
         program = getProgram(code);
         // no negative values allowed. Currently values over 127 are limited
@@ -3595,7 +3595,7 @@ public abstract class VMTest {
         private byte[] code;
         private int pc;
 
-        public ByteCodeIterator(byte[] code) {
+        ByteCodeIterator(byte[] code) {
             this.code = code;
         }
 

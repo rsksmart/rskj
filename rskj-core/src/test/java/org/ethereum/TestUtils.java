@@ -209,11 +209,11 @@ public final class TestUtils {
     }
 
     private static class WhiteboxException extends RuntimeException {
-        public WhiteboxException(String message) {
+        WhiteboxException(String message) {
             super(message);
         }
 
-        public WhiteboxException(String message, Throwable cause) {
+        WhiteboxException(String message, Throwable cause) {
             super(message, cause);
         }
     }

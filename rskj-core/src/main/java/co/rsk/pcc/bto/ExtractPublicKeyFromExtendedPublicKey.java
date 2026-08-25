@@ -41,7 +41,7 @@ public class ExtractPublicKeyFromExtendedPublicKey extends NativeMethod {
 
     private final HDWalletUtilsHelper helper;
 
-    private final static String INVALID_EXTENDED_PUBLIC_KEY = "Invalid extended public key '%s'";
+    private static final String INVALID_EXTENDED_PUBLIC_KEY = "Invalid extended public key '%s'";
 
     public ExtractPublicKeyFromExtendedPublicKey(ExecutionEnvironment executionEnvironment, HDWalletUtilsHelper helper) {
         super(executionEnvironment);

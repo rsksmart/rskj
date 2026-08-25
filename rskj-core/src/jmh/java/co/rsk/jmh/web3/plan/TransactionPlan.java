@@ -20,15 +20,11 @@ package co.rsk.jmh.web3.plan;
 
 import co.rsk.jmh.helpers.BenchmarkHelper;
 import co.rsk.jmh.web3.BenchmarkWeb3Exception;
-import co.rsk.jmh.web3.e2e.RskModuleWeb3j;
 import co.rsk.jmh.web3.factory.TransactionFactory;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.BenchmarkParams;
 import org.web3j.protocol.core.methods.request.Transaction;
-import org.web3j.protocol.core.methods.response.EthSendTransaction;
-import org.web3j.protocol.core.methods.response.EthTransaction;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.Optional;

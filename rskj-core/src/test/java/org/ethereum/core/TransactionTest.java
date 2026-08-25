@@ -661,6 +661,7 @@ class TransactionTest {
             Assertions.fail();
         }
         catch (RuntimeException ex) {
+            // expected
         }
 
         try {
@@ -668,6 +669,7 @@ class TransactionTest {
             Assertions.fail();
         }
         catch (RuntimeException ex) {
+            // expected
         }
 
         Transaction tx1 = createTx(sender, contractAddress, callData, repository);

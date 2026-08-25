@@ -738,7 +738,7 @@ class P2shErpFederationTest {
         Script script;
 
         @JsonCreator
-        public RawGeneratedRedeemScript(@JsonProperty("mainFed") List<String> mainFed,
+        RawGeneratedRedeemScript(@JsonProperty("mainFed") List<String> mainFed,
                                         @JsonProperty("emergencyFed") List<String> emergencyFed,
                                         @JsonProperty("timelock") Long timelock,
                                         @JsonProperty("script") String script) {

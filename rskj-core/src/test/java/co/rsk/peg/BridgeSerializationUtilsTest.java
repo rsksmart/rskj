@@ -24,8 +24,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
@@ -74,6 +73,8 @@ class BridgeSerializationUtilsTest {
 
     private static final Address ADDRESS = BitcoinTestUtils.createP2PKHAddress(MAINNET_PARAMETERS, "first");
     private static final Address OTHER_ADDRESS = BitcoinTestUtils.createP2PKHAddress(MAINNET_PARAMETERS, "second");
+
+    private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
 
     private static Stream<Arguments> validRskAddressesProvider() {
         return Stream.of(
@@ -1236,8 +1237,8 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void deserializeTransactionSet_emptyOrNull() {
-        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(null, TESTNET_PARAMETERS).getEntries().size());
-        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(new byte[]{}, TESTNET_PARAMETERS).getEntries().size());
+        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(null, TESTNET_PARAMETERS).getEntries(ACTIVATIONS_ALL).size());
+        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(new byte[]{}, TESTNET_PARAMETERS).getEntries(ACTIVATIONS_ALL).size());
     }
 
     @Test
@@ -1273,9 +1274,9 @@ class BridgeSerializationUtilsTest {
 
         PegoutsWaitingForConfirmations result = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, params);
 
-        Set<PegoutsWaitingForConfirmations.Entry> entries = result.getEntries();
+        var entries = result.getEntries(ACTIVATIONS_ALL);
 
-        assertEquals(expectedEntries, entries);
+        assertEquals(expectedEntries, new HashSet<>(entries));
     }
 
     @Test

@@ -460,7 +460,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         private final double score;
         private final NodeMsgTraceInfo nodeMsgTraceInfo;
 
-        public MessageTask(Peer sender, Message message, double score, NodeMsgTraceInfo nodeMsgTraceInfo) {
+        MessageTask(Peer sender, Message message, double score, NodeMsgTraceInfo nodeMsgTraceInfo) {
             this.sender = sender;
             this.message = message;
             this.score = score;

@@ -91,7 +91,7 @@ class ProgramTest {
         gasCost = precompiledContract.getGasForData(DataWord.ONE.getData());
 
         when(repository.startTracking()).thenReturn(repository);
-        when(repository.getBalance(any())).thenReturn(Coin.valueOf(20l));
+        when(repository.getBalance(any())).thenReturn(Coin.valueOf(20L));
 
         when(programInvoke.getOwnerAddress()).thenReturn(DataWord.ONE);
         when(programInvoke.getRepository()).thenReturn(repository);

@@ -503,7 +503,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsFromBlockchainWithCallContractAndFilterByContractAddress() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         HexAddressParam[] addressParam = new HexAddressParam[]{new HexAddressParam(block1.getTransactionsList().get(0).getContractAddress().toJsonString())};
         FilterRequestParam fr = new FilterRequestParam(new BlockIdentifierParam("earliest"), null, addressParam, null, null);
         Object[] logs = web3.eth_getLogs(fr);
@@ -521,7 +521,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsTwoceFromBlockchainWithCallContractAndFilterByContractAddress() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         HexAddressParam[] hexAddressParam = new HexAddressParam[]{
                 new HexAddressParam(block1.getTransactionsList().get(0).getContractAddress().toJsonString())
@@ -602,7 +602,7 @@ class Web3ImplLogsTest {
     void getLogsFromBlockchainWithCallContractAndFilterByKnownTopic() throws Exception {
         addContractCall();
 
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = initTopicsArray(GET_VALUED_EVENT_SIGNATURE);
         FilterRequestParam fr = new FilterRequestParam(blockIdentifierParam, null, null, topics, null);
@@ -618,7 +618,7 @@ class Web3ImplLogsTest {
     void getLogsTwiceFromBlockchainWithCallContractAndFilterByKnownTopic() throws Exception {
         addContractCall();
 
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = initTopicsArray(GET_VALUED_EVENT_SIGNATURE);
         FilterRequestParam fr = new FilterRequestParam(blockIdentifierParam, null, null, topics, null);
@@ -634,7 +634,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsFromBlockchainWithCallContractAndFilterByKnownTopicInList() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = initTopicsArray(GET_VALUED_EVENT_SIGNATURE);
         FilterRequestParam fr = new FilterRequestParam(blockIdentifierParam, null, null, topics, null);
@@ -649,7 +649,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsTwiceFromBlockchainWithCallContractAndFilterByKnownTopicInList() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = initTopicsArray(GET_VALUED_EVENT_SIGNATURE);
         FilterRequestParam fr = new FilterRequestParam(blockIdentifierParam, null, null, topics, null);
@@ -665,7 +665,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsFromBlockchainWithCallContractAndFilterByKnownsTopicInList() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = new TopicParam[][]{{new TopicParam(GET_VALUED_EVENT_SIGNATURE), new TopicParam(INC_EVENT_SIGNATURE)}};
         FilterRequestParam fr = new FilterRequestParam(blockIdentifierParam, null, null, topics, null);
@@ -683,7 +683,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsTwiceFromBlockchainWithCallContractAndFilterByKnownsTopicInList() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = new TopicParam[][]{{new TopicParam(GET_VALUED_EVENT_SIGNATURE), new TopicParam(INC_EVENT_SIGNATURE)}};
         FilterRequestParam fr = new FilterRequestParam(blockIdentifierParam, null, null, topics, null);
@@ -702,7 +702,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsFromBlockchainWithCallContractAndFilterByKnownTopicInListWithNull() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = new TopicParam[][]{{new TopicParam(GET_VALUED_EVENT_SIGNATURE)}, {null}};
         FilterRequestParam fr = new FilterRequestParam(blockIdentifierParam, null, null, topics, null);
@@ -717,7 +717,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsTwiceFromBlockchainWithCallContractAndFilterByKnownTopicInListWithNull() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = new TopicParam[][]{{new TopicParam(GET_VALUED_EVENT_SIGNATURE)}, {null}};
 
@@ -734,7 +734,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsFromBlockchainWithCallContractAndFilterWithNullTopic() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = new TopicParam[][]{{null}};
         FilterRequestParam fr = new FilterRequestParam(blockIdentifierParam, null, null, topics, null);
@@ -752,7 +752,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsTwiceFromBlockchainWithCallContractAndFilterWithNullTopic() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = new TopicParam[][]{{null}};
         FilterRequestParam fr = new FilterRequestParam(blockIdentifierParam, null, null, topics, null);
@@ -771,7 +771,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsFromBlockchainWithCallContractAndFilterWithTwoTopics() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = new TopicParam[][]{{new TopicParam(INC_EVENT_SIGNATURE)}, {new TopicParam(ONE_TOPIC)}};
         FilterRequestParam fr = new FilterRequestParam(blockIdentifierParam, null, null, topics, null);
@@ -789,7 +789,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsTwiceFromBlockchainWithCallContractAndFilterWithTwoTopics() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = new TopicParam[][]{{new TopicParam(INC_EVENT_SIGNATURE)}, {new TopicParam(ONE_TOPIC)}};
         FilterRequestParam fr = new FilterRequestParam(blockIdentifierParam, null, null, topics, null);
@@ -808,7 +808,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsFromBlockchainWithCallContractAndFilterBySecondTopic() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = new TopicParam[][]{{null}, {new TopicParam(ONE_TOPIC)}};
         FilterRequestParam fr = new FilterRequestParam(blockIdentifierParam, null, null, topics, null);
@@ -826,7 +826,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsTwiceFromBlockchainWithCallContractAndFilterBySecondTopic() throws Exception {
         addContractCall();
-        Block block1 = blockChain.getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1L);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("earliest");
         TopicParam[][] topics = new TopicParam[][]{{null}, {new TopicParam(ONE_TOPIC)}};
         FilterRequestParam fr = new FilterRequestParam(blockIdentifierParam, null, null, topics, null);

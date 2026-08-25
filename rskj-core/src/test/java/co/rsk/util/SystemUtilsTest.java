@@ -18,9 +18,7 @@
 
 package co.rsk.util;
 
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.config.blockchain.upgrades.NetworkUpgrade;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;

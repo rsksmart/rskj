@@ -69,8 +69,10 @@ public abstract class PrecompiledContractPerformanceTestCase {
         private static final long MILLION = 1_000_000;
 
         private final ThreadMXBean thread;
-        private long startTime, endTime;
-        private long startRealTime, endRealTime;
+        private long startTime;
+        private long endTime;
+        private long startRealTime;
+        private long endRealTime;
         private RepositoryTrackWithBenchmarking.Statistics repositoryStatistics;
 
         public ExecutionTracker(ThreadMXBean thread) {
@@ -124,7 +126,6 @@ public abstract class PrecompiledContractPerformanceTestCase {
         if (!thread.isThreadCpuTimeSupported()) {
             throw new RuntimeException("Thread CPU time not supported");
         }
-        ;
 
         oldCpuTimeEnabled = thread.isThreadCpuTimeEnabled();
         thread.setThreadCpuTimeEnabled(true);

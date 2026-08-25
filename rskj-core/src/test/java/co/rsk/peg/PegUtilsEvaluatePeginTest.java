@@ -137,7 +137,7 @@ class PegUtilsEvaluatePeginTest {
     @ParameterizedTest()
     @MethodSource("protocolVersionArgs")
     void evaluatePegin_parseThrowsExceptionAndBtcRefundAddressIsPresent(int protocolVersion) throws PeginInstructionsException {
-        Address btcRefundAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");;
+        Address btcRefundAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");
         PeginInformation peginInformation = mock(PeginInformation.class);
         when(peginInformation.getBtcRefundAddress()).thenReturn(btcRefundAddress);
 

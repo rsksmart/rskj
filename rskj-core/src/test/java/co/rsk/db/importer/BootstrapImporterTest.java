@@ -30,8 +30,8 @@ class BootstrapImporterTest {
         // using toURI() instead of getPath() prevent some errors on Windows
         // (https://stackoverflow.com/questions/38887853/java-nio-file-invalidpathexception-with-getpath/38888561)
         Path path = Paths.get(getClass().getClassLoader().getResource("import/bootstrap-data.bin").toURI());
-        byte[] oneBlockAndState = Files.readAllBytes(path);
-        when(bootstrapDataProvider.getBootstrapData()).thenReturn(oneBlockAndState);
+        when(bootstrapDataProvider.getBootstrapDataPath()).thenReturn(path);
+        when(bootstrapDataProvider.getBootstrapData()).thenReturn(Files.readAllBytes(path));
         when(bootstrapDataProvider.getSelectedHeight()).thenReturn(1L);
 
         BootstrapImporter bootstrapImporter = new BootstrapImporter(blockStore, trieStore,

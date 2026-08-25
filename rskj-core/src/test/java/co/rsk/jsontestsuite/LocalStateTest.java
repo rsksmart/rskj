@@ -659,4 +659,3 @@ class LocalStateTest {
         return json;
     }
 }
-

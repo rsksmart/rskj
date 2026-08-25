@@ -94,7 +94,7 @@ class BlockSyncServiceTest {
         Block branchingPoint = blockchain.getBlockByNumber(7);
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        List<Block> extendedChain = blockGenerator.getBlockChain(branchingPoint, 10, 1000000l);
+        List<Block> extendedChain = blockGenerator.getBlockChain(branchingPoint, 10, 1000000L);
         // we have just surpassed the best branch
         for (int i = 0; i < extendedChain.size(); i++) {
             Block newBestBlock = extendedChain.get(i);

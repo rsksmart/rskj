@@ -28,6 +28,35 @@ public final class RpcTransactionAssertions {
     private RpcTransactionAssertions() {}
 
 
+    /**
+     * Waits until every transaction is known to the node's pending pool (i.e.
+     * {@code eth_getTransactionByHash} returns a result for it). This is the
+     * deterministic gate to run before mining a single block: it guarantees all
+     * transactions are queued so that one {@code evm_mine} includes them together.
+     */
+    public static void awaitTransactionsInPool(int rpcPort, final int maxAttempts, final long sleepMills, List<String> txHashes) {
+        for (String txHash : txHashes) {
+            try {
+                boolean known = false;
+                for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+                    JsonNode response = OkHttpClientTestFixture.getJsonResponseForGetTransactionByHash(rpcPort, txHash);
+                    JsonNode result = response.get("result");
+                    if (result != null && !result.isNull()) {
+                        known = true;
+                        break;
+                    }
+                    Thread.sleep(sleepMills);
+                }
+                Assertions.assertTrue(known, () -> "Transaction not found in pool after " + maxAttempts + " attempts for tx " + txHash);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                Assertions.fail("Interrupted while waiting for tx in pool " + txHash, e);
+            } catch (Exception e) {
+                Assertions.fail("Failed while waiting for tx in pool " + txHash, e);
+            }
+        }
+    }
+
     public static long assertMined(int rpcPort, final int maxAttempts, final long sleepMills, String txHash) {
         try {
             JsonNode receipt = null;

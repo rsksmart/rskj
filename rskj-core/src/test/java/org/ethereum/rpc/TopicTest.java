@@ -21,7 +21,6 @@ package org.ethereum.rpc;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.bouncycastle.util.encoders.DecoderException;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 /**
  * Created by ajlopez on 18/01/2018.
