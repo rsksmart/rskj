@@ -1,20 +1,3 @@
-/*
- * This file is part of RskJ
- * Copyright (C) 2024 RSK Labs Ltd.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
 package co.rsk.peg.constants;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,7 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.Keccak256;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.HashUtil;
 import org.junit.jupiter.api.Test;
 
 class HistoricalPegoutSelectionsConstantsTest {
@@ -94,10 +81,40 @@ class HistoricalPegoutSelectionsConstantsTest {
     }
 
     @Test
+    void mainnetDataset_matchesPinnedDigest() {
+        assertEquals("504f1aeb5364bd0bb99609868d2437a1cf40be4508483ff9255d8f37fd7c5544",
+            digestOf(HistoricalPegoutSelectionsMainNetConstants.getInstance()));
+    }
+
+    @Test
+    void testnetDataset_matchesPinnedDigest() {
+        assertEquals("1121533b823aeb59483536040683d6b189d32278ec9d45ca5673cda3e1935e1c",
+            digestOf(HistoricalPegoutSelectionsTestNetConstants.getInstance()));
+    }
+
+    @Test
     void selections_areImmutable() {
         assertThrows(UnsupportedOperationException.class,
             () -> HistoricalPegoutSelectionsMainNetConstants.getInstance().getSelections()
                 .put(UNKNOWN_RSK_TX, MAINNET_FIRST_BTC_TX));
+    }
+
+    /**
+     * Digest over every pair in the dataset, so that changing a single character of any hash, or swapping
+     * a key with its value, fails the build. The size test only catches additions and removals, and both
+     * sides are 32 bytes, so neither mistake is otherwise detectable. Sorting is required: the iteration
+     * order of a {@code Map.ofEntries} map is unspecified.
+     *
+     * <p>A failure here means the consensus dataset changed. Re-pin only after confirming the change is
+     * intended and independently validated.</p>
+     */
+    private static String digestOf(HistoricalPegoutSelectionsConstants constants) {
+        String canonical = constants.getSelections().entrySet().stream()
+            .map(entry -> entry.getKey() + ":" + entry.getValue())
+            .sorted()
+            .collect(Collectors.joining("\n"));
+
+        return Hex.toHexString(HashUtil.sha256(canonical.getBytes(StandardCharsets.UTF_8)));
     }
 
     @Test
