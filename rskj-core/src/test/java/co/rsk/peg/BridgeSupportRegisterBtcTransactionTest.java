@@ -3737,6 +3737,9 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
+            when(federationStorageProvider.getLastRetiredFederationP2SHScript(allActivations)).thenReturn(Optional.ofNullable(inputScript));
+
             Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
                 FIRST_INPUT_INDEX,
                 retiringFederation.getRedeemScript(),
@@ -3933,6 +3936,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
+
             Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
                 FIRST_INPUT_INDEX,
                 retiringFederation.getRedeemScript(),
@@ -4089,6 +4094,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
+
             Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
                 FIRST_INPUT_INDEX,
                 retiringFederation.getRedeemScript(),
@@ -4198,6 +4205,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
+
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
 
             Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
                 FIRST_INPUT_INDEX,
@@ -4341,6 +4350,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
+
             Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
             Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
             Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -4544,6 +4555,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
+
             Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
             Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
             Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -5274,6 +5287,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             FederationTestUtils.addSignatures(retiredFed, retiredFedSigners, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
+
+            when(federationStorageProvider.getLastRetiredFederationP2SHScript(allActivations)).thenReturn(Optional.of(retiredFed.getP2SHScript()));
 
             Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
                 FIRST_INPUT_INDEX,
