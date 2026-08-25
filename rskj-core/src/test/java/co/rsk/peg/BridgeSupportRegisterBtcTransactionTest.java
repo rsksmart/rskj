@@ -4244,8 +4244,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
             Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+            Keccak256 derivationArgumentsHash = RskTestUtils.createHash(0);
+            RskAddress lbcAddress = RskTestUtils.generateAddress("seed");
 
             BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
             Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
@@ -4303,8 +4303,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
             Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+            Keccak256 derivationArgumentsHash = RskTestUtils.createHash(0);
+            RskAddress lbcAddress = RskTestUtils.generateAddress("seed");
 
             BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
             Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
@@ -4362,8 +4362,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
             Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+            Keccak256 derivationArgumentsHash = RskTestUtils.createHash(0);
+            RskAddress lbcAddress = RskTestUtils.generateAddress("seed");
 
             BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
             Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
@@ -4428,8 +4428,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
             Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+            Keccak256 derivationArgumentsHash = RskTestUtils.createHash(0);
+            RskAddress lbcAddress = RskTestUtils.generateAddress("seed");
 
             BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
             Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
@@ -4497,8 +4497,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
             Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+            Keccak256 derivationArgumentsHash = RskTestUtils.createHash(0);
+            RskAddress lbcAddress = RskTestUtils.generateAddress("seed");
 
             BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
             Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
@@ -4566,8 +4566,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
             Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+            Keccak256 derivationArgumentsHash = RskTestUtils.createHash(0);
+            RskAddress lbcAddress = RskTestUtils.generateAddress("seed");
 
             BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
             Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(

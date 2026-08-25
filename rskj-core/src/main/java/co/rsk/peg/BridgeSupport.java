@@ -1452,7 +1452,6 @@ public class BridgeSupport {
             ).toList();
 
         logger.debug("[removeSpentUtxos] Used {} UTXOs for this release", utxosToRemove.size());
-
         utxosToUse.removeAll(utxosToRemove);
     }
 
