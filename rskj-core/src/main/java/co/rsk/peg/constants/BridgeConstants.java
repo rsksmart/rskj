@@ -37,6 +37,8 @@ public abstract class BridgeConstants {
     protected FederationConstants federationConstants;
     protected LockingCapConstants lockingCapConstants;
     protected UnionBridgeConstants unionBridgeConstants;
+    protected HistoricalPegoutSelectionsConstants historicalPegoutSelectionsConstants =
+        new HistoricalPegoutSelectionsConstants();
 
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int rsk2BtcMinimumAcceptableConfirmations;
@@ -75,6 +77,8 @@ public abstract class BridgeConstants {
     public FederationConstants getFederationConstants() { return federationConstants; }
 
     public LockingCapConstants getLockingCapConstants() { return lockingCapConstants; }
+
+    public HistoricalPegoutSelectionsConstants getHistoricalPegoutSelectionsConstants() { return historicalPegoutSelectionsConstants; }
 
     public UnionBridgeConstants getUnionBridgeConstants() {
         return unionBridgeConstants;
