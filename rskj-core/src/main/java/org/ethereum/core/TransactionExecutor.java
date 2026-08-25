@@ -416,7 +416,7 @@ public class TransactionExecutor {
                     track.setupContract(targetAddress);
                 }
             } catch (VMException | RuntimeException e) {
-                if(activations.isActive(ConsensusRule.RSKIP560)) {
+                if (activations.isActive(ConsensusRule.RSKIP560)) {
                     gasLeftover = 0;
                     gasUsed = txGasLimit;
                     execError(e);
