@@ -282,7 +282,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
     }
 
-    private void assertBtcTxWasProcessedAndUtxoAddedInActiveFed(BtcTransaction btcTransaction) throws IOException {
+    private void assertUtxoWasRegistered(BtcTransaction btcTransaction) throws IOException {
         verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
         assertEquals(1, activeFederationUtxos.size());
         assertTrue(retiringFederationUtxos.isEmpty());
@@ -843,7 +843,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
         verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
-        assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+        assertUtxoWasRegistered(btcTransaction);
     }
 
     @ParameterizedTest
@@ -1371,7 +1371,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
 
         verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
-        assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+        assertUtxoWasRegistered(btcTransaction);
     }
 
     @ParameterizedTest
@@ -2858,7 +2858,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -2907,7 +2907,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -2958,7 +2958,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -3007,7 +3007,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -3066,7 +3066,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -3123,7 +3123,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -3172,7 +3172,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -3219,7 +3219,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -3268,7 +3268,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -3315,7 +3315,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -3372,7 +3372,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -3427,7 +3427,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -3688,7 +3688,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -3719,7 +3719,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -3755,7 +3755,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -4143,7 +4143,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -4177,7 +4177,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -4217,7 +4217,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -4276,7 +4276,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -4335,7 +4335,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -4400,7 +4400,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -4761,7 +4761,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
             verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
             verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(migrationTx);
+            assertUtxoWasRegistered(migrationTx);
         }
 
         @Test
@@ -4909,7 +4909,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
             verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
             verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(migrationTx);
+            assertUtxoWasRegistered(migrationTx);
         }
 
         @Test
@@ -5083,7 +5083,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -5113,7 +5113,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -5149,7 +5149,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
 
             // assert
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
 
         @Test
@@ -5245,7 +5245,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
             verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
             verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
-            assertBtcTxWasProcessedAndUtxoAddedInActiveFed(btcTransaction);
+            assertUtxoWasRegistered(btcTransaction);
         }
     }
 }
