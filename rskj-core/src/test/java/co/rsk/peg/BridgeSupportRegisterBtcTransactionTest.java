@@ -2591,7 +2591,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithoutChange(btcTransaction);
+            assertPegoutWithoutChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2604,7 +2604,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithoutChange(btcTransaction);
+            assertPegoutWithoutChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2617,7 +2617,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithoutChange(btcTransaction);
+            assertPegoutWithoutChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2630,7 +2630,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithoutChange(btcTransaction);
+            assertPegoutWithoutChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2644,7 +2644,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithoutChange(btcTransaction);
+            assertPegoutWithoutChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2658,7 +2658,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithoutChange(btcTransaction);
+            assertPegoutWithoutChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2680,7 +2680,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             BtcTransaction refundPegout = pegoutWaitingForConfirmationEntry.getBtcTransaction();
             assertLogReleaseRequested(logs, rskTx.getHash(), refundPegout.getHash(), amountToSend);
 
-            assertPegoutWasRegisteredWithoutChange(btcTransaction);
+            assertPegoutWithoutChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2693,7 +2693,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithChange(btcTransaction);
+            assertPegoutWithChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2706,7 +2706,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithChange(btcTransaction);
+            assertPegoutWithChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2719,7 +2719,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithChange(btcTransaction);
+            assertPegoutWithChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2732,7 +2732,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithChange(btcTransaction);
+            assertPegoutWithChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2746,7 +2746,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithChange(btcTransaction);
+            assertPegoutWithChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2760,7 +2760,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithChange(btcTransaction);
+            assertPegoutWithChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2773,7 +2773,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithChange(btcTransaction);
+            assertPegoutWithChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2786,7 +2786,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithChange(btcTransaction);
+            assertPegoutWithChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2799,7 +2799,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithChange(btcTransaction);
+            assertPegoutWithChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2812,7 +2812,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithChange(btcTransaction);
+            assertPegoutWithChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2826,7 +2826,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithChange(btcTransaction);
+            assertPegoutWithChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2840,7 +2840,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithChange(btcTransaction);
+            assertPegoutWithChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2853,7 +2853,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithoutChange(btcTransaction);
+            assertPegoutWithoutChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2866,7 +2866,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithoutChange(btcTransaction);
+            assertPegoutWithoutChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2879,7 +2879,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithoutChange(btcTransaction);
+            assertPegoutWithoutChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2892,7 +2892,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithoutChange(btcTransaction);
+            assertPegoutWithoutChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2906,7 +2906,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithoutChange(btcTransaction);
+            assertPegoutWithoutChangeWasProcessed(btcTransaction);
         }
 
         @Test
@@ -2920,7 +2920,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
             // assert
-            assertPegoutWasRegisteredWithoutChange(btcTransaction);
+            assertPegoutWithoutChangeWasProcessed(btcTransaction);
         }
 
         void setUp(ForBlock activations) {
@@ -3065,16 +3065,16 @@ class BridgeSupportRegisterBtcTransactionTest {
             bridgeStorageProvider.save();
         }
 
-        private void assertPegoutWasRegisteredWithoutChange(BtcTransaction pegout) throws IOException {
+        private void assertPegoutWithoutChangeWasProcessed(BtcTransaction pegout) throws IOException {
             assertPegoutWasProcessed(pegout);
-            assertNoUtxoWasRegisteredInActiveFed();
-            assertNoUtxoWasRegisteredInRetiringFed();
+            assertNoUtxoWasAddedInActiveFed();
+            assertNoUtxoWasAddedInRetiringFed();
         }
 
-        private void assertPegoutWasRegisteredWithChange(BtcTransaction pegout) throws IOException {
+        private void assertPegoutWithChangeWasProcessed(BtcTransaction pegout) throws IOException {
             assertPegoutWasProcessed(pegout);
-            assertUtxoWasRegisteredInActiveFed();
-            assertNoUtxoWasRegisteredInRetiringFed();
+            assertUtxoWasAddedInActiveFed();
+            assertNoUtxoWasAddedInRetiringFed();
         }
 
         private void assertPegoutWasProcessed(BtcTransaction pegout) throws IOException {
@@ -3082,15 +3082,15 @@ class BridgeSupportRegisterBtcTransactionTest {
             assertTrue(height.isPresent());
         }
 
-        private void assertUtxoWasRegisteredInActiveFed() {
+        private void assertUtxoWasAddedInActiveFed() {
             assertEquals(1, federationSupport.getActiveFederationBtcUTXOs().size());
         }
 
-        private void assertNoUtxoWasRegisteredInActiveFed() {
+        private void assertNoUtxoWasAddedInActiveFed() {
             assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
         }
 
-        private void assertNoUtxoWasRegisteredInRetiringFed() {
+        private void assertNoUtxoWasAddedInRetiringFed() {
             assertTrue(federationSupport.getRetiringFederationBtcUTXOs().isEmpty());
         }
 
