@@ -19,9 +19,18 @@ public final class SyncUtils {
         int chunksToDownload = Math.max(1, Math.min(maxSkeletonChunks, chunksToBestBlock - skippedChunks));
         return 1 + // get status
                 1 + // check best header
-                binarySearchExpectedRequests(bestBlock, currentBestBlock) + // find connection point
+                connectionPointRequests(currentBestBlock) + // find connection point
                 1 + // get skeleton
                 chunksToDownload; // get headers chunks
+    }
+
+    /**
+     * The connection point search probes our own tip first. When we hold nothing above genesis the
+     * answer is genesis and nothing is asked at all; otherwise the peer confirms our tip in a single
+     * request. Only a peer that diverged below our tip falls back to the old binary search.
+     */
+    private static int connectionPointRequests(long currentBestBlock) {
+        return currentBestBlock == 0L ? 0 : 1;
     }
 
     private static int binarySearchExpectedRequests(long bestBlock, long currentBestBlock) {

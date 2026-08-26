@@ -932,22 +932,12 @@ class SyncProcessorTest {
         BlockHeadersRequestMessage requestMessage = (BlockHeadersRequestMessage) messages.get(0);
         processor.processBlockHeadersResponse(sender, new BlockHeadersResponseMessage(requestMessage.getId(), Collections.singletonList(advancedBlockchain.getBestBlock().getHeader())));
 
-        long[] expectedHeights = new long[] { 50, 25, 12, 6, 3, 1};
-
-        for (int k = 0; k < expectedHeights.length; k++) {
-            Assertions.assertEquals( k + 2, messages.size());
-            Message message = messages.get(k + 1);
-            Assertions.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
-            BlockHashRequestMessage request = (BlockHashRequestMessage)message;
-            long requestId = request.getId();
-            Assertions.assertEquals(expectedHeights[k], request.getHeight());
-
-            Block block = advancedBlockchain.getBlockByNumber(expectedHeights[k]);
-
-            processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash().getBytes()));
-        }
-
-        Assertions.assertEquals(expectedHeights.length + 2, messages.size());
+        // We hold nothing above genesis, so the connection point is genesis by definition and no
+        // search is needed. Asking would mean requesting the hash at height 0, which peers do not
+        // answer at all.
+        Assertions.assertEquals(2, messages.size());
+        Assertions.assertTrue(messages.stream()
+                .noneMatch(m -> m.getMessageType() == MessageType.BLOCK_HASH_REQUEST_MESSAGE));
 
         Message message = messages.get(messages.size() - 1);
 
@@ -992,21 +982,20 @@ class SyncProcessorTest {
         BlockHeadersRequestMessage requestMessage = (BlockHeadersRequestMessage) messages.get(0);
         processor.processBlockHeadersResponse(sender, new BlockHeadersResponseMessage(requestMessage.getId(), Collections.singletonList(advancedBlockchain.getBestBlock().getHeader())));
 
-        long[] binarySearchHeights = new long[] { 50, 25, 37, 31, 28, 29, 30, 30 };
-        for (int k = 0; k < binarySearchHeights.length; k++) {
-            Assertions.assertEquals(k + 2, messages.size());
-            Message message = messages.get(k + 1);
-            Assertions.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
-            BlockHashRequestMessage request = (BlockHashRequestMessage)message;
-            long requestId = request.getId();
-            Assertions.assertEquals(binarySearchHeights[k], request.getHeight());
+        // Our 30 blocks are a prefix of the peer's chain, so probing our own tip settles the
+        // connection point in a single round trip. The old binary search needed eight
+        // ({ 50, 25, 37, 31, 28, 29, 30, 30 }) and repeated that for every sync round.
+        Assertions.assertEquals(2, messages.size());
+        Message probe = messages.get(1);
+        Assertions.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, probe.getMessageType());
+        BlockHashRequestMessage probeRequest = (BlockHashRequestMessage) probe;
+        Assertions.assertEquals(30, probeRequest.getHeight());
 
-            Block block = advancedBlockchain.getBlockByNumber(binarySearchHeights[k]);
+        processor.processBlockHashResponse(sender, new BlockHashResponseMessage(
+                probeRequest.getId(),
+                advancedBlockchain.getBlockByNumber(30).getHash().getBytes()));
 
-            processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash().getBytes()));
-        }
-
-        Assertions.assertEquals(binarySearchHeights.length + 2, messages.size());
+        Assertions.assertEquals(3, messages.size());
 
         Message message = messages.get(messages.size() - 1);
 

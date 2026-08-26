@@ -223,8 +223,9 @@ class TwoAsyncNodeUsingSyncProcessorTest {
         node2.sendFullStatusTo(node1);
         // sync setup
         node1.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(b2Size, b1Size, SyncConfiguration.IMMEDIATE_FOR_TESTING));
-        // request bodies
-        node1.waitExactlyNTasksWithTimeout(b2Size - b1Size - longSyncLimit + 1);
+        // request bodies. One body per missing block; the download no longer issues an extra
+        // request for a block that already arrived, which the old lock-step version did.
+        node1.waitExactlyNTasksWithTimeout(b2Size - b1Size - longSyncLimit);
 
         Assertions.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assertions.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());

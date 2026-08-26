@@ -33,6 +33,8 @@ import org.mockito.Mockito;
 
 import java.util.*;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class DownloadingHeadersSyncStateTest {
@@ -107,93 +109,121 @@ class DownloadingHeadersSyncStateTest {
         Assertions.assertTrue(syncEventsHandler.stopSyncingWasCalled());
     }
 
-    @Test
-    void newBlockHeadersWhenNoCurrentChunkThenSyncIssue() {
-        SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
-        SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
-        Peer selectedPeer = mock(Peer.class);
-        DownloadingHeadersSyncState syncState = new DownloadingHeadersSyncState(
-                syncConfiguration,
+    private static List<BlockIdentifier> skeleton(byte[] tipHash) {
+        List<BlockIdentifier> skeleton = new ArrayList<>();
+        skeleton.add(new BlockIdentifier(TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class, "base", 32), 0L));
+        skeleton.add(new BlockIdentifier(tipHash, 1L));
+        return skeleton;
+    }
+
+    private static DownloadingHeadersSyncState stateWith(SyncEventsHandler syncEventsHandler,
+                                                         Peer selectedPeer,
+                                                         Map<Peer, List<BlockIdentifier>> skeletons) {
+        return new DownloadingHeadersSyncState(
+                SyncConfiguration.DEFAULT,
                 syncEventsHandler,
                 mock(ConsensusValidationMainchainView.class),
                 mock(DependentBlockHeaderRule.class),
                 mock(BlockHeaderValidationRule.class),
-                selectedPeer, Collections.emptyMap(),
+                selectedPeer, skeletons,
                 0);
+    }
 
-        ChunksDownloadHelper chunksDownloadHelper = mock(ChunksDownloadHelper.class);
-        TestUtils.setInternalState(syncState, "chunksDownloadHelper", chunksDownloadHelper);
+    private static BlockHeader headerWithHash(byte[] hash) {
+        BlockHeader header = mock(BlockHeader.class, Mockito.RETURNS_DEEP_STUBS);
+        when(header.getHash().getBytes()).thenReturn(hash);
+        return header;
+    }
 
-        when(chunksDownloadHelper.getCurrentChunk()).thenReturn(Optional.empty());
+    @Test
+    void onEnterWithEmptySkeletonThenSyncIssue() {
+        SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
+        Peer selectedPeer = mock(Peer.class);
+        DownloadingHeadersSyncState syncState = stateWith(syncEventsHandler, selectedPeer, Collections.emptyMap());
 
-        syncState.newBlockHeaders(selectedPeer, new ArrayList<>());
+        syncState.onEnter();
 
         verify(syncEventsHandler, times(1)).onSyncIssue(selectedPeer,
-                "Current chunk not present on {}", DownloadingHeadersSyncState.class);
+                "Empty skeleton on {}", DownloadingHeadersSyncState.class);
     }
 
     @Test
     void newBlockHeadersWhenUnexpectedChunkSizeThenInvalidMessage() {
-        SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
         Peer selectedPeer = mock(Peer.class);
-        DownloadingHeadersSyncState syncState = new DownloadingHeadersSyncState(
-                syncConfiguration,
-                syncEventsHandler,
-                mock(ConsensusValidationMainchainView.class),
-                mock(DependentBlockHeaderRule.class),
-                mock(BlockHeaderValidationRule.class),
-                selectedPeer, Collections.emptyMap(),
-                0);
+        byte[] chunkHash = TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class, "chunkHash", 32);
+        DownloadingHeadersSyncState syncState = stateWith(syncEventsHandler, selectedPeer,
+                Collections.singletonMap(selectedPeer, skeleton(chunkHash)));
 
-        ChunksDownloadHelper chunksDownloadHelper = mock(ChunksDownloadHelper.class);
-        TestUtils.setInternalState(syncState, "chunksDownloadHelper", chunksDownloadHelper);
+        syncState.onEnter();
 
-        ChunkDescriptor currentChunk = mock(ChunkDescriptor.class);
-        when(currentChunk.getCount()).thenReturn(2); // different from chunk size
-        byte[] chunkHash = TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class,"chunkHash",32);
-        when(currentChunk.getHash()).thenReturn(chunkHash);
-        when(chunksDownloadHelper.getCurrentChunk()).thenReturn(Optional.of(currentChunk));
-
+        // top header matches the skeleton boundary, but the chunk carries more headers than the
+        // descriptor says it should
         List<BlockHeader> chunk = new ArrayList<>();
-        chunk.add(mock(BlockHeader.class));
+        chunk.add(headerWithHash(chunkHash));
+        chunk.add(headerWithHash(TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class, "extra", 32)));
+
         syncState.newBlockHeaders(selectedPeer, chunk);
 
         verify(syncEventsHandler, times(1)).onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
-                "Unexpected chunk size received on {}: hash: {}", DownloadingHeadersSyncState.class, HashUtil.toPrintableHash(currentChunk.getHash()));
+                "Unexpected chunk size received on {}: hash: {}", DownloadingHeadersSyncState.class,
+                HashUtil.toPrintableHash(chunkHash));
     }
 
     @Test
-    void newBlockHeadersWhenUnexpectedHeaderThenInvalidMessage() {
-        SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
+    void newBlockHeadersWhenUnknownChunkThenInvalidMessage() {
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
         Peer selectedPeer = mock(Peer.class);
+        byte[] chunkHash = TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class, "chunkHash", 32);
+        DownloadingHeadersSyncState syncState = stateWith(syncEventsHandler, selectedPeer,
+                Collections.singletonMap(selectedPeer, skeleton(chunkHash)));
+
+        syncState.onEnter();
+
+        // a chunk whose top header hashes to nothing in the trusted skeleton
+        List<BlockHeader> chunk = new ArrayList<>();
+        chunk.add(headerWithHash(TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class, "headerHash", 32)));
+
+        syncState.newBlockHeaders(selectedPeer, chunk);
+
+        verify(syncEventsHandler, times(1)).onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
+                "Unexpected headers chunk received on {}", DownloadingHeadersSyncState.class);
+    }
+
+    @Test
+    void chunkRequestsAreSpreadOverEveryPeerThatSharesTheSkeleton() {
+        SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
+        Peer selectedPeer = mock(Peer.class);
+        Peer helperPeer = mock(Peer.class);
+
+        // three chunks, so more than one request can be in flight at a time
+        List<BlockIdentifier> sk = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            sk.add(new BlockIdentifier(
+                    TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class, "link" + i, 32), i));
+        }
+        Map<Peer, List<BlockIdentifier>> skeletons = new HashMap<>();
+        skeletons.put(selectedPeer, sk);
+        skeletons.put(helperPeer, sk);
+
+        // up to 3 chunk requests in flight, at most 2 to any single peer
+        SyncConfiguration parallelConfig = new SyncConfiguration(
+                5, 60, 30, 5, 20, 192, 20, 10, 0, false, false, 0,
+                Collections.emptyList(), 24, 0, 3, 2);
+
         DownloadingHeadersSyncState syncState = new DownloadingHeadersSyncState(
-                syncConfiguration,
+                parallelConfig,
                 syncEventsHandler,
                 mock(ConsensusValidationMainchainView.class),
                 mock(DependentBlockHeaderRule.class),
                 mock(BlockHeaderValidationRule.class),
-                selectedPeer, Collections.emptyMap(),
+                selectedPeer, skeletons,
                 0);
 
-        ChunksDownloadHelper chunksDownloadHelper = mock(ChunksDownloadHelper.class);
-        TestUtils.setInternalState(syncState, "chunksDownloadHelper", chunksDownloadHelper);
+        syncState.onEnter();
 
-        ChunkDescriptor currentChunk = mock(ChunkDescriptor.class);
-        when(currentChunk.getCount()).thenReturn(1);
-        byte[] chunkHash = TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class,"chunkHash",32);
-        when(currentChunk.getHash()).thenReturn(chunkHash);
-        when(chunksDownloadHelper.getCurrentChunk()).thenReturn(Optional.of(currentChunk));
-
-        List<BlockHeader> chunk = new ArrayList<>();
-        BlockHeader header = mock(BlockHeader.class, Mockito.RETURNS_DEEP_STUBS);
-        byte[] headerHash = TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class,"headerHash",32);
-        when(header.getHash().getBytes()).thenReturn(headerHash); // different from chunkHash
-        chunk.add(header);
-        syncState.newBlockHeaders(selectedPeer, chunk);
-
-        verify(syncEventsHandler, times(1)).onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
-                "Unexpected chunk header hash received on {}: hash: {}", DownloadingHeadersSyncState.class, HashUtil.toPrintableHash(currentChunk.getHash()));
+        // all three chunks dispatched at once, and the load shared with the helper peer
+        verify(syncEventsHandler, times(3)).sendBlockHeadersRequest(any(Peer.class), any(ChunkDescriptor.class));
+        verify(syncEventsHandler, atLeastOnce()).sendBlockHeadersRequest(eq(helperPeer), any(ChunkDescriptor.class));
     }
 }

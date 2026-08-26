@@ -26,12 +26,21 @@ import java.util.*;
 
 public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
 
+    /**
+     * How long to keep waiting for the remaining skeletons once the trusted peer has answered.
+     * Collecting a skeleton from every candidate is what lets the header and body phases spread
+     * their requests, but a single unresponsive candidate must not hold a whole sync round hostage
+     * for the full request timeout.
+     */
+    private static final Duration REMAINING_SKELETONS_GRACE = Duration.ofSeconds(2);
+
     private final PeersInformation peersInformation;
     private final Map<Peer, List<BlockIdentifier>> skeletons;
     private final List<Peer> candidates;
     private long connectionPoint;
     private long expectedSkeletons;
     private boolean selectedPeerAnswered;
+    private Duration elapsedSinceSelectedPeerAnswered = Duration.ZERO;
 
 
     public DownloadingSkeletonSyncState(SyncConfiguration syncConfiguration,
@@ -67,6 +76,9 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
         }
 
         expectedSkeletons--;
+        if (isSelectedPeer && !selectedPeerAnswered) {
+            elapsedSinceSelectedPeerAnswered = Duration.ZERO;
+        }
         selectedPeerAnswered = selectedPeerAnswered || isSelectedPeer;
 
         if (expectedSkeletons <= 0){
@@ -81,6 +93,16 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
     @Override
     public void tick(Duration duration) {
         timeElapsed = timeElapsed.plus(duration);
+
+        if (selectedPeerAnswered && !skeletons.isEmpty()) {
+            elapsedSinceSelectedPeerAnswered = elapsedSinceSelectedPeerAnswered.plus(duration);
+            if (elapsedSinceSelectedPeerAnswered.compareTo(REMAINING_SKELETONS_GRACE) >= 0) {
+                // go with whatever arrived; stragglers simply do not take part in this round
+                syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, selectedPeer);
+                return;
+            }
+        }
+
         if (timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingRequest()) >= 0) {
             candidates.stream()
                     .filter(c -> !skeletons.containsKey(c))
@@ -104,11 +126,7 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
         // download phase can spread its requests over many peers instead of a single one.
         // onEnter already contacted every candidate before this change; the responses were simply
         // thrown away because the state advanced on the first one. No extra requests are sent here.
-        List<Peer> peersToAsk = new ArrayList<>(candidates);
-        if (!peersToAsk.contains(selectedPeer)) {
-            peersToAsk.add(selectedPeer);
-        }
-        this.expectedSkeletons = peersToAsk.size();
-        peersToAsk.forEach(p -> syncEventsHandler.sendSkeletonRequest(p, connectionPoint));
+        this.expectedSkeletons = candidates.size();
+        candidates.forEach(p -> syncEventsHandler.sendSkeletonRequest(p, connectionPoint));
     }
 }

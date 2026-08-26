@@ -336,6 +336,16 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
 
     @Override
     public void tick(Duration duration) {
+        if (inFlightByChunk.isEmpty()) {
+            // Nothing outstanding: fall back to the global stall timeout so that a state which
+            // cannot dispatch (no usable peer, empty skeleton) aborts instead of hanging forever.
+            timeElapsed = timeElapsed.plus(duration);
+            if (timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingRequest()) >= 0) {
+                onMessageTimeOut();
+            }
+            return;
+        }
+
         List<Integer> timedOut = new ArrayList<>();
         for (Map.Entry<Integer, InFlightChunk> entry : inFlightByChunk.entrySet()) {
             InFlightChunk inFlight = entry.getValue();

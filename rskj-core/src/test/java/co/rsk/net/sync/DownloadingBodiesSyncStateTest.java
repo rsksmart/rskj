@@ -36,6 +36,9 @@ import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.*;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class DownloadingBodiesSyncStateTest {
@@ -136,40 +139,70 @@ class DownloadingBodiesSyncStateTest {
                 pendingHeaders,
                 Collections.emptyMap());
 
+        // Work is tracked per request now, so a single outstanding body request is enough to set up.
+        // A timeout only reports to peer scoring once the peer is actually discarded, which takes
+        // several consecutive expiries: penalising every expired request would ruin the local
+        // reputation of a merely slow peer and shrink the download pool.
         BlockHeader header = mock(BlockHeader.class);
-        DownloadingBodiesSyncState.PendingBodyResponse pendingBodyResponse = new DownloadingBodiesSyncState.PendingBodyResponse(peer.getPeerNodeID(), header);
-        Map<Long, DownloadingBodiesSyncState.PendingBodyResponse> pendingBodyResponses = new HashMap<>();
         long messageId = 2L;
-        pendingBodyResponses.put(messageId, pendingBodyResponse);
+
+        Map<Long, DownloadingBodiesSyncState.PendingBodyResponse> pendingBodyResponses = new HashMap<>();
+        pendingBodyResponses.put(messageId,
+                new DownloadingBodiesSyncState.PendingBodyResponse(peer.getPeerNodeID(), header, peer, 0));
         TestUtils.setInternalState(state, "pendingBodyResponses", pendingBodyResponses);
 
-        Map<Peer, Integer> chunksBeingDownloaded = new HashMap<>();
-        int peerChunk = 0;
-        chunksBeingDownloaded.put(peer, peerChunk);
-        TestUtils.setInternalState(state, "chunksBeingDownloaded", chunksBeingDownloaded);
+        Map<Peer, Set<Long>> inFlightByPeer = new HashMap<>();
+        Set<Long> inFlight = new HashSet<>();
+        inFlight.add(messageId);
+        inFlightByPeer.put(peer, inFlight);
+        TestUtils.setInternalState(state, "inFlightByPeer", inFlightByPeer);
 
-        Map<Peer, Integer> segmentsBeingDownloaded = new HashMap<>();
-        int peerSegment = 0;
-        segmentsBeingDownloaded.put(peer, peerSegment);
-        TestUtils.setInternalState(state, "segmentsBeingDownloaded", segmentsBeingDownloaded);
+        // one short of the last-resort discard threshold, so this tick trips it
+        Map<Peer, Integer> consecutiveTimeoutsByPeer = new HashMap<>();
+        consecutiveTimeoutsByPeer.put(peer, 39);
+        TestUtils.setInternalState(state, "consecutiveTimeoutsByPeer", consecutiveTimeoutsByPeer);
 
-        List<Deque<Integer>> chunksBySegment = new ArrayList<>();
-        Deque<Integer> segmentedChunks = new ArrayDeque<>();
-        segmentedChunks.add(peerChunk);
-        chunksBySegment.add(segmentedChunks);
-        TestUtils.setInternalState(state, "chunksBySegment", chunksBySegment);
+        state.tick(syncConfiguration.getTimeoutWaitingRequest());
 
-        Map<Peer, Duration> timeElapsedByPeer = new HashMap<>();
-        timeElapsedByPeer.put(peer, Duration.ofSeconds(2));
-        TestUtils.setInternalState(state, "timeElapsedByPeer", timeElapsedByPeer);
-
-        Map<Peer, Long> messagesByPeers = new HashMap<>();
-        messagesByPeers.put(peer, messageId);
-        TestUtils.setInternalState(state, "messagesByPeers", messagesByPeers);
-
-        state.tick(Duration.ofSeconds(1));
         verify(peersInformation, times(1))
                 .reportEventToPeerScoring(peer, EventType.TIMEOUT_MESSAGE,
                         "Timeout waiting body on {}", DownloadingBodiesSyncState.class);
+    }
+
+    @Test
+    void aSingleTimeoutDoesNotPenaliseThePeer() {
+        Deque<BlockHeader> headers = new ArrayDeque<>();
+        headers.add(mock(BlockHeader.class));
+
+        List<Deque<BlockHeader>> pendingHeaders = new ArrayList<>();
+        pendingHeaders.add(headers);
+
+        DownloadingBodiesSyncState state = new DownloadingBodiesSyncState(syncConfiguration,
+                syncEventsHandler,
+                peersInformation,
+                blockchain,
+                blockFactory,
+                blockSyncService,
+                syncBlockValidatorRule,
+                pendingHeaders,
+                Collections.emptyMap());
+
+        long messageId = 7L;
+        Map<Long, DownloadingBodiesSyncState.PendingBodyResponse> pendingBodyResponses = new HashMap<>();
+        pendingBodyResponses.put(messageId,
+                new DownloadingBodiesSyncState.PendingBodyResponse(
+                        peer.getPeerNodeID(), mock(BlockHeader.class), peer, 0));
+        TestUtils.setInternalState(state, "pendingBodyResponses", pendingBodyResponses);
+
+        Map<Peer, Set<Long>> inFlightByPeer = new HashMap<>();
+        Set<Long> inFlight = new HashSet<>();
+        inFlight.add(messageId);
+        inFlightByPeer.put(peer, inFlight);
+        TestUtils.setInternalState(state, "inFlightByPeer", inFlightByPeer);
+
+        state.tick(syncConfiguration.getTimeoutWaitingRequest());
+
+        verify(peersInformation, never())
+                .reportEventToPeerScoring(eq(peer), eq(EventType.TIMEOUT_MESSAGE), anyString(), any());
     }
 }

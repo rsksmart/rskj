@@ -58,8 +58,13 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
 
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
-    /** A peer is discarded after this many consecutive timed-out body requests. */
-    private static final int MAX_CONSECUTIVE_TIMEOUTS_PER_PEER = 5;
+    /**
+     * Last-resort threshold: a peer that keeps timing out even after its in-flight allowance has
+     * been squeezed down to one is not answering at all, so it is dropped. Timeouts on their own no
+     * longer discard a peer - throughput scales with how many peers stay in the rotation, and a
+     * merely slow peer is still worth keeping.
+     */
+    private static final int MAX_CONSECUTIVE_TIMEOUTS_PER_PEER = 40;
 
     /**
      * Half-minute throttling window. A peer counts the messages it receives from us inside each
@@ -85,6 +90,14 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
 
     // consecutive timeouts per peer
     private final Map<Peer, Integer> consecutiveTimeoutsByPeer;
+
+    /**
+     * Per-peer in-flight allowance. Peers differ widely in how fast they serve bodies, and pushing
+     * a slow one too hard just parks requests in its queue until they expire. The allowance halves
+     * on a timeout and creeps back up while the peer keeps up, so each peer settles at the depth it
+     * can actually sustain.
+     */
+    private final Map<Peer, Integer> allowanceByPeer;
 
     // headers waiting to be completed by bodies divided by chunks
     private final List<Deque<BlockHeader>> pendingHeaders;
@@ -145,6 +158,7 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         this.sentTimestampsByPeer = new HashMap<>();
         this.consecutiveTimeoutsByPeer = new HashMap<>();
         this.discardedPeers = new HashSet<>();
+        this.allowanceByPeer = new HashMap<>();
 
         this.maxInFlightPerPeer = Math.max(1, syncConfiguration.getMaxInFlightBodyRequestsPerPeer());
         this.maxRequestsPerMinutePerPeer = syncConfiguration.getMaxBodyRequestsPerMinutePerPeer();
@@ -173,8 +187,12 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
 
         // we already checked that this message was expected
         PendingBodyResponse pending = pendingBodyResponses.remove(requestId);
+        boolean wasSaturated = inFlightCount(peer) >= allowanceOf(peer);
         untrackInFlight(peer, requestId);
         consecutiveTimeoutsByPeer.put(peer, 0);
+        if (wasSaturated) {
+            allowanceByPeer.put(peer, Math.min(maxInFlightPerPeer, allowanceOf(peer) + 1));
+        }
 
         BlockHeader header = pending.header;
         header.setExtension(message.getBlockHeaderExtension());
@@ -205,12 +223,25 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
     }
 
     private void verifyDownloadIsFinished() {
-        // all headers have been requested and there is not any body still in flight
-        if (pendingBodyResponses.isEmpty() && pendingHeaders.stream().allMatch(Collection::isEmpty)) {
+        if (isDownloadComplete()) {
             // Finished syncing
             logger.info("Completed syncing phase");
             syncEventsHandler.stopSyncing();
         }
+    }
+
+    /**
+     * The range is done once no header is left to request and every request still outstanding is
+     * redundant, i.e. its block already reached the blockchain by another route. Waiting for those
+     * to come back (or time out) would stall the end of every round for no benefit, while waiting
+     * for genuinely missing bodies is still required.
+     */
+    private boolean isDownloadComplete() {
+        if (!pendingHeaders.stream().allMatch(Collection::isEmpty)) {
+            return false;
+        }
+        return pendingBodyResponses.values().stream()
+                .allMatch(pending -> isBlockKnown(pending.header.getHash()));
     }
 
     @Override
@@ -240,11 +271,11 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
 
         startDownloading(new ArrayList<>(suitablePeers));
 
-        if (pendingBodyResponses.isEmpty()) {
-            if (pendingHeaders.stream().allMatch(Collection::isEmpty)) {
-                logger.info("Completed syncing phase");
-                syncEventsHandler.stopSyncing();
-            } else if (!lastFillRateLimited) {
+        if (isDownloadComplete()) {
+            logger.info("Completed syncing phase");
+            syncEventsHandler.stopSyncing();
+        } else if (pendingBodyResponses.isEmpty()) {
+            if (!lastFillRateLimited) {
                 // nothing in flight, work left, and no peer able to take it: we cannot make progress
                 logger.warn("No peer can serve the {} remaining chunk(s); stopping sync",
                         pendingHeaders.stream().filter(d -> !d.isEmpty()).count());
@@ -293,7 +324,8 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
             return;
         }
 
-        while (inFlightCount(peer) < maxInFlightPerPeer) {
+        int allowance = allowanceOf(peer);
+        while (inFlightCount(peer) < allowance) {
             if (!allowSend(peer)) {
                 // there is capacity but we would go over the peer's per-minute message threshold
                 lastFillRateLimited = true;
@@ -390,13 +422,17 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         Peer peer = pending.peer;
         if (peer != null) {
             untrackInFlight(peer, requestId);
-            peersInformation.reportEventToPeerScoring(peer, EventType.TIMEOUT_MESSAGE,
-                    "Timeout waiting body on {}", this.getClass());
+
+            // Back off rather than discard: a slower pipeline still contributes blocks.
+            allowanceByPeer.put(peer, Math.max(1, allowanceOf(peer) / 2));
 
             int timeouts = consecutiveTimeoutsByPeer.merge(peer, 1, Integer::sum);
             if (timeouts >= MAX_CONSECUTIVE_TIMEOUTS_PER_PEER) {
+                // Squeezed all the way down and still silent: the peer is not answering at all.
                 logger.warn("Discarding peer {} after {} consecutive body timeouts",
                         peer.getPeerNodeID(), timeouts);
+                peersInformation.reportEventToPeerScoring(peer, EventType.TIMEOUT_MESSAGE,
+                        "Timeout waiting body on {}", this.getClass());
                 dropPeer(peer);
             }
         }
@@ -447,6 +483,7 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         discardedPeers.add(peer);
         sentTimestampsByPeer.remove(peer);
         consecutiveTimeoutsByPeer.remove(peer);
+        allowanceByPeer.remove(peer);
 
         Set<Long> inFlight = inFlightByPeer.remove(peer);
         if (inFlight == null) {
@@ -458,6 +495,10 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
                 requeue(pending);
             }
         }
+    }
+
+    private int allowanceOf(Peer peer) {
+        return allowanceByPeer.getOrDefault(peer, maxInFlightPerPeer);
     }
 
     private int inFlightCount(Peer peer) {

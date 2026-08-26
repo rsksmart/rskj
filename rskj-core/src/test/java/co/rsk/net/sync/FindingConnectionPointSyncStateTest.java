@@ -29,6 +29,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.longThat;
 import static org.mockito.Mockito.*;
 
 
@@ -55,6 +58,9 @@ class FindingConnectionPointSyncStateTest {
     @Test
     void noConnectionPoint() {
         when(blockStore.getMinNumber()).thenReturn(0L);
+        // We hold blocks up to height 10, so the state first probes our own tip and only then falls
+        // back to the binary search. That probe consumes one response, hence five here.
+        when(blockStore.getMaxNumber()).thenReturn(10L);
         FindingConnectionPointSyncState target =
                 new FindingConnectionPointSyncState(
                         SyncConfiguration.IMMEDIATE_FOR_TESTING,
@@ -65,12 +71,54 @@ class FindingConnectionPointSyncStateTest {
         when(blockStore.isBlockExist(any())).thenReturn(false);
 
         target.onEnter();
-        for(int i = 0; i < 4; i++) {
+        for(int i = 0; i < 5; i++) {
             target.newConnectionPointData(new byte[32]);
         }
 
         verify(syncEventsHandler, times(1))
                 .onSyncIssue(peer, "Connection point not found on {}", FindingConnectionPointSyncState.class);
+    }
+
+    @Test
+    void tipProbeSettlesConnectionPointInOneRoundTrip() {
+        when(blockStore.getMinNumber()).thenReturn(0L);
+        when(blockStore.getMaxNumber()).thenReturn(1000L);
+        FindingConnectionPointSyncState target =
+                new FindingConnectionPointSyncState(
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        syncEventsHandler,
+                        blockStore,
+                        peer, 5000L);
+
+        // the peer has our tip, so no binary search is needed at all
+        when(blockStore.isBlockExist(any())).thenReturn(true);
+
+        target.onEnter();
+        verify(syncEventsHandler, times(1)).sendBlockHashRequest(peer, 1000L);
+
+        target.newConnectionPointData(new byte[32]);
+
+        verify(syncEventsHandler, times(1)).startDownloadingSkeleton(1000L, peer);
+        verify(syncEventsHandler, never()).sendBlockHashRequest(eq(peer), longThat(h -> h != 1000L));
+    }
+
+    @Test
+    void freshDatabaseStartsSkeletonAtStoreMinimum() {
+        // Nothing above genesis yet: peers do not answer a hash request for height 0, so the state
+        // must go straight to the skeleton instead of asking.
+        when(blockStore.getMinNumber()).thenReturn(0L);
+        when(blockStore.getMaxNumber()).thenReturn(0L);
+        FindingConnectionPointSyncState target =
+                new FindingConnectionPointSyncState(
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        syncEventsHandler,
+                        blockStore,
+                        peer, 9_000_000L);
+
+        target.onEnter();
+
+        verify(syncEventsHandler, times(1)).startDownloadingSkeleton(0L, peer);
+        verify(syncEventsHandler, never()).sendBlockHashRequest(any(), anyLong());
     }
 
     @Test
