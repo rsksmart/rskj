@@ -157,9 +157,9 @@ class DownloadingBodiesSyncStateTest {
         inFlightByPeer.put(peer, inFlight);
         TestUtils.setInternalState(state, "inFlightByPeer", inFlightByPeer);
 
-        // one short of the last-resort discard threshold, so this tick trips it
+        // one short of the last-resort tick threshold, so this tick trips it
         Map<Peer, Integer> consecutiveTimeoutsByPeer = new HashMap<>();
-        consecutiveTimeoutsByPeer.put(peer, 39);
+        consecutiveTimeoutsByPeer.put(peer, 19);
         TestUtils.setInternalState(state, "consecutiveTimeoutsByPeer", consecutiveTimeoutsByPeer);
 
         state.tick(syncConfiguration.getTimeoutWaitingRequest());

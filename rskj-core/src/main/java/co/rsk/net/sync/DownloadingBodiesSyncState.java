@@ -59,12 +59,12 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
     /**
-     * Last-resort threshold: a peer that keeps timing out even after its in-flight allowance has
-     * been squeezed down to one is not answering at all, so it is dropped. Timeouts on their own no
-     * longer discard a peer - throughput scales with how many peers stay in the rotation, and a
-     * merely slow peer is still worth keeping.
+     * Last-resort threshold, counted in <em>ticks during which a peer timed out</em>, not in expired
+     * requests. Counting requests tied the threshold to the pipeline depth: with many requests in
+     * flight a single silent peer expires all of them at once and would be discarded immediately,
+     * which in turn emptied the peer set and aborted the whole round.
      */
-    private static final int MAX_CONSECUTIVE_TIMEOUTS_PER_PEER = 40;
+    private static final int MAX_CONSECUTIVE_TIMEOUT_TICKS_PER_PEER = 20;
 
     /**
      * Half-minute throttling window. A peer counts the messages it receives from us inside each
@@ -74,6 +74,14 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
      * carry more than the configured per-minute allowance.
      */
     private static final long RATE_WINDOW_MS = 30_000L;
+
+    /**
+     * Once every header of the range has been handed out, a round can only finish as fast as its
+     * slowest outstanding request. A single sluggish peer at that point stretches a 35s round past
+     * 60s. When only the tail is left, requests older than this are additionally asked of a second
+     * peer and whichever answer lands first is used.
+     */
+    private static final Duration HEDGE_AFTER = Duration.ofSeconds(3);
 
     private final PeersInformation peersInformation;
     private final Blockchain blockchain;
@@ -131,6 +139,23 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
     // set when a fill attempt was held back purely by the outbound rate limiter
     private boolean lastFillRateLimited;
 
+    /**
+     * Request ids superseded by a hedge. A late answer for one of these is ignored rather than
+     * punished. Bounded as an LRU: clearing the whole set instead would make later duplicates look
+     * like unsolicited bodies and cost us the peers that sent them.
+     */
+    private static final int MAX_ABANDONED_TRACKED = 8192;
+    private final Set<Long> abandonedRequests = Collections.newSetFromMap(
+            new LinkedHashMap<Long, Boolean>(256, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<Long, Boolean> eldest) {
+                    return size() > MAX_ABANDONED_TRACKED;
+                }
+            });
+
+    // headers that already have a hedge in flight, so we only duplicate once
+    private final Set<Keccak256> hedgedHeaders = new HashSet<>();
+
     public DownloadingBodiesSyncState(SyncConfiguration syncConfiguration,
                                       SyncEventsHandler syncEventsHandler,
                                       PeersInformation peersInformation,
@@ -181,12 +206,17 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         NodeID peerId = peer.getPeerNodeID();
         long requestId = message.getId();
         if (!isExpectedBody(requestId, peerId)) {
+            if (abandonedRequests.remove(requestId)) {
+                // the other copy of a hedged request already delivered this body
+                return;
+            }
             handleUnexpectedBody(peer);
             return;
         }
 
         // we already checked that this message was expected
         PendingBodyResponse pending = pendingBodyResponses.remove(requestId);
+        dropSiblingRequests(requestId, pending.header.getHash());
         boolean wasSaturated = inFlightCount(peer) >= allowanceOf(peer);
         untrackInFlight(peer, requestId);
         consecutiveTimeoutsByPeer.put(peer, 0);
@@ -256,8 +286,23 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
             }
         }
 
+        Set<Peer> peersThatTimedOut = new HashSet<>();
         for (Long requestId : timedOut) {
-            handleTimeoutMessage(requestId);
+            Peer peer = handleTimeoutMessage(requestId);
+            if (peer != null) {
+                peersThatTimedOut.add(peer);
+            }
+        }
+
+        for (Peer peer : peersThatTimedOut) {
+            int ticks = consecutiveTimeoutsByPeer.merge(peer, 1, Integer::sum);
+            if (ticks >= MAX_CONSECUTIVE_TIMEOUT_TICKS_PER_PEER) {
+                logger.warn("Discarding peer {} after {} consecutive ticks with body timeouts",
+                        peer.getPeerNodeID(), ticks);
+                peersInformation.reportEventToPeerScoring(peer, EventType.TIMEOUT_MESSAGE,
+                        "Timeout waiting body on {}", this.getClass());
+                dropPeer(peer);
+            }
         }
 
         // Peers connect and report their status continuously; pick up any that became usable since
@@ -270,6 +315,7 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         }
 
         startDownloading(new ArrayList<>(suitablePeers));
+        hedgeStragglers();
 
         if (isDownloadComplete()) {
             logger.info("Completed syncing phase");
@@ -414,29 +460,20 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         }
     }
 
-    private void handleTimeoutMessage(long requestId) {
+    /** Re-queues one expired request and backs its peer off. Returns the peer, if known. */
+    private Peer handleTimeoutMessage(long requestId) {
         PendingBodyResponse pending = pendingBodyResponses.remove(requestId);
         if (pending == null) {
-            return;
+            return null;
         }
         Peer peer = pending.peer;
         if (peer != null) {
             untrackInFlight(peer, requestId);
-
             // Back off rather than discard: a slower pipeline still contributes blocks.
             allowanceByPeer.put(peer, Math.max(1, allowanceOf(peer) / 2));
-
-            int timeouts = consecutiveTimeoutsByPeer.merge(peer, 1, Integer::sum);
-            if (timeouts >= MAX_CONSECUTIVE_TIMEOUTS_PER_PEER) {
-                // Squeezed all the way down and still silent: the peer is not answering at all.
-                logger.warn("Discarding peer {} after {} consecutive body timeouts",
-                        peer.getPeerNodeID(), timeouts);
-                peersInformation.reportEventToPeerScoring(peer, EventType.TIMEOUT_MESSAGE,
-                        "Timeout waiting body on {}", this.getClass());
-                dropPeer(peer);
-            }
         }
         requeue(pending);
+        return peer;
     }
 
     private void handleInvalidBlock(Peer peer, PendingBodyResponse pending) {
@@ -461,12 +498,16 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         rescheduleAfterPeerLoss();
     }
 
+    /**
+     * An unsolicited body is cheap to ignore and is now an ordinary occurrence: a hedged request
+     * whose loser answers after the winner, or a body that arrived just after its request timed out
+     * and was re-queued elsewhere. Bodies are checked against the trusted header regardless, so
+     * discarding the peer over one costs throughput and buys nothing.
+     */
     private void handleUnexpectedBody(Peer peer) {
         peersInformation.reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,
                 "Unexpected body received on {}", this.getClass());
-
-        dropPeer(peer);
-        rescheduleAfterPeerLoss();
+        fillPeer(peer);
     }
 
     private void rescheduleAfterPeerLoss() {
@@ -495,6 +536,73 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
                 requeue(pending);
             }
         }
+    }
+
+    /** Retires any other in-flight request for the same header (the losing side of a hedge). */
+    private void dropSiblingRequests(long winningRequestId, Keccak256 headerHash) {
+        if (hedgedHeaders.isEmpty()) {
+            return;
+        }
+        hedgedHeaders.remove(headerHash);
+        List<Long> siblings = new ArrayList<>();
+        for (Map.Entry<Long, PendingBodyResponse> e : pendingBodyResponses.entrySet()) {
+            if (e.getKey() != winningRequestId && e.getValue().header.getHash().equals(headerHash)) {
+                siblings.add(e.getKey());
+            }
+        }
+        for (Long id : siblings) {
+            PendingBodyResponse sibling = pendingBodyResponses.remove(id);
+            if (sibling != null && sibling.peer != null) {
+                untrackInFlight(sibling.peer, id);
+            }
+            abandonedRequests.add(id);
+        }
+    }
+
+    /**
+     * Duplicates long-outstanding requests onto a second peer, but only once the whole range has
+     * been handed out, so hedging never competes with fresh work for the request budget.
+     */
+    private void hedgeStragglers() {
+        if (!pendingHeaders.stream().allMatch(Collection::isEmpty)) {
+            return;
+        }
+        List<PendingBodyResponse> stragglers = new ArrayList<>();
+        for (PendingBodyResponse pending : pendingBodyResponses.values()) {
+            if (pending.peer != null
+                    && pending.elapsed.compareTo(HEDGE_AFTER) >= 0
+                    && !hedgedHeaders.contains(pending.header.getHash())) {
+                stragglers.add(pending);
+            }
+        }
+        for (PendingBodyResponse pending : stragglers) {
+            Peer other = pickAlternativePeer(pending.peer);
+            if (other == null) {
+                continue;
+            }
+            long messageId = syncEventsHandler.sendBodyRequest(other, pending.header);
+            pendingBodyResponses.put(messageId,
+                    new PendingBodyResponse(other.getPeerNodeID(), pending.header, other, pending.chunk));
+            inFlightByPeer.computeIfAbsent(other, k -> new HashSet<>()).add(messageId);
+            recordSend(other);
+            hedgedHeaders.add(pending.header.getHash());
+        }
+    }
+
+    private Peer pickAlternativePeer(Peer exclude) {
+        Peer best = null;
+        int bestLoad = Integer.MAX_VALUE;
+        for (Peer candidate : suitablePeers) {
+            if (candidate.equals(exclude) || !allowSend(candidate)) {
+                continue;
+            }
+            int load = inFlightCount(candidate);
+            if (load < allowanceOf(candidate) && load < bestLoad) {
+                bestLoad = load;
+                best = candidate;
+            }
+        }
+        return best;
     }
 
     private int allowanceOf(Peer peer) {

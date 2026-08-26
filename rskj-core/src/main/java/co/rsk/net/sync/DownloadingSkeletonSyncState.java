@@ -32,7 +32,7 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
      * their requests, but a single unresponsive candidate must not hold a whole sync round hostage
      * for the full request timeout.
      */
-    private static final Duration REMAINING_SKELETONS_GRACE = Duration.ofSeconds(2);
+    private static final Duration REMAINING_SKELETONS_GRACE = Duration.ofMillis(500);
 
     private final PeersInformation peersInformation;
     private final Map<Peer, List<BlockIdentifier>> skeletons;
