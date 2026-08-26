@@ -20,7 +20,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.HistoricalPegoutSelectionsConstants;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.util.Collection;
@@ -95,9 +95,9 @@ public class PegoutsWaitingForConfirmations {
             Integer minimumConfirmations,
             ForBlock activations,
             Keccak256 rskTxHash,
-            BridgeConstants bridgeConstants) {
+            HistoricalPegoutSelectionsConstants historicalSelections) {
         var rskip559 = activations.isActive(ConsensusRule.RSKIP559);
-        return this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, rskip559, rskTxHash, bridgeConstants);
+        return this.entries.getNextPegoutWithEnoughConfirmations(currentBlockNumber, minimumConfirmations, rskip559, rskTxHash, historicalSelections);
     }
 
     public void add(Entry entry) {
@@ -126,14 +126,14 @@ public class PegoutsWaitingForConfirmations {
         /**
          * @param withTxComparator turns on deterministic order (RSKIP559) for entries before selecting.
          * @param rskTxHash the confirming updateCollections rsk tx hash, used to look up the historic selection.
-         * @param bridgeConstants the network's bridge constants, used to pick the historic selection dataset.
+         * @param historicalSelections the network's historic pegout selections.
          */
         public Optional<Entry> getNextPegoutWithEnoughConfirmations(
                 Long currentBlockNumber,
                 Integer minimumConfirmations,
                 boolean withTxComparator,
                 Keccak256 rskTxHash,
-                BridgeConstants bridgeConstants) {
+                HistoricalPegoutSelectionsConstants historicalSelections) {
 
             List<Entry> eligibleEntries = entriesSet.stream()
                     .filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations))
@@ -154,9 +154,8 @@ public class PegoutsWaitingForConfirmations {
             // recorded for this updateCollections tx so every JVM agrees. Calls not in the dataset fall
             // back to the legacy pick (e.g. regtest, or networks without historical data).
             if (rskTxHash != null) {
-                Optional<Sha256Hash> selectedBtcTxHash = bridgeConstants
-                        .getHistoricalPegoutSelectionsConstants()
-                        .getSelectedPegoutBtcTxHash(rskTxHash);
+                Optional<Sha256Hash> selectedBtcTxHash =
+                        historicalSelections.getSelectedPegoutBtcTxHash(rskTxHash);
                 if (selectedBtcTxHash.isPresent()) {
                     Sha256Hash targetBtcTxHash = selectedBtcTxHash.get();
                     Entry selectedEntry = eligibleEntries.stream()
