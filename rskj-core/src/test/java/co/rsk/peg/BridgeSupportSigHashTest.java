@@ -97,7 +97,9 @@ class BridgeSupportSigHashTest {
             .build();
 
         // Act
-        bridgeSupport.updateCollections(mock(Transaction.class));
+        Transaction rskTx = mock(Transaction.class);
+        when(rskTx.getHash()).thenReturn(PegTestUtils.createHash3(1));
+        bridgeSupport.updateCollections(rskTx);
 
         // Assertions
 
