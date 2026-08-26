@@ -22,7 +22,8 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.constants.HistoricalPegoutSelectionsConstants;
-import co.rsk.peg.constants.HistoricalPegoutSelectionsRegTestConstants;
+import co.rsk.peg.constants.HistoricalPegoutSelectionsMainNetConstants;
+import co.rsk.peg.constants.HistoricalPegoutSelectionsTestNetConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -30,10 +31,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static org.mockito.Mockito.*;
 
@@ -41,13 +46,19 @@ import static org.mockito.Mockito.*;
 class PegoutsWaitingForConfirmationsTest {
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
 
-    // The updateCollections tx hash and network constants are only consulted (for the historic dataset)
-    // before RSKIP559 and when more than one entry is eligible. Regtest has no dataset, so with these the
-    // pre-RSKIP559 tests keep exercising the legacy findFirst() behaviour.
+    // The historic dataset is only consulted before RSKIP559 and when more than one entry is eligible.
+    // These fixtures use the real mainnet and testnet tables: this synthetic updateCollections hash is in
+    // neither, so the lookup misses against a fully populated table and the legacy pick applies.
     private static final Keccak256 UPDATE_COLLECTIONS_TX_HASH = PegTestUtils.createHash3(100);
-    private static final HistoricalPegoutSelectionsConstants REGTEST_SELECTIONS =
-        HistoricalPegoutSelectionsRegTestConstants.getInstance();
+    private static final HistoricalPegoutSelectionsConstants MAINNET_SELECTIONS =
+        HistoricalPegoutSelectionsMainNetConstants.getInstance();
+    private static final HistoricalPegoutSelectionsConstants TESTNET_SELECTIONS =
+        HistoricalPegoutSelectionsTestNetConstants.getInstance();
+
     // Legacy findFirst() pick over this JVM's HashSet order for the block-10, 5-confirmations eligible set.
+    // Verified identical on Java 17 (Zulu 17.0.13) and Java 21 (Temurin 21.0.5). If it stops matching, the
+    // fixture in createSet() changed, or a JDK reordered it: re-derive it from the actual value reported by
+    // getNextPegout_beforeRskip559_datasetMiss_fallsBackToFindFirst, which is the pure legacy path.
     private static final String LEGACY_FIND_FIRST_HASH = "53efc6f78eb9d159cfee76ec45bcffb08fd11f85c762e1eacf54e5c014da219d";
 
     private Set<PegoutsWaitingForConfirmations.Entry> setEntries;
@@ -193,13 +204,13 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void getNextPegoutWithEnoughConfirmations_no_matches() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(9L, 5, ActivationConfigsForTest.vetiver900().forBlock(9L), UPDATE_COLLECTIONS_TX_HASH, REGTEST_SELECTIONS);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(9L, 5, ActivationConfigsForTest.vetiver900().forBlock(9L), UPDATE_COLLECTIONS_TX_HASH, MAINNET_SELECTIONS);
         Assertions.assertFalse(result.isPresent());
     }
 
     @Test
     void getNextPegoutWithEnoughConfirmations_ok() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L), UPDATE_COLLECTIONS_TX_HASH, REGTEST_SELECTIONS);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L), UPDATE_COLLECTIONS_TX_HASH, MAINNET_SELECTIONS);
         Assertions.assertTrue(result.isPresent());
         Assertions.assertTrue(set.removeEntry(result.get()));
         Assertions.assertFalse(set.removeEntry(result.get()));
@@ -208,7 +219,7 @@ class PegoutsWaitingForConfirmationsTest {
     @Test
     void getNextPegoutWithEnoughConfirmation_multipleMatch_rskip559Off() {
         int size = set.getEntries(ACTIVATIONS_ALL).size();
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L), UPDATE_COLLECTIONS_TX_HASH, REGTEST_SELECTIONS);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L), UPDATE_COLLECTIONS_TX_HASH, MAINNET_SELECTIONS);
         Assertions.assertTrue(result.isPresent());
 
         var entry = result.get();
@@ -227,7 +238,7 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void getNextPegoutWithEnoughConfirmations_rskip559() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.all().forBlock(1L), UPDATE_COLLECTIONS_TX_HASH, REGTEST_SELECTIONS);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.all().forBlock(1L), UPDATE_COLLECTIONS_TX_HASH, MAINNET_SELECTIONS);
         Assertions.assertTrue(result.isPresent());
 
         var entry = result.get();
@@ -257,16 +268,26 @@ class PegoutsWaitingForConfirmationsTest {
             "The historic selection must override the legacy findFirst() pick");
     }
 
-    @Test
-    void getNextPegout_beforeRskip559_datasetMiss_fallsBackToFindFirst() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("populatedDatasets")
+    void getNextPegout_beforeRskip559_datasetMiss_fallsBackToFindFirst(
+            String network, HistoricalPegoutSelectionsConstants historicalSelections) {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.vetiver900().forBlock(10L);
 
-        // Regtest records no selections, so every lookup misses.
-        Optional<PegoutsWaitingForConfirmations.Entry> result =
-            set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, UPDATE_COLLECTIONS_TX_HASH, REGTEST_SELECTIONS);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(
+            10L, 5, activations, UPDATE_COLLECTIONS_TX_HASH, historicalSelections);
 
         Assertions.assertTrue(result.isPresent());
-        Assertions.assertEquals(LEGACY_FIND_FIRST_HASH, result.get().getBtcTransaction().getHash().toString());
+        Assertions.assertEquals(LEGACY_FIND_FIRST_HASH, result.get().getBtcTransaction().getHash().toString(),
+            "Legacy HashSet findFirst() pick changed: the createSet() fixture moved, or this JVM orders "
+                + "the set differently. Re-derive LEGACY_FIND_FIRST_HASH from the actual value above.");
+    }
+
+    private static Stream<Arguments> populatedDatasets() {
+        return Stream.of(
+            Arguments.of("mainnet", MAINNET_SELECTIONS),
+            Arguments.of("testnet", TESTNET_SELECTIONS)
+        );
     }
 
     @Test
@@ -286,8 +307,11 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void getNextPegout_rskip559_ignoresHistoricalSelection() {
-        // From RSKIP559 on the comparator sort is used and the historical dataset is never consulted.
-        HistoricalPegoutSelectionsConstants selections = mock(HistoricalPegoutSelectionsConstants.class);
+        // From RSKIP559 on the comparator sort decides. Seed a dataset that would pick a different entry:
+        // if it were consulted, the result would not be the comparator's.
+        PegoutsWaitingForConfirmations.Entry decoy = firstEligibleEntryOtherThanLegacyPick();
+        HistoricalPegoutSelectionsConstants selections =
+            selectionsMapping(decoy.getBtcTransaction().getHash());
 
         Optional<PegoutsWaitingForConfirmations.Entry> result =
             set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.all().forBlock(1L), UPDATE_COLLECTIONS_TX_HASH, selections);
@@ -296,14 +320,19 @@ class PegoutsWaitingForConfirmationsTest {
         Assertions.assertEquals(
             "fdd781c46b5ad7993b3f133e3af94b2e3cbcc8d19e443dfc6b555a1b0bac1527",
             result.get().getBtcTransaction().getHash().toString());
-        verifyNoInteractions(selections);
     }
 
-    /** A historic dataset that maps the updateCollections tx to {@code selected}. */
+    /**
+     * A real dataset mapping the updateCollections tx to {@code selected}. The genuine mainnet and testnet
+     * tables cannot be used for the hit path: their values are real btc tx hashes, and the fixture's
+     * synthetic transactions can never produce one.
+     */
     private static HistoricalPegoutSelectionsConstants selectionsMapping(Sha256Hash selected) {
-        HistoricalPegoutSelectionsConstants selections = mock(HistoricalPegoutSelectionsConstants.class);
-        when(selections.getSelectedPegoutBtcTxHash(UPDATE_COLLECTIONS_TX_HASH)).thenReturn(Optional.of(selected));
-        return selections;
+        return new HistoricalPegoutSelectionsConstants() {
+            {
+                selections = Map.of(UPDATE_COLLECTIONS_TX_HASH, selected);
+            }
+        };
     }
 
     @Test
@@ -313,7 +342,7 @@ class PegoutsWaitingForConfirmationsTest {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.vetiver900().forBlock(10L);
 
         Assertions.assertThrows(NullPointerException.class,
-            () -> set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, null, REGTEST_SELECTIONS));
+            () -> set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, null, MAINNET_SELECTIONS));
     }
 
     @Test
