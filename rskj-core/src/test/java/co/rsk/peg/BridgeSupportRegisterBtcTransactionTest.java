@@ -4,7 +4,6 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
-import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseInputScriptThatSpendsFromRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
@@ -47,6 +46,7 @@ import co.rsk.peg.whitelist.WhitelistStorageProvider;
 import co.rsk.peg.whitelist.WhitelistSupportImpl;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
+import co.rsk.test.builders.PegoutTransactionBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -2692,12 +2692,6 @@ class BridgeSupportRegisterBtcTransactionTest {
             federationStorageProvider.setNewFederation(activeFederation);
         }
 
-        private TransactionInput createInputSpendingFromActiveFederation(Sha256Hash spendTxHash, Coin inputValue) {
-            Script inputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript());
-            TransactionOutPoint outpoint = new TransactionOutPoint(btcMainnetParams, FIRST_OUTPUT_INDEX, spendTxHash);
-            return new TransactionInput(btcMainnetParams, null, inputScript.getProgram(), outpoint, inputValue);
-        }
-
         private void registerPegout(BtcTransaction pegout, int height) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             FederationTestUtils.addSignatures(activeFederation, activeFederationKeys, pegout);
             PartialMerkleTree pmtWithTransactions = buildPMTAndRecreateChainForTransactionRegistration(
@@ -2718,17 +2712,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         private void registerPegoutTxSigHash(BtcTransaction pegout) {
-            // must match the base (unsigned) script/witness shape that a real release tx has
-            // when its sigHash is first indexed, so it equals the sigHash recomputed on registration
-            for (int inputIndex = 0; inputIndex < pegout.getInputs().size(); inputIndex++) {
-                addSpendingFederationBaseScript(
-                    pegout,
-                    inputIndex,
-                    activeFederation.getRedeemScript(),
-                    activeFederation.getFormatVersion()
-                );
-            }
-
             Sha256Hash sigHash = pegout.hashForSignature(
                 FIRST_INPUT_INDEX,
                 activeFederation.getRedeemScript(),
@@ -2751,9 +2734,13 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
-            btcTransaction.addOutput(Coin.COIN, userAddress);
+            BtcTransaction btcTransaction = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withOutput(Coin.COIN, userAddress)
+                .withoutChange()
+                .build();
 
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
@@ -2766,9 +2753,13 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveLegacyFed(fingerrootActivations);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
-            btcTransaction.addOutput(Coin.COIN, userAddress);
+            BtcTransaction btcTransaction = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withOutput(Coin.COIN, userAddress)
+                .withoutChange()
+                .build();
 
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
@@ -2781,9 +2772,13 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
-            btcTransaction.addOutput(Coin.COIN, userAddress);
+            BtcTransaction btcTransaction = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withOutput(Coin.COIN, userAddress)
+                .withoutChange()
+                .build();
 
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
@@ -2796,9 +2791,13 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveLegacyFed(arrowhead600Activations);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
-            btcTransaction.addOutput(Coin.COIN, userAddress);
+            BtcTransaction btcTransaction = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withOutput(Coin.COIN, userAddress)
+                .withoutChange()
+                .build();
 
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
@@ -2811,9 +2810,13 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveAndRetiringFed();
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
-            btcTransaction.addOutput(Coin.COIN, userAddress);
+            BtcTransaction btcTransaction = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withOutput(Coin.COIN, userAddress)
+                .withoutChange()
+                .build();
 
             registerPegoutTxSigHash(btcTransaction);
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
@@ -2827,9 +2830,13 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveFed();
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
-            btcTransaction.addOutput(Coin.COIN, userAddress);
+            BtcTransaction btcTransaction = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withOutput(Coin.COIN, userAddress)
+                .withoutChange()
+                .build();
 
             registerPegoutTxSigHash(btcTransaction);
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
@@ -2844,10 +2851,13 @@ class BridgeSupportRegisterBtcTransactionTest {
             setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
 
             Coin amountToSend = Coin.COIN;
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
-            btcTransaction.addOutput(amountToSend, userAddress);
-            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
+            BtcTransaction btcTransaction = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withOutput(amountToSend, userAddress)
+                .withChangeAmount(Coin.COIN)
+                .build();
 
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
@@ -2871,30 +2881,34 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+            PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withoutChange();
             for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(createInputSpendingFromActiveFederation(BitcoinTestUtils.createHash(i + 1), Coin.COIN));
+                btcTransactionBuilder.withInput(BitcoinTestUtils.createHash(i + 1), FIRST_OUTPUT_INDEX, Coin.COIN);
             }
 
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
             Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
+                btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
+                btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
+                btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
+                btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
             }
 
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            BtcTransaction btcTransaction = btcTransactionBuilder.build();
 
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
@@ -2907,30 +2921,34 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveLegacyFed(fingerrootActivations);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+            PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withoutChange();
             for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(createInputSpendingFromActiveFederation(BitcoinTestUtils.createHash(i + 1), Coin.COIN));
+                btcTransactionBuilder.withInput(BitcoinTestUtils.createHash(i + 1), FIRST_OUTPUT_INDEX, Coin.COIN);
             }
 
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
             Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
+                btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
+                btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
+                btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
+                btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
             }
 
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            BtcTransaction btcTransaction = btcTransactionBuilder.build();
 
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
@@ -2943,30 +2961,34 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+            PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withoutChange();
             for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(createInputSpendingFromActiveFederation(BitcoinTestUtils.createHash(i + 1), Coin.COIN));
+                btcTransactionBuilder.withInput(BitcoinTestUtils.createHash(i + 1), FIRST_OUTPUT_INDEX, Coin.COIN);
             }
 
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
             Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
+                btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
+                btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
+                btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
+                btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
             }
 
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            BtcTransaction btcTransaction = btcTransactionBuilder.build();
 
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
@@ -2979,30 +3001,34 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveLegacyFed(arrowhead600Activations);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+            PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withoutChange();
             for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(createInputSpendingFromActiveFederation(BitcoinTestUtils.createHash(i + 1), Coin.COIN));
+                btcTransactionBuilder.withInput(BitcoinTestUtils.createHash(i + 1), FIRST_OUTPUT_INDEX, Coin.COIN);
             }
 
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
             Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
+                btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
+                btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
+                btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
+                btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
             }
 
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            BtcTransaction btcTransaction = btcTransactionBuilder.build();
 
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
@@ -3015,30 +3041,34 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveAndRetiringFed();
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+            PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withoutChange();
             for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(createInputSpendingFromActiveFederation(BitcoinTestUtils.createHash(i + 1), Coin.COIN));
+                btcTransactionBuilder.withInput(BitcoinTestUtils.createHash(i + 1), FIRST_OUTPUT_INDEX, Coin.COIN);
             }
 
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
             Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
+                btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
+                btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
+                btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
+                btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
             }
 
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            BtcTransaction btcTransaction = btcTransactionBuilder.build();
 
             registerPegoutTxSigHash(btcTransaction);
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
@@ -3052,30 +3082,34 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveFed();
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+            PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withoutChange();
             for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(createInputSpendingFromActiveFederation(BitcoinTestUtils.createHash(i + 1), Coin.COIN));
+                btcTransactionBuilder.withInput(BitcoinTestUtils.createHash(i + 1), FIRST_OUTPUT_INDEX, Coin.COIN);
             }
 
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
             Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
+                btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
+                btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
+                btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
             }
 
             for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
+                btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
             }
 
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            BtcTransaction btcTransaction = btcTransactionBuilder.build();
 
             registerPegoutTxSigHash(btcTransaction);
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
@@ -3089,8 +3123,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
+            BtcTransaction btcTransaction = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withoutChange()
+                .build();
 
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
             Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
@@ -3123,8 +3161,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveLegacyFed(fingerrootActivations);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
+            BtcTransaction btcTransaction = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withoutChange()
+                .build();
 
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
             Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
@@ -3157,8 +3199,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
+            BtcTransaction btcTransaction = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withoutChange()
+                .build();
 
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
             Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
@@ -3191,8 +3237,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveLegacyFed(arrowhead600Activations);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
+            BtcTransaction btcTransaction = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withoutChange()
+                .build();
 
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
             Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
@@ -3225,8 +3275,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveAndRetiringFed();
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
+            BtcTransaction btcTransaction = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withoutChange()
+                .build();
 
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
             Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
@@ -3260,8 +3314,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveFed();
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
+            BtcTransaction btcTransaction = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withoutChange()
+                .build();
 
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
             Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
@@ -3295,13 +3353,16 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(createInputSpendingFromActiveFederation(BitcoinTestUtils.createHash(i + 1), Coin.COIN));
-            }
-
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
+            PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withOutput(minimumPegoutTxValue, userAddress)
+                .withoutChange();
+            for (int i = 0; i < 50; i++) {
+                btcTransactionBuilder.withInput(BitcoinTestUtils.createHash(i + 1), FIRST_OUTPUT_INDEX, Coin.COIN);
+            }
+            BtcTransaction btcTransaction = btcTransactionBuilder.build();
 
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
@@ -3314,13 +3375,16 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveLegacyFed(fingerrootActivations);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(createInputSpendingFromActiveFederation(BitcoinTestUtils.createHash(i + 1), Coin.COIN));
-            }
-
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
+            PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withOutput(minimumPegoutTxValue, userAddress)
+                .withoutChange();
+            for (int i = 0; i < 50; i++) {
+                btcTransactionBuilder.withInput(BitcoinTestUtils.createHash(i + 1), FIRST_OUTPUT_INDEX, Coin.COIN);
+            }
+            BtcTransaction btcTransaction = btcTransactionBuilder.build();
 
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
@@ -3333,13 +3397,16 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(createInputSpendingFromActiveFederation(BitcoinTestUtils.createHash(i + 1), Coin.COIN));
-            }
-
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
+            PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withOutput(minimumPegoutTxValue, userAddress)
+                .withoutChange();
+            for (int i = 0; i < 50; i++) {
+                btcTransactionBuilder.withInput(BitcoinTestUtils.createHash(i + 1), FIRST_OUTPUT_INDEX, Coin.COIN);
+            }
+            BtcTransaction btcTransaction = btcTransactionBuilder.build();
 
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
@@ -3352,13 +3419,16 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveLegacyFed(arrowhead600Activations);
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(createInputSpendingFromActiveFederation(BitcoinTestUtils.createHash(i + 1), Coin.COIN));
-            }
-
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
+            PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withOutput(minimumPegoutTxValue, userAddress)
+                .withoutChange();
+            for (int i = 0; i < 50; i++) {
+                btcTransactionBuilder.withInput(BitcoinTestUtils.createHash(i + 1), FIRST_OUTPUT_INDEX, Coin.COIN);
+            }
+            BtcTransaction btcTransaction = btcTransactionBuilder.build();
 
             registerPegout(btcTransaction, heightBeforeUsingPegoutIndex);
 
@@ -3371,13 +3441,16 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveAndRetiringFed();
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(createInputSpendingFromActiveFederation(BitcoinTestUtils.createHash(i + 1), Coin.COIN));
-            }
-
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
+            PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withOutput(minimumPegoutTxValue, userAddress)
+                .withoutChange();
+            for (int i = 0; i < 50; i++) {
+                btcTransactionBuilder.withInput(BitcoinTestUtils.createHash(i + 1), FIRST_OUTPUT_INDEX, Coin.COIN);
+            }
+            BtcTransaction btcTransaction = btcTransactionBuilder.build();
 
             registerPegoutTxSigHash(btcTransaction);
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
@@ -3391,13 +3464,16 @@ class BridgeSupportRegisterBtcTransactionTest {
             // arrange
             setupActiveFed();
 
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(createInputSpendingFromActiveFederation(BitcoinTestUtils.createHash(i + 1), Coin.COIN));
-            }
-
             Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
+            PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(activeFederation)
+                .withOutput(minimumPegoutTxValue, userAddress)
+                .withoutChange();
+            for (int i = 0; i < 50; i++) {
+                btcTransactionBuilder.withInput(BitcoinTestUtils.createHash(i + 1), FIRST_OUTPUT_INDEX, Coin.COIN);
+            }
+            BtcTransaction btcTransaction = btcTransactionBuilder.build();
 
             registerPegoutTxSigHash(btcTransaction);
             registerPegout(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
