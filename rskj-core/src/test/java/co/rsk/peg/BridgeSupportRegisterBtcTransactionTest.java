@@ -2628,6 +2628,70 @@ class BridgeSupportRegisterBtcTransactionTest {
                 .build();
         }
 
+        private void setupActiveAndRetiringLegacyFed(ForBlock activations, int creationBlockNumber) {
+            activeFederation = P2shErpFederationBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withMembersBtcPublicKeys(activeFederationKeys)
+                .withErpActivationDelay(activationDelay)
+                .withErpPublicKeys(erpPubKeys)
+                .withCreationBlockNumber(creationBlockNumber)
+                .build();
+            retiringFederation = P2shErpFederationBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withMembersBtcPublicKeys(retiringFederationKeys)
+                .withErpActivationDelay(activationDelay)
+                .withErpPublicKeys(erpPubKeys)
+                .withCreationBlockNumber(creationBlockNumber)
+                .build();
+            setUp(activations);
+            federationStorageProvider.setNewFederation(activeFederation);
+            federationStorageProvider.setOldFederation(retiringFederation);
+        }
+
+        private void setupActiveLegacyFed(ForBlock activations) {
+            activeFederation = P2shErpFederationBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withMembersBtcPublicKeys(activeFederationKeys)
+                .withErpActivationDelay(activationDelay)
+                .withErpPublicKeys(erpPubKeys)
+                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
+                .build();
+            setUp(activations);
+            federationStorageProvider.setNewFederation(activeFederation);
+        }
+
+        private void setupActiveAndRetiringFed() {
+            activeFederation = P2shP2wshErpFederationBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withMembersBtcPublicKeys(activeFederationKeys)
+                .withErpActivationDelay(activationDelay)
+                .withErpPublicKeys(erpPubKeys)
+                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
+                .build();
+            retiringFederation = P2shErpFederationBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withMembersBtcPublicKeys(retiringFederationKeys)
+                .withErpActivationDelay(activationDelay)
+                .withErpPublicKeys(erpPubKeys)
+                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
+                .build();
+            setUp(allActivations);
+            federationStorageProvider.setNewFederation(activeFederation);
+            federationStorageProvider.setOldFederation(retiringFederation);
+        }
+
+        private void setupActiveFed() {
+            activeFederation = P2shP2wshErpFederationBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withMembersBtcPublicKeys(activeFederationKeys)
+                .withErpActivationDelay(activationDelay)
+                .withErpPublicKeys(erpPubKeys)
+                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
+                .build();
+            setUp(allActivations);
+            federationStorageProvider.setNewFederation(activeFederation);
+        }
+
         private TransactionInput createInputSpendingFromActiveFederation(Sha256Hash spendTxHash, Coin inputValue) {
             Script inputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript());
             TransactionOutPoint outpoint = new TransactionOutPoint(btcMainnetParams, FIRST_OUTPUT_INDEX, spendTxHash);
@@ -2685,23 +2749,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withNoChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(fingerrootActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
-            federationStorageProvider.setOldFederation(retiringFederation);
+            setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
@@ -2716,15 +2764,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withNoChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(fingerrootActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
+            setupActiveLegacyFed(fingerrootActivations);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
@@ -2739,23 +2779,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withNoChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(arrowhead600Activations);
-            federationStorageProvider.setNewFederation(activeFederation);
-            federationStorageProvider.setOldFederation(retiringFederation);
+            setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
@@ -2770,15 +2794,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withNoChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(arrowhead600Activations);
-            federationStorageProvider.setNewFederation(activeFederation);
+            setupActiveLegacyFed(arrowhead600Activations);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
@@ -2793,23 +2809,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withNoChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shP2wshErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            setUp(allActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
-            federationStorageProvider.setOldFederation(retiringFederation);
+            setupActiveAndRetiringFed();
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
@@ -2825,15 +2825,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withNoChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shP2wshErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            setUp(allActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
+            setupActiveFed();
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
@@ -2849,23 +2841,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_notInPegoutTxIndexWithChangeOutputFromFederation_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            setUp(arrowhead600Activations);
-            federationStorageProvider.setNewFederation(activeFederation);
-            federationStorageProvider.setOldFederation(retiringFederation);
+            setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -2893,23 +2869,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(fingerrootActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
-            federationStorageProvider.setOldFederation(retiringFederation);
+            setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -2945,15 +2905,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(fingerrootActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
+            setupActiveLegacyFed(fingerrootActivations);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -2989,23 +2941,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(arrowhead600Activations);
-            federationStorageProvider.setNewFederation(activeFederation);
-            federationStorageProvider.setOldFederation(retiringFederation);
+            setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3041,15 +2977,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(arrowhead600Activations);
-            federationStorageProvider.setNewFederation(activeFederation);
+            setupActiveLegacyFed(arrowhead600Activations);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3085,23 +3013,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shP2wshErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            setUp(allActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
-            federationStorageProvider.setOldFederation(retiringFederation);
+            setupActiveAndRetiringFed();
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3138,15 +3050,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shP2wshErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            setUp(allActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
+            setupActiveFed();
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3183,23 +3087,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(fingerrootActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
-            federationStorageProvider.setOldFederation(retiringFederation);
+            setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
@@ -3233,15 +3121,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(fingerrootActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
+            setupActiveLegacyFed(fingerrootActivations);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
@@ -3275,23 +3155,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(arrowhead600Activations);
-            federationStorageProvider.setNewFederation(activeFederation);
-            federationStorageProvider.setOldFederation(retiringFederation);
+            setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
@@ -3325,15 +3189,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(arrowhead600Activations);
-            federationStorageProvider.setNewFederation(activeFederation);
+            setupActiveLegacyFed(arrowhead600Activations);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
@@ -3367,23 +3223,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shP2wshErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            setUp(allActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
-            federationStorageProvider.setOldFederation(retiringFederation);
+            setupActiveAndRetiringFed();
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
@@ -3418,15 +3258,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shP2wshErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            setUp(allActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
+            setupActiveFed();
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(createInputSpendingFromActiveFederation(BTC_TX_HASH, Coin.COIN));
@@ -3461,23 +3293,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(fingerrootActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
-            federationStorageProvider.setOldFederation(retiringFederation);
+            setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3496,15 +3312,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(fingerrootActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
+            setupActiveLegacyFed(fingerrootActivations);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3523,23 +3331,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(arrowhead600Activations);
-            federationStorageProvider.setNewFederation(activeFederation);
-            federationStorageProvider.setOldFederation(retiringFederation);
+            setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3558,15 +3350,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
-                .build();
-            setUp(arrowhead600Activations);
-            federationStorageProvider.setNewFederation(activeFederation);
+            setupActiveLegacyFed(arrowhead600Activations);
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3585,23 +3369,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withOneOutputAndManyInputs_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shP2wshErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            setUp(allActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
-            federationStorageProvider.setOldFederation(retiringFederation);
+            setupActiveAndRetiringFed();
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
@@ -3621,15 +3389,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Test
         void registerBtcTransaction_withOneOutputAndManyInputs_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            activeFederation = P2shP2wshErpFederationBuilder.builder()
-                .withNetworkParameters(networkParameters)
-                .withMembersBtcPublicKeys(activeFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
-                .build();
-            setUp(allActivations);
-            federationStorageProvider.setNewFederation(activeFederation);
+            setupActiveFed();
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             for (int i = 0; i < 50; i++) {
