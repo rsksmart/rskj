@@ -20,6 +20,9 @@ import java.util.Optional;
  * <p>Only calls with more than one eligible entry are recorded — with zero or one eligible entry the
  * selection is already deterministic. Networks without a pre-RSKIP559 chain to reproduce leave the table
  * empty, which simply makes every lookup miss.</p>
+ *
+ * <p>Subclasses build their table with {@link java.util.Map#ofEntries}, which rejects a duplicated key at
+ * construction. Filling a mutable map with {@code put} would silently overwrite one instead.</p>
  */
 public class HistoricalPegoutSelectionsConstants {
 
@@ -39,6 +42,6 @@ public class HistoricalPegoutSelectionsConstants {
      * iteration order is unspecified, which is the very hazard this class exists to work around.
      */
     public Map<Keccak256, Sha256Hash> getSelections() {
-        return selections;
+        return Collections.unmodifiableMap(selections);
     }
 }
