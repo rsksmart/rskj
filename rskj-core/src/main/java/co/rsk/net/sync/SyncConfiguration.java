@@ -29,6 +29,14 @@ import java.util.stream.Collectors;
 
 @Immutable
 public final class SyncConfiguration {
+    /** Legacy behaviour: one body request in flight per peer (one block per round trip). */
+    private static final int DEFAULT_MAX_IN_FLIGHT_BODY_REQUESTS_PER_PEER = 1;
+    /** Legacy behaviour: no outbound throttling. */
+    private static final int DEFAULT_MAX_BODY_REQUESTS_PER_MINUTE_PER_PEER = 0;
+    /** Legacy behaviour: one header chunk request at a time, to the selected peer only. */
+    private static final int DEFAULT_MAX_CONCURRENT_HEADER_REQUESTS = 1;
+    private static final int DEFAULT_MAX_HEADER_REQUESTS_PER_PEER = 1;
+
     @VisibleForTesting
     public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, 0, false, false, 0);
 
@@ -49,6 +57,11 @@ public final class SyncConfiguration {
 
     private final int snapshotSyncLimit;
     private final Map<String, Node> nodeIdToSnapshotTrustedPeerMap;
+
+    private final int maxInFlightBodyRequestsPerPeer;
+    private final int maxBodyRequestsPerMinutePerPeer;
+    private final int maxConcurrentHeaderRequests;
+    private final int maxHeaderRequestsPerPeer;
 
     /**
      * @param expectedPeers            The expected number of peers we would want to start finding a connection point.
@@ -106,6 +119,35 @@ public final class SyncConfiguration {
             boolean isClientSnapSyncEnabled,
             int snapshotSyncLimit,
             List<Node> snapBootNodes) {
+        this(expectedPeers, timeoutWaitingPeers, timeoutWaitingRequest, expirationTimePeerStatus,
+                maxSkeletonChunks, chunkSize, maxRequestedBodies, longSyncLimit, topBest,
+                isServerSnapSyncEnabled, isClientSnapSyncEnabled, snapshotSyncLimit, snapBootNodes,
+                DEFAULT_MAX_IN_FLIGHT_BODY_REQUESTS_PER_PEER, DEFAULT_MAX_BODY_REQUESTS_PER_MINUTE_PER_PEER,
+                DEFAULT_MAX_CONCURRENT_HEADER_REQUESTS, DEFAULT_MAX_HEADER_REQUESTS_PER_PEER);
+    }
+
+    public SyncConfiguration(
+            int expectedPeers,
+            int timeoutWaitingPeers,
+            int timeoutWaitingRequest,
+            int expirationTimePeerStatus,
+            int maxSkeletonChunks,
+            int chunkSize,
+            int maxRequestedBodies,
+            int longSyncLimit,
+            double topBest,
+            boolean isServerSnapSyncEnabled,
+            boolean isClientSnapSyncEnabled,
+            int snapshotSyncLimit,
+            List<Node> snapBootNodes,
+            int maxInFlightBodyRequestsPerPeer,
+            int maxBodyRequestsPerMinutePerPeer,
+            int maxConcurrentHeaderRequests,
+            int maxHeaderRequestsPerPeer) {
+        this.maxInFlightBodyRequestsPerPeer = maxInFlightBodyRequestsPerPeer;
+        this.maxBodyRequestsPerMinutePerPeer = maxBodyRequestsPerMinutePerPeer;
+        this.maxConcurrentHeaderRequests = maxConcurrentHeaderRequests;
+        this.maxHeaderRequestsPerPeer = maxHeaderRequestsPerPeer;
         this.expectedPeers = expectedPeers;
         this.timeoutWaitingPeers = Duration.ofSeconds(timeoutWaitingPeers);
         this.timeoutWaitingRequest = Duration.ofSeconds(timeoutWaitingRequest);
@@ -171,6 +213,22 @@ public final class SyncConfiguration {
 
     public int getSnapshotSyncLimit() {
         return snapshotSyncLimit;
+    }
+
+    public int getMaxInFlightBodyRequestsPerPeer() {
+        return maxInFlightBodyRequestsPerPeer;
+    }
+
+    public int getMaxBodyRequestsPerMinutePerPeer() {
+        return maxBodyRequestsPerMinutePerPeer;
+    }
+
+    public int getMaxConcurrentHeaderRequests() {
+        return maxConcurrentHeaderRequests;
+    }
+
+    public int getMaxHeaderRequestsPerPeer() {
+        return maxHeaderRequestsPerPeer;
     }
 
     public Map<String, Node> getNodeIdToSnapshotTrustedPeerMap() {

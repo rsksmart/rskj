@@ -88,6 +88,14 @@ public class BlockChainImpl implements Blockchain {
 
     private volatile BlockChainStatus status = new BlockChainStatus(null, BlockDifficulty.ZERO);
 
+    // Aggregated import progress. Logging one INFO line per block costs real throughput when
+    // importing millions of them, so the per-block line is DEBUG and this summary is emitted
+    // every PROGRESS_LOG_INTERVAL imported blocks instead.
+    private static final long PROGRESS_LOG_INTERVAL =
+            Long.getLong("blockchain.progressLogInterval", 1000L);
+    private long importedSinceLastProgressLog;
+    private long lastProgressLogNanos = System.nanoTime();
+
     private final Object connectLock = new Object();
     private final Object accessLock = new Object();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -163,9 +171,11 @@ public class BlockChainImpl implements Blockchain {
                     if (BlockUtils.tooMuchProcessTime(totalTime)) {
                         logger.warn("block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, result);
                     }
-                    else {
-                        logger.info("block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, result);
+                    else if (logger.isDebugEnabled()) {
+                        logger.debug("block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, result);
                     }
+
+                    logImportProgress(block, result);
 
                     return result;
                 }
@@ -466,6 +476,35 @@ public class BlockChainImpl implements Blockchain {
     @Override @VisibleForTesting
     public byte[] getBestBlockHash() {
         return getBestBlock().getHash().getBytes();
+    }
+
+    /**
+     * Emits one aggregated INFO line every PROGRESS_LOG_INTERVAL imported blocks, reporting the
+     * height reached and the import rate. This keeps IMPORTED_BEST progress observable during a long
+     * sync without paying for a log line per block.
+     */
+    private void logImportProgress(Block block, ImportResult result) {
+        if (result != ImportResult.IMPORTED_BEST) {
+            return;
+        }
+
+        importedSinceLastProgressLog++;
+        if (importedSinceLastProgressLog < PROGRESS_LOG_INTERVAL) {
+            return;
+        }
+
+        long now = System.nanoTime();
+        double elapsedSeconds = (now - lastProgressLogNanos) / 1_000_000_000d;
+        double rate = elapsedSeconds > 0 ? importedSinceLastProgressLog / elapsedSeconds : 0d;
+
+        logger.info("SYNC PROGRESS: IMPORTED_BEST up to block [{}], {} blocks in [{}]s = [{}] blocks/s",
+                block.getNumber(),
+                importedSinceLastProgressLog,
+                String.format(java.util.Locale.ROOT, "%.1f", elapsedSeconds),
+                String.format(java.util.Locale.ROOT, "%.1f", rate));
+
+        importedSinceLastProgressLog = 0;
+        lastProgressLogNanos = now;
     }
 
     private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty) {

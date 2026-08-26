@@ -54,6 +54,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
     private static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     private static final int QUEUED_TIME_TO_WARN_LIMIT = 2; // seconds
+    private static final long FORCED_TICK_PERIOD_MILLIS = 250;
     private static final int QUEUED_TIME_TO_WARN_PERIOD = 10; // seconds
     private static final int PROCESSING_TIME_TO_WARN_LIMIT = 2; // seconds
 
@@ -420,9 +421,12 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private void updateTimedEvents() {
         long now = System.currentTimeMillis();
         Duration timeTick = Duration.ofMillis(now - lastTickSent);
-        // TODO(lsebrie): handle timeouts properly
-        lastTickSent = now;
-        if (queue.isEmpty()) {
+        // The sync states rely on tick() to time out stale requests and to top up their request
+        // pipelines. Firing it only on an empty queue starves it exactly when the node is busiest,
+        // so also fire it whenever enough real time has gone by. lastTickSent is advanced only when
+        // the tick is actually delivered, otherwise the reported elapsed time is lost.
+        if (queue.isEmpty() || timeTick.toMillis() >= FORCED_TICK_PERIOD_MILLIS) {
+            lastTickSent = now;
             this.syncProcessor.onTimePassed(timeTick);
         }
 

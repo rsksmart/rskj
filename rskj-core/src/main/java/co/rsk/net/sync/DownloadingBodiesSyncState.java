@@ -34,23 +34,57 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Downloads block bodies from every suitable peer.
+ *
+ * <p>The wire protocol carries exactly one body per request/response pair, so the only way to go
+ * faster than "one block per round trip per peer" is to keep several requests in flight at once and
+ * to spread them over as many peers as possible. This state therefore tracks work <em>per request</em>
+ * rather than per peer:
+ *
+ * <ul>
+ *     <li>up to {@code maxInFlightPerPeer} body requests are outstanding to each peer;</li>
+ *     <li>requests are throttled to {@code maxRequestsPerMinutePerPeer} per peer, because a stock
+ *         RskJ peer rejects every message from a sender that goes over
+ *         {@code peer.messageQueue.thresholdPerMinutePerPeer} (1000) within a calendar minute;</li>
+ *     <li>a slow response times out and is re-queued on its own, instead of discarding the peer on
+ *         the first late reply. A peer is dropped only after several consecutive timeouts.</li>
+ * </ul>
+ *
+ * <p>Chunks are no longer owned exclusively by one peer: any peer whose skeleton covers a chunk may
+ * pull pending headers from it, which keeps every peer busy until the whole range is downloaded.
+ */
 public class DownloadingBodiesSyncState extends BaseSyncState {
 
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
+
+    /** A peer is discarded after this many consecutive timed-out body requests. */
+    private static final int MAX_CONSECUTIVE_TIMEOUTS_PER_PEER = 5;
+
+    /**
+     * Half-minute throttling window. A peer counts the messages it receives from us inside each
+     * calendar minute, so a rolling 60s budget could still put nearly twice the limit into one of
+     * its minutes when the two windows straddle. Limiting to half the budget over 30s makes the
+     * bound provable: any 60s interval is the union of two disjoint 30s windows, so it can never
+     * carry more than the configured per-minute allowance.
+     */
+    private static final long RATE_WINDOW_MS = 30_000L;
 
     private final PeersInformation peersInformation;
     private final Blockchain blockchain;
     private final BlockFactory blockFactory;
 
-    // responses on wait
+    // responses on wait, keyed by request id
     private final Map<Long, PendingBodyResponse> pendingBodyResponses;
 
-    // messages on wait from a peer
-    private final Map<Peer, Long> messagesByPeers;
-    // chunks currently being downloaded
-    private final Map<Peer, Integer> chunksBeingDownloaded;
-    // segments currently being downloaded (many nodes can be downloading same segment)
-    private final Map<Peer, Integer> segmentsBeingDownloaded;
+    // in-flight request ids per peer
+    private final Map<Peer, Set<Long>> inFlightByPeer;
+
+    // sliding window of send timestamps per peer, used to throttle outbound requests
+    private final Map<Peer, Deque<Long>> sentTimestampsByPeer;
+
+    // consecutive timeouts per peer
+    private final Map<Peer, Integer> consecutiveTimeoutsByPeer;
 
     // headers waiting to be completed by bodies divided by chunks
     private final List<Deque<BlockHeader>> pendingHeaders;
@@ -61,18 +95,28 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
     // segment a peer belongs to
     private final Map<Peer, Integer> segmentByNode;
 
-    // time elapse registered for each active peer
-    private final Map<Peer, Duration> timeElapsedByPeer;
-
     // chunks divided by segments
     private final List<Deque<Integer>> chunksBySegment;
 
+    // segment each chunk belongs to
+    private final Map<Integer, Integer> segmentByChunk;
+
     // peers that can be used to download blocks
     private final List<Peer> suitablePeers;
+
+    // peers discarded during this phase; they must not be picked up again by the refresh below
+    private final Set<Peer> discardedPeers;
+
     // maximum time waiting for a peer to answer
     private final Duration limit;
     private final SyncBlockValidatorRule blockValidationRule;
     private final BlockSyncService blockSyncService;
+
+    private final int maxInFlightPerPeer;
+    private final int maxRequestsPerMinutePerPeer;
+
+    // set when a fill attempt was held back purely by the outbound rate limiter
+    private boolean lastFillRateLimited;
 
     public DownloadingBodiesSyncState(SyncConfiguration syncConfiguration,
                                       SyncEventsHandler syncEventsHandler,
@@ -96,13 +140,26 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         this.skeletons = skeletons;
         this.segmentByNode = new HashMap<>();
         this.chunksBySegment = new ArrayList<>();
-        this.chunksBeingDownloaded = new HashMap<>();
-        this.segmentsBeingDownloaded = new HashMap<>();
-        this.timeElapsedByPeer = new HashMap<>();
-        this.messagesByPeers = new HashMap<>();
+        this.segmentByChunk = new HashMap<>();
+        this.inFlightByPeer = new HashMap<>();
+        this.sentTimestampsByPeer = new HashMap<>();
+        this.consecutiveTimeoutsByPeer = new HashMap<>();
+        this.discardedPeers = new HashSet<>();
+
+        this.maxInFlightPerPeer = Math.max(1, syncConfiguration.getMaxInFlightBodyRequestsPerPeer());
+        this.maxRequestsPerMinutePerPeer = syncConfiguration.getMaxBodyRequestsPerMinutePerPeer();
 
         initializeSegments();
         this.suitablePeers = new ArrayList<>(segmentByNode.keySet());
+    }
+
+    @Override
+    public void onEnter() {
+        refreshSuitablePeers();
+        logger.info("Starting body download from {} peer(s), up to {} request(s) in flight each, {} req/min cap",
+                suitablePeers.size(), maxInFlightPerPeer,
+                maxRequestsPerMinutePerPeer > 0 ? String.valueOf(maxRequestsPerMinutePerPeer) : "no");
+        startDownloading(new ArrayList<>(suitablePeers));
     }
 
     @Override
@@ -115,211 +172,333 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         }
 
         // we already checked that this message was expected
-        BlockHeader header = pendingBodyResponses.remove(requestId).header;
+        PendingBodyResponse pending = pendingBodyResponses.remove(requestId);
+        untrackInFlight(peer, requestId);
+        consecutiveTimeoutsByPeer.put(peer, 0);
+
+        BlockHeader header = pending.header;
         header.setExtension(message.getBlockHeaderExtension());
         Block block;
         try {
             block = blockFactory.newBlock(header, message.getTransactions(), message.getUncles());
             block.seal();
         } catch (IllegalArgumentException ex) {
-            handleInvalidBody(peer, header);
+            handleInvalidBody(peer, pending);
             return;
         }
 
         if (!blockValidationRule.isValid(block)) {
-            handleInvalidBody(peer, header);
+            handleInvalidBody(peer, pending);
             return;
         }
 
         // handle block
         // this is a controled place where we ask for blocks, we never should look for missing hashes
-        if (blockSyncService.processBlock(block, peer, true).isInvalidBlock()){
-            handleInvalidBlock(peer, header);
+        if (blockSyncService.processBlock(block, peer, true).isInvalidBlock()) {
+            handleInvalidBlock(peer, pending);
             return;
         }
-        // updates peer downloading information
-        tryRequestNextBody(peer);
-        // check if this was the last block to download
+
+        // keep this peer's pipeline topped up
+        fillPeer(peer);
         verifyDownloadIsFinished();
     }
 
     private void verifyDownloadIsFinished() {
-        // all headers have been requested and there is not any chunk still in process
-        if (chunksBeingDownloaded.isEmpty() &&
-                pendingHeaders.stream().allMatch(Collection::isEmpty)) {
+        // all headers have been requested and there is not any body still in flight
+        if (pendingBodyResponses.isEmpty() && pendingHeaders.stream().allMatch(Collection::isEmpty)) {
             // Finished syncing
             logger.info("Completed syncing phase");
             syncEventsHandler.stopSyncing();
-
         }
     }
 
-    private void tryRequestNextBody(Peer peer) {
-        updateHeadersAndChunks(peer, chunksBeingDownloaded.get(peer))
-                .ifPresent(blockHeader -> tryRequestBody(peer, blockHeader));
+    @Override
+    public void tick(Duration duration) {
+        // age every in-flight request and collect the ones that went past the limit
+        List<Long> timedOut = new ArrayList<>();
+        for (Map.Entry<Long, PendingBodyResponse> entry : pendingBodyResponses.entrySet()) {
+            PendingBodyResponse pending = entry.getValue();
+            pending.elapsed = pending.elapsed.plus(duration);
+            if (pending.elapsed.compareTo(limit) >= 0) {
+                timedOut.add(entry.getKey());
+            }
+        }
+
+        for (Long requestId : timedOut) {
+            handleTimeoutMessage(requestId);
+        }
+
+        // Peers connect and report their status continuously; pick up any that became usable since
+        // this phase started instead of running the whole range with whoever happened to be ready.
+        refreshSuitablePeers();
+
+        if (suitablePeers.isEmpty()) {
+            syncEventsHandler.stopSyncing();
+            return;
+        }
+
+        startDownloading(new ArrayList<>(suitablePeers));
+
+        if (pendingBodyResponses.isEmpty()) {
+            if (pendingHeaders.stream().allMatch(Collection::isEmpty)) {
+                logger.info("Completed syncing phase");
+                syncEventsHandler.stopSyncing();
+            } else if (!lastFillRateLimited) {
+                // nothing in flight, work left, and no peer able to take it: we cannot make progress
+                logger.warn("No peer can serve the {} remaining chunk(s); stopping sync",
+                        pendingHeaders.stream().filter(d -> !d.isEmpty()).count());
+                syncEventsHandler.stopSyncing();
+            }
+        }
     }
 
-    private void handleInvalidBlock(Peer peer, BlockHeader header) {
+    /**
+     * Adds every currently usable peer to the rotation.
+     *
+     * <p>A peer does not need to have contributed a skeleton to serve bodies: the body it returns is
+     * checked against the header we already trust (transactions root and uncles hash), so a peer
+     * that sends the wrong body is detected and penalised exactly as before. Restricting the
+     * download to the handful of peers that answered the skeleton request left most of the
+     * connected peers idle for the whole phase.
+     */
+    private void refreshSuitablePeers() {
+        for (Peer peer : peersInformation.getBestPeerCandidates()) {
+            if (!discardedPeers.contains(peer) && !suitablePeers.contains(peer)) {
+                suitablePeers.add(peer);
+            }
+        }
+    }
+
+    /** Highest block this peer claims to have, or -1 when it has not reported a status yet. */
+    private long bestBlockNumberOf(Peer peer) {
+        SyncPeerStatus peerStatus = peersInformation.getPeer(peer);
+        if (peerStatus == null || peerStatus.getStatus() == null) {
+            return -1L;
+        }
+        return peerStatus.getStatus().getBestBlockNumber();
+    }
+
+    private void startDownloading(List<Peer> peers) {
+        lastFillRateLimited = false;
+        peers.forEach(this::fillPeer);
+    }
+
+    /**
+     * Sends as many body requests to {@code peer} as the in-flight window and the outbound rate
+     * limiter allow.
+     */
+    private void fillPeer(Peer peer) {
+        if (!suitablePeers.contains(peer)) {
+            return;
+        }
+
+        while (inFlightCount(peer) < maxInFlightPerPeer) {
+            if (!allowSend(peer)) {
+                // there is capacity but we would go over the peer's per-minute message threshold
+                lastFillRateLimited = true;
+                return;
+            }
+            Optional<Assignment> assignment = pollAssignmentFor(peer);
+            if (!assignment.isPresent()) {
+                return;
+            }
+            sendRequest(peer, assignment.get());
+        }
+    }
+
+    private void sendRequest(Peer peer, Assignment assignment) {
+        long messageId = syncEventsHandler.sendBodyRequest(peer, assignment.header);
+        PendingBodyResponse pending =
+                new PendingBodyResponse(peer.getPeerNodeID(), assignment.header, peer, assignment.chunk);
+        pendingBodyResponses.put(messageId, pending);
+        inFlightByPeer.computeIfAbsent(peer, k -> new HashSet<>()).add(messageId);
+        recordSend(peer);
+    }
+
+    /**
+     * Picks the next header this peer is able to serve, scanning from its own segment downwards.
+     * Chunks are shared: several peers may drain the same chunk concurrently, and each header is
+     * handed out exactly once because it is removed from the deque here.
+     */
+    private Optional<Assignment> pollAssignmentFor(Peer peer) {
+        Integer peerSegment = segmentByNode.get(peer);
+        long peerBest = Long.MAX_VALUE;
+        int startSegment;
+        if (peerSegment != null) {
+            // This peer's skeleton covers these chunks, so no extra height check is needed.
+            startSegment = peerSegment;
+        } else {
+            // No skeleton from this peer: it may still serve any header it is tall enough for.
+            if (chunksBySegment.isEmpty()) {
+                return Optional.empty();
+            }
+            startSegment = chunksBySegment.size() - 1;
+            peerBest = bestBlockNumberOf(peer);
+            if (peerBest < 0) {
+                return Optional.empty();
+            }
+        }
+
+        for (int segmentNumber = startSegment; segmentNumber >= 0; segmentNumber--) {
+            Deque<Integer> chunks = chunksBySegment.get(segmentNumber);
+            while (!chunks.isEmpty()) {
+                Integer chunkNumber = chunks.peekLast();
+                Deque<BlockHeader> headers = pendingHeaders.get(chunkNumber);
+                BlockHeader header = headers.poll();
+                while (header != null) {
+                    // we double check if the header was not downloaded or obtained by another way
+                    if (!isBlockKnown(header.getHash())) {
+                        if (header.getNumber() > peerBest) {
+                            // this peer is not tall enough for this header; leave it for another one
+                            headers.addFirst(header);
+                            return Optional.empty();
+                        }
+                        return Optional.of(new Assignment(header, chunkNumber));
+                    }
+                    header = headers.poll();
+                }
+                // this chunk is drained, move on to the next one in the segment
+                chunks.pollLast();
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** Puts a header back so that another request (possibly to another peer) can pick it up. */
+    private void requeue(PendingBodyResponse pending) {
+        int chunkNumber = pending.chunk;
+        if (chunkNumber < 0 || chunkNumber >= pendingHeaders.size()) {
+            return;
+        }
+        pendingHeaders.get(chunkNumber).addFirst(pending.header);
+
+        Integer segmentNumber = segmentByChunk.get(chunkNumber);
+        if (segmentNumber != null) {
+            Deque<Integer> chunks = chunksBySegment.get(segmentNumber);
+            if (!chunks.contains(chunkNumber)) {
+                chunks.addLast(chunkNumber);
+            }
+        }
+    }
+
+    private void handleTimeoutMessage(long requestId) {
+        PendingBodyResponse pending = pendingBodyResponses.remove(requestId);
+        if (pending == null) {
+            return;
+        }
+        Peer peer = pending.peer;
+        if (peer != null) {
+            untrackInFlight(peer, requestId);
+            peersInformation.reportEventToPeerScoring(peer, EventType.TIMEOUT_MESSAGE,
+                    "Timeout waiting body on {}", this.getClass());
+
+            int timeouts = consecutiveTimeoutsByPeer.merge(peer, 1, Integer::sum);
+            if (timeouts >= MAX_CONSECUTIVE_TIMEOUTS_PER_PEER) {
+                logger.warn("Discarding peer {} after {} consecutive body timeouts",
+                        peer.getPeerNodeID(), timeouts);
+                dropPeer(peer);
+            }
+        }
+        requeue(pending);
+    }
+
+    private void handleInvalidBlock(Peer peer, PendingBodyResponse pending) {
         peersInformation.reportEventToPeerScoring(
                 peer, EventType.INVALID_BLOCK,
                 "Invalid block received on {}, no {}, hash {}",
-                this.getClass(), header.getNumber(), header.getPrintableHash());
+                this.getClass(), pending.header.getNumber(), pending.header.getPrintableHash());
 
-        clearPeerInfo(peer);
-        if (suitablePeers.isEmpty()){
-            syncEventsHandler.stopSyncing();
-            return;
-        }
-        messagesByPeers.remove(peer);
-        resetChunkAndHeader(peer, header);
-        startDownloading(getInactivePeers());
+        dropPeer(peer);
+        requeue(pending);
+        rescheduleAfterPeerLoss();
     }
 
-    private void handleInvalidBody(Peer peer, BlockHeader header) {
+    private void handleInvalidBody(Peer peer, PendingBodyResponse pending) {
         peersInformation.reportEventToPeerScoring(
                 peer, EventType.INVALID_MESSAGE,
                 "Invalid body received on {}, no {}, hash {}",
-                this.getClass(), header.getNumber(), header.getPrintableHash());
+                this.getClass(), pending.header.getNumber(), pending.header.getPrintableHash());
 
-        clearPeerInfo(peer);
-        if (suitablePeers.isEmpty()){
-            syncEventsHandler.stopSyncing();
-            return;
-        }
-        messagesByPeers.remove(peer);
-        resetChunkAndHeader(peer, header);
-        startDownloading(getInactivePeers());
+        dropPeer(peer);
+        requeue(pending);
+        rescheduleAfterPeerLoss();
     }
 
     private void handleUnexpectedBody(Peer peer) {
         peersInformation.reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,
                 "Unexpected body received on {}", this.getClass());
 
-        clearPeerInfo(peer);
+        dropPeer(peer);
+        rescheduleAfterPeerLoss();
+    }
+
+    private void rescheduleAfterPeerLoss() {
         if (suitablePeers.isEmpty()) {
             syncEventsHandler.stopSyncing();
             return;
         }
-        // if this peer has another different message pending then its restored to the stack
-        Long messageId = messagesByPeers.remove(peer);
-        if (messageId != null) {
-            resetChunkAndHeader(peer, pendingBodyResponses.remove(messageId).header);
-        }
-        startDownloading(getInactivePeers());
+        startDownloading(new ArrayList<>(suitablePeers));
     }
 
-    private void resetChunkAndHeader(Peer peer, BlockHeader header) {
-        int chunkNumber = chunksBeingDownloaded.remove(peer);
-        pendingHeaders.get(chunkNumber).addLast(header);
-        int segmentNumber = segmentsBeingDownloaded.remove(peer);
-        chunksBySegment.get(segmentNumber).push(chunkNumber);
-    }
-
-    private void clearPeerInfo(Peer peer) {
+    /** Removes a peer from the rotation and re-queues everything it still owed us. */
+    private void dropPeer(Peer peer) {
         suitablePeers.remove(peer);
-        timeElapsedByPeer.remove(peer);
-    }
+        discardedPeers.add(peer);
+        sentTimestampsByPeer.remove(peer);
+        consecutiveTimeoutsByPeer.remove(peer);
 
-    private Optional<BlockHeader> updateHeadersAndChunks(Peer peer, Integer currentChunk) {
-        Deque<BlockHeader> headers = pendingHeaders.get(currentChunk);
-        BlockHeader header = headers.poll();
-        while (header != null) {
-            // we double check if the header was not downloaded or obtained by another way
-            if (!isKnownBlock(header.getHash())) {
-                return Optional.of(header);
-            }
-            header = headers.poll();
+        Set<Long> inFlight = inFlightByPeer.remove(peer);
+        if (inFlight == null) {
+            return;
         }
-
-        Optional<BlockHeader> blockHeader = tryFindBlockHeader(peer);
-        if (!blockHeader.isPresent()){
-            chunksBeingDownloaded.remove(peer);
-            segmentsBeingDownloaded.remove(peer);
-            messagesByPeers.remove(peer);
-        }
-
-        return blockHeader;
-    }
-
-    private boolean isKnownBlock(Keccak256 hash) {
-        return blockchain.getBlockByHash(hash.getBytes()) != null;
-    }
-
-    private Optional<BlockHeader> tryFindBlockHeader(Peer peer) {
-        // we start from the last chunk that can be downloaded
-        for (int segmentNumber = segmentByNode.get(peer); segmentNumber >= 0; segmentNumber--){
-            Deque<Integer> chunks = chunksBySegment.get(segmentNumber);
-            // if the segment stack is empty then continue to next segment
-            if (!chunks.isEmpty()) {
-                int chunkNumber = chunks.pollLast();
-                Deque<BlockHeader> headers = pendingHeaders.get(chunkNumber);
-                BlockHeader header = headers.poll();
-                while (header != null) {
-                    // we double check if the header was not downloaded or obtained by another way
-                    if (!isBlockKnown(header.getHash())) {
-                        chunksBeingDownloaded.put(peer, chunkNumber);
-                        segmentsBeingDownloaded.put(peer, segmentNumber);
-                        return Optional.of(header);
-                    }
-                    header = headers.poll();
-                }
+        for (Long requestId : inFlight) {
+            PendingBodyResponse pending = pendingBodyResponses.remove(requestId);
+            if (pending != null) {
+                requeue(pending);
             }
         }
-        return Optional.empty();
+    }
+
+    private int inFlightCount(Peer peer) {
+        Set<Long> inFlight = inFlightByPeer.get(peer);
+        return inFlight == null ? 0 : inFlight.size();
+    }
+
+    private void untrackInFlight(Peer peer, long requestId) {
+        Set<Long> inFlight = inFlightByPeer.get(peer);
+        if (inFlight != null) {
+            inFlight.remove(requestId);
+        }
+    }
+
+    /**
+     * True when another request may be sent to this peer without crossing its per-minute message
+     * threshold. Peers count every message they receive from us within a calendar minute and start
+     * rejecting once the threshold is passed, which would stall the download.
+     */
+    private boolean allowSend(Peer peer) {
+        if (maxRequestsPerMinutePerPeer <= 0) {
+            return true;
+        }
+        long now = System.currentTimeMillis();
+        Deque<Long> timestamps = sentTimestampsByPeer.computeIfAbsent(peer, k -> new ArrayDeque<>());
+        while (!timestamps.isEmpty() && now - timestamps.peekFirst() >= RATE_WINDOW_MS) {
+            timestamps.pollFirst();
+        }
+        return timestamps.size() < Math.max(1, maxRequestsPerMinutePerPeer / 2);
+    }
+
+    private void recordSend(Peer peer) {
+        if (maxRequestsPerMinutePerPeer <= 0) {
+            return;
+        }
+        sentTimestampsByPeer.computeIfAbsent(peer, k -> new ArrayDeque<>())
+                .addLast(System.currentTimeMillis());
     }
 
     private boolean isBlockKnown(Keccak256 hash) {
         return blockchain.getBlockByHash(hash.getBytes()) != null;
-    }
-
-    @Override
-    public void onEnter() {
-        startDownloading(suitablePeers);
-    }
-
-    private void startDownloading(List<Peer> peers) {
-        peers.forEach(p -> tryFindBlockHeader(p).ifPresent(header -> tryRequestBody(p, header)));
-    }
-
-    @Override
-    public void tick(Duration duration) {
-        // first we update all the nodes that are expected to be working
-        List<Peer> updatedNodes = timeElapsedByPeer.keySet().stream()
-            .filter(chunksBeingDownloaded::containsKey)
-            .collect(Collectors.toList());
-
-        updatedNodes.forEach(k -> timeElapsedByPeer.put(k, timeElapsedByPeer.get(k).plus(duration)));
-
-        // we get the nodes that got beyond timeout limit and remove them
-        updatedNodes.stream()
-            .filter(k -> timeElapsedByPeer.get(k).compareTo(limit) >= 0)
-            .forEach(this::handleTimeoutMessage);
-
-        if (suitablePeers.isEmpty()){
-            syncEventsHandler.stopSyncing();
-            return;
-        }
-
-        startDownloading(getInactivePeers());
-
-        if (chunksBeingDownloaded.isEmpty()){
-            syncEventsHandler.stopSyncing();
-        }
-    }
-
-    private void handleTimeoutMessage(Peer peer) {
-        peersInformation.reportEventToPeerScoring(peer, EventType.TIMEOUT_MESSAGE,
-                "Timeout waiting body on {}", this.getClass());
-        Long messageId = messagesByPeers.remove(peer);
-        BlockHeader header = pendingBodyResponses.remove(messageId).header;
-        clearPeerInfo(peer);
-        resetChunkAndHeader(peer, header);
-    }
-
-    private List<Peer> getInactivePeers() {
-        return suitablePeers.stream()
-                .filter(p -> !chunksBeingDownloaded.containsKey(p))
-                .collect(Collectors.toList());
     }
 
     /**
@@ -330,6 +509,10 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
      * The idea is to find the "min common chunks" between nodes to find when a new segment starts
      */
     private void initializeSegments() {
+        if (pendingHeaders.isEmpty()) {
+            return;
+        }
+
         Deque<Integer> segmentChunks = new ArrayDeque<>();
         int segmentNumber = 0;
         int chunkNumber = 0;
@@ -338,9 +521,9 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         segmentChunks.push(chunkNumber);
         chunkNumber++;
 
-        for (; chunkNumber < pendingHeaders.size(); chunkNumber++){
+        for (; chunkNumber < pendingHeaders.size(); chunkNumber++) {
             nodes = getAvailableNodesIDSFor(chunkNumber);
-            if (prevNodes.size() != nodes.size()){
+            if (prevNodes.size() != nodes.size()) {
                 final List<Peer> filteringNodes = nodes;
                 List<Peer> insertedNodes = prevNodes.stream()
                         .filter(k -> !filteringNodes.contains(k)).collect(Collectors.toList());
@@ -370,14 +553,8 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
 
     private void insertSegment(Deque<Integer> segmentChunks, List<Peer> nodes, Integer segmentNumber) {
         chunksBySegment.add(segmentChunks);
+        segmentChunks.forEach(chunk -> segmentByChunk.put(chunk, segmentNumber));
         nodes.forEach(peer -> segmentByNode.put(peer, segmentNumber));
-    }
-
-    private void tryRequestBody(Peer peer, BlockHeader header){
-        long messageId = syncEventsHandler.sendBodyRequest(peer, header);
-        pendingBodyResponses.put(messageId, new PendingBodyResponse(peer.getPeerNodeID(), header));
-        timeElapsedByPeer.put(peer, Duration.ZERO);
-        messagesByPeers.put(peer, messageId);
     }
 
     private boolean isExpectedBody(long requestId, NodeID peerId) {
@@ -391,13 +568,43 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
     }
 
     @VisibleForTesting
+    int getInFlightCount() {
+        return pendingBodyResponses.size();
+    }
+
+    @VisibleForTesting
+    List<Peer> getSuitablePeers() {
+        return suitablePeers;
+    }
+
+    private static final class Assignment {
+        private final BlockHeader header;
+        private final int chunk;
+
+        private Assignment(BlockHeader header, int chunk) {
+            this.header = header;
+            this.chunk = chunk;
+        }
+    }
+
+    @VisibleForTesting
     protected static class PendingBodyResponse {
         private NodeID nodeID;
         private BlockHeader header;
+        private Peer peer;
+        private int chunk;
+        private Duration elapsed;
 
         PendingBodyResponse(NodeID nodeID, BlockHeader header) {
+            this(nodeID, header, null, -1);
+        }
+
+        PendingBodyResponse(NodeID nodeID, BlockHeader header, Peer peer, int chunk) {
             this.nodeID = nodeID;
             this.header = header;
+            this.peer = peer;
+            this.chunk = chunk;
+            this.elapsed = Duration.ZERO;
         }
     }
 }

@@ -16,6 +16,7 @@ import co.rsk.peg.vote.*;
 import co.rsk.util.StringUtils;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -102,7 +103,20 @@ public class FederationSupportImpl implements FederationSupport {
         return federationAge >= constants.getFederationActivationAge(activations);
     }
 
+    /**
+     * The genesis federation is derived purely from immutable network constants, but it used to be
+     * rebuilt on every call - and REMASC calls it once per federator, for every block. Building it
+     * decompresses every federator public key (a secp256k1 modular square root), so caching it
+     * removes an O(members^2) cryptographic cost per block.
+     */
+    private static final Map<FederationConstants, Federation> GENESIS_FEDERATION_CACHE =
+            new ConcurrentHashMap<>();
+
     private Federation getGenesisFederation() {
+        return GENESIS_FEDERATION_CACHE.computeIfAbsent(constants, c -> buildGenesisFederation());
+    }
+
+    private Federation buildGenesisFederation() {
         long genesisFederationCreationBlockNumber = 1L;
         List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(
             constants.getGenesisFederationPublicKeys()

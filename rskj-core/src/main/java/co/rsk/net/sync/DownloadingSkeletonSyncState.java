@@ -100,6 +100,15 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
 
     @Override
     public void onEnter() {
-        peersInformation.getBestPeerCandidates().forEach(p -> syncEventsHandler.sendSkeletonRequest(p, connectionPoint));
+        // Request a skeleton from every candidate and wait for all of them, so that the body
+        // download phase can spread its requests over many peers instead of a single one.
+        // onEnter already contacted every candidate before this change; the responses were simply
+        // thrown away because the state advanced on the first one. No extra requests are sent here.
+        List<Peer> peersToAsk = new ArrayList<>(candidates);
+        if (!peersToAsk.contains(selectedPeer)) {
+            peersToAsk.add(selectedPeer);
+        }
+        this.expectedSkeletons = peersToAsk.size();
+        peersToAsk.forEach(p -> syncEventsHandler.sendSkeletonRequest(p, connectionPoint));
     }
 }

@@ -1551,7 +1551,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 rskSystemProperties.isServerSnapshotSyncEnabled(),
                 rskSystemProperties.isClientSnapshotSyncEnabled(),
                 rskSystemProperties.getSnapshotSyncLimit(),
-                rskSystemProperties.getSnapBootNodes());
+                rskSystemProperties.getSnapBootNodes(),
+                rskSystemProperties.getMaxInFlightBodyRequestsPerPeer(),
+                rskSystemProperties.getMaxBodyRequestsPerMinutePerPeer(),
+                rskSystemProperties.getMaxConcurrentHeaderRequests(),
+                rskSystemProperties.getMaxHeaderRequestsPerPeer());
     }
 
     protected synchronized StateRootHandler buildStateRootHandler() {

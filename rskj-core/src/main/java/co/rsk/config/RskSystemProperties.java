@@ -517,6 +517,22 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getBoolean("peer.fastBlockPropagation");
     }
 
+    public int getMaxInFlightBodyRequestsPerPeer() {
+        return configFromFiles.getInt("sync.maxInFlightBodyRequestsPerPeer");
+    }
+
+    public int getMaxBodyRequestsPerMinutePerPeer() {
+        return configFromFiles.getInt("sync.maxBodyRequestsPerMinutePerPeer");
+    }
+
+    public int getMaxConcurrentHeaderRequests() {
+        return configFromFiles.getInt("sync.maxConcurrentHeaderRequests");
+    }
+
+    public int getMaxHeaderRequestsPerPeer() {
+        return configFromFiles.getInt("sync.maxHeaderRequestsPerPeer");
+    }
+
     public int getMessageQueueMaxSize() {
         return configFromFiles.getInt("peer.messageQueue.maxSizePerPeer");
     }

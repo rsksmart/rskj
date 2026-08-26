@@ -27,6 +27,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +49,7 @@ public abstract class Federation {
     protected int formatVersion;
     protected Script p2shScript;
     protected Address address;
+    private volatile List<BtcECKey> btcPublicKeys;
 
     protected Federation(
         FederationArgs federationArgs,
@@ -85,12 +87,20 @@ public abstract class Federation {
     }
 
     public List<BtcECKey> getBtcPublicKeys() {
-        // Copy instances since we don't control
-        // immutability of BtcECKey instances
-        return members.stream()
-            .map(m -> m.getBtcPublicKey().getPubKey())
-            .map(BtcECKey::fromPublicOnly)
-            .collect(Collectors.toList());
+        // Memoised: a Federation is immutable, so this list never changes. It used to rebuild every
+        // key with fromPublicOnly(), costing two secp256k1 point decompressions per member per call
+        // on a path REMASC walks for every block.
+        List<BtcECKey> keys = btcPublicKeys;
+        if (keys == null) {
+            keys = members.stream()
+                    .map(FederationMember::getBtcPublicKey)
+                    .collect(Collectors.toList());
+            btcPublicKeys = keys;
+        }
+        // Hand back a fresh mutable list: callers such as ScriptBuilder may sort it in place, and
+        // the previous implementation returned a mutable ArrayList. Copying references is cheap;
+        // it is the key decompression above that was expensive, and that now happens only once.
+        return new ArrayList<>(keys);
     }
 
     public int getNumberOfSignaturesRequired() {

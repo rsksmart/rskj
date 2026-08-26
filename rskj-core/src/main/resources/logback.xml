@@ -120,9 +120,20 @@
         <appender-ref ref="FILE-AUDIT"/>
     </logger>
 
-    <!-- Root logger -->
-    <root level="DEBUG">
-        <appender-ref ref="stdout"/>
+    <!-- Async wrapper: keeps disk I/O off the block-processing thread during long syncs -->
+    <appender name="ASYNC-FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>8192</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+        <includeCallerData>false</includeCallerData>
         <appender-ref ref="FILE-AUDIT"/>
+    </appender>
+
+    <!-- Root logger. DEBUG writes several lines per imported block, which is a measurable cost
+         when importing millions of them, so the default is INFO and can be raised with
+         -Dlogging.root=DEBUG when troubleshooting. -->
+    <root level="${logging.root:-INFO}">
+        <appender-ref ref="stdout"/>
+        <appender-ref ref="ASYNC-FILE"/>
     </root>
 </configuration>

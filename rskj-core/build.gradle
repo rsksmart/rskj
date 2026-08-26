@@ -310,6 +310,14 @@ tasks.withType(Javadoc) {
 }
 
 repositories {
+    // Only used to resolve the locally built co.rsk:native snapshot, which ships the macOS/arm64
+    // secp256k1 binding the published 1.3.0 artifact lacks. Restricted so it cannot shadow (and
+    // fail dependency verification for) any other artifact.
+    mavenLocal {
+        content {
+            includeModule("co.rsk", "native")
+        }
+    }
     mavenCentral()
     gradlePluginPortal()
     maven {
@@ -353,7 +361,7 @@ ext {
             picocliVer           : '4.6.3',
 
             bitcoinjThinVer: '0.14.4-rsk-18',
-            rskjNativeVer: '1.3.0',
+            rskjNativeVer: '1.4.0-SNAPSHOT',
     ]
 
     libs = [

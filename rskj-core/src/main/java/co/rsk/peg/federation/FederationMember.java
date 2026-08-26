@@ -94,13 +94,15 @@ public final class FederationMember {
     }
 
     public BtcECKey getBtcPublicKey() {
-        // Return a copy
-        return BtcECKey.fromPublicOnly(btcPublicKey.getPubKey());
+        // The stored key is public-only and already normalised to its compressed form by the
+        // constructor, so it is effectively immutable and can be shared directly. Rebuilding it with
+        // fromPublicOnly() on every call forced a secp256k1 point decompression (a modular square
+        // root), which REMASC triggered O(members^2) times per block.
+        return btcPublicKey;
     }
 
     public ECKey getRskPublicKey() {
-        // Return a copy
-        return ECKey.fromPublicOnly(rskPublicKey.getPubKey());
+        return rskPublicKey;
     }
 
     public ECKey getMstPublicKey() {

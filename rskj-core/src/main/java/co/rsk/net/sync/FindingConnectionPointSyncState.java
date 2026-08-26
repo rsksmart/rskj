@@ -27,6 +27,17 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
     private final BlockStore blockStore;
     private final ConnectionPointFinder connectionPointFinder;
 
+    /**
+     * Our own tip. During a long sync the connection point is almost always exactly this block,
+     * because the previous round downloaded up to here from these same peers. Probing it directly
+     * settles the search in a single round trip instead of the ~log2(peerBestBlock) sequential
+     * requests the binary search needs (about 23 round trips against a 9M block chain, repeated for
+     * every 3840 block round).
+     */
+    private final long ourBestBlockNumber;
+    private final long minBlockNumber;
+    private boolean tipProbeAnswered;
+
     public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration,
                                            SyncEventsHandler syncEventsHandler,
                                            BlockStore blockStore,
@@ -36,13 +47,44 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
         long minNumber = blockStore.getMinNumber();
 
         this.blockStore = blockStore;
+        this.minBlockNumber = minNumber;
+        this.ourBestBlockNumber = Math.max(blockStore.getMaxNumber(), minNumber);
+        // A common block can never be above our own tip, so the search never needs to look higher.
         this.connectionPointFinder = new ConnectionPointFinder(
                 minNumber,
-                peerBestBlockNumber);
+                Math.min(peerBestBlockNumber, this.ourBestBlockNumber));
+    }
+
+    /**
+     * True when the search range is already degenerate, i.e. we hold nothing above the store's
+     * minimum. The connection point is then that minimum and no request is needed. Asking would
+     * mean requesting the genesis hash, which peers do not answer.
+     */
+    private boolean rangeIsSettled() {
+        return ourBestBlockNumber - minBlockNumber <= 0;
+    }
+
+    private boolean canProbeTip() {
+        // Never probe genesis: peers do not answer a block hash request for height 0, which is why
+        // the binary search below also short-circuits when it lands on it.
+        return ourBestBlockNumber > 0 && !rangeIsSettled();
     }
 
     @Override
     public void newConnectionPointData(byte[] hash) {
+        if (!tipProbeAnswered && canProbeTip()) {
+            tipProbeAnswered = true;
+            if (isKnownBlock(hash)) {
+                // The peer has our tip, so that is the connection point. No binary search needed.
+                syncEventsHandler.startDownloadingSkeleton(ourBestBlockNumber, selectedPeer);
+                return;
+            }
+            // Peer diverges below our tip: fall back to the regular binary search.
+            this.resetTimeElapsed();
+            trySendRequest();
+            return;
+        }
+
         boolean knownBlock = isKnownBlock(hash);
         Optional<Long> cp = connectionPointFinder.getConnectionPoint();
         if (cp.isPresent()) {
@@ -81,6 +123,16 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
 
     @Override
     public void onEnter() {
+        if (canProbeTip()) {
+            syncEventsHandler.sendBlockHashRequest(selectedPeer, ourBestBlockNumber);
+            return;
+        }
+        tipProbeAnswered = true;
+        if (rangeIsSettled()) {
+            // Nothing above the store minimum yet (fresh database): start right there.
+            syncEventsHandler.startDownloadingSkeleton(minBlockNumber, selectedPeer);
+            return;
+        }
         trySendRequest();
     }
 }
