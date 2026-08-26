@@ -77,16 +77,21 @@ public class PegoutsWaitingForConfirmations {
     }
 
     /**
-     * Given a block number and a minimum number of confirmations,
-     * returns a subset of transactions within the set that have
-     * at least that number of confirmations.
+     * Returns the next entry with at least {@code minimumConfirmations} confirmations, or an empty
+     * optional if no entry qualifies.
      *
-     * Optionally supply a maximum slice size to limit the output size.
-     * Sliced items are also removed from the set (thus the name, slice).
+     * <p>From RSKIP559 on, the pick among several eligible entries is made by sorting them with
+     * {@link Entry#BTC_TX_COMPARATOR}. Before RSKIP559 it reproduces the selection historically recorded
+     * for this {@code updateCollections}.</p>
      *
      * @param currentBlockNumber the current execution block number (height).
      * @param minimumConfirmations the minimum desired confirmations for the slice elements.
      * @param activations activations for a current block that determine entries ordering/filtering.
+     * @param rskTxHash the confirming {@code updateCollections} rsk tx hash. Must not be null: it keys the
+     *                  historic selection, and without it the pre-RSKIP559 pick would be JVM dependent
+     *                  again, which is the bug the dataset exists to avoid.
+     * @param historicalSelections the network's historic pegout selections. Must not be null; a network
+     *                             with no pre-RSKIP559 chain to reproduce supplies an empty table.
      *
      * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
      */
@@ -96,6 +101,9 @@ public class PegoutsWaitingForConfirmations {
             ForBlock activations,
             Keccak256 rskTxHash,
             HistoricalPegoutSelectionsConstants historicalSelections) {
+        Objects.requireNonNull(rskTxHash, "rskTxHash must not be null");
+        Objects.requireNonNull(historicalSelections, "historicalSelections must not be null");
+
         if (activations.isActive(ConsensusRule.RSKIP559)) {
             return this.entries.getNextPegoutSortedByBtcTx(currentBlockNumber, minimumConfirmations);
         }
