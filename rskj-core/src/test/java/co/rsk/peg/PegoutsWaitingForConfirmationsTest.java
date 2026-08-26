@@ -306,6 +306,24 @@ class PegoutsWaitingForConfirmationsTest {
         return selections;
     }
 
+    @Test
+    void getNextPegout_nullRskTxHash_throws() {
+        // Without the tx hash the historic selection cannot be looked up, and the pre-RSKIP559 pick would
+        // silently go back to being JVM dependent.
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.vetiver900().forBlock(10L);
+
+        Assertions.assertThrows(NullPointerException.class,
+            () -> set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, null, REGTEST_SELECTIONS));
+    }
+
+    @Test
+    void getNextPegout_nullHistoricalSelections_throws() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.vetiver900().forBlock(10L);
+
+        Assertions.assertThrows(NullPointerException.class,
+            () -> set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, UPDATE_COLLECTIONS_TX_HASH, null));
+    }
+
     private PegoutsWaitingForConfirmations.Entry firstEligibleEntryOtherThanLegacyPick() {
         for (PegoutsWaitingForConfirmations.Entry entry : setEntries) {
             boolean eligibleAtBlock10 = (10L - entry.getPegoutCreationRskBlockNumber()) >= 5;
