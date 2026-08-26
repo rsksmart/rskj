@@ -13,7 +13,6 @@ public class HistoricalPegoutSelectionsTestNetConstants extends HistoricalPegout
     private static final HistoricalPegoutSelectionsTestNetConstants instance = new HistoricalPegoutSelectionsTestNetConstants();
 
     private HistoricalPegoutSelectionsTestNetConstants() {
-        // Map.ofEntries rejects a duplicated key at construction; put() would silently overwrite it.
         selections = Map.ofEntries(
             Map.entry(new Keccak256("2d1b35c663d6c0c02380aba68e656cdc61cb7d412c31b19d330b637b4957a64c"), Sha256Hash.wrap("a9bdc4e4a48a3e3754b2722b3e61eeca9ae4009379a62a8313acf485c79171c1")),
             Map.entry(new Keccak256("0be2c6ef85204b2735f18f352ab54863c44de092461e7b6490d58e0f920ea158"), Sha256Hash.wrap("648858fe92cd7c9078b9870852d8abceecd472a8d1102fd767ec658fe414af9c")),

@@ -10,9 +10,13 @@ import co.rsk.crypto.Keccak256;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class HistoricalPegoutSelectionsConstantsTest {
 
@@ -34,7 +38,7 @@ class HistoricalPegoutSelectionsConstantsTest {
     private static final Sha256Hash TESTNET_LAST_BTC_TX =
         Sha256Hash.wrap("5bd422c96cabc0c4adecc4d7a2a23dd7c18ace92fb86348910e596449570a45f");
     private static final Keccak256 UNKNOWN_RSK_TX =
-        new Keccak256("0000000000000000000000000000000000000000000000000000000000000000");
+        new Keccak256("7a3c9e1b45d28f60a1c7e93b204f8d5617ba0c3e98d47f21b6053ac8e2149d7f");
 
     @Test
     void mainnet_knownKeys_returnRecordedSelection() {
@@ -52,11 +56,24 @@ class HistoricalPegoutSelectionsConstantsTest {
         assertEquals(Optional.of(TESTNET_LAST_BTC_TX), testnet.getSelectedPegoutBtcTxHash(TESTNET_LAST_RSK_TX));
     }
 
-    @Test
-    void mainnetKeyOnTestnet_returnsEmpty() {
-        // A key that exists on mainnet must not resolve against the testnet dataset.
-        assertEquals(Optional.empty(),
-            HistoricalPegoutSelectionsTestNetConstants.getInstance().getSelectedPegoutBtcTxHash(MAINNET_FIRST_RSK_TX));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("keyNetworkMismatches")
+    void mismatchBetweenKeyAndNetwork_returnsEmpty(
+            String description, Keccak256 rskTxHash, HistoricalPegoutSelectionsConstants otherNetwork) {
+        // A key recorded on one network must not resolve against the other network's dataset.
+        assertEquals(Optional.empty(), otherNetwork.getSelectedPegoutBtcTxHash(rskTxHash));
+    }
+
+    private static Stream<Arguments> keyNetworkMismatches() {
+        HistoricalPegoutSelectionsConstants mainnet = HistoricalPegoutSelectionsMainNetConstants.getInstance();
+        HistoricalPegoutSelectionsConstants testnet = HistoricalPegoutSelectionsTestNetConstants.getInstance();
+
+        return Stream.of(
+            Arguments.of("first mainnet key against testnet", MAINNET_FIRST_RSK_TX, testnet),
+            Arguments.of("last mainnet key against testnet", MAINNET_LAST_RSK_TX, testnet),
+            Arguments.of("first testnet key against mainnet", TESTNET_FIRST_RSK_TX, mainnet),
+            Arguments.of("last testnet key against mainnet", TESTNET_LAST_RSK_TX, mainnet)
+        );
     }
 
     @Test
