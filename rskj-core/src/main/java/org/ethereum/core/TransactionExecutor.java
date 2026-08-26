@@ -694,11 +694,17 @@ public class TransactionExecutor {
     }
 
     private Coin calculateFee() {
+        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP560)) {
+            return tx.getGasPrice().multiply(toBI(tx.getGasLimit()));
+        }
         BigInteger chargedGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(gasLeftover));
         return tx.getGasPrice().multiply(chargedGas);
     }
 
     private Coin calculateRefund() {
+        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP560)) {
+            return Coin.ZERO;
+        }
         return tx.getGasPrice().multiply(BigInteger.valueOf(gasLeftover));
     }
 
