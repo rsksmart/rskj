@@ -21,9 +21,8 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.HistoricalPegoutSelectionsConstants;
+import co.rsk.peg.constants.HistoricalPegoutSelectionsRegTestConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -46,7 +45,8 @@ class PegoutsWaitingForConfirmationsTest {
     // before RSKIP559 and when more than one entry is eligible. Regtest has no dataset, so with these the
     // pre-RSKIP559 tests keep exercising the legacy findFirst() behaviour.
     private static final Keccak256 UPDATE_COLLECTIONS_TX_HASH = PegTestUtils.createHash3(100);
-    private static final BridgeConstants REGTEST_CONSTANTS = new BridgeRegTestConstants();
+    private static final HistoricalPegoutSelectionsConstants REGTEST_SELECTIONS =
+        HistoricalPegoutSelectionsRegTestConstants.getInstance();
     // Legacy findFirst() pick over this JVM's HashSet order for the block-10, 5-confirmations eligible set.
     private static final String LEGACY_FIND_FIRST_HASH = "53efc6f78eb9d159cfee76ec45bcffb08fd11f85c762e1eacf54e5c014da219d";
 
@@ -193,13 +193,13 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void getNextPegoutWithEnoughConfirmations_no_matches() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(9L, 5, ActivationConfigsForTest.vetiver900().forBlock(9L), UPDATE_COLLECTIONS_TX_HASH, REGTEST_CONSTANTS);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(9L, 5, ActivationConfigsForTest.vetiver900().forBlock(9L), UPDATE_COLLECTIONS_TX_HASH, REGTEST_SELECTIONS);
         Assertions.assertFalse(result.isPresent());
     }
 
     @Test
     void getNextPegoutWithEnoughConfirmations_ok() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L), UPDATE_COLLECTIONS_TX_HASH, REGTEST_CONSTANTS);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L), UPDATE_COLLECTIONS_TX_HASH, REGTEST_SELECTIONS);
         Assertions.assertTrue(result.isPresent());
         Assertions.assertTrue(set.removeEntry(result.get()));
         Assertions.assertFalse(set.removeEntry(result.get()));
@@ -208,7 +208,7 @@ class PegoutsWaitingForConfirmationsTest {
     @Test
     void getNextPegoutWithEnoughConfirmation_multipleMatch_rskip559Off() {
         int size = set.getEntries(ACTIVATIONS_ALL).size();
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L), UPDATE_COLLECTIONS_TX_HASH, REGTEST_CONSTANTS);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L), UPDATE_COLLECTIONS_TX_HASH, REGTEST_SELECTIONS);
         Assertions.assertTrue(result.isPresent());
 
         var entry = result.get();
@@ -227,7 +227,7 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void getNextPegoutWithEnoughConfirmations_rskip559() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.all().forBlock(1L), UPDATE_COLLECTIONS_TX_HASH, REGTEST_CONSTANTS);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.all().forBlock(1L), UPDATE_COLLECTIONS_TX_HASH, REGTEST_SELECTIONS);
         Assertions.assertTrue(result.isPresent());
 
         var entry = result.get();
@@ -246,10 +246,10 @@ class PegoutsWaitingForConfirmationsTest {
         PegoutsWaitingForConfirmations.Entry target = firstEligibleEntryOtherThanLegacyPick();
         Sha256Hash targetBtcTxHash = target.getBtcTransaction().getHash();
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.vetiver900().forBlock(10L);
-        BridgeConstants bridgeConstants = constantsSelecting(targetBtcTxHash);
+        HistoricalPegoutSelectionsConstants historicalSelections = selectionsMapping(targetBtcTxHash);
 
         Optional<PegoutsWaitingForConfirmations.Entry> result =
-            set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, UPDATE_COLLECTIONS_TX_HASH, bridgeConstants);
+            set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, UPDATE_COLLECTIONS_TX_HASH, historicalSelections);
 
         Assertions.assertTrue(result.isPresent());
         Assertions.assertEquals(targetBtcTxHash, result.get().getBtcTransaction().getHash());
@@ -263,7 +263,7 @@ class PegoutsWaitingForConfirmationsTest {
 
         // Regtest records no selections, so every lookup misses.
         Optional<PegoutsWaitingForConfirmations.Entry> result =
-            set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, UPDATE_COLLECTIONS_TX_HASH, REGTEST_CONSTANTS);
+            set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, UPDATE_COLLECTIONS_TX_HASH, REGTEST_SELECTIONS);
 
         Assertions.assertTrue(result.isPresent());
         Assertions.assertEquals(LEGACY_FIND_FIRST_HASH, result.get().getBtcTransaction().getHash().toString());
@@ -274,10 +274,10 @@ class PegoutsWaitingForConfirmationsTest {
         Sha256Hash notEligibleBtcTxHash =
             Sha256Hash.wrap("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.vetiver900().forBlock(10L);
-        BridgeConstants bridgeConstants = constantsSelecting(notEligibleBtcTxHash);
+        HistoricalPegoutSelectionsConstants historicalSelections = selectionsMapping(notEligibleBtcTxHash);
 
         IllegalStateException thrown = Assertions.assertThrows(IllegalStateException.class,
-            () -> set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, UPDATE_COLLECTIONS_TX_HASH, bridgeConstants));
+            () -> set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, UPDATE_COLLECTIONS_TX_HASH, historicalSelections));
 
         // The message must name the eligible set, so a missing record is diagnosable from the log alone.
         Assertions.assertTrue(thrown.getMessage().contains(notEligibleBtcTxHash.toString()));
@@ -288,11 +288,9 @@ class PegoutsWaitingForConfirmationsTest {
     void getNextPegout_rskip559_ignoresHistoricalSelection() {
         // From RSKIP559 on the comparator sort is used and the historical dataset is never consulted.
         HistoricalPegoutSelectionsConstants selections = mock(HistoricalPegoutSelectionsConstants.class);
-        BridgeConstants bridgeConstants = mock(BridgeConstants.class);
-        lenient().when(bridgeConstants.getHistoricalPegoutSelectionsConstants()).thenReturn(selections);
 
         Optional<PegoutsWaitingForConfirmations.Entry> result =
-            set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.all().forBlock(1L), UPDATE_COLLECTIONS_TX_HASH, bridgeConstants);
+            set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.all().forBlock(1L), UPDATE_COLLECTIONS_TX_HASH, selections);
 
         Assertions.assertTrue(result.isPresent());
         Assertions.assertEquals(
@@ -301,14 +299,11 @@ class PegoutsWaitingForConfirmationsTest {
         verifyNoInteractions(selections);
     }
 
-    /** Bridge constants whose historical dataset maps the updateCollections tx to {@code selected}. */
-    private static BridgeConstants constantsSelecting(Sha256Hash selected) {
+    /** A historic dataset that maps the updateCollections tx to {@code selected}. */
+    private static HistoricalPegoutSelectionsConstants selectionsMapping(Sha256Hash selected) {
         HistoricalPegoutSelectionsConstants selections = mock(HistoricalPegoutSelectionsConstants.class);
         when(selections.getSelectedPegoutBtcTxHash(UPDATE_COLLECTIONS_TX_HASH)).thenReturn(Optional.of(selected));
-
-        BridgeConstants bridgeConstants = mock(BridgeConstants.class);
-        when(bridgeConstants.getHistoricalPegoutSelectionsConstants()).thenReturn(selections);
-        return bridgeConstants;
+        return selections;
     }
 
     private PegoutsWaitingForConfirmations.Entry firstEligibleEntryOtherThanLegacyPick() {

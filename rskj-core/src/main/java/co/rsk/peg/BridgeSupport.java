@@ -1613,7 +1613,7 @@ public class BridgeSupport {
                 bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(),
                 activations,
                 rskTx.getHash(),
-                bridgeConstants
+                bridgeConstants.getHistoricalPegoutSelectionsConstants()
             );
 
         if (nextPegoutWithEnoughConfirmations.isEmpty()) {
