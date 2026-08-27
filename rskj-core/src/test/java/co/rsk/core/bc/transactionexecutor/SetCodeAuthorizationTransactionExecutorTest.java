@@ -31,6 +31,7 @@ import org.ethereum.util.RLP;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
@@ -39,6 +40,7 @@ import static java.math.BigInteger.ONE;
 import static java.math.BigInteger.ZERO;
 import static org.ethereum.config.Constants.MAINNET_CHAIN_ID;
 import static org.ethereum.config.Constants.REGTEST_CHAIN_ID;
+import static org.ethereum.config.Constants.TESTNET2_CHAIN_ID;
 import static org.ethereum.config.Constants.TESTNET_CHAIN_ID;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -121,63 +123,6 @@ import static org.mockito.Mockito.when;
         );
 
         assertEquals("Nonce must be < 2^64 - 1", ex.getMessage());
-    }
-
-    @Test
-    void processAuthorizationTuple_shouldThrow_whenChainIdIsInvalid() {
-        var tuple =
-                new SetCodeAuthorization(
-                        BigInteger.valueOf(9999),
-                        randomAddress(),
-                        new byte[]{0x01},
-                        mock(ECDSASignature.class)
-                );
-
-        IllegalStateException ex = assertThrows(
-                IllegalStateException.class,
-                () -> executor.processAuthorizationTuple(repository, ONE_CHAIN_ID, tuple)
-        );
-
-        assertEquals("Invalid chain ID", ex.getMessage());
-    }
-
-    @Test
-    void processAuthorizationTuple_shouldThrow_whenChainIdDoesNotMatchOuterTransaction() {
-       var tuple =
-                new SetCodeAuthorization(
-                        BigInteger.valueOf(MAINNET_CHAIN_ID),
-                        randomAddress(),
-                        new byte[]{0x01},
-                        mock(ECDSASignature.class)
-                );
-
-        IllegalStateException ex = assertThrows(
-                IllegalStateException.class,
-                () -> executor.processAuthorizationTuple(
-                        repository,
-                        BigInteger.valueOf(TESTNET_CHAIN_ID),
-                        tuple
-                )
-        );
-
-        assertEquals("Chain ID mismatch", ex.getMessage());
-    }
-
-    @Test
-    void processAuthorizationTuple_shouldAllowUniversalChainIdWithAnyOuterChainId() {
-        ECKey authorityKey = new ECKey();
-        RskAddress authority = new RskAddress(authorityKey.getAddress());
-
-        var tuple = createValidAuthorizationTuple(RskAddress.ZERO_ADDRESS,
-                NONCE_ONE, ZERO_CHAIN_ID, authorityKey);
-
-        when(repository.getCode(authority)).thenReturn(null);
-        when(repository.getNonce(authority)).thenReturn(NONCE_ONE_VALUE);
-
-        long refund = executor.processAuthorizationTuple(repository, BigInteger.valueOf(33), tuple);
-        verify(repository).saveCode(eq(authority), aryEq(EMPTY_CODE));
-        verify(repository).increaseNonce(authority);
-        assertEquals(0L, refund);
     }
 
     @Test
@@ -279,29 +224,77 @@ import static org.mockito.Mockito.when;
         verify(repository, never()).increaseNonce(any());
     }
 
-    @ParameterizedTest
-    @ValueSource(longs = {MAINNET_CHAIN_ID, TESTNET_CHAIN_ID, REGTEST_CHAIN_ID})
-    void processAuthorizationTuple_shouldAllowChainId_whenOuterChainIdMatches(long chainIdValue) {
-        ECKey authorityKey = new ECKey();
-        RskAddress authority = new RskAddress(authorityKey.getAddress());
+     @ParameterizedTest
+     @CsvSource({
+             "30, 31",
+             "31, 30",
+             "32, 34",
+             "34, 32",
+             "127, 128",
+             "128, 127",
+             "128, 255",
+             "255, 128",
+             "254, 255",
+             "255, 254"
+     })
+     void processAuthorizationTuple_shouldRejectNonZeroChainId_whenOuterChainIdDoesNotMatch(long authorizationChainIdValue, long outerChainIdValue) {
+         BigInteger authorizationChainId = BigInteger.valueOf(authorizationChainIdValue);
+         BigInteger outerChainId = BigInteger.valueOf(outerChainIdValue);
 
-        BigInteger chainId = BigInteger.valueOf(chainIdValue);
+         var tuple = new SetCodeAuthorization(authorizationChainId, randomAddress(), NONCE_ONE, mock(ECDSASignature.class));
 
-        var tuple = createValidAuthorizationTuple(
-                RskAddress.ZERO_ADDRESS,
-                NONCE_ONE,
-                chainId,
-                authorityKey
-        );
+         IllegalStateException ex = assertThrows(
+                 IllegalStateException.class,
+                 () -> executor.processAuthorizationTuple(
+                         repository,
+                         outerChainId,
+                         tuple
+                 )
+         );
 
-        when(repository.getCode(authority)).thenReturn(null);
-        when(repository.getNonce(authority)).thenReturn(ONE);
+         assertEquals("Chain ID mismatch", ex.getMessage());
 
-        executor.processAuthorizationTuple(repository, chainId, tuple);
+         verify(repository, never()).getCode(any());
+         verify(repository, never()).getNonce(any());
+         verify(repository, never()).saveCode(any(), any());
+         verify(repository, never()).increaseNonce(any());
+     }
 
-        verify(repository).saveCode(eq(authority), aryEq(EMPTY_CODE));
-        verify(repository).increaseNonce(authority);
-    }
+     @ParameterizedTest
+     @ValueSource(longs = {
+             MAINNET_CHAIN_ID,
+             TESTNET_CHAIN_ID,
+             32,
+             REGTEST_CHAIN_ID,
+             TESTNET2_CHAIN_ID,
+             50,
+             127,
+             128,
+             255
+     })
+     void processAuthorizationTuple_shouldAllowNonZeroChainId_whenOuterChainIdMatches(long chainIdValue) {
+         ECKey authorityKey = new ECKey();
+         RskAddress authority = new RskAddress(authorityKey.getAddress());
+
+         BigInteger chainId = BigInteger.valueOf(chainIdValue);
+
+         var tuple = createValidAuthorizationTuple(
+                 RskAddress.ZERO_ADDRESS,
+                 NONCE_ONE,
+                 chainId,
+                 authorityKey
+         );
+
+         when(repository.getCode(authority)).thenReturn(null);
+         when(repository.getNonce(authority)).thenReturn(NONCE_ONE_VALUE);
+
+         assertDoesNotThrow(() ->
+                 executor.processAuthorizationTuple(repository, chainId, tuple)
+         );
+
+         verify(repository).saveCode(eq(authority), aryEq(EMPTY_CODE));
+         verify(repository).increaseNonce(authority);
+     }
 
     @Test
     void processAuthorizationTuple_shouldSaveExactDelegatedAddressInCode() {
@@ -632,6 +625,59 @@ import static org.mockito.Mockito.when;
         verify(repository).saveCode(eq(authority), aryEq(createDelegatedCode(delegated)));
         verify(repository).increaseNonce(authority);
      }
+
+     @ParameterizedTest
+     @ValueSource(longs = {
+             MAINNET_CHAIN_ID,
+             TESTNET_CHAIN_ID,
+             32,
+             REGTEST_CHAIN_ID,
+             TESTNET2_CHAIN_ID,
+             127,
+             128,
+             255
+     })
+     void processAuthorizationTuple_shouldAllowUniversalChainId_withAnyOuterChainId(long outerChainIdValue) {
+         ECKey authorityKey = new ECKey();
+         RskAddress authority = new RskAddress(authorityKey.getAddress());
+
+         var tuple = createValidAuthorizationTuple(RskAddress.ZERO_ADDRESS, NONCE_ONE, ZERO_CHAIN_ID, authorityKey);
+
+         when(repository.getCode(authority)).thenReturn(null);
+         when(repository.getNonce(authority)).thenReturn(NONCE_ONE_VALUE);
+
+         assertDoesNotThrow(() ->
+                 executor.processAuthorizationTuple(
+                         repository,
+                         BigInteger.valueOf(outerChainIdValue),
+                         tuple
+                 )
+         );
+
+         verify(repository).saveCode(eq(authority), aryEq(EMPTY_CODE));
+         verify(repository).increaseNonce(authority);
+     }
+
+     @Test
+     void processAuthorizationTuple_shouldNotRequireChainIdToBelongToKnownNetworkList() {
+         ECKey authorityKey = new ECKey();
+         RskAddress authority = new RskAddress(authorityKey.getAddress());
+
+         BigInteger chainId = BigInteger.valueOf(50);
+
+         var tuple = createValidAuthorizationTuple(RskAddress.ZERO_ADDRESS, NONCE_ONE, chainId, authorityKey);
+
+         when(repository.getCode(authority)).thenReturn(null);
+         when(repository.getNonce(authority)).thenReturn(NONCE_ONE_VALUE);
+
+         assertDoesNotThrow(() ->
+                 executor.processAuthorizationTuple(repository, chainId, tuple)
+         );
+
+         verify(repository).saveCode(eq(authority), aryEq(EMPTY_CODE));
+         verify(repository).increaseNonce(authority);
+     }
+
 
     private SetCodeAuthorization createValidAuthorizationTuple(
             RskAddress delegatedAddress,

@@ -18,7 +18,6 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
-import org.ethereum.config.Constants;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.Secp256k1;
@@ -31,6 +30,7 @@ import java.security.SignatureException;
 public class SetCodeAuthorizationTransactionExecutor {
 
     public static final byte[] CODE_FOR_CLEANING_DELEGATED_ADDRESS = new byte[0];
+    final BigInteger UNIVERSAL_CHAIN_ID = BigInteger.ZERO;
 
     public long processAuthorizationTuple(Repository repository, BigInteger outerTransactionChainId, SetCodeAuthorization authorization) {
         verifyChainId(authorization.getChainId(), outerTransactionChainId);
@@ -54,12 +54,6 @@ public class SetCodeAuthorizationTransactionExecutor {
     }
 
     private void verifyChainId(BigInteger chainId, BigInteger outerTransactionChainId) {
-        final BigInteger UNIVERSAL_CHAIN_ID = BigInteger.ZERO;
-        boolean valid = chainId.equals(UNIVERSAL_CHAIN_ID) || chainId.equals(BigInteger.valueOf(Constants.MAINNET_CHAIN_ID)) || chainId.equals(BigInteger.valueOf(Constants.TESTNET_CHAIN_ID)) || chainId.equals(BigInteger.valueOf(Constants.REGTEST_CHAIN_ID));
-        if (!valid) {
-            throw new IllegalStateException("Invalid chain ID");
-        }
-
         if (!chainId.equals(UNIVERSAL_CHAIN_ID) && !chainId.equals(outerTransactionChainId)) {
             throw new IllegalStateException("Chain ID mismatch");
         }
