@@ -76,12 +76,20 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
     private static final long RATE_WINDOW_MS = 30_000L;
 
     /**
-     * Once every header of the range has been handed out, a round can only finish as fast as its
-     * slowest outstanding request. A single sluggish peer at that point stretches a 35s round past
-     * 60s. When only the tail is left, requests older than this are additionally asked of a second
-     * peer and whichever answer lands first is used.
+     * A round can only finish as fast as its slowest outstanding request. Peers differ enormously
+     * in how quickly they answer - measured service rates across a live peer set spanned more than a
+     * factor of two - so a block parked behind a slow peer holds up the round while faster peers sit
+     * idle. Any request older than this is additionally asked of a second peer, and whichever answer
+     * arrives first wins.
      */
     private static final Duration HEDGE_AFTER = Duration.ofSeconds(3);
+
+    /**
+     * Hedging only pays while there is spare capacity to spend on it, so it is limited to this
+     * fraction of a peer's allowance. Without a bound, a slow patch across the whole peer set would
+     * turn into a second full copy of the range.
+     */
+    private static final int HEDGE_CAPACITY_DIVISOR = 2;
 
     private final PeersInformation peersInformation;
     private final Blockchain blockchain;
@@ -558,9 +566,6 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
      * been handed out, so hedging never competes with fresh work for the request budget.
      */
     private void hedgeStragglers() {
-        if (!pendingHeaders.stream().allMatch(Collection::isEmpty)) {
-            return;
-        }
         List<PendingBodyResponse> stragglers = new ArrayList<>();
         for (PendingBodyResponse pending : pendingBodyResponses.values()) {
             if (pending.peer != null
@@ -583,6 +588,11 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         }
     }
 
+    /**
+     * Picks the least loaded peer other than the one already sitting on this request, and only one
+     * with genuine spare capacity - hedging is worth doing with an idle peer, not by displacing
+     * first-copy work on a busy one.
+     */
     private Peer pickAlternativePeer(Peer exclude) {
         Peer best = null;
         int bestLoad = Integer.MAX_VALUE;
@@ -591,7 +601,8 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
                 continue;
             }
             int load = inFlightCount(candidate);
-            if (load < allowanceOf(candidate) && load < bestLoad) {
+            int spare = Math.max(1, allowanceOf(candidate) / HEDGE_CAPACITY_DIVISOR);
+            if (load < spare && load < bestLoad) {
                 bestLoad = load;
                 best = candidate;
             }
