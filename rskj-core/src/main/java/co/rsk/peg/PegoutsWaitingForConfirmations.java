@@ -20,9 +20,9 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants;
 import com.google.common.primitives.UnsignedBytes;
-
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -31,7 +31,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
@@ -51,14 +50,14 @@ public class PegoutsWaitingForConfirmations {
     }
 
     /**
-     * Return entries ordered accoring to {@link Entry.BTC_TX_COMPARATOR}.
+     * Return entries ordered according to {@link Entry.BTC_TX_COMPARATOR}.
      */
     public Collection<Entry> getEntriesWithoutHashOrdered() {
         return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() == null).sorted(Entry.BTC_TX_COMPARATOR).toList();
     }
 
     /**
-     * Return entries ordered accoring to {@link Entry.BTC_TX_COMPARATOR}.
+     * Return entries ordered according to {@link Entry.BTC_TX_COMPARATOR}.
      */
     public Collection<Entry> getEntriesWithHashOrdered() {
         return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() != null).sorted(Entry.BTC_TX_COMPARATOR).toList();
@@ -84,31 +83,36 @@ public class PegoutsWaitingForConfirmations {
      * {@link Entry#BTC_TX_COMPARATOR}. Before RSKIP559 it reproduces the selection historically recorded
      * for this {@code updateCollections}.</p>
      *
+     * @param currentRskTxHash the confirming {@code updateCollections} rsk tx hash. Must not be null: it keys the
+     *                         historic selection, and without it the pre-RSKIP559 pick would be JVM dependent
+     *                         again, which is the bug the dataset exists to avoid.
      * @param currentBlockNumber the current execution block number (height).
-     * @param minimumConfirmations the minimum desired confirmations for the slice elements.
+     * @param bridgeConstants the network's Bridge constants, which expose the network's historic pegout selections and minimum required confirmations.
      * @param activations activations for a current block that determine entries ordering/filtering.
-     * @param rskTxHash the confirming {@code updateCollections} rsk tx hash. Must not be null: it keys the
-     *                  historic selection, and without it the pre-RSKIP559 pick would be JVM dependent
-     *                  again, which is the bug the dataset exists to avoid.
-     * @param historicalSelections the network's historic pegout selections. Must not be null; a network
-     *                             with no pre-RSKIP559 chain to reproduce supplies an empty table.
      *
      * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
      */
     public Optional<Entry> getNextPegoutWithEnoughConfirmations(
-            Long currentBlockNumber,
-            Integer minimumConfirmations,
-            ForBlock activations,
-            Keccak256 rskTxHash,
-            HistoricalPegoutSelectionsConstants historicalSelections) {
-        Objects.requireNonNull(rskTxHash, "rskTxHash must not be null");
-        Objects.requireNonNull(historicalSelections, "historicalSelections must not be null");
+        Keccak256 currentRskTxHash,
+        long currentBlockNumber,
+        BridgeConstants bridgeConstants,
+        ForBlock activations
+    ) {
+        Objects.requireNonNull(currentRskTxHash, "currentRskTxHash must not be null");
+        Objects.requireNonNull(bridgeConstants, "bridgeConstants must not be null");
 
-        if (activations.isActive(ConsensusRule.RSKIP559)) {
-            return this.entries.getNextPegoutSortedByBtcTx(currentBlockNumber, minimumConfirmations);
+        int minimumConfirmations = bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations();
+        if (!activations.isActive(ConsensusRule.RSKIP559)) {
+            HistoricalPegoutSelectionsConstants historicalSelections = bridgeConstants.getHistoricalPegoutSelectionsConstants();
+            return this.entries.getNextPegoutFromHistoricalSelection(
+                currentRskTxHash,
+                currentBlockNumber,
+                minimumConfirmations,
+                historicalSelections
+            );
         }
-        return this.entries.getNextPegoutFromHistoricalSelection(
-                currentBlockNumber, minimumConfirmations, rskTxHash, historicalSelections);
+
+        return this.entries.getNextPegoutSortedByBtcTx(currentBlockNumber, minimumConfirmations);
     }
 
     public void add(Entry entry) {
@@ -122,7 +126,7 @@ public class PegoutsWaitingForConfirmations {
     /**
      * Encapsulate entries while preserving sorting order before fork.
      */
-    public static class EntriesStore {
+    private static class EntriesStore {
 
         private final HashSet<Entry> entriesSet;
 
@@ -130,23 +134,24 @@ public class PegoutsWaitingForConfirmations {
             this.entriesSet = new HashSet<>(entries);
         }
 
-        private boolean hasEnoughConfirmations(Entry entry, Long currentBlockNumber, Integer minimumConfirmations) {
-            return (currentBlockNumber - entry.getPegoutCreationRskBlockNumber()) >= minimumConfirmations;
+        private boolean hasEnoughConfirmations(Entry entry, long currentBlockNumber, int minimumConfirmations) {
+            long pegoutConfirmations = currentBlockNumber - entry.getPegoutCreationRskBlockNumber();
+            return pegoutConfirmations >= minimumConfirmations;
         }
 
-        private List<Entry> eligibleEntries(Long currentBlockNumber, Integer minimumConfirmations) {
+        private List<Entry> eligibleEntries(long currentBlockNumber, int minimumConfirmations) {
             return entriesSet.stream()
-                    .filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations))
-                    .collect(Collectors.toList());
+                .filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations))
+                .toList();
         }
 
         /**
          * From RSKIP559 on, selection is deterministic via the btc tx comparator.
          */
-        public Optional<Entry> getNextPegoutSortedByBtcTx(Long currentBlockNumber, Integer minimumConfirmations) {
+        private Optional<Entry> getNextPegoutSortedByBtcTx(long currentBlockNumber, int minimumConfirmations) {
             return eligibleEntries(currentBlockNumber, minimumConfirmations).stream()
-                    .sorted(Entry.BTC_TX_COMPARATOR)
-                    .findFirst();
+                .sorted(Entry.BTC_TX_COMPARATOR)
+                .findFirst();
         }
 
         /**
@@ -154,53 +159,53 @@ public class PegoutsWaitingForConfirmations {
          * iteration order changed between Java 17 and Java 21. Reproduce the selection historically recorded
          * for this {@code updateCollections} so that every JVM agrees.
          *
-         * @param rskTxHash the confirming updateCollections rsk tx hash, keying the historic selection.
-         * @param historicalSelections the network's historic pegout selections.
+         * @param currentRskTxHash the confirming updateCollections rsk tx hash, keying the historic selection.
+         * @param currentBlockNumber the current execution block number (height).
+         * @param minimumConfirmations the network's minimum required confirmations
+         * @param historicalSelections the network's historic pegout selections
          */
-        public Optional<Entry> getNextPegoutFromHistoricalSelection(
-                Long currentBlockNumber,
-                Integer minimumConfirmations,
-                Keccak256 rskTxHash,
-                HistoricalPegoutSelectionsConstants historicalSelections) {
-
+        private Optional<Entry> getNextPegoutFromHistoricalSelection(
+            Keccak256 currentRskTxHash,
+            long currentBlockNumber,
+            int minimumConfirmations,
+            HistoricalPegoutSelectionsConstants historicalSelections
+        ) {
             List<Entry> eligibleEntries = eligibleEntries(currentBlockNumber, minimumConfirmations);
 
-            // With zero or one eligible entry the selection is already deterministic.
-            if (eligibleEntries.size() <= 1) {
-                return eligibleEntries.stream().findFirst();
-            }
-
-            // A call the dataset does not record falls back to the legacy pick: a network with no
-            // pre-RSKIP559 chain to reproduce, or a call that never had more than one eligible entry.
-            return getEntryFromHistoricalPegoutsData(eligibleEntries, rskTxHash, historicalSelections)
+            // A call the dataset does not record uses the legacy findFirst() pick — its selection was already
+            // deterministic, or this network has no pre-RSKIP559 chain to reproduce.
+            return getEntryFromHistoricalPegoutsData(eligibleEntries, currentRskTxHash, historicalSelections)
                     .or(() -> eligibleEntries.stream().findFirst());
         }
 
         private static Optional<Entry> getEntryFromHistoricalPegoutsData(
-                List<Entry> eligibleEntries,
-                Keccak256 rskTxHash,
-                HistoricalPegoutSelectionsConstants historicalSelections) {
-
-            Optional<Sha256Hash> selectedBtcTxHash = historicalSelections.getSelectedPegoutBtcTxHash(rskTxHash);
+            List<Entry> eligibleEntries,
+            Keccak256 currentRskTxHash,
+            HistoricalPegoutSelectionsConstants historicalSelections
+        ) {
+            Optional<Sha256Hash> selectedBtcTxHash = historicalSelections.getSelectedPegoutBtcTxHash(currentRskTxHash);
             if (selectedBtcTxHash.isEmpty()) {
                 return Optional.empty();
             }
 
             Sha256Hash targetBtcTxHash = selectedBtcTxHash.get();
             return Optional.of(eligibleEntries.stream()
-                    .filter(entry -> entry.getBtcTransaction().getHash().equals(targetBtcTxHash))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException(
-                            "Historic pegout selection " + targetBtcTxHash + " for updateCollections "
-                                    + rskTxHash + " is not among the eligible entries "
-                                    + eligibleBtcTxHashes(eligibleEntries))));
+                .filter(entry -> entry.getBtcTransaction().getHash().equals(targetBtcTxHash))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(String.format(
+                    "Historic pegout selection %s for updateCollections %s is not among the eligible entries %s",
+                    targetBtcTxHash,
+                    currentRskTxHash,
+                    eligibleBtcTxHashes(eligibleEntries)
+                )))
+            );
         }
 
         private static String eligibleBtcTxHashes(List<Entry> eligibleEntries) {
             return eligibleEntries.stream()
-                    .map(entry -> entry.getBtcTransaction().getHash().toString())
-                    .sorted()
-                    .collect(Collectors.joining(", ", "[", "]"));
+                .map(entry -> entry.getBtcTransaction().getHash().toString())
+                .sorted()
+                .collect(Collectors.joining(", ", "[", "]"));
         }
 
         public void addEntry(Entry entry) {
@@ -213,25 +218,23 @@ public class PegoutsWaitingForConfirmations {
             return this.entriesSet.remove(entry);
         }
     }
+
     public static class Entry {
-
-        private final BtcTransaction btcTransaction;
-
-        private final Long pegoutCreationRskBlockNumber;
-
-        private final Keccak256 pegoutCreationRskTxHash;
-
         /**
          * Compares entries using the lexicographical order of the btc tx's serialized bytes.
          */
-        public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<Entry>() {
-            private Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
+        public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<>() {
+            private final Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
 
             @Override
             public int compare(Entry e1, Entry e2) {
                 return comparator.compare(e1.getBtcTransaction().bitcoinSerialize(), e2.getBtcTransaction().bitcoinSerialize());
             }
         };
+
+        private final BtcTransaction btcTransaction;
+        private final Long pegoutCreationRskBlockNumber;
+        private final Keccak256 pegoutCreationRskTxHash;
 
         public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber, Keccak256 pegoutCreationRskTxHash) {
             this.btcTransaction = btcTransaction;

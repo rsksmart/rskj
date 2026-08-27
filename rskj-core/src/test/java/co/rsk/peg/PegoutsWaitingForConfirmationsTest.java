@@ -18,6 +18,11 @@
 
 package co.rsk.peg;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,9 +35,10 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants;
-import co.rsk.peg.pegout.HistoricalPegoutSelectionsMainNetConstants;
-import co.rsk.peg.pegout.HistoricalPegoutSelectionsTestNetConstants;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,21 +58,22 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class PegoutsWaitingForConfirmationsTest {
+    private static final ActivationConfig.ForBlock VETIVER_ACTIVATIONS = ActivationConfigsForTest.vetiver900().forBlock(0L);
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
 
     // The historic dataset is only consulted before RSKIP559 and when more than one entry is eligible.
     // These fixtures use the real mainnet and testnet tables: this synthetic updateCollections hash is in
     // neither, so the lookup misses against a fully populated table and the legacy pick applies.
     private static final Keccak256 UPDATE_COLLECTIONS_TX_HASH = RskTestUtils.createHash(100);
-    private static final HistoricalPegoutSelectionsConstants MAINNET_SELECTIONS =
-        HistoricalPegoutSelectionsMainNetConstants.getInstance();
-    private static final HistoricalPegoutSelectionsConstants TESTNET_SELECTIONS =
-        HistoricalPegoutSelectionsTestNetConstants.getInstance();
+    private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
+    private static final int MINIMUM_CONFIRMATIONS = BRIDGE_CONSTANTS.getRsk2BtcMinimumAcceptableConfirmations();
+    private static final long BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS = MINIMUM_CONFIRMATIONS + 5L;
+    private static final long BLOCK_HEIGHT_WITHOUT_ELIGIBLE_PEGOUTS = MINIMUM_CONFIRMATIONS + 4L;
 
-    // The entry BTC_TX_COMPARATOR sorts first among the block-10, 5-confirmations eligible set.
+    // The entry BTC_TX_COMPARATOR sorts first among the block-BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS, MINIMUM_CONFIRMATIONS-confirmations eligible set.
     private static final String COMPARATOR_PICK_HASH = "fdd781c46b5ad7993b3f133e3af94b2e3cbcc8d19e443dfc6b555a1b0bac1527";
 
-    // Legacy findFirst() pick over this JVM's HashSet order for the block-10, 5-confirmations eligible set.
+    // Legacy findFirst() pick over this JVM's HashSet order for the block-BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS, MINIMUM_CONFIRMATIONS-confirmations eligible set.
     // Verified identical on Java 17 (Zulu 17.0.13) and Java 21 (Temurin 21.0.5). If it stops matching, the
     // fixture in createSet() changed, or a JDK reordered it: re-derive it from the actual value reported by
     // getNextPegout_beforeRskip559_datasetMiss_fallsBackToFindFirst, which is the pure legacy path.
@@ -109,20 +116,20 @@ class PegoutsWaitingForConfirmationsTest {
         PegoutsWaitingForConfirmations.Entry e7 = new PegoutsWaitingForConfirmations.Entry(uniqueTransaction3, 15L, null);
         PegoutsWaitingForConfirmations.Entry e8 = new PegoutsWaitingForConfirmations.Entry(uniqueTransaction3, 15L, null);
 
-        Assertions.assertEquals(e1, e2);
-        Assertions.assertNotEquals(e1, e3);
-        Assertions.assertNotEquals(e1, e4);
-        Assertions.assertEquals(e5, e6);
-        Assertions.assertNotEquals(e5, e7);
-        Assertions.assertEquals(e7, e8);
+        assertEquals(e1, e2);
+        assertNotEquals(e1, e3);
+        assertNotEquals(e1, e4);
+        assertEquals(e5, e6);
+        assertNotEquals(e5, e7);
+        assertEquals(e7, e8);
     }
 
     @Test
     void entryGetters() {
         PegoutsWaitingForConfirmations.Entry entry = new PegoutsWaitingForConfirmations.Entry(createTransaction(5, Coin.valueOf(100)), 7L);
 
-        Assertions.assertEquals(createTransaction(5, Coin.valueOf(100)), entry.getBtcTransaction());
-        Assertions.assertEquals(7L, entry.getPegoutCreationRskBlockNumber().longValue());
+        assertEquals(createTransaction(5, Coin.valueOf(100)), entry.getBtcTransaction());
+        assertEquals(7L, entry.getPegoutCreationRskBlockNumber().longValue());
     }
 
     @Test
@@ -133,16 +140,16 @@ class PegoutsWaitingForConfirmationsTest {
         PegoutsWaitingForConfirmations.Entry e4 = new PegoutsWaitingForConfirmations.Entry(mockTxSerialize("bb"), 7L);
         PegoutsWaitingForConfirmations.Entry e5 = new PegoutsWaitingForConfirmations.Entry(mockTxSerialize("99"), 7L);
 
-        Assertions.assertEquals(0, PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR.compare(e1, e2));
-        Assertions.assertEquals(0, PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR.compare(e1, e3));
-        Assertions.assertTrue(PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR.compare(e1, e4) < 0);
-        Assertions.assertTrue(PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR.compare(e1, e5) > 0);
+        assertEquals(0, PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR.compare(e1, e2));
+        assertEquals(0, PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR.compare(e1, e3));
+        assertTrue(PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR.compare(e1, e4) < 0);
+        assertTrue(PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR.compare(e1, e5) > 0);
     }
 
     @Test
     void entriesCopy() {
         Assertions.assertNotSame(setEntries, set.getEntries(ACTIVATIONS_ALL));
-        Assertions.assertEquals(setEntries, new HashSet<>(set.getEntries(ACTIVATIONS_ALL)));
+        assertEquals(setEntries, new HashSet<>(set.getEntries(ACTIVATIONS_ALL)));
 
         Set<PegoutsWaitingForConfirmations.Entry> entryWithoutHash = new HashSet<>(Collections.singletonList(
             new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L)
@@ -156,39 +163,39 @@ class PegoutsWaitingForConfirmationsTest {
         PegoutsWaitingForConfirmations transactionSetWithHash = new PegoutsWaitingForConfirmations(entryWithHash);
 
         var resultCallWithoutHash = transactionSetWithoutHash.getEntriesWithoutHashOrdered();
-        Assertions.assertEquals(entryWithoutHash, new HashSet<>(resultCallWithoutHash));
+        assertEquals(entryWithoutHash, new HashSet<>(resultCallWithoutHash));
 
         var resultCallWithHash = transactionSetWithoutHash.getEntriesWithHashOrdered();
-        Assertions.assertEquals(0, resultCallWithHash.size());
+        assertEquals(0, resultCallWithHash.size());
 
         var resultCallWithoutHash2 = transactionSetWithHash.getEntriesWithoutHashOrdered();
-        Assertions.assertEquals(0, resultCallWithoutHash2.size());
+        assertEquals(0, resultCallWithoutHash2.size());
 
         var resultCallWithHash2 = transactionSetWithHash.getEntriesWithHashOrdered();
-        Assertions.assertEquals(entryWithHash, new HashSet<>(resultCallWithHash2));
+        assertEquals(entryWithHash, new HashSet<>(resultCallWithHash2));
     }
 
     @Test
     void add_nonExisting() {
-        Assertions.assertFalse(set.getEntries(ACTIVATIONS_ALL).contains(new PegoutsWaitingForConfirmations.Entry(createTransaction(123, Coin.COIN.multiply(3)), 34L)));
+        assertFalse(set.getEntries(ACTIVATIONS_ALL).contains(new PegoutsWaitingForConfirmations.Entry(createTransaction(123, Coin.COIN.multiply(3)), 34L)));
         set.add(new PegoutsWaitingForConfirmations.Entry(createTransaction(123, Coin.COIN.multiply(3)), 34L));
-        Assertions.assertTrue(set.getEntries(ACTIVATIONS_ALL).contains(new PegoutsWaitingForConfirmations.Entry(createTransaction(123, Coin.COIN.multiply(3)), 34L)));
+        assertTrue(set.getEntries(ACTIVATIONS_ALL).contains(new PegoutsWaitingForConfirmations.Entry(createTransaction(123, Coin.COIN.multiply(3)), 34L)));
     }
 
     @Test
     void add_existing() {
         var tx = createTransaction(2, Coin.valueOf(150));
-        Assertions.assertTrue(set.getEntries(ACTIVATIONS_ALL).contains(new PegoutsWaitingForConfirmations.Entry(tx, 32L)));
-        Assertions.assertEquals(1, set.getEntries(ACTIVATIONS_ALL).stream().filter(e -> e.getBtcTransaction().equals(createTransaction(2, Coin.valueOf(150)))).count());
+        assertTrue(set.getEntries(ACTIVATIONS_ALL).contains(new PegoutsWaitingForConfirmations.Entry(tx, 32L)));
+        assertEquals(1, set.getEntries(ACTIVATIONS_ALL).stream().filter(e -> e.getBtcTransaction().equals(createTransaction(2, Coin.valueOf(150)))).count());
 
         set.add(new PegoutsWaitingForConfirmations.Entry(tx, 23L));
-        Assertions.assertTrue(set.getEntries(ACTIVATIONS_ALL).contains(new PegoutsWaitingForConfirmations.Entry(tx, 32L)));
+        assertTrue(set.getEntries(ACTIVATIONS_ALL).contains(new PegoutsWaitingForConfirmations.Entry(tx, 32L)));
 
         int size = set.getEntries(ACTIVATIONS_ALL).size();
         set.add(new PegoutsWaitingForConfirmations.Entry(tx, 23L));
-        Assertions.assertEquals(set.getEntries(ACTIVATIONS_ALL).size(), size);
-        Assertions.assertFalse(set.getEntries(ACTIVATIONS_ALL).contains(new PegoutsWaitingForConfirmations.Entry(tx, 23L)));
-        Assertions.assertEquals(1, set.getEntries(ACTIVATIONS_ALL).stream().filter(e -> e.getBtcTransaction().equals(tx)).count());
+        assertEquals(set.getEntries(ACTIVATIONS_ALL).size(), size);
+        assertFalse(set.getEntries(ACTIVATIONS_ALL).contains(new PegoutsWaitingForConfirmations.Entry(tx, 23L)));
+        assertEquals(1, set.getEntries(ACTIVATIONS_ALL).stream().filter(e -> e.getBtcTransaction().equals(tx)).count());
     }
 
     @Test
@@ -209,56 +216,67 @@ class PegoutsWaitingForConfirmationsTest {
         pegouts.add(e13);
         pegouts.add(e20);
 
-        Assertions.assertEquals(2, pegouts.getEntries(ACTIVATIONS_ALL).size(), "Must not add multiple pegouts for same TX");
+        assertEquals(2, pegouts.getEntries(ACTIVATIONS_ALL).size(), "Must not add multiple pegouts for same TX");
     }
 
     @Test
     void getNextPegoutWithEnoughConfirmations_no_matches() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(9L, 5, ActivationConfigsForTest.vetiver900().forBlock(9L), UPDATE_COLLECTIONS_TX_HASH, MAINNET_SELECTIONS);
-        Assertions.assertFalse(result.isPresent());
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            BLOCK_HEIGHT_WITHOUT_ELIGIBLE_PEGOUTS,
+            BRIDGE_CONSTANTS,
+            VETIVER_ACTIVATIONS
+        );
+        assertFalse(result.isPresent());
     }
 
     @Test
     void getNextPegoutWithEnoughConfirmations_ok() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L), UPDATE_COLLECTIONS_TX_HASH, MAINNET_SELECTIONS);
-        Assertions.assertTrue(result.isPresent());
-        Assertions.assertTrue(set.removeEntry(result.get()));
-        Assertions.assertFalse(set.removeEntry(result.get()));
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+            BRIDGE_CONSTANTS,
+            VETIVER_ACTIVATIONS
+        );
+        assertTrue(result.isPresent());
+        assertTrue(set.removeEntry(result.get()));
+        assertFalse(set.removeEntry(result.get()));
     }
 
     @Test
     void getNextPegoutWithEnoughConfirmation_multipleMatch_rskip559Off() {
-        int size = set.getEntries(ACTIVATIONS_ALL).size();
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.vetiver900().forBlock(10L), UPDATE_COLLECTIONS_TX_HASH, MAINNET_SELECTIONS);
-        Assertions.assertTrue(result.isPresent());
+        int size = set.getEntries(VETIVER_ACTIVATIONS).size();
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+            BRIDGE_CONSTANTS,
+            VETIVER_ACTIVATIONS
+        );
+        assertTrue(result.isPresent());
 
         var entry = result.get();
         var hash = entry.getBtcTransaction().getHash().toString();
 
-        Assertions.assertEquals(
-            "53efc6f78eb9d159cfee76ec45bcffb08fd11f85c762e1eacf54e5c014da219d",
-            hash,
-            "Valid candidate for non deterministic pegouts sorting"
-        );
-
-        Assertions.assertTrue(set.removeEntry(entry));
-        Assertions.assertFalse(set.removeEntry(entry));
-        Assertions.assertEquals(set.getEntries(ACTIVATIONS_ALL).size(), size-1);
+        assertEquals(LEGACY_FIND_FIRST_HASH, hash, "Valid candidate for non deterministic pegouts sorting");
+        assertTrue(set.removeEntry(entry));
+        assertFalse(set.removeEntry(entry));
+        assertEquals(set.getEntries(VETIVER_ACTIVATIONS).size(), size-1);
     }
 
     @Test
     void getNextPegoutWithEnoughConfirmations_rskip559() {
-        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.all().forBlock(1L), UPDATE_COLLECTIONS_TX_HASH, MAINNET_SELECTIONS);
-        Assertions.assertTrue(result.isPresent());
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+            BRIDGE_CONSTANTS,
+            ACTIVATIONS_ALL
+        );
+        assertTrue(result.isPresent());
 
         var entry = result.get();
         var hash = entry.getBtcTransaction().getHash().toString();
 
-        Assertions.assertEquals(
-            COMPARATOR_PICK_HASH,
-            hash,
-            "Valid candidate for non fixed pegouts sorting"
-        );
+        assertEquals(COMPARATOR_PICK_HASH, hash, "Valid candidate for non fixed pegouts sorting");
     }
 
     @Test
@@ -266,53 +284,70 @@ class PegoutsWaitingForConfirmationsTest {
         // With historical data, reproduce the recorded selection instead of the JVM-dependent findFirst().
         PegoutsWaitingForConfirmations.Entry target = firstEligibleEntryOtherThanLegacyPick();
         Sha256Hash targetBtcTxHash = target.getBtcTransaction().getHash();
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.vetiver900().forBlock(10L);
-        HistoricalPegoutSelectionsConstants historicalSelections = selectionsMapping(targetBtcTxHash);
-
-        Optional<PegoutsWaitingForConfirmations.Entry> result =
-            set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, UPDATE_COLLECTIONS_TX_HASH, historicalSelections);
-
-        Assertions.assertTrue(result.isPresent());
-        Assertions.assertEquals(targetBtcTxHash, result.get().getBtcTransaction().getHash());
-        Assertions.assertNotEquals(LEGACY_FIND_FIRST_HASH, result.get().getBtcTransaction().getHash().toString(),
-            "The historic selection must override the legacy findFirst() pick");
-    }
-
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("populatedDatasets")
-    void getNextPegout_beforeRskip559_datasetMiss_fallsBackToFindFirst(
-            String network, HistoricalPegoutSelectionsConstants historicalSelections) {
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.vetiver900().forBlock(10L);
 
         Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(
-            10L, 5, activations, UPDATE_COLLECTIONS_TX_HASH, historicalSelections);
+            UPDATE_COLLECTIONS_TX_HASH,
+            BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+            bridgeConstantsWithHistoricalSelection(targetBtcTxHash),
+            VETIVER_ACTIVATIONS
+        );
 
-        Assertions.assertTrue(result.isPresent());
-        Assertions.assertEquals(LEGACY_FIND_FIRST_HASH, result.get().getBtcTransaction().getHash().toString(),
-            "Legacy HashSet findFirst() pick changed: the createSet() fixture moved, or this JVM orders "
-                + "the set differently. Re-derive LEGACY_FIND_FIRST_HASH from the actual value above.");
+        assertTrue(result.isPresent());
+
+        BtcTransaction pegoutTx = result.get().getBtcTransaction();
+        assertEquals(targetBtcTxHash, pegoutTx.getHash());
+        assertNotEquals(
+            LEGACY_FIND_FIRST_HASH,
+            pegoutTx.getHash().toString(),
+            "The historic selection must override the legacy findFirst() pick"
+        );
     }
 
-    private static Stream<Arguments> populatedDatasets() {
+    @ParameterizedTest
+    @MethodSource("networksWithPopulatedHistoricalSelections")
+    void getNextPegout_beforeRskip559_datasetMiss_fallsBackToFindFirst(BridgeConstants bridgeConstants) {
+        long blockNumber = bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations() + 5L;
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            blockNumber,
+            bridgeConstants,
+            VETIVER_ACTIVATIONS
+        );
+
+        assertTrue(result.isPresent());
+        assertEquals(
+            LEGACY_FIND_FIRST_HASH,
+            result.get().getBtcTransaction().getHash().toString(),
+            "Legacy HashSet findFirst() pick changed: the createSet() fixture moved, or this JVM orders "
+                + "the set differently. Re-derive LEGACY_FIND_FIRST_HASH from the actual value above."
+        );
+    }
+
+    private static Stream<Arguments> networksWithPopulatedHistoricalSelections() {
         return Stream.of(
-            Arguments.of("mainnet", MAINNET_SELECTIONS),
-            Arguments.of("testnet", TESTNET_SELECTIONS)
+            Arguments.of(BRIDGE_CONSTANTS),
+            Arguments.of(BridgeTestNetConstants.getInstance())
         );
     }
 
     @Test
     void getNextPegout_beforeRskip559_historicalSelectionNotEligible_throws() {
-        Sha256Hash notEligibleBtcTxHash =
-            Sha256Hash.wrap("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.vetiver900().forBlock(10L);
-        HistoricalPegoutSelectionsConstants historicalSelections = selectionsMapping(notEligibleBtcTxHash);
+        Sha256Hash notEligibleBtcTxHash = Sha256Hash.wrap("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        BridgeConstants bridgeConstants = bridgeConstantsWithHistoricalSelection(notEligibleBtcTxHash);
 
-        IllegalStateException thrown = Assertions.assertThrows(IllegalStateException.class,
-            () -> set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, UPDATE_COLLECTIONS_TX_HASH, historicalSelections));
+        IllegalStateException thrown = assertThrows(
+            IllegalStateException.class,
+            () -> set.getNextPegoutWithEnoughConfirmations(
+                UPDATE_COLLECTIONS_TX_HASH,
+                BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+                bridgeConstants,
+                VETIVER_ACTIVATIONS
+            )
+        );
 
         // The message must name the eligible set, so a missing record is diagnosable from the log alone.
-        Assertions.assertTrue(thrown.getMessage().contains(notEligibleBtcTxHash.toString()));
-        Assertions.assertTrue(thrown.getMessage().contains(LEGACY_FIND_FIRST_HASH));
+        assertTrue(thrown.getMessage().contains(notEligibleBtcTxHash.toString()));
+        assertTrue(thrown.getMessage().contains(LEGACY_FIND_FIRST_HASH));
     }
 
     @Test
@@ -320,47 +355,58 @@ class PegoutsWaitingForConfirmationsTest {
         // From RSKIP559 on the comparator sort decides. Seed a dataset that would pick a different entry:
         // if it were consulted, the result would not be the comparator's.
         PegoutsWaitingForConfirmations.Entry decoy = firstEligibleEntryOtherThan(COMPARATOR_PICK_HASH);
-        HistoricalPegoutSelectionsConstants selections =
-            selectionsMapping(decoy.getBtcTransaction().getHash());
+        BridgeConstants bridgeConstants = bridgeConstantsWithHistoricalSelection(decoy.getBtcTransaction().getHash());
 
-        Optional<PegoutsWaitingForConfirmations.Entry> result =
-            set.getNextPegoutWithEnoughConfirmations(10L, 5, ActivationConfigsForTest.all().forBlock(1L), UPDATE_COLLECTIONS_TX_HASH, selections);
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+            bridgeConstants,
+            ACTIVATIONS_ALL
+        );
 
-        Assertions.assertTrue(result.isPresent());
-        Assertions.assertEquals(
-            COMPARATOR_PICK_HASH,
-            result.get().getBtcTransaction().getHash().toString());
+        assertTrue(result.isPresent());
+        assertEquals(COMPARATOR_PICK_HASH, result.get().getBtcTransaction().getHash().toString());
     }
 
     /**
-     * A real dataset mapping the updateCollections tx to {@code selected}. The genuine mainnet and testnet
-     * tables cannot be used for the hit path: their values are real btc tx hashes, and the fixture's
-     * synthetic transactions can never produce one.
+     * Bridge constants whose historic table maps the updateCollections tx to {@code selectedBtcTxHash}.
+     * The genuine mainnet and testnet tables cannot drive the hit path: their values are real btc tx
+     * hashes, and the fixture's synthetic transactions can never produce one.
      */
-    private static HistoricalPegoutSelectionsConstants selectionsMapping(Sha256Hash selected) {
-        return new HistoricalPegoutSelectionsConstants() {
+    private static BridgeConstants bridgeConstantsWithHistoricalSelection(Sha256Hash selectedBtcTxHash) {
+        HistoricalPegoutSelectionsConstants historicalSelections = new HistoricalPegoutSelectionsConstants() {
             {
-                selections = Map.of(UPDATE_COLLECTIONS_TX_HASH, selected);
+                selections = Map.of(UPDATE_COLLECTIONS_TX_HASH, selectedBtcTxHash);
             }
         };
+
+        BridgeConstants bridgeConstants = mock(BridgeConstants.class);
+        when(bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations()).thenReturn(MINIMUM_CONFIRMATIONS);
+        when(bridgeConstants.getHistoricalPegoutSelectionsConstants()).thenReturn(historicalSelections);
+
+        return bridgeConstants;
     }
 
     @Test
     void getNextPegout_nullRskTxHash_throws() {
         // Without the tx hash the historic selection cannot be looked up, and the pre-RSKIP559 pick would
         // silently go back to being JVM dependent.
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.vetiver900().forBlock(10L);
-
-        Assertions.assertThrows(NullPointerException.class,
-            () -> set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, null, MAINNET_SELECTIONS));
+        assertThrows(NullPointerException.class, () -> set.getNextPegoutWithEnoughConfirmations(
+            null,
+            BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+            BRIDGE_CONSTANTS,
+            VETIVER_ACTIVATIONS
+        ));
     }
 
     @Test
-    void getNextPegout_nullHistoricalSelections_throws() {
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.vetiver900().forBlock(10L);
-
-        Assertions.assertThrows(NullPointerException.class,
-            () -> set.getNextPegoutWithEnoughConfirmations(10L, 5, activations, UPDATE_COLLECTIONS_TX_HASH, null));
+    void getNextPegout_nullBridgeConstants_throws() {
+        assertThrows(NullPointerException.class, () -> set.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+            null,
+            VETIVER_ACTIVATIONS
+        ));
     }
 
     private PegoutsWaitingForConfirmations.Entry firstEligibleEntryOtherThanLegacyPick() {
@@ -369,13 +415,13 @@ class PegoutsWaitingForConfirmationsTest {
 
     /**
      * An eligible entry whose btc tx hash differs from {@code excludedBtcTxHash}. Tests that prove one
-     * selection strategy overrode another need a target the other strategy would not have chosen anyway,
-     * otherwise they pass whichever strategy ran.
+     * selection strategy overrode another need a target the other strategy would not have chosen anyway.
+     * Otherwise, they pass whichever strategy ran.
      */
     private PegoutsWaitingForConfirmations.Entry firstEligibleEntryOtherThan(String excludedBtcTxHash) {
         for (PegoutsWaitingForConfirmations.Entry entry : setEntries) {
-            boolean eligibleAtBlock10 = (10L - entry.getPegoutCreationRskBlockNumber()) >= 5;
-            if (eligibleAtBlock10 && !entry.getBtcTransaction().getHash().toString().equals(excludedBtcTxHash)) {
+            boolean eligible = (BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS - entry.getPegoutCreationRskBlockNumber()) >= MINIMUM_CONFIRMATIONS;
+            if (eligible && !entry.getBtcTransaction().getHash().toString().equals(excludedBtcTxHash)) {
                 return entry;
             }
         }
