@@ -33,7 +33,9 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -370,17 +372,17 @@ class JsonRpcDocCoverageTest {
     void noComponentIsLeftUnreferencedByTheAssembledDocument(@TempDir Path tempDir) {
         JsonNode document = assembleDocument(tempDir);
 
-        Set<String> unreferenced = definedComponents(document);
-        unreferenced.removeAll(collectReferences(document));
-        unreferenced.removeAll(KNOWN_UNREFERENCED_COMPONENTS);
+        Set<String> unreachable = definedComponents(document);
+        unreachable.removeAll(componentsReachableFromTheMethods(document));
+        unreachable.removeAll(KNOWN_UNREFERENCED_COMPONENTS);
 
-        assertTrue(unreferenced.isEmpty(), () -> String.format(
-                "%d component(s) survive in the assembled document that no method and no other component "
-                        + "reaches. Deleting a fragment usually orphans the components only it referenced, and "
-                        + "those can orphan further components in turn, so this needs a second pass rather than "
-                        + "one sweep. Delete them, or add them to KNOWN_UNREFERENCED_COMPONENTS with a "
+        assertTrue(unreachable.isEmpty(), () -> String.format(
+                "%d component(s) survive in the assembled document that nothing reaches from the methods. "
+                        + "Deleting a fragment usually orphans the components only it referenced, and those can "
+                        + "orphan further components in turn, so this reports the whole orphaned set in one "
+                        + "sweep. Delete them, or add them to KNOWN_UNREFERENCED_COMPONENTS with a "
                         + "reason:%n  - %s",
-                unreferenced.size(), String.join(System.lineSeparator() + "  - ", unreferenced)));
+                unreachable.size(), String.join(System.lineSeparator() + "  - ", unreachable)));
     }
 
     /**
@@ -568,6 +570,49 @@ class JsonRpcDocCoverageTest {
     }
 
     /**
+     * The components a reader can actually arrive at, found by walking forward from the methods and following
+     * references from component to component.
+     *
+     * <p>This is deliberately not "every {@code $ref} in the document". A component referenced only by
+     * another orphan is referenced, and unreachable; two orphans referencing each other are referenced by
+     * something for as long as they both exist, so collecting references cannot ever see them. That second
+     * case is the one worth the walk: an orphan chain shrinks by one on each sweep and eventually surfaces,
+     * but an orphan cycle is invisible permanently rather than until the next run.
+     *
+     * <p>{@link #KNOWN_UNREFERENCED_COMPONENTS} is not seeded into the walk. Its entries are excused from
+     * being reported, not treated as roots, so a component reachable only from an excused one is still
+     * reported -- one exception cannot quietly cover a subtree hanging off it.
+     */
+    private static Set<String> componentsReachableFromTheMethods(JsonNode document) {
+        Deque<String> pending = new ArrayDeque<>();
+        document.fields().forEachRemaining(field -> {
+            if (!"components".equals(field.getKey())) {
+                Set<String> roots = new TreeSet<>();
+                collectReferencesInto(field.getValue(), roots);
+                pending.addAll(roots);
+            }
+        });
+
+        Set<String> reachable = new TreeSet<>();
+        while (!pending.isEmpty()) {
+            String reference = pending.removeFirst();
+            if (!reachable.add(reference)) {
+                continue;
+            }
+            JsonNode component = componentAt(document, reference);
+            if (component == null) {
+                // Dangling; everyReferenceInTheAssembledDocumentResolves owns that case, and the walk only
+                // needs to not follow it.
+                continue;
+            }
+            Set<String> onwards = new TreeSet<>();
+            collectReferencesInto(component, onwards);
+            pending.addAll(onwards);
+        }
+        return reachable;
+    }
+
+    /**
      * Every {@code $ref} value anywhere in the document, however deeply nested and including references a
      * component makes to another component.
      */
@@ -634,6 +679,16 @@ class JsonRpcDocCoverageTest {
 
     /**
      * Methods deliberately left out of the published reference, mapped to the entry that excuses each.
+     *
+     * <p>The array is checked before it is folded into a map, because folding loses exactly the mistakes worth
+     * catching. Two entries under one name would leave the later one in effect and the earlier one visible in
+     * the file but inert -- two checked-in reasons for one exclusion, only one of them true. An entry with no
+     * usable {@code name} would key on the empty string, and the method it meant to excuse would be reported
+     * as undocumented: a failure pointing at a fragment nobody forgot to write, and away from the typo.
+     *
+     * <p>The name is held to the same pattern the reflected names are, which is what makes a typo diagnosable.
+     * Without it a misspelled entry is well-formed, so the guard reports it as a method the node does not
+     * expose -- true, and no help at all in finding the character that is wrong.
      */
     private static Map<String, AllowlistEntry> allowlistedMethods() {
         Path allowlist = docRpcDir().resolve(UNDOCUMENTED_FILE);
@@ -643,8 +698,29 @@ class JsonRpcDocCoverageTest {
         }
 
         Map<String, AllowlistEntry> allowlisted = new TreeMap<>();
-        methods.forEach(entry -> allowlisted.put(entry.path("name").asText(),
-                new AllowlistEntry(entry.path("reason").asText(null), entry.path("basis").asText(null))));
+        Map<String, Integer> indexByName = new TreeMap<>();
+        for (int index = 0; index < methods.size(); index++) {
+            JsonNode entry = methods.get(index);
+            JsonNode name = entry.path("name");
+            if (!name.isTextual() || !RPC_METHOD_NAME.matcher(name.asText()).matches()) {
+                throw new IllegalStateException(String.format(
+                        "%s entry %d declares no usable \"name\": %s. Every entry names the method it excuses, "
+                                + "spelled as the node exposes it.",
+                        allowlist, index, entry));
+            }
+
+            Integer firstSeen = indexByName.put(name.asText(), index);
+            if (firstSeen != null) {
+                throw new IllegalStateException(String.format(
+                        "%s lists %s twice, at entries %d and %d. One exclusion carries one reason: keep the "
+                                + "reason that is true and delete the other, rather than leaving both in the file "
+                                + "with only the later one in effect.%n  entry %d: %s%n  entry %d: %s",
+                        allowlist, name.asText(), firstSeen, index,
+                        firstSeen, methods.get(firstSeen), index, entry));
+            }
+            allowlisted.put(name.asText(),
+                    new AllowlistEntry(entry.path("reason").asText(null), entry.path("basis").asText(null)));
+        }
         return allowlisted;
     }
 
