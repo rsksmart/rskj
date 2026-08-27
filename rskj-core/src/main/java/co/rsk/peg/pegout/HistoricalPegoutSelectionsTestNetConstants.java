@@ -1,4 +1,4 @@
-package co.rsk.peg.constants;
+package co.rsk.peg.pegout;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.Keccak256;

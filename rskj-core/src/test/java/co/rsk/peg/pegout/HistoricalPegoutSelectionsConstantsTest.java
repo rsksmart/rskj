@@ -1,4 +1,4 @@
-package co.rsk.peg.constants;
+package co.rsk.peg.pegout;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.constants.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.stream.Collectors;

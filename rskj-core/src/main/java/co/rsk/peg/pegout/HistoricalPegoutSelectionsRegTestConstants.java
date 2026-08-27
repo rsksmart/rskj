@@ -1,4 +1,4 @@
-package co.rsk.peg.constants;
+package co.rsk.peg.pegout;
 
 /**
  * Regtest has no historical chain to reproduce, so it records no selections.
