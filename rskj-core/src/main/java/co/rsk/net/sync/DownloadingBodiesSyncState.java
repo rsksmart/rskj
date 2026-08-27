@@ -566,6 +566,14 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
      * been handed out, so hedging never competes with fresh work for the request budget.
      */
     private void hedgeStragglers() {
+        // Only once the whole range has been handed out. Hedging mid-round was measured and it made
+        // things slightly worse: a duplicate is another message, and a peer's queue is served in
+        // priority order with the sender's message rate counting against it, so the extra copies
+        // cost more in priority than they win back in latency. At the tail there is no first-copy
+        // work left to lose priority for, and a single stalled request is what ends the round.
+        if (!pendingHeaders.stream().allMatch(Collection::isEmpty)) {
+            return;
+        }
         List<PendingBodyResponse> stragglers = new ArrayList<>();
         for (PendingBodyResponse pending : pendingBodyResponses.values()) {
             if (pending.peer != null
