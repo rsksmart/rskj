@@ -1597,7 +1597,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             btcTransaction.addOutput(amountToSend, activeFederation.getAddress());
             btcTransaction.addOutput(Coin.ZERO, PegTestUtils.createOpReturnScriptForRskWithCustomPayload(1, new byte[]{}));
 
-            FederationTestUtils.addSignatures(unknownFed, signers, btcTransaction);
+            FederationTestUtils.addSignaturesAndFederationRedeemScript(unknownFed, signers, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -1640,7 +1640,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
             btcTransaction.addOutput(amountToSend, retiringFederation.getAddress());
 
-            FederationTestUtils.addSignatures(unknownFed, signers, btcTransaction);
+            FederationTestUtils.addSignaturesAndFederationRedeemScript(unknownFed, signers, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -1684,7 +1684,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
             btcTransaction.addOutput(amountToSend, retiringFederation.getAddress());
 
-            FederationTestUtils.addSignatures(unknownFed, signers, btcTransaction);
+            FederationTestUtils.addSignaturesAndFederationRedeemScript(unknownFed, signers, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -1731,14 +1731,14 @@ class BridgeSupportRegisterBtcTransactionTest {
                 ScriptBuilder.createP2SHMultiSigInputScript(null, unknownFed.getRedeemScript())
             );
             fundingTx.addOutput(PegTestUtils.createBech32Output(btcMainnetParams, Coin.COIN));
-            FederationTestUtils.addSignatures(unknownFed, unknownFedSigners, fundingTx);
+            FederationTestUtils.addSignaturesAndFederationRedeemScript(unknownFed, unknownFedSigners, fundingTx);
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(fundingTx.getOutput(FIRST_OUTPUT_INDEX));
             btcTransaction.addOutput(amountToSend, activeFederation.getAddress());
 
-            FederationTestUtils.addSignatures(unknownFed, unknownFedSigners, btcTransaction);
+            FederationTestUtils.addSignaturesAndFederationRedeemScript(unknownFed, unknownFedSigners, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -1785,7 +1785,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             btcTransaction.addOutput(Coin.ZERO, PegTestUtils.createOpReturnScriptForRskWithCustomPayload(1, new byte[]{}));
 
-            FederationTestUtils.addSignatures(unknownFed, signers, btcTransaction);
+            FederationTestUtils.addSignaturesAndFederationRedeemScript(unknownFed, signers, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -3447,7 +3447,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     
                 when(federationStorageProvider.getLastRetiredFederationP2SHScript(fingerrootActivations)).thenReturn(Optional.ofNullable(inputScript));
     
-                FederationTestUtils.addSignatures(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
+                FederationTestUtils.addSignaturesAndFederationRedeemScript(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
     
                 PartialMerkleTree pmt = new PartialMerkleTree(btcRegTestsParams, new byte[]{0x3f}, Collections.singletonList(migrationTx.getHash()), 1);
                 Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
@@ -3594,7 +3594,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     
                 when(federationStorageProvider.getLastRetiredFederationP2SHScript(arrowhead600Activations)).thenReturn(Optional.ofNullable(inputScript));
     
-                FederationTestUtils.addSignatures(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
+                FederationTestUtils.addSignaturesAndFederationRedeemScript(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
     
                 PartialMerkleTree pmt = new PartialMerkleTree(btcRegTestsParams, new byte[]{0x3f}, Collections.singletonList(migrationTx.getHash()), 1);
                 Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
@@ -3742,7 +3742,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     
                 when(federationStorageProvider.getLastRetiredFederationP2SHScript(arrowhead600Activations)).thenReturn(Optional.ofNullable(inputScript));
     
-                FederationTestUtils.addSignatures(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
+                FederationTestUtils.addSignaturesAndFederationRedeemScript(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
     
                 PartialMerkleTree pmt = new PartialMerkleTree(btcRegTestsParams, new byte[]{0x3f}, Collections.singletonList(migrationTx.getHash()), 1);
                 Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
@@ -3884,7 +3884,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 );
                 migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
     
-                FederationTestUtils.addSignatures(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
+                FederationTestUtils.addSignaturesAndFederationRedeemScript(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
     
                 PartialMerkleTree pmt = new PartialMerkleTree(btcRegTestsParams, new byte[]{0x3f}, Collections.singletonList(migrationTx.getHash()), 1);
                 Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
@@ -4230,7 +4230,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         private void registerReleaseTransaction(BtcTransaction releaseTx, Federation signingFederation, List<BtcECKey> signingFederationKeys, int height) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            FederationTestUtils.addSignatures(signingFederation, signingFederationKeys, releaseTx);
+            FederationTestUtils.addSignaturesAndFederationRedeemScript(signingFederation, signingFederationKeys, releaseTx);
             PartialMerkleTree pmtWithTransactions = buildPMTAndRecreateChainForTransactionRegistration(
                 bridgeStorageProvider,
                 bridgeMainnetConstants,
