@@ -19,14 +19,18 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.util.MaxSizeHashMap;
 import co.rsk.util.StringUtils;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -47,12 +51,54 @@ public final class FederationMember {
     private final ECKey rskPublicKey;
     private final ECKey mstPublicKey;
 
+    /**
+     * Building a member decompresses each of its public keys, and decompression is a modular square
+     * root over the secp256k1 field. From the first federation change onwards the active federation
+     * is read back from storage, so REMASC made the node re-deserialize it - and re-decompress every
+     * federator key - for every block it imported. The federation is a handful of keys that never
+     * change, so the results are memoised.
+     *
+     * <p>Keyed on the encoding handed in, which is the raw stored bytes and costs nothing to read.
+     * The two directions are kept in separate maps: the same bytes mean "normalise this key to its
+     * compressed form" in one and "decode exactly these bytes" in the other, and for an uncompressed
+     * input those are different keys.
+     */
+    private static final int KEY_CACHE_SIZE = 2048;
+    private static final Map<ByteArrayWrapper, BtcECKey> COMPRESSED_BTC_KEYS =
+            Collections.synchronizedMap(new MaxSizeHashMap<>(KEY_CACHE_SIZE, true));
+    private static final Map<ByteArrayWrapper, ECKey> COMPRESSED_RSK_KEYS =
+            Collections.synchronizedMap(new MaxSizeHashMap<>(KEY_CACHE_SIZE, true));
+    private static final Map<ByteArrayWrapper, BtcECKey> DECODED_BTC_KEYS =
+            Collections.synchronizedMap(new MaxSizeHashMap<>(KEY_CACHE_SIZE, true));
+    private static final Map<ByteArrayWrapper, ECKey> DECODED_RSK_KEYS =
+            Collections.synchronizedMap(new MaxSizeHashMap<>(KEY_CACHE_SIZE, true));
+
+    private static BtcECKey toCompressed(BtcECKey key) {
+        return COMPRESSED_BTC_KEYS.computeIfAbsent(ByteUtil.wrap(key.getPubKey()),
+                k -> BtcECKey.fromPublicOnly(key.getPubKeyPoint().getEncoded(true)));
+    }
+
+    private static ECKey toCompressed(ECKey key) {
+        return COMPRESSED_RSK_KEYS.computeIfAbsent(ByteUtil.wrap(key.getPubKey()),
+                k -> ECKey.fromPublicOnly(key.getPubKey(true)));
+    }
+
+    private static BtcECKey decodeBtcKey(byte[] encoded) {
+        return DECODED_BTC_KEYS.computeIfAbsent(ByteUtil.wrap(encoded),
+                k -> BtcECKey.fromPublicOnly(k.getData()));
+    }
+
+    private static ECKey decodeRskKey(byte[] encoded) {
+        return DECODED_RSK_KEYS.computeIfAbsent(ByteUtil.wrap(encoded),
+                k -> ECKey.fromPublicOnly(k.getData()));
+    }
+
     public FederationMember(BtcECKey btcPublicKey, ECKey rskPublicKey, ECKey mstPublicKey) {
         // Copy public keys to ensure effective immutability
         // Make sure we always use compressed versions of public keys
-        this.btcPublicKey = BtcECKey.fromPublicOnly(btcPublicKey.getPubKeyPoint().getEncoded(true));
-        this.rskPublicKey = ECKey.fromPublicOnly(rskPublicKey.getPubKey(true));
-        this.mstPublicKey = ECKey.fromPublicOnly(mstPublicKey.getPubKey(true));
+        this.btcPublicKey = toCompressed(btcPublicKey);
+        this.rskPublicKey = toCompressed(rskPublicKey);
+        this.mstPublicKey = toCompressed(mstPublicKey);
     }
 
     public enum KeyType {
@@ -180,9 +226,9 @@ public final class FederationMember {
         byte[] rskKeyData = rlpList.get(RSK_KEY_INDEX).getRLPData();
         byte[] mstKeyData = rlpList.get(MST_KEY_INDEX).getRLPData();
 
-        BtcECKey btcKey = BtcECKey.fromPublicOnly(btcKeyData);
-        ECKey rskKey = ECKey.fromPublicOnly(rskKeyData);
-        ECKey mstKey = ECKey.fromPublicOnly(mstKeyData);
+        BtcECKey btcKey = decodeBtcKey(btcKeyData);
+        ECKey rskKey = decodeRskKey(rskKeyData);
+        ECKey mstKey = decodeRskKey(mstKeyData);
 
         return new FederationMember(btcKey, rskKey, mstKey);
     }
