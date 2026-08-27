@@ -30,7 +30,6 @@ import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
@@ -3011,8 +3010,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         @Nested
         class MigrationTransaction {
 
-            public static final int EXPECTED_ACTIVE_FEDERATION_UTXO_COUNT = 40;
-
             @Test
             void registerBtcTransaction_withOneInputAndOutput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
@@ -3023,7 +3020,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, 1);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3036,7 +3033,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, 1);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3050,7 +3047,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, 1);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3112,7 +3109,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, EXPECTED_ACTIVE_FEDERATION_UTXO_COUNT);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3125,7 +3122,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, EXPECTED_ACTIVE_FEDERATION_UTXO_COUNT);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3139,7 +3136,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, EXPECTED_ACTIVE_FEDERATION_UTXO_COUNT);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3152,7 +3149,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, EXPECTED_ACTIVE_FEDERATION_UTXO_COUNT);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3165,7 +3162,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, EXPECTED_ACTIVE_FEDERATION_UTXO_COUNT);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3179,7 +3176,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, EXPECTED_ACTIVE_FEDERATION_UTXO_COUNT);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3192,7 +3189,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, 1);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3205,7 +3202,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, 1);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3219,7 +3216,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, 1);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3232,7 +3229,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, 1);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3245,7 +3242,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, 1);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3259,7 +3256,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, 1);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3272,7 +3269,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, EXPECTED_ACTIVE_FEDERATION_UTXO_COUNT);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3285,7 +3282,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, EXPECTED_ACTIVE_FEDERATION_UTXO_COUNT);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3299,7 +3296,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, EXPECTED_ACTIVE_FEDERATION_UTXO_COUNT);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3313,7 +3310,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, 1);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3327,7 +3324,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, 1);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3342,7 +3339,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, 1);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
             @Test
@@ -3404,12 +3401,12 @@ class BridgeSupportRegisterBtcTransactionTest {
                 registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
 
                 // assert
-                assertMigrationTxWasProcessed(migrationTx, 1);
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
-            private void assertMigrationTxWasProcessed(BtcTransaction migrationTx, int expectedActiveFederationUtxoCount) throws IOException {
+            private void assertMigrationTxWasProcessed(BtcTransaction migrationTx) throws IOException {
                 assertReleaseTxWasProcessed(migrationTx);
-                assertUtxosAddedInActiveFed(expectedActiveFederationUtxoCount);
+                assertUtxosAddedInActiveFed(migrationTx.getOutputs().size());
                 assertNoUtxoWasAddedInRetiringFed();
             }
 
