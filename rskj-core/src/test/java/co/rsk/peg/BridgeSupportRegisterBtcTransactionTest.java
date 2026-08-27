@@ -3300,7 +3300,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_fromLastRetiredFederation_forFingerroot_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_fromLastRetiredFederation_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupActiveLegacyFed(fingerrootActivations);
                 federationStorageProvider.setLastRetiredFederationP2SHScript(retiredFed.getP2SHScript());
@@ -3314,7 +3314,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_fromLastRetiredFederation_withoutPegoutIndex_forArrowhead_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_fromLastRetiredFederation_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
                 setupActiveLegacyFed(arrowhead600Activations);
                 federationStorageProvider.setLastRetiredFederationP2SHScript(retiredFed.getP2SHScript());
@@ -3322,21 +3322,6 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // act
                 registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
-
-                // assert
-                assertMigrationTxWasProcessed(migrationTx);
-            }
-
-            @Test
-            void registerBtcTransaction_fromLastRetiredFederation_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-                // arrange
-                setupActiveFed();
-                federationStorageProvider.setLastRetiredFederationP2SHScript(retiredFed.getP2SHScript());
-                BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiredFed, retiredFedSigners, activeFederation.getAddress());
-
-                // act
-                registerPegoutTxSigHash(migrationTx);
-                registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx);
