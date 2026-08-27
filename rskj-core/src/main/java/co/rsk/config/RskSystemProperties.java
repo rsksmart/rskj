@@ -525,6 +525,10 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getInt("sync.maxBodyRequestsPerMinutePerPeer");
     }
 
+    public int getSkeletonRangeMultiplier() {
+        return configFromFiles.getInt("sync.skeletonRangeMultiplier");
+    }
+
     public int getMaxConcurrentHeaderRequests() {
         return configFromFiles.getInt("sync.maxConcurrentHeaderRequests");
     }

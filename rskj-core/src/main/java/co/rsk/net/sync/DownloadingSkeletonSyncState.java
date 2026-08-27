@@ -20,6 +20,9 @@ package co.rsk.net.sync;
 import co.rsk.net.Peer;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.BlockIdentifier;
+import org.ethereum.util.ByteUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.*;
@@ -34,6 +37,15 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
      */
     private static final Duration REMAINING_SKELETONS_GRACE = Duration.ofMillis(500);
 
+    private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
+
+    /**
+     * Chunks a peer puts in one skeleton. It is the responder's own maxSkeletonChunks, which we
+     * cannot read, so the stride between the extra skeleton requests assumes the stock value. A
+     * wrong guess simply fails the continuity check below and the round falls back to one skeleton.
+     */
+    private static final int ASSUMED_PEER_SKELETON_CHUNKS = 20;
+
     private final PeersInformation peersInformation;
     private final Map<Peer, List<BlockIdentifier>> skeletons;
     private final List<Peer> candidates;
@@ -41,6 +53,11 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
     private long expectedSkeletons;
     private boolean selectedPeerAnswered;
     private Duration elapsedSinceSelectedPeerAnswered = Duration.ZERO;
+
+    /** Selected peer's skeletons, keyed by their first block number so they join in order. */
+    private final SortedMap<Long, List<BlockIdentifier>> selectedPeerParts = new TreeMap<>();
+    private final int rangeMultiplier;
+    private final long skeletonStride;
 
 
     public DownloadingSkeletonSyncState(SyncConfiguration syncConfiguration,
@@ -55,6 +72,50 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
         this.peersInformation = peersInformation;
         this.candidates = peersInformation.getBestPeerCandidates();
         this.expectedSkeletons = 0;
+        this.rangeMultiplier = Math.max(1, syncConfiguration.getSkeletonRangeMultiplier());
+        this.skeletonStride = (long) syncConfiguration.getChunkSize() * ASSUMED_PEER_SKELETON_CHUNKS;
+    }
+
+    /**
+     * Joins the selected peer's skeletons into one continuous list. Each skeleton starts at the
+     * block the previous one ended on, so the shared boundary is dropped. Joining stops at the
+     * first boundary that does not line up, which leaves the round with a shorter but still
+     * completely valid range.
+     */
+    private List<BlockIdentifier> stitchSelectedPeerSkeleton() {
+        List<BlockIdentifier> combined = new ArrayList<>();
+        for (List<BlockIdentifier> part : selectedPeerParts.values()) {
+            if (combined.isEmpty()) {
+                combined.addAll(part);
+                continue;
+            }
+            BlockIdentifier tail = combined.get(combined.size() - 1);
+            BlockIdentifier head = part.get(0);
+            boolean joins = head.getNumber() == tail.getNumber()
+                    && ByteUtil.fastEquals(head.getHash(), tail.getHash());
+            if (!joins) {
+                logger.debug("Skeleton at {} does not join onto {}; keeping the shorter range",
+                        head.getNumber(), tail.getNumber());
+                break;
+            }
+            combined.addAll(part.subList(1, part.size()));
+        }
+        return combined;
+    }
+
+    /** Publishes the joined skeleton for the selected peer and moves on to header download. */
+    private void transitionToHeaders(Peer trustedPeer) {
+        if (!selectedPeerParts.isEmpty()) {
+            List<BlockIdentifier> combined = stitchSelectedPeerSkeleton();
+            if (combined.size() >= 2) {
+                skeletons.put(selectedPeer, combined);
+            }
+        }
+        if (skeletons.isEmpty()) {
+            syncEventsHandler.stopSyncing();
+            return;
+        }
+        syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, trustedPeer);
     }
 
     @Override
@@ -71,6 +132,9 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
                 syncEventsHandler.stopSyncing();
                 return;
             }
+        } else if (isSelectedPeer) {
+            // several skeletons may come back from the trusted peer, one per slice of the range
+            selectedPeerParts.put(skeleton.get(0).getNumber(), skeleton);
         } else {
             skeletons.put(peer, skeleton);
         }
@@ -82,11 +146,7 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
         selectedPeerAnswered = selectedPeerAnswered || isSelectedPeer;
 
         if (expectedSkeletons <= 0){
-            if (skeletons.isEmpty()){
-                syncEventsHandler.stopSyncing();
-                return;
-            }
-            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, peer);
+            transitionToHeaders(selectedPeerAnswered ? selectedPeer : peer);
         }
     }
 
@@ -94,11 +154,11 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
     public void tick(Duration duration) {
         timeElapsed = timeElapsed.plus(duration);
 
-        if (selectedPeerAnswered && !skeletons.isEmpty()) {
+        if (selectedPeerAnswered && !selectedPeerParts.isEmpty()) {
             elapsedSinceSelectedPeerAnswered = elapsedSinceSelectedPeerAnswered.plus(duration);
             if (elapsedSinceSelectedPeerAnswered.compareTo(REMAINING_SKELETONS_GRACE) >= 0) {
                 // go with whatever arrived; stragglers simply do not take part in this round
-                syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, selectedPeer);
+                transitionToHeaders(selectedPeer);
                 return;
             }
         }
@@ -116,7 +176,7 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
                 return;
             }
 
-            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, selectedPeer);
+            transitionToHeaders(selectedPeer);
         }
     }
 
@@ -128,5 +188,13 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
         // thrown away because the state advanced on the first one. No extra requests are sent here.
         this.expectedSkeletons = candidates.size();
         candidates.forEach(p -> syncEventsHandler.sendSkeletonRequest(p, connectionPoint));
+
+        // Ask the trusted peer for the following slices of the range at the same time. They are all
+        // in flight together, so the extra coverage costs no additional round trip, and the
+        // per-round setup is then amortised over rangeMultiplier times as many blocks.
+        for (int i = 1; i < rangeMultiplier; i++) {
+            syncEventsHandler.sendSkeletonRequest(selectedPeer, connectionPoint + i * skeletonStride);
+            this.expectedSkeletons++;
+        }
     }
 }

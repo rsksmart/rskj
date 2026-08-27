@@ -209,7 +209,7 @@ class DownloadingHeadersSyncStateTest {
         // up to 3 chunk requests in flight, at most 2 to any single peer
         SyncConfiguration parallelConfig = new SyncConfiguration(
                 5, 60, 30, 5, 20, 192, 20, 10, 0, false, false, 0,
-                Collections.emptyList(), 24, 0, 3, 2);
+                Collections.emptyList(), 24, 0, 3, 2, 1);
 
         DownloadingHeadersSyncState syncState = new DownloadingHeadersSyncState(
                 parallelConfig,

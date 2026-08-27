@@ -20,6 +20,7 @@ package co.rsk.net.sync;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.IntStream;
 
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
@@ -212,11 +213,19 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
             BlockHeader headerToAdd = chunk.get(chunk.size() - 1);
             headers.add(headerToAdd);
 
-            for (int k = 1; k < chunk.size(); ++k) {
-                BlockHeader parentHeader = chunk.get(chunk.size() - k);
-                BlockHeader header = chunk.get(chunk.size() - k - 1);
+            // Proof-of-work verification is by far the most expensive part of validating a chunk and
+            // it depends on nothing but the header itself, so it runs across all cores first. The
+            // order-dependent checks below (parent linkage, difficulty) stay sequential and are
+            // cheap. Doing it all inline left the single message-handling thread hashing tens of
+            // thousands of headers per round while the rest of the machine sat idle.
+            boolean[] powValid = validateProofOfWorkInParallel(chunk);
 
-                if (!blockHeaderIsValid(header, parentHeader)) {
+            for (int k = 1; k < chunk.size(); ++k) {
+                int headerIndex = chunk.size() - k - 1;
+                BlockHeader parentHeader = chunk.get(chunk.size() - k);
+                BlockHeader header = chunk.get(headerIndex);
+
+                if (!powValid[headerIndex] || !blockHeaderLinksToParent(header, parentHeader)) {
                     syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_HEADER,
                             "Invalid header received on {}, no: {}, hash: {}",
                             this.getClass(), header.getNumber(), header.getPrintableHash());
@@ -385,16 +394,26 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
         return skeletons.get(selectedPeer);
     }
 
-    private boolean blockHeaderIsValid(BlockHeader header, BlockHeader parentHeader) {
+    /**
+     * Runs the standalone header rule (proof of work) over every header of the chunk concurrently.
+     * Each header is handled by exactly one thread and the rule only reads immutable configuration,
+     * so there is nothing shared to race on.
+     */
+    private boolean[] validateProofOfWorkInParallel(List<BlockHeader> chunk) {
+        boolean[] valid = new boolean[chunk.size()];
+        IntStream.range(0, chunk.size())
+                .parallel()
+                .forEach(i -> valid[i] = blockHeaderValidationRule.isValid(chunk.get(i)));
+        return valid;
+    }
+
+    /** The order-dependent half of header validation; cheap, so it stays sequential. */
+    private boolean blockHeaderLinksToParent(BlockHeader header, BlockHeader parentHeader) {
         if (!parentHeader.getHash().equals(header.getParentHash())) {
             return false;
         }
 
         if (header.getNumber() != parentHeader.getNumber() + 1) {
-            return false;
-        }
-
-        if (!blockHeaderValidationRule.isValid(header)) {
             return false;
         }
 

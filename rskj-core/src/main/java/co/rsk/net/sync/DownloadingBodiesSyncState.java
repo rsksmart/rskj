@@ -400,22 +400,16 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
      * handed out exactly once because it is removed from the deque here.
      */
     private Optional<Assignment> pollAssignmentFor(Peer peer) {
-        Integer peerSegment = segmentByNode.get(peer);
-        long peerBest = Long.MAX_VALUE;
-        int startSegment;
-        if (peerSegment != null) {
-            // This peer's skeleton covers these chunks, so no extra height check is needed.
-            startSegment = peerSegment;
-        } else {
-            // No skeleton from this peer: it may still serve any header it is tall enough for.
-            if (chunksBySegment.isEmpty()) {
-                return Optional.empty();
-            }
-            startSegment = chunksBySegment.size() - 1;
-            peerBest = bestBlockNumberOf(peer);
-            if (peerBest < 0) {
-                return Optional.empty();
-            }
+        if (chunksBySegment.isEmpty()) {
+            return Optional.empty();
+        }
+        // Any peer tall enough may serve any header: the body is checked against the trusted
+        // header regardless of who sent it. Capping a peer at the segment its own skeleton covers
+        // left most peers idle for the later chunks of an extended range.
+        int startSegment = chunksBySegment.size() - 1;
+        long peerBest = bestBlockNumberOf(peer);
+        if (peerBest < 0) {
+            return Optional.empty();
         }
 
         for (int segmentNumber = startSegment; segmentNumber >= 0; segmentNumber--) {

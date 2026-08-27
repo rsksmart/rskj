@@ -36,6 +36,8 @@ public final class SyncConfiguration {
     /** Legacy behaviour: one header chunk request at a time, to the selected peer only. */
     private static final int DEFAULT_MAX_CONCURRENT_HEADER_REQUESTS = 1;
     private static final int DEFAULT_MAX_HEADER_REQUESTS_PER_PEER = 1;
+    /** Legacy behaviour: one skeleton per sync round. */
+    private static final int DEFAULT_SKELETON_RANGE_MULTIPLIER = 1;
 
     @VisibleForTesting
     public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, 0, false, false, 0);
@@ -62,6 +64,7 @@ public final class SyncConfiguration {
     private final int maxBodyRequestsPerMinutePerPeer;
     private final int maxConcurrentHeaderRequests;
     private final int maxHeaderRequestsPerPeer;
+    private final int skeletonRangeMultiplier;
 
     /**
      * @param expectedPeers            The expected number of peers we would want to start finding a connection point.
@@ -123,7 +126,8 @@ public final class SyncConfiguration {
                 maxSkeletonChunks, chunkSize, maxRequestedBodies, longSyncLimit, topBest,
                 isServerSnapSyncEnabled, isClientSnapSyncEnabled, snapshotSyncLimit, snapBootNodes,
                 DEFAULT_MAX_IN_FLIGHT_BODY_REQUESTS_PER_PEER, DEFAULT_MAX_BODY_REQUESTS_PER_MINUTE_PER_PEER,
-                DEFAULT_MAX_CONCURRENT_HEADER_REQUESTS, DEFAULT_MAX_HEADER_REQUESTS_PER_PEER);
+                DEFAULT_MAX_CONCURRENT_HEADER_REQUESTS, DEFAULT_MAX_HEADER_REQUESTS_PER_PEER,
+                DEFAULT_SKELETON_RANGE_MULTIPLIER);
     }
 
     public SyncConfiguration(
@@ -143,7 +147,9 @@ public final class SyncConfiguration {
             int maxInFlightBodyRequestsPerPeer,
             int maxBodyRequestsPerMinutePerPeer,
             int maxConcurrentHeaderRequests,
-            int maxHeaderRequestsPerPeer) {
+            int maxHeaderRequestsPerPeer,
+            int skeletonRangeMultiplier) {
+        this.skeletonRangeMultiplier = skeletonRangeMultiplier;
         this.maxInFlightBodyRequestsPerPeer = maxInFlightBodyRequestsPerPeer;
         this.maxBodyRequestsPerMinutePerPeer = maxBodyRequestsPerMinutePerPeer;
         this.maxConcurrentHeaderRequests = maxConcurrentHeaderRequests;
@@ -221,6 +227,10 @@ public final class SyncConfiguration {
 
     public int getMaxBodyRequestsPerMinutePerPeer() {
         return maxBodyRequestsPerMinutePerPeer;
+    }
+
+    public int getSkeletonRangeMultiplier() {
+        return skeletonRangeMultiplier;
     }
 
     public int getMaxConcurrentHeaderRequests() {
