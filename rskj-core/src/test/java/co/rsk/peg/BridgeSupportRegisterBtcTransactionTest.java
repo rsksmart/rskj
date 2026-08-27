@@ -8,6 +8,7 @@ import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseInputScriptThatSpendsFromRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.getSigHashForPegoutIndex;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
+import static co.rsk.peg.federation.FederationTestUtils.addSignatures;
 import static co.rsk.peg.federation.FederationTestUtils.addSignaturesAndFederationRedeemScript;
 import static co.rsk.peg.pegin.RejectedPeginReason.*;
 import static co.rsk.peg.utils.NonRefundablePeginReason.OUTPUTS_SENT_TO_DIFFERENT_TYPES_OF_FEDS;
@@ -4013,7 +4014,6 @@ class BridgeSupportRegisterBtcTransactionTest {
                     .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
                     .withOutput(Coin.COIN, activeFederation.getAddress())
                     .withoutChange()
-                    .withSignatures(retiringFederationKeys)
                     .build();
 
                 addSpendingFederationBaseScript(
@@ -4022,6 +4022,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     retiringFederationFlyoverRedeemScript,
                     retiringFederation.getFormatVersion()
                 );
+                addSignatures(retiringFederation, retiringFederationKeys, migrationTx);
 
                 return migrationTx;
             }
@@ -4054,8 +4055,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     .withNetworkParameters(networkParameters)
                     .withActiveFederation(retiringFederation)
                     .withInput(BitcoinTestUtils.createHash(0), FIRST_OUTPUT_INDEX, Coin.COIN)
-                    .withoutChange()
-                    .withSignatures(retiringFederationKeys);
+                    .withoutChange();
                 addManyInputs(btcTransactionBuilder);
                 addManyMigrationOutputs(btcTransactionBuilder);
                 BtcTransaction migrationTx = btcTransactionBuilder.build();
@@ -4066,6 +4066,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     retiringFederationFlyoverRedeemScript,
                     retiringFederation.getFormatVersion()
                 );
+                addSignatures(retiringFederation, retiringFederationKeys, migrationTx);
 
                 return migrationTx;
             }
