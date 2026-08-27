@@ -3469,7 +3469,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                     retiringFederation.getRedeemScript()
                 );
 
-                Sha256Hash flyoverInputTxHash = BitcoinTestUtils.createHash(50);
+                Sha256Hash flyoverInputTxHash = BitcoinTestUtils.createHash(123);
                 PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
                     .withNetworkParameters(networkParameters)
                     .withActiveFederation(retiringFederation)
