@@ -4051,10 +4051,11 @@ class BridgeSupportRegisterBtcTransactionTest {
                     retiringFederation.getRedeemScript()
                 );
 
+                Sha256Hash flyoverInputTxHash = BitcoinTestUtils.createHash(50);
                 PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
                     .withNetworkParameters(networkParameters)
                     .withActiveFederation(retiringFederation)
-                    .withInput(BitcoinTestUtils.createHash(0), FIRST_OUTPUT_INDEX, Coin.COIN)
+                    .withInput(flyoverInputTxHash, FIRST_OUTPUT_INDEX, Coin.COIN)
                     .withoutChange();
                 addManyInputs(btcTransactionBuilder);
                 addManyMigrationOutputs(btcTransactionBuilder);
