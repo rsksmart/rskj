@@ -312,10 +312,10 @@ class PegoutsWaitingForConfirmationsTest {
         );
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{displayName} - {0}")
     @MethodSource("networksWithPopulatedHistoricalSelections")
     void getNextPegout_beforeRskip559_datasetMiss_fallsBackToFindFirst(BridgeConstants bridgeConstants) {
-        long blockNumber = bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations() + 5L;
+        long blockNumber = bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations() + EARLIEST_PEGOUT_CREATION_BLOCK;
         Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(
             UPDATE_COLLECTIONS_TX_HASH,
             blockNumber,
@@ -334,8 +334,8 @@ class PegoutsWaitingForConfirmationsTest {
 
     private static Stream<Arguments> networksWithPopulatedHistoricalSelections() {
         return Stream.of(
-            Arguments.of(BRIDGE_CONSTANTS),
-            Arguments.of(BridgeTestNetConstants.getInstance())
+            Arguments.of(named("mainnet", BRIDGE_CONSTANTS)),
+            Arguments.of(named("testnet", BridgeTestNetConstants.getInstance()))
         );
     }
 
