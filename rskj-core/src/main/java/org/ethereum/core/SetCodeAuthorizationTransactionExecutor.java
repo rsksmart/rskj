@@ -30,7 +30,7 @@ import java.security.SignatureException;
 public class SetCodeAuthorizationTransactionExecutor {
 
     public static final byte[] CODE_FOR_CLEANING_DELEGATED_ADDRESS = new byte[0];
-    final BigInteger UNIVERSAL_CHAIN_ID = BigInteger.ZERO;
+    private static final BigInteger UNIVERSAL_CHAIN_ID = BigInteger.ZERO;
 
     public long processAuthorizationTuple(Repository repository, BigInteger outerTransactionChainId, SetCodeAuthorization authorization) {
         verifyChainId(authorization.getChainId(), outerTransactionChainId);
