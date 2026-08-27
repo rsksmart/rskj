@@ -20,7 +20,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.constants.HistoricalPegoutSelectionsConstants;
+import co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.util.Collection;
