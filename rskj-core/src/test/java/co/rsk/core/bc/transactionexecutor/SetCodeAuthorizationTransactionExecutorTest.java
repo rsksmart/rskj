@@ -22,8 +22,8 @@ import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
 import org.ethereum.core.SetCodeAuthorizationTransactionExecutor;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
@@ -43,6 +44,7 @@ import static java.math.BigInteger.ONE;
 import static java.math.BigInteger.ZERO;
 import static org.ethereum.config.Constants.MAINNET_CHAIN_ID;
 import static org.ethereum.config.Constants.REGTEST_CHAIN_ID;
+import static org.ethereum.config.Constants.TESTNET2_CHAIN_ID;
 import static org.ethereum.config.Constants.TESTNET_CHAIN_ID;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -62,8 +64,6 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
  class SetCodeAuthorizationTransactionExecutorTest {
 
     private static final BigInteger ZERO_CHAIN_ID = ZERO;
-    private static final BigInteger ONE_CHAIN_ID = ONE;
-
     private static final BigInteger NONCE_ONE_VALUE = ONE;
     private static final byte[] NONCE_ONE = NONCE_ONE_VALUE.toByteArray();
     private static final byte[] EMPTY_CODE =  new byte[0];
@@ -127,63 +127,6 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
         );
 
         assertEquals("Nonce must be < 2^64 - 1", ex.getMessage());
-    }
-
-    @Test
-    void processAuthorizationTuple_shouldThrow_whenChainIdIsInvalid() {
-        var tuple =
-                new SetCodeAuthorization(
-                        BigInteger.valueOf(9999),
-                        randomAddress(),
-                        new byte[]{0x01},
-                        mock(ECDSASignature.class)
-                );
-
-        IllegalStateException ex = assertThrows(
-                IllegalStateException.class,
-                () -> executor.processAuthorizationTuple(repository, ONE_CHAIN_ID, tuple)
-        );
-
-        assertEquals("Invalid chain ID", ex.getMessage());
-    }
-
-    @Test
-    void processAuthorizationTuple_shouldThrow_whenChainIdDoesNotMatchOuterTransaction() {
-       var tuple =
-                new SetCodeAuthorization(
-                        BigInteger.valueOf(MAINNET_CHAIN_ID),
-                        randomAddress(),
-                        new byte[]{0x01},
-                        mock(ECDSASignature.class)
-                );
-
-        IllegalStateException ex = assertThrows(
-                IllegalStateException.class,
-                () -> executor.processAuthorizationTuple(
-                        repository,
-                        BigInteger.valueOf(TESTNET_CHAIN_ID),
-                        tuple
-                )
-        );
-
-        assertEquals("Chain ID mismatch", ex.getMessage());
-    }
-
-    @Test
-    void processAuthorizationTuple_shouldAllowUniversalChainIdWithAnyOuterChainId() {
-        ECKey authorityKey = new ECKey();
-        RskAddress authority = new RskAddress(authorityKey.getAddress());
-
-        var tuple = createValidAuthorizationTuple(RskAddress.ZERO_ADDRESS,
-                NONCE_ONE, ZERO_CHAIN_ID, authorityKey);
-
-        when(repository.getCode(authority)).thenReturn(null);
-        when(repository.getNonce(authority)).thenReturn(NONCE_ONE_VALUE);
-
-        long refund = executor.processAuthorizationTuple(repository, BigInteger.valueOf(33), tuple);
-        verify(repository).saveCode(eq(authority), aryEq(EMPTY_CODE));
-        verify(repository).increaseNonce(authority);
-        assertEquals(0L, refund);
     }
 
     @Test
@@ -288,29 +231,77 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
         verify(repository, never()).increaseNonce(any());
     }
 
-    @ParameterizedTest
-    @ValueSource(longs = {MAINNET_CHAIN_ID, TESTNET_CHAIN_ID, REGTEST_CHAIN_ID})
-    void processAuthorizationTuple_shouldAllowChainId_whenOuterChainIdMatches(long chainIdValue) {
-        ECKey authorityKey = new ECKey();
-        RskAddress authority = new RskAddress(authorityKey.getAddress());
+     @ParameterizedTest
+     @CsvSource({
+             "30, 31",
+             "31, 30",
+             "32, 34",
+             "34, 32",
+             "127, 128",
+             "128, 127",
+             "128, 255",
+             "255, 128",
+             "254, 255",
+             "255, 254"
+     })
+     void processAuthorizationTuple_shouldRejectNonZeroChainId_whenOuterChainIdDoesNotMatch(long authorizationChainIdValue, long outerChainIdValue) {
+         BigInteger authorizationChainId = BigInteger.valueOf(authorizationChainIdValue);
+         BigInteger outerChainId = BigInteger.valueOf(outerChainIdValue);
 
-        BigInteger chainId = BigInteger.valueOf(chainIdValue);
+         var tuple = new SetCodeAuthorization(authorizationChainId, randomAddress(), NONCE_ONE, mock(ECDSASignature.class));
 
-        var tuple = createValidAuthorizationTuple(
-                RskAddress.ZERO_ADDRESS,
-                NONCE_ONE,
-                chainId,
-                authorityKey
-        );
+         IllegalStateException ex = assertThrows(
+                 IllegalStateException.class,
+                 () -> executor.processAuthorizationTuple(
+                         repository,
+                         outerChainId,
+                         tuple
+                 )
+         );
 
-        when(repository.getCode(authority)).thenReturn(null);
-        when(repository.getNonce(authority)).thenReturn(ONE);
+         assertEquals("Chain ID mismatch", ex.getMessage());
 
-        executor.processAuthorizationTuple(repository, chainId, tuple);
+         verify(repository, never()).getCode(any());
+         verify(repository, never()).getNonce(any());
+         verify(repository, never()).saveCode(any(), any());
+         verify(repository, never()).increaseNonce(any());
+     }
 
-        verify(repository).saveCode(eq(authority), aryEq(EMPTY_CODE));
-        verify(repository).increaseNonce(authority);
-    }
+     @ParameterizedTest
+     @ValueSource(longs = {
+             MAINNET_CHAIN_ID,
+             TESTNET_CHAIN_ID,
+             32,
+             REGTEST_CHAIN_ID,
+             TESTNET2_CHAIN_ID,
+             50,
+             127,
+             128,
+             255
+     })
+     void processAuthorizationTuple_shouldAllowNonZeroChainId_whenOuterChainIdMatches(long chainIdValue) {
+         ECKey authorityKey = new ECKey();
+         RskAddress authority = new RskAddress(authorityKey.getAddress());
+
+         BigInteger chainId = BigInteger.valueOf(chainIdValue);
+
+         var tuple = createValidAuthorizationTuple(
+                 RskAddress.ZERO_ADDRESS,
+                 NONCE_ONE,
+                 chainId,
+                 authorityKey
+         );
+
+         when(repository.getCode(authority)).thenReturn(null);
+         when(repository.getNonce(authority)).thenReturn(NONCE_ONE_VALUE);
+
+         assertDoesNotThrow(() ->
+                 executor.processAuthorizationTuple(repository, chainId, tuple)
+         );
+
+         verify(repository).saveCode(eq(authority), aryEq(EMPTY_CODE));
+         verify(repository).increaseNonce(authority);
+     }
 
     @Test
     void processAuthorizationTuple_shouldSaveExactDelegatedAddressInCode() {
@@ -657,70 +648,123 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
         verify(repository).increaseNonce(authority);
      }
 
-    @ParameterizedTest
-    @ValueSource(ints = {2, 3, 4, 7, 255})
-    void processAuthorizationTuple_shouldThrow_whenYParityIsOutsideParityRange(int yParity) {
-        var tuple = authorizationWithYParity(yParity);
+     @ParameterizedTest
+     @ValueSource(ints = {2, 3, 4, 7, 255})
+     void processAuthorizationTuple_shouldThrow_whenYParityIsOutsideParityRange(int yParity) {
+         var tuple = authorizationWithYParity(yParity);
 
-        IllegalStateException ex = assertThrows(
-                IllegalStateException.class,
-                () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
-        );
+         IllegalStateException ex = assertThrows(
+                 IllegalStateException.class,
+                 () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
+         );
 
-        assertEquals("Signature y_parity must be 0 or 1", ex.getMessage());
-        verify(repository, never()).saveCode(any(), any());
-        verify(repository, never()).increaseNonce(any());
-    }
+         assertEquals("Signature y_parity must be 0 or 1", ex.getMessage());
+         verify(repository, never()).saveCode(any(), any());
+         verify(repository, never()).increaseNonce(any());
+     }
 
-    @ParameterizedTest
-    @MethodSource("signatureComponentsOutsideCurveRange")
-    void processAuthorizationTuple_shouldThrow_whenSignatureComponentsAreOutsideCurveRange(
-            BigInteger r, BigInteger s) {
-        var tuple = authorizationWithSignatureComponents(r, s);
+     @ParameterizedTest
+     @MethodSource("signatureComponentsOutsideCurveRange")
+     void processAuthorizationTuple_shouldThrow_whenSignatureComponentsAreOutsideCurveRange(
+             BigInteger r, BigInteger s) {
+         var tuple = authorizationWithSignatureComponents(r, s);
 
-        IllegalStateException ex = assertThrows(
-                IllegalStateException.class,
-                () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
-        );
+         IllegalStateException ex = assertThrows(
+                 IllegalStateException.class,
+                 () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
+         );
 
-        assertEquals("Signature r and s must be in [1, secp256k1n)", ex.getMessage());
-        verify(repository, never()).saveCode(any(), any());
-        verify(repository, never()).increaseNonce(any());
-    }
+         assertEquals("Signature r and s must be in [1, secp256k1n)", ex.getMessage());
+         verify(repository, never()).saveCode(any(), any());
+         verify(repository, never()).increaseNonce(any());
+     }
 
-    private static Stream<Arguments> signatureComponentsOutsideCurveRange() {
-        BigInteger curveOrder = Constants.getSECP256K1N();
-        return Stream.of(
-                Arguments.of(ZERO, ONE),
-                Arguments.of(curveOrder, ONE),
-                Arguments.of(ONE, ZERO),
-                Arguments.of(ONE, curveOrder)
-        );
-    }
+     private static Stream<Arguments> signatureComponentsOutsideCurveRange() {
+         BigInteger curveOrder = Constants.getSECP256K1N();
+         return Stream.of(
+                 Arguments.of(ZERO, ONE),
+                 Arguments.of(curveOrder, ONE),
+                 Arguments.of(ONE, ZERO),
+                 Arguments.of(ONE, curveOrder)
+         );
+     }
 
-    private SetCodeAuthorization authorizationWithSignatureComponents(BigInteger r, BigInteger s) {
-        SetCodeAuthorization signed = createValidAuthorizationTuple(
-                RskAddress.ZERO_ADDRESS, NONCE_ONE, ZERO_CHAIN_ID, new ECKey());
-        ECDSASignature signature = ECDSASignature.fromComponents(
-                BigIntegers.asUnsignedByteArray(r),
-                BigIntegers.asUnsignedByteArray(s),
-                signed.getSignature().getV()
-        );
+     private SetCodeAuthorization authorizationWithSignatureComponents(BigInteger r, BigInteger s) {
+         SetCodeAuthorization signed = createValidAuthorizationTuple(
+                 RskAddress.ZERO_ADDRESS, NONCE_ONE, ZERO_CHAIN_ID, new ECKey());
+         ECDSASignature signature = ECDSASignature.fromComponents(
+                 BigIntegers.asUnsignedByteArray(r),
+                 BigIntegers.asUnsignedByteArray(s),
+                 signed.getSignature().getV()
+         );
 
-        return new SetCodeAuthorization(ZERO_CHAIN_ID, RskAddress.ZERO_ADDRESS, NONCE_ONE, signature);
-    }
+         return new SetCodeAuthorization(ZERO_CHAIN_ID, RskAddress.ZERO_ADDRESS, NONCE_ONE, signature);
+     }
 
-    private SetCodeAuthorization authorizationWithYParity(int yParity) {
-        SetCodeAuthorization signed = createValidAuthorizationTuple(
-                RskAddress.ZERO_ADDRESS, NONCE_ONE, ZERO_CHAIN_ID, new ECKey());
-        ECDSASignature signature = ECDSASignature.fromComponents(
-                BigIntegers.asUnsignedByteArray(signed.getSignature().getR()),
-                BigIntegers.asUnsignedByteArray(signed.getSignature().getS()),
-                (byte) (Transaction.LOWER_REAL_V + yParity)
-        );
+     private SetCodeAuthorization authorizationWithYParity(int yParity) {
+         SetCodeAuthorization signed = createValidAuthorizationTuple(
+                 RskAddress.ZERO_ADDRESS, NONCE_ONE, ZERO_CHAIN_ID, new ECKey());
+         ECDSASignature signature = ECDSASignature.fromComponents(
+                 BigIntegers.asUnsignedByteArray(signed.getSignature().getR()),
+                 BigIntegers.asUnsignedByteArray(signed.getSignature().getS()),
+                 (byte) (Transaction.LOWER_REAL_V + yParity)
+         );
 
-        return new SetCodeAuthorization(ZERO_CHAIN_ID, RskAddress.ZERO_ADDRESS, NONCE_ONE, signature);
-    }
+         return new SetCodeAuthorization(ZERO_CHAIN_ID, RskAddress.ZERO_ADDRESS, NONCE_ONE, signature);
+     }
+
+     @ParameterizedTest
+     @ValueSource(longs = {
+             MAINNET_CHAIN_ID,
+             TESTNET_CHAIN_ID,
+             32,
+             REGTEST_CHAIN_ID,
+             TESTNET2_CHAIN_ID,
+             127,
+             128,
+             255
+     })
+     void processAuthorizationTuple_shouldAllowUniversalChainId_withAnyOuterChainId(long outerChainIdValue) {
+         ECKey authorityKey = new ECKey();
+         RskAddress authority = new RskAddress(authorityKey.getAddress());
+
+         var tuple = createValidAuthorizationTuple(RskAddress.ZERO_ADDRESS, NONCE_ONE, ZERO_CHAIN_ID, authorityKey);
+
+         when(repository.getCode(authority)).thenReturn(null);
+         when(repository.getNonce(authority)).thenReturn(NONCE_ONE_VALUE);
+
+         assertDoesNotThrow(() ->
+                 executor.processAuthorizationTuple(
+                         repository,
+                         BigInteger.valueOf(outerChainIdValue),
+                         tuple
+                 )
+         );
+
+         verify(repository).saveCode(eq(authority), aryEq(EMPTY_CODE));
+         verify(repository).increaseNonce(authority);
+     }
+
+     @Test
+     void processAuthorizationTuple_shouldNotRequireChainIdToBelongToKnownNetworkList() {
+         ECKey authorityKey = new ECKey();
+         RskAddress authority = new RskAddress(authorityKey.getAddress());
+
+         BigInteger chainId = BigInteger.valueOf(50);
+
+         var tuple = createValidAuthorizationTuple(RskAddress.ZERO_ADDRESS, NONCE_ONE, chainId, authorityKey);
+
+         when(repository.getCode(authority)).thenReturn(null);
+         when(repository.getNonce(authority)).thenReturn(NONCE_ONE_VALUE);
+
+         assertDoesNotThrow(() ->
+                 executor.processAuthorizationTuple(repository, chainId, tuple)
+         );
+
+         verify(repository).saveCode(eq(authority), aryEq(EMPTY_CODE));
+         verify(repository).increaseNonce(authority);
+     }
+
 
     private SetCodeAuthorization createValidAuthorizationTuple(
             RskAddress delegatedAddress,
