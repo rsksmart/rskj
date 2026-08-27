@@ -8,6 +8,12 @@ on:
     paths:
       - "docs/**"
       - "doc/rpc/**"
+      # The assembled document stamps info.version from this file, so a release bump alone has to
+      # publish. Without it the portal keeps serving the previous version until some unrelated docs
+      # change happens along. The cost is a portal pull request per bump whose only diff is that
+      # one field, which is the right trade: release cadence is low, and a published document
+      # claiming the wrong version is worse than a one-line pull request.
+      - "rskj-core/src/main/resources/version.properties"
     branches:
       - master
   workflow_dispatch:
@@ -40,7 +46,7 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Extract version from gradle.properties
+      - name: Extract version from version.properties
         run: |
           VERSION=$(tr -d "'\"" < rskj-core/src/main/resources/version.properties | cut -d = -f 2- | paste -sd - -)
           echo "RSK_VERSION=${VERSION}" >> $GITHUB_ENV
@@ -69,7 +75,22 @@ jobs:
 
           git clone https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/rsksmart/devportal.git
           cd devportal
-          git checkout -b ${BRANCH_NAME} || git checkout ${BRANCH_NAME}
+
+          # The branch name follows version.properties, so it is stable for a whole release cycle and
+          # a second run can find the first run's branch still open. Build on it when it exists.
+          # This step runs against a fresh clone, where a local branch of that name cannot already
+          # exist, so `git checkout -b` always succeeded and the fallback beside it was dead code:
+          # the branch was rebuilt from the default branch every run, and the force-push below then
+          # dropped anything the earlier run published that this one does not reproduce -- an
+          # upstream deletion, say -- out of a pull request already open for review.
+          if git ls-remote --exit-code --heads origin "${BRANCH_NAME}" >/dev/null 2>&1; then
+            echo "Continuing the existing ${BRANCH_NAME}."
+            git fetch origin "${BRANCH_NAME}"
+            git checkout -b "${BRANCH_NAME}" "origin/${BRANCH_NAME}"
+          else
+            echo "Starting ${BRANCH_NAME} from the default branch."
+            git checkout -b "${BRANCH_NAME}"
+          fi
           cd ..
 
       # Step 3: Transform Each File and Copy to DevPortal Repository
@@ -136,7 +157,7 @@ jobs:
           https://api.github.com/repos/rsksmart/devportal/pulls \
           -d '{
             "title": "Automated update of documentation for RSKj node - '"${{ env.BRANCH_NAME }}"'",
-            "body": "This PR updates the Devportal documentation with the latest changes from the original repository.\n\nOriginal RSKj PR: https://github.com/rsksmart/rskj/pull/${{ github.event.pull_request.number }}",
+            "body": "This PR updates the Devportal documentation with the latest changes from the original repository.\n\nrskj commit: https://github.com/${{ github.repository }}/commit/${{ github.sha }}\nWorkflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
             "head": "'"${{ env.BRANCH_NAME }}"'",
             "base": "main"
           }')
