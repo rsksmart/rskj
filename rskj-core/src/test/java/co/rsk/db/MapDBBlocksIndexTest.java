@@ -123,7 +123,10 @@ class MapDBBlocksIndexTest {
     @Test
     void getBlocksByNumber_found() {
         long blockNumber = 20;
-        List<IndexedBlockStore.BlockInfo> expectedResult = mock(List.class);
+        // a real list rather than a mock: the reader hands back a copy so that a caller reshaping
+        // the list (saveBlock appends to it) cannot reshape the cached entry
+        List<IndexedBlockStore.BlockInfo> expectedResult = new ArrayList<>();
+        expectedResult.add(new IndexedBlockStore.BlockInfo());
 
         index.put(blockNumber, expectedResult);
 

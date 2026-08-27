@@ -25,8 +25,11 @@ import org.mapdb.DB;
 import org.mapdb.Serializer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import co.rsk.util.MaxSizeHashMap;
 
 import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 
@@ -39,6 +42,23 @@ public class MapDBBlocksIndex implements BlocksIndex {
 
     private final Map<Long, List<IndexedBlockStore.BlockInfo>> index;
     private final Map<String, byte[]> metadata;
+
+    /**
+     * Read cache in front of MapDB.
+     *
+     * <p>Every block that arrives is checked against the index to see whether it is already known,
+     * and MapDB answers by reading the entry off disk and deserialising it through Java
+     * serialization. During a sync that is a file read plus an ObjectInputStream round trip per
+     * block, which profiling put at roughly half of the block-processing thread.
+     *
+     * <p>Entries are refreshed on every write, and the store only mutates a BlockInfo it obtained
+     * from an entry that exists, always following the mutation with putBlocks, so a cached entry
+     * cannot drift from what MapDB holds.
+     */
+    private static final int INDEX_CACHE_SIZE =
+            Integer.getInteger("blockstore.indexCacheEntries", 200_000);
+    private final Map<Long, List<IndexedBlockStore.BlockInfo>> indexCache =
+            Collections.synchronizedMap(new MaxSizeHashMap<>(INDEX_CACHE_SIZE, true));
 
     private final DB indexDB;
 
@@ -94,7 +114,16 @@ public class MapDBBlocksIndex implements BlocksIndex {
 
     @Override
     public List<IndexedBlockStore.BlockInfo> getBlocksByNumber(long blockNumber) {
-        return index.getOrDefault(blockNumber, new ArrayList<>());
+        List<IndexedBlockStore.BlockInfo> cached = indexCache.get(blockNumber);
+        if (cached == null) {
+            cached = index.get(blockNumber);
+            if (cached == null) {
+                return new ArrayList<>();
+            }
+            indexCache.put(blockNumber, cached);
+        }
+        // hand back a copy so a caller reshaping the list cannot reshape the cached entry
+        return new ArrayList<>(cached);
     }
 
     @Override
@@ -112,6 +141,7 @@ public class MapDBBlocksIndex implements BlocksIndex {
         }
 
         index.put(blockNumber, blocks);
+        indexCache.put(blockNumber, blocks);
     }
 
     @Override
@@ -133,9 +163,11 @@ public class MapDBBlocksIndex implements BlocksIndex {
         if (blockInfoList.isEmpty()) {
             //We are not allowing empty list into the index
             index.remove(blockNumber);
+            indexCache.remove(blockNumber);
         } else {
             //MapDB does not support update of values in a map so we use the list as a immutable object
             index.put(blockNumber, blockInfoList);
+            indexCache.put(blockNumber, blockInfoList);
         }
     }
 
@@ -147,6 +179,7 @@ public class MapDBBlocksIndex implements BlocksIndex {
         }
 
         List<IndexedBlockStore.BlockInfo> result = index.remove(lastBlockNumber);
+        indexCache.remove(lastBlockNumber);
 
         if (result == null) {
             result = new ArrayList<>();
