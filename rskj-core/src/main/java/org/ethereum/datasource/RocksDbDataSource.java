@@ -66,6 +66,14 @@ public class RocksDbDataSource implements KeyValueDataSource {
             Boolean.parseBoolean(System.getProperty("rocksdb.paranoidChecks", "false"));
     private static final boolean DISABLE_WAL =
             Boolean.parseBoolean(System.getProperty("rocksdb.disableWAL", "false"));
+    /**
+     * RocksDB re-checks a block's checksum on every read that touches it. During a bulk sync the
+     * trie is read millions of times per minute and that verification lands squarely on the block
+     * processing thread. Compaction still verifies checksums, so this trades read-time corruption
+     * detection for throughput; it defaults to the safe behaviour.
+     */
+    private static final boolean VERIFY_CHECKSUMS =
+            Boolean.parseBoolean(System.getProperty("rocksdb.verifyChecksums", "true"));
 
     static {
         // The shared cache and filter below are native objects, so the RocksDB library has to be
@@ -89,6 +97,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
     private final Options options = createOptions();
     private final WriteOptions writeOptions = createWriteOptions();
+    private final ReadOptions readOptions = createReadOptions();
     private RocksDB db;
     private boolean alive;
 
@@ -191,7 +200,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
                         logger.trace("~> RocksDbDataSource.get(): {}, key: {}", name, Bytes.of(key));
                     }
 
-                    byte[] ret = db.get(key);
+                    byte[] ret = db.get(readOptions, key);
 
                     if (logger.isTraceEnabled()) {
                         logger.trace("<~ RocksDbDataSource.get(): {}, key: {}, return length: {}", name, Bytes.of(key), (ret == null ? "null" : ret.length));
@@ -419,6 +428,9 @@ public class RocksDbDataSource implements KeyValueDataSource {
         // Paranoid checks re-verify data during opens and compactions. Useful, but it is pure
         // overhead on a node that is rebuilding its whole database from the network.
         options.setParanoidChecks(PARANOID_CHECKS);
+        // Trie lookups overwhelmingly hit, so the bottom level's filters earn nothing and only
+        // take up room that cached data blocks could use.
+        options.setOptimizeFiltersForHits(true);
 
         BlockBasedTableConfig tableConfig = new BlockBasedTableConfig();
         tableConfig.setBlockCache(SHARED_BLOCK_CACHE);
@@ -432,6 +444,12 @@ public class RocksDbDataSource implements KeyValueDataSource {
         options.setTableFormatConfig(tableConfig);
 
         return options;
+    }
+
+    private static ReadOptions createReadOptions() {
+        ReadOptions readOptions = new ReadOptions();
+        readOptions.setVerifyChecksums(VERIFY_CHECKSUMS);
+        return readOptions;
     }
 
     private static WriteOptions createWriteOptions() {

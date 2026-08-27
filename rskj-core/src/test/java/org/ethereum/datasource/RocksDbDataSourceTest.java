@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
+import org.rocksdb.ReadOptions;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.WriteBatch;
@@ -169,9 +170,10 @@ class RocksDbDataSourceTest {
 
         byte[] key = TestUtils.generateBytes(this.getClass(), "key", 20);
         RocksDBException fakeException = new RocksDBException("fake exception");
-        Mockito.when(db.get(key)).thenThrow(fakeException);
+        // reads go through a shared ReadOptions so that checksum verification can be configured
+        Mockito.when(db.get(Mockito.any(ReadOptions.class), Mockito.eq(key))).thenThrow(fakeException);
         Assertions.assertThrows(RuntimeException.class, () -> dataSource.get(key));
-        Mockito.verify(db, Mockito.times(2)).get(key);
+        Mockito.verify(db, Mockito.times(2)).get(Mockito.any(ReadOptions.class), Mockito.eq(key));
     }
 
     @Test
