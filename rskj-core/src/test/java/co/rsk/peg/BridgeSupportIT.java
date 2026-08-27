@@ -1670,7 +1670,7 @@ public class BridgeSupportIT {
 
         Coin changeValue = Coin.COIN.plus(Coin.COIN);
         releaseWithChangeTx.addOutput(changeValue, retiringFederationAddress);
-        FederationTestUtils.addSignatures(retiringFederation, retiringFedPrivateKeys, releaseWithChangeTx);
+        FederationTestUtils.addSignaturesAndFederationRedeemScript(retiringFederation, retiringFedPrivateKeys, releaseWithChangeTx);
 
         PartialMerkleTree partialMerkleTree = PartialMerkleTree.buildFromLeaves(params, new byte[]{(byte) 0xff}, Collections.singletonList(releaseWithChangeTx.getHash()));
 

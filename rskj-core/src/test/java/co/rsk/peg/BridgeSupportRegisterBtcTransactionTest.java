@@ -4,9 +4,12 @@ import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
+import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseInputScriptThatSpendsFromRedeemScript;
-import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript;
+import static co.rsk.peg.bitcoin.BitcoinUtils.getSigHashForPegoutIndex;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
+import static co.rsk.peg.federation.FederationTestUtils.addSignatures;
+import static co.rsk.peg.federation.FederationTestUtils.addSignaturesAndFederationRedeemScript;
 import static co.rsk.peg.pegin.RejectedPeginReason.*;
 import static co.rsk.peg.utils.NonRefundablePeginReason.OUTPUTS_SENT_TO_DIFFERENT_TYPES_OF_FEDS;
 import static co.rsk.peg.utils.NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
@@ -27,7 +30,6 @@ import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
@@ -46,6 +48,7 @@ import co.rsk.peg.whitelist.WhitelistStorageProvider;
 import co.rsk.peg.whitelist.WhitelistSupportImpl;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
+import co.rsk.test.builders.PegoutTransactionBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -79,6 +82,8 @@ class BridgeSupportRegisterBtcTransactionTest {
     private static final int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
     private static final int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
     private static final int heightBeforeUsingPegoutIndex = 1;
+    private static final Address userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
+    private static final Instant federationCreationTime = Instant.ofEpochMilli(1000L);
 
     private static final int FIRST_OUTPUT_INDEX = 0;
     private static final int FIRST_INPUT_INDEX = 0;
@@ -92,6 +97,11 @@ class BridgeSupportRegisterBtcTransactionTest {
         Optional.empty()
     );
 
+    private final Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+    private final Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+    private final Keccak256 derivationArgumentsHash = RskTestUtils.createHash(0);
+    private final RskAddress lbcAddress = RskTestUtils.generateAddress("seed");
+
     private BridgeConstants bridgeConstants;
     private NetworkParameters networkParameters;
 
@@ -99,15 +109,12 @@ class BridgeSupportRegisterBtcTransactionTest {
     private WhitelistStorageProvider whitelistStorageProvider;
     private FederationStorageProvider federationStorageProvider;
     private FederationSupport federationSupport;
-    private Address userAddress;
 
     private List<BtcECKey> retiredFedSigners;
     private Federation retiredFed;
 
-    private List<BtcECKey> retiringFedSigners;
     private Federation retiringFederation;
 
-    private List<BtcECKey> activeFedSigners;
     private Federation activeFederation;
 
     private BtcBlockStoreWithCache.Factory mockFactory;
@@ -123,8 +130,6 @@ class BridgeSupportRegisterBtcTransactionTest {
     private long rskExecutionBlockNumber;
     private Block rskExecutionBlock;
     private Transaction rskTx;
-
-    private co.rsk.bitcoinj.core.BtcBlock registerHeader;
 
     private BtcBlockStoreWithCache btcBlockStore;
     private BridgeSupport bridgeSupport;
@@ -179,7 +184,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = new PartialMerkleTree(btcMainnetParams, new byte[]{0x3f}, Collections.singletonList(btcTransaction.getHash()), 1);
         Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
 
-        registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+        BtcBlock registerHeader = new BtcBlock(
             btcMainnetParams,
             1,
             BTC_BLOCK_HASH,
@@ -275,39 +280,32 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @BeforeEach
     void init() throws IOException {
-        registerHeader = null;
-
-        userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
-        NetworkParameters btcParams = bridgeMainnetConstants.getBtcParams();
-
         retiredFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
         retiredFed = createFederation(bridgeMainnetConstants, retiredFedSigners);
 
-        retiringFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        List<BtcECKey> retiringFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa04", "fa05", "fa06"}, true
         );
 
-        retiringFedSigners.sort(BtcECKey.PUBKEY_COMPARATOR);
         List<FederationMember> retiringFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiringFedSigners);
-        Instant creationTime = Instant.ofEpochMilli(1000L);
         long retiringFedCreationBlockNumber = 1;
         List<BtcECKey> erpPubKeys = federationMainnetConstants.getErpFedPubKeysList();
         long activationDelay = federationMainnetConstants.getErpFedActivationDelay();
 
         FederationArgs retiringFedArgs =
-            new FederationArgs(retiringFedMembers, creationTime, retiringFedCreationBlockNumber, btcParams);
+            new FederationArgs(retiringFedMembers, federationCreationTime, retiringFedCreationBlockNumber, btcMainnetParams);
         retiringFederation = FederationFactory.buildP2shErpFederation(retiringFedArgs, erpPubKeys, activationDelay);
 
-        activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        List<BtcECKey> activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa07", "fa08", "fa09", "fa10", "fa11"}, true
         );
         activeFedSigners.sort(BtcECKey.PUBKEY_COMPARATOR);
         List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFedSigners);
         long activeFedCreationBlockNumber = 2L;
         FederationArgs activeFedArgs =
-            new FederationArgs(activeFedMembers, creationTime, activeFedCreationBlockNumber, btcParams);
+            new FederationArgs(activeFedMembers, federationCreationTime, activeFedCreationBlockNumber, btcMainnetParams);
         activeFederation = FederationFactory.buildP2shErpFederation(activeFedArgs, erpPubKeys, activationDelay);
 
         mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -653,9 +651,6 @@ class BridgeSupportRegisterBtcTransactionTest {
                 when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
             }
 
-            Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-            Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
             RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
             BridgeSupport bridgeSupport = buildBridgeSupport(activations);
@@ -722,9 +717,6 @@ class BridgeSupportRegisterBtcTransactionTest {
                 when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
             }
 
-            Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-            Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
             RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
             BridgeSupport bridgeSupport = buildBridgeSupport(activations);
@@ -1603,7 +1595,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             btcTransaction.addOutput(amountToSend, activeFederation.getAddress());
             btcTransaction.addOutput(Coin.ZERO, PegTestUtils.createOpReturnScriptForRskWithCustomPayload(1, new byte[]{}));
 
-            FederationTestUtils.addSignatures(unknownFed, signers, btcTransaction);
+            addSignaturesAndFederationRedeemScript(unknownFed, signers, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -1646,7 +1638,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
             btcTransaction.addOutput(amountToSend, retiringFederation.getAddress());
 
-            FederationTestUtils.addSignatures(unknownFed, signers, btcTransaction);
+            addSignaturesAndFederationRedeemScript(unknownFed, signers, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -1690,7 +1682,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
             btcTransaction.addOutput(amountToSend, retiringFederation.getAddress());
 
-            FederationTestUtils.addSignatures(unknownFed, signers, btcTransaction);
+            addSignaturesAndFederationRedeemScript(unknownFed, signers, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -1737,14 +1729,14 @@ class BridgeSupportRegisterBtcTransactionTest {
                 ScriptBuilder.createP2SHMultiSigInputScript(null, unknownFed.getRedeemScript())
             );
             fundingTx.addOutput(PegTestUtils.createBech32Output(btcMainnetParams, Coin.COIN));
-            FederationTestUtils.addSignatures(unknownFed, unknownFedSigners, fundingTx);
+            addSignaturesAndFederationRedeemScript(unknownFed, unknownFedSigners, fundingTx);
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(fundingTx.getOutput(FIRST_OUTPUT_INDEX));
             btcTransaction.addOutput(amountToSend, activeFederation.getAddress());
 
-            FederationTestUtils.addSignatures(unknownFed, unknownFedSigners, btcTransaction);
+            addSignaturesAndFederationRedeemScript(unknownFed, unknownFedSigners, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -1791,7 +1783,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             btcTransaction.addOutput(Coin.ZERO, PegTestUtils.createOpReturnScriptForRskWithCustomPayload(1, new byte[]{}));
 
-            FederationTestUtils.addSignatures(unknownFed, signers, btcTransaction);
+            addSignaturesAndFederationRedeemScript(unknownFed, signers, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -2575,2844 +2567,1126 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     @Nested
-    class PegoutTransaction {
+    class ReleaseTransaction {
 
-        @Test
-        void registerBtcTransaction_withNoChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-            );
-            btcTransaction.addOutput(Coin.COIN, userAddress);
+        private final Coin changeValue = minimumPeginTxValue.add(Coin.SATOSHI);
+        private final List<BtcECKey> erpPubKeys = federationMainnetConstants.getErpFedPubKeysList();
+        private final long activationDelay = federationMainnetConstants.getErpFedActivationDelay();
+        private final NetworkParameters networkParameters = federationMainnetConstants.getBtcParams();
+        private final FederationConstants federationConstants = bridgeMainnetConstants.getFederationConstants();
+        private final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true);
+        private final List<BtcECKey> retiringFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"newMember01", "newMember02", "newMember03", "newMember04", "newMember05", "member06", "member07", "member08", "member09"}, true);
+        Federation activeFederation;
+        Federation retiringFederation;
+        Repository repository;
+        Block currentBlock;
 
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
+        @Nested
+        class PegoutTransaction {
 
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
+            @Test
+            void registerBtcTransaction_withNoChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
 
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, fingerrootActivations)).thenReturn(retiringFederation);
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
 
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
 
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
+            @Test
+            void registerBtcTransaction_withNoChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveLegacyFed(fingerrootActivations);
+                BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
 
-        @Test
-        void registerBtcTransaction_withNoChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-            );
-            btcTransaction.addOutput(Coin.COIN, userAddress);
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
 
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
 
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
+            @Test
+            void registerBtcTransaction_withNoChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
 
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
 
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
 
-        @Test
-        void registerBtcTransaction_withNoChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-            );
-            btcTransaction.addOutput(Coin.COIN, userAddress);
+            @Test
+            void registerBtcTransaction_withNoChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveLegacyFed(arrowhead600Activations);
+                BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
 
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
 
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
 
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
+            @Test
+            void registerBtcTransaction_withNoChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringFed();
+                BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
+                registerPegoutTxSigHash(btcTransaction);
 
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
+                // act
+                registerReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
 
-        @Test
-        void registerBtcTransaction_withNoChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-            );
-            btcTransaction.addOutput(Coin.COIN, userAddress);
+            @Test
+            void registerBtcTransaction_withNoChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveFed();
+                BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
+                registerPegoutTxSigHash(btcTransaction);
 
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
+                // act
+                registerReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
 
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
+            @Test
+            void registerBtcTransaction_notInPegoutTxIndexWithChangeOutputFromFederation_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(allActivations, heightAtWhichToStartUsingPegoutIndex);
+                BtcTransaction btcTransaction = getPegoutTxWithOneInputAndOutputWithChange();
 
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
+                // act
+                registerReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
-        @Test
-        void registerBtcTransaction_withNoChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-            );
-            btcTransaction.addOutput(Coin.COIN, userAddress);
+                // assert
+                assertLogRejectedPegin(logs, btcTransaction, LEGACY_PEGIN_MULTISIG_SENDER);
 
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                activeFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withNoChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-            );
-            btcTransaction.addOutput(Coin.COIN, userAddress);
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                activeFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_notInPegoutTxIndexWithChangeOutputFromFederation_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-
-            Coin amountToSend = Coin.COIN;
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-            );
-            btcTransaction.addOutput(Coin.COIN, userAddress);
-            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, LEGACY_PEGIN_MULTISIG_SENDER);
-            verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(eq(rskTx.getHash().getBytes()), any(BtcTransaction.class), eq(amountToSend));
-
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i + 1),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+                BtcTransaction refundPegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+                assertReleaseRejectionWasSettled(
+                    repository,
+                    bridgeStorageProvider,
+                    logs,
+                    currentBlock.getNumber(),
+                    rskTx.getHash(),
+                    refundPegout,
+                    List.of(changeValue),
+                    changeValue
                 );
+
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
             }
 
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
+            @Test
+            void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertPegoutWithChangeWasProcessed(btcTransaction);
             }
 
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
+            @Test
+            void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveLegacyFed(fingerrootActivations);
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertPegoutWithChangeWasProcessed(btcTransaction);
             }
 
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
+            @Test
+            void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertPegoutWithChangeWasProcessed(btcTransaction);
             }
 
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
+            @Test
+            void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveLegacyFed(arrowhead600Activations);
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertPegoutWithChangeWasProcessed(btcTransaction);
             }
 
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            @Test
+            void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringFed();
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
+                registerPegoutTxSigHash(btcTransaction);
 
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
+                // act
+                registerReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
+                // assert
+                assertPegoutWithChangeWasProcessed(btcTransaction);
+            }
 
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, fingerrootActivations)).thenReturn(retiringFederation);
+            @Test
+            void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveFed();
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
+                registerPegoutTxSigHash(btcTransaction);
 
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
+                // act
+                registerReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
 
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
+                // assert
+                assertPegoutWithChangeWasProcessed(btcTransaction);
+            }
+
+            @Test
+            void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertPegoutWithChangeWasProcessed(btcTransaction);
+            }
+
+            @Test
+            void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveLegacyFed(fingerrootActivations);
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertPegoutWithChangeWasProcessed(btcTransaction);
+            }
+
+            @Test
+            void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertPegoutWithChangeWasProcessed(btcTransaction);
+            }
+
+            @Test
+            void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveLegacyFed(arrowhead600Activations);
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertPegoutWithChangeWasProcessed(btcTransaction);
+            }
+
+            @Test
+            void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringFed();
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
+                registerPegoutTxSigHash(btcTransaction);
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
+
+                // assert
+                assertPegoutWithChangeWasProcessed(btcTransaction);
+            }
+
+            @Test
+            void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveFed();
+                BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
+                registerPegoutTxSigHash(btcTransaction);
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
+
+                // assert
+                assertPegoutWithChangeWasProcessed(btcTransaction);
+            }
+
+            @Test
+            void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
+
+            @Test
+            void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveLegacyFed(fingerrootActivations);
+                BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
+
+            @Test
+            void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
+
+            @Test
+            void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveLegacyFed(arrowhead600Activations);
+                BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
+
+                // act
+                registerReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
+
+            @Test
+            void registerBtcTransaction_withOneOutputAndManyInputs_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringFed();
+                BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
+
+                // act
+                registerPegoutTxSigHash(btcTransaction);
+                registerReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
+
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
+
+            @Test
+            void registerBtcTransaction_withOneOutputAndManyInputs_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveFed();
+                BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
+
+                // act
+                registerPegoutTxSigHash(btcTransaction);
+                registerReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
+
+                // assert
+                assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
+            }
+
+            private void assertPegoutWithChangeWasProcessed(BtcTransaction pegout) throws IOException {
+                assertReleaseTxWasProcessed(pegout);
+                assertUtxosAddedInActiveFed(1);
+                assertNoUtxoWasAddedInRetiringFed();
+            }
+
+            private BtcTransaction getPegoutTxWithOneInputAndOutputWithChange() {
+                return PegoutTransactionBuilder.builder()
+                    .withNetworkParameters(networkParameters)
+                    .withActiveFederation(activeFederation)
+                    .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                    .withOutput(Coin.COIN, userAddress)
+                    .withChangeAmount(changeValue)
+                    .withSignatures(activeFederationKeys)
+                    .build();
+            }
+
+            private BtcTransaction getPegoutTxWithManyOutputsAndInputsWithChangeOutput() {
+                PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                    .withNetworkParameters(networkParameters)
+                    .withActiveFederation(activeFederation)
+                    .withSignatures(activeFederationKeys);
+                addManyInputs(btcTransactionBuilder);
+                addManyOutputsWithChangeOutput(btcTransactionBuilder);
+                return btcTransactionBuilder.build();
+            }
+
+            private BtcTransaction getPegoutTxWithManyOutputsAndOneInputWithChangeOutput() {
+                PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                    .withNetworkParameters(networkParameters)
+                    .withActiveFederation(activeFederation)
+                    .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                    .withSignatures(activeFederationKeys);
+                addManyOutputsWithChangeOutput(btcTransactionBuilder);
+                return btcTransactionBuilder.build();
+            }
+
+            private void addManyOutputsWithChangeOutput(PegoutTransactionBuilder btcTransactionBuilder) {
+                Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
+                Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
+                for (int i = 0; i < 10; i++) {
+                    btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(networkParameters, "user" + i));
+                }
+
+                for (int i = 0; i < 10; i++) {
+                    btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(networkParameters, "user" + i + 10));
+                }
+
+                for (int i = 0; i < 10; i++) {
+                    btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(networkParameters, "user" + i + 20));
+                }
+
+                for (int i = 0; i < 10; i++) {
+                    btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(networkParameters, "user" + i + 30));
+                }
+
+                btcTransactionBuilder.withChangeAmount(changeValue);
+            }
+
+            private BtcTransaction getPegoutTxWithOneOutputAndManyInputsWithoutChange() {
+                Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
+                PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                    .withNetworkParameters(networkParameters)
+                    .withActiveFederation(activeFederation)
+                    .withOutput(minimumPegoutTxValue, userAddress)
+                    .withoutChange()
+                    .withSignatures(activeFederationKeys);
+                addManyInputs(btcTransactionBuilder);
+                return btcTransactionBuilder.build();
+            }
         }
 
-        @Test
-        void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i + 1),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+        @Nested
+        class MigrationTransaction {
+
+            @Test
+            void registerBtcTransaction_withOneInputAndOutput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiringFederation, retiringFederationKeys, activeFederation.getAddress());
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_withOneInputAndOutput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiringFederation, retiringFederationKeys, activeFederation.getAddress());
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_withOneInputAndOutput_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringFed();
+                BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiringFederation, retiringFederationKeys, activeFederation.getAddress());
+
+                // act
+                registerPegoutTxSigHash(migrationTx);
+                registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_notInPegoutTxIndex_forArrowhead_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiringFederation, retiringFederationKeys, activeFederation.getAddress());
+
+                // act
+                registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
+
+                // assert
+                assertLogRejectedPegin(logs, migrationTx, LEGACY_PEGIN_MULTISIG_SENDER);
+                BtcTransaction refundPegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+                assertLegacyReleaseRejectionWasSettled(
+                    bridgeStorageProvider,
+                    logs,
+                    currentBlock.getNumber(),
+                    rskTx.getHash(),
+                    refundPegout,
+                    Coin.COIN,
+                    arrowhead600Activations
                 );
+                assertReleaseTxWasProcessedWithNoNewUtxo(migrationTx);
             }
 
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
-            }
+            @Test
+            void registerBtcTransaction_notInPegoutTxIndex_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringFed();
+                BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiringFederation, retiringFederationKeys, activeFederation.getAddress());
 
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
-            }
+                // act
+                registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
 
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
-            }
-
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i + 1),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+                // assert
+                assertLogRejectedPegin(logs, migrationTx, LEGACY_PEGIN_MULTISIG_SENDER);
+                BtcTransaction refundPegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+                assertReleaseRejectionWasSettled(
+                    repository,
+                    bridgeStorageProvider,
+                    logs,
+                    currentBlock.getNumber(),
+                    rskTx.getHash(),
+                    refundPegout,
+                    List.of(Coin.COIN),
+                    Coin.COIN
                 );
+                assertReleaseTxWasProcessedWithNoNewUtxo(migrationTx);
             }
 
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
+            @Test
+            void registerBtcTransaction_withManyOutputsAndInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndInputs();
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
+            @Test
+            void registerBtcTransaction_withManyOutputsAndInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndInputs();
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
+            @Test
+            void registerBtcTransaction_withManyOutputsAndInputs_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringFed();
+                BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndInputs();
+
+                // act
+                registerPegoutTxSigHash(migrationTx);
+                registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
+            @Test
+            void registerBtcTransaction_withManyOutputsAndOneInput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndOneInput();
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
+            @Test
+            void registerBtcTransaction_withManyOutputsAndOneInput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndOneInput();
 
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
 
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
+            @Test
+            void registerBtcTransaction_withManyOutputsAndOneInput_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringFed();
+                BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndOneInput();
 
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
+                // act
+                registerPegoutTxSigHash(migrationTx);
+                registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
 
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
 
-        @Test
-        void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i + 1),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+            @Test
+            void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                BtcTransaction migrationTx = getMigrationTxWithOneOutputAndManyInputs();
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                BtcTransaction migrationTx = getMigrationTxWithOneOutputAndManyInputs();
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_withOneOutputAndManyInputs_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringFed();
+                BtcTransaction migrationTx = getMigrationTxWithOneOutputAndManyInputs();
+
+                // act
+                registerPegoutTxSigHash(migrationTx);
+                registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                BtcTransaction migrationTx = getMigrationTxWithFlyoverUtxo(fingerrootActivations);
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                BtcTransaction migrationTx = getMigrationTxWithFlyoverUtxo(arrowhead600Activations);
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringFed();
+                BtcTransaction migrationTx = getMigrationTxWithFlyoverUtxo(allActivations);
+
+                // act
+                registerPegoutTxSigHash(migrationTx);
+                registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                BtcTransaction migrationTx = getMigrationTxWithManyInputsAndOutputsWithFlyoverUtxo(fingerrootActivations);
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringLegacyFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                BtcTransaction migrationTx = getMigrationTxWithManyInputsAndOutputsWithFlyoverUtxo(arrowhead600Activations);
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveAndRetiringFed();
+                BtcTransaction migrationTx = getMigrationTxWithManyInputsAndOutputsWithFlyoverUtxo(allActivations);
+
+                // act
+                registerPegoutTxSigHash(migrationTx);
+                registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_fromLastRetiredFederation_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveLegacyFed(fingerrootActivations);
+                federationStorageProvider.setLastRetiredFederationP2SHScript(retiredFed.getP2SHScript());
+                BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiredFed, retiredFedSigners, activeFederation.getAddress());
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_fromLastRetiredFederation_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveLegacyFed(arrowhead600Activations);
+                federationStorageProvider.setLastRetiredFederationP2SHScript(retiredFed.getP2SHScript());
+                BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiredFed, retiredFedSigners, activeFederation.getAddress());
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_fromRetiredFederationNotInStorage_forFingerroot_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveLegacyFed(fingerrootActivations);
+                BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiredFed, retiredFedSigners, activeFederation.getAddress());
+
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
+
+                // assert
+                assertLogRejectedPegin(logs, migrationTx, LEGACY_PEGIN_MULTISIG_SENDER);
+                BtcTransaction refundPegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+                assertLegacyReleaseRejectionWasSettled(
+                    bridgeStorageProvider,
+                    logs,
+                    currentBlock.getNumber(),
+                    rskTx.getHash(),
+                    refundPegout,
+                    Coin.COIN,
+                    fingerrootActivations
                 );
+                assertReleaseTxWasProcessedWithNoNewUtxo(migrationTx);
             }
 
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
-            }
+            @Test
+            void registerBtcTransaction_fromRetiredFederationNotInStorage_withoutPegoutIndex_forArrowhead_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveLegacyFed(arrowhead600Activations);
+                BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiredFed, retiredFedSigners, activeFederation.getAddress());
 
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
-            }
+                // act
+                registerReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex);
 
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
-            }
-
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i + 1),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+                // assert
+                assertLogRejectedPegin(logs, migrationTx, LEGACY_PEGIN_MULTISIG_SENDER);
+                BtcTransaction refundPegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+                assertLegacyReleaseRejectionWasSettled(
+                    bridgeStorageProvider,
+                    logs,
+                    currentBlock.getNumber(),
+                    rskTx.getHash(),
+                    refundPegout,
+                    Coin.COIN,
+                    arrowhead600Activations
                 );
+                assertReleaseTxWasProcessedWithNoNewUtxo(migrationTx);
             }
 
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
+            @Test
+            void registerBtcTransaction_fromRetiredFederationNotInStorage_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                setupActiveFed();
+                BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiredFed, retiredFedSigners, activeFederation.getAddress());
+
+                // act
+                registerPegoutTxSigHash(migrationTx);
+                registerReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex);
+
+                // assert
+                assertMigrationTxWasProcessed(migrationTx);
             }
 
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
+            private void assertMigrationTxWasProcessed(BtcTransaction migrationTx) throws IOException {
+                assertReleaseTxWasProcessed(migrationTx);
+                assertUtxosAddedInActiveFed(migrationTx.getOutputs().size());
+                assertNoUtxoWasAddedInRetiringFed();
             }
 
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
-            }
-
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                activeFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i + 1),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+            private BtcTransaction getMigrationTxWithFlyoverUtxo(ActivationConfig.ForBlock activations) {
+                Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+                    derivationArgumentsHash,
+                    userRefundBtcAddress,
+                    lpBtcAddress,
+                    lbcAddress,
+                    activations
                 );
-            }
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
-            }
-
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                activeFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-            );
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
-            }
-
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, fingerrootActivations)).thenReturn(retiringFederation);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-            );
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
-            }
-
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-            );
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
-            }
-
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-            );
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
-            }
-
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-            );
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
-            }
-
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                activeFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-            );
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
-            }
-
-            btcTransaction.addOutput(quarterMinimumPegoutTxValue, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                activeFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i + 1),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+                Script retiringFederationFlyoverRedeemScript = PegUtils.getFlyoverFederationRedeemScript(
+                    flyoverDerivationHash,
+                    retiringFederation.getRedeemScript()
                 );
-            }
 
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
+                BtcTransaction migrationTx = PegoutTransactionBuilder.builder()
+                    .withNetworkParameters(networkParameters)
+                    .withActiveFederation(retiringFederation)
+                    .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                    .withOutput(Coin.COIN, activeFederation.getAddress())
+                    .withoutChange()
+                    .build();
 
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, fingerrootActivations)).thenReturn(retiringFederation);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i + 1),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+                addSpendingFederationBaseScript(
+                    migrationTx,
+                    FIRST_INPUT_INDEX,
+                    retiringFederationFlyoverRedeemScript,
+                    retiringFederation.getFormatVersion()
                 );
+                addSignatures(retiringFederation, retiringFederationKeys, migrationTx);
+
+                return migrationTx;
             }
 
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
+            private BtcTransaction getMigrationTxWithManyOutputsAndInputs() {
+                PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                    .withNetworkParameters(networkParameters)
+                    .withActiveFederation(retiringFederation)
+                    .withoutChange()
+                    .withSignatures(retiringFederationKeys);
+                addManyInputs(btcTransactionBuilder);
+                addManyMigrationOutputs(btcTransactionBuilder);
+                return btcTransactionBuilder.build();
+            }
 
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i + 1),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+            private BtcTransaction getMigrationTxWithManyInputsAndOutputsWithFlyoverUtxo(ActivationConfig.ForBlock activations) {
+                Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+                    derivationArgumentsHash,
+                    userRefundBtcAddress,
+                    lpBtcAddress,
+                    lbcAddress,
+                    activations
                 );
-            }
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i + 1),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+                Script retiringFederationFlyoverRedeemScript = PegUtils.getFlyoverFederationRedeemScript(
+                    flyoverDerivationHash,
+                    retiringFederation.getRedeemScript()
                 );
-            }
 
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
+                Sha256Hash flyoverInputTxHash = BitcoinTestUtils.createHash(123);
+                PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                    .withNetworkParameters(networkParameters)
+                    .withActiveFederation(retiringFederation)
+                    .withInput(flyoverInputTxHash, FIRST_OUTPUT_INDEX, Coin.COIN)
+                    .withoutChange();
+                addManyInputs(btcTransactionBuilder);
+                addManyMigrationOutputs(btcTransactionBuilder);
+                BtcTransaction migrationTx = btcTransactionBuilder.build();
 
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withOneOutputAndManyInputs_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i + 1),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+                addSpendingFederationBaseScript(
+                    migrationTx,
+                    FIRST_INPUT_INDEX,
+                    retiringFederationFlyoverRedeemScript,
+                    retiringFederation.getFormatVersion()
                 );
+                addSignatures(retiringFederation, retiringFederationKeys, migrationTx);
+
+                return migrationTx;
             }
 
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
+            private BtcTransaction getMigrationTxWithManyOutputsAndOneInput() {
+                PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                    .withNetworkParameters(networkParameters)
+                    .withActiveFederation(retiringFederation)
+                    .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                    .withoutChange()
+                    .withSignatures(retiringFederationKeys);
+                addManyMigrationOutputs(btcTransactionBuilder);
+                return btcTransactionBuilder.build();
+            }
 
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
+            private void addManyMigrationOutputs(PegoutTransactionBuilder btcTransactionBuilder) {
+                Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
+                Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
+                for (int i = 0; i < 10; i++) {
+                    btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
+                }
 
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
+                for (int i = 0; i < 10; i++) {
+                    btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), activeFederation.getAddress());
+                }
 
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
+                for (int i = 0; i < 10; i++) {
+                    btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
+                }
 
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                activeFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
+                for (int i = 0; i < 10; i++) {
+                    btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.COIN), activeFederation.getAddress());
+                }
+            }
 
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
 
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
+            private BtcTransaction getMigrationTxWithOneOutputAndManyInputs() {
+                Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
+                PegoutTransactionBuilder btcTransactionBuilder = PegoutTransactionBuilder.builder()
+                    .withNetworkParameters(networkParameters)
+                    .withActiveFederation(retiringFederation)
+                    .withOutput(minimumPegoutTxValue, activeFederation.getAddress())
+                    .withoutChange()
+                    .withSignatures(retiringFederationKeys);
+                addManyInputs(btcTransactionBuilder);
+                return btcTransactionBuilder.build();
+            }
         }
 
-        @Test
-        void registerBtcTransaction_withOneOutputAndManyInputs_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i + 1),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
-                );
-            }
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
-
-            FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                activeFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-    }
-
-    @Nested
-    class MigrationTransaction {
-
-        @Test
-        void registerBtcTransaction_withOneInputAndOutput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiringFederation.getRedeemScript());
-            Script inputScript = p2SHScript.createEmptyInputScript(null, retiringFederation.getRedeemScript());
-            btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, fingerrootActivations)).thenReturn(retiringFederation);
-            when(federationStorageProvider.getLastRetiredFederationP2SHScript(fingerrootActivations)).thenReturn(Optional.ofNullable(inputScript));
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withOneInputAndOutput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiringFederation.getRedeemScript());
-            Script inputScript = p2SHScript.createEmptyInputScript(null, retiringFederation.getRedeemScript());
-            btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
-            when(federationStorageProvider.getLastRetiredFederationP2SHScript(arrowhead600Activations)).thenReturn(Optional.ofNullable(inputScript));
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withOneInputAndOutput_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiringFederation.getRedeemScript());
-            Script inputScript = p2SHScript.createEmptyInputScript(null, retiringFederation.getRedeemScript());
-            btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
-            when(federationStorageProvider.getLastRetiredFederationP2SHScript(allActivations)).thenReturn(Optional.ofNullable(inputScript));
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                retiringFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_notInPegoutTxIndex_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-
-            Coin amountToSend = Coin.COIN;
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
-            );
-            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, LEGACY_PEGIN_MULTISIG_SENDER);
-            verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(eq(rskTx.getHash().getBytes()), any(BtcTransaction.class), eq(amountToSend));
-            verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
-
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-
-            assertTrue(activeFederationUtxos.isEmpty());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
-                );
-            }
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), activeFederation.getAddress());
-            }
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, fingerrootActivations)).thenReturn(retiringFederation);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertEquals(40, activeFederationUtxos.size());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
-                );
-            }
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), activeFederation.getAddress());
-            }
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertEquals(40, activeFederationUtxos.size());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndInputs_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
-                );
-            }
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), activeFederation.getAddress());
-            }
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                retiringFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertEquals(40, activeFederationUtxos.size());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndOneInput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
-            );
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), activeFederation.getAddress());
-            }
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, fingerrootActivations)).thenReturn(retiringFederation);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertEquals(40, activeFederationUtxos.size());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndOneInput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
-            );
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), activeFederation.getAddress());
-            }
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertEquals(40, activeFederationUtxos.size());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withManyOutputsAndOneInput_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-
-            btcTransaction.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
-            );
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
-            }
-
-            for (int i = 0; i < 10; i++) {
-                btcTransaction.addOutput(minimumPegoutTxValue.add(Coin.COIN), activeFederation.getAddress());
-            }
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                retiringFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertEquals(40, activeFederationUtxos.size());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
-                );
-            }
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, fingerrootActivations)).thenReturn(retiringFederation);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
-                );
-            }
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withOneOutputAndManyInputs_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            for (int i = 0; i < 50; i++) {
-                btcTransaction.addInput(
-                    BitcoinTestUtils.createHash(i),
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
-                );
-            }
-
-            Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
-            btcTransaction.addOutput(minimumPegoutTxValue, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                retiringFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, fingerrootActivations)).thenReturn(retiringFederation);
-
-            Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-            Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
-                derivationArgumentsHash,
-                userRefundBtcAddress,
-                lpBtcAddress,
-                lbcAddress,
-                fingerrootActivations
-            );
-
-            Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        void setUp(ForBlock activations) {
+            repository = createRepository();
+            bridgeStorageProvider = new BridgeStorageProvider(repository, networkParameters, activations);
+            logs = new ArrayList<>();
+            bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainnetConstants,
-                activeFederation.getRedeemScript(),
-                Sha256Hash.wrap(flyoverDerivationHash.getBytes())
+                activations,
+                logs
             );
 
-            BtcTransaction fundingTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-
-            BtcECKey senderBtcKey = new BtcECKey();
-            fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
-
-            Coin amountToSend = minimumPeginTxValue;
-            fundingTx.addOutput(amountToSend, flyoverFederationAddress);
-            fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
-
-            BtcTransaction btcTransaction = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-            btcTransaction.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
-            btcTransaction.addOutput(Coin.COIN.multiply(10), activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            TransactionWitness txWitness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFederation.getRedeemScript());
-            btcTransaction.setWitness(FIRST_INPUT_INDEX, txWitness);
-
-            createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            PartialMerkleTree pmtWithWitness = createPmtWithWitness(btcTransaction);
-
-            // act
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmtWithWitness.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
-
-            Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-            Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
-                derivationArgumentsHash,
-                userRefundBtcAddress,
-                lpBtcAddress,
-                lbcAddress,
-                arrowhead600Activations
-            );
-
-            Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
-                bridgeMainnetConstants,
-                activeFederation.getRedeemScript(),
-                Sha256Hash.wrap(flyoverDerivationHash.getBytes())
-            );
-
-            BtcTransaction fundingTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-
-            BtcECKey senderBtcKey = new BtcECKey();
-            fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
-
-            Coin amountToSend = minimumPeginTxValue;
-            fundingTx.addOutput(amountToSend, flyoverFederationAddress);
-            fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
-
-            BtcTransaction btcTransaction = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-            btcTransaction.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
-            btcTransaction.addOutput(Coin.COIN.multiply(10), activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            TransactionWitness txWitness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFederation.getRedeemScript());
-            btcTransaction.setWitness(FIRST_INPUT_INDEX, txWitness);
-
-            createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            PartialMerkleTree pmtWithWitness = createPmtWithWitness(btcTransaction);
-
-            // act
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmtWithWitness.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
-
-            Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-            Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
-                derivationArgumentsHash,
-                userRefundBtcAddress,
-                lpBtcAddress,
-                lbcAddress,
-                allActivations
-            );
-
-            Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
-                bridgeMainnetConstants,
-                activeFederation.getRedeemScript(),
-                Sha256Hash.wrap(flyoverDerivationHash.getBytes())
-            );
-
-            BtcTransaction fundingTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-
-            BtcECKey senderBtcKey = new BtcECKey();
-            fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
-
-            Coin amountToSend = minimumPeginTxValue;
-            fundingTx.addOutput(amountToSend, flyoverFederationAddress);
-            fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
-
-            BtcTransaction btcTransaction = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-            btcTransaction.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
-            btcTransaction.addOutput(Coin.COIN.multiply(10), activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            TransactionWitness txWitness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFederation.getRedeemScript());
-            btcTransaction.setWitness(FIRST_INPUT_INDEX, txWitness);
-
-            createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            PartialMerkleTree pmtWithWitness = createPmtWithWitness(btcTransaction);
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                retiringFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmtWithWitness.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, fingerrootActivations)).thenReturn(retiringFederation);
-
-            Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-            Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
-                derivationArgumentsHash,
-                userRefundBtcAddress,
-                lpBtcAddress,
-                lbcAddress,
-                fingerrootActivations
-            );
-
-            Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
-                bridgeMainnetConstants,
-                activeFederation.getRedeemScript(),
-                Sha256Hash.wrap(flyoverDerivationHash.getBytes())
-            );
-
-            BtcTransaction fundingTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-
-            BtcECKey senderBtcKey = new BtcECKey();
-            fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
-
-            Coin amountToSend = minimumPeginTxValue;
-            fundingTx.addOutput(amountToSend, flyoverFederationAddress);
-            fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
-
-            BtcTransaction btcTransaction = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-            btcTransaction.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
-            btcTransaction.addOutput(Coin.COIN.multiply(10), activeFederation.getAddress());
-
-            for (int i = 0; i < 9; i++) {
-                BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-                btcTx.addInput(BitcoinTestUtils.createHash(i), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-                btcTx.addOutput(Coin.COIN, retiringFederation.getAddress());
-                btcTransaction.addInput(btcTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
-                btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-            }
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            TransactionWitness txWitness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFederation.getRedeemScript());
-            btcTransaction.setWitness(FIRST_INPUT_INDEX, txWitness);
-
-            createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            PartialMerkleTree pmtWithWitness = createPmtWithWitness(btcTransaction);
-
-            // act
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmtWithWitness.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertEquals(10, activeFederationUtxos.size());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
-
-            Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-            Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
-                derivationArgumentsHash,
-                userRefundBtcAddress,
-                lpBtcAddress,
-                lbcAddress,
-                arrowhead600Activations
-            );
-
-            Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
-                bridgeMainnetConstants,
-                activeFederation.getRedeemScript(),
-                Sha256Hash.wrap(flyoverDerivationHash.getBytes())
-            );
-
-            BtcTransaction fundingTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-
-            BtcECKey senderBtcKey = new BtcECKey();
-            fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
-
-            Coin amountToSend = minimumPeginTxValue;
-            fundingTx.addOutput(amountToSend, flyoverFederationAddress);
-            fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
-
-            BtcTransaction btcTransaction = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-            btcTransaction.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
-            btcTransaction.addOutput(Coin.COIN.multiply(10), activeFederation.getAddress());
-
-            for (int i = 0; i < 9; i++) {
-                BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-                btcTx.addInput(BitcoinTestUtils.createHash(i), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-                btcTx.addOutput(Coin.COIN, retiringFederation.getAddress());
-                btcTransaction.addInput(btcTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
-                btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-            }
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            TransactionWitness txWitness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFederation.getRedeemScript());
-            btcTransaction.setWitness(FIRST_INPUT_INDEX, txWitness);
-
-            createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            PartialMerkleTree pmtWithWitness = createPmtWithWitness(btcTransaction);
-
-            // act
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmtWithWitness.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertEquals(10, activeFederationUtxos.size());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        @Test
-        void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            when(federationStorageProvider.getOldFederation(federationMainnetConstants, allActivations)).thenReturn(retiringFederation);
-
-            Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
-            Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
-            Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
-                derivationArgumentsHash,
-                userRefundBtcAddress,
-                lpBtcAddress,
-                lbcAddress,
-                allActivations
-            );
-
-            Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
-                bridgeMainnetConstants,
-                activeFederation.getRedeemScript(),
-                Sha256Hash.wrap(flyoverDerivationHash.getBytes())
-            );
-
-            BtcTransaction fundingTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-
-            BtcECKey senderBtcKey = new BtcECKey();
-            fundingTx.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
-
-            Coin amountToSend = minimumPeginTxValue;
-            fundingTx.addOutput(amountToSend, flyoverFederationAddress);
-            fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
-
-            BtcTransaction btcTransaction = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-            btcTransaction.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
-            btcTransaction.addOutput(Coin.COIN.multiply(10), activeFederation.getAddress());
-
-            for (int i = 0; i < 9; i++) {
-                BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-                btcTx.addInput(BitcoinTestUtils.createHash(i), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-                btcTx.addOutput(Coin.COIN, retiringFederation.getAddress());
-                btcTransaction.addInput(btcTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
-                btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-            }
-
-            FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
-
-            TransactionWitness txWitness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFederation.getRedeemScript());
-            btcTransaction.setWitness(FIRST_INPUT_INDEX, txWitness);
-
-            createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            PartialMerkleTree pmtWithWitness = createPmtWithWitness(btcTransaction);
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                retiringFederation.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmtWithWitness.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeStorageProvider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            assertEquals(10, activeFederationUtxos.size());
-            assertTrue(retiringFederationUtxos.isEmpty());
-        }
-
-        // old fed
-        @Test
-        void registerBtcTransaction_signedByOldFederation_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
-            FederationConstants federationRegTestConstants = bridgeRegTestConstants.getFederationConstants();
-            NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
-            Context.propagate(new Context(btcRegTestsParams));
-
-            final List<BtcECKey> regtestOldFederationPrivateKeys = Arrays.asList(
-                BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
-                BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
-                BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
-            );
-            when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
-
-            LockWhitelist lockWhitelist = mock(LockWhitelist.class);
-            when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
-            when(whitelistStorageProvider.getLockWhitelist(fingerrootActivations, btcRegTestsParams)).thenReturn(lockWhitelist);
-
-            when(federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestsParams, fingerrootActivations)).thenReturn(activeFederationUtxos);
-
-            pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
-            when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
-
-            Federation oldFederation = createFederation(bridgeRegTestConstants, regtestOldFederationPrivateKeys);
-
-            // we need to recreate the active fed since we are in regtest
-            List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFedSigners);
-            long activeFedCreationBlockNumber = 2L;
-            Instant creationTime = Instant.ofEpochMilli(1000L);
-            List<BtcECKey> erpPubKeys = federationRegTestConstants.getErpFedPubKeysList();
-            long activationDelay = federationRegTestConstants.getErpFedActivationDelay();
-            FederationArgs activeFedArgs =
-                new FederationArgs(activeFedMembers, creationTime, activeFedCreationBlockNumber, btcRegTestsParams);
-            activeFederation = FederationFactory.buildP2shErpFederation(activeFedArgs, erpPubKeys, activationDelay);
-            when(federationStorageProvider.getNewFederation(any(), any())).thenReturn(activeFederation);
-
-            BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
-            Script inputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, oldFederation.getRedeemScript());
-            migrationTx.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                inputScript
-            );
-            migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            when(federationStorageProvider.getLastRetiredFederationP2SHScript(fingerrootActivations)).thenReturn(Optional.ofNullable(inputScript));
-
-            FederationTestUtils.addSignatures(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
-
-            PartialMerkleTree pmt = new PartialMerkleTree(btcRegTestsParams, new byte[]{0x3f}, Collections.singletonList(migrationTx.getHash()), 1);
-            Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
-
-            registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
-                btcRegTestsParams,
-                1,
-                BTC_BLOCK_HASH,
-                blockMerkleRoot,
-                1,
-                1,
-                1,
-                new ArrayList<>()
-            );
-
-            StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), heightBeforeUsingPegoutIndex);
-
-            BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-
-            co.rsk.bitcoinj.core.BtcBlock headBlock = new co.rsk.bitcoinj.core.BtcBlock(
-                btcRegTestsParams,
-                1,
-                BitcoinTestUtils.createHash(2),
-                Sha256Hash.of(new byte[]{1}),
-                1,
-                1,
-                1,
-                new ArrayList<>()
-            );
-
-            StoredBlock chainHead = new StoredBlock(
-                headBlock,
-                new BigInteger("0"),
-                heightBeforeUsingPegoutIndex + bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations()
-            );
-            when(btcBlockStore.getChainHead()).thenReturn(chainHead);
-
-            when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
-            when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
-
-            co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
-                btcRegTestsParams,
-                1,
-                BTC_BLOCK_HASH,
-                blockMerkleRoot,
-                1,
-                1,
-                1,
-                new ArrayList<>()
-            );
-
-            mockChainOfStoredBlocks(
-                btcBlockStore,
-                btcBlock,
-                heightBeforeUsingPegoutIndex + bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations(),
-                heightBeforeUsingPegoutIndex
-            );
-
-            FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-            when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
-
-            federationSupport = FederationSupportBuilder.builder()
-                .withFederationConstants(bridgeRegTestConstants.getFederationConstants())
+            StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+            federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+
+            // Move the required blocks ahead for the new powpeg to become active
+            rskExecutionBlockNumber = activeFederation.getCreationBlockNumber()
+                + federationMainnetConstants.getFederationActivationAge(activations);
+            currentBlock = createRskBlock(rskExecutionBlockNumber);
+
+            FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationConstants)
                 .withFederationStorageProvider(federationStorageProvider)
-                .withRskExecutionBlock(rskExecutionBlock)
-                .withActivations(fingerrootActivations)
+                .withRskExecutionBlock(currentBlock)
+                .withActivations(activations)
                 .build();
 
-            // act
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBtcBlockStoreFactory(mockFactory)
-                .withBridgeConstants(bridgeRegTestConstants)
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters, 100, 100);
+            btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProvider, activations);
+            btcLockSenderProvider = new BtcLockSenderProvider();
+            peginInstructionsProvider = new PeginInstructionsProvider();
+
+            BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
+            bridgeSupport = bridgeSupportBuilder
+                .withActivations(activations)
+                .withExecutionBlock(currentBlock)
+                .withBridgeConstants(bridgeMainnetConstants)
                 .withProvider(bridgeStorageProvider)
-                .withActivations(fingerrootActivations)
-                .withSignatureCache(signatureCache)
+                .withRepository(repository)
                 .withEventLogger(bridgeEventLogger)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
                 .withBtcLockSenderProvider(btcLockSenderProvider)
                 .withPeginInstructionsProvider(peginInstructionsProvider)
-                .withExecutionBlock(rskExecutionBlock)
-                .withFeePerKbSupport(feePerKbSupport)
                 .withFederationSupport(federationSupport)
-                .build();
-
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                migrationTx.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeEventLogger, never()).logNonRefundablePegin(migrationTx, LEGACY_PEGIN_UNDETERMINED_SENDER);
-            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-            verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
-            assertUtxoWasRegistered(migrationTx);
-        }
-
-        @Test
-        void registerBtcTransaction_signedByOldFederation_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
-            FederationConstants federationRegTestConstants = bridgeRegTestConstants.getFederationConstants();
-            NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
-            Context.propagate(new Context(btcRegTestsParams));
-
-            final List<BtcECKey> regtestOldFederationPrivateKeys = Arrays.asList(
-                BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
-                BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
-                BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
-            );
-            when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
-
-            LockWhitelist lockWhitelist = mock(LockWhitelist.class);
-            when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
-            when(whitelistStorageProvider.getLockWhitelist(arrowhead600Activations, btcRegTestsParams)).thenReturn(lockWhitelist);
-
-            when(federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestsParams, arrowhead600Activations)).thenReturn(activeFederationUtxos);
-
-            pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
-            when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
-
-            Federation oldFederation = createFederation(bridgeRegTestConstants, regtestOldFederationPrivateKeys);
-
-            // we need to recreate the active fed since we are in regtest
-            List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFedSigners);
-            long activeFedCreationBlockNumber = 2L;
-            Instant creationTime = Instant.ofEpochMilli(1000L);
-            List<BtcECKey> erpPubKeys = federationRegTestConstants.getErpFedPubKeysList();
-            long activationDelay = federationRegTestConstants.getErpFedActivationDelay();
-            FederationArgs activeFedArgs =
-                new FederationArgs(activeFedMembers, creationTime, activeFedCreationBlockNumber, btcRegTestsParams);
-            activeFederation = FederationFactory.buildP2shErpFederation(activeFedArgs, erpPubKeys, activationDelay);
-            when(federationStorageProvider.getNewFederation(any(), any())).thenReturn(activeFederation);
-
-            BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
-            Script inputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, oldFederation.getRedeemScript());
-            migrationTx.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                inputScript
-            );
-            migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            when(federationStorageProvider.getLastRetiredFederationP2SHScript(arrowhead600Activations)).thenReturn(Optional.ofNullable(inputScript));
-
-            FederationTestUtils.addSignatures(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
-
-            PartialMerkleTree pmt = new PartialMerkleTree(btcRegTestsParams, new byte[]{0x3f}, Collections.singletonList(migrationTx.getHash()), 1);
-            Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
-
-            registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
-                btcRegTestsParams,
-                1,
-                BTC_BLOCK_HASH,
-                blockMerkleRoot,
-                1,
-                1,
-                1,
-                new ArrayList<>()
-            );
-
-            StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), heightBeforeUsingPegoutIndex);
-
-            BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-
-            co.rsk.bitcoinj.core.BtcBlock headBlock = new co.rsk.bitcoinj.core.BtcBlock(
-                btcRegTestsParams,
-                1,
-                BitcoinTestUtils.createHash(2),
-                Sha256Hash.of(new byte[]{1}),
-                1,
-                1,
-                1,
-                new ArrayList<>()
-            );
-
-            int heightWithEnoughConfirmations = heightBeforeUsingPegoutIndex + bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations();
-            StoredBlock chainHead = new StoredBlock(
-                headBlock,
-                new BigInteger("0"),
-                heightWithEnoughConfirmations
-            );
-            when(btcBlockStore.getChainHead()).thenReturn(chainHead);
-
-            when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
-            when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
-
-            co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
-                btcRegTestsParams,
-                1,
-                BTC_BLOCK_HASH,
-                blockMerkleRoot,
-                1,
-                1,
-                1,
-                new ArrayList<>()
-            );
-
-            mockChainOfStoredBlocks(
-                btcBlockStore,
-                btcBlock,
-                heightWithEnoughConfirmations,
-                heightBeforeUsingPegoutIndex
-            );
-
-            FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-            when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
-
-            federationSupport = FederationSupportBuilder.builder()
-                .withFederationConstants(bridgeRegTestConstants.getFederationConstants())
-                .withFederationStorageProvider(federationStorageProvider)
-                .withRskExecutionBlock(rskExecutionBlock)
-                .withActivations(arrowhead600Activations)
-                .build();
-
-            // act
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBtcBlockStoreFactory(mockFactory)
-                .withBridgeConstants(bridgeRegTestConstants)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(arrowhead600Activations)
-                .withSignatureCache(signatureCache)
-                .withEventLogger(bridgeEventLogger)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .withPeginInstructionsProvider(peginInstructionsProvider)
-                .withExecutionBlock(rskExecutionBlock)
                 .withFeePerKbSupport(feePerKbSupport)
-                .withFederationSupport(federationSupport)
+                .build();
+        }
+
+        private void setupActiveAndRetiringLegacyFed(ForBlock activations, int creationBlockNumber) {
+            activeFederation = P2shErpFederationBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withMembersBtcPublicKeys(activeFederationKeys)
+                .withErpActivationDelay(activationDelay)
+                .withErpPublicKeys(erpPubKeys)
+                .withCreationBlockNumber(creationBlockNumber)
+                .build();
+            retiringFederation = P2shErpFederationBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withMembersBtcPublicKeys(retiringFederationKeys)
+                .withErpActivationDelay(activationDelay)
+                .withErpPublicKeys(erpPubKeys)
+                .withCreationBlockNumber(creationBlockNumber)
+                .build();
+            setUp(activations);
+            federationStorageProvider.setNewFederation(activeFederation);
+            federationStorageProvider.setOldFederation(retiringFederation);
+        }
+
+        private void setupActiveLegacyFed(ForBlock activations) {
+            activeFederation = P2shErpFederationBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withMembersBtcPublicKeys(activeFederationKeys)
+                .withErpActivationDelay(activationDelay)
+                .withErpPublicKeys(erpPubKeys)
+                .withCreationBlockNumber(heightBeforeUsingPegoutIndex)
+                .build();
+            setUp(activations);
+            federationStorageProvider.setNewFederation(activeFederation);
+        }
+
+        private void setupActiveAndRetiringFed() {
+            retiringFederation = P2shErpFederationBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withMembersBtcPublicKeys(retiringFederationKeys)
+                .withErpActivationDelay(activationDelay)
+                .withErpPublicKeys(erpPubKeys)
+                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
+                .build();
+            activeFederation = P2shP2wshErpFederationBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withMembersBtcPublicKeys(activeFederationKeys)
+                .withErpActivationDelay(activationDelay)
+                .withErpPublicKeys(erpPubKeys)
+                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
                 .build();
 
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                migrationTx.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeEventLogger, never()).logNonRefundablePegin(migrationTx, LEGACY_PEGIN_UNDETERMINED_SENDER);
-            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-            verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
-            assertUtxoWasRegistered(migrationTx);
+            setUp(allActivations);
+            federationStorageProvider.setNewFederation(activeFederation);
+            federationStorageProvider.setOldFederation(retiringFederation);
         }
 
-        @Test
-        void registerBtcTransaction_signedByOldFederation_notInPegoutTxIndex_withPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
-            FederationConstants federationRegTestConstants = bridgeRegTestConstants.getFederationConstants();
-            NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
-            Context.propagate(new Context(btcRegTestsParams));
-
-            final List<BtcECKey> regtestOldFederationPrivateKeys = Arrays.asList(
-                BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
-                BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
-                BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
-            );
-            when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
-
-            LockWhitelist lockWhitelist = mock(LockWhitelist.class);
-            when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
-            when(whitelistStorageProvider.getLockWhitelist(allActivations, btcRegTestsParams)).thenReturn(lockWhitelist);
-
-            when(federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestsParams, arrowhead600Activations)).thenReturn(activeFederationUtxos);
-
-            pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
-            when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
-
-            Federation oldFederation = createFederation(bridgeRegTestConstants, regtestOldFederationPrivateKeys);
-
-            // we need to recreate the active fed since we are in regtest
-            List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFedSigners);
-            long activeFedCreationBlockNumber = 2L;
-            Instant creationTime = Instant.ofEpochMilli(1000L);
-            List<BtcECKey> erpPubKeys = federationRegTestConstants.getErpFedPubKeysList();
-            long activationDelay = federationRegTestConstants.getErpFedActivationDelay();
-            FederationArgs activeFedArgs =
-                new FederationArgs(activeFedMembers, creationTime, activeFedCreationBlockNumber, btcRegTestsParams);
-            activeFederation = FederationFactory.buildP2shErpFederation(activeFedArgs, erpPubKeys, activationDelay);
-            when(federationStorageProvider.getNewFederation(any(), any())).thenReturn(activeFederation);
-
-            BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
-            Script inputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, oldFederation.getRedeemScript());
-            migrationTx.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                inputScript
-            );
-            migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            when(federationStorageProvider.getLastRetiredFederationP2SHScript(arrowhead600Activations)).thenReturn(Optional.ofNullable(inputScript));
-
-            FederationTestUtils.addSignatures(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
-
-            PartialMerkleTree pmt = new PartialMerkleTree(btcRegTestsParams, new byte[]{0x3f}, Collections.singletonList(migrationTx.getHash()), 1);
-            Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
-
-            registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
-                btcRegTestsParams,
-                1,
-                BTC_BLOCK_HASH,
-                blockMerkleRoot,
-                1,
-                1,
-                1,
-                new ArrayList<>()
-            );
-
-            StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), heightAtWhichToStartUsingPegoutIndex);
-
-            BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-
-            co.rsk.bitcoinj.core.BtcBlock headBlock = new co.rsk.bitcoinj.core.BtcBlock(
-                btcRegTestsParams,
-                1,
-                BitcoinTestUtils.createHash(2),
-                Sha256Hash.of(new byte[]{1}),
-                1,
-                1,
-                1,
-                new ArrayList<>()
-            );
-
-            int heightWithEnoughConfirmations = heightAtWhichToStartUsingPegoutIndex + bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations();
-            StoredBlock chainHead = new StoredBlock(
-                headBlock,
-                new BigInteger("0"),
-                heightWithEnoughConfirmations
-            );
-            when(btcBlockStore.getChainHead()).thenReturn(chainHead);
-
-            when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
-            when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
-
-            co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
-                btcRegTestsParams,
-                1,
-                BTC_TX_HASH,
-                blockMerkleRoot,
-                1,
-                1,
-                1,
-                new ArrayList<>()
-            );
-
-            mockChainOfStoredBlocks(
-                btcBlockStore,
-                btcBlock,
-                heightWithEnoughConfirmations,
-                heightAtWhichToStartUsingPegoutIndex
-            );
-
-            FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-            when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
-
-            federationSupport = FederationSupportBuilder.builder()
-                .withFederationConstants(bridgeRegTestConstants.getFederationConstants())
-                .withFederationStorageProvider(federationStorageProvider)
-                .withRskExecutionBlock(rskExecutionBlock)
-                .withActivations(arrowhead600Activations)
+        private void setupActiveFed() {
+            activeFederation = P2shP2wshErpFederationBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withMembersBtcPublicKeys(activeFederationKeys)
+                .withErpActivationDelay(activationDelay)
+                .withErpPublicKeys(erpPubKeys)
+                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
                 .build();
+            setUp(allActivations);
+            federationStorageProvider.setNewFederation(activeFederation);
+        }
 
-            // act
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBtcBlockStoreFactory(mockFactory)
-                .withBridgeConstants(bridgeRegTestConstants)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(arrowhead600Activations)
-                .withSignatureCache(signatureCache)
-                .withEventLogger(bridgeEventLogger)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .withPeginInstructionsProvider(peginInstructionsProvider)
-                .withExecutionBlock(rskExecutionBlock)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withFederationSupport(federationSupport)
+        private void registerReleaseTransaction(BtcTransaction releaseTx, int height) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            PartialMerkleTree pmtWithTransactions = buildPMTAndRecreateChainForTransactionRegistration(
+                bridgeStorageProvider,
+                bridgeMainnetConstants,
+                height,
+                releaseTx,
+                btcBlockStore
+            );
+
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                releaseTx.bitcoinSerialize(),
+                height,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeSupport.save();
+        }
+
+        private void registerPegoutTxSigHash(BtcTransaction pegout) {
+            Sha256Hash sigHash = getSigHashForPegoutIndex(pegout)
+                .orElseThrow(() -> new IllegalStateException("Could not compute sig hash for pegout"));
+            bridgeStorageProvider.setPegoutTxSigHash(sigHash);
+            bridgeStorageProvider.save();
+        }
+
+        private void assertReleaseTxWasProcessedWithNoNewUtxo(BtcTransaction releaseTx) throws IOException {
+            assertReleaseTxWasProcessed(releaseTx);
+            assertNoUtxoWasAddedInActiveFed();
+            assertNoUtxoWasAddedInRetiringFed();
+        }
+
+        private void assertReleaseTxWasProcessed(BtcTransaction releaseTransaction) throws IOException {
+            assertTransactionWasProcessed(bridgeStorageProvider, releaseTransaction.getHash(false), (int) currentBlock.getNumber());
+        }
+
+        private void assertUtxosAddedInActiveFed(int expectedUtxosCount) {
+            assertEquals(expectedUtxosCount, federationSupport.getActiveFederationBtcUTXOs().size());
+        }
+
+        private void assertNoUtxoWasAddedInActiveFed() {
+            assertTrue(federationSupport.getActiveFederationBtcUTXOs().isEmpty());
+        }
+
+        private void assertNoUtxoWasAddedInRetiringFed() {
+            assertTrue(federationSupport.getRetiringFederationBtcUTXOs().isEmpty());
+        }
+
+        private void addManyInputs(PegoutTransactionBuilder btcTransactionBuilder) {
+            for (int i = 0; i < 50; i++) {
+                btcTransactionBuilder.withInput(BitcoinTestUtils.createHash(i + 1), FIRST_OUTPUT_INDEX, Coin.COIN);
+            }
+        }
+
+        private BtcTransaction getReleaseTxWithOneInputAndOutputWithoutChange(Federation spendingFederation, List<BtcECKey> spendingFederationKeys, Address receiverAddress) {
+            return PegoutTransactionBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withActiveFederation(spendingFederation)
+                .withInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, Coin.COIN)
+                .withOutput(Coin.COIN, receiverAddress)
+                .withoutChange()
+                .withSignatures(spendingFederationKeys)
                 .build();
-
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                migrationTx.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertPeginIsRejectedAndRefunded(arrowhead600Activations, migrationTx, Coin.COIN, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER);
-        }
-
-        @Test
-        void registerBtcTransaction_notInPegoutTxIndex_signedByOldFederation_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
-            FederationConstants federationRegTestConstants = bridgeRegTestConstants.getFederationConstants();
-            NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
-            Context.propagate(new Context(btcRegTestsParams));
-
-            final List<BtcECKey> regtestOldFederationPrivateKeys = Arrays.asList(
-                BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
-                BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
-                BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
-            );
-            when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
-
-            LockWhitelist lockWhitelist = mock(LockWhitelist.class);
-            when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
-            when(whitelistStorageProvider.getLockWhitelist(allActivations, btcRegTestsParams)).thenReturn(lockWhitelist);
-
-            when(federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestsParams, allActivations)).thenReturn(activeFederationUtxos);
-
-            pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
-            when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
-
-            Federation oldFederation = createFederation(bridgeRegTestConstants, regtestOldFederationPrivateKeys);
-
-            // we need to recreate the active fed since we are in regtest
-            List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFedSigners);
-            long activeFedCreationBlockNumber = 2L;
-            Instant creationTime = Instant.ofEpochMilli(1000L);
-            List<BtcECKey> erpPubKeys = federationRegTestConstants.getErpFedPubKeysList();
-            long activationDelay = federationRegTestConstants.getErpFedActivationDelay();
-            FederationArgs activeFedArgs =
-                new FederationArgs(activeFedMembers, creationTime, activeFedCreationBlockNumber, btcRegTestsParams);
-            activeFederation = FederationFactory.buildP2shErpFederation(activeFedArgs, erpPubKeys, activationDelay);
-            when(federationStorageProvider.getNewFederation(any(), any())).thenReturn(activeFederation);
-
-            BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
-            Script inputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, oldFederation.getRedeemScript());
-            migrationTx.addInput(
-                BTC_TX_HASH,
-                FIRST_OUTPUT_INDEX,
-                inputScript
-            );
-            migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            FederationTestUtils.addSignatures(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
-
-            PartialMerkleTree pmt = new PartialMerkleTree(btcRegTestsParams, new byte[]{0x3f}, Collections.singletonList(migrationTx.getHash()), 1);
-            Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
-
-            registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
-                btcRegTestsParams,
-                1,
-                BTC_BLOCK_HASH,
-                blockMerkleRoot,
-                1,
-                1,
-                1,
-                new ArrayList<>()
-            );
-
-            StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), heightAtWhichToStartUsingPegoutIndex);
-
-            BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-
-            co.rsk.bitcoinj.core.BtcBlock headBlock = new co.rsk.bitcoinj.core.BtcBlock(
-                btcRegTestsParams,
-                1,
-                BitcoinTestUtils.createHash(2),
-                Sha256Hash.of(new byte[]{1}),
-                1,
-                1,
-                1,
-                new ArrayList<>()
-            );
-
-            int heightWithEnoughConfirmations = heightAtWhichToStartUsingPegoutIndex + bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations();
-            StoredBlock chainHead = new StoredBlock(
-                headBlock,
-                new BigInteger("0"),
-                heightWithEnoughConfirmations
-            );
-            when(btcBlockStore.getChainHead()).thenReturn(chainHead);
-
-            when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
-            when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
-
-            co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
-                btcRegTestsParams,
-                1,
-                BTC_BLOCK_HASH,
-                blockMerkleRoot,
-                1,
-                1,
-                1,
-                new ArrayList<>()
-            );
-
-            mockChainOfStoredBlocks(
-                btcBlockStore,
-                btcBlock,
-                heightWithEnoughConfirmations,
-                heightAtWhichToStartUsingPegoutIndex
-            );
-
-            FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-            when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
-
-            federationSupport = FederationSupportBuilder.builder()
-                .withFederationConstants(bridgeRegTestConstants.getFederationConstants())
-                .withFederationStorageProvider(federationStorageProvider)
-                .withRskExecutionBlock(rskExecutionBlock)
-                .withActivations(allActivations)
-                .build();
-
-            // act
-            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-                .withBtcBlockStoreFactory(mockFactory)
-                .withBridgeConstants(bridgeRegTestConstants)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(allActivations)
-                .withSignatureCache(signatureCache)
-                .withEventLogger(bridgeEventLogger)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .withPeginInstructionsProvider(peginInstructionsProvider)
-                .withExecutionBlock(rskExecutionBlock)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withFederationSupport(federationSupport)
-                .build();
-
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                migrationTx.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertPeginIsRejectedAndRefunded(allActivations, migrationTx, Coin.COIN, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER);
-        }
-
-        // retired fed
-
-        @Test
-        void registerBtcTransaction_fromLastRetiredFederation_forFingerroot_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiredFed.getRedeemScript());
-            Script inputScript = p2SHScript.createEmptyInputScript(null, retiredFed.getRedeemScript());
-            btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
-
-            FederationTestUtils.addSignatures(retiredFed, retiredFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getLastRetiredFederationP2SHScript(fingerrootActivations)).thenReturn(Optional.of(retiredFed.getP2SHScript()));
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_fromLastRetiredFederation_withoutPegoutIndex_forArrowhead_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiredFed.getRedeemScript());
-            Script inputScript = p2SHScript.createEmptyInputScript(null, retiredFed.getRedeemScript());
-            btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
-
-            FederationTestUtils.addSignatures(retiredFed, retiredFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            when(federationStorageProvider.getLastRetiredFederationP2SHScript(arrowhead600Activations)).thenReturn(Optional.of(retiredFed.getP2SHScript()));
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_fromLastRetiredFederation_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiredFed.getRedeemScript());
-            Script inputScript = p2SHScript.createEmptyInputScript(null, retiredFed.getRedeemScript());
-            btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
-
-            FederationTestUtils.addSignatures(retiredFed, retiredFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            when(federationStorageProvider.getLastRetiredFederationP2SHScript(allActivations)).thenReturn(Optional.of(retiredFed.getP2SHScript()));
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                retiredFed.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertUtxoWasRegistered(btcTransaction);
-        }
-
-        @Test
-        void registerBtcTransaction_fromRetiredFederationNotInStorage_forFingerroot_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiredFed.getRedeemScript());
-            Script inputScript = p2SHScript.createEmptyInputScript(null, retiredFed.getRedeemScript());
-            btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
-
-            FederationTestUtils.addSignatures(retiredFed, retiredFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(fingerrootActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertPeginIsRejectedAndRefunded(fingerrootActivations, btcTransaction, Coin.COIN, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER);
-        }
-
-        @Test
-        void registerBtcTransaction_fromRetiredFederationNotInStorage_withoutPegoutIndex_forArrowhead_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiredFed.getRedeemScript());
-            Script inputScript = p2SHScript.createEmptyInputScript(null, retiredFed.getRedeemScript());
-            btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
-
-            FederationTestUtils.addSignatures(retiredFed, retiredFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightBeforeUsingPegoutIndex);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightBeforeUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            assertPeginIsRejectedAndRefunded(arrowhead600Activations, btcTransaction, Coin.COIN, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER);
-        }
-
-        @Test
-        void registerBtcTransaction_fromRetiredFederationNotInStorage_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-            // arrange
-            BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-            btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-
-            Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiredFed.getRedeemScript());
-            Script inputScript = p2SHScript.createEmptyInputScript(null, retiredFed.getRedeemScript());
-            btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
-
-            FederationTestUtils.addSignatures(retiredFed, retiredFedSigners, btcTransaction);
-
-            PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, heightAtWhichToStartUsingPegoutIndex);
-
-            Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
-                FIRST_INPUT_INDEX,
-                retiredFed.getRedeemScript(),
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            when(bridgeStorageProvider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
-
-            // act
-            BridgeSupport bridgeSupport = buildBridgeSupport(allActivations);
-            bridgeSupport.registerBtcTransaction(
-                rskTx,
-                btcTransaction.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
-                pmt.bitcoinSerialize()
-            );
-
-            // assert
-            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-            verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-            verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
-            assertUtxoWasRegistered(btcTransaction);
         }
     }
 }
