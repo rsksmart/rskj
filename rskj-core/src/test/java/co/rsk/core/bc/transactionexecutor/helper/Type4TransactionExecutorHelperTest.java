@@ -147,9 +147,23 @@ public abstract class Type4TransactionExecutorHelperTest {
             byte chainId,
             ECKey authorityKey
     ) {
+        return createValidAuthorizationTuple(
+                delegatedAddress,
+                nonce,
+                BigInteger.valueOf(Byte.toUnsignedInt(chainId)),
+                authorityKey
+        );
+    }
+
+    protected SetCodeAuthorization createValidAuthorizationTuple(
+            RskAddress delegatedAddress,
+            BigInteger nonce,
+            BigInteger chainId,
+            ECKey authorityKey
+    ) {
         byte[] nonceBytes = CommonParsingUtils.unsignedBytes(nonce);
         byte[] rlpEncoded = RLP.encodeList(
-                RLP.encodeBigInteger(BigInteger.valueOf(chainId)),
+                RLP.encodeBigInteger(chainId),
                 RLP.encodeElement(delegatedAddress.getBytes()),
                 RLP.encodeElement(nonceBytes)
         );
@@ -163,7 +177,7 @@ public abstract class Type4TransactionExecutorHelperTest {
                 ECDSASignature.fromSignature(authorityKey.sign(HashUtil.keccak256(payload)));
 
         return new SetCodeAuthorization(
-                BigInteger.valueOf(chainId),
+                chainId,
                 delegatedAddress,
                 nonceBytes,
                 signature
