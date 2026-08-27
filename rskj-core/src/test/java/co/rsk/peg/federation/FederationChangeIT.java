@@ -12,6 +12,7 @@ import static co.rsk.peg.BridgeSupportTestUtil.recreateChainFromPmt;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
+import static co.rsk.peg.federation.FederationTestUtils.addSignatures;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -928,7 +929,7 @@ class FederationChangeIT {
         var svpFundTx = copyPreservingInputValues(pegoutsTxs.get(0).getBtcTransaction());
 
         int neededSignatures = federationSupport.getActiveFederationThreshold();
-        signInputs(svpFundTx, activeFederationMembersKeys.subList(0, neededSignatures));
+        addSignatures(federationSupport.getActiveFederation(), activeFederationMembersKeys.subList(0, neededSignatures), svpFundTx);
 
         int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
         registerBtcTransaction(svpFundTx);
@@ -1538,20 +1539,6 @@ class FederationChangeIT {
         }
 
         return copy;
-    }
-
-    private void signInputs(BtcTransaction transaction, List<BtcECKey> keysToSign) {
-        boolean isSegwitFederation = federationSupport.getActiveFederation().getFormatVersion() ==
-            FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion();
-
-        List<TransactionInput> inputs = transaction.getInputs();
-        IntStream.range(0, inputs.size()).forEach(i -> {
-            if (isSegwitFederation) {
-                BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(transaction, i, inputs.get(i).getValue(), keysToSign);
-            } else {
-                BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, i, keysToSign);
-            }
-        });
     }
     
     // Assert federation change related methods
