@@ -1,0 +1,5 @@
+<<<<<<< HEAD
+{ "name": "eth_getCode",
+=======
+{ "name": "eth_getCode", "summary": "left behind by a conflicted merge",
+>>>>>>> other

@@ -39,7 +39,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -160,7 +159,7 @@ public class GenerateOpenRpcDoc implements Callable<Integer> {
                     .map(Path::getFileName)
                     .map(Path::toString)
                     .map(fileName -> this.loadFileAsJson(parentPath, fileName, toType))
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (IOException e) {
             logger.error("Error loading files under {} as json", parentPath);
             throw new GenerateOpenRpcException(e);
@@ -185,7 +184,7 @@ public class GenerateOpenRpcDoc implements Callable<Integer> {
         String fileName = file.getFileName().toString();
         int extension = fileName.lastIndexOf('.');
 
-        return extension >= 0 && fileName.substring(extension).equalsIgnoreCase(".json");
+        return extension >= 0 && ".json".equalsIgnoreCase(fileName.substring(extension));
     }
 
     private static String buildFullPath(String basePath, String fileName) {
