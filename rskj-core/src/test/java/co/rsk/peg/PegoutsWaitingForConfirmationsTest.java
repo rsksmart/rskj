@@ -55,6 +55,9 @@ class PegoutsWaitingForConfirmationsTest {
     private static final HistoricalPegoutSelectionsConstants TESTNET_SELECTIONS =
         HistoricalPegoutSelectionsTestNetConstants.getInstance();
 
+    // The entry BTC_TX_COMPARATOR sorts first among the block-10, 5-confirmations eligible set.
+    private static final String COMPARATOR_PICK_HASH = "fdd781c46b5ad7993b3f133e3af94b2e3cbcc8d19e443dfc6b555a1b0bac1527";
+
     // Legacy findFirst() pick over this JVM's HashSet order for the block-10, 5-confirmations eligible set.
     // Verified identical on Java 17 (Zulu 17.0.13) and Java 21 (Temurin 21.0.5). If it stops matching, the
     // fixture in createSet() changed, or a JDK reordered it: re-derive it from the actual value reported by
@@ -245,7 +248,7 @@ class PegoutsWaitingForConfirmationsTest {
         var hash = entry.getBtcTransaction().getHash().toString();
 
         Assertions.assertEquals(
-            "fdd781c46b5ad7993b3f133e3af94b2e3cbcc8d19e443dfc6b555a1b0bac1527",
+            COMPARATOR_PICK_HASH,
             hash,
             "Valid candidate for non fixed pegouts sorting"
         );
@@ -309,7 +312,7 @@ class PegoutsWaitingForConfirmationsTest {
     void getNextPegout_rskip559_ignoresHistoricalSelection() {
         // From RSKIP559 on the comparator sort decides. Seed a dataset that would pick a different entry:
         // if it were consulted, the result would not be the comparator's.
-        PegoutsWaitingForConfirmations.Entry decoy = firstEligibleEntryOtherThanLegacyPick();
+        PegoutsWaitingForConfirmations.Entry decoy = firstEligibleEntryOtherThan(COMPARATOR_PICK_HASH);
         HistoricalPegoutSelectionsConstants selections =
             selectionsMapping(decoy.getBtcTransaction().getHash());
 
@@ -318,7 +321,7 @@ class PegoutsWaitingForConfirmationsTest {
 
         Assertions.assertTrue(result.isPresent());
         Assertions.assertEquals(
-            "fdd781c46b5ad7993b3f133e3af94b2e3cbcc8d19e443dfc6b555a1b0bac1527",
+            COMPARATOR_PICK_HASH,
             result.get().getBtcTransaction().getHash().toString());
     }
 
@@ -354,9 +357,18 @@ class PegoutsWaitingForConfirmationsTest {
     }
 
     private PegoutsWaitingForConfirmations.Entry firstEligibleEntryOtherThanLegacyPick() {
+        return firstEligibleEntryOtherThan(LEGACY_FIND_FIRST_HASH);
+    }
+
+    /**
+     * An eligible entry whose btc tx hash differs from {@code excludedBtcTxHash}. Tests that prove one
+     * selection strategy overrode another need a target the other strategy would not have chosen anyway,
+     * otherwise they pass whichever strategy ran.
+     */
+    private PegoutsWaitingForConfirmations.Entry firstEligibleEntryOtherThan(String excludedBtcTxHash) {
         for (PegoutsWaitingForConfirmations.Entry entry : setEntries) {
             boolean eligibleAtBlock10 = (10L - entry.getPegoutCreationRskBlockNumber()) >= 5;
-            if (eligibleAtBlock10 && !entry.getBtcTransaction().getHash().toString().equals(LEGACY_FIND_FIRST_HASH)) {
+            if (eligibleAtBlock10 && !entry.getBtcTransaction().getHash().toString().equals(excludedBtcTxHash)) {
                 return entry;
             }
         }
