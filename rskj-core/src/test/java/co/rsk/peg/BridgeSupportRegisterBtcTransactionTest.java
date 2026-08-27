@@ -2972,19 +2972,19 @@ class BridgeSupportRegisterBtcTransactionTest {
                 Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
                 Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
                 for (int i = 0; i < 10; i++) {
-                    btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
+                    btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(networkParameters, "user" + i));
                 }
 
                 for (int i = 0; i < 10; i++) {
-                    btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 10));
+                    btcTransactionBuilder.withOutput(quarterMinimumPegoutTxValue.multiply(2).add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(networkParameters, "user" + i + 10));
                 }
 
                 for (int i = 0; i < 10; i++) {
-                    btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 20));
+                    btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(networkParameters, "user" + i + 20));
                 }
 
                 for (int i = 0; i < 10; i++) {
-                    btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i + 30));
+                    btcTransactionBuilder.withOutput(minimumPegoutTxValue.add(Coin.COIN), BitcoinTestUtils.createP2PKHAddress(networkParameters, "user" + i + 30));
                 }
 
                 btcTransactionBuilder.withChangeAmount(changeValue);
