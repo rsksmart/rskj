@@ -1747,8 +1747,7 @@ class Type4TransactionExecutorTests extends Type4TransactionExecutorHelperTest {
         when(constants.getChainId()).thenReturn(chainId);
         mockAccountWithBalanceAndNonce(tracker, sender, 1_000_000, ONE_NONCE);
         mockReceiver(receiver, EMPTY_CODE);
-        mockAuthorizationAccount(authorizationTracker, authority, ZERO_NONCE, EMPTY_CODE
-        );
+        mockAuthorizationAccount(authorizationTracker, authority, ZERO_NONCE, EMPTY_CODE);
 
         var authorization = createValidAuthorizationTuple(delegatedAddress, ZERO_NONCE, BigInteger.valueOf(chainIdValue), authorityKey);
 
