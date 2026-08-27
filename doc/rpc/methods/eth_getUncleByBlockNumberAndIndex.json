@@ -1,6 +1,6 @@
 {
   "name": "eth_getUncleByBlockNumberAndIndex",
-  "summary": "Returns information about a uncle of a block by hash and uncle index position.",
+  "summary": "Returns information about an uncle of a block by block number and uncle index position.",
   "params": [
     {
       "$ref": "#/components/contentDescriptors/BlockNumberOrTag"

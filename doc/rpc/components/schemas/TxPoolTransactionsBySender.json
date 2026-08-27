@@ -2,7 +2,7 @@
   "TxPoolTransactionsBySender": {
     "title": "txPoolTransactionsBySender",
     "type": "object",
-    "description": "Transactions keyed by sender address, then by decimal nonce",
+    "description": "Transactions keyed by sender address in bare hex, without the `0x` prefix, then by decimal nonce",
     "additionalProperties": {
       "title": "txPoolTransactionsByNonce",
       "type": "object",

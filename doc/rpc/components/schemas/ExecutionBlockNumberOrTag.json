@@ -1,7 +1,7 @@
 {
   "ExecutionBlockNumberOrTag": {
     "title": "executionBlockNumberOrTag",
-    "description": "A block to execute against, given as its height in hex or in decimal, or as a tag. The decimal form is accepted here and nowhere else: the block is resolved by `ExecutionBlockRetriever`, which parses both bases, while the block-reading methods parse hex only.",
+    "description": "A block to execute against, given as its height in hex or in decimal, or as a tag. The decimal form is accepted because the block is resolved by `ExecutionBlockRetriever`, which parses both bases; the block-reading methods resolve through `Web3InformationRetriever`, which parses hex only and answers `invalid blocknumber` for a decimal height. It is not the only place decimal is taken -- `eth_getBlocksByNumber` parses its own height and accepts both bases too -- but among the methods that take a block parameter it is what separates executing from reading.",
     "oneOf": [
       {
         "$ref": "#/components/schemas/BlockNumberHex"

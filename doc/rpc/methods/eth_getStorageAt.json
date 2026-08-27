@@ -1,6 +1,6 @@
 {
   "name": "eth_getStorageAt",
-  "summary": "Gets a storage value from a contract address, a position, and an optional blockNumber",
+  "summary": "Gets a storage value from a contract address, a position and a block.",
   "params": [
     {
       "$ref": "#/components/contentDescriptors/Address"

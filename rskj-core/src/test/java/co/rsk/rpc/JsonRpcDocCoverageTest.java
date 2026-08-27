@@ -116,12 +116,18 @@ class JsonRpcDocCoverageTest {
      * stay out of. Both parameter types accept a decimal string at deserialisation, by the same
      * {@code BlockTag.fromString} / {@code Utils.isDecimalString} / {@code Utils.isHexadecimalString} check —
      * so reading the parameter classes alone says every one of these methods takes it. The method then
-     * resolves the block, and only {@code eth_call} and {@code eth_estimateGas} resolve it through
-     * {@code ExecutionBlockRetriever}, which parses both bases; every other method goes through
-     * {@code Web3InformationRetriever}, whose {@code HexUtils.stringHexToBigInteger} demands the {@code 0x}
-     * prefix and answers {@code -32602 invalid blocknumber}. Which forms a method takes is therefore a
-     * property of its retrieval path, not of its parameter type, and a mapping keyed on the type can only
-     * hold the forms every method of that type shares.
+     * resolves the block, and among the methods reached through these two types only {@code eth_call} and
+     * {@code eth_estimateGas} resolve it through {@code ExecutionBlockRetriever}, which parses both bases;
+     * the rest go through {@code Web3InformationRetriever}, whose {@code HexUtils.stringHexToBigInteger}
+     * demands the {@code 0x} prefix and answers {@code -32602 invalid blocknumber}. Which forms a method
+     * takes is therefore a property of its retrieval path, not of its parameter type, and a mapping keyed on
+     * the type can only hold the forms every method of that type shares.
+     *
+     * <p>The retrieval path is what decides this, not the parameter type and not the pair of method names:
+     * {@code eth_getBlocksByNumber} declares a plain {@code String} and parses it with
+     * {@code HexUtils.stringNumberAsBigInt}, so it takes a decimal height as well. It is outside this mapping
+     * because it is outside both retrievers, which is exactly the point -- "decimal means executing" is true
+     * of the methods reached here and is not a rule about the node.
      *
      * @param parameterType the type the node deserialises the parameter into
      * @param form          the schema a method taking it must reach through its parameters
@@ -408,9 +414,9 @@ class JsonRpcDocCoverageTest {
                         + "of its type share, rather than widening a second definition of it. A mapping that matches "
                         + "no method holds nothing, and is reported here rather than passing quietly:%n  - %s%n%n"
                         + "The named descriptor is the one the block-reading methods of that type share. A method "
-                        + "that resolves its block through ExecutionBlockRetriever -- eth_call and eth_estimateGas, "
-                        + "and only those -- takes a decimal height the reading methods reject, so it belongs on the "
-                        + "wider Execution variant of that descriptor rather than on the one named here.",
+                        + "that resolves its block through ExecutionBlockRetriever -- of the methods mapped here, "
+                        + "eth_call and eth_estimateGas -- takes a decimal height the reading methods reject, so it "
+                        + "belongs on the wider Execution variant of that descriptor rather than on the one named here.",
                 problems.size(), String.join(System.lineSeparator() + "  - ", problems)));
     }
 

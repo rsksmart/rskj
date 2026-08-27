@@ -32,7 +32,7 @@
         "$ref": "#/components/schemas/Nonce"
       },
       "to": {
-        "$ref": "#/components/schemas/Address"
+        "$ref": "#/components/schemas/PoolDestinationAddress"
       },
       "value": {
         "$ref": "#/components/schemas/IntegerHex"
