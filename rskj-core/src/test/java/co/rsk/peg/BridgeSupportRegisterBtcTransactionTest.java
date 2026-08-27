@@ -113,10 +113,8 @@ class BridgeSupportRegisterBtcTransactionTest {
     private List<BtcECKey> retiredFedSigners;
     private Federation retiredFed;
 
-    private List<BtcECKey> retiringFedSigners;
     private Federation retiringFederation;
 
-    private List<BtcECKey> activeFedSigners;
     private Federation activeFederation;
 
     private BtcBlockStoreWithCache.Factory mockFactory;
@@ -132,8 +130,6 @@ class BridgeSupportRegisterBtcTransactionTest {
     private long rskExecutionBlockNumber;
     private Block rskExecutionBlock;
     private Transaction rskTx;
-
-    private co.rsk.bitcoinj.core.BtcBlock registerHeader;
 
     private BtcBlockStoreWithCache btcBlockStore;
     private BridgeSupport bridgeSupport;
@@ -188,7 +184,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = new PartialMerkleTree(btcMainnetParams, new byte[]{0x3f}, Collections.singletonList(btcTransaction.getHash()), 1);
         Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
 
-        registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+        BtcBlock registerHeader = new BtcBlock(
             btcMainnetParams,
             1,
             BTC_BLOCK_HASH,
@@ -289,7 +285,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
         retiredFed = createFederation(bridgeMainnetConstants, retiredFedSigners);
 
-        retiringFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        List<BtcECKey> retiringFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa04", "fa05", "fa06"}, true
         );
 
@@ -302,7 +298,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             new FederationArgs(retiringFedMembers, federationCreationTime, retiringFedCreationBlockNumber, btcMainnetParams);
         retiringFederation = FederationFactory.buildP2shErpFederation(retiringFedArgs, erpPubKeys, activationDelay);
 
-        activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        List<BtcECKey> activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa07", "fa08", "fa09", "fa10", "fa11"}, true
         );
         activeFedSigners.sort(BtcECKey.PUBKEY_COMPARATOR);
