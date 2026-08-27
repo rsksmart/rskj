@@ -63,9 +63,32 @@ public class SyncPool implements InternalService {
     private static final long WORKER_TIMEOUT = 3; // 3 seconds
 
     private static final Duration CONNECTION_TIMEOUT = Duration.ofSeconds(30);
+
+    /**
+     * A connection that lasted at least this long counts as a real peer rather than a node that
+     * turned us away, so it is retried straight away instead of being backed off.
+     *
+     * <p>The thresholds are deliberately small. Peers on this network come and go quickly, and the
+     * number held at any moment is roughly the rate at which new ones are dialled multiplied by how
+     * long they stay. Backing off hard therefore costs peers, which costs throughput directly; the
+     * point here is only to stop re-dialling a node that never accepts us many times a minute.
+     */
+    private static final Duration MIN_USEFUL_CONNECTION = Duration.ofSeconds(5);
+    private static final Duration MIN_RETRY_BACKOFF = Duration.ofSeconds(2);
+    private static final Duration MAX_RETRY_BACKOFF = Duration.ofSeconds(30);
     private final Map<NodeID, Channel> peers = new HashMap<>();
     private final List<Channel> activePeers = Collections.synchronizedList(new ArrayList<>());
     private final Map<String, Instant> pendingConnections = new HashMap<>();
+
+    /**
+     * Nodes that keep turning us away are retried with an exponential backoff. fillUp() runs every
+     * few seconds and dials every node it knows about, so without this a node that never accepts is
+     * dialled hundreds of times an hour. That is wasted effort at best, and at worst it is what
+     * makes a node stop accepting us at all.
+     */
+    private final Map<String, Integer> refusalsByNode = new HashMap<>();
+    private final Map<String, Instant> retryNotBefore = new HashMap<>();
+    private final Map<String, Instant> connectedSince = new HashMap<>();
 
     private BlockDifficulty lowerUsefulDifficulty = BlockDifficulty.ZERO;
 
@@ -147,6 +170,7 @@ public class SyncPool implements InternalService {
 
         synchronized (pendingConnections) {
             pendingConnections.remove(peer.getPeerId());
+            connectedSince.put(peer.getPeerId(), Instant.now());
         }
 
         ethereumListener.onPeerAddedToSyncPool(peer);
@@ -180,7 +204,38 @@ public class SyncPool implements InternalService {
             return;
         }
 
+        recordDisconnect(peer.getPeerId());
+
         logger.info("Peer {}: disconnected", peer.getPeerId());
+    }
+
+    /**
+     * A connection that did no real work counts against the node and pushes its next attempt
+     * further out; one that lasted clears the record so a good peer is re-dialled immediately.
+     */
+    private void recordDisconnect(String peerId) {
+        synchronized (pendingConnections) {
+            Instant since = connectedSince.remove(peerId);
+            boolean wasUseful = since != null
+                    && Duration.between(since, Instant.now()).compareTo(MIN_USEFUL_CONNECTION) >= 0;
+            if (wasUseful) {
+                refusalsByNode.remove(peerId);
+                retryNotBefore.remove(peerId);
+                return;
+            }
+            int refusals = refusalsByNode.merge(peerId, 1, Integer::sum);
+            long backoffSeconds = Math.min(
+                    MAX_RETRY_BACKOFF.getSeconds(),
+                    MIN_RETRY_BACKOFF.getSeconds() * (1L << Math.min(refusals - 1, 20)));
+            retryNotBefore.put(peerId, Instant.now().plusSeconds(backoffSeconds));
+        }
+    }
+
+    private boolean isBackedOff(String nodeId) {
+        synchronized (pendingConnections) {
+            Instant notBefore = retryNotBefore.get(nodeId);
+            return notBefore != null && Instant.now().isBefore(notBefore);
+        }
     }
 
     private void connect(Node node) {
@@ -189,6 +244,10 @@ public class SyncPool implements InternalService {
                 "Peer {}: initiate connection",
                 node.getHexId()
             );
+        }
+
+        if (isBackedOff(node.getHexId())) {
+            return;
         }
 
         if (isInUse(node.getHexId())) {
