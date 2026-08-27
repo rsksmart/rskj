@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationTestNetConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbTestNetConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapTestNetConstants;
+import co.rsk.peg.pegout.HistoricalPegoutSelectionsTestNetConstants;
 import co.rsk.peg.union.constants.UnionBridgeTestNetConstants;
 import co.rsk.peg.whitelist.constants.WhitelistTestNetConstants;
 
