@@ -285,7 +285,7 @@ public final class FederationTestUtils {
         int federationFormatVersion = federation.getFormatVersion();
 
         for (int inputIndex = 0; inputIndex < tx.getInputs().size(); inputIndex++) {
-            BitcoinUtils.addSpendingFederationBaseScript(tx, inputIndex, federation.getRedeemScript(), federation.getFormatVersion());
+            BitcoinUtils.addSpendingFederationBaseScript(tx, inputIndex, federation.getRedeemScript(), federationFormatVersion);
             signInput(signers, tx, federationFormatVersion, inputIndex);
         }
     }
