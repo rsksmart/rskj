@@ -2,7 +2,7 @@
   "BlockRef": {
     "title": "blockRef",
     "type": "object",
-    "description": "Object defining block references. At least one of `blockHash` or `blockNumber` must be present; the node rejects an object carrying neither with `Invalid block input`.",
+    "description": "Object defining block references, for a method that reads the block. At least one of `blockHash` or `blockNumber` must be present; the node rejects an object carrying neither with `Invalid block input`. `blockNumber` is hex only here -- a decimal height is answered with `invalid blocknumber`. The method that executes against the block rather than reading it takes `executionBlockRef`, which also accepts decimal.",
     "properties": {
       "blockHash": {
         "$ref": "#/components/schemas/BlockHash"
@@ -11,13 +11,7 @@
         "$ref": "#/components/schemas/BlockNumberHex"
       },
       "requireCanonical": {
-        "title": "requireCanonical",
-        "type": "string",
-        "description": "Whether a block that is not on the canonical chain is acceptable. Send it as the JSON string `\"true\"` or `\"false\"`, not as a JSON boolean: the node reads the whole object as a map of strings, so a non-string value fails during deserialisation, before this field is inspected. A string other than those two is rejected with `Invalid input: requireCanonical must be a String \"true\" or \"false\"`. It is only consulted alongside `blockHash`; when it is `\"true\"` and the referenced block is not on the canonical chain, the node answers with a block-not-found error stating the block is not canonical.",
-        "enum": [
-          "true",
-          "false"
-        ]
+        "$ref": "#/components/schemas/RequireCanonical"
       }
     },
     "anyOf": [

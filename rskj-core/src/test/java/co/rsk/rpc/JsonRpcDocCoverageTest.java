@@ -106,11 +106,16 @@ class JsonRpcDocCoverageTest {
      * this mapping rather than naming a type, so a third block-taking type is an entry here and not a third
      * copy of the same test.
      *
-     * <p>{@code form} is deliberately the part a narrow description drops rather than the whole union. For
+     * <p>{@code forms} is deliberately the part a narrow description drops rather than the whole union. For
      * {@link BlockRefParam} that is the {@code {"blockHash": ...}} object, documented since 2022 and still
      * missing from one method until it was pointed at the shared descriptor. For
      * {@link BlockIdentifierParam} it is the tag, which {@code eth_getUncleByBlockNumberAndIndex} declared
      * away by describing its parameter as a hex number, telling a reader {@code latest} would be rejected.
+     *
+     * <p>{@code form} is one exact schema rather than a set of acceptable ones, so the check is an upper
+     * bound as well as a lower one: a method documented too <em>widely</em> fails as loudly as one documented
+     * too narrowly. Where a method genuinely takes a wider form than the rest of its type,
+     * {@link #WIDER_BLOCK_FORM_BY_METHOD} names it and the schema it must reach instead.
      *
      * <p>What {@code form} is <em>not</em> is the decimal number, and that is the trap this mapping exists to
      * stay out of. Both parameter types accept a decimal string at deserialisation, by the same
@@ -135,6 +140,26 @@ class JsonRpcDocCoverageTest {
      */
     private record BlockParameterContract(Class<?> parameterType, String form, String descriptor) {
     }
+
+    /**
+     * The methods whose retrieval path takes a wider form than the rest of their parameter type, mapped to
+     * the schema that describes it.
+     *
+     * <p>This is the one place method names are listed rather than reflected for, and it has to be: the
+     * retrieval path is what decides which forms a method takes, and reflection cannot see a retrieval path.
+     * {@code eth_call} deserialises the same {@link BlockRefParam} as the reading methods and then resolves
+     * through {@code ExecutionBlockRetriever}, which parses a decimal height where {@code Web3InformationRetriever}
+     * answers {@code invalid blocknumber}. One schema cannot honestly describe both, so the two are separate
+     * and this says which method gets which.
+     *
+     * <p>Keeping it explicit rather than accepting either schema everywhere is what preserves the upper
+     * bound. Were any block-reference schema acceptable for any method of the type, a reading method could be
+     * repointed at the execution variant -- promising a decimal height its retriever rejects -- and nothing
+     * here would notice. An entry naming a method that does not take the mapped parameter type fails, for the
+     * same reason a mapped type matching no method does.
+     */
+    private static final Map<String, String> WIDER_BLOCK_FORM_BY_METHOD = Map.of(
+            "eth_call", "#/components/schemas/ExecutionBlockRef");
 
     /**
      * Every node-side block parameter type, mapped to what documenting it honestly requires. Methods are found
@@ -373,7 +398,8 @@ class JsonRpcDocCoverageTest {
      * a reference to the shared descriptor.
      *
      * <p>A mapped type that matches no method fails rather than passing quietly, so renaming a parameter type
-     * out from under an entry cannot leave it vacuously green. What the mapping cannot cover at all is a
+     * out from under an entry cannot leave it vacuously green. The same holds for a method named in
+     * {@link #WIDER_BLOCK_FORM_BY_METHOD} that takes none of the mapped types. What the mapping cannot cover at all is a
      * method taking its block as a bare {@code String}; see {@link #BLOCK_PARAMETER_CONTRACTS}.
      */
     @Test
@@ -382,8 +408,10 @@ class JsonRpcDocCoverageTest {
         Map<String, JsonNode> documented = documentedMethodsInDocument(document);
 
         List<String> problems = new ArrayList<>();
+        Set<String> covered = new TreeSet<>();
         for (BlockParameterContract contract : BLOCK_PARAMETER_CONTRACTS) {
             Set<String> taking = methodsTaking(contract.parameterType());
+            covered.addAll(taking);
 
             if (taking.isEmpty()) {
                 problems.add(contract.parameterType().getSimpleName() + " — no method on "
@@ -399,11 +427,21 @@ class JsonRpcDocCoverageTest {
                     // Allowlisted rather than documented; everyExposedMethodIsDocumentedOrAllowlisted owns that case.
                     continue;
                 }
-                if (!anyParameterResolvesTo(document, method, contract.form())) {
+                String form = WIDER_BLOCK_FORM_BY_METHOD.getOrDefault(name, contract.form());
+                if (!anyParameterResolvesTo(document, method, form)) {
                     problems.add(name + " — takes " + contract.parameterType().getSimpleName()
-                            + " but no parameter of it resolves to " + contract.form()
+                            + " but no parameter of it resolves to " + form
                             + "; point it at " + contract.descriptor());
                 }
+            }
+        }
+
+        for (String name : new TreeSet<>(WIDER_BLOCK_FORM_BY_METHOD.keySet())) {
+            if (!covered.contains(name)) {
+                problems.add(name + " — is named in WIDER_BLOCK_FORM_BY_METHOD but takes none of the mapped "
+                        + "parameter types, so the wider form it claims is never checked against anything. "
+                        + "Either it stopped taking a block parameter, or it was renamed and the entry needs to "
+                        + "follow it");
             }
         }
 

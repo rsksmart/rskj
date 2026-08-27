@@ -7,7 +7,7 @@
       "title": "blockRefOrExecutionNumberOrTag",
       "oneOf": [
         {
-          "$ref": "#/components/schemas/BlockRef"
+          "$ref": "#/components/schemas/ExecutionBlockRef"
         },
         {
           "$ref": "#/components/schemas/ExecutionBlockNumberOrTag"
