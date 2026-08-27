@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Historic record of which pegout {@code getNextPegoutWithEnoughConfirmations} selected when more than
+ * Historical record of which pegout {@code getNextPegoutWithEnoughConfirmations} selected when more than
  * one entry was eligible at the same call, keyed by the confirming {@code updateCollections} rsk tx hash.
  *
  * <p>Before RSKIP559, the next pegout to confirm was picked with {@code stream().findFirst()} over a
@@ -35,13 +35,5 @@ public class HistoricalPegoutSelectionsConstants {
      */
     public Optional<Sha256Hash> getSelectedPegoutBtcTxHash(Keccak256 rskTxHash) {
         return Optional.ofNullable(selections.get(rskTxHash));
-    }
-
-    /**
-     * The whole table, for introspection. Immutable, and deliberately only ever read by key: its
-     * iteration order is unspecified, which is the very hazard this class exists to work around.
-     */
-    public Map<Keccak256, Sha256Hash> getSelections() {
-        return Collections.unmodifiableMap(selections);
     }
 }

@@ -86,15 +86,15 @@ class HistoricalPegoutSelectionsConstantsTest {
     void regtest_recordsNoSelections() {
         HistoricalPegoutSelectionsConstants regtest = HistoricalPegoutSelectionsRegTestConstants.getInstance();
 
-        assertTrue(regtest.getSelections().isEmpty());
+        assertTrue(regtest.selections.isEmpty());
         assertEquals(Optional.empty(), regtest.getSelectedPegoutBtcTxHash(MAINNET_FIRST_RSK_TX));
     }
 
     @Test
     void datasets_haveExpectedSizes() {
         // Guards the consensus-critical datasets against accidental additions/removals.
-        assertEquals(17, HistoricalPegoutSelectionsMainNetConstants.getInstance().getSelections().size());
-        assertEquals(53, HistoricalPegoutSelectionsTestNetConstants.getInstance().getSelections().size());
+        assertEquals(17, HistoricalPegoutSelectionsMainNetConstants.getInstance().selections.size());
+        assertEquals(53, HistoricalPegoutSelectionsTestNetConstants.getInstance().selections.size());
     }
 
     @Test
@@ -111,13 +111,15 @@ class HistoricalPegoutSelectionsConstantsTest {
 
     @Test
     void selections_areImmutable() {
-        assertThrows(UnsupportedOperationException.class,
-            () -> HistoricalPegoutSelectionsMainNetConstants.getInstance().getSelections()
-                .put(UNKNOWN_RSK_TX, MAINNET_FIRST_BTC_TX));
+        HistoricalPegoutSelectionsConstants constants = HistoricalPegoutSelectionsMainNetConstants.getInstance();
+        assertThrows(
+            UnsupportedOperationException.class,
+            () -> constants.selections.put(UNKNOWN_RSK_TX, MAINNET_FIRST_BTC_TX)
+        );
     }
 
     /**
-     * Digest over every pair in the dataset, so that changing a single character of any hash, or swapping
+     * Digest over every pair in the dataset so that changing a single character of any hash, or swapping
      * a key with its value, fails the build. The size test only catches additions and removals, and both
      * sides are 32 bytes, so neither mistake is otherwise detectable. Sorting is required: the iteration
      * order of a {@code Map.ofEntries} map is unspecified.
@@ -126,7 +128,7 @@ class HistoricalPegoutSelectionsConstantsTest {
      * intended and independently validated.</p>
      */
     private static String digestOf(HistoricalPegoutSelectionsConstants constants) {
-        String canonical = constants.getSelections().entrySet().stream()
+        String canonical = constants.selections.entrySet().stream()
             .map(entry -> entry.getKey() + ":" + entry.getValue())
             .sorted()
             .collect(Collectors.joining("\n"));
