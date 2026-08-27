@@ -301,6 +301,22 @@ public final class BridgeSupportTestUtil {
         assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
     }
 
+    public static void assertLegacyReleaseRejectionWasSettled(
+        BridgeStorageProvider bridgeStorageProvider,
+        List<LogInfo> logs,
+        long executionBlock,
+        Keccak256 releaseCreationTxHash,
+        BtcTransaction releaseTransaction,
+        Coin totalAmountRequested,
+        ActivationConfig.ForBlock activations
+    ) throws IOException {
+        Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
+
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, executionBlock, activations);
+        assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, totalAmountRequested);
+    }
+
     public static void assertReleaseWasSettled(
         Repository repository,
         BridgeStorageProvider bridgeStorageProvider,
