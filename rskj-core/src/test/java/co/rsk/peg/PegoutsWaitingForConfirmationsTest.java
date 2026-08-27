@@ -18,38 +18,46 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import co.rsk.RskTestUtils;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.constants.HistoricalPegoutSelectionsConstants;
-import co.rsk.peg.constants.HistoricalPegoutSelectionsMainNetConstants;
-import co.rsk.peg.constants.HistoricalPegoutSelectionsTestNetConstants;
+import co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants;
+import co.rsk.peg.pegout.HistoricalPegoutSelectionsMainNetConstants;
+import co.rsk.peg.pegout.HistoricalPegoutSelectionsTestNetConstants;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigInteger;
-import java.util.*;
-import java.util.stream.Stream;
-
-import static org.mockito.Mockito.*;
-
-@ExtendWith(MockitoExtension.class)
 class PegoutsWaitingForConfirmationsTest {
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
 
     // The historic dataset is only consulted before RSKIP559 and when more than one entry is eligible.
     // These fixtures use the real mainnet and testnet tables: this synthetic updateCollections hash is in
     // neither, so the lookup misses against a fully populated table and the legacy pick applies.
-    private static final Keccak256 UPDATE_COLLECTIONS_TX_HASH = PegTestUtils.createHash3(100);
+    private static final Keccak256 UPDATE_COLLECTIONS_TX_HASH = RskTestUtils.createHash(100);
     private static final HistoricalPegoutSelectionsConstants MAINNET_SELECTIONS =
         HistoricalPegoutSelectionsMainNetConstants.getInstance();
     private static final HistoricalPegoutSelectionsConstants TESTNET_SELECTIONS =
@@ -88,7 +96,6 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void entryEquals() {
-
         BtcTransaction uniqueTransaction1 = createUniqueTransaction(2, Coin.valueOf(150));
         BtcTransaction uniqueTransaction2 = createUniqueTransaction(5, Coin.valueOf(230));
         BtcTransaction uniqueTransaction3 = createUniqueTransaction(5, Coin.valueOf(230));
@@ -97,8 +104,8 @@ class PegoutsWaitingForConfirmationsTest {
         PegoutsWaitingForConfirmations.Entry e2 = new PegoutsWaitingForConfirmations.Entry(uniqueTransaction1, 15L);
         PegoutsWaitingForConfirmations.Entry e3 = new PegoutsWaitingForConfirmations.Entry(createTransaction(2, Coin.valueOf(149)), 14L);
         PegoutsWaitingForConfirmations.Entry e4 = new PegoutsWaitingForConfirmations.Entry(createTransaction(5, Coin.valueOf(230)), 15L);
-        PegoutsWaitingForConfirmations.Entry e5 = new PegoutsWaitingForConfirmations.Entry(uniqueTransaction2, 15L, PegTestUtils.createHash3(0));
-        PegoutsWaitingForConfirmations.Entry e6 = new PegoutsWaitingForConfirmations.Entry(uniqueTransaction2, 15L, PegTestUtils.createHash3(0));
+        PegoutsWaitingForConfirmations.Entry e5 = new PegoutsWaitingForConfirmations.Entry(uniqueTransaction2, 15L, RskTestUtils.createHash(0));
+        PegoutsWaitingForConfirmations.Entry e6 = new PegoutsWaitingForConfirmations.Entry(uniqueTransaction2, 15L, RskTestUtils.createHash(0));
         PegoutsWaitingForConfirmations.Entry e7 = new PegoutsWaitingForConfirmations.Entry(uniqueTransaction3, 15L, null);
         PegoutsWaitingForConfirmations.Entry e8 = new PegoutsWaitingForConfirmations.Entry(uniqueTransaction3, 15L, null);
 
@@ -138,11 +145,11 @@ class PegoutsWaitingForConfirmationsTest {
         Assertions.assertEquals(setEntries, new HashSet<>(set.getEntries(ACTIVATIONS_ALL)));
 
         Set<PegoutsWaitingForConfirmations.Entry> entryWithoutHash = new HashSet<>(Collections.singletonList(
-                new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L)
+            new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L)
         ));
 
         Set<PegoutsWaitingForConfirmations.Entry> entryWithHash = new HashSet<>(Collections.singletonList(
-                new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L, PegTestUtils.createHash3(0))
+            new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L, RskTestUtils.createHash(0))
         ));
 
         PegoutsWaitingForConfirmations transactionSetWithoutHash = new PegoutsWaitingForConfirmations(entryWithoutHash);
