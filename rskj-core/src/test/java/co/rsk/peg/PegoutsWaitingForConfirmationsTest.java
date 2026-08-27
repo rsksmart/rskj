@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Named.named;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +38,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants;
 import java.math.BigInteger;
@@ -67,8 +69,15 @@ class PegoutsWaitingForConfirmationsTest {
     private static final Keccak256 UPDATE_COLLECTIONS_TX_HASH = RskTestUtils.createHash(100);
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final int MINIMUM_CONFIRMATIONS = BRIDGE_CONSTANTS.getRsk2BtcMinimumAcceptableConfirmations();
-    private static final long BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS = MINIMUM_CONFIRMATIONS + 5L;
-    private static final long BLOCK_HEIGHT_WITHOUT_ELIGIBLE_PEGOUTS = MINIMUM_CONFIRMATIONS + 4L;
+    // The earliest rsk block at which the createSet() fixture creates a pegout. Every network's eligible set
+    // is therefore the same four entries when the current block is its minimum confirmations past this one.
+    private static final long EARLIEST_PEGOUT_CREATION_BLOCK = 5L;
+    private static final long BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS = MINIMUM_CONFIRMATIONS + EARLIEST_PEGOUT_CREATION_BLOCK;
+    private static final long BLOCK_HEIGHT_WITHOUT_ELIGIBLE_PEGOUTS = BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS - 1L;
+
+    // A btc tx hash no fixture entry can ever carry, to drive the "recorded selection is not eligible" path.
+    private static final Sha256Hash BTC_TX_HASH_NOT_IN_ANY_SET =
+        Sha256Hash.wrap("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 
     // The entry BTC_TX_COMPARATOR sorts first among the block-BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS, MINIMUM_CONFIRMATIONS-confirmations eligible set.
     private static final String COMPARATOR_PICK_HASH = "fdd781c46b5ad7993b3f133e3af94b2e3cbcc8d19e443dfc6b555a1b0bac1527";
@@ -332,8 +341,7 @@ class PegoutsWaitingForConfirmationsTest {
 
     @Test
     void getNextPegout_beforeRskip559_historicalSelectionNotEligible_throws() {
-        Sha256Hash notEligibleBtcTxHash = Sha256Hash.wrap("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        BridgeConstants bridgeConstants = bridgeConstantsWithHistoricalSelection(notEligibleBtcTxHash);
+        BridgeConstants bridgeConstants = bridgeConstantsWithHistoricalSelection(BTC_TX_HASH_NOT_IN_ANY_SET);
 
         IllegalStateException thrown = assertThrows(
             IllegalStateException.class,
@@ -346,7 +354,7 @@ class PegoutsWaitingForConfirmationsTest {
         );
 
         // The message must name the eligible set, so a missing record is diagnosable from the log alone.
-        assertTrue(thrown.getMessage().contains(notEligibleBtcTxHash.toString()));
+        assertTrue(thrown.getMessage().contains(BTC_TX_HASH_NOT_IN_ANY_SET.toString()));
         assertTrue(thrown.getMessage().contains(LEGACY_FIND_FIRST_HASH));
     }
 
@@ -407,6 +415,201 @@ class PegoutsWaitingForConfirmationsTest {
             null,
             VETIVER_ACTIVATIONS
         ));
+    }
+
+    @Test
+    void getNextPegout_nullActivations_throws() {
+        NullPointerException thrown = assertThrows(
+            NullPointerException.class,
+            () -> set.getNextPegoutWithEnoughConfirmations(
+                UPDATE_COLLECTIONS_TX_HASH,
+                BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+                BRIDGE_CONSTANTS,
+                null
+            )
+        );
+
+        // Assert the guard's own message: without it the dereference below would throw an NPE too.
+        assertEquals("activations must not be null", thrown.getMessage());
+    }
+
+    @Test
+    void getNextPegout_beforeRskip559_historicalSelectionWithNoEligibleEntries_throws() {
+        // A recorded selection for a call that had no eligible entry can only be a dataset error. It must
+        // fail loudly, and the message must show the empty eligible set, so the log alone diagnoses it.
+        BridgeConstants bridgeConstants = bridgeConstantsWithHistoricalSelection(BTC_TX_HASH_NOT_IN_ANY_SET);
+
+        IllegalStateException thrown = assertThrows(
+            IllegalStateException.class,
+            () -> set.getNextPegoutWithEnoughConfirmations(
+                UPDATE_COLLECTIONS_TX_HASH,
+                BLOCK_HEIGHT_WITHOUT_ELIGIBLE_PEGOUTS,
+                bridgeConstants,
+                VETIVER_ACTIVATIONS
+            )
+        );
+
+        assertTrue(thrown.getMessage().contains(BTC_TX_HASH_NOT_IN_ANY_SET.toString()));
+        assertTrue(thrown.getMessage().contains("[]"), "the empty eligible set must be visible in the message");
+    }
+
+    @Test
+    void getNextPegout_beforeRskip559_historicalSelectionIsTheOnlyEligibleEntry_returnsIt() {
+        PegoutsWaitingForConfirmations.Entry onlyEligible = entryCreatedAt(EARLIEST_PEGOUT_CREATION_BLOCK);
+        PegoutsWaitingForConfirmations pegouts = pegoutsWith(onlyEligible, entryWithoutEnoughConfirmations());
+        BridgeConstants bridgeConstants = bridgeConstantsWithHistoricalSelection(onlyEligible.getBtcTransaction().getHash());
+
+        Optional<PegoutsWaitingForConfirmations.Entry> result = pegouts.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+            bridgeConstants,
+            VETIVER_ACTIVATIONS
+        );
+
+        assertEquals(Optional.of(onlyEligible), result);
+    }
+
+    @Test
+    void getNextPegout_beforeRskip559_historicalSelectionDiffersFromTheOnlyEligibleEntry_throws() {
+        // With one eligible entry the legacy pick was already deterministic, so a recorded selection that
+        // names a different tx is a dataset error too, not a selection to honour.
+        PegoutsWaitingForConfirmations.Entry onlyEligible = entryCreatedAt(EARLIEST_PEGOUT_CREATION_BLOCK);
+        PegoutsWaitingForConfirmations pegouts = pegoutsWith(onlyEligible, entryWithoutEnoughConfirmations());
+        BridgeConstants bridgeConstants = bridgeConstantsWithHistoricalSelection(BTC_TX_HASH_NOT_IN_ANY_SET);
+
+        IllegalStateException thrown = assertThrows(
+            IllegalStateException.class,
+            () -> pegouts.getNextPegoutWithEnoughConfirmations(
+                UPDATE_COLLECTIONS_TX_HASH,
+                BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+                bridgeConstants,
+                VETIVER_ACTIVATIONS
+            )
+        );
+
+        assertTrue(thrown.getMessage().contains(BTC_TX_HASH_NOT_IN_ANY_SET.toString()));
+        assertTrue(thrown.getMessage().contains(onlyEligible.getBtcTransaction().getHash().toString()));
+    }
+
+    @Test
+    void getNextPegout_beforeRskip559_datasetMiss_singleEligible_returnsIt() {
+        // No findFirst() ambiguity exists with one eligible entry, so every JVM must return that entry.
+        PegoutsWaitingForConfirmations.Entry onlyEligible = entryCreatedAt(EARLIEST_PEGOUT_CREATION_BLOCK);
+        PegoutsWaitingForConfirmations pegouts = pegoutsWith(onlyEligible, entryWithoutEnoughConfirmations());
+
+        Optional<PegoutsWaitingForConfirmations.Entry> result = pegouts.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+            BRIDGE_CONSTANTS,
+            VETIVER_ACTIVATIONS
+        );
+
+        assertEquals(Optional.of(onlyEligible), result);
+    }
+
+    @Test
+    void getNextPegout_beforeRskip559_emptyDataset_fallsBackToFindFirst() {
+        // Regtest has no pre-RSKIP559 chain, so its table is empty and every lookup misses. Its minimum
+        // confirmations make the eligible set the same four entries the populated-table tests use.
+        BridgeConstants regTestConstants = new BridgeRegTestConstants();
+        long blockNumber = regTestConstants.getRsk2BtcMinimumAcceptableConfirmations() + EARLIEST_PEGOUT_CREATION_BLOCK;
+
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            blockNumber,
+            regTestConstants,
+            VETIVER_ACTIVATIONS
+        );
+
+        assertTrue(result.isPresent());
+        assertEquals(LEGACY_FIND_FIRST_HASH, result.get().getBtcTransaction().getHash().toString());
+    }
+
+    @Test
+    void getNextPegout_rskip559_noEligibleEntries_returnsEmpty() {
+        Optional<PegoutsWaitingForConfirmations.Entry> result = set.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            BLOCK_HEIGHT_WITHOUT_ELIGIBLE_PEGOUTS,
+            BRIDGE_CONSTANTS,
+            ACTIVATIONS_ALL
+        );
+
+        assertEquals(Optional.empty(), result);
+    }
+
+    @Test
+    void getNextPegout_rskip559_singleEligibleEntry_returnsIt() {
+        PegoutsWaitingForConfirmations.Entry onlyEligible = entryCreatedAt(EARLIEST_PEGOUT_CREATION_BLOCK);
+        PegoutsWaitingForConfirmations pegouts = pegoutsWith(onlyEligible, entryWithoutEnoughConfirmations());
+
+        Optional<PegoutsWaitingForConfirmations.Entry> result = pegouts.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+            BRIDGE_CONSTANTS,
+            ACTIVATIONS_ALL
+        );
+
+        assertEquals(Optional.of(onlyEligible), result);
+    }
+
+    @ParameterizedTest(name = "{displayName} - {0}")
+    @MethodSource("activationsBeforeAndAfterRskip559")
+    void getNextPegout_confirmationsExactlyAtMinimum_isEligible(ActivationConfig.ForBlock activations) {
+        // Eligibility is confirmations >= minimum. Pin the boundary: turning it into > would silently
+        // delay every pegout by one block on both sides of the fork.
+        PegoutsWaitingForConfirmations.Entry exactlyAtMinimum = entryCreatedAt(EARLIEST_PEGOUT_CREATION_BLOCK);
+        PegoutsWaitingForConfirmations.Entry oneConfirmationShort = entryCreatedAt(EARLIEST_PEGOUT_CREATION_BLOCK + 1);
+        PegoutsWaitingForConfirmations pegouts = pegoutsWith(exactlyAtMinimum, oneConfirmationShort);
+
+        Optional<PegoutsWaitingForConfirmations.Entry> result = pegouts.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+            BRIDGE_CONSTANTS,
+            activations
+        );
+
+        assertEquals(Optional.of(exactlyAtMinimum), result);
+    }
+
+    @ParameterizedTest(name = "{displayName} - {0}")
+    @MethodSource("activationsBeforeAndAfterRskip559")
+    void getNextPegout_entryCreatedAfterCurrentBlock_isNotEligible(ActivationConfig.ForBlock activations) {
+        // A reorg can leave an entry whose creation block is above the executing one, giving negative
+        // confirmations. It must never be eligible.
+        PegoutsWaitingForConfirmations pegouts = pegoutsWith(entryCreatedAt(BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS + 1));
+
+        Optional<PegoutsWaitingForConfirmations.Entry> result = pegouts.getNextPegoutWithEnoughConfirmations(
+            UPDATE_COLLECTIONS_TX_HASH,
+            BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS,
+            BRIDGE_CONSTANTS,
+            activations
+        );
+
+        assertEquals(Optional.empty(), result);
+    }
+
+    private static Stream<Arguments> activationsBeforeAndAfterRskip559() {
+        return Stream.of(
+            Arguments.of(named("before RSKIP559", VETIVER_ACTIVATIONS)),
+            Arguments.of(named("from RSKIP559 on", ACTIVATIONS_ALL))
+        );
+    }
+
+    private PegoutsWaitingForConfirmations pegoutsWith(PegoutsWaitingForConfirmations.Entry... entries) {
+        return new PegoutsWaitingForConfirmations(new HashSet<>(Arrays.asList(entries)));
+    }
+
+    /**
+     * An entry whose btc tx is distinct per creation block, so a set built from several of them holds one
+     * entry per block without the deduplication in {@code addEntry} collapsing them.
+     */
+    private PegoutsWaitingForConfirmations.Entry entryCreatedAt(long pegoutCreationRskBlockNumber) {
+        BtcTransaction btcTransaction = createTransaction((int) pegoutCreationRskBlockNumber, Coin.COIN);
+        return new PegoutsWaitingForConfirmations.Entry(btcTransaction, pegoutCreationRskBlockNumber);
+    }
+
+    private PegoutsWaitingForConfirmations.Entry entryWithoutEnoughConfirmations() {
+        return entryCreatedAt(BLOCK_HEIGHT_WITH_ELIGIBLE_PEGOUTS);
     }
 
     private PegoutsWaitingForConfirmations.Entry firstEligibleEntryOtherThanLegacyPick() {
