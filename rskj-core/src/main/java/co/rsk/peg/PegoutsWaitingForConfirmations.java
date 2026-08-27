@@ -88,7 +88,7 @@ public class PegoutsWaitingForConfirmations {
      *                         again, which is the bug the dataset exists to avoid.
      * @param currentBlockNumber the current execution block number (height).
      * @param bridgeConstants the network's Bridge constants, which expose the network's historic pegout selections and minimum required confirmations.
-     * @param activations activations for a current block that determine entries ordering/filtering.
+     * @param activations activations for a current block that determine entries ordering/filtering. Must not be null.
      *
      * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
      */
@@ -100,6 +100,7 @@ public class PegoutsWaitingForConfirmations {
     ) {
         Objects.requireNonNull(currentRskTxHash, "currentRskTxHash must not be null");
         Objects.requireNonNull(bridgeConstants, "bridgeConstants must not be null");
+        Objects.requireNonNull(activations, "activations must not be null");
 
         int minimumConfirmations = bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations();
         if (!activations.isActive(ConsensusRule.RSKIP559)) {
