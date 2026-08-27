@@ -24,6 +24,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapConstants;
+import co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
