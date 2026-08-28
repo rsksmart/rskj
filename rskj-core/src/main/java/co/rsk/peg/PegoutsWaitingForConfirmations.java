@@ -156,8 +156,7 @@ public class PegoutsWaitingForConfirmations {
          */
         private Optional<Entry> getNextPegoutSortedByBtcTx(long currentBlockNumber, int minimumConfirmations) {
             return eligibleEntries(currentBlockNumber, minimumConfirmations).stream()
-                .sorted(Entry.BTC_TX_COMPARATOR)
-                .findFirst();
+                .min(Entry.BTC_TX_COMPARATOR);
         }
 
         /**
