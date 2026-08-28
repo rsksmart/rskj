@@ -64,15 +64,11 @@ public class PegoutsWaitingForConfirmations {
     }
 
     public Collection<Entry> getEntries(ForBlock activations) {
-        // TODO: After fork we could try to remove this code and leave only sorted output.
-        // Because only after fork it will be possible to prove that it 100% does not break behaviour.
-        // And rename it to getEntriesOrdered
-
-        var rskip559 = activations.isActive(ConsensusRule.RSKIP559);
-        if (rskip559) {
-            return entries.stream().sorted(Entry.BTC_TX_COMPARATOR).toList();
+        if (!activations.isActive(ConsensusRule.RSKIP559)) {
+            return entries.stream().toList();
         }
-        return entries.stream().toList();
+
+        return entries.stream().sorted(Entry.BTC_TX_COMPARATOR).toList();
     }
 
     /**
@@ -124,12 +120,9 @@ public class PegoutsWaitingForConfirmations {
         return entries.removeEntry(entry);
     }
 
-    /**
-     * Encapsulate entries while preserving sorting order before fork.
-     */
     private static class EntriesStore {
 
-        private final HashSet<Entry> entriesSet;
+        private final Set<Entry> entriesSet;
 
         private EntriesStore(Collection<Entry> entries) {
             this.entriesSet = new HashSet<>(entries);
@@ -263,10 +256,9 @@ public class PegoutsWaitingForConfirmations {
             }
 
             Entry otherEntry = (Entry) o;
-            return otherEntry.getBtcTransaction().equals(getBtcTransaction()) &&
-                otherEntry.getPegoutCreationRskBlockNumber().equals(getPegoutCreationRskBlockNumber()) &&
-                (otherEntry.getPegoutCreationRskTxHash() == null && getPegoutCreationRskTxHash() == null ||
-                 otherEntry.getPegoutCreationRskTxHash() != null && otherEntry.getPegoutCreationRskTxHash().equals(getPegoutCreationRskTxHash()));
+            return Objects.equals(btcTransaction, otherEntry.btcTransaction) &&
+                Objects.equals(pegoutCreationRskBlockNumber, otherEntry.pegoutCreationRskBlockNumber) &&
+                Objects.equals(pegoutCreationRskTxHash, otherEntry.pegoutCreationRskTxHash);
         }
 
         @Override
