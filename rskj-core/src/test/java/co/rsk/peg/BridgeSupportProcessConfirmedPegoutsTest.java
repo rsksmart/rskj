@@ -112,6 +112,24 @@ class BridgeSupportProcessConfirmedPegoutsTest {
         Coin.valueOf(150_000_000L)  // 1.5 btc, two utxos
     );
 
+    /**
+     * The btc tx hashes of the {@link #PEGOUT_REQUEST_VALUES} pegouts, in the order RSKIP559 must confirm
+     * them: ascending lexicographical order of the serialized btc transaction.
+     *
+     * <p>Pinned as literals on purpose. Sorting the fixture with {@code Entry.BTC_TX_COMPARATOR} would
+     * derive the expectation from the very comparator these tests exercise, so an inverted comparator
+     * would flip the expectation with it and every assertion would still pass.</p>
+     *
+     * <p>A failure against these literals means either the comparator changed or the fixture now builds
+     * different transactions. Re-pin only after establishing which, and never from the comparator's own
+     * output.</p>
+     */
+    private static final List<Sha256Hash> DETERMINISTIC_PEGOUT_ORDER = List.of(
+        Sha256Hash.wrap("c744fa71b0278196c9f2d4a295cb82a22564216cb55bcab7c68f41d3822a53e9"),
+        Sha256Hash.wrap("3c17a301ec33f74e02d990ce5ea6ee872f4c8201f884422428e81cb4e415f40e"),
+        Sha256Hash.wrap("7ad3515f8a04eb725989e98da619be9e078d368c0e3998fa0671d7529eb14360")
+    );
+
     private static final int MINIMUM_CONFIRMATIONS = BRIDGE_CONSTANTS.getRsk2BtcMinimumAcceptableConfirmations();
     private static final int BLOCKS_BETWEEN_PEGOUTS = BRIDGE_CONSTANTS.getNumberOfBlocksBetweenPegouts();
     private static final long FIRST_PEGOUT_CREATION_BLOCK = 1_000L;
@@ -208,7 +226,7 @@ class BridgeSupportProcessConfirmedPegoutsTest {
     void updateCollections_fromRskip559_whenCalledRepeatedly_shouldConfirmOnePegoutPerCallInTheDeterministicOrder() throws IOException {
         // Arrange
         List<Entry> pegouts = createPegoutsWaitingForConfirmations(SEVERAL_PEGOUTS, P2SH_P2WSH_ERP_FEDERATION, ALL_ACTIVATIONS);
-        List<Entry> expectedOrder = pegouts.stream().sorted(Entry.BTC_TX_COMPARATOR).toList();
+        List<Entry> expectedOrder = inDeterministicOrder(pegouts);
         assertNotEquals(
             pegouts,
             expectedOrder,
@@ -714,11 +732,38 @@ class BridgeSupportProcessConfirmedPegoutsTest {
     }
 
     private static Entry firstInDeterministicOrder(List<Entry> pegouts) {
-        return pegouts.stream().min(Entry.BTC_TX_COMPARATOR).orElseThrow();
+        return inDeterministicOrder(pegouts).get(0);
     }
 
     private static Entry lastInDeterministicOrder(List<Entry> pegouts) {
-        return pegouts.stream().max(Entry.BTC_TX_COMPARATOR).orElseThrow();
+        List<Entry> ordered = inDeterministicOrder(pegouts);
+        return ordered.get(ordered.size() - 1);
+    }
+
+    /**
+     * The fixture pegouts in {@link #DETERMINISTIC_PEGOUT_ORDER}, resolved by btc tx hash rather than by
+     * sorting, so that the expected order is independent of the comparator under test.
+     */
+    private static List<Entry> inDeterministicOrder(List<Entry> pegouts) {
+        assertEquals(
+            DETERMINISTIC_PEGOUT_ORDER.size(),
+            pegouts.size(),
+            "the pinned order covers the whole pegout request fixture, so it can only order all of it"
+        );
+
+        return DETERMINISTIC_PEGOUT_ORDER.stream()
+            .map(btcTxHash -> pegoutWithBtcTxHash(pegouts, btcTxHash))
+            .toList();
+    }
+
+    private static Entry pegoutWithBtcTxHash(List<Entry> pegouts, Sha256Hash btcTxHash) {
+        return pegouts.stream()
+            .filter(pegout -> pegout.getBtcTransaction().getHash().equals(btcTxHash))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError(
+                "no fixture pegout carries the pinned btc tx " + btcTxHash
+                    + ", so the fixture no longer builds the transactions the pinned order was derived from"
+            ));
     }
 
     private SortedMap<Keccak256, BtcTransaction> pegoutsWaitingForSignatures() throws IOException {
