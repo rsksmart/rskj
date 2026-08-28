@@ -319,11 +319,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         bridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
 
-        LockWhitelist lockWhitelist = mock(LockWhitelist.class);
-        whitelistStorageProvider = mock(WhitelistStorageProvider.class);
-        when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
-        when(whitelistStorageProvider.getLockWhitelist(allActivations, btcMainnetParams)).thenReturn(lockWhitelist);
-
         feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
