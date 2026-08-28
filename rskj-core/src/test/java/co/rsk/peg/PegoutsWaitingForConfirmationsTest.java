@@ -63,7 +63,7 @@ class PegoutsWaitingForConfirmationsTest {
     private static final ActivationConfig.ForBlock VETIVER_ACTIVATIONS = ActivationConfigsForTest.vetiver900().forBlock(0L);
     private static final ActivationConfig.ForBlock ACTIVATIONS_ALL = ActivationConfigsForTest.all().forBlock(0L);
 
-    // The historic dataset is only consulted before RSKIP559 and when more than one entry is eligible.
+    // The real historic dataset only contains entries for pre-RSKIP559 calls that had >1 eligible pegout.
     // These fixtures use the real mainnet and testnet tables: this synthetic updateCollections hash is in
     // neither, so the lookup misses against a fully populated table and the legacy pick applies.
     private static final Keccak256 UPDATE_COLLECTIONS_TX_HASH = RskTestUtils.createHash(100);

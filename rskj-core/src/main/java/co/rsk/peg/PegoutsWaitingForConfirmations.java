@@ -124,7 +124,8 @@ public class PegoutsWaitingForConfirmations {
      * From RSKIP559 on, selection is deterministic via the btc tx comparator.
      */
     private Optional<Entry> getNextPegoutSortedByBtcTx(long currentBlockNumber, int minimumConfirmations) {
-        return eligibleEntries(currentBlockNumber, minimumConfirmations).stream()
+        return entries.stream()
+            .filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations))
             .min(Entry.BTC_TX_COMPARATOR);
     }
 
