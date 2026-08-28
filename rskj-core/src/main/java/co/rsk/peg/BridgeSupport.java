@@ -3476,6 +3476,34 @@ public class BridgeSupport {
             throws BlockStoreException, VerificationException.EmptyInputsOrOutputs, BridgeIllegalArgumentException {
 
         // Validates height and confirmations for tx
+        if (!areHeightAndConfirmationsValid(btcTxHash, height)) {
+            return false;
+        }
+
+        // Validates pmt size
+        validatePMTSize(pmtSerialized);
+
+        // Calculates merkleRoot
+        Optional<Sha256Hash> merkleRoot = getMerkleRoot(btcTxHash, pmtSerialized);
+        if (merkleRoot.isEmpty()) {
+            return false;
+        }
+
+        // Validates inputs count
+        logger.info("[validationsForRegisterBtcTransaction] Going to validate inputs for btc tx {}", btcTxHash);
+        BridgeUtils.validateInputsCount(btcTxSerialized, activations.isActive(ConsensusRule.RSKIP143));
+
+        // Check the merkle root equals merkle root of btc block at specified height in the btc best chain
+        // BTC blockstore is available since we've already queried the best chain height
+        if (!isMerkleRootWithBlockHeaderValid(btcTxHash, height, merkleRoot.get())) {
+            return false;
+        }
+
+        logger.trace("[validationsForRegisterBtcTransaction] Btc tx: {} successfully validated", btcTxHash);
+        return true;
+    }
+
+    private boolean areHeightAndConfirmationsValid(Sha256Hash btcTxHash, int height) {
         try {
             int acceptableConfirmationsAmount = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
             if (!BridgeUtils.validateHeightAndConfirmations(
@@ -3490,37 +3518,33 @@ public class BridgeSupport {
             logger.warn(panicMessage);
             return false;
         }
+        return true;
+    }
 
-        // Validates pmt size
+    private static void validatePMTSize(byte[] pmtSerialized) throws BridgeIllegalArgumentException {
         if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
             String message = "PartialMerkleTree doesn't have expected size";
             logger.warn(message);
             throw new BridgeIllegalArgumentException(message);
         }
+    }
 
-        // Calculates merkleRoot
-        Sha256Hash merkleRoot;
+    private Optional<Sha256Hash> getMerkleRoot(Sha256Hash btcTxHash, byte[] pmtSerialized) throws BridgeIllegalArgumentException {
         try {
-            merkleRoot = BridgeUtils.calculateMerkleRoot(networkParameters, pmtSerialized, btcTxHash);
-            if (merkleRoot == null) {
-                return false;
-            }
+            return Optional.ofNullable(BridgeUtils.calculateMerkleRoot(networkParameters, pmtSerialized, btcTxHash));
         } catch (VerificationException e) {
             throw new BridgeIllegalArgumentException(e.getMessage(), e);
         }
+    }
 
-        // Validates inputs count
-        logger.info("[validationsForRegisterBtcTransaction] Going to validate inputs for btc tx {}", btcTxHash);
-        BridgeUtils.validateInputsCount(btcTxSerialized, activations.isActive(ConsensusRule.RSKIP143));
-
-        // Check the merkle root equals merkle root of btc block at specified height in the btc best chain
-        // BTC blockstore is available since we've already queried the best chain height
-        logger.trace("[validationsForRegisterBtcTransaction] Getting btc block at height: {}", height);
+    private boolean isMerkleRootWithBlockHeaderValid(Sha256Hash btcTxHash, int height, Sha256Hash merkleRoot) throws BlockStoreException {
+        logger.trace("[isMerkleRootWithBlockHeaderValid] Getting btc block at height: {}", height);
         BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
-        logger.trace("[validationsForRegisterBtcTransaction] Validating block merkle root at height: {}", height);
+
+        logger.trace("[isMerkleRootWithBlockHeaderValid] Validating block merkle root at height: {}", height);
         if (!isBlockMerkleRootValid(merkleRoot, blockHeader)){
             String panicMessage = String.format(
-                "[validationsForRegisterBtcTransaction] Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
+                "[isMerkleRootWithBlockHeaderValid] Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
                 btcTxHash.toString(),
                 merkleRoot,
                 blockHeader.getMerkleRoot()
@@ -3528,8 +3552,6 @@ public class BridgeSupport {
             logger.warn(panicMessage);
             return false;
         }
-
-        logger.trace("[validationsForRegisterBtcTransaction] Btc tx: {} successfully validated", btcTxHash);
         return true;
     }
 

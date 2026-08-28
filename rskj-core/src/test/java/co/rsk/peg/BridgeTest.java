@@ -1,6 +1,9 @@
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRepository;
+import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.core.RskAddress.ZERO_ADDRESS;
+import static co.rsk.peg.BridgeSupportTestUtil.buildPMTAndRecreateChainForTransactionRegistration;
 import static co.rsk.peg.PegTestUtils.createHash3;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,6 +16,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.peg.BridgeMethods.AuthorizerProvider;
+import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
@@ -21,14 +25,21 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
+import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
+import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.test.builders.BridgeBuilder;
 import co.rsk.test.builders.BridgeSupportBuilder;
+import co.rsk.test.builders.FederationSupportBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -44,6 +55,7 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.*;
@@ -424,6 +436,79 @@ class BridgeTest {
             anyInt(),
             any(byte[].class)
         );
+    }
+
+    @Test
+    void registerBtcTransaction_withNoInputs_shouldThrowEmptyInputsOrOutputs() throws BlockStoreException {
+        // Arrange
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
+
+        Repository repository = createRepository();
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(repository, networkParameters, activations);
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(new InMemoryStorage());
+        Block executionBlock = createRskBlock(1);
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
+            .withFederationConstants(bridgeMainNetConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withRskExecutionBlock(executionBlock)
+            .withActivations(activations)
+            .build();
+
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters, 100, 100);
+        BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, activations);
+
+        List<LogInfo> logs = new ArrayList<>();
+        BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(bridgeMainNetConstants, activations, logs);
+
+        FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(
+            bridgeMainNetConstants.getFeePerKbConstants(),
+            new FeePerKbStorageProviderImpl(new InMemoryStorage())
+        );
+
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+            .withActivations(activations)
+            .withExecutionBlock(executionBlock)
+            .withBridgeConstants(bridgeMainNetConstants)
+            .withProvider(bridgeStorageProvider)
+            .withRepository(repository)
+            .withEventLogger(bridgeEventLogger)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withBtcLockSenderProvider(new BtcLockSenderProvider())
+            .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFederationSupport(federationSupport)
+            .withFeePerKbSupport(feePerKbSupport)
+            .build();
+
+        BtcTransaction btcTransactionWithNoInputs = new BtcTransaction(networkParameters);
+        Address userAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "userAddress");
+        btcTransactionWithNoInputs.addOutput(Coin.COIN, userAddress);
+        assertEquals(1, btcTransactionWithNoInputs.getOutputs().size());
+        assertEquals(0, btcTransactionWithNoInputs.getInputs().size());
+
+        int height = 5;
+        PartialMerkleTree pmt = buildPMTAndRecreateChainForTransactionRegistration(
+            bridgeStorageProvider,
+            bridgeMainNetConstants,
+            height,
+            btcTransactionWithNoInputs,
+            btcBlockStore
+        );
+
+        Bridge bridge = bridgeBuilder
+            .activationConfig(ActivationConfigsForTest.all())
+            .bridgeSupport(bridgeSupport)
+            .build();
+
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(
+            btcTransactionWithNoInputs.bitcoinSerialize(),
+            height,
+            pmt.bitcoinSerialize()
+        );
+
+        // Act & Assert
+        VMException exception = assertThrows(VMException.class, () -> bridge.execute(data));
+        assertInstanceOf(VerificationException.EmptyInputsOrOutputs.class, exception.getCause());
     }
 
     @Test

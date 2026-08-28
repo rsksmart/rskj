@@ -414,16 +414,16 @@ class BridgeUtilsTest {
 
     @Test
     void validateHeightAndConfirmations_invalid_height() {
-        Assertions.assertThrows(Exception.class, () -> Assertions.assertFalse(BridgeUtils.validateHeightAndConfirmations(-1, 0, 0, null)));
+        Assertions.assertFalse(BridgeUtils.validateHeightAndConfirmations(-1, 0, 0, null));
     }
 
     @Test
-    void validateHeightAndConfirmation_insufficient_confirmations() throws Exception {
+    void validateHeightAndConfirmations_insufficient_confirmations() {
         Assertions.assertFalse(BridgeUtils.validateHeightAndConfirmations(2, 5, 10, Sha256Hash.of(Hex.decode("ab"))));
     }
 
     @Test
-    void validateHeightAndConfirmation_enough_confirmations() throws Exception {
+    void validateHeightAndConfirmations_enough_confirmations() {
         Assertions.assertTrue(BridgeUtils.validateHeightAndConfirmations(
             2,
             5,
