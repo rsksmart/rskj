@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
@@ -53,14 +54,14 @@ public class PegoutsWaitingForConfirmations {
      * Return entries ordered according to {@link Entry.BTC_TX_COMPARATOR}.
      */
     public Collection<Entry> getEntriesWithoutHashOrdered() {
-        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() == null).sorted(Entry.BTC_TX_COMPARATOR).toList();
+        return entries.stream().filter(e -> e.getPegoutCreationRskTxHash() == null).sorted(Entry.BTC_TX_COMPARATOR).toList();
     }
 
     /**
      * Return entries ordered according to {@link Entry.BTC_TX_COMPARATOR}.
      */
     public Collection<Entry> getEntriesWithHashOrdered() {
-        return entries.entriesSet.stream().filter(e -> e.getPegoutCreationRskTxHash() != null).sorted(Entry.BTC_TX_COMPARATOR).toList();
+        return entries.stream().filter(e -> e.getPegoutCreationRskTxHash() != null).sorted(Entry.BTC_TX_COMPARATOR).toList();
     }
 
     public Collection<Entry> getEntries(ForBlock activations) {
@@ -70,9 +71,9 @@ public class PegoutsWaitingForConfirmations {
 
         var rskip559 = activations.isActive(ConsensusRule.RSKIP559);
         if (rskip559) {
-            return entries.entriesSet.stream().sorted(Entry.BTC_TX_COMPARATOR).toList();
+            return entries.stream().sorted(Entry.BTC_TX_COMPARATOR).toList();
         }
-        return entries.entriesSet.stream().toList();
+        return entries.stream().toList();
     }
 
     /**
@@ -133,6 +134,10 @@ public class PegoutsWaitingForConfirmations {
 
         private EntriesStore(Collection<Entry> entries) {
             this.entriesSet = new HashSet<>(entries);
+        }
+
+        private Stream<Entry> stream() {
+            return entriesSet.stream();
         }
 
         private boolean hasEnoughConfirmations(Entry entry, long currentBlockNumber, int minimumConfirmations) {
