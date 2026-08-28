@@ -108,11 +108,16 @@ class JsonRpcDocCoverageTest {
      * this mapping rather than naming a type, so a third block-taking type is an entry here and not a third
      * copy of the same test.
      *
-     * <p>{@code forms} is deliberately the part a narrow description drops rather than the whole union. For
-     * {@link BlockRefParam} that is the {@code {"blockHash": ...}} object, documented since 2022 and still
-     * missing from one method until it was pointed at the shared descriptor. For
-     * {@link BlockIdentifierParam} it is the tag, which {@code eth_getUncleByBlockNumberAndIndex} declared
-     * away by describing its parameter as a hex number, telling a reader {@code latest} would be rejected.
+     * <p>{@code form} is the whole union a method of that type must reach, not merely the part a narrow
+     * description tends to drop. Pinning the part is enough to catch narrowing -- for {@link BlockRefParam}
+     * the {@code {"blockHash": ...}} object, documented since 2022 and still missing from one method until it
+     * was pointed at the shared descriptor; for {@link BlockIdentifierParam} the tag, which
+     * {@code eth_getUncleByBlockNumberAndIndex} declared away by describing its parameter as a hex number,
+     * telling a reader {@code latest} would be rejected. It is not enough to catch widening, and that is why
+     * the union is pinned instead. {@code BlockNumberTag} is contained by the reading union and the executing
+     * one alike, so a pin on the tag resolves through either and cannot tell them apart: a reading method
+     * repointed at {@code ExecutionBlockNumberOrTag} would promise a decimal height that
+     * {@code Web3InformationRetriever} rejects, and the check would pass.
      *
      * <p>{@code form} is one exact schema rather than a set of acceptable ones, so the check is an upper
      * bound as well as a lower one: a method documented too <em>widely</em> fails as loudly as one documented
@@ -159,9 +164,18 @@ class JsonRpcDocCoverageTest {
      * repointed at the execution variant -- promising a decimal height its retriever rejects -- and nothing
      * here would notice. An entry naming a method that does not take the mapped parameter type fails, for the
      * same reason a mapped type matching no method does.
+     *
+     * <p>{@code eth_estimateGas} is the executing method of the {@link BlockIdentifierParam} type, and it is
+     * named here for the same reason {@code eth_call} is: its type's {@code form} is the reading union, which
+     * it does not reach. The entry and the union pin depend on each other and were made together. With the
+     * tag pinned instead, this entry would be unnecessary and a reading method could be widened to the
+     * executing variant unnoticed; with the union pinned and this entry absent, {@code eth_estimateGas} itself
+     * fails. Together they hold the contract in both directions: a reading method cannot claim the decimal
+     * height its retriever rejects, and the executing method cannot quietly lose it.
      */
     private static final Map<String, String> WIDER_BLOCK_FORM_BY_METHOD = Map.of(
-            "eth_call", "#/components/schemas/ExecutionBlockRef");
+            "eth_call", "#/components/schemas/ExecutionBlockRef",
+            "eth_estimateGas", "#/components/schemas/ExecutionBlockNumberOrTag");
 
     /**
      * Every node-side block parameter type, mapped to what documenting it honestly requires. Methods are found
@@ -179,7 +193,7 @@ class JsonRpcDocCoverageTest {
                     "#/components/schemas/BlockRef",
                     "#/components/contentDescriptors/BlockRefOrNumberOrTag"),
             new BlockParameterContract(BlockIdentifierParam.class,
-                    "#/components/schemas/BlockNumberTag",
+                    "#/components/schemas/BlockNumberOrTag",
                     "#/components/contentDescriptors/BlockNumberOrTag"));
 
     private static final String DOC_RPC_DIR = "doc/rpc";
