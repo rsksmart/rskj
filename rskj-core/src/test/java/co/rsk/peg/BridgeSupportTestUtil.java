@@ -203,7 +203,24 @@ public final class BridgeSupportTestUtil {
             .chainId(Constants.MAINNET_CHAIN_ID)
             .build();
 
-        tx.sign(RskTestUtils.getEcKeyFromSeed("sender").getPrivKeyBytes());
+        ECKey signerKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(signerKey.getPrivKeyBytes());
+        return tx;
+    }
+
+    public static Transaction buildPegoutRequestTransaction(co.rsk.core.Coin pegoutRequestValue, long nonce, ECKey sender) {
+        Transaction tx = Transaction
+            .builder()
+            .nonce(BigInteger.valueOf(nonce))
+            .gasPrice(BigInteger.valueOf(100))
+            .gasLimit(BigInteger.valueOf(1_000))
+            .destination(PrecompiledContracts.BRIDGE_ADDR)
+            .data(Bridge.RELEASE_BTC.encode())
+            .chainId(Constants.MAINNET_CHAIN_ID)
+            .value(pegoutRequestValue)
+            .build();
+
+        tx.sign(sender.getPrivKeyBytes());
         return tx;
     }
 
