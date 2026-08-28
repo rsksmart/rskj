@@ -138,7 +138,7 @@ class PegoutsWaitingForConfirmationsTest {
         PegoutsWaitingForConfirmations.Entry entry = new PegoutsWaitingForConfirmations.Entry(createTransaction(5, Coin.valueOf(100)), 7L);
 
         assertEquals(createTransaction(5, Coin.valueOf(100)), entry.getBtcTransaction());
-        assertEquals(7L, entry.getPegoutCreationRskBlockNumber().longValue());
+        assertEquals(7L, entry.getPegoutCreationRskBlockNumber());
     }
 
     @Test

@@ -49,14 +49,14 @@ public class PegoutsWaitingForConfirmations {
     }
 
     /**
-     * Return entries ordered according to {@link Entry.BTC_TX_COMPARATOR}.
+     * Return entries ordered according to {@link Entry#BTC_TX_COMPARATOR}.
      */
     public Collection<Entry> getEntriesWithoutHashOrdered() {
         return entries.stream().filter(e -> e.getPegoutCreationRskTxHash() == null).sorted(Entry.BTC_TX_COMPARATOR).toList();
     }
 
     /**
-     * Return entries ordered according to {@link Entry.BTC_TX_COMPARATOR}.
+     * Return entries ordered according to {@link Entry#BTC_TX_COMPARATOR}.
      */
     public Collection<Entry> getEntriesWithHashOrdered() {
         return entries.stream().filter(e -> e.getPegoutCreationRskTxHash() != null).sorted(Entry.BTC_TX_COMPARATOR).toList();
@@ -191,26 +191,22 @@ public class PegoutsWaitingForConfirmations {
         /**
          * Compares entries using the lexicographical order of the btc tx's serialized bytes.
          */
-        public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<>() {
-            private final Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
-
-            @Override
-            public int compare(Entry e1, Entry e2) {
-                return comparator.compare(e1.getBtcTransaction().bitcoinSerialize(), e2.getBtcTransaction().bitcoinSerialize());
-            }
-        };
+        public static final Comparator<Entry> BTC_TX_COMPARATOR = Comparator.comparing(
+            entry -> entry.getBtcTransaction().bitcoinSerialize(),
+            UnsignedBytes.lexicographicalComparator()
+        );
 
         private final BtcTransaction btcTransaction;
-        private final Long pegoutCreationRskBlockNumber;
+        private final long pegoutCreationRskBlockNumber;
         private final Keccak256 pegoutCreationRskTxHash;
 
-        public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber, Keccak256 pegoutCreationRskTxHash) {
+        public Entry(BtcTransaction btcTransaction, long pegoutCreationRskBlockNumber, Keccak256 pegoutCreationRskTxHash) {
             this.btcTransaction = btcTransaction;
             this.pegoutCreationRskBlockNumber = pegoutCreationRskBlockNumber;
             this.pegoutCreationRskTxHash = pegoutCreationRskTxHash;
         }
 
-        public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber) {
+        public Entry(BtcTransaction btcTransaction, long pegoutCreationRskBlockNumber) {
             this(btcTransaction, pegoutCreationRskBlockNumber, null);
         }
 
@@ -218,7 +214,7 @@ public class PegoutsWaitingForConfirmations {
             return btcTransaction;
         }
 
-        public Long getPegoutCreationRskBlockNumber() {
+        public long getPegoutCreationRskBlockNumber() {
             return pegoutCreationRskBlockNumber;
         }
 
@@ -234,7 +230,7 @@ public class PegoutsWaitingForConfirmations {
 
             Entry otherEntry = (Entry) o;
             return Objects.equals(btcTransaction, otherEntry.btcTransaction) &&
-                Objects.equals(pegoutCreationRskBlockNumber, otherEntry.pegoutCreationRskBlockNumber) &&
+                pegoutCreationRskBlockNumber == otherEntry.pegoutCreationRskBlockNumber &&
                 Objects.equals(pegoutCreationRskTxHash, otherEntry.pegoutCreationRskTxHash);
         }
 

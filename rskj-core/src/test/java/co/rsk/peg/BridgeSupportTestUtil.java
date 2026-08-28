@@ -327,7 +327,7 @@ public final class BridgeSupportTestUtil {
         var pegoutEntries = pegoutsWaitingForConfirmations.getEntries(ACTIVATIONS_ALL);
         Optional<PegoutsWaitingForConfirmations.Entry> pegoutEntry = pegoutEntries.stream()
             .filter(entry -> entry.getBtcTransaction().getHash().equals(pegoutTransactionHash) &&
-                entry.getPegoutCreationRskBlockNumber().equals(executionBlock) &&
+                entry.getPegoutCreationRskBlockNumber() == executionBlock &&
                 entry.getPegoutCreationRskTxHash().equals(releaseCreationTxHash))
             .findFirst();
         assertTrue(pegoutEntry.isPresent());
