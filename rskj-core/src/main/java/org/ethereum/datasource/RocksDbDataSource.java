@@ -37,6 +37,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.stream.Collectors;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.lang.System.getProperty;
@@ -74,6 +75,15 @@ public class RocksDbDataSource implements KeyValueDataSource {
      */
     private static final boolean VERIFY_CHECKSUMS =
             Boolean.parseBoolean(System.getProperty("rocksdb.verifyChecksums", "true"));
+    /**
+     * SST compression. RskJ has written uncompressed SSTs since RocksDB was introduced, and a
+     * completed mainnet database measured 171 GB that way. Compression trades CPU on every read for
+     * fewer bytes on disk and off it, so which way it pays depends on the host: worth having where
+     * disk is the binding constraint, and worth avoiding where cores are. Defaults to the historical
+     * behaviour so nothing changes unless it is asked for.
+     */
+    private static final String COMPRESSION_TYPE =
+            System.getProperty("rocksdb.compression", "none");
 
     static {
         // The shared cache and filter below are native objects, so the RocksDB library has to be
@@ -407,10 +417,33 @@ public class RocksDbDataSource implements KeyValueDataSource {
         // All is flushed immediately: there is no uncommittedCache to flush
     }
 
+    /**
+     * Resolves {@code rocksdb.compression} to a RocksDB type, falling back to the historical
+     * uncompressed behaviour rather than failing a node at startup over a typo.
+     *
+     * <p>The unrecognised case is checked explicitly because RocksDB's own lookup answers
+     * {@code NO_COMPRESSION} for anything it does not know: without this, "snappyy" would silently
+     * write an uncompressed database and look exactly like a deliberate choice.
+     */
+    private static CompressionType compressionType() {
+        String requested = COMPRESSION_TYPE.trim().toLowerCase(Locale.ROOT);
+        CompressionType resolved = CompressionType.getCompressionType(requested);
+        if (resolved == CompressionType.NO_COMPRESSION && !"none".equals(requested)) {
+            logger.warn("Unknown rocksdb.compression '{}'; writing uncompressed. Known values: {}",
+                    COMPRESSION_TYPE,
+                    Arrays.stream(CompressionType.values())
+                            .map(CompressionType::getLibraryName)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.joining(", ")));
+            return CompressionType.NO_COMPRESSION;
+        }
+        return resolved;
+    }
+
     private static Options createOptions() {
         Options options = new Options();
         options.setCreateIfMissing(true);
-        options.setCompressionType(CompressionType.NO_COMPRESSION);
+        options.setCompressionType(compressionType());
         options.setArenaBlockSize(GENERAL_SIZE);
 
         // Bigger memtables mean fewer, larger L0 files and therefore much less compaction work
