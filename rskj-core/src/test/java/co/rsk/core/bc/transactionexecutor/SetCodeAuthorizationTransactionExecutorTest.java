@@ -22,6 +22,7 @@ import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.core.DelegationCodeResolver;
 import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.SetCodeAuthorizationTransactionExecutor;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.crypto.ECKey;
@@ -31,9 +32,12 @@ import org.ethereum.util.RLP;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
+import java.util.stream.Stream;
 
 import static java.math.BigInteger.ONE;
 import static java.math.BigInteger.ZERO;
@@ -64,6 +68,7 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
     private static final byte[] NONCE_ONE = NONCE_ONE_VALUE.toByteArray();
     private static final byte[] EMPTY_CODE =  new byte[0];
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
+    private static final BigInteger R_WITHOUT_CURVE_POINT = BigInteger.valueOf(5);
 
     private Repository repository;
     private SetCodeAuthorizationTransactionExecutor executor;
@@ -185,7 +190,10 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
     void processAuthorizationTuple_shouldThrow_whenSignatureRecoveryFails() {
         ECDSASignature signature = mock(ECDSASignature.class);
 
+        when(signature.getV()).thenReturn(Transaction.LOWER_REAL_V);
+        when(signature.getR()).thenReturn(R_WITHOUT_CURVE_POINT);
         when(signature.getS()).thenReturn(ONE);
+        when(signature.validateComponentsWithoutV()).thenReturn(true);
 
         var tuple = new SetCodeAuthorization(
                         ZERO_CHAIN_ID,
@@ -633,6 +641,71 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
         verify(repository).saveCode(eq(authority), aryEq(createDelegatedCode(delegated)));
         verify(repository).increaseNonce(authority);
      }
+
+    @ParameterizedTest
+    @ValueSource(ints = {2, 3, 4, 7, 255})
+    void processAuthorizationTuple_shouldThrow_whenYParityIsOutsideParityRange(int yParity) {
+        var tuple = authorizationWithYParity(yParity);
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
+        );
+
+        assertEquals("Signature y_parity must be 0 or 1", ex.getMessage());
+        verify(repository, never()).saveCode(any(), any());
+        verify(repository, never()).increaseNonce(any());
+    }
+
+    @ParameterizedTest
+    @MethodSource("signatureComponentsOutsideCurveRange")
+    void processAuthorizationTuple_shouldThrow_whenSignatureComponentsAreOutsideCurveRange(
+            BigInteger r, BigInteger s) {
+        var tuple = authorizationWithSignatureComponents(r, s);
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
+        );
+
+        assertEquals("Signature r and s must be in [1, secp256k1n)", ex.getMessage());
+        verify(repository, never()).saveCode(any(), any());
+        verify(repository, never()).increaseNonce(any());
+    }
+
+    private static Stream<Arguments> signatureComponentsOutsideCurveRange() {
+        BigInteger curveOrder = Constants.getSECP256K1N();
+        return Stream.of(
+                Arguments.of(ZERO, ONE),
+                Arguments.of(curveOrder, ONE),
+                Arguments.of(ONE, ZERO),
+                Arguments.of(ONE, curveOrder)
+        );
+    }
+
+    private SetCodeAuthorization authorizationWithSignatureComponents(BigInteger r, BigInteger s) {
+        SetCodeAuthorization signed = createValidAuthorizationTuple(
+                RskAddress.ZERO_ADDRESS, NONCE_ONE, ZERO_CHAIN_ID, new ECKey());
+        ECDSASignature signature = ECDSASignature.fromComponents(
+                BigIntegers.asUnsignedByteArray(r),
+                BigIntegers.asUnsignedByteArray(s),
+                signed.getSignature().getV()
+        );
+
+        return new SetCodeAuthorization(ZERO_CHAIN_ID, RskAddress.ZERO_ADDRESS, NONCE_ONE, signature);
+    }
+
+    private SetCodeAuthorization authorizationWithYParity(int yParity) {
+        SetCodeAuthorization signed = createValidAuthorizationTuple(
+                RskAddress.ZERO_ADDRESS, NONCE_ONE, ZERO_CHAIN_ID, new ECKey());
+        ECDSASignature signature = ECDSASignature.fromComponents(
+                BigIntegers.asUnsignedByteArray(signed.getSignature().getR()),
+                BigIntegers.asUnsignedByteArray(signed.getSignature().getS()),
+                (byte) (Transaction.LOWER_REAL_V + yParity)
+        );
+
+        return new SetCodeAuthorization(ZERO_CHAIN_ID, RskAddress.ZERO_ADDRESS, NONCE_ONE, signature);
+    }
 
     private SetCodeAuthorization createValidAuthorizationTuple(
             RskAddress delegatedAddress,

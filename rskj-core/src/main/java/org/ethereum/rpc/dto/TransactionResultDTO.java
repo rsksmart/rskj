@@ -169,7 +169,7 @@ public class TransactionResultDTO {
                     HexUtils.toQuantityJsonHex(auth.getChainId()),
                     auth.getAddress().toJsonString(),
                     HexUtils.toQuantityJsonHex(auth.getNonceBytes()),
-                    HexUtils.toQuantityJsonHex((long) signature.getV() - Transaction.LOWER_REAL_V),
+                    HexUtils.toQuantityJsonHex((signature.getV() - Transaction.LOWER_REAL_V) & 0xFF),
                     HexUtils.toQuantityJsonHex(signature.getR()),
                     HexUtils.toQuantityJsonHex(signature.getS())
             ));
