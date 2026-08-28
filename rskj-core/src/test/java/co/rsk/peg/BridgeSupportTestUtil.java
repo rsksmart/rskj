@@ -37,6 +37,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
+import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.Federation;
@@ -184,6 +185,42 @@ public final class BridgeSupportTestUtil {
         bridgeStorageProvider.save();
 
         return pmtWithTransactions;
+    }
+
+    /**
+     * Builds a registration scenario for a witness-bearing (segwit) transaction that mirrors how it is
+     * actually validated in production: a Bitcoin block header's merkle root is always computed over
+     * txids, never wtxids, so the merkle branch proving inclusion of a segwit transaction's
+     * witness data can never match the block header directly. Instead, that proof is built over the
+     * transaction's wtxid and validated against the witness commitment recorded from the block's
+     * coinbase transaction (RSKIP143).
+     *
+     * @return the wtxid-rooted merkle branch to submit for registration.
+     */
+    public static PartialMerkleTree buildPMTAndRecreateChainForSegwitTransactionRegistration(
+        BridgeStorageProvider bridgeStorageProvider,
+        BridgeConstants bridgeConstants,
+        int btcBlockToRegisterHeight,
+        BtcTransaction transaction,
+        BtcBlockStoreWithCache btcBlockStore
+    ) throws BlockStoreException {
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+
+        PartialMerkleTree pmtForBlockHeader = createValidPmtForTransactionsHashes(List.of(transaction.getHash(false)), networkParameters);
+        int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStore, chainHeight, pmtForBlockHeader, btcBlockToRegisterHeight, networkParameters);
+        // setMainChainBlock only updates the provider's in-memory height index; save() is required
+        // before it can be read back via getBtcBestBlockHashByHeight/getStoredBlockAtMainChainHeight
+        bridgeStorageProvider.save();
+
+        PartialMerkleTree pmtWithWitness = createValidPmtForTransactionsHashes(List.of(transaction.getHash(true)), networkParameters);
+        Sha256Hash witnessMerkleRoot = pmtWithWitness.getTxnHashAndMerkleRoot(new ArrayList<>());
+
+        BtcBlock registeredBlockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(btcBlockToRegisterHeight).getHeader();
+        bridgeStorageProvider.setCoinbaseInformation(registeredBlockHeader.getHash(), new CoinbaseInformation(witnessMerkleRoot));
+        bridgeStorageProvider.save();
+
+        return pmtWithWitness;
     }
 
     public static Transaction buildUpdateCollectionsTransaction() {
