@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>The documented set is read from the {@code name} field of every fragment under {@code doc/rpc/methods/}
  * — the field is what reaches the published document, so a fragment whose {@code name} disagreed with its
  * filename would otherwise be checked under a name that never ships. Methods deliberately left out of the
- * reference are listed in {@code doc/rpc/undocumented.json}, each with a reason and the basis that reason
+ * reference are listed in {@code doc/rpc/public_api_exclusions.json}, each with a reason and the basis that reason
  * rests on: {@code configuration} for a method shipped node configuration does not serve, {@code editorial}
  * for one left out by judgement. The basis is a label and nothing more — the guard checks that every entry
  * declares a recognised one, never that the reason written beside it is still true.
@@ -198,7 +198,7 @@ class JsonRpcDocCoverageTest {
 
     private static final String DOC_RPC_DIR = "doc/rpc";
     private static final String METHODS_DIR = "methods";
-    private static final String UNDOCUMENTED_FILE = "undocumented.json";
+    private static final String EXCLUSIONS_FILE = "public_api_exclusions.json";
 
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
@@ -238,7 +238,7 @@ class JsonRpcDocCoverageTest {
             message.append(String.format(
                     "%n%d method(s) exposed but neither documented nor allowlisted. Add a fragment under %s/%s/, "
                             + "or an entry with a reason to %s/%s:%n",
-                    undocumented.size(), DOC_RPC_DIR, METHODS_DIR, DOC_RPC_DIR, UNDOCUMENTED_FILE));
+                    undocumented.size(), DOC_RPC_DIR, METHODS_DIR, DOC_RPC_DIR, EXCLUSIONS_FILE));
             undocumented.forEach(name -> message.append("  - ").append(name).append(System.lineSeparator()));
         }
 
@@ -276,7 +276,7 @@ class JsonRpcDocCoverageTest {
         });
 
         assertTrue(problems.isEmpty(), () -> String.format("%s/%s is stale:%n  - %s",
-                DOC_RPC_DIR, UNDOCUMENTED_FILE, String.join(System.lineSeparator() + "  - ", problems)));
+                DOC_RPC_DIR, EXCLUSIONS_FILE, String.join(System.lineSeparator() + "  - ", problems)));
     }
 
     /**
@@ -297,7 +297,7 @@ class JsonRpcDocCoverageTest {
         assertTrue(problems.isEmpty(), () -> String.format(
                 "%d entr(ies) in %s/%s declare no basis, or one that is not recognised. Every entry must carry "
                         + "a \"basis\" of %s, matching the reason already written on it:%n  - %s",
-                problems.size(), DOC_RPC_DIR, UNDOCUMENTED_FILE,
+                problems.size(), DOC_RPC_DIR, EXCLUSIONS_FILE,
                 String.join(" or ", new TreeSet<>(ALLOWLIST_BASES)),
                 String.join(System.lineSeparator() + "  - ", problems)));
     }
@@ -705,7 +705,7 @@ class JsonRpcDocCoverageTest {
      * expose -- true, and no help at all in finding the character that is wrong.
      */
     private static Map<String, AllowlistEntry> allowlistedMethods() {
-        Path allowlist = docRpcDir().resolve(UNDOCUMENTED_FILE);
+        Path allowlist = docRpcDir().resolve(EXCLUSIONS_FILE);
         JsonNode methods = readJson(allowlist).path("methods");
         if (!methods.isArray()) {
             throw new IllegalStateException(allowlist + " must hold a \"methods\" array");
