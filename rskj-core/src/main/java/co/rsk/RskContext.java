@@ -1556,7 +1556,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 rskSystemProperties.getMaxBodyRequestsPerMinutePerPeer(),
                 rskSystemProperties.getMaxConcurrentHeaderRequests(),
                 rskSystemProperties.getMaxHeaderRequestsPerPeer(),
-                rskSystemProperties.getSkeletonRangeMultiplier());
+                rskSystemProperties.getSkeletonRangeMultiplier(),
+                rskSystemProperties.isDeriveEmptyBodiesEnabled());
     }
 
     protected synchronized StateRootHandler buildStateRootHandler() {

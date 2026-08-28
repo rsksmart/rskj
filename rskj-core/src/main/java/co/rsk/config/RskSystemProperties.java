@@ -527,6 +527,10 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getBoolean("peer.fastBlockPropagation");
     }
 
+    public boolean isDeriveEmptyBodiesEnabled() {
+        return configFromFiles.getBoolean("sync.deriveEmptyBodies");
+    }
+
     public int getMaxInFlightBodyRequestsPerPeer() {
         return configFromFiles.getInt("sync.maxInFlightBodyRequestsPerPeer");
     }

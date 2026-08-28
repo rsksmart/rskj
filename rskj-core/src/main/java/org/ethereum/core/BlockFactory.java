@@ -22,12 +22,14 @@ import co.rsk.config.RskMiningConstants;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BtcHeaderSizeRule;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -143,6 +145,61 @@ public final class BlockFactory implements BtcHeaderSizeRule {
                           boolean sealed) {
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, header.getNumber());
         return new Block(header, transactionList, uncleList, isRskip126Enabled, sealed);
+    }
+
+    /**
+     * Value {@code unclesHash} takes when a block has no uncles: {@code keccak256(RLP.encodeList())}.
+     * The uncle list is the only part of a body a header cannot yield - {@code unclesHash} is a
+     * one-way commitment - so "no uncles" is the precondition for deriving a body at all.
+     */
+    private static final byte[] EMPTY_UNCLE_LIST_HASH =
+            HashUtil.keccak256(BlockHeader.getUnclesEncoded(Collections.emptyList()));
+
+    /**
+     * True when this block's body follows from its header alone, so it need not be requested from a
+     * peer. That holds when the block has no uncles and carries nothing but its REMASC transaction,
+     * which {@link RemascTransaction#RemascTransaction(long)} derives from the block number alone.
+     *
+     * <p>Both parts are checked against consensus-validated header fields rather than trusted:
+     * {@code unclesHash} is exactly what {@code BlockUnclesHashValidationRule} verifies, and
+     * {@code txTrieRoot} is what {@code BlockRootValidationRule} verifies. A derived body that
+     * satisfies both is the same body the peer would have sent, or the header itself is invalid and
+     * is rejected downstream either way. {@code uncleCount} is deliberately <em>not</em> used: no
+     * rule asserts that it equals the actual uncle list size, so it is a hint, not a commitment.
+     *
+     * <p>Restricted to version 0 headers. From RSKIP351 a header carries a {@link
+     * BlockHeaderExtension} that the body response supplies and that cannot be derived here; that
+     * affects testnet and regtest only, as mainnet has {@code reed810 = -1}.
+     */
+    public boolean hasDerivableBody(BlockHeader header) {
+        if (header.getVersion() != 0) {
+            return false;
+        }
+        if (!ByteUtil.fastEquals(header.getUnclesHash(), EMPTY_UNCLE_LIST_HASH)) {
+            return false;
+        }
+        return ByteUtil.fastEquals(header.getTxTrieRoot(), derivedTxTrieRoot(header));
+    }
+
+    /**
+     * Builds the block whose body {@link #hasDerivableBody} proved derivable. The result goes
+     * through the same construction, sealing and validation path as a downloaded one.
+     */
+    public Block newBlockWithDerivedBody(BlockHeader header) {
+        return newBlock(header, derivedTransactions(header), Collections.emptyList());
+    }
+
+    private List<Transaction> derivedTransactions(BlockHeader header) {
+        return Collections.singletonList(new RemascTransaction(header.getNumber()));
+    }
+
+    /**
+     * The trie encoding changed at RSKIP126, and the two encodings give different roots for a
+     * REMASC-only list (they agree only for the empty list), so the flag must be resolved per height.
+     */
+    private byte[] derivedTxTrieRoot(BlockHeader header) {
+        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, header.getNumber());
+        return BlockHashesHelper.getTxTrieRoot(derivedTransactions(header), isRskip126Enabled);
     }
 
     public BlockHeader decodeHeader(byte[] encoded, boolean compressed) {

@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 @Immutable
 public final class SyncConfiguration {
     /** Legacy behaviour: one body request in flight per peer (one block per round trip). */
+    private static final boolean DEFAULT_DERIVE_EMPTY_BODIES = true;
     private static final int DEFAULT_MAX_IN_FLIGHT_BODY_REQUESTS_PER_PEER = 1;
     /** Legacy behaviour: no outbound throttling. */
     private static final int DEFAULT_MAX_BODY_REQUESTS_PER_MINUTE_PER_PEER = 0;
@@ -61,6 +62,7 @@ public final class SyncConfiguration {
     private final Map<String, Node> nodeIdToSnapshotTrustedPeerMap;
 
     private final int maxInFlightBodyRequestsPerPeer;
+    private final boolean deriveEmptyBodies;
     private final int maxBodyRequestsPerMinutePerPeer;
     private final int maxConcurrentHeaderRequests;
     private final int maxHeaderRequestsPerPeer;
@@ -149,6 +151,35 @@ public final class SyncConfiguration {
             int maxConcurrentHeaderRequests,
             int maxHeaderRequestsPerPeer,
             int skeletonRangeMultiplier) {
+        this(expectedPeers, timeoutWaitingPeers, timeoutWaitingRequest, expirationTimePeerStatus,
+                maxSkeletonChunks, chunkSize, maxRequestedBodies, longSyncLimit, topBest,
+                isServerSnapSyncEnabled, isClientSnapSyncEnabled, snapshotSyncLimit, snapBootNodes,
+                maxInFlightBodyRequestsPerPeer, maxBodyRequestsPerMinutePerPeer,
+                maxConcurrentHeaderRequests, maxHeaderRequestsPerPeer, skeletonRangeMultiplier,
+                DEFAULT_DERIVE_EMPTY_BODIES);
+    }
+
+    public SyncConfiguration(
+            int expectedPeers,
+            int timeoutWaitingPeers,
+            int timeoutWaitingRequest,
+            int expirationTimePeerStatus,
+            int maxSkeletonChunks,
+            int chunkSize,
+            int maxRequestedBodies,
+            int longSyncLimit,
+            double topBest,
+            boolean isServerSnapSyncEnabled,
+            boolean isClientSnapSyncEnabled,
+            int snapshotSyncLimit,
+            List<Node> snapBootNodes,
+            int maxInFlightBodyRequestsPerPeer,
+            int maxBodyRequestsPerMinutePerPeer,
+            int maxConcurrentHeaderRequests,
+            int maxHeaderRequestsPerPeer,
+            int skeletonRangeMultiplier,
+            boolean deriveEmptyBodies) {
+        this.deriveEmptyBodies = deriveEmptyBodies;
         this.skeletonRangeMultiplier = skeletonRangeMultiplier;
         this.maxInFlightBodyRequestsPerPeer = maxInFlightBodyRequestsPerPeer;
         this.maxBodyRequestsPerMinutePerPeer = maxBodyRequestsPerMinutePerPeer;
@@ -219,6 +250,15 @@ public final class SyncConfiguration {
 
     public int getSnapshotSyncLimit() {
         return snapshotSyncLimit;
+    }
+
+    /**
+     * When true, a block whose body follows from its header - no uncles, REMASC only - is built
+     * locally instead of being requested from a peer. Set to false to restore the stock behaviour of
+     * requesting every body.
+     */
+    public boolean isDeriveEmptyBodiesEnabled() {
+        return deriveEmptyBodies;
     }
 
     public int getMaxInFlightBodyRequestsPerPeer() {

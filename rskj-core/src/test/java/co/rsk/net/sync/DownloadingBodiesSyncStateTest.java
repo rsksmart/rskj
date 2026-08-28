@@ -18,13 +18,17 @@
 
 package co.rsk.net.sync;
 
+import co.rsk.crypto.Keccak256;
+import co.rsk.net.BlockProcessResult;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
+import co.rsk.net.Status;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
 import co.rsk.validators.SyncBlockValidatorRule;
 import org.ethereum.TestUtils;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
@@ -37,6 +41,7 @@ import java.time.Duration;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -67,6 +72,111 @@ class DownloadingBodiesSyncStateTest {
 
         when(peer.getPeerNodeID()).thenReturn(new NodeID(new byte[]{2}));
         when(peer.getAddress()).thenReturn(InetAddress.getByName("127.0.0.1"));
+    }
+
+    /**
+     * Roughly a fifth of mainnet blocks carry no uncles and nothing but their REMASC transaction, so
+     * their body follows from the header and costs a round trip to ask for. Such a header must be
+     * built locally and must never turn into a body request; the ones next to it still must.
+     */
+    @Test
+    void aDerivableBodyIsBuiltLocallyAndNeverRequested() {
+        BlockHeader derivable = headerAt(100L, new byte[]{10});
+        BlockHeader requestable = headerAt(101L, new byte[]{11});
+
+        Deque<BlockHeader> chunk = new ArrayDeque<>();
+        chunk.add(derivable);
+        chunk.add(requestable);
+        List<Deque<BlockHeader>> pendingHeaders = new ArrayList<>();
+        pendingHeaders.add(chunk);
+
+        Block derivedBlock = mock(Block.class);
+        when(blockFactory.hasDerivableBody(derivable)).thenReturn(true);
+        when(blockFactory.hasDerivableBody(requestable)).thenReturn(false);
+        when(blockFactory.newBlockWithDerivedBody(derivable)).thenReturn(derivedBlock);
+        when(syncBlockValidatorRule.isValid(derivedBlock)).thenReturn(true);
+        when(blockSyncService.processBlock(derivedBlock, null, true)).thenReturn(mock(BlockProcessResult.class));
+
+        DownloadingBodiesSyncState state = stateReadyToDownload(pendingHeaders);
+
+        state.onEnter();
+
+        // the derivable one was assembled and imported without touching the network
+        verify(blockFactory, times(1)).newBlockWithDerivedBody(derivable);
+        verify(blockSyncService, times(1)).processBlock(derivedBlock, null, true);
+        verify(syncEventsHandler, never()).sendBodyRequest(any(), eq(derivable));
+
+        // its neighbour still goes out as an ordinary request
+        verify(syncEventsHandler, times(1)).sendBodyRequest(peer, requestable);
+    }
+
+    /**
+     * If a locally derived body fails validation the header must fall back to being requested, and
+     * no peer may be blamed - no peer sent it.
+     */
+    @Test
+    void aDerivedBodyThatFailsValidationFallsBackToARequest() {
+        BlockHeader header = headerAt(100L, new byte[]{10});
+
+        Deque<BlockHeader> chunk = new ArrayDeque<>();
+        chunk.add(header);
+        List<Deque<BlockHeader>> pendingHeaders = new ArrayList<>();
+        pendingHeaders.add(chunk);
+
+        Block derivedBlock = mock(Block.class);
+        when(blockFactory.hasDerivableBody(header)).thenReturn(true);
+        when(blockFactory.newBlockWithDerivedBody(header)).thenReturn(derivedBlock);
+        when(syncBlockValidatorRule.isValid(derivedBlock)).thenReturn(false);
+
+        DownloadingBodiesSyncState state = stateReadyToDownload(pendingHeaders);
+
+        state.onEnter();
+
+        verify(blockSyncService, never()).processBlock(any(), any(), anyBoolean());
+        verify(syncEventsHandler, times(1)).sendBodyRequest(peer, header);
+        verify(peersInformation, never())
+                .reportEventToPeerScoring(any(Peer.class), any(EventType.class), anyString(), any());
+    }
+
+    private BlockHeader headerAt(long number, byte[] hashSeed) {
+        BlockHeader header = mock(BlockHeader.class);
+        byte[] hash = new byte[32];
+        System.arraycopy(hashSeed, 0, hash, 0, hashSeed.length);
+        when(header.getNumber()).thenReturn(number);
+        when(header.getHash()).thenReturn(new Keccak256(hash));
+        return header;
+    }
+
+    /** Builds a state with one peer already usable and one chunk of work assigned to it. */
+    private DownloadingBodiesSyncState stateReadyToDownload(List<Deque<BlockHeader>> pendingHeaders) {
+        SyncPeerStatus peerStatus = mock(SyncPeerStatus.class);
+        when(peerStatus.getStatus()).thenReturn(new Status(1_000L, new byte[32]));
+        when(peersInformation.getPeer(peer)).thenReturn(peerStatus);
+        when(peersInformation.getBestPeerCandidates()).thenReturn(Collections.singletonList(peer));
+
+        DownloadingBodiesSyncState state = new DownloadingBodiesSyncState(syncConfiguration,
+                syncEventsHandler,
+                peersInformation,
+                blockchain,
+                blockFactory,
+                blockSyncService,
+                syncBlockValidatorRule,
+                pendingHeaders,
+                Collections.emptyMap());
+
+        Deque<Integer> chunksOfSegment = new ArrayDeque<>();
+        for (int i = pendingHeaders.size() - 1; i >= 0; i--) {
+            chunksOfSegment.addLast(i);
+        }
+        List<Deque<Integer>> chunksBySegment = new ArrayList<>();
+        chunksBySegment.add(chunksOfSegment);
+        Map<Integer, Integer> segmentByChunk = new HashMap<>();
+        for (int i = 0; i < pendingHeaders.size(); i++) {
+            segmentByChunk.put(i, 0);
+        }
+        TestUtils.setInternalState(state, "chunksBySegment", chunksBySegment);
+        TestUtils.setInternalState(state, "segmentByChunk", segmentByChunk);
+        return state;
     }
 
     @Test
