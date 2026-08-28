@@ -1,0 +1,33 @@
+{
+  "name": "rsk_getRawBlockHeaderByNumber",
+  "summary": "Returns the RLP-encoded header of the block at the given number or tag.",
+  "description": "Returns the block header exactly as it is encoded for consensus, so it can be hashed or verified independently. Returns `null` when no block matches the given number or tag.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
+    }
+  ],
+  "result": {
+    "name": "rawBlockHeader",
+    "description": "The RLP-encoded block header, or `null` if no block matches",
+    "schema": {
+      "$ref": "#/components/schemas/BytesOrNull"
+    }
+  },
+  "examples": [
+    {
+      "name": "getRawBlockHeaderByNumberExample",
+      "description": "The result is abridged; a real encoded header is several hundred bytes long",
+      "params": [
+        {
+          "name": "blockNumberOrTag",
+          "value": "latest"
+        }
+      ],
+      "result": {
+        "name": "rawBlockHeaderResult",
+        "value": "0xf90218a01cd0e5cbd3ba2c9b48eb6ff5bc0be6ba9d5a0e1b7c4ec9b3e6cb1d1b3f7a1e0d"
+      }
+    }
+  ]
+}

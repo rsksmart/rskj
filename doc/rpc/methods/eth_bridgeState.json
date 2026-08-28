@@ -1,0 +1,47 @@
+{
+  "name": "eth_bridgeState",
+  "summary": "Returns the current state of the Bridge contract.",
+  "description": "Returns a debugging view of the Bridge, the precompiled contract that holds the two-way peg with Bitcoin, as seen from the best block.",
+  "params": [],
+  "result": {
+    "name": "bridgeState",
+    "description": "The current state of the Bridge contract",
+    "schema": {
+      "title": "bridgeState",
+      "type": "object",
+      "properties": {
+        "btcBlockchainBestChainHeight": {
+          "title": "btcBlockchainBestChainHeight",
+          "type": "integer",
+          "description": "Height of the best chain of the Bitcoin headers the Bridge has stored"
+        },
+        "rskTxsWaitingForSignatures": {
+          "title": "rskTxsWaitingForSignatures",
+          "type": "array",
+          "description": "Hashes of the transactions waiting to be signed by the federation. Unlike every other hash in this reference these arrive unprefixed, as bare hex",
+          "items": {
+            "title": "unprefixedTransactionHash",
+            "type": "string",
+            "description": "Hex representation of a Keccak 256 hash, without the `0x` prefix",
+            "pattern": "^[a-fA-F\\d]{64}$"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "bridgeStateExample",
+      "params": [],
+      "result": {
+        "name": "bridgeStateResult",
+        "value": {
+          "btcBlockchainBestChainHeight": 826542,
+          "rskTxsWaitingForSignatures": [
+            "7bf47e6a5a3a3e37d4b0e0f7c0b3a4b1b04ac9b6de8b5ff1a0e5a51e9c3a1f42"
+          ]
+        }
+      }
+    }
+  ]
+}

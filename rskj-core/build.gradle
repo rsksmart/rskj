@@ -516,6 +516,37 @@ publishing {
     }
 }
 
+// Assembles the OpenRPC document from the fragments under doc/rpc, the same way the devportal sync
+// does, so the document can also be produced with a single local command. A JavaExec over the main
+// runtime classpath rather than `fatJar` + `java -cp`: this only needs compileJava instead of
+// shading every dependency.
+//
+// The version defaults to the project version and can be overridden with -PrpcDocVersion=<version>,
+// which is how CI passes the version it extracts from version.properties. Do not "fix" the x.y.z
+// placeholder in doc/rpc/template.json -- the tool substitutes it from the required --version.
+task genRpcDocs(type: JavaExec) {
+    group = 'documentation'
+    description = 'Assembles the OpenRPC JSON-RPC document from the fragments under doc/rpc'
+
+    def docSourceDir = new File(rootDir, 'doc/rpc')
+    def docOutputFile = new File(buildDir, 'rpc-docs/rskj-openrpc.json')
+    def docVersion = (project.findProperty('rpcDocVersion') ?: project.version).toString()
+
+    inputs.dir docSourceDir
+    inputs.property 'rpcDocVersion', docVersion
+    outputs.file docOutputFile
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'co.rsk.cli.tools.GenerateOpenRpcDoc'
+    // -d takes the directory that directly contains template.json and methods/. Files at that
+    // directory's root other than template.json -- undocumented.json -- are never read.
+    args '--version', docVersion, '--dir', docSourceDir.toString(), '--outputFile', docOutputFile.toString()
+
+    doFirst {
+        docOutputFile.parentFile.mkdirs()
+    }
+}
+
 task generateResources {
     def buildInfoFile = 'build-info.properties'
 

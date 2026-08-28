@@ -5,6 +5,9 @@
   "params": [
     {
       "$ref": "#/components/contentDescriptors/TransactionCreate"
+    },
+    {
+      "$ref": "#/components/contentDescriptors/ExecutionBlockNumberOrTag"
     }
   ],
   "result": {
@@ -20,6 +23,10 @@
       "params": [
         {
           "$ref": "#/components/schemas/TransactionCreateExampleParam"
+        },
+        {
+          "name": "blockNumberOrTag",
+          "value": "latest"
         }
       ],
       "result": {
