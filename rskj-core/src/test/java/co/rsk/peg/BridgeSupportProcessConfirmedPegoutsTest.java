@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -30,7 +31,9 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationStorageProvider;
 import co.rsk.peg.federation.FederationStorageProviderImpl;
 import co.rsk.peg.federation.FederationSupport;
+import co.rsk.peg.federation.P2shErpFederationBuilder;
 import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
+import co.rsk.peg.federation.StandardMultiSigFederationBuilder;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbStorageIndexKey;
 import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
@@ -79,6 +82,25 @@ class BridgeSupportProcessConfirmedPegoutsTest {
 
     private static final ActivationConfig.ForBlock ALL_ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0L);
     private static final ActivationConfig.ForBlock VETIVER_ACTIVATIONS = ActivationConfigsForTest.vetiver900().forBlock(0L);
+    private static final ActivationConfig.ForBlock FINGERROOT_ACTIVATIONS = ActivationConfigsForTest.fingerroot500().forBlock(0L);
+    private static final ActivationConfig.ForBlock HOP_ACTIVATIONS = ActivationConfigsForTest.hop400().forBlock(0L);
+    private static final ActivationConfig.ForBlock IRIS_ACTIVATIONS = ActivationConfigsForTest.iris300().forBlock(0L);
+    private static final ActivationConfig.ForBlock PAPYRUS_ACTIVATIONS = ActivationConfigsForTest.papyrus200().forBlock(0L);
+    private static final ActivationConfig.ForBlock WASABI_ACTIVATIONS = ActivationConfigsForTest.wasabi100().forBlock(0L);
+
+    // The active federation of each era, since the fixtures build real pegout txs by spending its utxos.
+    private static final Federation STANDARD_MULTISIG_FEDERATION = StandardMultiSigFederationBuilder.builder()
+        .withNetworkParameters(NETWORK_PARAMETERS)
+        .build();
+    private static final Federation P2SH_ERP_FEDERATION = P2shErpFederationBuilder.builder()
+        .withNetworkParameters(NETWORK_PARAMETERS)
+        .build();
+    private static final Federation P2SH_P2WSH_ERP_FEDERATION = P2shP2wshErpFederationBuilder.builder()
+        .withNetworkParameters(NETWORK_PARAMETERS)
+        .build();
+
+    private static final long ACTIVE_FEDERATION_CREATION_BLOCK = 100L;
+    private static final int RETIRING_FEDERATION_UTXOS = 2;
 
     private static final int FEDERATION_UTXOS = 10;
     private static final Coin FEDERATION_UTXO_VALUE = Coin.COIN;
@@ -132,17 +154,12 @@ class BridgeSupportProcessConfirmedPegoutsTest {
             FEE_PER_KB,
             BridgeSerializationUtils::serializeCoin
         );
-
-        activeFederation = P2shP2wshErpFederationBuilder.builder()
-            .withNetworkParameters(NETWORK_PARAMETERS)
-            .build();
-        federationStorageProvider.setNewFederation(activeFederation);
     }
 
     @Test
     void updateCollections_whenPegoutReachesTheMinimumConfirmations_shouldConfirmIt() throws IOException {
         // Arrange
-        List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, ALL_ACTIVATIONS);
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, P2SH_P2WSH_ERP_FEDERATION, ALL_ACTIVATIONS);
         Entry pegout = pegouts.get(0);
         setUpBridgeSupport(BRIDGE_CONSTANTS, ALL_ACTIVATIONS, blockWithEnoughConfirmations(pegout));
 
@@ -156,7 +173,7 @@ class BridgeSupportProcessConfirmedPegoutsTest {
     @Test
     void updateCollections_whenPegoutIsOneConfirmationShort_shouldNotConfirmIt() throws IOException {
         // Arrange
-        List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, ALL_ACTIVATIONS);
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, P2SH_P2WSH_ERP_FEDERATION, ALL_ACTIVATIONS);
         Entry pegout = pegouts.get(0);
         setUpBridgeSupport(BRIDGE_CONSTANTS, ALL_ACTIVATIONS, blockWithEnoughConfirmations(pegout) - 1);
 
@@ -170,7 +187,7 @@ class BridgeSupportProcessConfirmedPegoutsTest {
     @Test
     void updateCollections_fromRskip559_whenSeveralPegoutsAreConfirmable_shouldConfirmTheFirstInTheDeterministicOrder() throws IOException {
         // Arrange
-        List<Entry> pegouts = createPegoutsWaitingForConfirmations(SEVERAL_PEGOUTS, ALL_ACTIVATIONS);
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(SEVERAL_PEGOUTS, P2SH_P2WSH_ERP_FEDERATION, ALL_ACTIVATIONS);
         Entry expectedPegout = firstInDeterministicOrder(pegouts);
         assertNotEquals(
             pegouts.get(0),
@@ -190,7 +207,7 @@ class BridgeSupportProcessConfirmedPegoutsTest {
     @Test
     void updateCollections_fromRskip559_whenCalledRepeatedly_shouldConfirmOnePegoutPerCallInTheDeterministicOrder() throws IOException {
         // Arrange
-        List<Entry> pegouts = createPegoutsWaitingForConfirmations(SEVERAL_PEGOUTS, ALL_ACTIVATIONS);
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(SEVERAL_PEGOUTS, P2SH_P2WSH_ERP_FEDERATION, ALL_ACTIVATIONS);
         List<Entry> expectedOrder = pegouts.stream().sorted(Entry.BTC_TX_COMPARATOR).toList();
         assertNotEquals(
             pegouts,
@@ -243,7 +260,7 @@ class BridgeSupportProcessConfirmedPegoutsTest {
     @Test
     void updateCollections_fromRskip559_whenTheCallHasARecordedSelection_shouldIgnoreItAndConfirmTheFirstInTheDeterministicOrder() throws IOException {
         // Arrange
-        List<Entry> pegouts = createPegoutsWaitingForConfirmations(SEVERAL_PEGOUTS, ALL_ACTIVATIONS);
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(SEVERAL_PEGOUTS, P2SH_P2WSH_ERP_FEDERATION, ALL_ACTIVATIONS);
         Entry expectedPegout = firstInDeterministicOrder(pegouts);
         Entry recordedPegout = lastInDeterministicOrder(pegouts);
         assertNotEquals(
@@ -266,8 +283,7 @@ class BridgeSupportProcessConfirmedPegoutsTest {
     @Test
     void updateCollections_beforeRskip559_whenTheCallHasARecordedSelection_shouldConfirmTheRecordedPegout() throws IOException {
         // Arrange
-        List<Entry> pegouts = createPegoutsWaitingForConfirmations(SEVERAL_PEGOUTS,
-            VETIVER_ACTIVATIONS);
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(SEVERAL_PEGOUTS, P2SH_P2WSH_ERP_FEDERATION, VETIVER_ACTIVATIONS);
         Entry recordedPegout = lastInDeterministicOrder(pegouts);
         assertNotEquals(
             firstInDeterministicOrder(pegouts),
@@ -293,7 +309,7 @@ class BridgeSupportProcessConfirmedPegoutsTest {
         // A selection recorded under the creation tx must miss, leaving the ordinary flow untouched: were it
         // consulted, its btc tx hash would not be among the pegouts waiting for confirmations, and the call
         // would fail.
-        List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, VETIVER_ACTIVATIONS);
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, P2SH_P2WSH_ERP_FEDERATION, VETIVER_ACTIVATIONS);
         Entry pegout = pegouts.get(0);
         BridgeConstants bridgeConstants = new BridgeMainNetConstantsWithHistoricalPegoutSelection(
             pegout.getPegoutCreationRskTxHash(),
@@ -311,7 +327,7 @@ class BridgeSupportProcessConfirmedPegoutsTest {
     @Test
     void updateCollections_beforeRskip559_whenTheRecordedSelectionIsNotWaitingForConfirmations_shouldFailAndConfirmNoPegout() throws IOException {
         // Arrange
-        List<Entry> pegouts = createPegoutsWaitingForConfirmations(SEVERAL_PEGOUTS, VETIVER_ACTIVATIONS);
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(SEVERAL_PEGOUTS, P2SH_P2WSH_ERP_FEDERATION, VETIVER_ACTIVATIONS);
         Transaction confirmingTransaction = confirmingUpdateCollectionsTransaction(0);
         BridgeConstants bridgeConstants = constantsRecording(confirmingTransaction, BTC_TX_HASH_OF_NO_PEGOUT);
         setUpBridgeSupport(bridgeConstants, VETIVER_ACTIVATIONS, BLOCK_WITH_EVERY_PEGOUT_CONFIRMABLE);
@@ -327,6 +343,225 @@ class BridgeSupportProcessConfirmedPegoutsTest {
         assertNoPegoutWasConfirmed(pegouts);
     }
 
+    @Test
+    void updateCollections_beforeRskip146_shouldKeyTheConfirmedPegoutByTheUpdateCollectionsTx() throws IOException {
+        // Arrange
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, STANDARD_MULTISIG_FEDERATION, WASABI_ACTIVATIONS);
+        Entry pegout = pegouts.get(0);
+        assertNull(
+            pegout.getPegoutCreationRskTxHash(),
+            "before RSKIP146 the bridge records no creation tx hash, which is what leaves the updateCollections tx as the only possible key"
+        );
+
+        Transaction confirmingTransaction = confirmingUpdateCollectionsTransaction(0);
+        setUpBridgeSupport(BRIDGE_CONSTANTS, WASABI_ACTIVATIONS, blockWithEnoughConfirmations(pegout));
+
+        // Act
+        bridgeSupport.updateCollections(confirmingTransaction);
+
+        // Assert
+        assertPegoutWasConfirmedUnder(pegout, confirmingTransaction.getHash(), pegouts);
+        assertNoPegoutConfirmedEventWasLogged(pegouts);
+    }
+
+    @Test
+    void updateCollections_fromRskip146_beforeRskip176_shouldKeyTheConfirmedPegoutByItsCreationTx() throws IOException {
+        // Arrange
+        Transaction pegoutRequest = pegoutRequestTransaction(0);
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, STANDARD_MULTISIG_FEDERATION, PAPYRUS_ACTIVATIONS);
+        Entry pegout = pegouts.get(0);
+        assertEquals(
+            pegoutRequest.getHash(),
+            pegout.getPegoutCreationRskTxHash(),
+            "before RSKIP271 a pegout is built for one request, so its creation tx is the releaseBtc tx"
+        );
+
+        setUpBridgeSupport(BRIDGE_CONSTANTS, PAPYRUS_ACTIVATIONS, blockWithEnoughConfirmations(pegout));
+
+        // Act
+        bridgeSupport.updateCollections(confirmingUpdateCollectionsTransaction(0));
+
+        // Assert
+        assertPegoutWasConfirmedUnder(pegout, pegout.getPegoutCreationRskTxHash(), pegouts);
+        assertNoPegoutConfirmedEventWasLogged(pegouts);
+    }
+
+    @Test
+    void updateCollections_fromRskip146_whenThePegoutWasCreatedBeforeRskip146_shouldKeyItByTheUpdateCollectionsTx() throws IOException {
+        // Arrange
+        // A pegout created before RSKIP146 carries no creation tx hash, and it is still waiting when the fork
+        // activates. Saving it under the old format and reading it back under the new one is what a node
+        // crossing the fork does.
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, STANDARD_MULTISIG_FEDERATION, WASABI_ACTIVATIONS);
+        Entry pegout = pegouts.get(0);
+        saveAndReloadStorageAt(PAPYRUS_ACTIVATIONS);
+        assertTrue(
+            pegoutsWaitingForConfirmations().contains(pegout),
+            "the pegout must survive the fork crossing"
+        );
+
+        Transaction confirmingTransaction = confirmingUpdateCollectionsTransaction(0);
+        setUpBridgeSupport(BRIDGE_CONSTANTS, PAPYRUS_ACTIVATIONS, blockWithEnoughConfirmations(pegout));
+
+        // Act
+        bridgeSupport.updateCollections(confirmingTransaction);
+
+        // Assert
+        assertPegoutWasConfirmedUnder(pegout, confirmingTransaction.getHash(), pegouts);
+        assertNoPegoutConfirmedEventWasLogged(pegouts);
+    }
+
+    @Test
+    void updateCollections_fromRskip176_beforeRskip375_shouldKeyTheConfirmedPegoutByTheUpdateCollectionsTx() throws IOException {
+        // Arrange
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, STANDARD_MULTISIG_FEDERATION, IRIS_ACTIVATIONS);
+        Entry pegout = pegouts.get(0);
+        Transaction confirmingTransaction = confirmingUpdateCollectionsTransaction(0);
+        setUpBridgeSupport(BRIDGE_CONSTANTS, IRIS_ACTIVATIONS, blockWithEnoughConfirmations(pegout));
+
+        // Act
+        bridgeSupport.updateCollections(confirmingTransaction);
+
+        // Assert
+        assertPegoutWasConfirmedUnder(pegout, confirmingTransaction.getHash(), pegouts);
+        assertNull(
+            pegoutsWaitingForSignatures().get(pegout.getPegoutCreationRskTxHash()),
+            "RSKIP176 goes back to the updateCollections tx as the key, even though the pegout has a creation tx hash"
+        );
+        assertNoPegoutConfirmedEventWasLogged(pegouts);
+    }
+
+    @Test
+    void updateCollections_beforeRskip326_shouldConfirmThePegoutWithoutLoggingIt() throws IOException {
+        // Arrange
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, P2SH_ERP_FEDERATION, HOP_ACTIVATIONS);
+        Entry pegout = pegouts.get(0);
+        Transaction confirmingTransaction = confirmingUpdateCollectionsTransaction(0);
+        setUpBridgeSupport(BRIDGE_CONSTANTS, HOP_ACTIVATIONS, blockWithEnoughConfirmations(pegout));
+
+        // Act
+        bridgeSupport.updateCollections(confirmingTransaction);
+
+        // Assert
+        assertPegoutWasConfirmedUnder(pegout, confirmingTransaction.getHash(), pegouts);
+        assertNoPegoutConfirmedEventWasLogged(pegouts);
+    }
+
+    @Test
+    void updateCollections_beforeRskip375_whenTheKeyIsAlreadyTaken_shouldOverrideTheEntry() throws IOException {
+        // Arrange
+        // Two entries under the same key cannot arise on a live chain in this era, since the key is the
+        // confirming updateCollections tx. The scenario pins the absence of the guard that RSKIP375 adds:
+        // before the fork the bridge overwrites, losing the btc tx that was already waiting.
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, STANDARD_MULTISIG_FEDERATION, IRIS_ACTIVATIONS);
+        Entry pegout = pegouts.get(0);
+        Transaction confirmingTransaction = confirmingUpdateCollectionsTransaction(0);
+
+        BtcTransaction alreadyWaitingForSignatures = anotherBtcTransaction();
+        pegoutsWaitingForSignatures().put(confirmingTransaction.getHash(), alreadyWaitingForSignatures);
+        setUpBridgeSupport(BRIDGE_CONSTANTS, IRIS_ACTIVATIONS, blockWithEnoughConfirmations(pegout));
+
+        // Act
+        bridgeSupport.updateCollections(confirmingTransaction);
+
+        // Assert
+        assertPegoutWasConfirmedUnder(pegout, confirmingTransaction.getHash(), pegouts);
+        assertNotEquals(
+            alreadyWaitingForSignatures,
+            pegoutsWaitingForSignatures().get(confirmingTransaction.getHash()),
+            "the btc tx that was already waiting must have been overridden"
+        );
+    }
+
+    @Test
+    void updateCollections_fromRskip375_whenTheKeyIsAlreadyTaken_shouldFailAndConfirmNoPegout() throws IOException {
+        // Arrange
+        List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, P2SH_ERP_FEDERATION, FINGERROOT_ACTIVATIONS);
+        Entry pegout = pegouts.get(0);
+        Transaction confirmingTransaction = confirmingUpdateCollectionsTransaction(0);
+
+        BtcTransaction alreadyWaitingForSignatures = anotherBtcTransaction();
+        pegoutsWaitingForSignatures().put(pegout.getPegoutCreationRskTxHash(), alreadyWaitingForSignatures);
+        setUpBridgeSupport(BRIDGE_CONSTANTS, FINGERROOT_ACTIVATIONS, blockWithEnoughConfirmations(pegout));
+
+        // Act
+        assertThrows(
+            IllegalStateException.class,
+            () -> bridgeSupport.updateCollections(confirmingTransaction)
+        );
+
+        // Assert
+        assertEquals(1, pegoutsWaitingForSignatures().size());
+        assertEquals(
+            alreadyWaitingForSignatures,
+            pegoutsWaitingForSignatures().get(pegout.getPegoutCreationRskTxHash()),
+            "the btc tx that was already waiting must be left untouched"
+        );
+        assertTrue(pegoutsWaitingForConfirmations().contains(pegout));
+        assertNoPegoutConfirmedEventWasLogged(pegouts);
+    }
+
+    @Test
+    void updateCollections_fromRskip375_whenTwoPegoutsShareTheirCreationTx_shouldConfirmOneAndThenFail() throws IOException {
+        // Arrange
+        // One updateCollections that both migrates funds and batches a pegout leaves two entries carrying its
+        // own hash as their creation tx. From RSKIP375 on that hash is the key, so the second confirmation
+        // has nowhere to go: it must fail rather than override the first one and lose a pegout.
+        Federation retiringFederation = STANDARD_MULTISIG_FEDERATION;
+        Federation activeFederation = P2shErpFederationBuilder.builder()
+            .withNetworkParameters(NETWORK_PARAMETERS)
+            .withCreationBlockNumber(ACTIVE_FEDERATION_CREATION_BLOCK)
+            .build();
+
+        bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, FINGERROOT_ACTIVATIONS);
+        setUpActiveFederation(activeFederation, FINGERROOT_ACTIVATIONS);
+        setUpRetiringFederation(retiringFederation);
+
+        long migrationBlockNumber = duringMigrationBlockNumber(FINGERROOT_ACTIVATIONS);
+        setUpBridgeSupport(BRIDGE_CONSTANTS, FINGERROOT_ACTIVATIONS, migrationBlockNumber);
+
+        Transaction creatingTransaction = buildUpdateCollectionsTransaction(0);
+        bridgeSupport.releaseBtc(pegoutRequestTransaction(1));
+        bridgeSupport.updateCollections(creatingTransaction);
+        logs.clear();
+
+        List<Entry> pegouts = List.copyOf(pegoutsWaitingForConfirmations());
+        assertEquals(2, pegouts.size(), "the fixture must leave a migration tx and a batched pegout waiting");
+        pegouts.forEach(pegout -> assertEquals(
+            creatingTransaction.getHash(),
+            pegout.getPegoutCreationRskTxHash(),
+            "both entries must carry the creating updateCollections tx as their creation tx"
+        ));
+
+        setUpBridgeSupport(BRIDGE_CONSTANTS, FINGERROOT_ACTIVATIONS, migrationBlockNumber + MINIMUM_CONFIRMATIONS);
+
+        // Act
+        bridgeSupport.updateCollections(confirmingUpdateCollectionsTransaction(0));
+
+        // Assert
+        assertEquals(1, pegoutsWaitingForSignatures().size(), "the first confirmation must go through");
+        assertEquals(1, pegoutsWaitingForConfirmations().size());
+        BtcTransaction confirmedBtcTx = pegoutsWaitingForSignatures().get(creatingTransaction.getHash());
+
+        // Arrange
+        setUpBridgeSupport(BRIDGE_CONSTANTS, FINGERROOT_ACTIVATIONS, migrationBlockNumber + MINIMUM_CONFIRMATIONS + 1);
+
+        // Act
+        assertThrows(
+            IllegalStateException.class,
+            () -> bridgeSupport.updateCollections(confirmingUpdateCollectionsTransaction(1))
+        );
+
+        // Assert
+        assertEquals(1, pegoutsWaitingForSignatures().size());
+        assertEquals(
+            confirmedBtcTx,
+            pegoutsWaitingForSignatures().get(creatingTransaction.getHash()),
+            "the pegout confirmed first must be left untouched"
+        );
+        assertEquals(1, pegoutsWaitingForConfirmations().size(), "the pegout that could not be confirmed must keep waiting");
+    }
+
     /**
      * Leaves {@code numberOfPegouts} pegouts waiting for confirmations, each one created by the bridge out
      * of its own pegout request, in its own {@code updateCollections} call, one pegout creation period
@@ -335,20 +570,24 @@ class BridgeSupportProcessConfirmedPegoutsTest {
      *
      * @return the pegouts in creation order.
      */
-    private List<Entry> createPegoutsWaitingForConfirmations(int numberOfPegouts, ActivationConfig.ForBlock activations) throws IOException {
+    private List<Entry> createPegoutsWaitingForConfirmations(
+        int numberOfPegouts,
+        Federation activeFederation,
+        ActivationConfig.ForBlock activations
+    ) throws IOException {
         bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, activations);
-        fundActiveFederation(activations);
+        setUpActiveFederation(activeFederation, activations);
 
         List<Entry> pegouts = new ArrayList<>();
         for (int i = 0; i < numberOfPegouts; i++) {
             long pegoutCreationBlockNumber = FIRST_PEGOUT_CREATION_BLOCK + (long) i * BLOCKS_BETWEEN_PEGOUTS;
             setUpBridgeSupport(BRIDGE_CONSTANTS, activations, pegoutCreationBlockNumber);
 
-            Transaction creatingTransaction = buildUpdateCollectionsTransaction(i);
+            Collection<Entry> pegoutsBeforeTheCall = List.copyOf(pegoutsWaitingForConfirmations());
             bridgeSupport.releaseBtc(pegoutRequestTransaction(i));
-            bridgeSupport.updateCollections(creatingTransaction);
+            bridgeSupport.updateCollections(buildUpdateCollectionsTransaction(i));
 
-            pegouts.add(pegoutCreatedBy(creatingTransaction));
+            pegouts.add(pegoutCreatedSince(pegoutsBeforeTheCall));
         }
 
         assertEquals(
@@ -361,20 +600,72 @@ class BridgeSupportProcessConfirmedPegoutsTest {
         return List.copyOf(pegouts);
     }
 
-    private Entry pegoutCreatedBy(Transaction creatingTransaction) throws IOException {
-        return pegoutsWaitingForConfirmations().stream()
-            .filter(pegout -> creatingTransaction.getHash().equals(pegout.getPegoutCreationRskTxHash()))
-            .findFirst()
-            .orElseThrow(() -> new AssertionError("no pegout was created by updateCollections " + creatingTransaction.getHash()));
+    /**
+     * The one entry the last call added. Identifying it by difference works in every era: the creation tx
+     * hash an entry carries is the releaseBtc tx before RSKIP271, the updateCollections tx from RSKIP271 on,
+     * and nothing at all before RSKIP146.
+     */
+    private Entry pegoutCreatedSince(Collection<Entry> pegoutsBeforeTheCall) throws IOException {
+        List<Entry> created = pegoutsWaitingForConfirmations().stream()
+            .filter(pegout -> !pegoutsBeforeTheCall.contains(pegout))
+            .toList();
+
+        assertEquals(1, created.size(), "the call must have created exactly one pegout");
+        return created.get(0);
     }
 
-    private void fundActiveFederation(ActivationConfig.ForBlock activations) {
+    private void setUpActiveFederation(Federation federation, ActivationConfig.ForBlock activations) {
+        activeFederation = federation;
+        federationStorageProvider.setNewFederation(federation);
+
         List<UTXO> utxos = UTXOBuilder.builder()
             .withValue(FEDERATION_UTXO_VALUE)
-            .withScriptPubKey(activeFederation.getP2SHScript())
+            .withScriptPubKey(federation.getP2SHScript())
             .buildMany(FEDERATION_UTXOS, i -> createHash(i + 1));
 
         federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMETERS, activations).addAll(utxos);
+    }
+
+    /**
+     * Sets up a federation being retired, funded with just enough utxos for a single migration transaction,
+     * so that no later call in the same test creates another one.
+     */
+    private void setUpRetiringFederation(Federation federation) {
+        federationStorageProvider.setOldFederation(federation);
+
+        List<UTXO> utxos = UTXOBuilder.builder()
+            .withValue(FEDERATION_UTXO_VALUE)
+            .withScriptPubKey(federation.getP2SHScript())
+            .buildMany(RETIRING_FEDERATION_UTXOS, i -> createHash(FEDERATION_UTXOS + i + 1));
+
+        federationStorageProvider.getOldFederationBtcUTXOs().addAll(utxos);
+    }
+
+    /**
+     * Persists the bridge state and reads it back at {@code activations}, which is what a node crossing a
+     * fork does. The pegouts waiting for confirmations are stored under a different key from RSKIP146 on,
+     * so entries written before the fork are only reachable through this path.
+     */
+    private void saveAndReloadStorageAt(ActivationConfig.ForBlock activations) {
+        bridgeStorageProvider.save();
+        bridgeStorageProvider = new BridgeStorageProvider(repository, NETWORK_PARAMETERS, activations);
+    }
+
+    private static long duringMigrationBlockNumber(ActivationConfig.ForBlock activations) {
+        return ACTIVE_FEDERATION_CREATION_BLOCK
+            + FEDERATION_CONSTANTS.getFederationActivationAge(activations)
+            + FEDERATION_CONSTANTS.getFundsMigrationAgeSinceActivationBegin()
+            + 1;
+    }
+
+    /**
+     * A btc transaction that belongs to no pegout, to stand for one already waiting for signatures.
+     */
+    private BtcTransaction anotherBtcTransaction() {
+        BtcTransaction btcTransaction = new BtcTransaction(NETWORK_PARAMETERS);
+        btcTransaction.addOutput(FEDERATION_UTXO_VALUE, activeFederation.getAddress());
+
+        return btcTransaction;
     }
 
     private void setUpBridgeSupport(BridgeConstants bridgeConstants, ActivationConfig.ForBlock executionActivations, long executionBlockNumber) {
@@ -438,7 +729,17 @@ class BridgeSupportProcessConfirmedPegoutsTest {
         return bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries(activations);
     }
 
+    /**
+     * From RSKIP375 on the key is the pegout's creation tx, and from RSKIP326 on the confirmation is logged.
+     */
     private void assertPegoutWasConfirmed(Entry confirmedPegout, List<Entry> pegouts) throws IOException {
+        assertPegoutWasConfirmedUnder(confirmedPegout, confirmedPegout.getPegoutCreationRskTxHash(), pegouts);
+
+        assertPegoutConfirmedEventWasLogged(confirmedPegout);
+        assertNoPegoutConfirmedEventWasLogged(pegoutsWaitingForConfirmations());
+    }
+
+    private void assertPegoutWasConfirmedUnder(Entry confirmedPegout, Keccak256 expectedKey, List<Entry> pegouts) throws IOException {
         SortedMap<Keccak256, BtcTransaction> waitingForSignatures = pegoutsWaitingForSignatures();
         assertEquals(
             1,
@@ -447,8 +748,8 @@ class BridgeSupportProcessConfirmedPegoutsTest {
         );
         assertEquals(
             confirmedPegout.getBtcTransaction(),
-            waitingForSignatures.get(confirmedPegout.getPegoutCreationRskTxHash()),
-            "the confirmed pegout must be keyed by the rsk tx that created it"
+            waitingForSignatures.get(expectedKey),
+            "the confirmed pegout is not waiting for signatures under the expected key"
         );
 
         Collection<Entry> stillWaitingForConfirmations = pegoutsWaitingForConfirmations();
@@ -457,9 +758,6 @@ class BridgeSupportProcessConfirmedPegoutsTest {
             "the confirmed pegout must leave the waiting for confirmations set"
         );
         assertEquals(pegouts.size() - 1, stillWaitingForConfirmations.size());
-
-        assertPegoutConfirmedEventWasLogged(confirmedPegout);
-        assertNoPegoutConfirmedEventWasLogged(stillWaitingForConfirmations);
     }
 
     private void assertNoPegoutWasConfirmed(List<Entry> pegouts) throws IOException {
