@@ -29,6 +29,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.longThat;
@@ -135,4 +136,45 @@ class FindingConnectionPointSyncStateTest {
                         "Timeout waiting requests on {}", FindingConnectionPointSyncState.class);
     }
 
+
+    @Test
+    void anUnansweredTipProbeFallsBackToTheSearchInsteadOfAbandoningTheSync() {
+        when(blockStore.getMinNumber()).thenReturn(0L);
+        when(blockStore.getMaxNumber()).thenReturn(1000L);
+        FindingConnectionPointSyncState target =
+                new FindingConnectionPointSyncState(
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        syncEventsHandler,
+                        blockStore,
+                        peer, 5000L);
+
+        target.onEnter();
+        verify(syncEventsHandler, times(1)).sendBlockHashRequest(peer, 1000L);
+
+        // A peer answers a block hash request only for a block it stores, and stays silent
+        // otherwise, so the probe can simply never come back.
+        target.onMessageTimeOut();
+
+        // the search continues at a lower height rather than the sync being dropped
+        verify(syncEventsHandler, never()).onErrorSyncing(any(), any(), anyString(), any());
+        verify(syncEventsHandler, times(1)).sendBlockHashRequest(eq(peer), longThat(h -> h < 1000L));
+    }
+
+    @Test
+    void theProbeNeverAsksForAHeightThePeerCannotHave() {
+        when(blockStore.getMinNumber()).thenReturn(0L);
+        when(blockStore.getMaxNumber()).thenReturn(9_000_000L);
+        // peer is behind us, which is common near the tip
+        FindingConnectionPointSyncState target =
+                new FindingConnectionPointSyncState(
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        syncEventsHandler,
+                        blockStore,
+                        peer, 8_500_000L);
+
+        target.onEnter();
+
+        verify(syncEventsHandler, times(1)).sendBlockHashRequest(peer, 8_500_000L);
+        verify(syncEventsHandler, never()).sendBlockHashRequest(eq(peer), longThat(h -> h > 8_500_000L));
+    }
 }

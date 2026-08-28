@@ -36,6 +36,7 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
      */
     private final long ourBestBlockNumber;
     private final long minBlockNumber;
+    private final long probeHeight;
     private boolean tipProbeAnswered;
 
     public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration,
@@ -49,6 +50,12 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
         this.blockStore = blockStore;
         this.minBlockNumber = minNumber;
         this.ourBestBlockNumber = Math.max(blockStore.getMaxNumber(), minNumber);
+        // Probe the highest block we could possibly share with this peer, never our own tip
+        // blindly: a peer answers a block hash request only for a block it actually stores, and
+        // stays silent otherwise. Asking for a height it does not have costs the full request
+        // timeout and restarts the whole sync, which is what happens near the tip where peers are
+        // as likely to be behind us as ahead.
+        this.probeHeight = Math.min(this.ourBestBlockNumber, peerBestBlockNumber);
         // A common block can never be above our own tip, so the search never needs to look higher.
         this.connectionPointFinder = new ConnectionPointFinder(
                 minNumber,
@@ -67,7 +74,7 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
     private boolean canProbeTip() {
         // Never probe genesis: peers do not answer a block hash request for height 0, which is why
         // the binary search below also short-circuits when it lands on it.
-        return ourBestBlockNumber > 0 && !rangeIsSettled();
+        return probeHeight > 0 && !rangeIsSettled();
     }
 
     @Override
@@ -75,8 +82,8 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
         if (!tipProbeAnswered && canProbeTip()) {
             tipProbeAnswered = true;
             if (isKnownBlock(hash)) {
-                // The peer has our tip, so that is the connection point. No binary search needed.
-                syncEventsHandler.startDownloadingSkeleton(ourBestBlockNumber, selectedPeer);
+                // We share that block, so it is the connection point. No binary search needed.
+                syncEventsHandler.startDownloadingSkeleton(probeHeight, selectedPeer);
                 return;
             }
             // Peer diverges below our tip: fall back to the regular binary search.
@@ -113,6 +120,22 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
         trySendRequest();
     }
 
+    /**
+     * A peer that cannot answer the probe simply does not reply, so an unanswered probe must fall
+     * back to the binary search rather than abandoning the sync: the search asks about lower
+     * heights, which a peer is far more likely to hold.
+     */
+    @Override
+    protected void onMessageTimeOut() {
+        if (!tipProbeAnswered && canProbeTip()) {
+            tipProbeAnswered = true;
+            this.resetTimeElapsed();
+            trySendRequest();
+            return;
+        }
+        super.onMessageTimeOut();
+    }
+
     private boolean isKnownBlock(byte[] hash) {
         return blockStore.isBlockExist(hash);
     }
@@ -124,7 +147,7 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
     @Override
     public void onEnter() {
         if (canProbeTip()) {
-            syncEventsHandler.sendBlockHashRequest(selectedPeer, ourBestBlockNumber);
+            syncEventsHandler.sendBlockHashRequest(selectedPeer, probeHeight);
             return;
         }
         tipProbeAnswered = true;
