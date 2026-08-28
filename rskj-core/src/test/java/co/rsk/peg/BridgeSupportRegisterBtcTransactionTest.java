@@ -2,7 +2,6 @@ package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRepository;
 import static co.rsk.RskTestUtils.createRskBlock;
-import static co.rsk.peg.BridgeSupportRegisterBtcTransactionTest.ReleaseTransaction.MigrationTransaction.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
@@ -2571,7 +2570,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         private final List<BtcECKey> erpPubKeys = federationMainnetConstants.getErpFedPubKeysList();
         private final long activationDelay = federationMainnetConstants.getErpFedActivationDelay();
         private final NetworkParameters networkParameters = federationMainnetConstants.getBtcParams();
-        private final FederationConstants federationConstants = bridgeMainnetConstants.getFederationConstants();
         private final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true);
         private final List<BtcECKey> retiringFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"newMember01", "newMember02", "newMember03", "newMember04", "newMember05", "member06", "member07", "member08", "member09"}, true);
         Federation activeFederation;
