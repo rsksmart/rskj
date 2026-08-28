@@ -12,7 +12,7 @@ import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 public class BridgeMainNetConstants extends BridgeConstants {
     private static final BridgeMainNetConstants instance = new BridgeMainNetConstants();
 
-    BridgeMainNetConstants() {
+    private BridgeMainNetConstants() {
         btcParamsString = NetworkParameters.ID_MAINNET;
         feePerKbConstants = FeePerKbMainNetConstants.getInstance();
         whitelistConstants = WhitelistMainNetConstants.getInstance();
