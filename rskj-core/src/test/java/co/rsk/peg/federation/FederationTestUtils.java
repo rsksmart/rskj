@@ -300,12 +300,13 @@ public final class FederationTestUtils {
 
     private static void signInput(List<BtcECKey> signers, BtcTransaction tx, int federationFormatVersion, int inputIndex) {
         boolean isSegwitFederation = federationFormatVersion == FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion();
-        if (isSegwitFederation) {
+        if (!isSegwitFederation) {
             Coin inputValue = tx.getInput(inputIndex).getValue();
             BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(tx, inputIndex, inputValue, signers);
-        } else {
-            BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(tx, inputIndex, signers);
+            return;
         }
+
+        BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(tx, inputIndex, signers);
     }
 
     private static Script createInputScriptSig(
