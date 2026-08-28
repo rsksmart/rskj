@@ -14,6 +14,10 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.BtcTransaction;
@@ -26,7 +30,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegoutsWaitingForConfirmations.Entry;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeMainNetConstantsWithHistoricalPegoutSelection;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationStorageProvider;
 import co.rsk.peg.federation.FederationStorageProviderImpl;
@@ -39,6 +42,7 @@ import co.rsk.peg.feeperkb.FeePerKbStorageIndexKey;
 import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
+import co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
@@ -329,7 +333,7 @@ class BridgeSupportProcessConfirmedPegoutsTest {
         // would fail.
         List<Entry> pegouts = createPegoutsWaitingForConfirmations(1, P2SH_P2WSH_ERP_FEDERATION, VETIVER_ACTIVATIONS);
         Entry pegout = pegouts.get(0);
-        BridgeConstants bridgeConstants = new BridgeMainNetConstantsWithHistoricalPegoutSelection(
+        BridgeConstants bridgeConstants = constantsRecording(
             pegout.getPegoutCreationRskTxHash(),
             BTC_TX_HASH_OF_NO_PEGOUT
         );
@@ -711,7 +715,30 @@ class BridgeSupportProcessConfirmedPegoutsTest {
     }
 
     private static BridgeConstants constantsRecording(Transaction confirmingTransaction, Sha256Hash selectedPegoutBtcTxHash) {
-        return new BridgeMainNetConstantsWithHistoricalPegoutSelection(confirmingTransaction.getHash(), selectedPegoutBtcTxHash);
+        return constantsRecording(confirmingTransaction.getHash(), selectedPegoutBtcTxHash);
+    }
+
+    /**
+     * Mainnet constants recording the one historic pegout selection a scenario needs, with every other
+     * mainnet value left as it ships.
+     *
+     * <p>The real mainnet table cannot drive a scenario: its values are the btc tx hashes of the unsigned
+     * pegouts mainnet really confirmed, and reproducing those transactions would need the bridge state of
+     * an archive node.</p>
+     *
+     * <p>A spy keeps this a test-only concern. Subclassing the real constants would mean opening their
+     * constructor, and that constructor is private precisely to make the network constants a singleton.
+     * Every key other than {@code updateCollectionsRskTxHash} misses, as it does against the real table.</p>
+     */
+    private static BridgeConstants constantsRecording(Keccak256 updateCollectionsRskTxHash, Sha256Hash selectedPegoutBtcTxHash) {
+        HistoricalPegoutSelectionsConstants historicalSelections = mock(HistoricalPegoutSelectionsConstants.class);
+        when(historicalSelections.getSelectedPegoutBtcTxHash(updateCollectionsRskTxHash))
+            .thenReturn(Optional.of(selectedPegoutBtcTxHash));
+
+        BridgeConstants bridgeConstants = spy(BRIDGE_CONSTANTS);
+        doReturn(historicalSelections).when(bridgeConstants).getHistoricalPegoutSelectionsConstants();
+
+        return bridgeConstants;
     }
 
     private static long blockWithEnoughConfirmations(Entry pegout) {
