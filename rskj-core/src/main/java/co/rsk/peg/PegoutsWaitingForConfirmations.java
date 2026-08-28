@@ -18,7 +18,6 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants;
@@ -188,22 +187,16 @@ public class PegoutsWaitingForConfirmations {
             Keccak256 currentRskTxHash,
             HistoricalPegoutSelectionsConstants historicalSelections
         ) {
-            Optional<Sha256Hash> selectedBtcTxHash = historicalSelections.getSelectedPegoutBtcTxHash(currentRskTxHash);
-            if (selectedBtcTxHash.isEmpty()) {
-                return Optional.empty();
-            }
-
-            Sha256Hash targetBtcTxHash = selectedBtcTxHash.get();
-            return Optional.of(eligibleEntries.stream()
-                .filter(entry -> entry.getBtcTransaction().getHash().equals(targetBtcTxHash))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException(String.format(
-                    "Historic pegout selection %s for updateCollections %s is not among the eligible entries %s",
-                    targetBtcTxHash,
-                    currentRskTxHash,
-                    eligibleBtcTxHashes(eligibleEntries)
-                )))
-            );
+            return historicalSelections.getSelectedPegoutBtcTxHash(currentRskTxHash)
+                .map(targetBtcTxHash -> eligibleEntries.stream()
+                    .filter(entry -> entry.getBtcTransaction().getHash().equals(targetBtcTxHash))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException(String.format(
+                        "Historic pegout selection %s for updateCollections %s is not among the eligible entries %s",
+                        targetBtcTxHash,
+                        currentRskTxHash,
+                        eligibleBtcTxHashes(eligibleEntries)
+                    ))));
         }
 
         private static String eligibleBtcTxHashes(List<Entry> eligibleEntries) {
