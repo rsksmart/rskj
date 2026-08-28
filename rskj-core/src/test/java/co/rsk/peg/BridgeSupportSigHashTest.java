@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
@@ -98,7 +99,7 @@ class BridgeSupportSigHashTest {
 
         // Act
         Transaction rskTx = mock(Transaction.class);
-        when(rskTx.getHash()).thenReturn(PegTestUtils.createHash3(1));
+        when(rskTx.getHash()).thenReturn(RskTestUtils.createHash(1));
         bridgeSupport.updateCollections(rskTx);
 
         // Assertions
@@ -107,7 +108,11 @@ class BridgeSupportSigHashTest {
         assertEquals(1, pegoutsWaitingForConfirmations.getEntries(activations).size());
 
         if (activations.isActive(ConsensusRule.RSKIP379)){
-            PegoutsWaitingForConfirmations.Entry pegoutBatchTx = pegoutsWaitingForConfirmations.getEntries(activations).stream().findFirst().get();
+            PegoutsWaitingForConfirmations.Entry pegoutBatchTx = pegoutsWaitingForConfirmations
+                .getEntries(activations)
+                .stream()
+                .findFirst()
+                .orElseThrow();
             Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(pegoutBatchTx.getBtcTransaction());
             assertTrue(firstInputSigHash.isPresent());
             verify(provider, times(1)).setPegoutTxSigHash(firstInputSigHash.get());
@@ -174,7 +179,7 @@ class BridgeSupportSigHashTest {
             .build();
 
         Transaction rskTx = mock(Transaction.class);
-        when(rskTx.getHash()).thenReturn(PegTestUtils.createHash3(1));
+        when(rskTx.getHash()).thenReturn(RskTestUtils.createHash(1));
 
         // Act
         bridgeSupport.updateCollections(rskTx);
@@ -189,7 +194,7 @@ class BridgeSupportSigHashTest {
                 getEntries(activations).
                 stream().
                 findFirst().
-                get();
+                orElseThrow();
             Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(migrationTx.getBtcTransaction());
             assertTrue(firstInputSigHash.isPresent());
             verify(provider, times(1)).setPegoutTxSigHash(firstInputSigHash.get());
@@ -263,7 +268,7 @@ class BridgeSupportSigHashTest {
             .build();
 
         Transaction rskTx = mock(Transaction.class);
-        when(rskTx.getHash()).thenReturn(PegTestUtils.createHash3(1));
+        when(rskTx.getHash()).thenReturn(RskTestUtils.createHash(1));
 
         // Act
         bridgeSupport.updateCollections(rskTx);
