@@ -53,7 +53,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     private static final Logger logger = LoggerFactory.getLogger(RepositoryBtcBlockStoreWithCache.class);
 
     private static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
-    private static final int DEFAULT_MAX_DEPTH_BLOCK_CACHE = 5_000;
+    private static final int DEFAULT_MAX_DEPTH_BLOCK_CACHE = 0; // Disabled, will be removed soon
     private static final int DEFAULT_MAX_SIZE_BLOCK_CACHE = 10_000;
 
     private final Repository repository;
