@@ -3523,7 +3523,7 @@ public class BridgeSupport {
 
     private static void validatePMTSize(byte[] pmtSerialized) throws BridgeIllegalArgumentException {
         if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
-            String message = "PartialMerkleTree doesn't have expected size";
+            String message = "[validatePMTSize] PartialMerkleTree doesn't have expected size";
             logger.warn(message);
             throw new BridgeIllegalArgumentException(message);
         }
