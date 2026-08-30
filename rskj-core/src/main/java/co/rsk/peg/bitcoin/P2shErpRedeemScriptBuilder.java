@@ -1,18 +1,15 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_INTERNAL_REDEEM_SCRIPTS;
+
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Utils;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_INTERNAL_REDEEM_SCRIPTS;
 
 public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
-    private static final Logger logger = LoggerFactory.getLogger(P2shErpRedeemScriptBuilder.class);
 
     private P2shErpRedeemScriptBuilder() {}
 
@@ -43,7 +40,7 @@ public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
 
         ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(defaultRedeemScript, emergencyRedeemScript, csvValue);
         byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(csvValue);
-        logger.debug("[createRedeemScriptFromKeys] Creating the redeem script from the scripts");
+
         return createRedeemScriptFromScripts(defaultRedeemScript, emergencyRedeemScript, serializedCsvValue);
     }
 
