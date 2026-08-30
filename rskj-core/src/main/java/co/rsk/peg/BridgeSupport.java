@@ -3514,7 +3514,7 @@ public class BridgeSupport {
                 return false;
             }
         } catch (Exception e) {
-            String panicMessage = String.format("[validationsForRegisterBtcTransaction] Btc Tx %s Supplied Height is %d but should be greater than 0", btcTxHash, height);
+            String panicMessage = String.format("[areHeightAndConfirmationsValid] Btc Tx %s with supplied Height %d could not be validated", btcTxHash, height);
             logger.warn(panicMessage);
             return false;
         }
