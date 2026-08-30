@@ -547,7 +547,8 @@ public final class BridgeUtils {
     public static boolean validateHeightAndConfirmations(int height, int btcBestChainHeight, int acceptableConfirmationsAmount, Sha256Hash btcTxHash) {
         // Check there are at least N blocks on top of the supplied height
         if (height < 0) {
-             logger.warn("[validateHeightAndConfirmations] Btc Tx {} Supplied Height is {} but should be greater than 0", btcTxHash, height);            return false;
+             logger.warn("[validateHeightAndConfirmations] Btc Tx {} Supplied Height is {} but should be greater than or equal to 0", btcTxHash, height);
+             return false;
         }
         int confirmations = btcBestChainHeight - height + 1;
         if (confirmations < acceptableConfirmationsAmount) {
