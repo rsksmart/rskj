@@ -49,6 +49,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 
 public abstract class Type4TransactionExecutorHelperTest {
 
@@ -146,10 +147,11 @@ public abstract class Type4TransactionExecutorHelperTest {
             byte chainId,
             ECKey authorityKey
     ) {
+        byte[] nonceBytes = CommonParsingUtils.unsignedBytes(nonce);
         byte[] rlpEncoded = RLP.encodeList(
                 RLP.encodeBigInteger(BigInteger.valueOf(chainId)),
                 RLP.encodeElement(delegatedAddress.getBytes()),
-                RLP.encodeElement(nonce.toByteArray())
+                RLP.encodeElement(nonceBytes)
         );
 
         byte[] payload = new byte[1 + rlpEncoded.length];
@@ -163,7 +165,7 @@ public abstract class Type4TransactionExecutorHelperTest {
         return new SetCodeAuthorization(
                 BigInteger.valueOf(chainId),
                 delegatedAddress,
-                nonce.toByteArray(),
+                nonceBytes,
                 signature
         );
     }

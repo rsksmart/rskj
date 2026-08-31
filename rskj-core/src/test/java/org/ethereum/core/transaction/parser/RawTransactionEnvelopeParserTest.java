@@ -370,6 +370,35 @@ class RawTransactionEnvelopeParserTest {
     }
 
     @Test
+    void fromRaw_type4WithOverlongTuplePrefix_throws() {
+        byte[] authList = Rskip545TestSupport.authListWithModifiedTupleField(
+                0, new byte[]{(byte) 0x81, 0x21});
+        byte[] raw = signedType4RawWithAuthList(authList);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Transaction.fromRaw(raw));
+
+        assertTrue(ex.getMessage().contains("canonically encoded"), ex.getMessage());
+    }
+
+    @Test
+    void fromRaw_type4WithCanonicalTuple_parses() {
+        byte[] raw = signedType4RawWithAuthList(Rskip545TestSupport.defaultAuthListBytes());
+
+        Transaction tx = Transaction.fromRaw(raw);
+
+        assertEquals(1, tx.getAuthorizationList().size());
+    }
+
+    private static byte[] signedType4RawWithAuthList(byte[] authListBytes) {
+        byte[][] fields = Rskip545TestSupport.defaultSignedType4Fields(
+                Rskip545TestSupport.DEFAULT_RECEIVER, authListBytes);
+        fields[11] = RLP.encodeElement(new byte[]{0x01});
+        fields[12] = RLP.encodeElement(new byte[]{0x01});
+        return Rskip545TestSupport.buildRawType4Bytes(fields);
+    }
+
+    @Test
     void parse_type4PlaceholderSignatureFields_parses() {
         Transaction tx = buildSignedType4Tx();
         byte[] raw = new Type4TransactionEncoder().encodeSigned(tx);

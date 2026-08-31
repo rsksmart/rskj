@@ -52,6 +52,16 @@ public final class CommonParsingUtils {
         }
     }
 
+    /**
+     * Rejects a scalar field that was received with a leading zero byte.
+     */
+    public static void requireCanonicalScalar(byte[] field, String fieldLabel) {
+        if (field != null && field.length > 0 && field[0] == 0) {
+            throw new IllegalArgumentException(
+                    fieldLabel + " must not have leading zero bytes; zero is encoded as the empty string");
+        }
+    }
+
     public static void requireSignatureComponent(byte[] component, String message) {
         if (component == null) {
             return;

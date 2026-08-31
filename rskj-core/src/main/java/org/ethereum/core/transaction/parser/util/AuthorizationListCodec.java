@@ -31,6 +31,7 @@ import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -124,6 +125,7 @@ public final class AuthorizationListCodec {
 
         byte[] chainIdData = inner.get(0).getRLPData();
         CommonParsingUtils.requireDataWordBytes(chainIdData, "Authorization chain_id is not valid");
+        CommonParsingUtils.requireCanonicalScalar(chainIdData, "Authorization chain_id");
         BigInteger chainId = decodeChainId(chainIdData);
         RskAddress address = decodeAddress(inner.get(1).getRLPData());
         byte[] nonce = inner.get(2).getRLPData();
@@ -133,21 +135,37 @@ public final class AuthorizationListCodec {
             nonce = ByteUtil.cloneBytes(nonce);
         }
         CommonParsingUtils.requireDataWordBytes(nonce, "Authorization nonce is not valid");
+        CommonParsingUtils.requireCanonicalScalar(nonce, "Authorization nonce");
         validateNonceValue(decodeNonce(nonce));
-        byte yParity = parseYParity(inner.get(3).getRLPData());
+        byte[] yParityData = inner.get(3).getRLPData();
+        CommonParsingUtils.requireCanonicalScalar(yParityData, "Authorization y_parity");
+        byte yParity = parseYParity(yParityData);
         byte[] r = inner.get(4).getRLPData();
         byte[] s = inner.get(5).getRLPData();
         if (r == null || s == null) {
             throw new IllegalArgumentException("Authorization list tuple signature is incomplete");
         }
-        CommonParsingUtils.requireSignatureComponent(r, "Authorization signature r is not valid");
-        CommonParsingUtils.requireSignatureComponent(s, "Authorization signature s is not valid");
+        CommonParsingUtils.requireDataWordBytes(r, "Authorization signature r is not valid");
+        CommonParsingUtils.requireDataWordBytes(s, "Authorization signature s is not valid");
+        CommonParsingUtils.requireCanonicalScalar(r, "Authorization signature r");
+        CommonParsingUtils.requireCanonicalScalar(s, "Authorization signature s");
         byte v = (byte) (Transaction.LOWER_REAL_V + yParity);
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
 
         SetCodeAuthorization auth = new SetCodeAuthorization(chainId, address, nonce, signature);
         validateAuthorization(auth);
+        requireCanonicalTupleEncoding(tupleBytes, auth);
         return auth;
+    }
+
+    /**
+     * Rejects a tuple whose RLP framing is not minimal, by requiring that re-encoding it reproduces
+     * the bytes received.
+     */
+    private static void requireCanonicalTupleEncoding(byte[] tupleBytes, SetCodeAuthorization auth) {
+        if (!Arrays.equals(tupleBytes, encodeTuple(auth))) {
+            throw new IllegalArgumentException("Authorization list tuple is not canonically encoded");
+        }
     }
 
     private static SetCodeAuthorization parseCallArgumentsEntry(CallArguments.AuthorizationListEntry entry, int index) {

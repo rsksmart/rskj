@@ -23,6 +23,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AuthorizationListCodec;
+import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
@@ -62,10 +63,11 @@ public final class Rskip545TestSupport {
             BigInteger nonce,
             byte chainId
     ) {
+        byte[] nonceBytes = CommonParsingUtils.unsignedBytes(nonce);
         byte[] rlpEncoded = RLP.encodeList(
                 RLP.encodeBigInteger(BigInteger.valueOf(chainId & 0xFF)),
                 RLP.encodeElement(delegate.getBytes()),
-                RLP.encodeElement(nonce.toByteArray())
+                RLP.encodeElement(nonceBytes)
         );
         byte[] payload = new byte[1 + rlpEncoded.length];
         payload[0] = 0x05;
@@ -75,7 +77,7 @@ public final class Rskip545TestSupport {
         return new SetCodeAuthorization(
                 BigInteger.valueOf(chainId & 0xFF),
                 delegate,
-                nonce.toByteArray(),
+                nonceBytes,
                 signature
         );
     }

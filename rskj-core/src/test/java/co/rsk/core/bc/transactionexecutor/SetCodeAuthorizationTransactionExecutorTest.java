@@ -52,6 +52,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 
 
  class SetCodeAuthorizationTransactionExecutorTest {
@@ -640,10 +641,11 @@ import static org.mockito.Mockito.when;
             ECKey authorityKey
     ) {
 
+        byte[] nonceBytes = CommonParsingUtils.unsignedBytes(new BigInteger(1, nonce));
         byte[] rlpEncoded = RLP.encodeList(
                 RLP.encodeBigInteger(chainId),
                 RLP.encodeElement(delegatedAddress.getBytes()),
-                RLP.encodeElement(nonce)
+                RLP.encodeElement(nonceBytes)
         );
 
         byte[] payload = new byte[1 + rlpEncoded.length];
@@ -656,7 +658,7 @@ import static org.mockito.Mockito.when;
         return new SetCodeAuthorization(
                         chainId,
                         delegatedAddress,
-                        nonce,
+                        nonceBytes,
                         signature
                 );
     }

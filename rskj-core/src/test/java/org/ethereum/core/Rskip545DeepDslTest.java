@@ -249,7 +249,7 @@ class Rskip545DeepDslTest {
                 RLP.encodeList(
                         RLP.encodeBigInteger(BigInteger.valueOf(Constants.REGTEST_CHAIN_ID)),
                         RLP.encodeElement(DELEGATE_03.getBytes()),
-                        RLP.encodeElement(BigInteger.ZERO.toByteArray())
+                        RLP.encodeElement(new byte[0])
                 )
         );
         assertArrayEquals(HashUtil.keccak256(expectedPayload), auth.getSigningHash());
