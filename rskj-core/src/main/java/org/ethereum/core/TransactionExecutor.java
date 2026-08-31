@@ -333,7 +333,7 @@ public class TransactionExecutor {
 
     private long processAuthorizationList(List<SetCodeAuthorization> authorizationList, Repository repository, Transaction tx) {
         SetCodeAuthorizationTransactionExecutor authorizationTransactionExecutor = new SetCodeAuthorizationTransactionExecutor();
-        BigInteger outerTransactionChainId = BigInteger.valueOf(tx.getChainId());
+        BigInteger outerTransactionChainId = BigInteger.valueOf(Byte.toUnsignedInt(tx.getChainId()));
         long totalRefund = 0;
 
         for (SetCodeAuthorization authorization : authorizationList) {

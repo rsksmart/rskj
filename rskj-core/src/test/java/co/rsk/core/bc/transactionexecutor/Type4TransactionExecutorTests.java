@@ -37,6 +37,8 @@ import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InOrder;
 
 import java.math.BigInteger;
@@ -1729,6 +1731,84 @@ class Type4TransactionExecutorTests extends Type4TransactionExecutorHelperTest {
         assertTrue(combinedRefund > maxRefund, "The authorization refund must push the combined refund above the cap");
 
         assertEquals(maxRefund, deductedRefund);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {127, 128, 255})
+    void type4TransactionProcessesAuthorizationWithUnsignedChainId(int chainIdValue) {
+        var authorityKey = new ECKey();
+        var authority = new RskAddress(authorityKey.getAddress());
+
+        var cacheTracker = mock(MutableRepository.class);
+        var authorizationTracker = mock(MutableRepository.class);
+
+        when(tracker.startTracking()).thenReturn(cacheTracker, authorizationTracker);
+        byte chainId = (byte) chainIdValue;
+        when(constants.getChainId()).thenReturn(chainId);
+        mockAccountWithBalanceAndNonce(tracker, sender, 1_000_000, ONE_NONCE);
+        mockReceiver(receiver, EMPTY_CODE);
+        mockAuthorizationAccount(authorizationTracker, authority, ZERO_NONCE, EMPTY_CODE);
+
+        var authorization = createValidAuthorizationTuple(delegatedAddress, ZERO_NONCE, BigInteger.valueOf(chainIdValue), authorityKey);
+
+        var tx = createSignedType4Transaction(
+                senderKey,
+                (byte) chainIdValue,
+                ONE_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                2,
+                EMPTY_DATA,
+                authorization
+        );
+
+        var txExecutor = newExecutor(tx);
+
+        assertTrue(txExecutor.executeTransaction());
+
+        verifyValidAuthorityChanges(authorizationTracker, authority, delegatedAddress);
+    }
+
+    @Test
+    void type4TransactionSkipsAuthorizationWhenUnsignedOuterChainIdDoesNotMatch() {
+        var authorityKey = new ECKey();
+        var authority = new RskAddress(authorityKey.getAddress());
+
+        var cacheTracker = mock(MutableRepository.class);
+        var authorizationTracker = mock(MutableRepository.class);
+
+        when(tracker.startTracking()).thenReturn(cacheTracker, authorizationTracker);
+        byte outerChainId = (byte) 128;
+        when(constants.getChainId()).thenReturn(outerChainId);
+        mockAccountWithBalanceAndNonce(tracker, sender, 1_000_000, ONE_NONCE);
+        mockReceiver(receiver, EMPTY_CODE);
+
+        var authorization = createValidAuthorizationTuple(delegatedAddress, ZERO_NONCE, BigInteger.valueOf(127), authorityKey);
+
+        var tx = createSignedType4Transaction(
+                senderKey,
+                outerChainId,
+                ONE_NONCE,
+                600_000,
+                1,
+                1,
+                receiver,
+                2,
+                EMPTY_DATA,
+                authorization
+        );
+
+        var txExecutor = newExecutor(tx);
+
+        assertTrue(txExecutor.executeTransaction());
+
+        verifyInvalidAuthorityChanges(
+                authorizationTracker,
+                authority,
+                delegatedAddress
+        );
     }
 
     private static byte[] clearStorageSlotsAndBurnGas(int numberOfSlots, int gasBurningOperations) {
