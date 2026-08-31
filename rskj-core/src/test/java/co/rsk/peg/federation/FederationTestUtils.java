@@ -290,7 +290,7 @@ public final class FederationTestUtils {
         }
     }
 
-    public static void addSignatures(Federation federation, List<BtcECKey> signers, BtcTransaction tx) {
+    public static void signInputs(Federation federation, List<BtcECKey> signers, BtcTransaction tx) {
         int federationFormatVersion = federation.getFormatVersion();
 
         for (int inputIndex = 0; inputIndex < tx.getInputs().size(); inputIndex++) {
