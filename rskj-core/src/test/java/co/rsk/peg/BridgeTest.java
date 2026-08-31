@@ -365,7 +365,7 @@ class BridgeTest {
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         BtcECKey fed1Key = new BtcECKey();
-        RskAddress fed1Address = new RskAddress(ECKey.fromPublicOnly(fed1Key.getPubKey()).getAddress());
+        RskAddress fed1Address = BitcoinTestUtils.getRskAddressFromBtcPublicKey(fed1Key);
         List<BtcECKey> federationKeys = Arrays.asList(fed1Key, new BtcECKey(), new BtcECKey());
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 

@@ -3,13 +3,12 @@ package co.rsk.peg.btcLockSender;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.core.RskAddress;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -81,7 +80,7 @@ class P2shP2wpkhBtcLockSenderTest {
 
         BtcECKey key = BtcECKey.fromPublicOnly(Hex.decode("02adeef95a8ffc5d1c4b1a480fd6d68e8b6cf14a65c903b147922150fbfbad91bc"));
         Assertions.assertEquals("2NBdCxoCY6wx1NHpwGWfJThHk9K2tVdNx1A", btcLockSender.getBTCAddress().toBase58());
-        Assertions.assertEquals(new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress()), btcLockSender.getRskAddress());
+        Assertions.assertEquals(BitcoinTestUtils.getRskAddressFromBtcPublicKey(key), btcLockSender.getRskAddress());
         Assertions.assertEquals(TxSenderAddressType.P2SHP2WPKH, btcLockSender.getTxSenderAddressType());
     }
 

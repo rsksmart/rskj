@@ -165,6 +165,69 @@ public final class BridgeUtils {
         }
     }
 
+    public static List<Coin> calculateMigrationTransactionOutputsValues(Coin expectedMigrationValue, BridgeConstants bridgeConstants) {
+        Coin multipleOutputsThresholdBtcValue = getMultipleOutputsThresholdBtcValue(bridgeConstants);
+        Coin migrationValueForMultipleOutputs = bridgeConstants.getMigrationValueForMultipleOutputs();
+        return expectedMigrationValue.isLessThan(multipleOutputsThresholdBtcValue) ?
+            List.of(expectedMigrationValue) :
+            calculateMigrationTransactionMultipleOutputsValues(expectedMigrationValue, migrationValueForMultipleOutputs, bridgeConstants);
+    }
+
+    private static List<Coin> calculateMigrationTransactionMultipleOutputsValues(
+        Coin expectedMigrationValue,
+        Coin migrationValueForMultipleOutputs,
+        BridgeConstants bridgeConstants
+    ) {
+        Coin largeMultipleOutputsThresholdBtcValue = getLargeMultipleOutputsThresholdBtcValue(bridgeConstants);
+        boolean migrationValueExceedsLargeOutputThreshold = !expectedMigrationValue.isLessThan(largeMultipleOutputsThresholdBtcValue);
+        if (migrationValueExceedsLargeOutputThreshold) {
+            int maxOutputsPerMigrationTransaction = bridgeConstants.getMaxOutputsPerMigrationTransaction();
+            return getEvenlyDistributedMigrationTransactionOutputs(expectedMigrationValue, maxOutputsPerMigrationTransaction);
+        }
+
+        return getFixedValueMigrationTransactionOutputs(expectedMigrationValue, migrationValueForMultipleOutputs);
+    }
+
+    private static List<Coin> getFixedValueMigrationTransactionOutputs(Coin expectedMigrationValue, Coin migrationValueForMultipleOutputs) {
+        if (expectedMigrationValue.isLessThan(migrationValueForMultipleOutputs)) {
+            return List.of(expectedMigrationValue);
+        }
+
+        Coin remaining = expectedMigrationValue;
+        List<Coin> outputs = new ArrayList<>();
+        while (!remaining.isLessThan(migrationValueForMultipleOutputs)) {
+            outputs.add(migrationValueForMultipleOutputs);
+            remaining = remaining.subtract(migrationValueForMultipleOutputs);
+        }
+        if (remaining.isPositive()) {
+            int lastOutputIndex = outputs.size() - 1;
+            Coin lastOutput = outputs.get(lastOutputIndex);
+            outputs.set(lastOutputIndex, lastOutput.add(remaining));
+        }
+        return outputs;
+    }
+
+    private static List<Coin> getEvenlyDistributedMigrationTransactionOutputs(Coin totalValue, int maxOutputsPerMigrationTransaction) {
+        Coin[] outputDistribution = totalValue.divideAndRemainder(maxOutputsPerMigrationTransaction);
+        Coin valuePerOutput = outputDistribution[0];
+        Coin remainder = outputDistribution[1];
+        List<Coin> outputs = new ArrayList<>(maxOutputsPerMigrationTransaction);
+        for (int i = 0; i < maxOutputsPerMigrationTransaction - 1; i++) {
+            outputs.add(valuePerOutput);
+        }
+        outputs.add(valuePerOutput.add(remainder));
+        return outputs;
+    }
+
+    static Coin getMultipleOutputsThresholdBtcValue(BridgeConstants bridgeConstants) {
+        return bridgeConstants.getMigrationValueForMultipleOutputs().multiply(2);
+    }
+
+    static Coin getLargeMultipleOutputsThresholdBtcValue(BridgeConstants bridgeConstants) {
+        int maxOutputsPerMigrationTransaction = bridgeConstants.getMaxOutputsPerMigrationTransaction();
+        return bridgeConstants.getMigrationValueForMultipleOutputs().multiply(maxOutputsPerMigrationTransaction);
+    }
+
     /**
      * @param activations
      * @param bridgeConstants
