@@ -3,6 +3,7 @@ package co.rsk.peg;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
+import static co.rsk.peg.BridgeEventsTestUtils.getLogsBySignature;
 import static co.rsk.peg.BridgeEventsTestUtils.getLogsData;
 import static co.rsk.peg.BridgeEventsTestUtils.getLogsTopics;
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASES_OUTPOINTS_VALUES;
@@ -204,6 +205,10 @@ public final class BridgeSupportTestUtil {
         BtcTransaction transaction,
         BtcBlockStoreWithCache btcBlockStore
     ) throws BlockStoreException {
+        // Without a witness getHash(true) == getHash(false), the chosen path would match the
+        // header's merkle root directly and isBlockMerkleRootValid would never take its coinbase path.
+        assertTrue(transaction.hasWitness());
+
         NetworkParameters networkParameters = bridgeConstants.getBtcParams();
 
         PartialMerkleTree pmtForBlockHeader = createValidPmtForTransactionsHashes(List.of(transaction.getHash(false)), networkParameters);
@@ -352,6 +357,20 @@ public final class BridgeSupportTestUtil {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
         assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, executionBlock, activations);
         assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, totalAmountRequested);
+
+        // The peg-in was rejected, so it must not have been logged as a registered peg-in,
+        // and since the rejection was refunded it must not have been logged as non-refundable either.
+        assertEventWasNotEmitted(logs, BridgeEvents.PEGIN_BTC.getEvent());
+        assertEventWasNotEmitted(logs, BridgeEvents.UNREFUNDABLE_PEGIN.getEvent());
+
+        // The refund pegout's outpoint values are only logged from RSKIP428 onwards.
+        assertEventWasNotEmitted(logs, BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent());
+
+        // A refund pegout is settled through BridgeSupport.settleReleaseRejection, which unlike
+        // settleReleaseRequest does not index the pegout in the pegout tx index. Pinning this is the
+        // whole point: were the refund indexed at creation time, registering it later would be
+        // recognised through the index instead of taking the path this rejection is testing.
+        assertPegoutTxSigHashWasNotSaved(bridgeStorageProvider, releaseTransaction);
     }
 
     public static void assertReleaseWasSettled(
@@ -388,6 +407,14 @@ public final class BridgeSupportTestUtil {
 
         Sha256Hash pegoutTxSigHash = pegoutTxSigHashOpt.get();
         assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(pegoutTxSigHash));
+    }
+
+    public static void assertPegoutTxSigHashWasNotSaved(BridgeStorageProvider bridgeStorageProvider, BtcTransaction pegoutTransaction) {
+        Optional<Sha256Hash> pegoutTxSigHashOpt = BitcoinUtils.getSigHashForPegoutIndex(pegoutTransaction);
+        assertTrue(pegoutTxSigHashOpt.isPresent());
+
+        Sha256Hash pegoutTxSigHash = pegoutTxSigHashOpt.get();
+        assertFalse(bridgeStorageProvider.hasPegoutTxSigHash(pegoutTxSigHash));
     }
 
     public static void assertReleaseTransactionInfoWasProcessed(
@@ -510,5 +537,10 @@ public final class BridgeSupportTestUtil {
     public static void assertEventWasEmittedWithExpectedData(List<LogInfo> logs, byte[] expectedData) {
         Optional<LogInfo> data = getLogsData(logs, expectedData);
         assertTrue(data.isPresent());
+    }
+
+    public static void assertEventWasNotEmitted(List<LogInfo> logs, CallTransaction.Function bridgeEvent) {
+        Optional<LogInfo> event = getLogsBySignature(logs, bridgeEvent);
+        assertFalse(event.isPresent());
     }
 }

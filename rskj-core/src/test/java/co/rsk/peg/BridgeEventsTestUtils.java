@@ -30,4 +30,11 @@ public class BridgeEventsTestUtils {
             .filter(log -> Arrays.equals(log.getData(), expectedData))
             .findFirst();
     }
+
+    public static Optional<LogInfo> getLogsBySignature(List<LogInfo> logs, CallTransaction.Function bridgeEvent) {
+        DataWord signatureTopic = DataWord.valueOf(bridgeEvent.encodeSignatureLong());
+        return logs.stream()
+            .filter(log -> !log.getTopics().isEmpty() && log.getTopics().get(0).equals(signatureTopic))
+            .findFirst();
+    }
 }
