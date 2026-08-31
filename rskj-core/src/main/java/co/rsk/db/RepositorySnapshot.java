@@ -21,6 +21,7 @@ package co.rsk.db;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.crypto.Keccak256;
+import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 
@@ -71,6 +72,8 @@ public interface RepositorySnapshot extends AccountInformationProvider {
      * @return account state as stored in the database
      */
     AccountState getAccountState(RskAddress addr);
+
+    Trie getTrie();
 
     /**
      * This method creates a new child repository for change tracking purposes.

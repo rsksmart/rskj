@@ -19,8 +19,10 @@
 package co.rsk.rpc;
 
 import co.rsk.rpc.modules.rsk.RskModule;
+import org.ethereum.rpc.dto.ProofResultDTO;
 import org.ethereum.rpc.parameters.BlockRefParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataArrayParam;
 import org.ethereum.rpc.parameters.HexNumberParam;
 
 public interface Web3RskModule {
@@ -52,5 +54,16 @@ public interface Web3RskModule {
     RskModule getRskModule();
 
     String rsk_getStorageBytesAt(HexAddressParam address, HexNumberParam storageIdx, BlockRefParam blockRefParam);
+
+    /**
+     * Returns the account and storage values with Merkle proofs using RSKj's native unified trie format.
+     * This differs from eth_getProof which returns Ethereum-compatible proofs.
+     *
+     * @param address The address of the account
+     * @param storageKeys Array of storage keys to prove
+     * @param blockRefParam Block identifier
+     * @return ProofResultDTO containing account info and proofs
+     */
+    ProofResultDTO rsk_getProof(HexAddressParam address, HexDataArrayParam storageKeys, BlockRefParam blockRefParam) throws Exception;
 
 }
