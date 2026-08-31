@@ -24,7 +24,7 @@ Compressed logs:
 
 ## Log level options
 
-When you configure your log level, all log items for that level and below get written to the log file. In the following table, the left column represents the the possible values you can set in your configuration.
+When you configure your log level, all log items for that level and below get written to the log file. In the following table, the left column represents the possible values you can set in your configuration.
 
 ![Log Levels](https://i.stack.imgur.com/7o9Kk.png)
 
