@@ -33,7 +33,10 @@ import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
+import org.rocksdb.CompressionType;
 import org.rocksdb.WriteBatch;
+import org.rocksdb.ColumnFamilyHandle;
+import org.rocksdb.CompactRangeOptions;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -92,6 +95,47 @@ class RocksDbDataSourceTest {
         } catch (RocksDBException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    void parseCompressionTypeSupportsLowerSnakeCaseValues() {
+        CompressionType compressionType = RocksDbDataSource.parseCompressionType("no_compression");
+
+        assertEquals(CompressionType.NO_COMPRESSION, compressionType);
+    }
+
+    @Test
+    void parseCompressionTypeSupportsValuesWithoutCompressionSuffix() {
+        CompressionType compressionType = RocksDbDataSource.parseCompressionType("snappy");
+
+        assertEquals(CompressionType.SNAPPY_COMPRESSION, compressionType);
+    }
+
+    @Test
+    void parseCompressionTypeRejectsUnknownValues() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> RocksDbDataSource.parseCompressionType("unknown_compression")
+        );
+
+        assertTrue(exception.getMessage().contains("Invalid RocksDB compression type"));
+    }
+
+    @Test
+    void compactRangeCompactsWholeDataSource() throws RocksDBException {
+        RocksDB db = Mockito.mock(RocksDB.class);
+        ColumnFamilyHandle defaultColumnFamily = Mockito.mock(ColumnFamilyHandle.class);
+        Mockito.when(db.getDefaultColumnFamily()).thenReturn(defaultColumnFamily);
+        TestUtils.setInternalState(dataSource, "db", db);
+
+        dataSource.compactRange();
+
+        verify(db, times(1)).compactRange(
+                eq(defaultColumnFamily),
+                isNull(),
+                isNull(),
+                any(CompactRangeOptions.class)
+        );
     }
 
     @Test
