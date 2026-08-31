@@ -64,7 +64,7 @@ public class PegUtils {
      * @param activations
      * @return
      */
-    static boolean allUTXOsToFedAreAboveMinimumPeginValue(
+    public static boolean allUTXOsToFedAreAboveMinimumPeginValue(
         BtcTransaction btcTx,
         Wallet fedWallet,
         Coin minimumPegInTxValue,
