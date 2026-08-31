@@ -12,7 +12,7 @@ import static co.rsk.peg.BridgeSupportTestUtil.recreateChainFromPmt;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createHash;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
-import static co.rsk.peg.federation.FederationTestUtils.addSignatures;
+import static co.rsk.peg.federation.FederationTestUtils.signInputs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -929,7 +929,7 @@ class FederationChangeIT {
         var svpFundTx = copyPreservingInputValues(pegoutsTxs.get(0).getBtcTransaction());
 
         int neededSignatures = federationSupport.getActiveFederationThreshold();
-        addSignatures(federationSupport.getActiveFederation(), activeFederationMembersKeys.subList(0, neededSignatures), svpFundTx);
+        signInputs(federationSupport.getActiveFederation(), activeFederationMembersKeys.subList(0, neededSignatures), svpFundTx);
 
         int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
         registerBtcTransaction(svpFundTx);
