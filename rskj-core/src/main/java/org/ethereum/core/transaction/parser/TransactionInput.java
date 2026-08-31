@@ -132,11 +132,11 @@ public final class TransactionInput {
 
         return new TransactionInput(
                 typePrefix,
-                nonce == null ? null : nonce.toByteArray(),
+                nonce == null ? null : CommonParsingUtils.unsignedBytes(nonce),
                 gasPrice,
                 maxPriorityFeePerGas,
                 maxFeePerGas,
-                gasLimit.toByteArray(),
+                CommonParsingUtils.unsignedBytes(gasLimit),
                 receiveAddress,
                 value,
                 data,
