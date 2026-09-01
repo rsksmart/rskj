@@ -8,7 +8,7 @@ import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseInputScriptThatSpendsFromRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.getSigHashForPegoutIndex;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
-import static co.rsk.peg.federation.FederationTestUtils.addSignaturesAndFederationRedeemScript;
+import static co.rsk.peg.federation.FederationTestUtils.spendFromFed;
 import static co.rsk.peg.federation.FederationTestUtils.signInputs;
 import static co.rsk.peg.pegin.RejectedPeginReason.*;
 import static co.rsk.peg.utils.NonRefundablePeginReason.OUTPUTS_SENT_TO_DIFFERENT_TYPES_OF_FEDS;
@@ -1635,7 +1635,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             btcTransaction.addOutput(amountToSend, activeFederation.getAddress());
             btcTransaction.addOutput(Coin.ZERO, PegTestUtils.createOpReturnScriptForRskWithCustomPayload(1, new byte[]{}));
 
-            addSignaturesAndFederationRedeemScript(unknownFed, signers, btcTransaction);
+            spendFromFed(unknownFed, signers, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -1678,7 +1678,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
             btcTransaction.addOutput(amountToSend, retiringFederation.getAddress());
 
-            addSignaturesAndFederationRedeemScript(unknownFed, signers, btcTransaction);
+            spendFromFed(unknownFed, signers, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -1722,7 +1722,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
             btcTransaction.addOutput(amountToSend, retiringFederation.getAddress());
 
-            addSignaturesAndFederationRedeemScript(unknownFed, signers, btcTransaction);
+            spendFromFed(unknownFed, signers, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -1769,14 +1769,14 @@ class BridgeSupportRegisterBtcTransactionTest {
                 ScriptBuilder.createP2SHMultiSigInputScript(null, unknownFed.getRedeemScript())
             );
             fundingTx.addOutput(PegTestUtils.createBech32Output(btcMainnetParams, Coin.COIN));
-            addSignaturesAndFederationRedeemScript(unknownFed, unknownFedSigners, fundingTx);
+            spendFromFed(unknownFed, unknownFedSigners, fundingTx);
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(fundingTx.getOutput(FIRST_OUTPUT_INDEX));
             btcTransaction.addOutput(amountToSend, activeFederation.getAddress());
 
-            addSignaturesAndFederationRedeemScript(unknownFed, unknownFedSigners, btcTransaction);
+            spendFromFed(unknownFed, unknownFedSigners, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
@@ -1823,7 +1823,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             btcTransaction.addOutput(Coin.ZERO, PegTestUtils.createOpReturnScriptForRskWithCustomPayload(1, new byte[]{}));
 
-            addSignaturesAndFederationRedeemScript(unknownFed, signers, btcTransaction);
+            spendFromFed(unknownFed, signers, btcTransaction);
 
             PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
