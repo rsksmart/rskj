@@ -88,11 +88,14 @@ public class TrieStoreImpl implements TrieStore {
             traceInfo.numOfSavesInBlockProcess = 0;
             traceInfo.numOfNoSavesInBlockProcess = 0;
 
-            if (store instanceof DataSourceWithCache) {
-                ((DataSourceWithCache) store).emitLogs();
-            }
-
             traceInfoLocal.remove();
+        }
+
+        // Cache hit-rate stats are gated on their own logger, not on this one. Tying them to
+        // "triestore" meant the only way to see the trie cache's hit rate - the layer that dominates
+        // a deep sync - was to also turn on a per-block trace that is far too noisy to leave running.
+        if (store instanceof DataSourceWithCache) {
+            ((DataSourceWithCache) store).emitLogs();
         }
 
         if (debugEnabled) {

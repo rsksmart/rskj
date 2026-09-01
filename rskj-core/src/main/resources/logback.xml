@@ -104,6 +104,11 @@
     <logger name="co.rsk.db.migration.MissingOrchidStorageKeysProvider" level="INFO"/>
     <logger name="blooms" level="INFO"/>
     <logger name="triestore" level="INFO" />
+    <!-- DataSourceWithCache counts gets vs gets-that-reached-the-store, i.e. the hit rate of the
+         trie node cache - the layer that dominates a deep sync profile. The counters have always
+         existed but this logger was never declared, so it inherited INFO and the stats could not be
+         emitted at all. Raise with -Dlogging.datasourcewithcache=TRACE to measure cache sizing. -->
+    <logger name="datasourcewithcache" level="${logging.datasourcewithcache:-INFO}" />
     <logger name="btcBlockStore" level="INFO" />
     <logger name="secp256k1" level="INFO" />
     <logger name="altbn128" level="INFO" />
