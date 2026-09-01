@@ -143,11 +143,6 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     private List<LogInfo> logs;
 
-    @BeforeEach
-    void setupConstants() {
-        bridgeConstants = BridgeMainNetConstants.getInstance();
-    }
-
     private void setUpBridgeSupport(ForBlock activations, BridgeConstants bridgeConstants, long federationCreationBlockNumber) {
         repository = createRepository();
         logs = new ArrayList<>();
@@ -194,10 +189,9 @@ class BridgeSupportRegisterBtcTransactionTest {
             .build();
     }
 
-    //
-    // setup methods for unknown and pegin txs
     @BeforeEach
     void init() throws IOException {
+        bridgeConstants = BridgeMainNetConstants.getInstance();
         retiredFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
@@ -265,14 +259,14 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     private BridgeSupport buildBridgeSupport(ActivationConfig.ForBlock activations) {
-        Repository repository = mock(Repository.class);
+        repository = mock(Repository.class);
         when(repository.getBalance(bridgeContractAddress)).thenReturn(co.rsk.core.Coin.fromBitcoin(bridgeMainnetConstants.getMaxRbtc()));
         LockingCapSupport lockingCapSupport =  mock(LockingCapSupport.class);
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(bridgeMainnetConstants.getMaxRbtc()));
 
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
-        FeePerKbSupport feePerKbSupport =  new FeePerKbSupportImpl(
+        feePerKbSupport =  new FeePerKbSupportImpl(
             bridgeMainnetConstants.getFeePerKbConstants(),
             feePerKbStorageProvider
         );
@@ -323,8 +317,6 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
 
-        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-
         co.rsk.bitcoinj.core.BtcBlock headBlock = new co.rsk.bitcoinj.core.BtcBlock(
             btcMainnetParams,
             1,
@@ -336,6 +328,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             new ArrayList<>()
         );
 
+        btcBlockStore = mock(BtcBlockStoreWithCache.class);
         StoredBlock chainHead = new StoredBlock(headBlock, new BigInteger("0"), height + BridgeSupportRegisterBtcTransactionTest.bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations());
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
 
@@ -672,8 +665,6 @@ class BridgeSupportRegisterBtcTransactionTest {
                 when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
             }
 
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-
             BridgeSupport bridgeSupport = buildBridgeSupport(activations);
             Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
                 derivationArgumentsHash,
@@ -738,9 +729,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
             }
 
-            RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-
-            BridgeSupport bridgeSupport = buildBridgeSupport(activations);
+            bridgeSupport = buildBridgeSupport(activations);
             Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
                 derivationArgumentsHash,
                 userRefundBtcAddress,
@@ -3218,16 +3207,6 @@ class BridgeSupportRegisterBtcTransactionTest {
             private static final int ONE_MIGRATION_UTXO = 1;
             private static final int MANY_MIGRATION_UTXOS = 40;
             private static final int OLD_FEDERATION_MIGRATION_HEIGHT = 5;
-            private static final BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
-            private static final NetworkParameters btcRegTestParams = bridgeRegTestConstants.getBtcParams();
-            private static final List<BtcECKey> testnetOldRetiringFederationKeys = Arrays.asList(
-                BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
-                BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
-                BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
-            );
-            private static final List<BtcECKey> regTestActiveFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-                new String[]{"regtestActiveMember01", "regtestActiveMember02", "regtestActiveMember03"}, true
-            );
 
             @Test
             void registerBtcTransaction_withOneInputAndOutput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
@@ -3911,7 +3890,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             // doesn't work; block lookup falls back to walking real prevBlockHash links from the chain
             // head, so a genuinely linked mini-chain has to be built instead.
             private void registerOldFederationMigrationTxBeforeRSKIP199(BtcTransaction migrationTx, BridgeConstants bridgeConstants) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-                NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+                networkParameters = bridgeConstants.getBtcParams();
                 PartialMerkleTree pmt = createValidPmtForTransactions(List.of(migrationTx), networkParameters);
                 Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
 
