@@ -212,6 +212,58 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void authorizationOnFailingPrecompileAppliesGasPriceMultiplier(boolean rskip560Active) {
+        activationConfig = rskip560Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP560);
+        when(config.getActivationConfig()).thenReturn(activationConfig);
+
+        long gasPrice = 3L;
+
+        MutableRepository repository = createRepository();
+
+        repository.createAccount(authorityAddress);
+        repository.setNonce(authorityAddress, ONE_NONCE);
+        repository.saveCode(authorityAddress, DelegationCodeResolver.createDelegatedCode(createRandomAddress()));
+
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+
+        RskAddress fakeContractAddress = createRandomAddress();
+        PrecompiledContracts.PrecompiledContract throwingPrecompile = createPrecompiledContract();
+        when(precompiledContracts.getContractForAddress(any(), eq(DataWord.valueOf(fakeContractAddress.getBytes()))))
+                .thenReturn(throwingPrecompile);
+
+        SetCodeAuthorization authorization = createValidAuthorizationTuple(delegatedAddress, ONE_NONCE, constants.getChainId(), authorityKey);
+
+        Transaction tx = createSignedType4Transaction(
+                senderKey, constants.getChainId(), ZERO_NONCE, 100_000, gasPrice, gasPrice,
+                fakeContractAddress, 0, EMPTY_DATA, authorization
+        );
+
+        TransactionExecutor txExecutor = newExecutor(tx, repository);
+        assertTrue(txExecutor.executeTransaction());
+
+        assertNotNull(txExecutor.getResult().getException());
+        assertAuthorityDelegatedTo(repository, authorityAddress, delegatedAddress);
+
+        long authorizationRefund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST; // 9_500
+
+        if (rskip560Active) {
+            long expectedChargedGas = 100_000L - authorizationRefund; // 90_500
+            Coin expectedFee = Coin.valueOf(expectedChargedGas * gasPrice); // 271_500
+            Coin expectedSenderBalance = Coin.valueOf(1_000_000L - expectedChargedGas * gasPrice); // 728_500
+
+            assertEquals(expectedFee, txExecutor.getPaidFees(), "paidFees must be chargedGas * gasPrice, not just chargedGas");
+            assertEquals(expectedSenderBalance, repository.getBalance(sender), "sender balance must reflect the refund scaled by gasPrice");
+        } else {
+            Coin expectedFee = Coin.valueOf(100_000L * gasPrice); // 300_000
+            Coin expectedSenderBalance = Coin.valueOf(1_000_000L - 100_000L * gasPrice); // 700_000
+
+            assertEquals(expectedFee, txExecutor.getPaidFees(), "pre-activation, the full gasLimit fee must still be scaled by gasPrice");
+            assertEquals(expectedSenderBalance, repository.getBalance(sender), "pre-activation, no refund is paid, but the prepaid cost must reflect gasPrice");
+        }
+    }
+
     private TxResult runRevertScenario(boolean rskip560Active, boolean withAuthorization) {
         activationConfig = rskip560Active
                 ? ActivationConfigsForTest.all()

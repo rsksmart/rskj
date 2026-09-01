@@ -474,7 +474,7 @@ public class TransactionExecutor {
     private void execError(Throwable err) {
         logger.error("execError: ", err);
         String message = err.getMessage();
-        executionError =message != null && !message.isEmpty() ? message : err.getClass().getSimpleName();
+        executionError = message != null && !message.isEmpty() ? message : err.getClass().getSimpleName();
     }
 
     private void execError(String err) {
