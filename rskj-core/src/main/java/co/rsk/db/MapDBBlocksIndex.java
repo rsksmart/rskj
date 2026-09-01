@@ -18,12 +18,14 @@
 
 package co.rsk.db;
 
+import co.rsk.config.BlocksIndexConfig;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.ByteUtil;
 import org.mapdb.DB;
 import org.mapdb.Serializer;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +34,7 @@ import java.util.Map;
 import co.rsk.util.MaxSizeHashMap;
 
 import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
+import static org.ethereum.db.IndexedBlockStore.COMPACT_BLOCK_INFO_SERIALIZER;
 
 /**
  * MapDBBlocksIndex is a thread safe implementation of BlocksIndex with mapDB providing the underlying functionality.
@@ -39,6 +42,15 @@ import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 public class MapDBBlocksIndex implements BlocksIndex {
 
     private static final String MAX_BLOCK_NUMBER_KEY = "max_block";
+
+    /**
+     * Which encoding wrote this index. The two are not interchangeable, and reading one with the
+     * other yields garbage rather than an error, so the choice is recorded on disk and checked on
+     * every open.
+     */
+    private static final String ENCODING_KEY = "block_info_encoding";
+    private static final String ENCODING_JAVA = "java-serialization";
+    private static final String ENCODING_COMPACT = "compact-v1";
 
     private final Map<Long, List<IndexedBlockStore.BlockInfo>> index;
     private final Map<String, byte[]> metadata;
@@ -55,26 +67,47 @@ public class MapDBBlocksIndex implements BlocksIndex {
      * from an entry that exists, always following the mutation with putBlocks, so a cached entry
      * cannot drift from what MapDB holds.
      */
-    private static final int INDEX_CACHE_SIZE =
-            Integer.getInteger("blockstore.indexCacheEntries", 200_000);
-    private final Map<Long, List<IndexedBlockStore.BlockInfo>> indexCache =
-            Collections.synchronizedMap(new MaxSizeHashMap<>(INDEX_CACHE_SIZE, true));
+    private final Map<Long, List<IndexedBlockStore.BlockInfo>> indexCache;
 
     private final DB indexDB;
 
     public MapDBBlocksIndex(DB indexDB) {
+        this(indexDB, BlocksIndexConfig.defaults());
+    }
+
+    public MapDBBlocksIndex(DB indexDB, BlocksIndexConfig config) {
 
         this.indexDB = indexDB;
-
-        index = indexDB.hashMapCreate("index")
-                .keySerializer(Serializer.LONG)
-                .valueSerializer(BLOCK_INFO_SERIALIZER)
-                .counterEnable()
-                .makeOrGet();
+        this.indexCache = Collections.synchronizedMap(new MaxSizeHashMap<>(config.getCacheEntries(), true));
 
         metadata = indexDB.hashMapCreate("metadata")
                 .keySerializer(Serializer.STRING)
                 .valueSerializer(Serializer.BYTE_ARRAY)
+                .makeOrGet();
+
+        String wanted = config.isCompactSerializer() ? ENCODING_COMPACT : ENCODING_JAVA;
+        String stored = readEncoding();
+        if (stored == null) {
+            // No marker means either a brand new index, or one written before the marker existed -
+            // and anything written before it existed is Java-serialized by definition. The presence
+            // of the max-block key is what separates the two.
+            stored = metadata.containsKey(MAX_BLOCK_NUMBER_KEY) ? ENCODING_JAVA : wanted;
+            metadata.put(ENCODING_KEY, stored.getBytes(StandardCharsets.UTF_8));
+        }
+
+        if (!stored.equals(wanted)) {
+            throw new IllegalStateException(String.format(
+                    "This block index was written with the '%s' encoding, but "
+                            + "database.blocksIndex.compactSerializer asks to open it as '%s'. The formats are "
+                            + "not interchangeable and reading one as the other returns corrupt data, so the "
+                            + "index will not be opened. Either restore the previous setting or resync.",
+                    stored, wanted));
+        }
+
+        index = indexDB.hashMapCreate("index")
+                .keySerializer(Serializer.LONG)
+                .valueSerializer(config.isCompactSerializer() ? COMPACT_BLOCK_INFO_SERIALIZER : BLOCK_INFO_SERIALIZER)
+                .counterEnable()
                 .makeOrGet();
 
         // Max block number initialization assumes an index without gap
@@ -82,6 +115,11 @@ public class MapDBBlocksIndex implements BlocksIndex {
             long maxBlockNumber = (long) index.size() - 1;
             metadata.put(MAX_BLOCK_NUMBER_KEY, ByteUtil.longToBytes(maxBlockNumber));
         }
+    }
+
+    private String readEncoding() {
+        byte[] raw = metadata.get(ENCODING_KEY);
+        return raw == null ? null : new String(raw, StandardCharsets.UTF_8);
     }
 
     @Override

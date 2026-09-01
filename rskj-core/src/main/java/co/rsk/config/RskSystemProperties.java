@@ -547,6 +547,19 @@ public class RskSystemProperties extends SystemProperties {
                 configFromFiles.getString("database.rocksdb.compression"));
     }
 
+    /**
+     * Block-index tuning from {@code database.blocksIndex.*}. Same mechanism as the RocksDB block
+     * above: ordinary config properties, overridable with {@code -Ddatabase.blocksIndex.<key>}.
+     */
+    public BlocksIndexConfig getBlocksIndexConfig() {
+        return new BlocksIndexConfig(
+                configFromFiles.getBoolean("database.blocksIndex.mmap"),
+                configFromFiles.getBoolean("database.blocksIndex.asyncWrite"),
+                configFromFiles.getBoolean("database.blocksIndex.transactionDisable"),
+                configFromFiles.getInt("database.blocksIndex.cacheEntries"),
+                configFromFiles.getBoolean("database.blocksIndex.compactSerializer"));
+    }
+
     public boolean isDeriveEmptyBodiesEnabled() {
         return configFromFiles.getBoolean("sync.deriveEmptyBodies");
     }

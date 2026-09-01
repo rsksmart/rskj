@@ -652,4 +652,64 @@ public class IndexedBlockStore implements BlockStore {
             return value;
         }
     };
+
+    /**
+     * The same data as {@link #BLOCK_INFO_SERIALIZER}, written by hand instead of through Java
+     * serialization.
+     *
+     * <p>A BlockInfo is a 32-byte hash, a difficulty and a flag - about 40 bytes. Java
+     * serialization spends far more time deciding how to write that than writing it: profiling a
+     * mainnet sync found {@code ObjectInputStream}, {@code Class.forName} and
+     * {@code VM.latestUserDefinedLoader} accounting for roughly 40% of the block-processing
+     * thread's running time, because every entry read reconstructs the stream header and resolves
+     * the class through the classloader.
+     *
+     * <p>The encoding is length-prefixed and fixed-order, so it carries no class metadata at all.
+     * It is NOT interchangeable with the Java-serialized format; {@code MapDBBlocksIndex} records
+     * which encoding wrote an index and refuses to open it with the other.
+     */
+    public static final Serializer<List<BlockInfo>> COMPACT_BLOCK_INFO_SERIALIZER = new Serializer<List<BlockInfo>>() {
+
+        @Override
+        public void serialize(DataOutput out, List<BlockInfo> value) throws IOException {
+            DataIO.packInt(out, value.size());
+
+            for (BlockInfo info : value) {
+                byte[] hash = info.getHash().getBytes();
+                DataIO.packInt(out, hash.length);
+                out.write(hash);
+
+                // toByteArray/new BigInteger round trips exactly, sign byte included, so the
+                // difficulty that comes back equals the one that went in.
+                byte[] difficulty = info.getCummDifficulty().asBigInteger().toByteArray();
+                DataIO.packInt(out, difficulty.length);
+                out.write(difficulty);
+
+                out.writeBoolean(info.isMainChain());
+            }
+        }
+
+        @Override
+        public List<BlockInfo> deserialize(DataInput in, int available) throws IOException {
+            int size = DataIO.unpackInt(in);
+            List<BlockInfo> value = new ArrayList<>(size);
+
+            for (int i = 0; i < size; i++) {
+                byte[] hash = new byte[DataIO.unpackInt(in)];
+                in.readFully(hash);
+
+                byte[] difficulty = new byte[DataIO.unpackInt(in)];
+                in.readFully(difficulty);
+
+                BlockInfo info = new BlockInfo();
+                info.setHash(hash);
+                info.setCummDifficulty(new BlockDifficulty(new BigInteger(difficulty)));
+                info.setMainChain(in.readBoolean());
+
+                value.add(info);
+            }
+
+            return value;
+        }
+    };
 }

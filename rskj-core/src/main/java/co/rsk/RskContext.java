@@ -1239,14 +1239,38 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             }
         }
 
-        DB indexDB = DBMaker.fileDB(dbFile)
-                .make();
+        BlocksIndexConfig blocksIndexConfig = getRskSystemProperties().getBlocksIndexConfig();
+
+        // Opened with no options at all, MapDB reaches the file through RandomAccessFile and keeps
+        // a write-ahead log. Profiling a mainnet sync put ~60% of the block-processing thread in
+        // this store, so each option below is opt-in tuning for that. Defaults keep MapDB's
+        // original behaviour.
+        DBMaker.Maker indexDBMaker = DBMaker.fileDB(dbFile);
+        if (blocksIndexConfig.isMmap()) {
+            // EnableIfSupported rather than Enable: on a platform where mmap is unavailable this
+            // degrades to the normal file access instead of refusing to start.
+            indexDBMaker = indexDBMaker.fileMmapEnableIfSupported()
+                    // Skip zeroing freshly mapped regions; MapDB writes before it reads them.
+                    .fileMmapPreclearDisable()
+                    // Without the cleaner hack the mapping is only released at GC, which on a
+                    // growing index means the old mappings pile up.
+                    .fileMmapCleanerHackEnable();
+        }
+        if (blocksIndexConfig.isAsyncWrite()) {
+            indexDBMaker = indexDBMaker.asyncWriteEnable();
+        }
+        if (blocksIndexConfig.isTransactionDisable()) {
+            logger.warn("database.blocksIndex.transactionDisable is on: the block index has no write-ahead log, "
+                    + "so an unclean shutdown can leave it unreadable and force a resync.");
+            indexDBMaker = indexDBMaker.transactionDisable();
+        }
+        DB indexDB = indexDBMaker.make();
 
         Path blocksDbPath = Paths.get(databaseDir, "blocks");
         DbKind currentDbKind = getDbKind(databaseDir);
         KeyValueDataSource blocksDB = KeyValueDataSourceUtils.makeDataSource(blocksDbPath, currentDbKind, getRskSystemProperties().getRocksDbConfig());
 
-        return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
+        return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB, blocksIndexConfig));
     }
 
     public synchronized PeerScoringReporterService getPeerScoringReporterService() {
