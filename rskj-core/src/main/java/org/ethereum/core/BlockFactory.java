@@ -113,6 +113,21 @@ public final class BlockFactory implements BtcHeaderSizeRule {
         return decodeBlock(rawData, true);
     }
 
+    /**
+     * Decodes just the header out of an encoded block, without parsing the transaction or uncle
+     * lists. Callers that only need a header - validating the mainchain view walks back hundreds of
+     * blocks per block and reads nothing but headers - would otherwise pay to decode every
+     * transaction in every one of those blocks and throw the result away.
+     */
+    public BlockHeader decodeBlockHeader(byte[] rawData) {
+        RLPList block = RLP.decodeList(rawData);
+        if (block.size() != NUMBER_OF_ELEMENTS_IN_BLOCK_RLP) {
+            throw new IllegalArgumentException("A block must have 3 exactly items");
+        }
+
+        return decodeHeader((RLPList) block.get(0), false, true);
+    }
+
     private Block decodeBlock(byte[] rawData, boolean sealed) {
         RLPList block = RLP.decodeList(rawData);
         if (block.size() != NUMBER_OF_ELEMENTS_IN_BLOCK_RLP) {

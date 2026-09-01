@@ -56,11 +56,12 @@ public class ConsensusValidationMainchainViewImpl implements ConsensusValidation
 
         Keccak256 currentHash = startingHashToGetMainchainFrom;
         for(int i = 0; i < height; i++) {
-            Block block = blockStore.getBlockByHash(currentHash.getBytes());
-            BlockHeader header;
-            if (block != null) {
-                header = block.getHeader();
-            } else {
+            // Headers only: this loop runs once per validated block and walks hundreds of ancestors,
+            // so reading whole blocks here decoded every transaction in each of them - and rebuilt
+            // the REMASC sibling map on every call, cache hit included - to use nothing but the
+            // header.
+            BlockHeader header = blockStore.getBlockHeaderByHash(currentHash.getBytes());
+            if (header == null) {
                 if(pendingHeadersByHash == null) {
                     logger.error("Pending headers by hash has not been set.");
                     return new ArrayList<>();

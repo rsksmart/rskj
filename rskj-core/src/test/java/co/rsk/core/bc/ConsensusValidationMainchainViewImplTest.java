@@ -109,7 +109,9 @@ class ConsensusValidationMainchainViewImplTest {
         Block bestBlock = blockStore.getBestBlock();
 
         byte[] bestBlockParentHash = bestBlock.getParentHash().getBytes();
+        // "absent from the store" now has to be said on both accessors: the view reads headers.
         when(blockStore.getBlockByHash(bestBlockParentHash)).thenReturn(null);
+        when(blockStore.getBlockHeaderByHash(bestBlockParentHash)).thenReturn(null);
 
         Map<Keccak256, BlockHeader> pendingHeadersByHash = new ConcurrentHashMap<>();
         view.setPendingHeaders(pendingHeadersByHash);
@@ -128,7 +130,9 @@ class ConsensusValidationMainchainViewImplTest {
         Block bestBlock = blockStore.getBestBlock();
 
         byte[] bestBlockParentHash = bestBlock.getParentHash().getBytes();
+        // "absent from the store" now has to be said on both accessors: the view reads headers.
         when(blockStore.getBlockByHash(bestBlockParentHash)).thenReturn(null);
+        when(blockStore.getBlockHeaderByHash(bestBlockParentHash)).thenReturn(null);
 
         Map<Keccak256, BlockHeader> pendingHeadersByHash = new ConcurrentHashMap<>();
         view.setPendingHeaders(pendingHeadersByHash);
@@ -183,11 +187,17 @@ class ConsensusValidationMainchainViewImplTest {
         BlockStore blockstore = mock(BlockStore.class);
 
         Block previousBlock = createBlock(420, TestUtils.generateHash("previousBlock"));
+        // Hoisted: createBlock returns a mock, so calling getHeader() inside thenReturn(...) would
+        // interleave two stubbings and trip UnfinishedStubbingException.
+        BlockHeader previousHeader = previousBlock.getHeader();
         when(blockstore.getBlockByHash(previousBlock.getHash().getBytes())).thenReturn(previousBlock);
+        when(blockstore.getBlockHeaderByHash(previousBlock.getHash().getBytes())).thenReturn(previousHeader);
 
         for(long i = 421; i < 420 + numberOfBlocks; i++) {
             Block block = createBlock(i, previousBlock.getHash());
+            BlockHeader header = block.getHeader();
             when(blockstore.getBlockByHash(block.getHash().getBytes())).thenReturn(block);
+            when(blockstore.getBlockHeaderByHash(block.getHash().getBytes())).thenReturn(header);
 
             if(i == 420 + numberOfBlocks - 1) {
                 when(blockstore.getBestBlock()).thenReturn(block);

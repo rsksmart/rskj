@@ -22,6 +22,7 @@ package org.ethereum.db;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.db.RemascCache;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
 
 import javax.annotation.Nonnull;
@@ -48,6 +49,16 @@ public interface BlockStore extends RemascCache {
     void removeBlock(Block block);
 
     Block getBlockByHash(byte[] hash);
+
+    /**
+     * Returns just the header of a stored block. Defaults to loading the whole block so existing
+     * implementations keep working; stores that can do better should override it. Callers walking
+     * the mainchain read hundreds of headers per block and never touch the bodies.
+     */
+    default BlockHeader getBlockHeaderByHash(byte[] hash) {
+        Block block = getBlockByHash(hash);
+        return block == null ? null : block.getHeader();
+    }
 
     Block getBlockAtDepthStartingAt(long depth, byte[] hash);
 

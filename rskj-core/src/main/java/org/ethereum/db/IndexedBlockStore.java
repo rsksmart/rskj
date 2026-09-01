@@ -53,7 +53,18 @@ public class IndexedBlockStore implements BlockStore {
     private static final Logger logger = LoggerFactory.getLogger("general");
     private static final Profiler profiler = ProfilerFactory.getInstance();
 
+    /** Comfortably more than the 449-ancestor fork-detection walk, so it never self-evicts. */
+    private static final int HEADER_CACHE_SIZE = 10_000;
+
     private final BlockCache blockCache;
+    /**
+     * Headers only. Validating a block walks {@code REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION}
+     * (449) ancestors and reads nothing but their headers, so caching headers separately keeps that
+     * walk off both the body decoder and the block cache, which would otherwise be flushed of the
+     * blocks actually being executed. Headers are ~100x smaller than blocks, so this holds far more
+     * of the chain per byte.
+     */
+    private final MaxSizeHashMap<Keccak256, BlockHeader> headerCache;
     private final MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>> remascCache;
 
     private final BlocksIndex index;
@@ -70,12 +81,14 @@ public class IndexedBlockStore implements BlockStore {
         //TODO(lsebrie): move these maps creation outside blockstore,
         // remascCache should be an external component and not be inside blockstore
         this.blockCache = new BlockCache(5000);
+        this.headerCache = new MaxSizeHashMap<>(HEADER_CACHE_SIZE, true);
         this.remascCache = new MaxSizeHashMap<>(50000, true);
     }
 
     @Override
     public synchronized void removeBlock(Block block) {
         this.blockCache.removeBlock(block);
+        this.headerCache.remove(block.getHash());
         this.remascCache.remove(block.getHash());
         this.blocks.delete(block.getHash().getBytes());
         this.index.removeBlock(block.getNumber(), block.getHash());
@@ -268,6 +281,37 @@ public class IndexedBlockStore implements BlockStore {
         blockCache.addBlock(block);
         remascCache.put(block.getHash(), getSiblingsFromBlock(block));
         return block;
+    }
+
+    /**
+     * Header without the body. Avoids three costs the block path pays: decoding every transaction in
+     * the block, rebuilding the REMASC sibling map, and evicting the block cache with blocks that
+     * are only being read for their header.
+     */
+    @Override
+    public synchronized BlockHeader getBlockHeaderByHash(byte[] hash) {
+        Keccak256 key = new Keccak256(hash);
+
+        BlockHeader cached = headerCache.get(key);
+        if (cached != null) {
+            return cached;
+        }
+
+        // A block already in the block cache is free to read a header from.
+        Block block = this.blockCache.getBlockByHash(hash);
+        if (block != null) {
+            headerCache.put(key, block.getHeader());
+            return block.getHeader();
+        }
+
+        byte[] blockRlp = blocks.get(hash);
+        if (blockRlp == null) {
+            return null;
+        }
+
+        BlockHeader header = blockFactory.decodeBlockHeader(blockRlp);
+        headerCache.put(key, header);
+        return header;
     }
 
     private synchronized Block getBlock(byte[] hash) {
