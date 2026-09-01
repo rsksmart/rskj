@@ -24,6 +24,7 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.config.RocksDbConfig;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
@@ -47,56 +48,24 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private static final Long GENERAL_SIZE = 10L * 1024L * 1024L;
     private static final int MAX_RETRIES = 2;
 
-    // Bulk-sync oriented RocksDB tuning. Every value can be overridden with a -D system property so
-    // that a node can be tuned without a rebuild.
-    private static final long WRITE_BUFFER_SIZE =
-            Long.getLong("rocksdb.writeBufferSizeMb", 128L) * 1024L * 1024L;
-    private static final int MAX_WRITE_BUFFER_NUMBER =
-            Integer.getInteger("rocksdb.maxWriteBufferNumber", 4);
-    private static final int MIN_WRITE_BUFFER_NUMBER_TO_MERGE =
-            Integer.getInteger("rocksdb.minWriteBufferNumberToMerge", 2);
-    private static final long BLOCK_CACHE_SIZE =
-            Long.getLong("rocksdb.blockCacheSizeMb", 1024L) * 1024L * 1024L;
-    private static final int MAX_BACKGROUND_JOBS =
-            Integer.getInteger("rocksdb.maxBackgroundJobs", 8);
-    private static final int BLOOM_BITS_PER_KEY =
-            Integer.getInteger("rocksdb.bloomBitsPerKey", 10);
-    private static final int BLOCK_SIZE =
-            Integer.getInteger("rocksdb.blockSizeKb", 16) * 1024;
-    private static final boolean PARANOID_CHECKS =
-            Boolean.parseBoolean(System.getProperty("rocksdb.paranoidChecks", "false"));
-    private static final boolean DISABLE_WAL =
-            Boolean.parseBoolean(System.getProperty("rocksdb.disableWAL", "false"));
     /**
-     * RocksDB re-checks a block's checksum on every read that touches it. During a bulk sync the
-     * trie is read millions of times per minute and that verification lands squarely on the block
-     * processing thread. Compaction still verifies checksums, so this trades read-time corruption
-     * detection for throughput; it defaults to the safe behaviour.
+     * Shared across every datasource, so they are built once from the first configuration seen.
+     * Without a shared cache each datasource silently gets its own small default one, and without a
+     * bloom filter every trie point lookup becomes a scan across the LSM levels.
      */
-    private static final boolean VERIFY_CHECKSUMS =
-            Boolean.parseBoolean(System.getProperty("rocksdb.verifyChecksums", "true"));
-    /**
-     * SST compression. RskJ has written uncompressed SSTs since RocksDB was introduced, and a
-     * completed mainnet database measured 171 GB that way. Compression trades CPU on every read for
-     * fewer bytes on disk and off it, so which way it pays depends on the host: worth having where
-     * disk is the binding constraint, and worth avoiding where cores are. Defaults to the historical
-     * behaviour so nothing changes unless it is asked for.
-     */
-    private static final String COMPRESSION_TYPE =
-            System.getProperty("rocksdb.compression", "none");
+    private static Cache sharedBlockCache;
+    private static Filter sharedBloomFilter;
 
-    static {
-        // The shared cache and filter below are native objects, so the RocksDB library has to be
-        // loaded before they are constructed. Stock code got away without this because its only
-        // RocksDB field was per-instance, initialised well after class loading.
-        RocksDB.loadLibrary();
+    private static synchronized void initShared(RocksDbConfig config) {
+        if (sharedBlockCache == null) {
+            // The cache and filter are native objects, so the library must be loaded before they are
+            // constructed. Stock code got away without this because its only RocksDB objects were
+            // created after a RocksDB.open() had already loaded it.
+            RocksDB.loadLibrary();
+            sharedBlockCache = new LRUCache(config.getBlockCacheSizeBytes());
+            sharedBloomFilter = new BloomFilter(config.getBloomBitsPerKey(), false);
+        }
     }
-
-    // A single block cache and a single filter policy shared by every datasource. Without this each
-    // datasource silently gets its own small default cache, and none of them get a bloom filter at
-    // all, which turns every trie point lookup into a scan across the LSM levels.
-    private static final Cache SHARED_BLOCK_CACHE = new LRUCache(BLOCK_CACHE_SIZE);
-    private static final Filter SHARED_BLOOM_FILTER = new BloomFilter(BLOOM_BITS_PER_KEY, false);
 
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final Profiler profiler = ProfilerFactory.getInstance();
@@ -104,10 +73,11 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
     private final String databaseDir;
     private final String name;
+    private final RocksDbConfig config;
 
-    private final Options options = createOptions();
-    private final WriteOptions writeOptions = createWriteOptions();
-    private final ReadOptions readOptions = createReadOptions();
+    private final Options options;
+    private final WriteOptions writeOptions;
+    private final ReadOptions readOptions;
     private RocksDB db;
     private boolean alive;
 
@@ -120,9 +90,18 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private final ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
     public RocksDbDataSource(String name, String databaseDir) {
+        this(name, databaseDir, RocksDbConfig.defaults());
+    }
+
+    public RocksDbDataSource(String name, String databaseDir, RocksDbConfig config) {
         this.databaseDir = databaseDir;
         this.name = name;
-        logger.info("New RocksDbDataSource: {}", name);
+        this.config = config;
+        initShared(config);
+        this.options = createOptions();
+        this.writeOptions = createWriteOptions();
+        this.readOptions = createReadOptions();
+        logger.debug("New RocksDbDataSource: {}", name);
     }
 
     @Override
@@ -425,12 +404,12 @@ public class RocksDbDataSource implements KeyValueDataSource {
      * {@code NO_COMPRESSION} for anything it does not know: without this, "snappyy" would silently
      * write an uncompressed database and look exactly like a deliberate choice.
      */
-    private static CompressionType compressionType() {
-        String requested = COMPRESSION_TYPE.trim().toLowerCase(Locale.ROOT);
+    private CompressionType compressionType() {
+        String requested = config.getCompression().trim().toLowerCase(Locale.ROOT);
         CompressionType resolved = CompressionType.getCompressionType(requested);
         if (resolved == CompressionType.NO_COMPRESSION && !"none".equals(requested)) {
             logger.warn("Unknown rocksdb.compression '{}'; writing uncompressed. Known values: {}",
-                    COMPRESSION_TYPE,
+                    config.getCompression(),
                     Arrays.stream(CompressionType.values())
                             .map(CompressionType::getLibraryName)
                             .filter(Objects::nonNull)
@@ -440,7 +419,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
         return resolved;
     }
 
-    private static Options createOptions() {
+    private Options createOptions() {
         Options options = new Options();
         options.setCreateIfMissing(true);
         options.setCompressionType(compressionType());
@@ -448,48 +427,48 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
         // Bigger memtables mean fewer, larger L0 files and therefore much less compaction work
         // while importing millions of blocks.
-        options.setWriteBufferSize(WRITE_BUFFER_SIZE);
-        options.setMaxWriteBufferNumber(MAX_WRITE_BUFFER_NUMBER);
-        options.setMinWriteBufferNumberToMerge(MIN_WRITE_BUFFER_NUMBER_TO_MERGE);
+        options.setWriteBufferSize(config.getWriteBufferSizeBytes());
+        options.setMaxWriteBufferNumber(config.getMaxWriteBufferNumber());
+        options.setMinWriteBufferNumberToMerge(config.getMinWriteBufferNumberToMerge());
 
         // Compaction is the main background cost of a bulk import; give it more than one thread.
-        options.setMaxBackgroundJobs(MAX_BACKGROUND_JOBS);
+        options.setMaxBackgroundJobs(config.getMaxBackgroundJobs());
         options.setLevelCompactionDynamicLevelBytes(true);
         options.setBytesPerSync(4L * 1024L * 1024L);
         options.setCompactionReadaheadSize(2L * 1024L * 1024L);
 
         // Paranoid checks re-verify data during opens and compactions. Useful, but it is pure
         // overhead on a node that is rebuilding its whole database from the network.
-        options.setParanoidChecks(PARANOID_CHECKS);
+        options.setParanoidChecks(config.isParanoidChecks());
         // Trie lookups overwhelmingly hit, so the bottom level's filters earn nothing and only
         // take up room that cached data blocks could use.
         options.setOptimizeFiltersForHits(true);
 
         BlockBasedTableConfig tableConfig = new BlockBasedTableConfig();
-        tableConfig.setBlockCache(SHARED_BLOCK_CACHE);
+        tableConfig.setBlockCache(sharedBlockCache);
         // The trie datasource is a pure random-key point-lookup workload; without a bloom filter
         // every miss has to touch an SST on each level.
-        tableConfig.setFilterPolicy(SHARED_BLOOM_FILTER);
+        tableConfig.setFilterPolicy(sharedBloomFilter);
         tableConfig.setWholeKeyFiltering(true);
         tableConfig.setCacheIndexAndFilterBlocks(true);
         tableConfig.setPinL0FilterAndIndexBlocksInCache(true);
-        tableConfig.setBlockSize(BLOCK_SIZE);
+        tableConfig.setBlockSize(config.getBlockSizeBytes());
         options.setTableFormatConfig(tableConfig);
 
         return options;
     }
 
-    private static ReadOptions createReadOptions() {
+    private ReadOptions createReadOptions() {
         ReadOptions readOptions = new ReadOptions();
-        readOptions.setVerifyChecksums(VERIFY_CHECKSUMS);
+        readOptions.setVerifyChecksums(config.isVerifyChecksums());
         return readOptions;
     }
 
-    private static WriteOptions createWriteOptions() {
+    private WriteOptions createWriteOptions() {
         WriteOptions writeOptions = new WriteOptions();
         // The WAL doubles the bytes written per block. It can be turned off while rebuilding the
         // database from scratch, where a crash simply means resyncing.
-        writeOptions.setDisableWAL(DISABLE_WAL);
+        writeOptions.setDisableWAL(config.isDisableWal());
         return writeOptions;
     }
 }

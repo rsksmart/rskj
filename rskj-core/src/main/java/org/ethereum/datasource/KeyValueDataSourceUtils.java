@@ -3,6 +3,8 @@ package org.ethereum.datasource;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.LoggerFactory;
 
+import co.rsk.config.RocksDbConfig;
+
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileReader;
@@ -20,6 +22,16 @@ public class KeyValueDataSourceUtils {
 
     @Nonnull
     public static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+        return makeDataSource(datasourcePath, kind, RocksDbConfig.defaults());
+    }
+
+    /**
+     * Builds a datasource with explicit RocksDB tuning. Callers that have a node configuration -
+     * i.e. a running node - should use this so the values in {@code database.rocksdb.*} are honoured;
+     * the overload above keeps working for CLI tools and tests, which have no configuration.
+     */
+    public static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind,
+                                                    @Nonnull RocksDbConfig rocksDbConfig) {
         String name = datasourcePath.getFileName().toString();
         String databaseDir = datasourcePath.getParent().toString();
 
@@ -29,7 +41,7 @@ public class KeyValueDataSourceUtils {
                 ds = new LevelDbDataSource(name, databaseDir);
                 break;
             case ROCKS_DB:
-                ds = new RocksDbDataSource(name, databaseDir);
+                ds = new RocksDbDataSource(name, databaseDir, rocksDbConfig);
                 break;
             default:
                 throw new IllegalArgumentException("kind");

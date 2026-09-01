@@ -527,6 +527,26 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getBoolean("peer.fastBlockPropagation");
     }
 
+    /**
+     * RocksDB tuning from {@code database.rocksdb.*}. These are ordinary config properties, so they
+     * are set in rsk.conf like everything else; the config loader layers system properties over the
+     * files, so {@code -Ddatabase.rocksdb.<key>=<value>} still works for one-off overrides.
+     */
+    public RocksDbConfig getRocksDbConfig() {
+        return new RocksDbConfig(
+                configFromFiles.getLong("database.rocksdb.writeBufferSizeMb"),
+                configFromFiles.getInt("database.rocksdb.maxWriteBufferNumber"),
+                configFromFiles.getInt("database.rocksdb.minWriteBufferNumberToMerge"),
+                configFromFiles.getLong("database.rocksdb.blockCacheSizeMb"),
+                configFromFiles.getInt("database.rocksdb.maxBackgroundJobs"),
+                configFromFiles.getInt("database.rocksdb.bloomBitsPerKey"),
+                configFromFiles.getInt("database.rocksdb.blockSizeKb"),
+                configFromFiles.getBoolean("database.rocksdb.paranoidChecks"),
+                configFromFiles.getBoolean("database.rocksdb.disableWal"),
+                configFromFiles.getBoolean("database.rocksdb.verifyChecksums"),
+                configFromFiles.getString("database.rocksdb.compression"));
+    }
+
     public boolean isDeriveEmptyBodiesEnabled() {
         return configFromFiles.getBoolean("sync.deriveEmptyBodies");
     }
