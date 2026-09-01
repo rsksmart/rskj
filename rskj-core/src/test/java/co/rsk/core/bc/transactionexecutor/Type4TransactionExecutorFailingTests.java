@@ -264,6 +264,42 @@ class Type4TransactionExecutorFailingTests extends Type4TransactionExecutorHelpe
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void localCallOnFailingPrecompileDoesNotInflateGasEstimateToLimit(boolean rskip560Active) {
+        activationConfig = rskip560Active ? ActivationConfigsForTest.all() : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP560);
+        when(config.getActivationConfig()).thenReturn(activationConfig);
+
+        MutableRepository repository = createRepository();
+
+        repository.createAccount(authorityAddress);
+        repository.setNonce(authorityAddress, ONE_NONCE);
+        repository.saveCode(authorityAddress, DelegationCodeResolver.createDelegatedCode(createRandomAddress()));
+
+        fundSender(repository, ZERO_NONCE, 1_000_000);
+
+        RskAddress fakeContractAddress = createRandomAddress();
+        PrecompiledContracts.PrecompiledContract throwingPrecompile = createPrecompiledContract();
+        when(precompiledContracts.getContractForAddress(any(), eq(DataWord.valueOf(fakeContractAddress.getBytes())))).thenReturn(throwingPrecompile);
+
+        SetCodeAuthorization authorization = createValidAuthorizationTuple(delegatedAddress, ONE_NONCE, constants.getChainId(), authorityKey);
+
+        long gasEstimationCapStandIn = 6_800_000L;
+        Transaction tx = createSignedType4Transaction(
+                senderKey, constants.getChainId(), ZERO_NONCE, gasEstimationCapStandIn, 1, 1,
+                fakeContractAddress, 0, EMPTY_DATA, authorization
+        );
+
+        TransactionExecutor txExecutor = newExecutor(tx, repository).setLocalCall(true);
+        assertTrue(txExecutor.executeTransaction());
+
+        assertNotNull(txExecutor.getResult().getException());
+
+        long maxGasUsed = txExecutor.getResult().getMaxGasUsed();
+        assertTrue(maxGasUsed < gasEstimationCapStandIn / 2, "a local call against a throwing precompile must not report gasUsed inflated toward the full gas limit; got " + maxGasUsed);
+        assertNotEquals(gasEstimationCapStandIn, maxGasUsed, "gasUsed must reflect the precompile's declared cost, not txGasLimit, regardless of RSKIP560 activation");
+    }
+
     private TxResult runRevertScenario(boolean rskip560Active, boolean withAuthorization) {
         activationConfig = rskip560Active
                 ? ActivationConfigsForTest.all()
