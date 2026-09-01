@@ -143,6 +143,11 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     private List<LogInfo> logs;
 
+    @BeforeEach
+    void setupConstants() {
+        bridgeConstants = BridgeMainNetConstants.getInstance();
+    }
+
     private void setUpBridgeSupport(ForBlock activations, BridgeConstants bridgeConstants, long federationCreationBlockNumber) {
         repository = createRepository();
         logs = new ArrayList<>();
@@ -1927,11 +1932,6 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             private BtcTransaction prevTx;
 
-            @BeforeEach
-            void beforeEach() {
-                bridgeConstants = BridgeMainNetConstants.getInstance();
-            }
-
             @Test
             void registerBtcTransaction_legacyPeginP2SHMultisigSender_sentToP2shErpRetiringFed_shouldRefund() throws Exception {
                 // arrange
@@ -2573,28 +2573,29 @@ class BridgeSupportRegisterBtcTransactionTest {
         private final Coin changeValue = minimumPeginTxValue.add(Coin.SATOSHI);
         private final List<BtcECKey> erpPubKeys = federationMainnetConstants.getErpFedPubKeysList();
         private final long activationDelay = federationMainnetConstants.getErpFedActivationDelay();
-        private final List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true);
         private final List<BtcECKey> retiringFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"newMember01", "newMember02", "newMember03", "newMember04", "newMember05", "member06", "member07", "member08", "member09"}, true);
+        private List<BtcECKey> activeFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true);
         Federation activeFederation;
         Federation retiringFederation;
 
         private void setupLegacyActiveAndLegacyRetiringFeds(ForBlock activations, int creationBlockNumber) {
+            NetworkParameters btcParams = bridgeConstants.getBtcParams();
             activeFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(btcMainnetParams)
+                .withNetworkParameters(btcParams)
                 .withMembersBtcPublicKeys(activeFederationKeys)
                 .withErpActivationDelay(activationDelay)
                 .withErpPublicKeys(erpPubKeys)
                 .withCreationBlockNumber(creationBlockNumber)
                 .build();
             retiringFederation = P2shErpFederationBuilder.builder()
-                .withNetworkParameters(btcMainnetParams)
+                .withNetworkParameters(btcParams)
                 .withMembersBtcPublicKeys(retiringFederationKeys)
-                .withErpActivationDelay(activationDelay)
-                .withErpPublicKeys(erpPubKeys)
+                .withErpActivationDelay(bridgeConstants.getFederationConstants().getErpFedActivationDelay())
+                .withErpPublicKeys(bridgeConstants.getFederationConstants().getErpFedPubKeysList())
                 .withCreationBlockNumber(creationBlockNumber)
                 .build();
 
-            setUpBridgeSupport(activations, bridgeMainnetConstants, activeFederation.getCreationBlockNumber());
+            setUpBridgeSupport(activations, bridgeConstants, activeFederation.getCreationBlockNumber());
 
             federationStorageProvider.setOldFederation(retiringFederation);
             federationStorageProvider.setNewFederation(activeFederation);
@@ -3218,9 +3219,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             private static final int MANY_MIGRATION_UTXOS = 40;
             private static final int OLD_FEDERATION_MIGRATION_HEIGHT = 5;
             private static final BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
-            private static final FederationConstants federationRegTestConstants = bridgeRegTestConstants.getFederationConstants();
             private static final NetworkParameters btcRegTestParams = bridgeRegTestConstants.getBtcParams();
-            private static final List<BtcECKey> regtestOldRetiringFederationKeys = Arrays.asList(
+            private static final List<BtcECKey> testnetOldRetiringFederationKeys = Arrays.asList(
                 BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
                 BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
                 BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
@@ -3749,101 +3749,183 @@ class BridgeSupportRegisterBtcTransactionTest {
             }
 
             @Test
-            void registerBtcTransaction_signedByOldFederation_beforeRSKIP199_shouldBeDetectedAsPeginAndRejected() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_signedByOldFederation_realTx_beforeRSKIP199_testnet_shouldBeDetectedAsPeginAndRejected() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndOldRetiringFedsInRegtest(papyrus200Activations);
-                BtcTransaction migrationTx = getOldFederationMigrationTxInRegtest();
+                bridgeConstants = BridgeTestNetConstants.getInstance();
+                NetworkParameters btcParams = bridgeConstants.getBtcParams();
+
+                // data from https://mempool.space/testnet/tx/0c0c4f64512ed1b82b0cc714a519d6155e89367d2def26246506b785fc09a322
+                byte[] realRawTx = Hex.decode("0100000001b73f8f5b95b57840cc2f236915ff0c61bbcf71e51dfc9dbb0229bd3efb71f51200000000fc0047304402207b7752b0fe0e3c6c6bf273e6c4e6f0aa021f5b04204565d1020b75aaf2e9bd6c02205dae67b2dd19dede55de05889791fb0e2d67fbafd2835fb52cde949be7ee2e30014730440220298d954f84d7f00fc0f3bbc61c5d7e8de04feec28202fab8f9df3892bfe630af0220678f2934f59708c08748ca3b7214880eb3a785e55e60fddb54c08abe92f62f84014c69522102368f3524c4af7ac42d346adf6e81b9214b517db3d6251f0a45bde62e6c8d4f222102801d1086b8b480a0f3519ab06f6056d9cdacdbaa20cd2b005cd0ff845e3a4e69210333374514e573c1ae770ba9e1fd0817e6bec4c0557f4ca5beb2b69662a9a0fcb353aeffffffff0163ee10000000000017a91457f76bf3ab818811c740929ac7a5e3ef8c7a34b98700000000");
+                BtcTransaction realMigrationTx = new BtcTransaction(btcParams, realRawTx);
+
+                activeFederationKeys = List.of(
+                    BtcECKey.fromPublicOnly(Hex.decode("023f0283519167f1603ba92b060146baa054712b938a61f35605ba08773142f4da")),
+                    BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da")),
+                    BtcECKey.fromPublicOnly(Hex.decode("031174d64db12dc2dcdc8064a53a4981fa60f4ee649a954e01bcae221fc60777a2")),
+                    BtcECKey.fromPublicOnly(Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09")),
+                    BtcECKey.fromPublicOnly(Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9"))
+                );
+                activeFederation = StandardMultiSigFederationBuilder.builder()
+                    .withNetworkParameters(btcParams)
+                    .withMembersBtcPublicKeys(activeFederationKeys)
+                    .build();
+                setUpBridgeSupport(papyrus200Activations, bridgeConstants, activeFederation.getCreationBlockNumber());
+                federationStorageProvider.setNewFederation(activeFederation);
 
                 // act
-                registerOldFederationMigrationTxBeforeRSKIP199InRegtest(migrationTx);
+                registerOldFederationMigrationTxBeforeRSKIP199(realMigrationTx, bridgeConstants);
 
                 // assert
                 BtcTransaction refundPegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+                Coin realValueSent = realMigrationTx.getOutputSum();
                 assertLegacyReleaseRejectionWasSettled(
                     bridgeStorageProvider,
                     logs,
                     currentBlock.getNumber(),
                     rskTx.getHash(),
                     refundPegout,
-                    Coin.COIN,
+                    realValueSent,
                     papyrus200Activations
                 );
-                assertReleaseTxWasProcessedWithNoNewUtxo(migrationTx);
+                assertReleaseTxWasProcessedWithNoNewUtxo(realMigrationTx);
             }
 
             @Test
-            void registerBtcTransaction_signedByOldFederation_afterRSKIP199_forIris_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            void registerBtcTransaction_signedByOldFederation_realTx_afterRSKIP199_testnet_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndOldRetiringFedsInRegtest(iris300Activations);
-                BtcTransaction migrationTx = getOldFederationMigrationTxInRegtest();
+                bridgeConstants = BridgeTestNetConstants.getInstance();
+                NetworkParameters btcParams = bridgeConstants.getBtcParams();
 
-                // act
-                registerLegacyReleaseTransaction(migrationTx, OLD_FEDERATION_MIGRATION_HEIGHT, bridgeRegTestConstants);
+                // data from https://mempool.space/testnet/tx/0c0c4f64512ed1b82b0cc714a519d6155e89367d2def26246506b785fc09a322
+                byte[] realRawTx = Hex.decode("0100000001b73f8f5b95b57840cc2f236915ff0c61bbcf71e51dfc9dbb0229bd3efb71f51200000000fc0047304402207b7752b0fe0e3c6c6bf273e6c4e6f0aa021f5b04204565d1020b75aaf2e9bd6c02205dae67b2dd19dede55de05889791fb0e2d67fbafd2835fb52cde949be7ee2e30014730440220298d954f84d7f00fc0f3bbc61c5d7e8de04feec28202fab8f9df3892bfe630af0220678f2934f59708c08748ca3b7214880eb3a785e55e60fddb54c08abe92f62f84014c69522102368f3524c4af7ac42d346adf6e81b9214b517db3d6251f0a45bde62e6c8d4f222102801d1086b8b480a0f3519ab06f6056d9cdacdbaa20cd2b005cd0ff845e3a4e69210333374514e573c1ae770ba9e1fd0817e6bec4c0557f4ca5beb2b69662a9a0fcb353aeffffffff0163ee10000000000017a91457f76bf3ab818811c740929ac7a5e3ef8c7a34b98700000000");
+                BtcTransaction realMigrationTx = new BtcTransaction(btcParams, realRawTx);
 
-                // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
-            }
-
-            @Test
-            void registerBtcTransaction_signedByOldFederation_withPegoutIndex_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-                // arrange
-                setupLegacyActiveAndOldRetiringFedsInRegtest(allActivations);
-                BtcTransaction migrationTx = getOldFederationMigrationTxInRegtest();
-                int heightInRegtest = bridgeRegTestConstants.getBtcHeightWhenPegoutTxIndexActivates()
-                    + bridgeRegTestConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
-                registerPegoutTxSigHash(migrationTx);
-
-                // act
-                registerLegacyReleaseTransaction(migrationTx, heightInRegtest, bridgeRegTestConstants);
-
-                // assert
-                assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
-            }
-
-            private void setupLegacyActiveAndOldRetiringFedsInRegtest(ActivationConfig.ForBlock activations) {
-                retiringFederation = createFederation(bridgeRegTestConstants, regtestOldRetiringFederationKeys);
-                activeFederation = P2shErpFederationBuilder.builder()
-                    .withNetworkParameters(btcRegTestParams)
-                    .withMembersBtcPublicKeys(regTestActiveFederationKeys)
-                    .withErpActivationDelay(federationRegTestConstants.getErpFedActivationDelay())
-                    .withErpPublicKeys(federationRegTestConstants.getErpFedPubKeysList())
-                    .withCreationBlockNumber(OLD_FEDERATION_MIGRATION_HEIGHT)
-                    .build();
-                setUp(activations);
-                federationStorageProvider.setNewFederation(activeFederation);
-            }
-
-            private BtcTransaction getOldFederationMigrationTxInRegtest() {
-                BtcTransaction migrationTx = new BtcTransaction(btcRegTestParams);
-                migrationTx.addInput(
-                    BTC_TX_HASH,
-                    FIRST_OUTPUT_INDEX,
-                    ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
+                activeFederationKeys = List.of(
+                    BtcECKey.fromPublicOnly(Hex.decode("023f0283519167f1603ba92b060146baa054712b938a61f35605ba08773142f4da")),
+                    BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da")),
+                    BtcECKey.fromPublicOnly(Hex.decode("031174d64db12dc2dcdc8064a53a4981fa60f4ee649a954e01bcae221fc60777a2")),
+                    BtcECKey.fromPublicOnly(Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09")),
+                    BtcECKey.fromPublicOnly(Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9"))
                 );
-                migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
-                addSignaturesAndFederationRedeemScript(retiringFederation, regtestOldRetiringFederationKeys, migrationTx);
-                return migrationTx;
+                activeFederation = StandardMultiSigFederationBuilder.builder()
+                    .withNetworkParameters(btcParams)
+                    .withMembersBtcPublicKeys(activeFederationKeys)
+                    .build();
+                setUpBridgeSupport(iris300Activations, bridgeConstants, activeFederation.getCreationBlockNumber());
+                federationStorageProvider.setNewFederation(activeFederation);
+
+                // act
+                registerLegacyReleaseTransaction(realMigrationTx, OLD_FEDERATION_MIGRATION_HEIGHT, bridgeConstants);
+
+                // assert
+                assertMigrationTxWasProcessed(realMigrationTx, ONE_MIGRATION_UTXO);
+            }
+
+            @Test
+            void registerBtcTransaction_signedByOldFederation_realTx_beforeRSKIP199_mainnet_shouldBeDetectedAsPeginAndRejected() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                bridgeConstants = BridgeMainNetConstants.getInstance();
+                NetworkParameters btcParams = bridgeConstants.getBtcParams();
+
+                // data from https://mempool.space/tx/617d41024ccf8589da084c40f62bb7713c95ee057f164fec7547a96e19cdf91f
+                byte[] realRawTx = Hex.decode("0100000001401a31829f47ec2bc7f60554b3a7289d222f3bdfbda6061740bf3a1087dfa4f501000000fda50200483045022100e9d9093d16c03ccb651d848652a8db3d07d78fb1fd7a41e157a11f1d13f654fb02207579c581c304810ef418fe8e3da104ee8f7ffb8a86fb3b82b7b319e84cae44fe01483045022100e2b1f72a79fbf1f6e9a00d0c95a5eb8c8f1efcacad81813931b7273924c2020d022022a253ff2e274550edd0ea53faf018d2060310f3bf9d6d304859890093fc151301483045022100f1f3f45c7bebcc5d0e4c39ccf0ad4d29f6a7549eb190aae56cec41f9f6e6307502206dc3f0a0a26e118780a493870118d0409a13c7859530a6fb0d7ea54cc92a660001483045022100ac81d803121d7e345c188e0674d567106561ce1e033583fce2a7c80f936a42c10220524538864d4b31a2ce0d0d396a99698ad3e4590620bfd44852965f7d887c07570147304402203fba5111368598166117dcb10588fe87be02b712a39d33a45acacc41f55fc66d022064fcb975f9c6086ae018a051b5a22b72f6dc4b32378822f26d685c6548b19056014d35015521027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344210294c817150f78607566e961b3c71df53a22022a80acbb982f83c0c8baac040adc2102a9c6848e302193179ce6479516c2d97f6967e1365c707e3b9d3e0cb683ccb8222103250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93210372cd46831f3b6afd4c044d160b7667e8ebf659d6cb51a825a3104df6ee0638c62103ae72827d25030818c4947a800187b1fbcc33ae751e248ae60094cc989fb880f62103b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad22103b65cd7c22e70c0823882c6e71ac2c279ed31cbe29cb4a1c00572ce539c0c45732103ecd8af1e93c57a1b8c7f917bd9980af798adeb0205e9687865673353eb041e8d59aeffffffff01ee1671750000000017a914056d0d9c5b14dd720d9f61fdb3f557c074f95cef8700000000");
+                BtcTransaction realMigrationTx = new BtcTransaction(btcParams, realRawTx);
+
+                activeFederationKeys = List.of(
+                    BtcECKey.fromPublicOnly(Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
+                    BtcECKey.fromPublicOnly(Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
+                    BtcECKey.fromPublicOnly(Hex.decode("026b472f7d59d201ff1f540f111b6eb329e071c30a9d23e3d2bcd128fe73dc254c")),
+                    BtcECKey.fromPublicOnly(Hex.decode("0275d473555de2733c47125f9702b0f870df1d817379f5587f09b6c40ed2c6c949")),
+                    BtcECKey.fromPublicOnly(Hex.decode("02a95f095d0ce8cb3b9bf70cc837e3ebe1d107959b1fa3f9b2d8f33446f9c8cbdb")),
+                    BtcECKey.fromPublicOnly(Hex.decode("03250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93")),
+                    BtcECKey.fromPublicOnly(Hex.decode("034851379ec6b8a701bd3eef8a0e2b119abb4bdde7532a3d6bcbff291b0daf3f25")),
+                    BtcECKey.fromPublicOnly(Hex.decode("03b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b35888771906")),
+                    BtcECKey.fromPublicOnly(Hex.decode("03e05bf6002b62651378b1954820539c36ca405cbb778c225395dd9ebff6780299"))
+                );
+                activeFederation = P2shErpFederationBuilder.builder()
+                    .withNetworkParameters(btcParams)
+                    .withErpPublicKeys(bridgeConstants.getFederationConstants().getErpFedPubKeysList())
+                    .withErpActivationDelay(bridgeConstants.getFederationConstants().getErpFedActivationDelay())
+                    .withMembersBtcPublicKeys(activeFederationKeys)
+                    .build();
+                setUpBridgeSupport(papyrus200Activations, bridgeConstants, activeFederation.getCreationBlockNumber());
+                federationStorageProvider.setNewFederation(activeFederation);
+
+                // act
+                registerOldFederationMigrationTxBeforeRSKIP199(realMigrationTx, bridgeConstants);
+
+                // assert
+                BtcTransaction refundPegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+                Coin realValueSent = realMigrationTx.getOutputSum();
+                assertLegacyReleaseRejectionWasSettled(
+                    bridgeStorageProvider,
+                    logs,
+                    currentBlock.getNumber(),
+                    rskTx.getHash(),
+                    refundPegout,
+                    realValueSent,
+                    papyrus200Activations
+                );
+                assertReleaseTxWasProcessedWithNoNewUtxo(realMigrationTx);
+            }
+
+            @Test
+            void registerBtcTransaction_signedByOldFederation_realTx_afterRSKIP199_mainnet_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                // arrange
+                bridgeConstants = BridgeMainNetConstants.getInstance();
+                NetworkParameters btcParams = bridgeConstants.getBtcParams();
+
+                // data from https://mempool.space/tx/617d41024ccf8589da084c40f62bb7713c95ee057f164fec7547a96e19cdf91f
+                byte[] realRawTx = Hex.decode("0100000001401a31829f47ec2bc7f60554b3a7289d222f3bdfbda6061740bf3a1087dfa4f501000000fda50200483045022100e9d9093d16c03ccb651d848652a8db3d07d78fb1fd7a41e157a11f1d13f654fb02207579c581c304810ef418fe8e3da104ee8f7ffb8a86fb3b82b7b319e84cae44fe01483045022100e2b1f72a79fbf1f6e9a00d0c95a5eb8c8f1efcacad81813931b7273924c2020d022022a253ff2e274550edd0ea53faf018d2060310f3bf9d6d304859890093fc151301483045022100f1f3f45c7bebcc5d0e4c39ccf0ad4d29f6a7549eb190aae56cec41f9f6e6307502206dc3f0a0a26e118780a493870118d0409a13c7859530a6fb0d7ea54cc92a660001483045022100ac81d803121d7e345c188e0674d567106561ce1e033583fce2a7c80f936a42c10220524538864d4b31a2ce0d0d396a99698ad3e4590620bfd44852965f7d887c07570147304402203fba5111368598166117dcb10588fe87be02b712a39d33a45acacc41f55fc66d022064fcb975f9c6086ae018a051b5a22b72f6dc4b32378822f26d685c6548b19056014d35015521027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344210294c817150f78607566e961b3c71df53a22022a80acbb982f83c0c8baac040adc2102a9c6848e302193179ce6479516c2d97f6967e1365c707e3b9d3e0cb683ccb8222103250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93210372cd46831f3b6afd4c044d160b7667e8ebf659d6cb51a825a3104df6ee0638c62103ae72827d25030818c4947a800187b1fbcc33ae751e248ae60094cc989fb880f62103b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad22103b65cd7c22e70c0823882c6e71ac2c279ed31cbe29cb4a1c00572ce539c0c45732103ecd8af1e93c57a1b8c7f917bd9980af798adeb0205e9687865673353eb041e8d59aeffffffff01ee1671750000000017a914056d0d9c5b14dd720d9f61fdb3f557c074f95cef8700000000");
+                BtcTransaction realMigrationTx = new BtcTransaction(btcParams, realRawTx);
+
+                activeFederationKeys = List.of(
+                    BtcECKey.fromPublicOnly(Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
+                    BtcECKey.fromPublicOnly(Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
+                    BtcECKey.fromPublicOnly(Hex.decode("026b472f7d59d201ff1f540f111b6eb329e071c30a9d23e3d2bcd128fe73dc254c")),
+                    BtcECKey.fromPublicOnly(Hex.decode("0275d473555de2733c47125f9702b0f870df1d817379f5587f09b6c40ed2c6c949")),
+                    BtcECKey.fromPublicOnly(Hex.decode("02a95f095d0ce8cb3b9bf70cc837e3ebe1d107959b1fa3f9b2d8f33446f9c8cbdb")),
+                    BtcECKey.fromPublicOnly(Hex.decode("03250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93")),
+                    BtcECKey.fromPublicOnly(Hex.decode("034851379ec6b8a701bd3eef8a0e2b119abb4bdde7532a3d6bcbff291b0daf3f25")),
+                    BtcECKey.fromPublicOnly(Hex.decode("03b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b35888771906")),
+                    BtcECKey.fromPublicOnly(Hex.decode("03e05bf6002b62651378b1954820539c36ca405cbb778c225395dd9ebff6780299"))
+                );
+                activeFederation = P2shErpFederationBuilder.builder()
+                    .withNetworkParameters(btcParams)
+                    .withErpPublicKeys(bridgeConstants.getFederationConstants().getErpFedPubKeysList())
+                    .withErpActivationDelay(bridgeConstants.getFederationConstants().getErpFedActivationDelay())
+                    .withMembersBtcPublicKeys(activeFederationKeys)
+                    .build();
+                setUpBridgeSupport(iris300Activations, bridgeConstants, activeFederation.getCreationBlockNumber());
+                federationStorageProvider.setNewFederation(activeFederation);
+
+                // act
+                registerLegacyReleaseTransaction(realMigrationTx, OLD_FEDERATION_MIGRATION_HEIGHT, bridgeConstants);
+
+                // assert
+                assertMigrationTxWasProcessed(realMigrationTx, ONE_MIGRATION_UTXO);
             }
 
             // Before RSKIP199, BridgeStorageProvider.getBtcBestBlockHashByHeight always returns empty,
             // so the height-index shortcut buildPMTAndRecreateChainForTransactionRegistration relies on
             // doesn't work; block lookup falls back to walking real prevBlockHash links from the chain
             // head, so a genuinely linked mini-chain has to be built instead.
-            private void registerOldFederationMigrationTxBeforeRSKIP199InRegtest(BtcTransaction migrationTx) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(migrationTx), btcRegTestParams);
+            private void registerOldFederationMigrationTxBeforeRSKIP199(BtcTransaction migrationTx, BridgeConstants bridgeConstants) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+                NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+                PartialMerkleTree pmt = createValidPmtForTransactions(List.of(migrationTx), networkParameters);
                 Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
 
                 co.rsk.bitcoinj.core.BtcBlock targetBlockHeader = new co.rsk.bitcoinj.core.BtcBlock(
-                    btcRegTestParams, 1, BTC_BLOCK_HASH, merkleRoot, 1, 1, 1, new ArrayList<>()
+                    networkParameters, 1, BTC_BLOCK_HASH, merkleRoot, 1, 1, 1, new ArrayList<>()
                 );
                 StoredBlock targetBlock = new StoredBlock(targetBlockHeader, BigInteger.ONE, OLD_FEDERATION_MIGRATION_HEIGHT);
                 btcBlockStore.put(targetBlock);
 
                 StoredBlock previousBlock = targetBlock;
-                int confirmations = bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations();
+                int confirmations = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
                 for (int i = 1; i <= confirmations; i++) {
                     co.rsk.bitcoinj.core.BtcBlock header = new co.rsk.bitcoinj.core.BtcBlock(
-                        btcRegTestParams, 1, previousBlock.getHeader().getHash(), Sha256Hash.of(new byte[]{(byte) i}), 1, 1, 1, new ArrayList<>()
+                        networkParameters, 1, previousBlock.getHeader().getHash(), Sha256Hash.of(new byte[]{(byte) i}), 1, 1, 1, new ArrayList<>()
                     );
                     StoredBlock block = new StoredBlock(header, BigInteger.ONE, OLD_FEDERATION_MIGRATION_HEIGHT + i);
                     btcBlockStore.put(block);
@@ -4006,10 +4088,6 @@ class BridgeSupportRegisterBtcTransactionTest {
                 addManyMigrationInputs(migrationTxBuilder);
                 return migrationTxBuilder.build();
             }
-        }
-
-        void setUp(ForBlock activations) {
-            setUpBridgeSupport(activations, MigrationTransaction.bridgeRegTestConstants, activeFederation.getCreationBlockNumber());
         }
 
         private void registerLegacyReleaseTransaction(BtcTransaction releaseTx, int height, BridgeConstants bridgeConstants) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
