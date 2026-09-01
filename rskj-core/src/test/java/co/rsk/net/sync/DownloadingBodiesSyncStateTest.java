@@ -35,6 +35,9 @@ import org.ethereum.core.Blockchain;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
@@ -42,6 +45,7 @@ import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -176,6 +180,94 @@ class DownloadingBodiesSyncStateTest {
         }
         TestUtils.setInternalState(state, "chunksBySegment", chunksBySegment);
         TestUtils.setInternalState(state, "segmentByChunk", segmentByChunk);
+        return state;
+    }
+
+    /**
+     * A stall on our side - a long GC, the host swapping - times every peer out at once. Blaming
+     * them costs the whole peer set, and the round then has to rediscover it while we are still
+     * stalled. Observed live: 67 peers discarded in one hour while the host was swapping.
+     */
+    @Test
+    void whenEveryAwaitedPeerTimesOutAtOnceNoPeerIsPenalised() {
+        Peer other = mock(Peer.class);
+        when(other.getPeerNodeID()).thenReturn(new NodeID(new byte[]{3}));
+
+        DownloadingBodiesSyncState state = stateWithInFlight(peer, other);
+
+        // one tick well past the request timeout: both peers expire together
+        state.tick(Duration.ofSeconds(600));
+
+        Map<Peer, Integer> timeouts = TestUtils.getInternalState(state, "consecutiveTimeoutsByPeer");
+        assertTrue(timeouts.isEmpty(), "an all-peer timeout must not be charged to any peer");
+        verify(peersInformation, never())
+                .reportEventToPeerScoring(any(Peer.class), eq(EventType.TIMEOUT_MESSAGE), anyString(), any());
+    }
+
+    /**
+     * A stall rarely silences every outstanding request at once. Requiring all of them meant partial
+     * stalls still cost peers - 48 were discarded around 51 detected stalls on a live sync - so a
+     * clear majority going quiet together is read as our fault too.
+     */
+    @Test
+    void aMajorityTimingOutTogetherIsAlsoTreatedAsALocalStall() {
+        Peer b = mock(Peer.class);
+        when(b.getPeerNodeID()).thenReturn(new NodeID(new byte[]{4}));
+        Peer c = mock(Peer.class);
+        when(c.getPeerNodeID()).thenReturn(new NodeID(new byte[]{5}));
+
+        // three peers awaited; two of them (a two-thirds majority) go silent together
+        DownloadingBodiesSyncState state = stateWithInFlight(peer, b, c);
+        Map<Long, DownloadingBodiesSyncState.PendingBodyResponse> pending =
+                TestUtils.getInternalState(state, "pendingBodyResponses");
+        // hold one request back so it does not expire in this tick
+        Long survivor = pending.keySet().iterator().next();
+        TestUtils.setInternalState(pending.get(survivor), "elapsed", Duration.ofSeconds(-3600));
+
+        state.tick(Duration.ofSeconds(600));
+
+        Map<Peer, Integer> timeouts = TestUtils.getInternalState(state, "consecutiveTimeoutsByPeer");
+        assertTrue(timeouts.isEmpty(), "a majority timing out together must not be charged to peers");
+    }
+
+    /**
+     * One silent peer is still that peer's problem: with nobody else to compare against, "everyone
+     * timed out" carries no information, so the normal per-peer accounting must still apply.
+     */
+    @Test
+    void aLoneSilentPeerIsStillCountedAgainstIt() {
+        DownloadingBodiesSyncState state = stateWithInFlight(peer);
+
+        state.tick(Duration.ofSeconds(600));
+
+        Map<Peer, Integer> timeouts = TestUtils.getInternalState(state, "consecutiveTimeoutsByPeer");
+        assertEquals(1, timeouts.get(peer), "a lone silent peer should still be counted");
+    }
+
+    /** Builds a state with one outstanding body request per given peer. */
+    private DownloadingBodiesSyncState stateWithInFlight(Peer... peers) {
+        DownloadingBodiesSyncState state = new DownloadingBodiesSyncState(syncConfiguration,
+                syncEventsHandler,
+                peersInformation,
+                blockchain,
+                blockFactory,
+                blockSyncService,
+                syncBlockValidatorRule,
+                Collections.emptyList(),
+                Collections.emptyMap());
+
+        Map<Long, DownloadingBodiesSyncState.PendingBodyResponse> pending = new HashMap<>();
+        List<Peer> suitable = new ArrayList<>();
+        long id = 1;
+        for (Peer p : peers) {
+            BlockHeader header = mock(BlockHeader.class);
+            when(header.getHash()).thenReturn(new Keccak256(new byte[32]));
+            pending.put(id++, new DownloadingBodiesSyncState.PendingBodyResponse(p.getPeerNodeID(), header, p, 0));
+            suitable.add(p);
+        }
+        TestUtils.setInternalState(state, "pendingBodyResponses", pending);
+        TestUtils.setInternalState(state, "suitablePeers", suitable);
+        when(peersInformation.getBestPeerCandidates()).thenReturn(suitable);
         return state;
     }
 

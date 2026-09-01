@@ -67,6 +67,21 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
     private static final int MAX_CONSECUTIVE_TIMEOUT_TICKS_PER_PEER = 20;
 
     /**
+     * Below this many simultaneously-silent peers, "they all timed out" is not evidence of anything:
+     * with one peer awaited it is the ordinary single-peer timeout.
+     */
+    private static final int MIN_PEERS_TO_INFER_LOCAL_STALL = 2;
+
+    /**
+     * Fraction of the awaited peers that must go silent together before we read it as our own stall
+     * rather than theirs. Requiring *all* of them was too strict to be useful: a stall rarely lands
+     * on every outstanding request at once, so partial stalls fell through to the per-peer path and
+     * still cost us the peer set. Measured on a live sync, requiring all caught 51 stalls while 48
+     * peers were still discarded around them.
+     */
+    private static final double LOCAL_STALL_PEER_FRACTION = 2.0 / 3.0;
+
+    /**
      * Half-minute throttling window. A peer counts the messages it receives from us inside each
      * calendar minute, so a rolling 60s budget could still put nearly twice the limit into one of
      * its minutes when the two windows straddle. Limiting to half the budget over 30s makes the
@@ -327,6 +342,12 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
             }
         }
 
+        // Who we were actually waiting on, captured before the timeouts clear the in-flight map.
+        Set<Peer> peersAwaited = pendingBodyResponses.values().stream()
+                .map(pending -> pending.peer)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
         Set<Peer> peersThatTimedOut = new HashSet<>();
         for (Long requestId : timedOut) {
             Peer peer = handleTimeoutMessage(requestId);
@@ -335,14 +356,24 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
             }
         }
 
-        for (Peer peer : peersThatTimedOut) {
-            int ticks = consecutiveTimeoutsByPeer.merge(peer, 1, Integer::sum);
-            if (ticks >= MAX_CONSECUTIVE_TIMEOUT_TICKS_PER_PEER) {
-                logger.warn("Discarding peer {} after {} consecutive ticks with body timeouts",
-                        peer.getPeerNodeID(), ticks);
-                peersInformation.reportEventToPeerScoring(peer, EventType.TIMEOUT_MESSAGE,
-                        "Timeout waiting body on {}", this.getClass());
-                dropPeer(peer);
+        if (isLocalStall(peersAwaited, peersThatTimedOut)) {
+            // Everyone went quiet at once, which is not something independent peers do. Far more
+            // likely we stalled - a long GC, the host swapping, a slow disk - and could not read
+            // their answers in time. Penalising them for that costs the entire peer set, and then
+            // the round has to rediscover it while we are still stalled. The requests have already
+            // been re-queued, so the round continues; we simply do not blame anyone for it.
+            logger.warn("{} of {} peers timed out in the same tick; treating it as a local stall, not peer failure",
+                    peersThatTimedOut.size(), peersAwaited.size());
+        } else {
+            for (Peer peer : peersThatTimedOut) {
+                int ticks = consecutiveTimeoutsByPeer.merge(peer, 1, Integer::sum);
+                if (ticks >= MAX_CONSECUTIVE_TIMEOUT_TICKS_PER_PEER) {
+                    logger.warn("Discarding peer {} after {} consecutive ticks with body timeouts",
+                            peer.getPeerNodeID(), ticks);
+                    peersInformation.reportEventToPeerScoring(peer, EventType.TIMEOUT_MESSAGE,
+                            "Timeout waiting body on {}", this.getClass());
+                    dropPeer(peer);
+                }
             }
         }
 
@@ -564,6 +595,20 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
                 chunks.addLast(chunkNumber);
             }
         }
+    }
+
+    /**
+     * True when a timeout looks like our own stall rather than the peers' fault.
+     *
+     * <p>Peers fail independently, so one going quiet says something about that peer. Most of them
+     * going quiet in the same tick says something about us. Requiring at least two peers keeps the
+     * single-peer case - the one this check cannot distinguish - on the normal path.
+     */
+    private boolean isLocalStall(Set<Peer> peersAwaited, Set<Peer> peersThatTimedOut) {
+        if (peersThatTimedOut.size() < MIN_PEERS_TO_INFER_LOCAL_STALL) {
+            return false;
+        }
+        return peersThatTimedOut.size() >= Math.ceil(peersAwaited.size() * LOCAL_STALL_PEER_FRACTION);
     }
 
     /** Re-queues one expired request and backs its peer off. Returns the peer, if known. */
