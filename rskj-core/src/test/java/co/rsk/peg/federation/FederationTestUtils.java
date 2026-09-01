@@ -281,24 +281,25 @@ public final class FederationTestUtils {
 //        System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
     }
 
-    public static void addSignaturesAndFederationRedeemScript(Federation federation, List<BtcECKey> signers, BtcTransaction tx) {
+    public static void spendFromFed(Federation federation, List<BtcECKey> signers, BtcTransaction tx) {
         int federationFormatVersion = federation.getFormatVersion();
 
         for (int inputIndex = 0; inputIndex < tx.getInputs().size(); inputIndex++) {
             BitcoinUtils.addSpendingFederationBaseScript(tx, inputIndex, federation.getRedeemScript(), federationFormatVersion);
-            signInput(signers, tx, federationFormatVersion, inputIndex);
+            signInput(federationFormatVersion, signers, tx, inputIndex);
         }
     }
 
+    // used to sign inputs that already have the spending script set
     public static void signInputs(Federation federation, List<BtcECKey> signers, BtcTransaction tx) {
         int federationFormatVersion = federation.getFormatVersion();
 
         for (int inputIndex = 0; inputIndex < tx.getInputs().size(); inputIndex++) {
-            signInput(signers, tx, federationFormatVersion, inputIndex);
+            signInput(federationFormatVersion, signers, tx, inputIndex);
         }
     }
 
-    private static void signInput(List<BtcECKey> signers, BtcTransaction tx, int federationFormatVersion, int inputIndex) {
+    private static void signInput(int federationFormatVersion, List<BtcECKey> signers, BtcTransaction tx, int inputIndex) {
         boolean isSegwitFederation = federationFormatVersion == FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion();
         if (!isSegwitFederation) {
             BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(tx, inputIndex, signers);
