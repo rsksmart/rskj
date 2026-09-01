@@ -30,7 +30,6 @@ import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
@@ -83,10 +82,10 @@ class BridgeSupportRegisterBtcTransactionTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(ActivationConfigsForTest.all().forBlock(0));
     private static final Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
-    private static final int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
-    private static final int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
-    private static final int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
-    private static final int heightBeforeUsingPegoutIndex = 1;
+    private static final int BTC_HEIGHT_WHEN_PEGOUT_TX_INDEX_ACTIVATES = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
+    private static final int PEGOUT_TX_INDEX_GRACE_PERIOD_IN_BTC_BLOCKS = bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+    private static final int HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX = BTC_HEIGHT_WHEN_PEGOUT_TX_INDEX_ACTIVATES + PEGOUT_TX_INDEX_GRACE_PERIOD_IN_BTC_BLOCKS;
+    private static final int HEIGHT_BEFORE_USING_PEGOUT_INDEX = 1;
     private static final Address userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
     private static final Instant federationCreationTime = Instant.ofEpochMilli(1000L);
 
@@ -489,7 +488,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean existsRetiringFederation
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -541,7 +540,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean existsRetiringFederation
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -601,7 +600,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean existsRetiringFederation
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -660,7 +659,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean existsRetiringFederation
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
             if (existsRetiringFederation) {
                 when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
             }
@@ -724,7 +723,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean existsRetiringFederation
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
             if (existsRetiringFederation) {
                 when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
             }
@@ -1001,7 +1000,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean existsRetiringFederation
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -1039,7 +1038,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean existsRetiringFederation
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
@@ -1079,7 +1078,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean existsRetiringFederation
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -1119,7 +1118,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean existsRetiringFederation
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
@@ -1159,7 +1158,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean existsRetiringFederation
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
@@ -1196,7 +1195,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean existsRetiringFederation
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
@@ -1234,7 +1233,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean existsRetiringFederation
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
@@ -1275,7 +1274,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean shouldUsePegoutTxIndex
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
@@ -1312,7 +1311,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean shouldUsePegoutTxIndex
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
@@ -1348,7 +1347,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean shouldUsePegoutTxIndex
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
             btcTransaction.addInput(BTC_TX_HASH, FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
@@ -1386,7 +1385,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean shouldUsePegoutTxIndex
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -1430,7 +1429,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean shouldUsePegoutTxIndex
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -1482,7 +1481,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean shouldUsePegoutTxIndex
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -1525,7 +1524,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean shouldUsePegoutTxIndex
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -1566,7 +1565,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean shouldUsePegoutTxIndex
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             Coin amountToSend = Coin.COIN;
             BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -1619,7 +1618,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             btcLockSenderProvider = mock(BtcLockSenderProvider.class);
             when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.empty());
 
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"key1", "key2", "key3"}, true);
 
@@ -1664,7 +1663,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean shouldUsePegoutTxIndex
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"key1", "key2", "key3"}, true);
 
@@ -1708,7 +1707,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             btcLockSenderProvider = mock(BtcLockSenderProvider.class);
             when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.empty());
 
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"key1", "key2", "key3"}, true);
 
@@ -1756,7 +1755,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             btcLockSenderProvider = mock(BtcLockSenderProvider.class);
             when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.empty());
 
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             List<BtcECKey> unknownFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"key1", "key2", "key3"}, true);
 
@@ -1806,7 +1805,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             boolean shouldUsePegoutTxIndex
         ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
-            int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+            int height = shouldUsePegoutTxIndex ? HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX : 1;
 
             List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"key1", "key2", "key3"}, true);
 
@@ -2596,14 +2595,14 @@ class BridgeSupportRegisterBtcTransactionTest {
                 .withMembersBtcPublicKeys(activeFederationKeys)
                 .withErpActivationDelay(activationDelay)
                 .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
+                .withCreationBlockNumber(HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX)
                 .build();
             retiringFederation = P2shErpFederationBuilder.builder()
                 .withNetworkParameters(btcMainnetParams)
                 .withMembersBtcPublicKeys(retiringFederationKeys)
                 .withErpActivationDelay(activationDelay)
                 .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
+                .withCreationBlockNumber(HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX)
                 .build();
 
             // From Reed on, new federations are segwit, so legacy retiring and segwit active feds
@@ -2620,14 +2619,14 @@ class BridgeSupportRegisterBtcTransactionTest {
                 .withMembersBtcPublicKeys(activeFederationKeys)
                 .withErpActivationDelay(activationDelay)
                 .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
+                .withCreationBlockNumber(HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX)
                 .build();
             retiringFederation = P2shP2wshErpFederationBuilder.builder()
                 .withNetworkParameters(btcMainnetParams)
                 .withMembersBtcPublicKeys(retiringFederationKeys)
                 .withErpActivationDelay(activationDelay)
                 .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
+                .withCreationBlockNumber(HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX)
                 .build();
 
             setUpBridgeSupport(allActivations, bridgeMainnetConstants, activeFederation.getCreationBlockNumber());
@@ -2656,7 +2655,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 .withMembersBtcPublicKeys(activeFederationKeys)
                 .withErpActivationDelay(activationDelay)
                 .withErpPublicKeys(erpPubKeys)
-                .withCreationBlockNumber(heightAtWhichToStartUsingPegoutIndex)
+                .withCreationBlockNumber(HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX)
                 .build();
 
             setUpBridgeSupport(allActivations, bridgeMainnetConstants, activeFederation.getCreationBlockNumber());
@@ -2670,11 +2669,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withNoChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
@@ -2683,11 +2682,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withNoChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveFed(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
@@ -2696,11 +2695,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withNoChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
@@ -2709,11 +2708,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withNoChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveFed(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
@@ -2722,12 +2721,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withNoChangeOutput_withPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
                 registerPegoutTxSigHash(btcTransaction);
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
@@ -2736,12 +2735,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withNoChangeOutput_withPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveFed(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getReleaseTxWithOneInputAndOutputWithoutChange(activeFederation, activeFederationKeys, userAddress);
                 registerPegoutTxSigHash(btcTransaction);
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
@@ -2778,11 +2777,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_notInPegoutTxIndexWithChangeOutputFromFederation_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(allActivations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(allActivations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithOneInputAndOutputWithChange();
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertLogRejectedPegin(logs, btcTransaction, LEGACY_PEGIN_MULTISIG_SENDER);
@@ -2805,11 +2804,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
@@ -2818,11 +2817,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveFed(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
@@ -2831,11 +2830,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
@@ -2844,11 +2843,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveFed(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
@@ -2857,12 +2856,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
                 registerPegoutTxSigHash(btcTransaction);
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
@@ -2871,12 +2870,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndInputsAndChangeOutput_withPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveFed(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndInputsWithChangeOutput();
                 registerPegoutTxSigHash(btcTransaction);
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
@@ -2913,11 +2912,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
@@ -2926,11 +2925,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveFed(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
@@ -2939,11 +2938,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
@@ -2952,11 +2951,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveFed(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
@@ -2965,12 +2964,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
                 registerPegoutTxSigHash(btcTransaction);
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
@@ -2979,12 +2978,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndOneInputAndChangeOutput_withPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveFed(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithManyOutputsAndOneInputWithChangeOutput();
                 registerPegoutTxSigHash(btcTransaction);
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertPegoutWithChangeWasProcessed(btcTransaction);
@@ -3021,11 +3020,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
@@ -3034,11 +3033,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveFed(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
@@ -3047,11 +3046,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
@@ -3060,11 +3059,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveFed(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
@@ -3073,12 +3072,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withOneOutputAndManyInputs_withPegoutIndex_forArrowhead_withRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
                 registerPegoutTxSigHash(btcTransaction);
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
@@ -3087,12 +3086,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withOneOutputAndManyInputs_withPegoutIndex_forArrowhead_withoutRetiringFed_shouldRegisterPegoutTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveFed(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction btcTransaction = getPegoutTxWithOneOutputAndManyInputsWithoutChange();
                 registerPegoutTxSigHash(btcTransaction);
 
                 // act
-                registerLegacyReleaseTransaction(btcTransaction, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(btcTransaction, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertReleaseTxWasProcessedWithNoNewUtxo(btcTransaction);
@@ -3211,11 +3210,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withOneInputAndOutput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiringFederation, retiringFederationKeys, activeFederation.getAddress());
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3224,11 +3223,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withOneInputAndOutput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiringFederation, retiringFederationKeys, activeFederation.getAddress());
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3237,12 +3236,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withOneInputAndOutput_withPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiringFederation, retiringFederationKeys, activeFederation.getAddress());
                 registerPegoutTxSigHash(migrationTx);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3256,7 +3255,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // act
                 registerPegoutTxSigHash(migrationTx);
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3279,11 +3278,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_notInPegoutTxIndex_forArrowhead_shouldBeDetectedAsLegacyPeginRejectedAndRefunded() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiringFederation, retiringFederationKeys, activeFederation.getAddress());
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertLogRejectedPegin(logs, migrationTx, LEGACY_PEGIN_MULTISIG_SENDER);
@@ -3307,7 +3306,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiringFederation, retiringFederationKeys, activeFederation.getAddress());
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertLogRejectedPegin(logs, migrationTx, LEGACY_PEGIN_MULTISIG_SENDER);
@@ -3328,11 +3327,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndInputs();
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
@@ -3341,11 +3340,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndInputs();
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
@@ -3354,12 +3353,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndInputs_withPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndInputs();
                 registerPegoutTxSigHash(migrationTx);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
@@ -3373,7 +3372,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // act
                 registerPegoutTxSigHash(migrationTx);
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
@@ -3396,11 +3395,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndOneInput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndOneInput();
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
@@ -3409,11 +3408,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndOneInput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndOneInput();
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
@@ -3422,12 +3421,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withManyOutputsAndOneInput_withPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithManyOutputsAndOneInput();
                 registerPegoutTxSigHash(migrationTx);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
@@ -3441,7 +3440,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // act
                 registerPegoutTxSigHash(migrationTx);
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
@@ -3450,11 +3449,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withOneOutputAndManyInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithOneOutputAndManyInputs();
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3463,11 +3462,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withOneOutputAndManyInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithOneOutputAndManyInputs();
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3476,12 +3475,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withOneOutputAndManyInputs_withPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithOneOutputAndManyInputs();
                 registerPegoutTxSigHash(migrationTx);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3495,7 +3494,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // act
                 registerPegoutTxSigHash(migrationTx);
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3504,11 +3503,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithFlyoverUtxo(fingerrootActivations);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3517,11 +3516,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithFlyoverUtxo(arrowhead600Activations);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3530,12 +3529,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withFlyoverUtxoWithOneInputAndOutput_withPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithFlyoverUtxo(arrowhead600Activations);
                 registerPegoutTxSigHash(migrationTx);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3549,7 +3548,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // act
                 registerPegoutTxSigHash(migrationTx);
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3572,11 +3571,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithManyInputsAndOutputsWithFlyoverUtxo(fingerrootActivations);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
@@ -3585,11 +3584,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithManyInputsAndOutputsWithFlyoverUtxo(arrowhead600Activations);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
@@ -3598,12 +3597,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_withFlyoverUtxoWithManyOutputsAndInputs_withPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveAndLegacyRetiringFeds(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getMigrationTxWithManyInputsAndOutputsWithFlyoverUtxo(arrowhead600Activations);
                 registerPegoutTxSigHash(migrationTx);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
@@ -3617,7 +3616,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // act
                 registerPegoutTxSigHash(migrationTx);
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, MANY_MIGRATION_UTXOS);
@@ -3626,12 +3625,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_fromLastRetiredFederation_forFingerroot_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveFed(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 federationStorageProvider.setLastRetiredFederationP2SHScript(retiredFed.getP2SHScript());
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiredFed, retiredFedSigners, activeFederation.getAddress());
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3640,12 +3639,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_fromLastRetiredFederation_withoutPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveFed(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 federationStorageProvider.setLastRetiredFederationP2SHScript(retiredFed.getP2SHScript());
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiredFed, retiredFedSigners, activeFederation.getAddress());
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3654,11 +3653,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_fromRetiredFederationNotInStorage_forFingerroot_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(fingerrootActivations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveFed(fingerrootActivations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiredFed, retiredFedSigners, activeFederation.getAddress());
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertLogRejectedPegin(logs, migrationTx, LEGACY_PEGIN_MULTISIG_SENDER);
@@ -3678,11 +3677,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_fromRetiredFederationNotInStorage_withoutPegoutIndex_forArrowhead_shouldRejectAndRefund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(arrowhead600Activations, heightBeforeUsingPegoutIndex);
+                setupLegacyActiveFed(arrowhead600Activations, HEIGHT_BEFORE_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiredFed, retiredFedSigners, activeFederation.getAddress());
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightBeforeUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_BEFORE_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertLogRejectedPegin(logs, migrationTx, LEGACY_PEGIN_MULTISIG_SENDER);
@@ -3702,12 +3701,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             @Test
             void registerBtcTransaction_fromRetiredFederationNotInStorage_withPegoutIndex_forArrowhead_shouldRegisterMigrationTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
                 // arrange
-                setupLegacyActiveFed(arrowhead600Activations, heightAtWhichToStartUsingPegoutIndex);
+                setupLegacyActiveFed(arrowhead600Activations, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX);
                 BtcTransaction migrationTx = getReleaseTxWithOneInputAndOutputWithoutChange(retiredFed, retiredFedSigners, activeFederation.getAddress());
                 registerPegoutTxSigHash(migrationTx);
 
                 // act
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -3721,7 +3720,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
                 // act
                 registerPegoutTxSigHash(migrationTx);
-                registerLegacyReleaseTransaction(migrationTx, heightAtWhichToStartUsingPegoutIndex, bridgeMainnetConstants);
+                registerLegacyReleaseTransaction(migrationTx, HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX, bridgeMainnetConstants);
 
                 // assert
                 assertMigrationTxWasProcessed(migrationTx, ONE_MIGRATION_UTXO);
@@ -4091,7 +4090,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             PartialMerkleTree pmtWithWitness = buildPMTAndRecreateChainForSegwitTransactionRegistration(
                 bridgeStorageProvider,
                 bridgeMainnetConstants,
-                heightAtWhichToStartUsingPegoutIndex,
+                HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX,
                 releaseTx,
                 btcBlockStore
             );
@@ -4099,7 +4098,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             bridgeSupport.registerBtcTransaction(
                 rskTx,
                 releaseTx.bitcoinSerialize(),
-                heightAtWhichToStartUsingPegoutIndex,
+                HEIGHT_AT_WHICH_TO_START_USING_PEGOUT_INDEX,
                 pmtWithWitness.bitcoinSerialize()
             );
             bridgeSupport.save();
