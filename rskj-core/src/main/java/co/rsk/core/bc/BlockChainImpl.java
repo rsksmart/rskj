@@ -95,6 +95,12 @@ public class BlockChainImpl implements Blockchain {
             Long.getLong("blockchain.progressLogInterval", 1000L);
     private long importedSinceLastProgressLog;
     private long lastProgressLogNanos = System.nanoTime();
+    // Blocks per second says how many blocks were imported, not how much work that was: the cost of
+    // a block is dominated by the gas it executes, and on mainnet that varies by more than an order
+    // of magnitude across the chain. Carrying gas alongside the block count makes a sync profile
+    // comparable between height ranges, and is free here because the block is already in hand.
+    private long gasSinceLastProgressLog;
+    private long totalGasImported;
 
     private final Object connectLock = new Object();
     private final Object accessLock = new Object();
@@ -489,6 +495,8 @@ public class BlockChainImpl implements Blockchain {
         }
 
         importedSinceLastProgressLog++;
+        gasSinceLastProgressLog += block.getGasUsed();
+        totalGasImported += block.getGasUsed();
         if (importedSinceLastProgressLog < PROGRESS_LOG_INTERVAL) {
             return;
         }
@@ -496,14 +504,20 @@ public class BlockChainImpl implements Blockchain {
         long now = System.nanoTime();
         double elapsedSeconds = (now - lastProgressLogNanos) / 1_000_000_000d;
         double rate = elapsedSeconds > 0 ? importedSinceLastProgressLog / elapsedSeconds : 0d;
+        double mgasPerSecond = elapsedSeconds > 0 ? gasSinceLastProgressLog / elapsedSeconds / 1_000_000d : 0d;
 
-        logger.info("SYNC PROGRESS: IMPORTED_BEST up to block [{}], {} blocks in [{}]s = [{}] blocks/s",
+        logger.info("SYNC PROGRESS: IMPORTED_BEST up to block [{}], {} blocks in [{}]s = [{}] blocks/s, "
+                        + "gas [{}] = [{}] Mgas/s, total gas [{}]",
                 block.getNumber(),
                 importedSinceLastProgressLog,
                 String.format(java.util.Locale.ROOT, "%.1f", elapsedSeconds),
-                String.format(java.util.Locale.ROOT, "%.1f", rate));
+                String.format(java.util.Locale.ROOT, "%.1f", rate),
+                gasSinceLastProgressLog,
+                String.format(java.util.Locale.ROOT, "%.2f", mgasPerSecond),
+                totalGasImported);
 
         importedSinceLastProgressLog = 0;
+        gasSinceLastProgressLog = 0;
         lastProgressLogNanos = now;
     }
 
