@@ -215,6 +215,9 @@ Remove anything left there.
 
 ## Common failures
 
+<details>
+<summary>Expand the message you are seeing</summary>
+
 | Message | What it means |
 |---|---|
 | `Failed to download and parse index from <url>` | A signer's index could not be fetched or parsed. Check network access to the import URL, and that you have not overridden `database.import.url` with something unreachable. |
@@ -228,6 +231,8 @@ Remove anything left there.
 | `Error reading bootstrap data from <path>` | The extracted `bootstrap-data.bin` could not be read. Check that the temporary directory still holds it and that nothing is cleaning temporary files while the node runs. |
 | `Configuration has less trusted sources than the minimum required <n> of 2` | Fewer than two trusted keys are configured, and two is the floor however few you configure. Restore the shipped keys for the network. This is a warning at startup, not the failure itself — the run continues and then fails on one of the messages above. |
 | `java.lang.OutOfMemoryError` | The load stage ran out of heap. Raise `-Xmx` above the 4G used above and run the import again; note that a retry downloads the bootstrap data again. |
+
+</details>
 
 ## Switching between LevelDB and RocksDB
 
