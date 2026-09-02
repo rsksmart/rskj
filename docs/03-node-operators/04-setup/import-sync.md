@@ -55,7 +55,7 @@ Each signer publishes its own index under that URL, at a path named for its publ
 
 Every entry in an index carries a block `height`, the path to the archive, its `hash`, and the signer's signature over that entry.
 
-RSKj will only import bootstrap data that **at least two trusted signers agree on**: the same height, with the same hash, correctly signed by each. A height offered by only one signer is ignored, however recent it is. Among the heights that meet that bar, RSKj takes the highest.
+RSKj will only import bootstrap data that **enough trusted signers agree on**: the same height, with the same hash, correctly signed by each. The threshold is a majority of the keys you have configured, and never fewer than two — with the three keys shipped for each network, that is two. A height offered by too few signers is ignored, however recent it is. Among the heights that meet that bar, RSKj takes the highest.
 
 The trusted keys are long, and they are the one thing worth taking from the JAR you are about to run rather than from this page, since that is the authoritative answer for your version:
 
@@ -93,9 +93,10 @@ You can see exactly which height you would land on before downloading anything. 
       curl -sS -o "index-$KEY.json" "$URL$KEY/index.json"
     done
 
-    jq -s '[.[].dbs[] | {height, hash}] | group_by(.height)
+    jq -s '(((length / 2) | floor) + 1 | if . < 2 then 2 else . end) as $required
+           | [.[].dbs[] | {height, hash}] | group_by(.height)
            | map({height: .[0].height, agreeing: ([group_by(.hash)[] | length] | max)})
-           | map(select(.agreeing >= 2)) | max_by(.height)' index-*.json
+           | map(select(.agreeing >= $required)) | max_by(.height)' index-*.json
     ```
   </TabItem>
   <TabItem value="land-testnet" label="Testnet">
@@ -112,20 +113,21 @@ You can see exactly which height you would land on before downloading anything. 
       curl -sS -o "index-$KEY.json" "$URL$KEY/index.json"
     done
 
-    jq -s '[.[].dbs[] | {height, hash}] | group_by(.height)
+    jq -s '(((length / 2) | floor) + 1 | if . < 2 then 2 else . end) as $required
+           | [.[].dbs[] | {height, hash}] | group_by(.height)
            | map({height: .[0].height, agreeing: ([group_by(.hash)[] | length] | max)})
-           | map(select(.agreeing >= 2)) | max_by(.height)' index-*.json
+           | map(select(.agreeing >= $required)) | max_by(.height)' index-*.json
     ```
   </TabItem>
 </Tabs>
 
-This reproduces the node's own selection rule and prints the height it would choose, along with how many signers agree on it.
+This reproduces the node's own selection rule and prints the height it would choose, along with how many signers agree on it. The threshold is derived from the number of index files you fetched, so the query stays correct if you configure a different set of keys.
 
 Each network gets its own directory because the final `jq` reads every `index-*.json` it finds. Index files are named after the signer's key, and the two networks use different keys, so running both checks in one directory leaves six files there rather than overwriting three — and the query then takes the highest height across both networks. On a Testnet check that had Mainnet files alongside it, the answer would be a Mainnet height, reported with two agreeing signers and no error.
 
 :::warning[The newest entry in an index is not necessarily the one you get]
 
-Do not read the last entry of a single index and assume that is your landing height. Signers publish independently, so the most recent entries may be offered by only one of them — and those can never be selected. The query above applies the two-signer rule, which is what RSKj actually does.
+Do not read the last entry of a single index and assume that is your landing height. Signers publish independently, so the most recent entries may be offered by only one of them — and those can never be selected. The query above applies the same threshold RSKj does.
 
 :::
 
@@ -215,14 +217,14 @@ Remove anything left there.
 | Message | What it means |
 |---|---|
 | `Failed to download and parse index from <url>` | A signer's index could not be fetched or parsed. Check network access to the import URL, and that you have not overridden `database.import.url` with something unreachable. |
-| `Downloaded files doesn't contain enough entries for a common height` | No single height is offered by at least two trusted signers with a matching hash. This is what you see if you have narrowed `database.import.trusted-keys` to fewer than two working signers, or if the indexes have no height in common. |
+| `Downloaded files doesn't contain enough entries for a common height` | No single height is offered, with a matching hash, by the required majority of trusted signers. This is what you see if `database.import.trusted-keys` has been narrowed to fewer working signers than the threshold, or if the indexes have no height in common. |
 | `Not enough valid signatures: selected height <n> doesn't have enough trustworthy sources: <x> of <y>` | A height looked agreed-upon, but too few signatures actually verified against the trusted keys. The bootstrap data is not trustworthy. Do not work around this by lowering the requirement. |
 | `Failed to create a temporary directory. Please start again the import process` | RSKj could not create its working directory under the JVM's temporary directory. This happens before anything is downloaded. Check that `java.io.tmpdir` exists and is writable by the user running the node — a read-only or otherwise restricted temporary directory is the usual cause. |
 | `File: <path> does not match with expected hash: <hash>` | The downloaded archive does not match the hash the signers committed to. Usually an incomplete or corrupted download; remove the temporary files and retry. |
 | `Error downloading bootstrap data from <url>. Please start again the import process` | The archive could not be retrieved, or could not be written to disk. Check network access, and check free space in the temporary directory — a download that fills the filesystem fails here. If it persists, the published archive may be missing from the location its index advertises. |
 | `The file is corrupted or incomplete. Please start again the import process` | The archive downloaded and matched its hash, but could not be unpacked. Check free space in the temporary directory first: running out during extraction produces this message even though the archive itself is fine. If space is adequate and it persists, the published archive is faulty — report it rather than working around it. |
 | `Error trying to read bootstrap data contents. Please start again the import process` | The unpacked data could not be read back. Check free space in the temporary directory, then retry. |
-| `Configuration has less trusted sources than the minimum required <n> of 2` | Fewer than two trusted keys are configured. At least two independent signers are always required. Restore the shipped keys for the network. This is a warning at startup, not the failure itself — the run continues and then fails on one of the messages above. |
+| `Configuration has less trusted sources than the minimum required <n> of 2` | Fewer than two trusted keys are configured, and two is the floor however few you configure. Restore the shipped keys for the network. This is a warning at startup, not the failure itself — the run continues and then fails on one of the messages above. |
 | `java.lang.OutOfMemoryError` | The load stage ran out of heap. Raise `-Xmx` above the 4G used above and run the import again; note that a retry downloads the bootstrap data again. |
 
 ## Switching between LevelDB and RocksDB
