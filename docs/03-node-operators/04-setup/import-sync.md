@@ -244,11 +244,17 @@ Remove anything left there.
 
 </details>
 
-## Switching between LevelDB and RocksDB
+## Migrating from LevelDB to RocksDB
 
-Switching the [`keyvalue.datasource`](/node-operators/setup/configuration/reference#keyvaluedatasource-experimental) between `leveldb` and `rocksdb` requires starting with an empty database directory, because an existing database cannot be reopened under a different engine. Running with `--import` achieves that, which is why it is described as a way to switch.
+If your node still runs on **LevelDB**, migrate it to **RocksDB**. LevelDB is deprecated and will be removed in a future release; a node that opens a LevelDB database logs a warning saying so on every start. RocksDB is the default for any node set up from scratch.
 
-Import sync is not a database conversion, though. It **discards your current database** and replaces it with the published bootstrap data, so a node that had synced to the tip comes back at the imported height and has to sync the difference again.
+Changing [`keyvalue.datasource`](/node-operators/setup/configuration/reference#keyvaluedatasource) requires starting with an empty database directory, because an existing database cannot be reopened under a different engine. Running with `--import` gets you there, which is why import sync is described as a way to switch:
+
+```shell
+java -Xmx4G -Dkeyvalue.datasource=rocksdb -cp <PATH-TO-THE-RSKJ-JAR> co.rsk.Start --import
+```
+
+Import sync is not a database conversion, though. It **discards your current database** and replaces it with the published bootstrap data, so a node that had synced to the tip comes back at the imported height and has to sync the difference again. If you would rather keep the history you already have, convert the database in place with [`DbMigrate`](/node-operators/setup/configuration/cli/#dbmigrate) instead — it downloads nothing.
 
 The one-shot rule still applies. Use `--import` on the command line for the switchover, and do not leave import enabled in configuration afterwards.
 
