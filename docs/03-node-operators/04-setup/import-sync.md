@@ -12,6 +12,16 @@ Run it as a one-off from the command line, and never leave `database.import.enab
 
 :::
 
+## At a glance
+
+1. Check your [prerequisites and free space](#before-you-start) — the database is sized for a full node, and the download needs temporary space of its own.
+2. Optionally, [check which height the import will land you on](#check-where-import-sync-will-land-you), and how large the download is, before committing to it.
+3. [Run the node once with `--import`](#run-the-import). RSKj downloads the published bootstrap data, checks that [enough trusted signers agree on it](#how-bootstrap-data-is-trusted), and loads it into a fresh database. There is nothing for you to download, and the flag takes no file path.
+4. [Restart the node without the flag](#confirm-it-worked-then-restart-without-the-flag) and confirm it is syncing on from the imported height.
+5. [Delete the leftover files](#clean-up-temporary-files) from the temporary directory.
+
+If anything fails along the way, look the message up under [Common failures](#common-failures).
+
 ## Who this page is for
 
 These instructions cover running the node from the **JAR file**, on **Mainnet** or **Testnet**.
