@@ -145,17 +145,17 @@ Run this on a node that is **not** already running, with no valuable database in
 <Tabs>
   <TabItem value="import-mainnet" label="Mainnet" default>
     ```shell
-    java -cp <PATH-TO-THE-RSKJ-JAR> co.rsk.Start --import
+    java -Xmx4G -cp <PATH-TO-THE-RSKJ-JAR> co.rsk.Start --import
     ```
   </TabItem>
   <TabItem value="import-testnet" label="Testnet">
     ```shell
-    java -cp <PATH-TO-THE-RSKJ-JAR> co.rsk.Start --testnet --import
+    java -Xmx4G -cp <PATH-TO-THE-RSKJ-JAR> co.rsk.Start --testnet --import
     ```
   </TabItem>
 </Tabs>
 
-The `--import` flag sets `database.import.enabled` for that run only. It supplies no URL and no keys of its own — those come from the network configuration shipped in the JAR.
+The `--import` flag sets `database.import.enabled` for that run only. It supplies no URL and no keys of its own — those come from the network configuration shipped in the JAR. `-Xmx4G` is the heap recommended for this command in [Setup node using Java](/node-operators/setup/installation/java/); left out, the JVM sizes the heap from physical RAM instead.
 
 The import prints nothing to the console. It writes to `logs/rsk.log`, relative to the directory you ran the command from. A successful import logs there, in order:
 
@@ -223,7 +223,7 @@ Remove anything left there.
 | `The file is corrupted or incomplete. Please start again the import process` | The archive downloaded and matched its hash, but could not be unpacked. Check free space in the temporary directory first: running out during extraction produces this message even though the archive itself is fine. If space is adequate and it persists, the published archive is faulty — report it rather than working around it. |
 | `Error trying to read bootstrap data contents. Please start again the import process` | The unpacked data could not be read back. Check free space in the temporary directory, then retry. |
 | `Configuration has less trusted sources than the minimum required <n> of 2` | Fewer than two trusted keys are configured. At least two independent signers are always required. Restore the shipped keys for the network. This is a warning at startup, not the failure itself — the run continues and then fails on one of the messages above. |
-| `java.lang.OutOfMemoryError` | The load stage ran out of heap. Raise `-Xmx` and run it again; note that a retry downloads the bootstrap data again. |
+| `java.lang.OutOfMemoryError` | The load stage ran out of heap. Raise `-Xmx` above the 4G used above and run the import again; note that a retry downloads the bootstrap data again. |
 
 ## Switching between LevelDB and RocksDB
 
