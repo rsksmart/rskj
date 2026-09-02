@@ -35,7 +35,7 @@ These instructions cover running the node from the **JAR file**, on **Mainnet** 
 
 ## Before you start
 
-- **Java 17 JDK** and **RSKj `VETIVER-9.0.4` or later** — see [Setup node using Java](/node-operators/setup/installation/java/). Earlier versions may not be able to read the published bootstrap data.
+- **Java 17 JDK** and **RSKj `VETIVER-9.0.4` or later** — see [Setup node using Java](/node-operators/setup/installation/java/). Earlier versions cannot read the bootstrap data published today, and will fail the import.
 - **Disk for the database.** Size the data directory for a full node, per the [minimum requirements](/node-operators/setup/requirements/) — not for the size of the download.
 - **Disk for temporary files.** RSKj downloads the bootstrap archive and extracts it into the JVM's temporary directory: `/tmp` on Linux, a per-user directory under `/var/folders` on macOS. To see the exact path yours will use, run `java -XshowSettings:properties -version 2>&1 | grep java.io.tmpdir`. Both files exist there at the same time. The extracted contents are larger than the archive, so allow **about three times the size of the bootstrap archive** in temporary space, on top of the database itself. To check that size before committing to the download, see [Check where import sync will land you](#check-where-import-sync-will-land-you).
 

@@ -46,11 +46,23 @@ It is also used when switching between different databases,
 e.g. when moving from the deprecated `leveldb` to `rocksdb`.
 
 - `--import`:
-This indicates that the block database should be imported from an external source.
+This indicates that the block database should be imported from published bootstrap data
+instead of being synced from peers.
 This is typically expected to be used when connecting to Rootstock Testnet or Rootstock Mainnet,
 and when a reduction in "initial sync time" is desired.
 It is also used when switching between different databases,
 e.g. when moving from the deprecated `leveldb` to `rocksdb`.
+
+  :::danger[Import erases the database every time it runs]
+
+  A node started with import enabled **deletes its database directory** and downloads the
+  bootstrap data again, even if it was fully synced a minute earlier. Run it as a one-off on
+  the command line, and never leave `database.import.enabled = true` in a configuration file.
+
+  :::
+
+  Reading the bootstrap data published today requires RSKj **`VETIVER-9.0.4` or later**.
+  For the full procedure, see [Bootstrap a node using Import Sync](/node-operators/setup/import-sync/).
 
 ### Configuration related
 

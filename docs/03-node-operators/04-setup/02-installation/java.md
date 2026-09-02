@@ -78,7 +78,7 @@ Every time a node starts with import enabled, it **deletes its database director
 
 In short:
 
-1. Check that you are on **Java 17** and RSKj **`VETIVER-9.0.4` or later**.
+1. Check that you are on **Java 17** and RSKj **`VETIVER-9.0.4` or later** — earlier versions cannot read the bootstrap data published today.
 2. Make sure you have room for a full node's database, per the [minimum requirements](/node-operators/setup/requirements/), plus about three times the size of the bootstrap archive in temporary space.
 3. Run the node **once** with `--import`. RSKj downloads the published bootstrap data, checks that enough trusted signers agree on it, and loads it into a fresh database.
 4. Stop the node and start it again **without** `--import`. It continues syncing from the imported height.
