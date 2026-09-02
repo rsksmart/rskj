@@ -43,14 +43,14 @@ i.e. from genesis block.
 This is typically expected to be used when connecting to Rootstock Regtest,
 or in select debugging scenarios.
 It is also used when switching between different databases,
-e.g. between `leveldb` and `rocksdb`.
+e.g. when moving from the deprecated `leveldb` to `rocksdb`.
 
 - `--import`:
 This indicates that the block database should be imported from an external source.
 This is typically expected to be used when connecting to Rootstock Testnet or Rootstock Mainnet,
 and when a reduction in "initial sync time" is desired.
 It is also used when switching between different databases,
-e.g. between `leveldb` and `rocksdb`.
+e.g. when moving from the deprecated `leveldb` to `rocksdb`.
 
 ### Configuration related
 
@@ -213,7 +213,7 @@ The `RewindBlocks` command is used to rewind the Rootstock blockchain to a speci
 
 #### DbMigrate
 
-The `DbMigrate` command is a tool for migrating between different databases such as leveldb and rocksdb.
+The `DbMigrate` command is a tool for migrating between different databases, such as moving a node off the deprecated `leveldb` and onto `rocksdb`. Unlike [import sync](/node-operators/setup/import-sync/), it converts the database you already have and downloads nothing.
 
 **Usage:**
 
@@ -221,11 +221,11 @@ The `DbMigrate` command is a tool for migrating between different databases such
 
 **Options:**
 
-- `-t, --targetDb`: The target database to migrate to. (“leveldb” or “rocksdb”).
+- `-t, --targetDb`: The target database to migrate to (`rocksdb` or `leveldb`). Use `rocksdb` — `leveldb` is deprecated and will be removed in a future release.
 
 **Example:**
 
-In this example, the current database will be migrated from leveldb to rocksdb.
+In this example, the current database will be migrated from `leveldb` to `rocksdb`.
 
 `java -cp rsk.jar co.rsk.cli.tools.DbMigrate -t rocksdb`
 

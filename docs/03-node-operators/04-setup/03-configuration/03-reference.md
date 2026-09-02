@@ -118,17 +118,22 @@ Options related to experimental import sync v0.1.
 * `database.import.enabled = [true/false]`
   enable the import sync.
 
-## keyvalue.datasource (experimental)
+## keyvalue.datasource
 
 Selects the database that will be used to store the information.
 Possible options are:
 
-* `leveldb`
-* `rocksdb` (default)
+* `rocksdb` (default, recommended)
+* `leveldb` (deprecated, will be removed in a future release)
 
-If you wish to switch between the different storage options,
-for example from `leveldb` to `rocksdb` or vice versa,
-you must **restart** the node with the import option each time you do so.
+Use `rocksdb`. If your node still runs on `leveldb`, migrate it — see
+[Migrating an existing node to RocksDB](/node-operators/setup/configuration/preferences/#migrating-an-existing-node-to-rocksdb).
+
+An existing database cannot be reopened under a different engine, so changing this value
+requires an empty database directory: either convert the database with
+[`DbMigrate`](/node-operators/setup/configuration/cli/#dbmigrate), or **restart** the node with
+the [import option](/node-operators/setup/import-sync/), which erases it and rebuilds it from
+published bootstrap data.
 
 ## vm
 
