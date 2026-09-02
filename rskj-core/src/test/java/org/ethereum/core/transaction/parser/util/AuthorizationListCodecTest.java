@@ -582,6 +582,20 @@ class AuthorizationListCodecTest {
     }
 
     @Test
+    void decodeTuple_highS_decodes() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger maxDecodableS = BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE);
+        byte[] tuple = rebuildTupleField(
+                reference,
+                5,
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(maxDecodableS)));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(maxDecodableS, decoded.getSignature().getS());
+    }
+
+    @Test
     void decodeTuple_nullNonceField_defaultsToEmpty() {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
         byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeElement(null));
@@ -744,6 +758,26 @@ class AuthorizationListCodecTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> AuthorizationListCodec.encodeTuple(bad));
+    }
+
+    /** {@code asUnsignedByteArray} drops the sign rather than failing, so -1 would encode as 0xff. */
+    @ParameterizedTest
+    @ValueSource(ints = {R_FIELD_INDEX, S_FIELD_INDEX})
+    void encodeTuple_negativeSignatureComponent_throws(int fieldIndex) {
+        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger negative = BigInteger.valueOf(-1);
+        SetCodeAuthorization bad = new SetCodeAuthorization(
+                auth.getChainId(),
+                auth.getAddress(),
+                auth.getNonceBytes(),
+                new ECDSASignature(
+                        fieldIndex == R_FIELD_INDEX ? negative : auth.getSignature().getR(),
+                        fieldIndex == S_FIELD_INDEX ? negative : auth.getSignature().getS(),
+                        auth.getSignature().getV()));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> AuthorizationListCodec.encodeTuple(bad));
+        assertEquals("Authorization signature r and s must be non-negative", ex.getMessage());
     }
 
     // -------------------------------------------------------------------------

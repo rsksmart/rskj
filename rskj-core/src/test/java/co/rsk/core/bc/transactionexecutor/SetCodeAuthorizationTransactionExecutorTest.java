@@ -422,6 +422,21 @@ import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
     }
 
     @Test
+    void processAuthorizationTuple_highS_throws() {
+        var tuple = authorizationWithRecoverableSignatureAndS(
+                BigInteger.ONE.shiftLeft(256).subtract(ONE));
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> executor.processAuthorizationTuple(repository, ZERO_CHAIN_ID, tuple)
+        );
+
+        assertEquals("Signature r and s must be in [1, secp256k1n)", ex.getMessage());
+        verify(repository, never()).saveCode(any(), any());
+        verify(repository, never()).increaseNonce(any());
+    }
+
+    @Test
     void processAuthorizationTuple_shouldAcceptSignatureSJustBelowHalfCurveOrder() {
         var tuple = authorizationWithRecoverableSignatureAndS(SECP256K1N_HALF.subtract(ONE));
 

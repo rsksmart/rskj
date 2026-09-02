@@ -133,22 +133,10 @@ public final class AuthorizationListCodec {
         CommonParsingUtils.requireCanonicalScalar(chainIdData, "Authorization chain_id");
         BigInteger chainId = decodeChainId(chainIdData);
         RskAddress address = decodeAddress(inner.get(1).getRLPData());
-        byte[] nonce = inner.get(2).getRLPData();
-        if (nonce == null) {
-            nonce = new byte[0];
-        } else {
-            nonce = ByteUtil.cloneBytes(nonce);
-        }
-        CommonParsingUtils.requireDataWordBytes(nonce, "Authorization nonce is not valid");
-        CommonParsingUtils.requireCanonicalScalar(nonce, "Authorization nonce");
-        requireNonceInRange(decodeUnsignedBigInteger(nonce));
-        byte yParity = parseTupleYParity(inner.get(3).getRLPData());
-        byte[] r = CommonParsingUtils.nullToEmpty(inner.get(4).getRLPData());
-        byte[] s = CommonParsingUtils.nullToEmpty(inner.get(5).getRLPData());
-        CommonParsingUtils.requireDataWordBytes(r, "Authorization signature r is not valid");
-        CommonParsingUtils.requireDataWordBytes(s, "Authorization signature s is not valid");
-        CommonParsingUtils.requireCanonicalScalar(r, "Authorization signature r");
-        CommonParsingUtils.requireCanonicalScalar(s, "Authorization signature s");
+        byte[] nonce = decodeAndValidateNonce(inner.get(2));
+        byte yParity = decodeAndValidateYParity(inner.get(3).getRLPData());
+        byte[] r = decodeAndValidateSignatureComponent(inner.get(4), "r");
+        byte[] s = decodeAndValidateSignatureComponent(inner.get(5), "s");
         byte v = (byte) (Transaction.LOWER_REAL_V + yParity);
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
 
@@ -272,11 +260,30 @@ public final class AuthorizationListCodec {
         }
     }
 
+    /** Decode bounds for the nonce, measured as received. */
+    private static byte[] decodeAndValidateNonce(RLPElement field) {
+        byte[] rawNonce = field.getRLPData();
+        byte[] nonce = rawNonce == null ? new byte[0] : ByteUtil.cloneBytes(rawNonce);
+        CommonParsingUtils.requireDataWordBytes(nonce, "Authorization nonce is not valid");
+        CommonParsingUtils.requireCanonicalScalar(nonce, "Authorization nonce");
+        requireNonceInRange(decodeUnsignedBigInteger(nonce));
+        return nonce;
+    }
+
+    /** Decode bounds for r/s; the curve range {@code [1, secp256k1n)} is a processing step. */
+    private static byte[] decodeAndValidateSignatureComponent(RLPElement field, String fieldName) {
+        byte[] component = CommonParsingUtils.nullToEmpty(field.getRLPData());
+        CommonParsingUtils.requireDataWordBytes(
+                component, "Authorization signature " + fieldName + " is not valid");
+        CommonParsingUtils.requireCanonicalScalar(component, "Authorization signature " + fieldName);
+        return component;
+    }
+
     /**
-     * Wire path: canonical and single-byte, but any value. Restricting it to {@code {0, 1}} is a
-     * processing step, so it cannot use the shared {@code parseCanonicalYParity}.
+     * Wire path: canonical and single-byte, but any value, since restricting it to {@code {0, 1}}
+     * is a processing step. That is why it cannot use the shared {@code parseCanonicalYParity}.
      */
-    private static byte parseTupleYParity(byte[] yParityData) {
+    private static byte decodeAndValidateYParity(byte[] yParityData) {
         if (yParityData == null || yParityData.length == 0) {
             return 0;
         }
