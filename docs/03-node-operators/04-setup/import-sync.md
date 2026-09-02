@@ -81,6 +81,8 @@ You can see exactly which height you would land on before downloading anything. 
 <Tabs>
   <TabItem value="land-mainnet" label="Mainnet" default>
     ```shell
+    mkdir -p ~/rskj-index/mainnet && cd ~/rskj-index/mainnet
+
     URL=https://import.mainnet.rskcomputing.net/dbs/mainnet/
 
     for KEY in \
@@ -98,6 +100,8 @@ You can see exactly which height you would land on before downloading anything. 
   </TabItem>
   <TabItem value="land-testnet" label="Testnet">
     ```shell
+    mkdir -p ~/rskj-index/testnet && cd ~/rskj-index/testnet
+
     URL=https://import.testnet.rskcomputing.net/dbs/testnet/
 
     for KEY in \
@@ -117,13 +121,15 @@ You can see exactly which height you would land on before downloading anything. 
 
 This reproduces the node's own selection rule and prints the height it would choose, along with how many signers agree on it.
 
+Each network gets its own directory because the final `jq` reads every `index-*.json` it finds. Index files are named after the signer's key, and the two networks use different keys, so running both checks in one directory leaves six files there rather than overwriting three — and the query then takes the highest height across both networks. On a Testnet check that had Mainnet files alongside it, the answer would be a Mainnet height, reported with two agreeing signers and no error.
+
 :::warning[The newest entry in an index is not necessarily the one you get]
 
 Do not read the last entry of a single index and assume that is your landing height. Signers publish independently, so the most recent entries may be offered by only one of them — and those can never be selected. The query above applies the two-signer rule, which is what RSKj actually does.
 
 :::
 
-Once you know the height, you can check how large the download will be. Any of the agreeing signers' indexes will do, since they publish the same archive:
+Once you know the height, you can check how large the download will be. Run this in the same directory, so `$URL` and the index files still refer to the network you just checked. Any of the agreeing signers' indexes will do, since they publish the same archive:
 
 ```shell
 DB=$(jq -r --argjson h <HEIGHT> '.dbs[] | select(.height == $h) | .db' index-<TRUSTED-KEY>.json)
