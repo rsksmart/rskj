@@ -68,7 +68,7 @@ public class Type0RawTransactionParser implements RawTransactionTypeParser<Parse
 
     @Override
     public ParsedType0Transaction parse(TransactionTypePrefix typePrefix, TransactionInput input, byte defaultChainId) {
-        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce(), false);
+        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce());
         BigInteger gasLimit = TransactionInput.resolveGasLimit(input.gasLimit());
         Coin gasPrice = CommonParsingUtils.defaultValue(input.gasPrice());
         Coin value = CommonParsingUtils.defaultValue(input.value());

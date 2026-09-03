@@ -24,10 +24,12 @@ import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AuthorizationListCodec;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.rpc.CallArguments;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.stream.Stream;
@@ -70,6 +72,33 @@ class NonceGasLimitCanonicalEncodingTest {
     @MethodSource("typesAndBoundaries")
     void gasLimitIsCanonical(TransactionType type, BigInteger gasLimit) {
         assertCanonical(type, DEFAULT_NONCE, gasLimit);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("defaultNonceTypes")
+    void nonceOmittedDefaultsToCanonicalZero(TransactionType type) {
+        Transaction builderTx = build(type, BigInteger.ZERO, DEFAULT_GAS_LIMIT);
+        Transaction rpcTx = Transaction.fromCallArguments(callArguments(type, null, DEFAULT_GAS_LIMIT), null, REGTEST_CHAIN_ID);
+
+        byte[] expectedNonce = CommonParsingUtils.unsignedBytes(BigInteger.ZERO);
+        assertArrayEquals(expectedNonce, rpcTx.getNonce());
+        assertArrayEquals(builderTx.getNonce(), rpcTx.getNonce());
+        assertArrayEquals(builderTx.getEncodedRaw(), rpcTx.getEncodedRaw());
+
+        builderTx.sign(PRIVATE_KEY);
+        rpcTx.sign(PRIVATE_KEY);
+
+        assertArrayEquals(builderTx.getEncoded(), rpcTx.getEncoded());
+        assertEquals(builderTx.getRawHash(), rpcTx.getRawHash());
+        assertEquals(builderTx.getHash(), rpcTx.getHash());
+    }
+
+    // TransactionInput.nonce() never surfaces a true null (ByteUtil.cloneBytes(null) -> empty
+    // array), so an omitted nonce resolves to canonical empty bytes for LEGACY too, same as TYPE_1/2/4.
+    @Test
+    void legacyNonceOmittedAlsoResolvesToCanonicalZero() {
+        Transaction rpcTx = Transaction.fromCallArguments(callArguments(TransactionType.LEGACY, null, DEFAULT_GAS_LIMIT), null, REGTEST_CHAIN_ID);
+        assertArrayEquals(CommonParsingUtils.unsignedBytes(BigInteger.ZERO), rpcTx.getNonce());
     }
 
     private static void assertCanonical(TransactionType type, BigInteger nonce, BigInteger gasLimit) {
@@ -136,11 +165,13 @@ class NonceGasLimitCanonicalEncodingTest {
         };
     }
 
-    private static CallArguments callArguments(TransactionType type, BigInteger nonce, BigInteger gasLimit) {
+    private static CallArguments callArguments(TransactionType type, @Nullable BigInteger nonce, BigInteger gasLimit) {
         CallArguments args = new CallArguments();
         args.setFrom("0x0000000000000000000000000000000000000001");
         args.setTo(DEFAULT_RECEIVER.toHexString());
-        args.setNonce(hex(nonce));
+        if (nonce != null) {
+            args.setNonce(hex(nonce));
+        }
         args.setGas(hex(gasLimit));
         args.setValue("0x0");
 
@@ -177,6 +208,11 @@ class NonceGasLimitCanonicalEncodingTest {
     private static Stream<Arguments> typesAndBoundaries() {
         return SUPPORTED_TYPES.stream()
                 .flatMap(type -> BOUNDARIES.stream().map(value -> Arguments.of(type, value)));
+    }
+
+    private static Stream<Arguments> defaultNonceTypes() {
+        return Stream.of(TransactionType.TYPE_1, TransactionType.TYPE_2, TransactionType.TYPE_4)
+                .map(Arguments::of);
     }
 
     private static String hex(BigInteger value) {
