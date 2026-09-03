@@ -419,7 +419,8 @@ class BridgeUtilsTest {
 
     @Test
     void validateHeightAndConfirmation_insufficient_confirmations() {
-        assertThrows(VerificationException.class, () -> BridgeUtils.validateHeightAndConfirmations(200, 298, bridgeConstantsMainnet, Sha256Hash.of(Hex.decode("ab"))));
+        Sha256Hash btcTxHash = Sha256Hash.of(Hex.decode("ab"));
+        assertThrows(VerificationException.class, () -> BridgeUtils.validateHeightAndConfirmations(200, 298, bridgeConstantsMainnet, btcTxHash));
     }
 
     @Test

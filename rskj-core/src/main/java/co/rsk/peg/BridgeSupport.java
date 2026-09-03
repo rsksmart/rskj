@@ -2297,6 +2297,7 @@ public class BridgeSupport {
         try {
             validateBlockMerkleRoot(merkleRoot, block.getHeader());
         } catch (InvalidMerkleRootException e) {
+            logger.error("[getBtcTransactionConfirmations] Error {} trying to validate block merkle root", e.getMessage());
             return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE;
         }
 
@@ -2853,9 +2854,9 @@ public class BridgeSupport {
         try {
             validateBtcTxRegistration(btcTxHash, height, pmtSerialized, btcTxSerialized);
         } catch (RegisterBtcTransactionException e) {
-            logger.debug(
-                "[registerFlyoverBtcTransaction] (btcTx:{}) error during validationsForRegisterBtcTransaction",
-                btcTxHash
+            logger.error(
+                "[registerFlyoverBtcTransaction] Error {} during validating registration for btcTx : {}",
+                e.getMessage(), btcTxHash
             );
             return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value());
         }
@@ -3471,7 +3472,7 @@ public class BridgeSupport {
         try {
             validateMerkleRoot(merkleRoot.get(), height);
         } catch (InvalidMerkleRootException e) {
-            throw new RegisterBtcTransactionException(e.getMessage());
+            throw new RegisterBtcTransactionException(e.getMessage(), e);
         }
 
         logger.trace("[validationsForRegisterBtcTransaction] Btc tx: {} successfully validated", btcTxHash);
