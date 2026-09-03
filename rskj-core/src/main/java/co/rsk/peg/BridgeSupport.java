@@ -3474,7 +3474,7 @@ public class BridgeSupport {
             throw new RegisterBtcTransactionException(e.getMessage(), e);
         }
 
-        logger.trace("[validationsForRegisterBtcTransaction] Btc tx: {} successfully validated", btcTxHash);
+        logger.trace("[validateBtcTxRegistration] Btc tx: {} successfully validated", btcTxHash);
     }
 
     private void validatePMTSize(byte[] pmtSerialized) throws BridgeIllegalArgumentException {
