@@ -2855,7 +2855,8 @@ public class BridgeSupport {
         } catch (RegisterBtcTransactionException e) {
             logger.debug(
                 "[registerFlyoverBtcTransaction] Error {} during validating registration for btcTx : {}",
-                e.getMessage(), btcTxHash
+                e.getMessage(),
+                btcTxHash
             );
             return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value());
         }
