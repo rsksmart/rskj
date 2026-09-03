@@ -268,6 +268,9 @@ test {
 
     jvmArgs '-Xss32m', '-Xmx4G'
 
+    //run test classes in parallel forked JVMs, override with -PtestForks=N
+    maxParallelForks = project.hasProperty('testForks') ? project.property('testForks').toString().toInteger() : (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)
+
     testLogging {
         events "failed"
         exceptionFormat "short"
@@ -288,21 +291,6 @@ jacocoTestReport {
         xml.required = true
     }
     sourceSets sourceSets.main, sourceSets.fuzzTest
-}
-
-task parallelTest(type: Test) {
-    useJUnitPlatform()
-    //increase heap memory
-    jvmArgs '-Xss64m', '-Xmx4G'
-    //stop build after the first failing test
-    failFast = project.hasProperty("failFast")
-    //option to use the half of the available cores (it can be increased but there is no too much difference)
-    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
-    //this is recommended in the docs, -> https://docs.gradle.org/current/userguide/performance.html#forking_options
-    forkEvery = 750
-    //save some time avoiding reports
-    reports.html.required = false
-    reports.junitXml.required = false
 }
 
 tasks.withType(Javadoc) {
