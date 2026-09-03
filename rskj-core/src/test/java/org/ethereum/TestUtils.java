@@ -19,11 +19,21 @@
 
 package org.ethereum;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import java.io.File;
+import java.lang.reflect.Field;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.bouncycastle.util.encoders.Hex;
@@ -36,17 +46,6 @@ import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.Assertions;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
-
-import javax.annotation.Nonnull;
-import java.io.File;
-import java.lang.reflect.Field;
-import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.security.SecureRandom;
-import java.util.*;
 
 
 public final class TestUtils {
@@ -276,12 +275,6 @@ public final class TestUtils {
         while (System.currentTimeMillis() - startMillis < durationMillis) {
             // simulate processing time
         }
-    }
-
-    public static RskAddress mockAddress(String addr) {
-        RskAddress mock = mock(RskAddress.class);
-        when(mock.getBytes()).thenReturn(Hex.decode(addr));
-        return mock;
     }
 
     public static String bigIntegerToHex(BigInteger value) {
