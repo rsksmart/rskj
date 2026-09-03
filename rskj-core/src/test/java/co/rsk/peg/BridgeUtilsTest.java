@@ -467,6 +467,7 @@ class BridgeUtilsTest {
     @Test
     void validateInputsCount_active_rskip() {
         byte[] decode = Hex.decode("00000000000100");
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
         Assertions.assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(decode, activations));
     }
 
