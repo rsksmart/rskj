@@ -90,15 +90,16 @@ public class MigrationTransactionBuilder {
         for (BtcTransaction prevTx : prevTxs) {
             for (TransactionOutput prevTxOutput : prevTx.getOutputs()) {
                 migrationTx.addInput(prevTxOutput);
-            }
-            BitcoinUtils.addSpendingFederationBaseScript(
-                migrationTx,
-                inputIndex,
-                retiringFederation.getRedeemScript(),
-                retiringFederation.getFormatVersion()
-            );
 
-            inputIndex++;
+                BitcoinUtils.addSpendingFederationBaseScript(
+                    migrationTx,
+                    inputIndex,
+                    retiringFederation.getRedeemScript(),
+                    retiringFederation.getFormatVersion()
+                );
+
+                inputIndex++;
+            }
         }
     }
 
