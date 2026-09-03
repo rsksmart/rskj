@@ -62,7 +62,30 @@ public final class CommonParsingUtils {
         }
     }
 
-    public static void requireSignatureComponent(byte[] component, String message) {
+    /**
+     * Canonical y_parity parse shared by the typed envelope and the authorization tuple: empty is
+     * zero, a leading zero or a payload wider than one byte is rejected, and the value must be 0 or 1.
+     */
+    public static byte parseCanonicalYParity(byte[] yParityData, String fieldLabel) {
+        if (yParityData == null || yParityData.length == 0) {
+            return 0;
+        }
+        requireCanonicalScalar(yParityData, fieldLabel);
+        if (yParityData.length > 1) {
+            throw new IllegalArgumentException(fieldLabel + " must fit in a single byte");
+        }
+        byte yParity = yParityData[0];
+        if (yParity != 0 && yParity != 1) {
+            throw new IllegalArgumentException(fieldLabel + " must be 0 or 1, got: " + (yParity & 0xFF));
+        }
+        return yParity;
+    }
+
+    /**
+     * Checks the component's numeric value, ignoring leading zeros, so it accepts non-minimal
+     * encodings. On a canonical-RLP path use requireDataWordBytes + requireCanonicalScalar instead.
+     */
+    public static void requireNormalizedSignatureComponent(byte[] component, String message) {
         if (component == null) {
             return;
         }

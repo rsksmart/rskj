@@ -552,12 +552,12 @@ class AuthorizationListCodecTest {
     }
 
     @Test
-    void privateDecodeNonce_null_returnsZero() throws Exception {
-        java.lang.reflect.Method decodeNonce = AuthorizationListCodec.class.getDeclaredMethod(
-                "decodeNonce", byte[].class);
-        decodeNonce.setAccessible(true);
+    void privateDecodeUnsignedBigInteger_null_returnsZero() throws Exception {
+        java.lang.reflect.Method decodeUnsignedBigInteger = AuthorizationListCodec.class.getDeclaredMethod(
+                "decodeUnsignedBigInteger", byte[].class);
+        decodeUnsignedBigInteger.setAccessible(true);
 
-        assertEquals(BigInteger.ZERO, decodeNonce.invoke(null, (Object) null));
+        assertEquals(BigInteger.ZERO, decodeUnsignedBigInteger.invoke(null, (Object) null));
     }
 
     @Test
@@ -748,7 +748,7 @@ class AuthorizationListCodecTest {
     void decodeTuple_oversizeSignatureRWithLeadingZero_reportsLengthError() {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
         byte[] tuple = rebuildTupleField(reference, 4,
-                RLP.encodeElement(withLeadingZero(BigIntegers.asUnsignedByteArray(reference.getSignature().getR()))));
+                RLP.encodeElement(zeroPaddedBeyondDataWord(reference.getSignature().getR())));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> decodeSingleTuple(tuple));
@@ -794,6 +794,18 @@ class AuthorizationListCodecTest {
         return padded;
     }
 
+    /**
+     * Always 33 bytes with a leading zero, so the length rule fires whatever the signature draw:
+     * r is only 32 bytes while r >= 2**248, so a bare prepend gives 32 bytes about 1 draw in 256.
+     */
+    private static byte[] zeroPaddedBeyondDataWord(BigInteger value) {
+        byte[] magnitude = BigIntegers.asUnsignedByteArray(value);
+        byte[] padded = new byte[Transaction.DATAWORD_LENGTH + 1];
+        int taken = Math.min(Transaction.DATAWORD_LENGTH, magnitude.length);
+        System.arraycopy(magnitude, magnitude.length - taken, padded, padded.length - taken, taken);
+        return padded;
+    }
+
     @Test
     void decodeTuple_overlongItemPrefixOnChainId_throws() {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
@@ -825,11 +837,6 @@ class AuthorizationListCodecTest {
                 ex.getMessage());
     }
 
-    private static byte[] withLeadingZero(byte[] value) {
-        byte[] padded = new byte[value.length + 1];
-        System.arraycopy(value, 0, padded, 1, value.length);
-        return padded;
-    }
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------

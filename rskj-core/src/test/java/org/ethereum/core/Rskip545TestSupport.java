@@ -264,7 +264,7 @@ public final class Rskip545TestSupport {
     ) {
         byte[][] fields = new byte[][]{
                 RLP.encodeByte(REGTEST_CHAIN_ID),
-                RLP.encodeElement(BigInteger.ZERO.toByteArray()),
+                RLP.encodeElement(new byte[0]),
                 RLP.encodeCoinNonNullZero(DEFAULT_MAX_PRIORITY),
                 RLP.encodeCoinNonNullZero(DEFAULT_MAX_FEE),
                 RLP.encodeElement(gasLimit.toByteArray()),
