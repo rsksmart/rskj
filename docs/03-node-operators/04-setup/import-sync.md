@@ -29,8 +29,8 @@ These instructions cover running the node from the **JAR file**, on **Mainnet** 
 | | Import sync |
 |---|---|
 | JAR (`java -cp … co.rsk.Start`) | Supported — this page |
-| Docker | Not documented. See [the note below](#docker-and-the-ubuntu-package) |
-| Ubuntu package / `systemd` service | Not documented. See [the note below](#docker-and-the-ubuntu-package) |
+| Docker | Supported, with a different procedure — see [Docker](#docker) |
+| Ubuntu package / `systemd` service | Supported, with a different procedure — see [Ubuntu package](#ubuntu-package) |
 | Regtest | Not supported. No bootstrap data is published for Regtest, and because the database is erased before the import is attempted, running `--import` there deletes the Regtest database and then fails |
 
 ## Before you start
@@ -260,11 +260,61 @@ The one-shot rule still applies. Use `--import` on the command line for the swit
 
 ## Docker and the Ubuntu package
 
-Import sync is documented here for the JAR only, and deliberately so.
+Import sync works under both, but neither runs the node the way the procedure above assumes. That procedure ends with *stop the node and start it again without the flag* — and these two restart the node for you.
 
-The hazard at the top of this page — that import erases the database on **every** start — is difficult to contain in a setup where the node restarts on its own. A container configured to import on start, or a `systemd` service whose configuration file has `database.import.enabled = true`, will erase and re-download its database on every restart and every reboot, indefinitely.
+So run the import as a **one-off invocation**, and keep `--import` out of anything that restarts: a `docker run` in a compose file, a `systemd` unit, or `database.import.enabled = true` in a configuration file will erase and re-download the database on every restart and every reboot, indefinitely.
 
-If you operate a node under Docker or the Ubuntu package and want to bootstrap it from published data, run the import as a **separate one-off invocation** of the JAR against the same data directory, then start your usual service normally with import disabled.
+### Docker
+
+The image passes its arguments through to the node, so `--import` can be given to `docker run`. Two things differ from the JAR:
+
+- **The volume has to be writable by the node.** The node runs as the unprivileged `rsk` user, and `/var/lib/rsk/.rsk` does not exist in the image — so Docker creates the mount point owned by `root`, and the import fails on its first write with `dbKind.properties (No such file or directory)`. Create the volume and hand it to `rsk` once, before importing.
+- **Set a maximum heap.** The image sets `DEFAULT_JVM_OPTS="-Xms4G"`, which is the *initial* heap, not a ceiling. Without `-Xmx` the JVM still sizes the maximum from the memory the container is given, so set both.
+
+```shell
+docker volume create rsk-data
+docker run --rm -u 0 -v rsk-data:/var/lib/rsk/.rsk \
+  --entrypoint chown rsksmart/rskj:latest -R rsk:rsk /var/lib/rsk/.rsk
+```
+
+Then import, mounting that volume at the `rsk` user's home so the database lands at `/var/lib/rsk/.rsk/<network>/database`:
+
+<Tabs>
+  <TabItem value="docker-mainnet" label="Mainnet" default>
+    ```shell
+    docker run --rm -v rsk-data:/var/lib/rsk/.rsk \
+      -e DEFAULT_JVM_OPTS="-Xms4G -Xmx4G" \
+      rsksmart/rskj:latest --import
+    ```
+  </TabItem>
+  <TabItem value="docker-testnet" label="Testnet">
+    ```shell
+    docker run --rm -v rsk-data:/var/lib/rsk/.rsk \
+      -e DEFAULT_JVM_OPTS="-Xms4G -Xmx4G" \
+      rsksmart/rskj:latest --testnet --import
+    ```
+  </TabItem>
+</Tabs>
+
+The container does not exit when the import finishes — the node carries on into normal operation. Watch for `Bootstrap data has successfully been imported` in the logs, stop the container, then start your usual container against the same volume **without** `--import`.
+
+The archive is downloaded and unpacked inside the container, under `/tmp`, which is the container's own writable layer rather than the volume. Allow roughly three times the archive size there, on top of the space the database needs in the volume.
+
+### Ubuntu package
+
+The package installs the JAR at `/usr/share/rsk/rsk.jar` and its configuration in `/etc/rsk`, and runs the node as the `rsk` user. Stop the service, run the same JAR once with `--import`, then start the service again:
+
+```shell
+sudo service rsk stop
+sudo -u rsk java -Xmx4G -cp /usr/share/rsk/rsk.jar co.rsk.Start --import
+sudo service rsk start
+```
+
+Three details matter here:
+
+- **Run it as the `rsk` user**, as above. The service runs as `rsk`, so an import run as `root` or as your own account leaves behind a database the service cannot read.
+- **There is no configuration flag to pass, and no network flag either.** RSKj reads `/etc/rsk/node.conf` on its own when that file exists, exactly as the service does. That file is a symlink to the network you chose at installation, and it sets the database location — `/var/lib/rsk/database/<network>`. See [switching networks](/node-operators/setup/configuration/switch-network) if you need to change it.
+- **Stop the import once it reports success.** As with Docker, the node continues into normal operation rather than exiting; interrupt it after `Bootstrap data has successfully been imported`, then hand the node back to the service.
 
 ## Related
 
