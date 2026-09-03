@@ -2297,7 +2297,7 @@ public class BridgeSupport {
         try {
             validateBlockMerkleRoot(merkleRoot, block.getHeader());
         } catch (InvalidMerkleRootException e) {
-            logger.error("[getBtcTransactionConfirmations] Error {} trying to validate block merkle root", e.getMessage());
+            logger.debug("[getBtcTransactionConfirmations] Error {} trying to validate block merkle root", e.getMessage());
             return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE;
         }
 
@@ -2854,7 +2854,7 @@ public class BridgeSupport {
         try {
             validateBtcTxRegistration(btcTxHash, height, pmtSerialized, btcTxSerialized);
         } catch (RegisterBtcTransactionException e) {
-            logger.error(
+            logger.debug(
                 "[registerFlyoverBtcTransaction] Error {} during validating registration for btcTx : {}",
                 e.getMessage(), btcTxHash
             );
@@ -3520,7 +3520,7 @@ public class BridgeSupport {
         CoinbaseInformation coinbaseInformation = provider.getCoinbaseInformation(blockHeader.getHash());
         if (coinbaseInformation == null || !coinbaseInformation.getWitnessMerkleRoot().equals(merkleRoot)) {
             String message = String.format(
-                "[validateBlockMerkleRoot] Coinbase information for block %s is not yet registered" +
+                "[validateBlockMerkleRoot] Coinbase information for block %s is not yet registered " +
                     "or its witness merkle root is not valid", blockHeader.getHash()
             );
             logger.trace(message);
