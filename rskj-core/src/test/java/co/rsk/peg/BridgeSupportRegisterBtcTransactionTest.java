@@ -254,7 +254,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(rskExecutionBlock.getNumber()).thenReturn(blockNumber);
 
         rskTx = mock(Transaction.class);
-        when(rskTx.getHash()).thenReturn(PegTestUtils.createHash3(1));
+        when(rskTx.getHash()).thenReturn(RskTestUtils.createHash(1));
     }
 
     private BridgeSupport buildBridgeSupport(ActivationConfig.ForBlock activations) {
@@ -794,7 +794,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             assertTrue(retiringFederationUtxos.isEmpty());
 
             assertEquals(1, pegoutsWaitingForConfirmations.getEntries(activations).size());
-            Entry pegoutWaitingForConfirmationEntry = pegoutsWaitingForConfirmations.getEntries(activations).stream().findFirst().get();
+            Entry pegoutWaitingForConfirmationEntry = pegoutsWaitingForConfirmations.getEntries(activations).stream().findFirst().orElseThrow();
             BtcTransaction refundPegout = pegoutWaitingForConfirmationEntry.getBtcTransaction();
             Sha256Hash refundPegoutHash = refundPegout.getHash();
             List<Coin> refundPegoutOutpointValues = extractOutpointValues(refundPegout);
