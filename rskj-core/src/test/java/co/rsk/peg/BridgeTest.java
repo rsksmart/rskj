@@ -558,7 +558,7 @@ class BridgeTest {
                 Transaction rskTx = mock(Transaction.class);
                 when(rskTx.getSender(any(SignatureCache.class))).thenReturn(federatorAddress);
 
-                bridge = bridgeBuilder
+                Bridge bridge = bridgeBuilder
                     .activationConfig(genesisConfig)
                     .bridgeSupport(bridgeSupport)
                     .transaction(rskTx)
@@ -732,7 +732,7 @@ class BridgeTest {
             }
 
             @Test
-            void registerFlyoverBtcTransaction_negativeHeight_shouldReturnValidationsError_shouldNotMarkHashAsUsed() throws VMException {
+            void registerFlyoverBtcTransaction_negativeHeight_shouldReturnValidationsError_shouldNotMarkHashAsUsed() throws IOException, VMException {
                 // Arrange
                 int height = -1;
                 PartialMerkleTree pmt = createValidPmtForTransactions(List.of(flyoverTx), networkParameters);
@@ -752,7 +752,7 @@ class BridgeTest {
             }
 
             @Test
-            void registerFlyoverBtcTransaction_notEnoughConfirmations_shouldReturnValidationsError_shouldNotMarkHashAsUsed() throws VMException {
+            void registerFlyoverBtcTransaction_notEnoughConfirmations_shouldReturnValidationsError_shouldNotMarkHashAsUsed() throws IOException, VMException {
                 // Arrange
                 PartialMerkleTree pmt = createValidPmtForTransactions(List.of(flyoverTx), networkParameters);
 
@@ -771,7 +771,7 @@ class BridgeTest {
             }
 
             @Test
-            void registerFlyoverBtcTransaction_wrongPMTSize_shouldReturnGenericError_shouldNotMarkHashAsUsed() throws VMException {
+            void registerFlyoverBtcTransaction_wrongPMTSize_shouldReturnGenericError_shouldNotMarkHashAsUsed() throws IOException, VMException {
                 // Arrange
                 byte[] pmtWithWrongSize = new byte[]{};
                 byte[] data = encodeRegisterFlyoverBtcTransaction(
@@ -789,7 +789,7 @@ class BridgeTest {
             }
 
             @Test
-            void registerFlyoverBtcTransaction_pmtNonParseable_shouldReturnGenericError_shouldNotMarkHashAsUsed() throws VMException {
+            void registerFlyoverBtcTransaction_pmtNonParseable_shouldReturnGenericError_shouldNotMarkHashAsUsed() throws IOException, VMException {
                 // Arrange
                 PartialMerkleTree pmt = createValidPmtForTransactions(List.of(flyoverTx), networkParameters);
                 byte[] pmtSerialized = pmt.bitcoinSerialize();
@@ -812,9 +812,8 @@ class BridgeTest {
             }
 
             @Test
-            void registerFlyoverBtcTransaction_pmtNotInMerkleRoot_shouldReturnValidationsError_shouldNotMarkHashAsUsed() throws VMException {
+            void registerFlyoverBtcTransaction_pmtNotInMerkleRoot_shouldReturnValidationsError_shouldNotMarkHashAsUsed() throws IOException, VMException {
                 // Arrange
-                //
                 PartialMerkleTree pmtForAnotherTx = createValidPmtForTransactions(List.of(anotherFlyoverTx), networkParameters);
 
                 byte[] data = encodeRegisterFlyoverBtcTransaction(
@@ -832,7 +831,7 @@ class BridgeTest {
             }
 
             @Test
-            void registerFlyoverBtcTransaction_withNoInputs_shouldReturnGenericError_shouldNotMarkHashAsUsed() throws VMException {
+            void registerFlyoverBtcTransaction_withNoInputs_shouldReturnGenericError_shouldNotMarkHashAsUsed() throws IOException, VMException {
                 // Arrange
                 BtcTransaction btcTxNoInputs = new BtcTransaction(networkParameters);
                 Address userAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "userAddress");
@@ -911,7 +910,7 @@ class BridgeTest {
                 assertEquals(expectedResponseCode.value(), response);
             }
 
-            private void assertFlyoverDerivationHashNotUsed(BtcTransaction tx) {
+            private void assertFlyoverDerivationHashNotUsed(BtcTransaction tx) throws IOException {
                 bridgeSupport.save();
 
                 // a registered flyover pegin is marked by its derivation hash, not by the btc tx hash
