@@ -540,7 +540,7 @@ public final class BridgeSupportTestUtil {
     }
 
     public static void assertEventWasNotEmitted(List<LogInfo> logs, CallTransaction.Function bridgeEvent) {
-        Optional<LogInfo> event = getLogsBySignature(logs, bridgeEvent);
-        assertFalse(event.isPresent());
+        List<LogInfo> event = getLogsBySignature(logs, bridgeEvent);
+        assertEquals(0, event.size());
     }
 }
