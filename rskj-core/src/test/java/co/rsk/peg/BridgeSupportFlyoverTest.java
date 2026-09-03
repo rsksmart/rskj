@@ -2964,7 +2964,7 @@ class BridgeSupportFlyoverTest {
     }
 
     @Test
-    void registerFlyoverBtcTransaction_validationsForRegisterBtcTransaction_returns_false()
+    void registerFlyoverBtcTransaction_validateBtcTxRegistration_returns_false()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -3001,7 +3001,7 @@ class BridgeSupportFlyoverTest {
 
     @Test
     void registerFlyoverBtcTransaction_amount_sent_is_0()
-        throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+        throws BlockStoreException, IOException, BridgeIllegalArgumentException, RegisterBtcTransactionException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
@@ -3030,7 +3030,7 @@ class BridgeSupportFlyoverTest {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsMainnet.getFederationConstants());
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
-        doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
+        doNothing().when(bridgeSupport).validateBtcTxRegistration(any(), anyInt(), any(), any());
 
         Address btcAddress = Address.fromBase58(
             btcRegTestParams,
@@ -3064,7 +3064,7 @@ class BridgeSupportFlyoverTest {
 
     @Test
     void registerFlyoverBtcTransaction_surpasses_locking_cap_and_shouldTransfer_is_true()
-        throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+        throws IOException, BlockStoreException, BridgeIllegalArgumentException, RegisterBtcTransactionException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
@@ -3109,7 +3109,7 @@ class BridgeSupportFlyoverTest {
         ));
 
         when(bridgeSupport.getActiveFederation()).thenReturn(genesisFederation);
-        when(bridgeSupport.validationsForRegisterBtcTransaction(any(), anyInt(), any(), any())).thenReturn(true);
+        doNothing().when(bridgeSupport).validateBtcTxRegistration(any(), anyInt(), any(), any());
 
         Address btcAddress = Address.fromBase58(
             btcRegTestParams,
@@ -3145,7 +3145,7 @@ class BridgeSupportFlyoverTest {
 
     @Test
     void registerFlyoverBtcTransaction_surpasses_locking_cap_and_shouldTransfer_is_false()
-        throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+        throws IOException, BlockStoreException, BridgeIllegalArgumentException, RegisterBtcTransactionException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
@@ -3192,7 +3192,7 @@ class BridgeSupportFlyoverTest {
         ));
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
-        doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
+        doNothing().when(bridgeSupport).validateBtcTxRegistration(any(), anyInt(), any(), any());
 
         Address btcAddress = Address.fromBase58(
             btcRegTestParams,
@@ -3227,7 +3227,7 @@ class BridgeSupportFlyoverTest {
 
     @Test
     void registerFlyoverBtcTransaction_surpasses_locking_cap_and_tries_to_register_again()
-        throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+        throws IOException, BlockStoreException, BridgeIllegalArgumentException, RegisterBtcTransactionException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
@@ -3271,7 +3271,7 @@ class BridgeSupportFlyoverTest {
         ));
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
-        doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
+        doNothing().when(bridgeSupport).validateBtcTxRegistration(any(), anyInt(), any(), any());
         doReturn(
             Optional.of(Coin.COIN), // The first time we simulate a lower locking cap than the value to register, to force the reimburse
             Optional.of(Coin.FIFTY_COINS) // The next time we simulate a height locking cap, to verify the user can't attempt to register the already reimbursed tx
@@ -3330,7 +3330,7 @@ class BridgeSupportFlyoverTest {
 
     @Test
     void registerFlyoverBtcTransaction_OK()
-        throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+        throws IOException, BlockStoreException, BridgeIllegalArgumentException, RegisterBtcTransactionException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
@@ -3372,7 +3372,7 @@ class BridgeSupportFlyoverTest {
         Federation genesisFederation = FederationTestUtils.getGenesisFederationLegacy(federationConstantsRegtest);
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
-        doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
+        doNothing().when(bridgeSupport).validateBtcTxRegistration(any(), anyInt(), any(), any());
 
         Address btcAddress = Address.fromBase58(
             btcRegTestParams,
