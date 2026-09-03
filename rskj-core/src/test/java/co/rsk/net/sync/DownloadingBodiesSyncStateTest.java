@@ -36,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.InetAddress;
@@ -231,17 +232,43 @@ class DownloadingBodiesSyncStateTest {
     }
 
     /**
-     * One silent peer is still that peer's problem: with nobody else to compare against, "everyone
-     * timed out" carries no information, so the normal per-peer accounting must still apply.
+     * The local-stall inference must be bounded, or it livelocks.
+     *
+     * <p>If the peer set genuinely goes bad and stays bad, every tick looks exactly like a local
+     * stall - all peers time out together - so without a limit the node explains it away forever,
+     * never penalises anyone, never replaces a peer, and imports nothing. That happened on a live
+     * sync: 96 consecutive ticks across 48 minutes at height 5.6M with zero blocks imported and
+     * every peer still nominally connected.
+     *
+     * <p>After MAX_CONSECUTIVE_LOCAL_STALL_TICKS the benefit of the doubt has to be withdrawn so
+     * the normal per-peer accounting can start discarding the dead peers.
      */
     @Test
-    void aLoneSilentPeerIsStillCountedAgainstIt() {
+    void aPersistentAllPeerTimeoutStopsBeingTreatedAsALocalStall() {
         DownloadingBodiesSyncState state = stateWithInFlight(peer);
+        Peer b = mock(Peer.class);
+        when(b.getPeerNodeID()).thenReturn(new NodeID(new byte[]{7}));
 
-        state.tick(Duration.ofSeconds(600));
+        // Must track MAX_CONSECUTIVE_LOCAL_STALL_TICKS in DownloadingBodiesSyncState; TestUtils
+        // cannot read a private static, and exposing the constant just for a test is worse.
+        int bound = 4;
 
-        Map<Peer, Integer> timeouts = TestUtils.getInternalState(state, "consecutiveTimeoutsByPeer");
-        assertEquals(1, timeouts.get(peer), "a lone silent peer should still be counted");
+        // Every tick times out everything we are waiting on, over and over, exactly as observed.
+        for (int i = 0; i < bound + 3; i++) {
+            DownloadingBodiesSyncState s = stateWithInFlight(peer, b);
+            TestUtils.setInternalState(s, "consecutiveLocalStallTicks", i);
+            s.tick(Duration.ofSeconds(600));
+
+            Map<Peer, Integer> timeouts = TestUtils.getInternalState(s, "consecutiveTimeoutsByPeer");
+            if (i < bound) {
+                assertTrue(timeouts.isEmpty(),
+                        "tick " + i + " is within the patience bound and must not blame peers");
+            } else {
+                assertFalse(timeouts.isEmpty(),
+                        "tick " + i + " is past the patience bound; peers must start being charged"
+                                + " or the sync can never recover");
+            }
+        }
     }
 
     /** Builds a state with one outstanding body request per given peer. */

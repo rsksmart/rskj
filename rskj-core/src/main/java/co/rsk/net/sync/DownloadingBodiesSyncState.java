@@ -72,6 +72,8 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
      */
     private static final int MIN_PEERS_TO_INFER_LOCAL_STALL = 2;
 
+    private int consecutiveLocalStallTicks;
+
     /**
      * Fraction of the awaited peers that must go silent together before we read it as our own stall
      * rather than theirs. Requiring *all* of them was too strict to be useful: a stall rarely lands
@@ -80,6 +82,21 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
      * peers were still discarded around them.
      */
     private static final double LOCAL_STALL_PEER_FRACTION = 2.0 / 3.0;
+
+    /**
+     * How many consecutive ticks we are willing to explain away as our own stall.
+     *
+     * <p>Without a bound this inference livelocks. If the peer set genuinely goes bad and stays
+     * bad, every tick looks identical - all peers time out together - so it is read as a local
+     * stall forever, nobody is ever penalised or replaced, and the same unresponsive peers are
+     * re-requested indefinitely. Observed in the field: 96 consecutive ticks over 48 minutes with
+     * zero blocks imported, on a node whose peers were all still nominally connected.
+     *
+     * <p>A real local stall is a GC pause, a flush or a slow disk: seconds, not minutes. After this
+     * many ticks the benefit of the doubt is withdrawn and the normal per-peer timeout accounting
+     * takes over, which is what eventually discards dead peers and lets the round recover.
+     */
+    private static final int MAX_CONSECUTIVE_LOCAL_STALL_TICKS = 4;
 
     /**
      * Half-minute throttling window. A peer counts the messages it receives from us inside each
@@ -271,6 +288,10 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         boolean wasSaturated = inFlightCount(peer) >= allowanceOf(peer);
         untrackInFlight(peer, requestId);
         consecutiveTimeoutsByPeer.put(peer, 0);
+        // A body actually arrived, so whatever we were is not stalled. Clear the local-stall
+        // patience counter, otherwise a run of bad ticks earlier would still count against the
+        // bound long after the node recovered.
+        consecutiveLocalStallTicks = 0;
         if (wasSaturated) {
             allowanceByPeer.put(peer, Math.min(maxInFlightPerPeer, allowanceOf(peer) + 1));
         }
@@ -356,15 +377,27 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
             }
         }
 
-        if (isLocalStall(peersAwaited, peersThatTimedOut)) {
+        boolean looksLocal = isLocalStall(peersAwaited, peersThatTimedOut);
+        if (looksLocal && consecutiveLocalStallTicks < MAX_CONSECUTIVE_LOCAL_STALL_TICKS) {
             // Everyone went quiet at once, which is not something independent peers do. Far more
             // likely we stalled - a long GC, the host swapping, a slow disk - and could not read
             // their answers in time. Penalising them for that costs the entire peer set, and then
             // the round has to rediscover it while we are still stalled. The requests have already
             // been re-queued, so the round continues; we simply do not blame anyone for it.
-            logger.warn("{} of {} peers timed out in the same tick; treating it as a local stall, not peer failure",
-                    peersThatTimedOut.size(), peersAwaited.size());
+            //
+            // Only for a bounded number of ticks though: see MAX_CONSECUTIVE_LOCAL_STALL_TICKS.
+            consecutiveLocalStallTicks++;
+            logger.warn("{} of {} peers timed out in the same tick; treating it as a local stall, not peer failure"
+                            + " ({} of {} consecutive ticks)",
+                    peersThatTimedOut.size(), peersAwaited.size(),
+                    consecutiveLocalStallTicks, MAX_CONSECUTIVE_LOCAL_STALL_TICKS);
         } else {
+            if (looksLocal) {
+                logger.warn("{} consecutive ticks looked like a local stall; that is too long to be one."
+                                + " Resuming normal per-peer timeout accounting so dead peers get replaced.",
+                        consecutiveLocalStallTicks);
+            }
+            consecutiveLocalStallTicks = 0;
             for (Peer peer : peersThatTimedOut) {
                 int ticks = consecutiveTimeoutsByPeer.merge(peer, 1, Integer::sum);
                 if (ticks >= MAX_CONSECUTIVE_TIMEOUT_TICKS_PER_PEER) {
