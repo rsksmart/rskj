@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -109,5 +110,33 @@ class NetworkConfigsActivationTest {
             }
         }
         assertTrue(missing.isEmpty(), network + " is missing hardforkActivationHeights for " + missing);
+    }
+
+    /** Known historical inversions, as "<earlierEnum>><laterEnum>". Extend only with a reason in the commit message. */
+    private static final Set<String> KNOWN_ENUM_ORDER_INVERSIONS = Set.of(
+        "papyrus200>twoToThree",     // twoToThree shipped before papyrus200 on main/testnet/testnet2
+        "afterBridgeSync>orchid");   // orchid is active from genesis on testnet/testnet2; afterBridgeSync is not
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("networkNames")
+    void enabledHeightsAreMonotonicInEnumOrder(String network) {
+        Map<String, Long> heights = activationHeights(loadNetwork(network));
+        List<String> inversions = new ArrayList<>();
+        String prevName = null;
+        long prevHeight = -1;
+        for (NetworkUpgrade upgrade : NetworkUpgrade.values()) {
+            Long h = heights.get(upgrade.getName());
+            if (h == null || h < 0) {
+                continue; // unconfigured (genesis) or disabled
+            }
+            if (prevName != null && h < prevHeight
+                && !KNOWN_ENUM_ORDER_INVERSIONS.contains(prevName + ">" + upgrade.getName())) {
+                inversions.add(network + ": " + prevName + "=" + prevHeight + " > " + upgrade.getName() + "=" + h);
+            }
+            prevName = upgrade.getName();
+            prevHeight = h;
+        }
+        assertTrue(inversions.isEmpty(),
+            "new enum-order inversion (add to KNOWN_ENUM_ORDER_INVERSIONS only with a documented reason): " + inversions);
     }
 }
