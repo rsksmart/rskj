@@ -50,14 +50,7 @@ import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.anyBoolean;
@@ -5788,7 +5781,7 @@ class BridgeSupportTest {
         Sha256Hash merkleRoot = BitcoinTestUtils.createHash(1);
         BtcBlock btcBlock = mock(BtcBlock.class);
         when(btcBlock.getMerkleRoot()).thenReturn(merkleRoot);
-        assertTrue(bridgeSupport.isBlockMerkleRootValid(merkleRoot, btcBlock));
+        assertDoesNotThrow(() -> bridgeSupport.validateBlockMerkleRoot(merkleRoot, btcBlock));
     }
 
     @Test
@@ -5811,7 +5804,7 @@ class BridgeSupportTest {
         Sha256Hash merkleRoot = BitcoinTestUtils.createHash(1);
         BtcBlock btcBlock = mock(BtcBlock.class);
         when(btcBlock.getMerkleRoot()).thenReturn(Sha256Hash.ZERO_HASH);
-        assertFalse(bridgeSupport.isBlockMerkleRootValid(merkleRoot, btcBlock));
+        assertThrows(InvalidMerkleRootException.class, () -> bridgeSupport.validateBlockMerkleRoot(merkleRoot, btcBlock));
     }
 
     @Test
@@ -5839,7 +5832,7 @@ class BridgeSupportTest {
         when(btcBlock.getMerkleRoot()).thenReturn(Sha256Hash.ZERO_HASH);
         when(btcBlock.getHash()).thenReturn(Sha256Hash.ZERO_HASH);
 
-        assertFalse(bridgeSupport.isBlockMerkleRootValid(BitcoinTestUtils.createHash(1), btcBlock));
+        assertThrows(InvalidMerkleRootException.class, () -> bridgeSupport.validateBlockMerkleRoot(BitcoinTestUtils.createHash(1), btcBlock));
     }
 
     @Test
@@ -5868,7 +5861,7 @@ class BridgeSupportTest {
         when(btcBlock.getMerkleRoot()).thenReturn(Sha256Hash.ZERO_HASH);
         when(btcBlock.getHash()).thenReturn(Sha256Hash.ZERO_HASH);
 
-        assertFalse(bridgeSupport.isBlockMerkleRootValid(BitcoinTestUtils.createHash(2), btcBlock));
+        assertThrows(InvalidMerkleRootException.class, () -> bridgeSupport.validateBlockMerkleRoot(BitcoinTestUtils.createHash(2), btcBlock));
     }
 
     @Test
@@ -5898,7 +5891,7 @@ class BridgeSupportTest {
         when(btcBlock.getMerkleRoot()).thenReturn(Sha256Hash.ZERO_HASH);
         when(btcBlock.getHash()).thenReturn(Sha256Hash.ZERO_HASH);
 
-        assertTrue(bridgeSupport.isBlockMerkleRootValid(merkleRoot, btcBlock));
+        assertDoesNotThrow(() -> bridgeSupport.validateBlockMerkleRoot(merkleRoot, btcBlock));
     }
 
     @Test
@@ -6906,7 +6899,7 @@ class BridgeSupportTest {
 
         byte[] data = Hex.decode("ab");
 
-        assertFalse(bridgeSupport.validationsForRegisterBtcTransaction(peginTx.getHash(), -1, data, data));
+        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.validateBtcTxRegistration(peginTx.getHash(), -1, data, data));
     }
 
     @Test
@@ -6928,7 +6921,7 @@ class BridgeSupportTest {
 
         byte[] data = Hex.decode("ab");
 
-        assertFalse(bridgeSupport.validationsForRegisterBtcTransaction(peginTx.getHash(), 100, data, data));
+        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.validateBtcTxRegistration(peginTx.getHash(), 100, data, data));
     }
 
     @Test
@@ -6959,7 +6952,7 @@ class BridgeSupportTest {
             .withBtcBlockStoreFactory(mockFactory)
             .build();
 
-        assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(
+        assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.validateBtcTxRegistration(
             btcTx.getHash(),
             btcTxHeight,
             pmtSerialized,
@@ -6998,7 +6991,7 @@ class BridgeSupportTest {
             .withBtcBlockStoreFactory(mockFactory)
             .build();
 
-        assertFalse(bridgeSupport.validationsForRegisterBtcTransaction(btcTx.getHash(), 0, pmt.bitcoinSerialize(), btcTx.bitcoinSerialize()));
+        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.validateBtcTxRegistration(btcTx.getHash(), 0, pmt.bitcoinSerialize(), btcTx.bitcoinSerialize()));
     }
 
     @Test
@@ -7030,7 +7023,7 @@ class BridgeSupportTest {
             .build();
 
         assertThrows(BridgeIllegalArgumentException.class,
-            () -> bridgeSupport.validationsForRegisterBtcTransaction(btcTx.getHash(), 0, pmt.bitcoinSerialize(), btcTx.bitcoinSerialize()));
+            () -> bridgeSupport.validateBtcTxRegistration(btcTx.getHash(), 0, pmt.bitcoinSerialize(), btcTx.bitcoinSerialize()));
     }
 
 
@@ -7072,7 +7065,7 @@ class BridgeSupportTest {
         Sha256Hash hash = btcTx.getHash();
         byte[] pmtSerialized = pmt.bitcoinSerialize();
         byte[] btcTxSerialized = btcTx.bitcoinSerialize();
-        assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(
+        assertThrows(VerificationException.class, () -> bridgeSupport.validateBtcTxRegistration(
             hash,
             btcTxHeight,
             pmtSerialized,
@@ -7118,7 +7111,7 @@ class BridgeSupportTest {
         Sha256Hash hash = btcTx.getHash();
         byte[] pmtSerialized = pmt.bitcoinSerialize();
         byte[] decode = Hex.decode("00000000000100");
-        assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(
+        assertThrows(VerificationException.class, () -> bridgeSupport.validateBtcTxRegistration(
             hash,
             0,
             pmtSerialized,
@@ -7175,7 +7168,7 @@ class BridgeSupportTest {
             signatureCache
         );
 
-        assertFalse(bridgeSupport.validationsForRegisterBtcTransaction(peginTx.getHash(), height, pmt.bitcoinSerialize(), peginTx.bitcoinSerialize()));
+        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.validateBtcTxRegistration(peginTx.getHash(), height, pmt.bitcoinSerialize(), peginTx.bitcoinSerialize()));
     }
 
     @Test
@@ -7239,7 +7232,7 @@ class BridgeSupportTest {
             .withSignatureCache(signatureCache)
             .build();
 
-        assertTrue(bridgeSupport.validationsForRegisterBtcTransaction(
+        assertDoesNotThrow(() -> bridgeSupport.validateBtcTxRegistration(
             peginTx.getHash(),
             height,
             pmt.bitcoinSerialize(),
