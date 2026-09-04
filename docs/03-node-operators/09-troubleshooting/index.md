@@ -45,7 +45,7 @@ If what you need is not in this section, **contact us** without hesitation throu
 - The above command removes the blocks with number 1000001 or higher.
 
 ### DbMigrate: Migrate Between Databases
-- This tool allows the user to migrate between different supported databases such as rocksdb and leveldb.
+- This tool allows the user to migrate an existing database between engines — chiefly to move a node off the deprecated `leveldb` and onto `rocksdb`, which is the default and the recommended engine. It converts the database you already have, downloading nothing.
 
 How to use
 - To use the DbMigrate tool to migrate between databases, we will need a tool class and CLI arguments.
@@ -53,8 +53,10 @@ How to use
 
 **Required CLI arguments:**
 - `args[0]` - database target where we are going to insert the information from the current selected database.
-    - Note: You cannot migrate to the same database or an error will be thrown. It is highly recommended to turn off the node in order to perform the migration since latest data could be lost.> > - Example migrating from leveldb to rocksdb:
-- `java -cp rsk-core-<VERSION>.jar co.rsk.cli.tools.DbMigrate rocksdb`
+    - Note: You cannot migrate to the same database or an error will be thrown. It is highly recommended to turn off the node in order to perform the migration since latest data could be lost.
+    - Example migrating from `leveldb` to `rocksdb`:
+
+      `java -cp rsk-core-<VERSION>.jar co.rsk.cli.tools.DbMigrate rocksdb`
 
 ## Docker Issues
 

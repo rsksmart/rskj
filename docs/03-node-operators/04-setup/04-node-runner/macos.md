@@ -163,13 +163,13 @@ In order to build, run or debug RSKj, we use `.vscode/launch.json`. Here we can 
             "name": "Run RSK Start",
             "request": "launch",
             "mainClass": "co.rsk.Start",
-            "args" : "--testnet -Xkeyvalue.datasource=leveldb"
+            "args" : "--testnet -Xdatabase.dir=/path/to/database"
         }
     ]
 }
 ```
 
-In this example we are going to run the application with the following arguments: `--testnet -Xkeyvalue.datasource=leveldb`.
+In this example we are going to run the application with the following arguments: `--testnet -Xdatabase.dir=/path/to/database`.
 
 #### Running the project
 

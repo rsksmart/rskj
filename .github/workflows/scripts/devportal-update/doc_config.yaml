@@ -31,6 +31,14 @@ files:
     tags: [rsk, rskj, node, node operators, experimental features]
     description: "All the experimental features released in RSKj  are explained in this section, how to enable and what's the purpose of the feature"
 
+  - input: docs/03-node-operators/04-setup/import-sync.md
+    output: transformed/03-node-operators/04-setup/import-sync.md
+    sidebar_label: Import Sync
+    sidebar_position: 4.5
+    title: Bootstrap a node using Import Sync
+    tags: [import, sync, bootstrap, rskj, node, node operators, rootstock, mainnet, testnet, how-to]
+    description: "Bootstrap an RSKj node from published, signed bootstrap data instead of syncing from genesis."
+
   # Docs from 03-node-operators/04-setup/02-installation
   - input: docs/03-node-operators/04-setup/02-installation/docker.md
     output: transformed/03-node-operators/04-setup/02-installation/docker.md
