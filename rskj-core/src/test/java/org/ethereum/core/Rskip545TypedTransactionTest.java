@@ -296,7 +296,7 @@ class Rskip545TypedTransactionTest {
 
     @ParameterizedTest(name = "rskip543={0}, rskip546={1}, rskip545={2} -> blocked={3}")
     @MethodSource("type4ActivationMatrix")
-    void isTypedTransactionNotAllowed_respectsRskip545Gate(
+    void isTypedTransactionNotAllowed_respectsType4ActivationGates(
             boolean rskip543, boolean rskip546, boolean rskip545, boolean expectBlocked) {
         Transaction tx = createType4(EMPTY_DATA);
         ActivationConfig.ForBlock activations = mockActivations(rskip543, rskip546, rskip545);
@@ -305,10 +305,13 @@ class Rskip545TypedTransactionTest {
     }
 
     private static Stream<Arguments> type4ActivationMatrix() {
+        // Mirrors Type4RawTransactionParser.validate: RSKIP-543, RSKIP-546, then RSKIP-545.
         return Stream.of(
                 Arguments.of(false, false, false, true),
                 Arguments.of(true, false, false, true),
+                Arguments.of(true, false, true, true),
                 Arguments.of(true, true, false, true),
+                Arguments.of(false, true, true, true),
                 Arguments.of(true, true, true, false)
         );
     }

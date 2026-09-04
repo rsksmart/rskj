@@ -26,7 +26,6 @@ import org.ethereum.vm.GasCost;
 
 import java.math.BigInteger;
 import java.security.SignatureException;
-import java.util.Arrays;
 
 
 public class SetCodeAuthorizationTransactionExecutor {
@@ -40,10 +39,10 @@ public class SetCodeAuthorizationTransactionExecutor {
         RskAddress authority = checkRecoveredAuthority(authorization);
 
         byte[] code = repository.getCode(authority);
-        byte[] currentNonce  = repository.getNonce(authority).toByteArray();
+        BigInteger currentNonce  = repository.getNonce(authority);
 
         verifyAuthorityCode(code);
-        verifyAuthorityNonce(authorization.getNonce(), currentNonce);
+        verifyAuthorityNonce(authorization.getNonceAsInteger(), currentNonce);
 
         long refund = calculateRefund(code);
 
@@ -67,6 +66,8 @@ public class SetCodeAuthorizationTransactionExecutor {
     }
 
     private RskAddress checkRecoveredAuthority(SetCodeAuthorization setCodeAuthorization) {
+        setCodeAuthorization.verifyYParity();
+        setCodeAuthorization.verifySignatureComponents();
         setCodeAuthorization.verifyLowS();
 
         byte[] messageHash =  setCodeAuthorization.getSigningHash();
@@ -75,7 +76,8 @@ public class SetCodeAuthorizationTransactionExecutor {
         try {
             key = Secp256k1.getInstance().signatureToKey(messageHash, setCodeAuthorization.getSignature());
 
-        } catch (SignatureException e) {
+        } catch (SignatureException | IllegalArgumentException e) {
+            // Bouncy Castle reports an r that is not a curve x coordinate as IllegalArgumentException.
             throw new IllegalStateException("Signature recovery failed", e);
         }
 
@@ -85,7 +87,7 @@ public class SetCodeAuthorizationTransactionExecutor {
 
         RskAddress authority = new RskAddress(key.getAddress());
 
-        if (authority.equals(RskAddress.nullAddress())) {
+        if (RskAddress.nullAddress().equals(authority) || RskAddress.ZERO_ADDRESS.equals(authority)) {
             throw new IllegalStateException("Recovered authority is zero address");
         }
 
@@ -103,8 +105,8 @@ public class SetCodeAuthorizationTransactionExecutor {
     }
 
 
-    private void verifyAuthorityNonce(byte[] expectedNonce, byte[] currentNonce) {
-        if (!Arrays.equals(currentNonce, expectedNonce)) {
+    private void verifyAuthorityNonce(BigInteger expectedNonce, BigInteger currentNonce) {
+        if (!currentNonce.equals(expectedNonce)) {
             throw new IllegalStateException("Authority nonce mismatch");
         }
     }

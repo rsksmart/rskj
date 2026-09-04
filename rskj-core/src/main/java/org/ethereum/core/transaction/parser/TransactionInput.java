@@ -102,11 +102,15 @@ public final class TransactionInput {
 
     public static TransactionInput fromCallArguments(CallArguments args, Supplier<String> nonceSupplier) {
         Objects.requireNonNull(args, "args");
+        TransactionTypePrefix typePrefix = TransactionTypePrefix.fromHex(args.getType(), args.getRskSubtype());
+        if (typePrefix.isRskNamespace()) {
+            throw invalidParamError(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE);
+        }
+
         if (args.getNonce() == null && nonceSupplier != null) {
             args.setNonce(nonceSupplier.get());
         }
 
-        TransactionTypePrefix typePrefix = TransactionTypePrefix.fromHex(args.getType(), args.getRskSubtype());
         BigInteger nonce = Optional.ofNullable(args.getNonce())
                 .map(HexUtils::strHexOrStrNumberToBigInteger)
                 .orElse(null);
@@ -128,11 +132,11 @@ public final class TransactionInput {
 
         return new TransactionInput(
                 typePrefix,
-                nonce == null ? null : nonce.toByteArray(),
+                nonce == null ? null : CommonParsingUtils.unsignedBytes(nonce),
                 gasPrice,
                 maxPriorityFeePerGas,
                 maxFeePerGas,
-                gasLimit.toByteArray(),
+                CommonParsingUtils.unsignedBytes(gasLimit),
                 receiveAddress,
                 value,
                 data,

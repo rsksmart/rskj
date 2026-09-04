@@ -61,7 +61,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings("squid:S1607") // many @Disabled annotations for diverse reasons
 class TransactionTest {
@@ -195,6 +199,23 @@ class TransactionTest {
     byte[] testValue = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(10000000000000000L));
     byte[] testData = Hex.decode("");
     byte[] testInit = Hex.decode("");
+
+    @Test
+    void getNonce_returnsDefensiveCopy() {
+        Transaction tx = Transaction.builder()
+                .nonce(new byte[]{0x05})
+                .gasPrice(testGasPrice)
+                .gasLimit(testGasLimit)
+                .receiveAddress(testReceiveAddress)
+                .value(testValue)
+                .data(testData)
+                .build();
+
+        tx.getNonce()[0] ^= 0x01;
+
+        assertArrayEquals(new byte[]{0x05}, tx.getNonce());
+        assertNotSame(tx.getNonce(), tx.getNonce());
+    }
 
     @Disabled
     @Test
