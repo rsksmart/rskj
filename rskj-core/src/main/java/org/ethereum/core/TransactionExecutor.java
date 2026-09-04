@@ -416,6 +416,11 @@ public class TransactionExecutor {
                     track.setupContract(targetAddress);
                 }
             } catch (VMException | RuntimeException e) {
+                if (!localCall && activations.isActive(ConsensusRule.RSKIP560)) {
+                    gasLeftover = 0;
+                    gasUsed = txGasLimit;
+                    execError(e);
+                }
                 result.setException(e);
             }
             result.spendGas(gasUsed);
@@ -468,7 +473,8 @@ public class TransactionExecutor {
 
     private void execError(Throwable err) {
         logger.error("execError: ", err);
-        executionError = err.getMessage();
+        String message = err.getMessage();
+        executionError = message != null && !message.isEmpty() ? message : err.getClass().getSimpleName();
     }
 
     private void execError(String err) {
@@ -621,40 +627,31 @@ public class TransactionExecutor {
         //Transaction sender is stored in cache
         signatureCache.storeSender(tx);
 
-        // Should include only LogInfo's that was added during not rejected transactions
-        List<LogInfo> logsFromNonRejectedTransactions = result.logsFromNonRejectedTransactions();
+        refundGas();
 
-        TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
-                .gasLeftover(BigInteger.valueOf(gasLeftover))
-                .logs(logsFromNonRejectedTransactions)
-                .result(result.getHReturn());
+        Coin refund = calculateRefund();
+        Coin fee = calculateFee();
 
-        long gasRefund = refundGas();
-
-        TransactionExecutionSummary summary = buildTransactionExecutionSummary(summaryBuilder, gasRefund);
-
-        // Refund for gas leftover
+        // Refund unused/refunded gas to sender
         RskAddress txSender = tx.getSender(signatureCache);
-        track.addBalance(txSender, summary.getLeftover().add(summary.getRefund()));
-        logger.trace("Pay total refund to sender: [{}], refund val: [{}]", txSender, summary.getRefund());
-
-        // Transfer fees to miner
-        Coin summaryFee = summary.getFee();
+        track.addBalance(txSender, refund);
+        logger.trace("Pay total refund to sender: [{}], refund val: [{}]", txSender, refund);
 
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
         if (!postponeFeePayment) {
             if (enableRemasc) {
                 logger.trace("Adding fee to remasc contract account");
-                track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
+                track.addBalance(PrecompiledContracts.REMASC_ADDR, fee);
             } else {
-                track.addBalance(coinbase, summaryFee);
+                track.addBalance(coinbase, fee);
             }
         }
 
-        this.paidFees = summaryFee;
+        this.paidFees = fee;
 
         logger.trace("Processing result");
-        logs = logsFromNonRejectedTransactions;
+        // Should include only LogInfo's that was added during not rejected transactions
+        logs =  result.logsFromNonRejectedTransactions();
 
         result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
         // Traverse list of suicides
@@ -674,60 +671,45 @@ public class TransactionExecutor {
         }
 
         if(result.getException() != null) {
-            logger.warn("Local call produced an execution error: {}",
-                    executionError != null ? executionError : "unexpected");
+            logger.warn("Local call produced an execution error: {}", executionError != null ? executionError : "unexpected");
             return;
         }
 
         logger.trace("Finalize transaction gas estimation, txHash: {}, nonce:{},", tx.getHash(), toBI(tx.getNonce()));
 
-        // Should include only LogInfo's that was added during not rejected transactions
-        List<LogInfo> logsFromNonRejectedTransactions = result.logsFromNonRejectedTransactions();
-
-        TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
-                .gasLeftover(BigInteger.valueOf(gasLeftover))
-                .logs(logsFromNonRejectedTransactions)
-                .result(result.getHReturn());
-
-        long gasRefund = refundGas();
-
+        refundGas();
         result.setGasUsed(getGasConsumed());
 
-        TransactionExecutionSummary summary = buildTransactionExecutionSummary(summaryBuilder, gasRefund);
-
         if (logger.isTraceEnabled()) {
-            logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(signatureCache), summary.getRefund());
+            logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(signatureCache), calculateRefund());
         }
 
-        // Transfer fees to miner
-        this.paidFees = summary.getFee();
+        this.paidFees = calculateFee();   // Transfer fees to miner
 
         logger.trace("Processing result for gas estimation");
 
-        logs = logsFromNonRejectedTransactions;
+        logs =  result.logsFromNonRejectedTransactions();
 
         logger.trace("tx listener for gas estimation done");
-
         logger.trace("tx finalization for gas estimation done");
     }
 
-    private TransactionExecutionSummary buildTransactionExecutionSummary(TransactionExecutionSummary.Builder summaryBuilder, long gasRefund) {
-        summaryBuilder
-                .gasUsed(toBI(result.getGasUsed()))
-                .gasRefund(toBI(gasRefund))
-                .deletedAccounts(result.getDeleteAccounts())
-                .internalTransactions(result.getInternalTransactions());
-
-        if (result.getException() != null) {
-            summaryBuilder.markAsFailed();
+    private Coin calculateFee() {
+        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP560)) {
+            return tx.getGasPrice().multiply(toBI(tx.getGasLimit()));
         }
-
-        logger.trace("Building transaction execution summary");
-
-        return summaryBuilder.build();
+        BigInteger chargedGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(gasLeftover));
+        return tx.getGasPrice().multiply(chargedGas);
     }
 
-    private long refundGas() {
+    private Coin calculateRefund() {
+        if (result.getException() != null && !activations.isActive(ConsensusRule.RSKIP560)) {
+            return Coin.ZERO;
+        }
+        return tx.getGasPrice().multiply(BigInteger.valueOf(gasLeftover));
+    }
+
+    private void refundGas() {
         // Accumulate refunds for deleted accounts and authorizations before applying the refund cap
         result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
         result.addFutureRefund(authorizationRefund);
@@ -738,11 +720,7 @@ public class TransactionExecutor {
         result.addDeductedRefund(gasRefund);
         result.setGasUsedBeforeRefunds(result.getGasUsed());
 
-        gasLeftover = activations.isActive(ConsensusRule.RSKIP136) ?
-                GasCost.add(gasLeftover, gasRefund) :
-                gasLeftover + gasRefund;
-
-        return gasRefund;
+        gasLeftover = activations.isActive(ConsensusRule.RSKIP136) ? GasCost.add(gasLeftover, gasRefund) : gasLeftover + gasRefund;
     }
 
 
