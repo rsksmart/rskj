@@ -22,6 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
@@ -30,12 +34,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -138,5 +144,74 @@ class NetworkConfigsActivationTest {
         }
         assertTrue(inversions.isEmpty(),
             "new enum-order inversion (add to KNOWN_ENUM_ORDER_INVERSIONS only with a documented reason): " + inversions);
+    }
+
+    private static final Path GOLDEN = configDir().getParent().getParent().getParent()
+        .resolve("test/resources/config/activation-heights-golden.json");   // rskj-core/src/test/resources/config/...
+    private static final ObjectMapper MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+
+    /**
+     * Tip height per network at the time the golden was last blessed. Heights at or below asOf have been mined
+     * and must never change. asOf < 0 means the network's history is not pinned: regtest heights are dev knobs,
+     * and testnet2 is a config profile on testnet's networkId/genesis rather than a chain with its own history.
+     * Bump main/testnet at release time, then run ./gradlew :rskj-core:updateActivationGolden.
+     */
+    private static final Map<String, Long> AS_OF = Map.of(
+        "main", 9_207_000L,
+        "testnet", 8_037_000L,
+        "testnet2", -1L,
+        "regtest", -1L);
+
+    @Test
+    void passedActivationHeightsMatchGolden() throws IOException {
+        if (Boolean.getBoolean("activation.golden.update")) {
+            writeGolden();
+            return;
+        }
+        assertTrue(Files.exists(GOLDEN), "golden missing; run ./gradlew :rskj-core:updateActivationGolden to create " + GOLDEN);
+        JsonNode golden = MAPPER.readTree(GOLDEN.toFile());
+        List<String> violations = new ArrayList<>();
+        for (String network : networkNames()) {
+            JsonNode asOfNode = golden.path("asOf").path(network);
+            JsonNode goldenHeights = golden.path("heights").path(network);
+            assertFalse(asOfNode.isMissingNode(), "golden asOf missing for " + network);
+            assertFalse(goldenHeights.isMissingNode(), "golden heights missing for " + network);
+            long asOf = asOfNode.asLong();
+            Map<String, Long> current = activationHeights(loadNetwork(network));
+            for (Iterator<Map.Entry<String, JsonNode>> it = goldenHeights.fields(); it.hasNext();) {
+                Map.Entry<String, JsonNode> e = it.next();
+                long was = e.getValue().asLong();
+                Long now = current.get(e.getKey());
+                if (now == null) {
+                    violations.add(network + "." + e.getKey() + " removed (was " + was + ")");
+                    continue;
+                }
+                if (was == now) {
+                    continue;
+                }
+                // A change is a violation if the height had already passed, or is being moved retroactively
+                // onto already-mined history. Scheduled/disabled changes above asOf are legitimate and show up
+                // in the config diff itself; regenerate the golden after making one.
+                boolean pinned = asOf >= 0 && ((was >= 0 && was <= asOf) || (now >= 0 && now <= asOf));
+                if (pinned) {
+                    violations.add(network + "." + e.getKey() + " changed " + was + " -> " + now + " (asOf=" + asOf + ")");
+                }
+            }
+        }
+        assertTrue(violations.isEmpty(), "Passed activation heights changed: " + violations);
+    }
+
+    private void writeGolden() throws IOException {
+        ObjectNode root = MAPPER.createObjectNode();
+        ObjectNode asOf = root.putObject("asOf");
+        ObjectNode heights = root.putObject("heights");
+        for (String network : networkNames()) {
+            asOf.put(network, AS_OF.getOrDefault(network, -1L));
+            ObjectNode h = heights.putObject(network);
+            activationHeights(loadNetwork(network)).forEach(h::put);
+        }
+        Files.createDirectories(GOLDEN.getParent());
+        MAPPER.writeValue(GOLDEN.toFile(), root);
+        System.out.println("Golden written to " + GOLDEN);   // visible: updateActivationGolden shows standard streams
     }
 }
