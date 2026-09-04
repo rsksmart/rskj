@@ -19,12 +19,14 @@
 package org.ethereum.config.blockchain.upgrades;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.core.util.DefaultIndenter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -84,7 +86,11 @@ class NetworkConfigsActivationTest {
         return ConfigFactory.load("config/" + name);
     }
 
-    /** Upgrade name -> configured height, in the order the config file declares them. */
+    /**
+     * Upgrade name -> configured height. Iteration follows Typesafe Config's own deterministic {@code entrySet()}
+     * order (not the order the .conf file happens to declare them in), which is what keeps the golden byte-stable
+     * across regenerations.
+     */
     static Map<String, Long> activationHeights(Config networkConfig) {
         Config heights = networkConfig.getConfig("blockchain.config.hardforkActivationHeights");
         Map<String, Long> out = new LinkedHashMap<>();
@@ -148,7 +154,7 @@ class NetworkConfigsActivationTest {
 
     private static final Path GOLDEN = configDir().getParent().getParent().getParent()
         .resolve("test/resources/config/activation-heights-golden.json");   // rskj-core/src/test/resources/config/...
-    private static final ObjectMapper MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     /**
      * Tip height per network at the time the golden was last blessed. Heights at or below asOf have been mined
@@ -177,6 +183,8 @@ class NetworkConfigsActivationTest {
             assertFalse(asOfNode.isMissingNode(), "golden asOf missing for " + network);
             assertFalse(goldenHeights.isMissingNode(), "golden heights missing for " + network);
             long asOf = asOfNode.asLong();
+            assertEquals(AS_OF.getOrDefault(network, -1L).longValue(), asOf,
+                network + ": golden asOf is stale; run ./gradlew :rskj-core:updateActivationGolden");
             Map<String, Long> current = activationHeights(loadNetwork(network));
             for (Iterator<Map.Entry<String, JsonNode>> it = goldenHeights.fields(); it.hasNext();) {
                 Map.Entry<String, JsonNode> e = it.next();
@@ -197,6 +205,13 @@ class NetworkConfigsActivationTest {
                     violations.add(network + "." + e.getKey() + " changed " + was + " -> " + now + " (asOf=" + asOf + ")");
                 }
             }
+            // A key the config has but the golden lacks is unpinned: it would never be compared again.
+            for (String key : current.keySet()) {
+                if (!goldenHeights.has(key)) {
+                    violations.add(network + "." + key + " not in golden (now " + current.get(key)
+                        + "); run ./gradlew :rskj-core:updateActivationGolden");
+                }
+            }
         }
         assertTrue(violations.isEmpty(), "Passed activation heights changed: " + violations);
     }
@@ -211,7 +226,12 @@ class NetworkConfigsActivationTest {
             activationHeights(loadNetwork(network)).forEach(h::put);
         }
         Files.createDirectories(GOLDEN.getParent());
-        MAPPER.writeValue(GOLDEN.toFile(), root);
+        // Explicit LF indenter + trailing newline: the golden is a committed text file, and the platform default
+        // line separator would make it churn between contributors.
+        DefaultPrettyPrinter pp = new DefaultPrettyPrinter()
+            .withObjectIndenter(new DefaultIndenter("  ", "\n"))
+            .withArrayIndenter(new DefaultIndenter("  ", "\n"));
+        Files.writeString(GOLDEN, MAPPER.writer(pp).writeValueAsString(root) + "\n");
         System.out.println("Golden written to " + GOLDEN);   // visible: updateActivationGolden shows standard streams
     }
 }

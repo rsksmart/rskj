@@ -45,6 +45,7 @@ class ConsensusLogFormatStringsTest {
     private static final String COMPOSITE_RULE = "co/rsk/validators/BlockCompositeRule.java";
     private static final String PARENT_COMPOSITE_RULE = "co/rsk/validators/BlockParentCompositeRule.java";
     private static final String SYSTEM_UTILS = "co/rsk/util/SystemUtils.java";
+    private static final String NODE_RUNNER = "co/rsk/NodeRunnerImpl.java";
     private static final String CHANNEL_MANAGER = "org/ethereum/net/server/ChannelManagerImpl.java";
     private static final String ASYNC_BLOCK_PROCESSOR = "co/rsk/net/AsyncNodeBlockProcessor.java";
     private static final String BLOCK_SYNC_SERVICE = "co/rsk/net/BlockSyncService.java";
@@ -66,13 +67,19 @@ class ConsensusLogFormatStringsTest {
             Arguments.of(BLOCK_CHAIN, "\"Invalid block with number: {}\""),
             Arguments.of(BLOCK_CHAIN, "\"Unexpected error: \""),
             // pre-execution rule attribution (classifier: FAIL, validation branch)
+            Arguments.of(BLOCK_DIFFICULTY_RULE, "getLogger(\"blockvalidator\")"),
             Arguments.of(BLOCK_DIFFICULTY_RULE, "\"#{}: difficulty != calcDifficulty\""),
             Arguments.of(DIFFICULTY_RULE, "\"#{}: difficulty != calcDifficulty\""),
+            Arguments.of(COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
             Arguments.of(COMPOSITE_RULE, "\"Error Validating block {} {}\""),
+            Arguments.of(PARENT_COMPOSITE_RULE, "getLogger(\"blockvalidator\")"),
             Arguments.of(PARENT_COMPOSITE_RULE, "\"Error Validating block {} {}\""),
-            // post-import height beacon and network fingerprint (pre-flight gate)
+            // post-import height beacon and network fingerprint (pre-flight gate).
+            // SystemUtils holds the message; NodeRunnerImpl's "fullnoderunner" logger is the one that emits it,
+            // so the scraper matches on that logger name.
             Arguments.of(SYSTEM_UTILS, "\"WARNING: Network upgrade {} is DISABLED. Best block number is: {}.\""),
             Arguments.of(SYSTEM_UTILS, "disabledNetworkUpgrade.name()"),
+            Arguments.of(NODE_RUNNER, "getLogger(\"fullnoderunner\")"),
             // peer identity for peer.active construction
             Arguments.of(CHANNEL_MANAGER, "getLogger(\"net\")"),
             Arguments.of(CHANNEL_MANAGER, "\"Added new peer: {}. Total num of active peers: {}\"")
