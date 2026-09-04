@@ -20,6 +20,7 @@ package org.ethereum.core.transaction;
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
@@ -96,6 +97,29 @@ public class SetCodeAuthorization {
 
     public BigInteger getNonceAsInteger() {
         return BigIntegers.fromUnsignedByteArray(nonce);
+    }
+
+    /**
+     * Rejects a y_parity outside {@code {0, 1}}, per tuple, since the decoder admits any single byte.
+     * Recovery cannot do it: headers 31/32 make y_parity 4 and 5 recover the same authority as 0
+     * and 1, so the tuple would be applied rather than skipped.
+     */
+    public void verifyYParity() {
+        byte v = signature.getV();
+        if (v != Transaction.LOWER_REAL_V && v != Transaction.LOWER_REAL_V + 1) {
+            throw new IllegalStateException("Signature y_parity must be 0 or 1");
+        }
+    }
+
+    /**
+     * Rejects signature components outside {@code [1, secp256k1n)}, per tuple, since the decoder
+     * admits any value below {@code 2^256}. The Bouncy Castle backend only sign-checks r and s, so
+     * key recovery cannot do this either.
+     */
+    public void verifySignatureComponents() {
+        if (!signature.validateComponentsWithoutV()) {
+            throw new IllegalStateException("Signature r and s must be in [1, secp256k1n)");
+        }
     }
 
     /**

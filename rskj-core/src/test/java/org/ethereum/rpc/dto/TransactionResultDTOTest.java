@@ -18,6 +18,7 @@
 package org.ethereum.rpc.dto;
 
 import co.rsk.config.TestSystemProperties;
+import org.bouncycastle.util.BigIntegers;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
@@ -38,6 +39,8 @@ import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import java.lang.reflect.Method;
@@ -399,6 +402,31 @@ class TransactionResultDTOTest {
         Assertions.assertEquals("0x0", entry.getYParity());
         Assertions.assertEquals("0x1", entry.getR());
         Assertions.assertEquals("0x2", entry.getS());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {2, 100, 101, 255})
+    void encodeAuthorizationList_rendersYParityOutsideParityRange(int yParity) throws Exception {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        ECDSASignature signature = ECDSASignature.fromComponents(
+                BigIntegers.asUnsignedByteArray(reference.getSignature().getR()),
+                BigIntegers.asUnsignedByteArray(reference.getSignature().getS()),
+                (byte) (Transaction.LOWER_REAL_V + yParity)
+        );
+        SetCodeAuthorization authorization = new SetCodeAuthorization(
+                reference.getChainId(), reference.getAddress(), reference.getNonceBytes(), signature);
+
+        Method encode = TransactionResultDTO.class.getDeclaredMethod(
+                "encodeAuthorizationList", List.class);
+        encode.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        List<TransactionResultDTO.AuthorizationListEntryDTO> entries =
+                (List<TransactionResultDTO.AuthorizationListEntryDTO>)
+                        encode.invoke(null, List.of(authorization));
+
+        Assertions.assertEquals(
+                "0x" + Integer.toHexString(yParity), entries.get(0).getYParity());
     }
 
     @Test

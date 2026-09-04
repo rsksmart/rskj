@@ -40,6 +40,7 @@ import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,6 +53,8 @@ class AuthorizationListCodecTest {
 
     private static final BigInteger SECP256K1N_HALF =
             Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
+    private static final int R_FIELD_INDEX = 4;
+    private static final int S_FIELD_INDEX = 5;
 
     // -------------------------------------------------------------------------
     // encodeList / decodeListUnchecked
@@ -152,6 +155,42 @@ class AuthorizationListCodecTest {
         assertEquals(BigInteger.valueOf(33), auth.getChainId());
         assertEquals(reference.getAddress(), auth.getAddress());
         assertEquals(BigInteger.ONE, new BigInteger(1, auth.getNonceBytes()));
+    }
+
+    @Test
+    void parseFromCallArguments_nonceAtMaxUint64MinusOne_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setNonce("0xffffffffffffffff");
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
+                () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertTrue(ex.getMessage().contains("2^64 - 1"), ex.getMessage());
+    }
+
+    @Test
+    void parseFromCallArguments_yParityOutsideParityRange_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setYParity("0x4");
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
+                () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertTrue(ex.getMessage().contains("y_parity"), ex.getMessage());
+    }
+
+    @Test
+    void parseFromCallArguments_zeroSignatureR_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setR("0x0");
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
+                () -> AuthorizationListCodec.parseFromCallArguments(List.of(entry)));
+
+        assertTrue(ex.getMessage().contains("secp256k1n"), ex.getMessage());
     }
 
     @Test
@@ -306,15 +345,14 @@ class AuthorizationListCodecTest {
     }
 
     @Test
-    void decodeTuple_nonceAtMaxUint64MinusOne_throws() {
+    void decodeTuple_nonceAtMaxUint64MinusOne_decodes() {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
-        byte[] tuple = rebuildTupleField(reference, 2,
-                RLP.encodeBigInteger(BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE)));
+        BigInteger maxUint64MinusOne = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
+        byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeBigInteger(maxUint64MinusOne));
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> decodeSingleTuple(tuple));
-        assertTrue(ex.getMessage().contains("2^64"),
-                "Expected nonce range error, got: " + ex.getMessage());
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(maxUint64MinusOne, new BigInteger(1, decoded.getNonceBytes()));
     }
 
     @Test
@@ -327,16 +365,35 @@ class AuthorizationListCodecTest {
         assertEquals(maxAllowed, new BigInteger(1, decoded.getNonceBytes()));
     }
 
-    @Test
-    void decodeTuple_missingSignatureComponents_throws() {
+    @ParameterizedTest
+    @ValueSource(ints = {R_FIELD_INDEX, S_FIELD_INDEX})
+    void decodeTuple_zeroSignatureComponent_decodes(int fieldIndex) {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
-        byte[] tuple = rebuildTupleField(reference, 4, RLP.encodeElement(null));
+        byte[] tuple = rebuildTupleField(reference, fieldIndex, RLP.encodeElement(new byte[0]));
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> AuthorizationListCodec.decodeTuple(RLP.decode2(tuple).get(0)));
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
 
-        assertTrue(ex.getMessage().contains("incomplete"),
-                "Expected incomplete signature error, got: " + ex.getMessage());
+        assertEquals(BigInteger.ZERO, signatureComponent(decoded, fieldIndex));
+        assertArrayEquals(tuple, AuthorizationListCodec.encodeTuple(decoded));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {R_FIELD_INDEX, S_FIELD_INDEX})
+    void decodeTuple_signatureComponentAtCurveOrder_decodes(int fieldIndex) {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger curveOrder = Constants.getSECP256K1N();
+        byte[] tuple = rebuildTupleField(reference, fieldIndex, RLP.encodeBigInteger(curveOrder));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(curveOrder, signatureComponent(decoded, fieldIndex));
+        assertArrayEquals(tuple, AuthorizationListCodec.encodeTuple(decoded));
+    }
+
+    private static BigInteger signatureComponent(SetCodeAuthorization authorization, int fieldIndex) {
+        return fieldIndex == R_FIELD_INDEX
+                ? authorization.getSignature().getR()
+                : authorization.getSignature().getS();
     }
 
     @Test
@@ -348,12 +405,28 @@ class AuthorizationListCodecTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {2, 5})
-    void decodeTuple_invalidYParityValue_throws(int yParityValue) {
+    @ValueSource(ints = {2, 5, 255})
+    void decodeTuple_yParityOutsideParityRange_decodes(int yParityValue) {
         SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
         byte[] tuple = rebuildTupleField(reference, 3, RLP.encodeByte((byte) yParityValue));
 
-        assertThrows(IllegalArgumentException.class, () -> decodeSingleTuple(tuple));
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(yParityValue, (decoded.getSignature().getV() - Transaction.LOWER_REAL_V) & 0xFF);
+    }
+
+    /**
+     * A tuple carrying an out-of-range y_parity must re-encode to the exact bytes it was decoded
+     * from, otherwise admitting it at decode time would shift the enclosing transaction hash.
+     */
+    @Test
+    void encodeTuple_yParityOutsideParityRange_roundTrips() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 3, RLP.encodeByte((byte) 255));
+
+        byte[] reencoded = AuthorizationListCodec.encodeTuple(decodeSingleTuple(tuple));
+
+        assertArrayEquals(tuple, reencoded);
     }
 
     @Test
@@ -506,6 +579,20 @@ class AuthorizationListCodecTest {
         SetCodeAuthorization decoded = decodeSingleTuple(tuple);
 
         assertEquals(justBelowHalf, decoded.getSignature().getS());
+    }
+
+    @Test
+    void decodeTuple_highS_decodes() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger maxDecodableS = BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE);
+        byte[] tuple = rebuildTupleField(
+                reference,
+                5,
+                RLP.encodeElement(BigIntegers.asUnsignedByteArray(maxDecodableS)));
+
+        SetCodeAuthorization decoded = decodeSingleTuple(tuple);
+
+        assertEquals(maxDecodableS, decoded.getSignature().getS());
     }
 
     @Test
@@ -671,6 +758,26 @@ class AuthorizationListCodecTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> AuthorizationListCodec.encodeTuple(bad));
+    }
+
+    /** {@code asUnsignedByteArray} drops the sign rather than failing, so -1 would encode as 0xff. */
+    @ParameterizedTest
+    @ValueSource(ints = {R_FIELD_INDEX, S_FIELD_INDEX})
+    void encodeTuple_negativeSignatureComponent_throws(int fieldIndex) {
+        SetCodeAuthorization auth = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        BigInteger negative = BigInteger.valueOf(-1);
+        SetCodeAuthorization bad = new SetCodeAuthorization(
+                auth.getChainId(),
+                auth.getAddress(),
+                auth.getNonceBytes(),
+                new ECDSASignature(
+                        fieldIndex == R_FIELD_INDEX ? negative : auth.getSignature().getR(),
+                        fieldIndex == S_FIELD_INDEX ? negative : auth.getSignature().getS(),
+                        auth.getSignature().getV()));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> AuthorizationListCodec.encodeTuple(bad));
+        assertEquals("Authorization signature r and s must be non-negative", ex.getMessage());
     }
 
     // -------------------------------------------------------------------------

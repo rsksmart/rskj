@@ -393,15 +393,39 @@ class Type4RawTransactionParserTest {
                 () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
     }
 
-    @ParameterizedTest(name = "parse_rlp rejects auth yParity={0}")
-    @ValueSource(ints = {2, 5})
-    void parse_rlp_authYParityInvalid_throws(int yParityValue) {
+    @ParameterizedTest(name = "parse_rlp accepts auth yParity={0}")
+    @ValueSource(ints = {2, 5, 255})
+    void parse_rlp_authYParityOutsideParityRange_succeeds(int yParityValue) {
         byte[] authList = Rskip545TestSupport.authListWithModifiedTupleField(
                 3, RLP.encodeByte((byte) yParityValue));
-        RLPList fields = Rskip545TestSupport.buildType4RlpList(RECEIVER, authList);
 
-        assertThrows(IllegalArgumentException.class,
-                () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
+        assertDoesNotThrow(() -> parseSignedType4WithAuthList(authList));
+    }
+
+    @Test
+    void parse_rlp_authNonceAtMaxUint64MinusOne_succeeds() {
+        byte[] authList = Rskip545TestSupport.authListWithModifiedTupleField(
+                2, RLP.encodeBigInteger(BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE)));
+
+        assertDoesNotThrow(() -> parseSignedType4WithAuthList(authList));
+    }
+
+    @ParameterizedTest(name = "parse_rlp accepts auth signature field {0} = 0")
+    @ValueSource(ints = {4, 5})
+    void parse_rlp_authZeroSignatureComponent_succeeds(int fieldIndex) {
+        byte[] authList = Rskip545TestSupport.authListWithModifiedTupleField(
+                fieldIndex, RLP.encodeElement(new byte[0]));
+
+        assertDoesNotThrow(() -> parseSignedType4WithAuthList(authList));
+    }
+
+    private ParsedType4Transaction parseSignedType4WithAuthList(byte[] authList) {
+        byte[][] encodedFields = Rskip545TestSupport.defaultSignedType4Fields(RECEIVER, authList);
+        encodedFields[11] = RLP.encodeElement(BigIntegers.asUnsignedByteArray(BigInteger.ONE));
+        encodedFields[12] = RLP.encodeElement(BigIntegers.asUnsignedByteArray(BigInteger.ONE));
+        RLPList fields = RLP.decodeList(RLP.encodeList(encodedFields));
+
+        return parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields);
     }
 
     /**

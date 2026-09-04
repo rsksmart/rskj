@@ -45,7 +45,7 @@ public final class AuthorizationListCodec {
 
     private static final int TUPLE_FIELD_COUNT = 6;
     private static final BigInteger MAX_CHAIN_ID = BigInteger.ONE.shiftLeft(256);
-    private static final BigInteger MAX_NONCE = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
+    private static final BigInteger MAX_NONCE = BigInteger.ONE.shiftLeft(64);
     private static final BigInteger MAX_SIGNATURE_COMPONENT = BigInteger.ONE.shiftLeft(256);
 
     private AuthorizationListCodec() {}
@@ -133,26 +133,10 @@ public final class AuthorizationListCodec {
         CommonParsingUtils.requireCanonicalScalar(chainIdData, "Authorization chain_id");
         BigInteger chainId = decodeChainId(chainIdData);
         RskAddress address = decodeAddress(inner.get(1).getRLPData());
-        byte[] nonce = inner.get(2).getRLPData();
-        if (nonce == null) {
-            nonce = new byte[0];
-        } else {
-            nonce = ByteUtil.cloneBytes(nonce);
-        }
-        CommonParsingUtils.requireDataWordBytes(nonce, "Authorization nonce is not valid");
-        CommonParsingUtils.requireCanonicalScalar(nonce, "Authorization nonce");
-        requireNonceInRange(decodeUnsignedBigInteger(nonce));
-        byte yParity = CommonParsingUtils.parseCanonicalYParity(
-                inner.get(3).getRLPData(), "Authorization y_parity");
-        byte[] r = inner.get(4).getRLPData();
-        byte[] s = inner.get(5).getRLPData();
-        if (r == null || s == null) {
-            throw new IllegalArgumentException("Authorization list tuple signature is incomplete");
-        }
-        CommonParsingUtils.requireDataWordBytes(r, "Authorization signature r is not valid");
-        CommonParsingUtils.requireDataWordBytes(s, "Authorization signature s is not valid");
-        CommonParsingUtils.requireCanonicalScalar(r, "Authorization signature r");
-        CommonParsingUtils.requireCanonicalScalar(s, "Authorization signature s");
+        byte[] nonce = decodeAndValidateNonce(inner.get(2));
+        byte yParity = decodeAndValidateYParity(inner.get(3).getRLPData());
+        byte[] r = decodeAndValidateSignatureComponent(inner.get(4), "r");
+        byte[] s = decodeAndValidateSignatureComponent(inner.get(5), "s");
         byte v = (byte) (Transaction.LOWER_REAL_V + yParity);
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
 
@@ -226,7 +210,23 @@ public final class AuthorizationListCodec {
                 signature
         );
         validateAuthorization(auth);
+        requireProcessableAuthorization(auth, index);
         return auth;
+    }
+
+    /**
+     * The raw decoding path deliberately admits tuples that processing will skip, so that one bad
+     * tuple cannot invalidate a whole signed transaction.
+     */
+    private static void requireProcessableAuthorization(SetCodeAuthorization auth, int index) {
+        try {
+            auth.verifyNonceRange();
+            auth.verifyYParity();
+            auth.verifySignatureComponents();
+        } catch (IllegalStateException e) {
+            throw invalidParamError(
+                    "Authorization list entry at index " + index + " is not processable: " + e.getMessage());
+        }
     }
 
     private static BigInteger decodeChainId(byte[] chainIdData) {
@@ -253,10 +253,45 @@ public final class AuthorizationListCodec {
         return new BigInteger(1, value);
     }
 
+    /** Decode bound {@code nonce < 2^64}; the tighter {@code < 2^64 - 1} is a processing step. */
     private static void requireNonceInRange(BigInteger nonceValue) {
         if (nonceValue.signum() < 0 || nonceValue.compareTo(MAX_NONCE) >= 0) {
-            throw new IllegalArgumentException("Authorization nonce must be non-negative and less than 2^64 - 1");
+            throw new IllegalArgumentException("Authorization nonce must be non-negative and less than 2^64");
         }
+    }
+
+    /** Decode bounds for the nonce, measured as received. */
+    private static byte[] decodeAndValidateNonce(RLPElement field) {
+        byte[] rawNonce = field.getRLPData();
+        byte[] nonce = rawNonce == null ? new byte[0] : ByteUtil.cloneBytes(rawNonce);
+        CommonParsingUtils.requireDataWordBytes(nonce, "Authorization nonce is not valid");
+        CommonParsingUtils.requireCanonicalScalar(nonce, "Authorization nonce");
+        requireNonceInRange(decodeUnsignedBigInteger(nonce));
+        return nonce;
+    }
+
+    /** Decode bounds for r/s; the curve range {@code [1, secp256k1n)} is a processing step. */
+    private static byte[] decodeAndValidateSignatureComponent(RLPElement field, String fieldName) {
+        byte[] component = CommonParsingUtils.nullToEmpty(field.getRLPData());
+        CommonParsingUtils.requireDataWordBytes(
+                component, "Authorization signature " + fieldName + " is not valid");
+        CommonParsingUtils.requireCanonicalScalar(component, "Authorization signature " + fieldName);
+        return component;
+    }
+
+    /**
+     * Wire path: canonical and single-byte, but any value, since restricting it to {@code {0, 1}}
+     * is a processing step. That is why it cannot use the shared {@code parseCanonicalYParity}.
+     */
+    private static byte decodeAndValidateYParity(byte[] yParityData) {
+        if (yParityData == null || yParityData.length == 0) {
+            return 0;
+        }
+        CommonParsingUtils.requireCanonicalScalar(yParityData, "Authorization y_parity");
+        if (yParityData.length > 1) {
+            throw new IllegalArgumentException("Authorization y_parity must fit in a single byte");
+        }
+        return yParityData[0];
     }
 
     /** RPC path only: accepts the 0x00 that a JSON quantity of "0x0" decodes to. */
@@ -267,11 +302,7 @@ public final class AuthorizationListCodec {
         if (yParityData.length > 1) {
             throw new IllegalArgumentException("Authorization y_parity must fit in a single byte");
         }
-        byte yParity = yParityData[0];
-        if (yParity != 0 && yParity != 1) {
-            throw new IllegalArgumentException("Authorization y_parity must be 0 or 1, got: " + (yParity & 0xFF));
-        }
-        return yParity;
+        return yParityData[0];
     }
 
     private static void validateAuthorization(SetCodeAuthorization auth) {
@@ -281,12 +312,13 @@ public final class AuthorizationListCodec {
         requireNonceInRange(decodeUnsignedBigInteger(auth.getNonceBytes()));
 
         ECDSASignature signature = auth.getSignature();
-        BigInteger r = signature.getR();
-        BigInteger s = signature.getS();
-        if (!signature.validateComponentsWithoutV()) {
-            throw new IllegalArgumentException("Authorization signature components are invalid");
+        // The curve range moved to processing, so this is the only remaining lower bound;
+        // asUnsignedByteArray drops the sign instead of failing, so -1 would encode as 0xff.
+        if (signature.getR().signum() < 0 || signature.getS().signum() < 0) {
+            throw new IllegalArgumentException("Authorization signature r and s must be non-negative");
         }
-        if (r.compareTo(MAX_SIGNATURE_COMPONENT) >= 0 || s.compareTo(MAX_SIGNATURE_COMPONENT) >= 0) {
+        if (signature.getR().compareTo(MAX_SIGNATURE_COMPONENT) >= 0
+                || signature.getS().compareTo(MAX_SIGNATURE_COMPONENT) >= 0) {
             throw new IllegalArgumentException("Authorization signature r and s must be less than 2^256");
         }
     }

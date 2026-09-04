@@ -66,6 +66,8 @@ public class SetCodeAuthorizationTransactionExecutor {
     }
 
     private RskAddress checkRecoveredAuthority(SetCodeAuthorization setCodeAuthorization) {
+        setCodeAuthorization.verifyYParity();
+        setCodeAuthorization.verifySignatureComponents();
         setCodeAuthorization.verifyLowS();
 
         byte[] messageHash =  setCodeAuthorization.getSigningHash();
@@ -74,7 +76,8 @@ public class SetCodeAuthorizationTransactionExecutor {
         try {
             key = Secp256k1.getInstance().signatureToKey(messageHash, setCodeAuthorization.getSignature());
 
-        } catch (SignatureException e) {
+        } catch (SignatureException | IllegalArgumentException e) {
+            // Bouncy Castle reports an r that is not a curve x coordinate as IllegalArgumentException.
             throw new IllegalStateException("Signature recovery failed", e);
         }
 
