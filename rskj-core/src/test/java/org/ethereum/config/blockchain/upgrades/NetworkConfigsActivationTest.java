@@ -20,6 +20,7 @@ package org.ethereum.config.blockchain.upgrades;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,5 +93,21 @@ class NetworkConfigsActivationTest {
         Config cfg = loadNetwork(network);
         assertDoesNotThrow(() -> ActivationConfig.read(cfg.getConfig("blockchain.config")),
             "ActivationConfig.read failed for network " + network);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("networkNames")
+    void everyNetworkUpgradeExceptGenesisIsConfigured(String network) {
+        Map<String, Long> heights = activationHeights(loadNetwork(network));
+        List<String> missing = new ArrayList<>();
+        for (NetworkUpgrade upgrade : NetworkUpgrade.values()) {
+            if (upgrade == NetworkUpgrade.GENESIS) {
+                continue; // listed in expected.conf, configured in no network file
+            }
+            if (!heights.containsKey(upgrade.getName())) {
+                missing.add(upgrade.getName());
+            }
+        }
+        assertTrue(missing.isEmpty(), network + " is missing hardforkActivationHeights for " + missing);
     }
 }
