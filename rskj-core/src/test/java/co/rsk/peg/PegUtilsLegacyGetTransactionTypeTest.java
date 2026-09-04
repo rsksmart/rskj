@@ -100,7 +100,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         migrationTx.addInput(Sha256Hash.ZERO_HASH, 0, p2shRetiringFederation.getRedeemScript());
         migrationTx.addOutput(minimumPeginTxValue, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(p2shRetiringFederation, fedKeys, migrationTx);
+        FederationTestUtils.spendFromFed(p2shRetiringFederation, fedKeys, migrationTx);
 
         // Act
         federationContext = FederationContext.builder()
@@ -164,7 +164,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         migrationTx.addInput(BitcoinTestUtils.createHash(1), 0, retiredFederation.getRedeemScript());
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(retiredFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
+        FederationTestUtils.spendFromFed(retiredFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
 
         // Act
         FederationContext.FederationContextBuilder federationContextBuilder = FederationContext.builder();
@@ -214,7 +214,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         );
         peginTx.addOutput(minimumPeginTxValue, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(unknownFed, unknownFedSigners, peginTx);
+        FederationTestUtils.spendFromFed(unknownFed, unknownFedSigners, peginTx);
 
         // Act
         federationContext = FederationContext.builder()
@@ -419,7 +419,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         pegoutBtcTx.addInput(BitcoinTestUtils.createHash(1), 0, activeFederation.getRedeemScript());
         pegoutBtcTx.addOutput(Coin.COIN, userAddress);
 
-        FederationTestUtils.addSignatures(activeFederation, fedKeys, pegoutBtcTx);
+        FederationTestUtils.spendFromFed(activeFederation, fedKeys, pegoutBtcTx);
 
         // Act
         federationContext = FederationContext.builder()
@@ -464,7 +464,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         migrationTx.addInput(BitcoinTestUtils.createHash(1), 0, retiringFederation.getRedeemScript());
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
+        FederationTestUtils.spendFromFed(retiringFederation, retiringFedKeys, migrationTx);
 
         // Act
         federationContext = FederationContext.builder()
@@ -516,7 +516,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         migrationTx.addInput(BitcoinTestUtils.createHash(1), 0, retiringFederation.getRedeemScript());
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
+        FederationTestUtils.spendFromFed(retiringFederation, retiringFedKeys, migrationTx);
 
         // Act
         federationContext = FederationContext.builder()
@@ -558,7 +558,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         migrationTx.addInput(BitcoinTestUtils.createHash(1), 0, retiringFederation.getRedeemScript());
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
+        FederationTestUtils.spendFromFed(retiringFederation, retiringFedKeys, migrationTx);
 
         // Act
         federationContext = FederationContext.builder()

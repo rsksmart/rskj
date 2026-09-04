@@ -3,6 +3,7 @@ package co.rsk.peg;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
+import static co.rsk.peg.BridgeEventsTestUtils.getLogsBySignature;
 import static co.rsk.peg.BridgeEventsTestUtils.getLogsData;
 import static co.rsk.peg.BridgeEventsTestUtils.getLogsTopics;
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASES_OUTPOINTS_VALUES;
@@ -37,6 +38,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
+import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.Federation;
@@ -186,6 +188,46 @@ public final class BridgeSupportTestUtil {
         return pmtWithTransactions;
     }
 
+    /**
+     * Builds a registration scenario for a witness-bearing (segwit) transaction that mirrors how it is
+     * actually validated in production: a Bitcoin block header's merkle root is always computed over
+     * txids, never wtxids, so the merkle branch proving inclusion of a segwit transaction's
+     * witness data can never match the block header directly. Instead, that proof is built over the
+     * transaction's wtxid and validated against the witness commitment recorded from the block's
+     * coinbase transaction (RSKIP143).
+     *
+     * @return the wtxid-rooted merkle branch to submit for registration.
+     */
+    public static PartialMerkleTree buildPMTAndRecreateChainForSegwitTransactionRegistration(
+        BridgeStorageProvider bridgeStorageProvider,
+        BridgeConstants bridgeConstants,
+        int btcBlockToRegisterHeight,
+        BtcTransaction transaction,
+        BtcBlockStoreWithCache btcBlockStore
+    ) throws BlockStoreException {
+        // Without a witness getHash(true) == getHash(false), the chosen path would match the
+        // header's merkle root directly and isBlockMerkleRootValid would never take its coinbase path.
+        assertTrue(transaction.hasWitness());
+
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+
+        PartialMerkleTree pmtForBlockHeader = createValidPmtForTransactionsHashes(List.of(transaction.getHash(false)), networkParameters);
+        int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStore, chainHeight, pmtForBlockHeader, btcBlockToRegisterHeight, networkParameters);
+        // setMainChainBlock only updates the provider's in-memory height index; save() is required
+        // before it can be read back via getBtcBestBlockHashByHeight/getStoredBlockAtMainChainHeight
+        bridgeStorageProvider.save();
+
+        PartialMerkleTree pmtWithWitness = createValidPmtForTransactionsHashes(List.of(transaction.getHash(true)), networkParameters);
+        Sha256Hash witnessMerkleRoot = pmtWithWitness.getTxnHashAndMerkleRoot(new ArrayList<>());
+
+        BtcBlock registeredBlockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(btcBlockToRegisterHeight).getHeader();
+        bridgeStorageProvider.setCoinbaseInformation(registeredBlockHeader.getHash(), new CoinbaseInformation(witnessMerkleRoot));
+        bridgeStorageProvider.save();
+
+        return pmtWithWitness;
+    }
+
     public static Transaction buildUpdateCollectionsTransaction() {
         return buildUpdateCollectionsTransaction(0);
     }
@@ -301,6 +343,36 @@ public final class BridgeSupportTestUtil {
         assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
     }
 
+    public static void assertLegacyReleaseRejectionWasSettled(
+        BridgeStorageProvider bridgeStorageProvider,
+        List<LogInfo> logs,
+        long executionBlock,
+        Keccak256 releaseCreationTxHash,
+        BtcTransaction releaseTransaction,
+        Coin totalAmountRequested,
+        ActivationConfig.ForBlock activations
+    ) throws IOException {
+        Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
+
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, executionBlock, activations);
+        assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, totalAmountRequested);
+
+        // The peg-in was rejected, so it must not have been logged as a registered peg-in,
+        // and since the rejection was refunded it must not have been logged as non-refundable either.
+        assertEventWasNotEmitted(logs, BridgeEvents.PEGIN_BTC.getEvent());
+        assertEventWasNotEmitted(logs, BridgeEvents.UNREFUNDABLE_PEGIN.getEvent());
+
+        // The refund pegout's outpoint values are only logged from RSKIP428 onwards.
+        assertEventWasNotEmitted(logs, BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent());
+
+        // A refund pegout is settled through BridgeSupport.settleReleaseRejection, which unlike
+        // settleReleaseRequest does not index the pegout in the pegout tx index. Pinning this is the
+        // whole point: were the refund indexed at creation time, registering it later would be
+        // recognised through the index instead of taking the path this rejection is testing.
+        assertPegoutTxSigHashWasNotSaved(bridgeStorageProvider, releaseTransaction);
+    }
+
     public static void assertReleaseWasSettled(
         Repository repository,
         BridgeStorageProvider bridgeStorageProvider,
@@ -335,6 +407,14 @@ public final class BridgeSupportTestUtil {
 
         Sha256Hash pegoutTxSigHash = pegoutTxSigHashOpt.get();
         assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(pegoutTxSigHash));
+    }
+
+    public static void assertPegoutTxSigHashWasNotSaved(BridgeStorageProvider bridgeStorageProvider, BtcTransaction pegoutTransaction) {
+        Optional<Sha256Hash> pegoutTxSigHashOpt = BitcoinUtils.getSigHashForPegoutIndex(pegoutTransaction);
+        assertTrue(pegoutTxSigHashOpt.isPresent());
+
+        Sha256Hash pegoutTxSigHash = pegoutTxSigHashOpt.get();
+        assertFalse(bridgeStorageProvider.hasPegoutTxSigHash(pegoutTxSigHash));
     }
 
     public static void assertReleaseTransactionInfoWasProcessed(
@@ -457,5 +537,10 @@ public final class BridgeSupportTestUtil {
     public static void assertEventWasEmittedWithExpectedData(List<LogInfo> logs, byte[] expectedData) {
         Optional<LogInfo> data = getLogsData(logs, expectedData);
         assertTrue(data.isPresent());
+    }
+
+    public static void assertEventWasNotEmitted(List<LogInfo> logs, CallTransaction.Function bridgeEvent) {
+        List<LogInfo> event = getLogsBySignature(logs, bridgeEvent);
+        assertEquals(0, event.size());
     }
 }
