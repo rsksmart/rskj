@@ -31,6 +31,7 @@ import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -92,6 +93,11 @@ public final class AuthorizationListCodec {
 
     public static byte[] encodeTuple(SetCodeAuthorization auth) {
         validateAuthorization(auth);
+        return encodeTupleUnchecked(auth);
+    }
+
+    /** Pure encoder. The round-trip check in decodeTuple has already validated the authorization. */
+    private static byte[] encodeTupleUnchecked(SetCodeAuthorization auth) {
         byte yParity = (byte) (auth.getSignature().getV() - Transaction.LOWER_REAL_V);
         return RLP.encodeList(
                 RLP.encodeBigInteger(auth.getChainId()),
@@ -124,6 +130,7 @@ public final class AuthorizationListCodec {
 
         byte[] chainIdData = inner.get(0).getRLPData();
         CommonParsingUtils.requireDataWordBytes(chainIdData, "Authorization chain_id is not valid");
+        CommonParsingUtils.requireCanonicalScalar(chainIdData, "Authorization chain_id");
         BigInteger chainId = decodeChainId(chainIdData);
         RskAddress address = decodeAddress(inner.get(1).getRLPData());
         byte[] nonce = inner.get(2).getRLPData();
@@ -133,21 +140,36 @@ public final class AuthorizationListCodec {
             nonce = ByteUtil.cloneBytes(nonce);
         }
         CommonParsingUtils.requireDataWordBytes(nonce, "Authorization nonce is not valid");
-        validateNonceValue(decodeNonce(nonce));
-        byte yParity = parseYParity(inner.get(3).getRLPData());
+        CommonParsingUtils.requireCanonicalScalar(nonce, "Authorization nonce");
+        requireNonceInRange(decodeUnsignedBigInteger(nonce));
+        byte yParity = CommonParsingUtils.parseCanonicalYParity(
+                inner.get(3).getRLPData(), "Authorization y_parity");
         byte[] r = inner.get(4).getRLPData();
         byte[] s = inner.get(5).getRLPData();
         if (r == null || s == null) {
             throw new IllegalArgumentException("Authorization list tuple signature is incomplete");
         }
-        CommonParsingUtils.requireSignatureComponent(r, "Authorization signature r is not valid");
-        CommonParsingUtils.requireSignatureComponent(s, "Authorization signature s is not valid");
+        CommonParsingUtils.requireDataWordBytes(r, "Authorization signature r is not valid");
+        CommonParsingUtils.requireDataWordBytes(s, "Authorization signature s is not valid");
+        CommonParsingUtils.requireCanonicalScalar(r, "Authorization signature r");
+        CommonParsingUtils.requireCanonicalScalar(s, "Authorization signature s");
         byte v = (byte) (Transaction.LOWER_REAL_V + yParity);
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
 
         SetCodeAuthorization auth = new SetCodeAuthorization(chainId, address, nonce, signature);
         validateAuthorization(auth);
+        requireCanonicalTupleRlp(tupleBytes, auth);
         return auth;
+    }
+
+    /**
+     * Requires re-encoding to reproduce the bytes received, covering the whole RLP frame: list
+     * header, item prefixes and scalar minimality. Catches the prefixes per-field checks cannot see.
+     */
+    private static void requireCanonicalTupleRlp(byte[] tupleBytes, SetCodeAuthorization auth) {
+        if (!Arrays.equals(tupleBytes, encodeTupleUnchecked(auth))) {
+            throw new IllegalArgumentException("Authorization list tuple is not canonically encoded");
+        }
     }
 
     private static SetCodeAuthorization parseCallArgumentsEntry(CallArguments.AuthorizationListEntry entry, int index) {
@@ -185,15 +207,15 @@ public final class AuthorizationListCodec {
             nonce = new byte[0];
         }
         CommonParsingUtils.requireDataWordBytes(nonce, "Authorization nonce is not valid");
-        validateNonceValue(decodeNonce(nonce));
-        byte yParity = parseYParity(HexUtils.strHexOrStrNumberToByteArray(entry.getYParity()));
+        requireNonceInRange(decodeUnsignedBigInteger(nonce));
+        byte yParity = parseNormalizedYParity(HexUtils.strHexOrStrNumberToByteArray(entry.getYParity()));
         byte[] r = HexUtils.stringHexToByteArray(entry.getR());
         byte[] s = HexUtils.stringHexToByteArray(entry.getS());
         if (r == null || s == null) {
             throw invalidParamError("Authorization list entry signature r/s must be hex at index " + index);
         }
-        CommonParsingUtils.requireSignatureComponent(r, "Authorization signature r is not valid");
-        CommonParsingUtils.requireSignatureComponent(s, "Authorization signature s is not valid");
+        CommonParsingUtils.requireNormalizedSignatureComponent(r, "Authorization signature r is not valid");
+        CommonParsingUtils.requireNormalizedSignatureComponent(s, "Authorization signature s is not valid");
         byte v = (byte) (Transaction.LOWER_REAL_V + yParity);
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
 
@@ -224,20 +246,21 @@ public final class AuthorizationListCodec {
         return new RskAddress(addressData);
     }
 
-    private static BigInteger decodeNonce(byte[] nonce) {
-        if (nonce == null) {
+    private static BigInteger decodeUnsignedBigInteger(byte[] value) {
+        if (value == null) {
             return BigInteger.ZERO;
         }
-        return new BigInteger(1, nonce);
+        return new BigInteger(1, value);
     }
 
-    private static void validateNonceValue(BigInteger nonceValue) {
+    private static void requireNonceInRange(BigInteger nonceValue) {
         if (nonceValue.signum() < 0 || nonceValue.compareTo(MAX_NONCE) >= 0) {
             throw new IllegalArgumentException("Authorization nonce must be non-negative and less than 2^64 - 1");
         }
     }
 
-    private static byte parseYParity(byte[] yParityData) {
+    /** RPC path only: accepts the 0x00 that a JSON quantity of "0x0" decodes to. */
+    private static byte parseNormalizedYParity(byte[] yParityData) {
         if (yParityData == null || yParityData.length == 0) {
             return 0;
         }
@@ -255,7 +278,7 @@ public final class AuthorizationListCodec {
         if (auth.getChainId().signum() < 0 || auth.getChainId().compareTo(MAX_CHAIN_ID) >= 0) {
             throw new IllegalArgumentException("Authorization chain_id must be non-negative and less than 2^256");
         }
-        validateNonceValue(decodeNonce(auth.getNonceBytes()));
+        requireNonceInRange(decodeUnsignedBigInteger(auth.getNonceBytes()));
 
         ECDSASignature signature = auth.getSignature();
         BigInteger r = signature.getR();

@@ -20,6 +20,7 @@ package org.ethereum.core.transaction;
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
+import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLP;
@@ -42,7 +43,7 @@ public class SetCodeAuthorization {
     public SetCodeAuthorization(BigInteger chainId, RskAddress address, byte[] nonce, ECDSASignature signature) {
         this.chainId = Objects.requireNonNull(chainId, "chainId");
         this.address = Objects.requireNonNull(address, "address");
-        this.nonce = Objects.requireNonNull(nonce, "nonce").clone();
+        this.nonce = minimalNonce(Objects.requireNonNull(nonce, "nonce"));
         this.signature = Objects.requireNonNull(signature, "signature");
     }
 
@@ -52,6 +53,17 @@ public class SetCodeAuthorization {
 
     public RskAddress getAddress() {
         return address;
+    }
+
+    /**
+     * Strips leading zero bytes so the stored nonce is the minimal big-endian encoding of its value.
+     *
+     * <p>The nonce is read by two consumers that must agree: {@link #getSigningHash()} and
+     * {@code AuthorizationListCodec.encodeTuple}. Normalizing here — rather than in either reader —
+     * keeps the bytes an authorization is signed over identical to the bytes it is encoded as.
+     */
+    private static byte[] minimalNonce(byte[] nonce) {
+        return CommonParsingUtils.unsignedBytes(BigIntegers.fromUnsignedByteArray(nonce));
     }
 
     public byte[] getNonceBytes() {

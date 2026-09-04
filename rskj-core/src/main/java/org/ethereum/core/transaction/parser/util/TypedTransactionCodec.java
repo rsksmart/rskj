@@ -41,7 +41,8 @@ public final class TypedTransactionCodec {
         byte[] s = txFields.get(sIndex).getRLPData();
         // Validated before the unsigned early return so the field is checked on every path.
         // Callers run requireFieldCount first, so the index always exists.
-        byte yParity = parseTypedYParity(txFields.get(yParityIndex).getRLPData());
+        byte yParity = CommonParsingUtils.parseCanonicalYParity(
+                txFields.get(yParityIndex).getRLPData(), "Typed transaction yParity");
 
         if (r == null && s == null) {
             byte chainId = parseTypedTxChainId(txFields.get(chainIdIndex).getRLPData());
@@ -51,38 +52,11 @@ public final class TypedTransactionCodec {
         if (r == null || s == null) {
             throw new IllegalArgumentException("Typed transaction signature is incomplete");
         }
-        CommonParsingUtils.requireSignatureComponent(r, "Signature R is not valid");
-        CommonParsingUtils.requireSignatureComponent(s, "Signature S is not valid");
+        CommonParsingUtils.requireNormalizedSignatureComponent(r, "Signature R is not valid");
+        CommonParsingUtils.requireNormalizedSignatureComponent(s, "Signature S is not valid");
         byte v = (byte) (LOWER_REAL_V + yParity);
         byte chainId = parseTypedTxChainId(txFields.get(chainIdIndex).getRLPData());
         return new SignedSignature(chainId, ECDSASignature.fromComponents(r, s, v));
-    }
-
-    /**
-     * Parses the yParity field of a typed transaction envelope.
-     *
-     * <p>Rejects payloads wider than one byte and values outside {@code {0, 1}}. A multi-byte
-     * payload such as {@code 0x00 0x01} would otherwise read as yParity 0 and recover a different
-     * address than the signer.
-     *
-     * <p>Both encodings of zero are accepted: the canonical empty item that RLP produces for the
-     * integer 0, and a single {@code 0x00} byte. The latter is non-canonical per EIP-2718, but it
-     * cannot be used for malleability here — {@code Transaction.getEncoded} re-encodes the parsed
-     * fields through {@code TransactionEncoderFactory} instead of retaining the raw bytes, so both
-     * spellings yield the same transaction hash.
-     */
-    private static byte parseTypedYParity(byte[] yParityData) {
-        if (yParityData == null || yParityData.length == 0) {
-            return 0;
-        }
-        if (yParityData.length > 1) {
-            throw new IllegalArgumentException("Typed transaction yParity must fit in a single byte");
-        }
-        byte yParity = yParityData[0];
-        if (yParity != 0 && yParity != 1) {
-            throw new IllegalArgumentException("Typed transaction yParity must be 0 or 1, got: " + (yParity & 0xFF));
-        }
-        return yParity;
     }
 
     /**

@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link TypedTransactionCodec}.
@@ -118,7 +119,7 @@ class TypedTransactionCodecTest {
         byte[] dummyRS = new byte[32];
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(new byte[]{33}),       // chainId = 33
-                RLP.encodeElement(new byte[]{yParity}),  // yParity
+                RLP.encodeByte(yParity),                 // yParity, as the encoder spells it
                 RLP.encodeElement(dummyRS),              // r
                 RLP.encodeElement(dummyRS)               // s
         );
@@ -160,6 +161,37 @@ class TypedTransactionCodecTest {
                 RLP.encodeElement(new byte[]{2}),   // invalid yParity
                 RLP.encodeElement(dummyRS),
                 RLP.encodeElement(dummyRS)
+        );
+        RLPList list = (RLPList) RLP.decode2(encoded).get(0);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> TypedTransactionCodec.parseTypedSignatureState(list, 0, 1, 2, 3));
+    }
+
+    /** The shared parse rejects 0x00 on the envelope, as it already did on the authorization tuple. */
+    @Test
+    void parseTypedSignatureState_yParityLeadingZero_throws() {
+        byte[] dummyRS = new byte[32];
+        byte[] encoded = RLP.encodeList(
+                RLP.encodeElement(new byte[]{33}),
+                RLP.encodeElement(new byte[]{0}),
+                RLP.encodeElement(dummyRS),
+                RLP.encodeElement(dummyRS)
+        );
+        RLPList list = (RLPList) RLP.decode2(encoded).get(0);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> TypedTransactionCodec.parseTypedSignatureState(list, 0, 1, 2, 3));
+        assertTrue(ex.getMessage().contains("must not have leading zero bytes"), ex.getMessage());
+    }
+
+    @Test
+    void parseTypedSignatureState_unsignedYParityLeadingZero_throws() {
+        byte[] encoded = RLP.encodeList(
+                RLP.encodeElement(new byte[]{33}),
+                RLP.encodeElement(new byte[]{0}),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null)
         );
         RLPList list = (RLPList) RLP.decode2(encoded).get(0);
 

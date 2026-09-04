@@ -552,12 +552,12 @@ class AuthorizationListCodecTest {
     }
 
     @Test
-    void privateDecodeNonce_null_returnsZero() throws Exception {
-        java.lang.reflect.Method decodeNonce = AuthorizationListCodec.class.getDeclaredMethod(
-                "decodeNonce", byte[].class);
-        decodeNonce.setAccessible(true);
+    void privateDecodeUnsignedBigInteger_null_returnsZero() throws Exception {
+        java.lang.reflect.Method decodeUnsignedBigInteger = AuthorizationListCodec.class.getDeclaredMethod(
+                "decodeUnsignedBigInteger", byte[].class);
+        decodeUnsignedBigInteger.setAccessible(true);
 
-        assertEquals(BigInteger.ZERO, decodeNonce.invoke(null, (Object) null));
+        assertEquals(BigInteger.ZERO, decodeUnsignedBigInteger.invoke(null, (Object) null));
     }
 
     @Test
@@ -671,6 +671,170 @@ class AuthorizationListCodecTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> AuthorizationListCodec.encodeTuple(bad));
+    }
+
+    // -------------------------------------------------------------------------
+    // Canonical RLP scalar encodings
+    // -------------------------------------------------------------------------
+
+    @Test
+    void decodeTuple_nonMinimalChainId_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 0, RLP.encodeElement(new byte[]{0x00, 0x21}));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("chain_id"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_nonMinimalNonce_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeElement(new byte[]{0x00, 0x01}));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("nonce"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_nonMinimalZeroNonce_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 2, new byte[]{0x00});
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("nonce"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_nonCanonicalZeroYParity_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 3, new byte[]{0x00});
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("y_parity"), ex.getMessage());
+    }
+
+    /**
+     * Padded to exactly 32 bytes, so the data-word length check passes and the minimality check is
+     * what rejects it. A 33-byte payload would be caught by the length rule instead and would not
+     * exercise this at all.
+     */
+    @Test
+    void decodeTuple_nonMinimalSignatureR_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 4,
+                RLP.encodeElement(zeroPaddedToDataWord(reference.getSignature().getR())));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("signature r must not have leading zero bytes"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_nonMinimalSignatureS_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 5,
+                RLP.encodeElement(zeroPaddedToDataWord(reference.getSignature().getS())));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("signature s must not have leading zero bytes"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_oversizeSignatureRWithLeadingZero_reportsLengthError() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 4,
+                RLP.encodeElement(zeroPaddedBeyondDataWord(reference.getSignature().getR())));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("Authorization signature r is not valid"), ex.getMessage());
+    }
+
+    @Test
+    void encodeTuple_zeroNonce_emitsCanonicalEmptyString() {
+        SetCodeAuthorization auth = new SetCodeAuthorization(
+                BigInteger.valueOf(33),
+                Rskip545TestSupport.minimalAuthorization((byte) 33).getAddress(),
+                new byte[]{0x00},
+                Rskip545TestSupport.minimalAuthorization((byte) 33).getSignature());
+
+        byte[] tuple = AuthorizationListCodec.encodeTuple(auth);
+
+        RLPList inner = RLP.decodeList(tuple);
+        assertEquals(0, inner.get(2).getRLPRawData().length,
+                "nonce zero must be encoded as the empty string 0x80, not as 0x00");
+    }
+
+    @Test
+    void parseFromCallArguments_zeroNonce_normalizesToCanonicalBytes() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        CallArguments.AuthorizationListEntry entry = validEntry(reference, reference.getSignature());
+        entry.setNonce("0x0");
+
+        SetCodeAuthorization auth = AuthorizationListCodec.parseFromCallArguments(List.of(entry)).get(0);
+
+        assertEquals(0, auth.getNonceBytes().length,
+                "nonce zero must be held as the empty byte array so the signing hash matches the canonical form");
+    }
+
+    /**
+     * The low 31 bytes of {@code value}, left-padded with one zero byte to a full 32-byte data word.
+     * Still a valid curve scalar, so the tuple fails on encoding rather than on its signature value.
+     */
+    private static byte[] zeroPaddedToDataWord(BigInteger value) {
+        byte[] magnitude = BigIntegers.asUnsignedByteArray(value);
+        byte[] padded = new byte[32];
+        int taken = Math.min(31, magnitude.length);
+        System.arraycopy(magnitude, magnitude.length - taken, padded, 32 - taken, taken);
+        return padded;
+    }
+
+    /**
+     * Always 33 bytes with a leading zero, so the length rule fires whatever the signature draw:
+     * r is only 32 bytes while r >= 2**248, so a bare prepend gives 32 bytes about 1 draw in 256.
+     */
+    private static byte[] zeroPaddedBeyondDataWord(BigInteger value) {
+        byte[] magnitude = BigIntegers.asUnsignedByteArray(value);
+        byte[] padded = new byte[Transaction.DATAWORD_LENGTH + 1];
+        int taken = Math.min(Transaction.DATAWORD_LENGTH, magnitude.length);
+        System.arraycopy(magnitude, magnitude.length - taken, padded, padded.length - taken, taken);
+        return padded;
+    }
+
+    @Test
+    void decodeTuple_overlongItemPrefixOnChainId_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 0, new byte[]{(byte) 0x81, 0x21});
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("canonically encoded"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_longFormLengthOnShortNonce_throws() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 2, new byte[]{(byte) 0xb8, 0x01, 0x01});
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("canonically encoded"), ex.getMessage());
+    }
+
+    @Test
+    void decodeTuple_leadingZeroNonce_reportsFieldSpecificMessage() {
+        SetCodeAuthorization reference = Rskip545TestSupport.minimalAuthorization((byte) 33);
+        byte[] tuple = rebuildTupleField(reference, 2, RLP.encodeElement(new byte[]{0x00, 0x01}));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> decodeSingleTuple(tuple));
+        assertTrue(ex.getMessage().contains("Authorization nonce must not have leading zero bytes"),
+                ex.getMessage());
     }
 
     // -------------------------------------------------------------------------
