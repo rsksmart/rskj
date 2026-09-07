@@ -21,8 +21,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Rskip545TestSupport;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionTypePrefix;
@@ -53,9 +51,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link Type4RawTransactionParser} (RSKIP-545 / EIP-7702 set-code).
@@ -75,50 +70,6 @@ class Type4RawTransactionParserTest {
     }
 
     private final Type4RawTransactionParser parser = new Type4RawTransactionParser();
-
-    // -------------------------------------------------------------------------
-    // validate() — fork gates
-    // -------------------------------------------------------------------------
-
-    @Test
-    void validate_beforeRskip543_throws() {
-        ActivationConfig activationConfig = mockActivationConfig(false, false, false);
-
-        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
-                () -> parser.validate(1L, activationConfig, Constants.regtest()));
-
-        assertTrue(ex.getMessage().contains("RSKIP-543"),
-                "Expected RSKIP-543 gate, got: " + ex.getMessage());
-    }
-
-    @Test
-    void validate_rskip543Only_throwsRskip546() {
-        ActivationConfig activationConfig = mockActivationConfig(true, false, false);
-
-        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
-                () -> parser.validate(1L, activationConfig, Constants.regtest()));
-
-        assertTrue(ex.getMessage().contains("RSKIP-546"),
-                "Expected RSKIP-546 gate, got: " + ex.getMessage());
-    }
-
-    @Test
-    void validate_rskip543And546Without545_throwsRskip545() {
-        ActivationConfig activationConfig = mockActivationConfig(true, true, false);
-
-        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class,
-                () -> parser.validate(1L, activationConfig, Constants.regtest()));
-
-        assertTrue(ex.getMessage().contains("RSKIP-545"),
-                "Expected RSKIP-545 gate, got: " + ex.getMessage());
-    }
-
-    @Test
-    void validate_allRequiredForksActive_doesNotThrow() {
-        ActivationConfig activationConfig = mockActivationConfig(true, true, true);
-
-        parser.validate(1L, activationConfig, Constants.regtest());
-    }
 
     // -------------------------------------------------------------------------
     // parse(CallArguments)
@@ -332,6 +283,33 @@ class Type4RawTransactionParserTest {
     }
 
     @Test
+    void parse_rlp_canonicalRlpZeroFees_accepted() {
+        byte[] authList = AuthorizationListCodec.encodeList(
+                List.of(Rskip545TestSupport.minimalAuthorization(REGTEST_CHAIN_ID)));
+        byte[][] fields = new byte[][]{
+                RLP.encodeByte(REGTEST_CHAIN_ID),
+                RLP.encodeElement(new byte[]{0x01}),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null),
+                RLP.encodeBigInteger(BigInteger.valueOf(21_000)),
+                RLP.encodeRskAddress(RECEIVER),
+                RLP.encodeBigInteger(BigInteger.ZERO),
+                RLP.encodeElement(new byte[0]),
+                RLP.encodeList(),
+                authList,
+                RLP.encodeElement(null),
+                RLP.encodeElement(null),
+                RLP.encodeElement(null),
+        };
+        RLPList payload = RLP.decodeList(RLP.encodeList(fields));
+
+        ParsedType4Transaction parsed = parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), payload);
+
+        assertEquals(Coin.ZERO, parsed.maxPriorityFeePerGas());
+        assertEquals(Coin.ZERO, parsed.maxFeePerGas());
+    }
+
+    @Test
     void parse_rlp_truncatedAccessList_throws() {
         byte[][] base = Rskip545TestSupport.defaultSignedType4Fields(RECEIVER, Rskip545TestSupport.defaultAuthListBytes());
         base[8] = new byte[]{(byte) 0xC4, 0x01};
@@ -415,24 +393,56 @@ class Type4RawTransactionParserTest {
                 () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
     }
 
-    @ParameterizedTest(name = "parse_rlp rejects auth yParity={0}")
-    @ValueSource(ints = {2, 5})
-    void parse_rlp_authYParityInvalid_throws(int yParityValue) {
+    @ParameterizedTest(name = "parse_rlp accepts auth yParity={0}")
+    @ValueSource(ints = {2, 5, 255})
+    void parse_rlp_authYParityOutsideParityRange_succeeds(int yParityValue) {
         byte[] authList = Rskip545TestSupport.authListWithModifiedTupleField(
                 3, RLP.encodeByte((byte) yParityValue));
-        RLPList fields = Rskip545TestSupport.buildType4RlpList(RECEIVER, authList);
 
-        assertThrows(IllegalArgumentException.class,
-                () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
+        assertDoesNotThrow(() -> parseSignedType4WithAuthList(authList));
     }
 
     @Test
-    void parse_rlp_authOversizedS_throws() {
-        byte[] oversizedS = BigIntegers.asUnsignedByteArray(SECP256K1N_HALF.add(BigInteger.ONE));
-        byte[] authList = Rskip545TestSupport.authListWithModifiedTupleField(5, RLP.encodeElement(oversizedS));
-        RLPList fields = Rskip545TestSupport.buildType4RlpList(RECEIVER, authList);
+    void parse_rlp_authNonceAtMaxUint64MinusOne_succeeds() {
+        byte[] authList = Rskip545TestSupport.authListWithModifiedTupleField(
+                2, RLP.encodeBigInteger(BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE)));
 
-        assertThrows(IllegalArgumentException.class,
+        assertDoesNotThrow(() -> parseSignedType4WithAuthList(authList));
+    }
+
+    @ParameterizedTest(name = "parse_rlp accepts auth signature field {0} = 0")
+    @ValueSource(ints = {4, 5})
+    void parse_rlp_authZeroSignatureComponent_succeeds(int fieldIndex) {
+        byte[] authList = Rskip545TestSupport.authListWithModifiedTupleField(
+                fieldIndex, RLP.encodeElement(new byte[0]));
+
+        assertDoesNotThrow(() -> parseSignedType4WithAuthList(authList));
+    }
+
+    private ParsedType4Transaction parseSignedType4WithAuthList(byte[] authList) {
+        byte[][] encodedFields = Rskip545TestSupport.defaultSignedType4Fields(RECEIVER, authList);
+        encodedFields[11] = RLP.encodeElement(BigIntegers.asUnsignedByteArray(BigInteger.ONE));
+        encodedFields[12] = RLP.encodeElement(BigIntegers.asUnsignedByteArray(BigInteger.ONE));
+        RLPList fields = RLP.decodeList(RLP.encodeList(encodedFields));
+
+        return parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields);
+    }
+
+    /**
+     * Authorization low-s is enforced per tuple at execution, so parsing must accept every s value
+     * around the bound and leave the verdict to {@code SetCodeAuthorizationTransactionExecutor}.
+     */
+    @ParameterizedTest(name = "parse_rlp accepts auth s = half{0}")
+    @ValueSource(ints = {-1, 0, 1})
+    void parse_rlp_authSAroundHalfCurveOrder_succeeds(int offsetFromHalf) {
+        byte[] s = BigIntegers.asUnsignedByteArray(SECP256K1N_HALF.add(BigInteger.valueOf(offsetFromHalf)));
+        byte[] authList = Rskip545TestSupport.authListWithModifiedTupleField(5, RLP.encodeElement(s));
+        byte[][] encodedFields = Rskip545TestSupport.defaultSignedType4Fields(RECEIVER, authList);
+        encodedFields[11] = RLP.encodeElement(BigIntegers.asUnsignedByteArray(BigInteger.ONE));
+        encodedFields[12] = RLP.encodeElement(BigIntegers.asUnsignedByteArray(BigInteger.ONE));
+        RLPList fields = RLP.decodeList(RLP.encodeList(encodedFields));
+
+        assertDoesNotThrow(
                 () -> parser.parse(TransactionTypePrefix.typed(TransactionType.TYPE_4), fields));
     }
 
@@ -460,20 +470,42 @@ class Type4RawTransactionParserTest {
         assertTrue(ex.getMessage().contains("secp256k1n/2"));
     }
 
+    @Test
+    void validateOuterSignatureFormat_rejectsHalfCurveOrderS() {
+        ECDSASignature halfS = ECDSASignature.fromComponents(
+                BigIntegers.asUnsignedByteArray(BigInteger.ONE),
+                BigIntegers.asUnsignedByteArray(SECP256K1N_HALF),
+                (byte) 27);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Type4TransactionValidation.validateOuterSignatureFormat(halfS));
+
+        assertTrue(ex.getMessage().contains("secp256k1n/2"));
+    }
+
+    @Test
+    void parse_rlp_halfCurveOrderOuterSignature_throws() {
+        assertThrows(IllegalArgumentException.class, () -> parser.parse(
+                TransactionTypePrefix.typed(TransactionType.TYPE_4), type4FieldsWithOuterS(SECP256K1N_HALF)));
+    }
+
+    @Test
+    void parse_rlp_justBelowHalfCurveOrderOuterSignature_succeeds() {
+        assertDoesNotThrow(() -> parser.parse(
+                TransactionTypePrefix.typed(TransactionType.TYPE_4),
+                type4FieldsWithOuterS(SECP256K1N_HALF.subtract(BigInteger.ONE))));
+    }
+
+    private static RLPList type4FieldsWithOuterS(BigInteger s) {
+        byte[][] base = Rskip545TestSupport.defaultSignedType4Fields(RECEIVER, Rskip545TestSupport.defaultAuthListBytes());
+        base[11] = RLP.encodeElement(BigIntegers.asUnsignedByteArray(BigInteger.ONE));
+        base[12] = RLP.encodeElement(BigIntegers.asUnsignedByteArray(s));
+        return RLP.decodeList(RLP.encodeList(base));
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
-
-    private static ActivationConfig mockActivationConfig(boolean rskip543, boolean rskip546, boolean rskip545) {
-        ActivationConfig.ForBlock forBlock = mock(ActivationConfig.ForBlock.class);
-        when(forBlock.isActive(ConsensusRule.RSKIP543)).thenReturn(rskip543);
-        when(forBlock.isActive(ConsensusRule.RSKIP546)).thenReturn(rskip546);
-        when(forBlock.isActive(ConsensusRule.RSKIP545)).thenReturn(rskip545);
-
-        ActivationConfig activationConfig = mock(ActivationConfig.class);
-        when(activationConfig.forBlock(anyLong())).thenReturn(forBlock);
-        return activationConfig;
-    }
 
     private static RLPList decodePayload(Transaction tx) {
         byte[] encoded = tx.getEncoded();

@@ -36,6 +36,7 @@ import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.jupiter.api.Assertions;
@@ -1075,6 +1076,29 @@ class EthModuleGasEstimationDSLTest {
                 "no caller-provided gas hint should make estimateGas return a value that OOGs on replay");
         assertTrue(firstEstimate >= trueMinimum,
                 "swept estimate must be at least the true minimum (" + trueMinimum + ")");
+    }
+
+
+    @Test
+    void estimateGas_throwingPrecompileDoesNotInflateEstimateTowardGasCap()
+            throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+        long gasEstimationCap = new TestSystemProperties().getGasEstimationCap();
+
+        final CallArguments args = new CallArguments();
+        args.setTo("0x" + PrecompiledContracts.BRIDGE_ADDR.toHexString());
+        args.setValue(HexUtils.toQuantityJsonHex(0));
+        args.setNonce(HexUtils.toQuantityJsonHex(0));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        // Calls the Bridge precompile with ABI-encoded data that intentionally triggers an exception.
+        args.setData("0xe674f5e80000000000000000000000000000000000000000000000000000000001000006");
+
+        long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
+
+        assertNotNull(eth.getEstimationResult().getException(), "the simulated call must have actually thrown inside the precompile for this test to be meaningful");
+        assertNotEquals(gasEstimationCap, estimatedGas, "a throwing precompile must not make eth_estimateGas return the gas estimation cap");
     }
 
     /**

@@ -22,6 +22,8 @@ import co.rsk.core.RskAddress;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 
@@ -162,20 +164,20 @@ class CommonParsingUtilsTest {
     }
 
     @Test
-    void requireSignatureComponent_signPaddedFullWord_doesNotThrow() {
+    void requireNormalizedSignatureComponent_signPaddedFullWord_doesNotThrow() {
         byte[] component = new byte[33];
         component[1] = (byte) 0x80;
 
-        assertDoesNotThrow(() -> CommonParsingUtils.requireSignatureComponent(component, "Signature R is not valid"));
+        assertDoesNotThrow(() -> CommonParsingUtils.requireNormalizedSignatureComponent(component, "Signature R is not valid"));
     }
 
     @Test
-    void requireSignatureComponent_exceedsLimit_throws() {
+    void requireNormalizedSignatureComponent_exceedsLimit_throws() {
         byte[] oversize = new byte[33];
         oversize[0] = 0x01;
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> CommonParsingUtils.requireSignatureComponent(oversize, "Signature R is not valid"));
+                () -> CommonParsingUtils.requireNormalizedSignatureComponent(oversize, "Signature R is not valid"));
         assertTrue(ex.getMessage().contains("Signature R is not valid"));
     }
 
@@ -233,5 +235,40 @@ class CommonParsingUtilsTest {
                 () -> CommonParsingUtils.requireFieldCount(list, 9, "TestType"));
         assertTrue(ex.getMessage().contains("TestType"));
         assertTrue(ex.getMessage().contains("9"));
+    }
+
+    // -------------------------------------------------------------------------
+    // parseCanonicalYParity — shared by the typed envelope and the authorization tuple
+    // -------------------------------------------------------------------------
+
+    @Test
+    void parseCanonicalYParity_emptyOrNull_isZero() {
+        assertEquals(0, CommonParsingUtils.parseCanonicalYParity(null, "y"));
+        assertEquals(0, CommonParsingUtils.parseCanonicalYParity(new byte[0], "y"));
+    }
+
+    @Test
+    void parseCanonicalYParity_one_isReturned() {
+        assertEquals(1, CommonParsingUtils.parseCanonicalYParity(new byte[]{1}, "y"));
+    }
+
+    @Test
+    void parseCanonicalYParity_singleZeroByte_throws() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> CommonParsingUtils.parseCanonicalYParity(new byte[]{0}, "y"));
+        assertTrue(ex.getMessage().contains("must not have leading zero bytes"), ex.getMessage());
+    }
+
+    @Test
+    void parseCanonicalYParity_multiByte_throws() {
+        assertThrows(IllegalArgumentException.class,
+                () -> CommonParsingUtils.parseCanonicalYParity(new byte[]{1, 0}, "y"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(bytes = {2, 5, 27, (byte) 0xFF})
+    void parseCanonicalYParity_outOfRange_throws(byte value) {
+        assertThrows(IllegalArgumentException.class,
+                () -> CommonParsingUtils.parseCanonicalYParity(new byte[]{value}, "y"));
     }
 }

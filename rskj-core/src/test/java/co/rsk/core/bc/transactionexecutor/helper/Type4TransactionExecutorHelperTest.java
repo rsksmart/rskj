@@ -49,6 +49,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 
 public abstract class Type4TransactionExecutorHelperTest {
 
@@ -146,10 +147,25 @@ public abstract class Type4TransactionExecutorHelperTest {
             byte chainId,
             ECKey authorityKey
     ) {
+        return createValidAuthorizationTuple(
+                delegatedAddress,
+                nonce,
+                BigInteger.valueOf(Byte.toUnsignedInt(chainId)),
+                authorityKey
+        );
+    }
+
+    protected SetCodeAuthorization createValidAuthorizationTuple(
+            RskAddress delegatedAddress,
+            BigInteger nonce,
+            BigInteger chainId,
+            ECKey authorityKey
+    ) {
+        byte[] nonceBytes = CommonParsingUtils.unsignedBytes(nonce);
         byte[] rlpEncoded = RLP.encodeList(
-                RLP.encodeBigInteger(BigInteger.valueOf(chainId)),
+                RLP.encodeBigInteger(chainId),
                 RLP.encodeElement(delegatedAddress.getBytes()),
-                RLP.encodeElement(nonce.toByteArray())
+                RLP.encodeElement(nonceBytes)
         );
 
         byte[] payload = new byte[1 + rlpEncoded.length];
@@ -161,9 +177,9 @@ public abstract class Type4TransactionExecutorHelperTest {
                 ECDSASignature.fromSignature(authorityKey.sign(HashUtil.keccak256(payload)));
 
         return new SetCodeAuthorization(
-                BigInteger.valueOf(chainId),
+                chainId,
                 delegatedAddress,
-                nonce.toByteArray(),
+                nonceBytes,
                 signature
         );
     }
@@ -248,6 +264,7 @@ public abstract class Type4TransactionExecutorHelperTest {
 
     protected void mockAccountWithCode(Repository repository, RskAddress address, byte[] code)  {
         when(repository.getCode(address)).thenReturn(code);
+        when(repository.isExist(address)).thenReturn(true);
     }
 
     protected void verifyTransactionCostBiggerOrEqualThan(Transaction tx, long expectedAuthorizationCost) {

@@ -18,7 +18,10 @@
 package org.ethereum.core.transaction;
 
 import co.rsk.core.RskAddress;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.RLP;
@@ -41,7 +44,7 @@ public class SetCodeAuthorization {
     public SetCodeAuthorization(BigInteger chainId, RskAddress address, byte[] nonce, ECDSASignature signature) {
         this.chainId = Objects.requireNonNull(chainId, "chainId");
         this.address = Objects.requireNonNull(address, "address");
-        this.nonce = Objects.requireNonNull(nonce, "nonce").clone();
+        this.nonce = minimalNonce(Objects.requireNonNull(nonce, "nonce"));
         this.signature = Objects.requireNonNull(signature, "signature");
     }
 
@@ -53,7 +56,18 @@ public class SetCodeAuthorization {
         return address;
     }
 
-    public byte[] getNonce() {
+    /**
+     * Strips leading zero bytes so the stored nonce is the minimal big-endian encoding of its value.
+     *
+     * <p>The nonce is read by two consumers that must agree: {@link #getSigningHash()} and
+     * {@code AuthorizationListCodec.encodeTuple}. Normalizing here — rather than in either reader —
+     * keeps the bytes an authorization is signed over identical to the bytes it is encoded as.
+     */
+    private static byte[] minimalNonce(byte[] nonce) {
+        return CommonParsingUtils.unsignedBytes(BigIntegers.fromUnsignedByteArray(nonce));
+    }
+
+    public byte[] getNonceBytes() {
         return  nonce.clone();
     }
 
@@ -76,15 +90,42 @@ public class SetCodeAuthorization {
     }
 
     public void verifyNonceRange() {
-        if (nonce.length == 0) {
-            throw new IllegalStateException("Nonce is empty");
-        }
-        BigInteger nonceValue = new BigInteger(1, nonce);
-        if (nonceValue.compareTo(MAX_NONCE) >= 0) {
+        if (getNonceAsInteger().compareTo(MAX_NONCE) >= 0) {
             throw new IllegalStateException("Nonce must be < 2^64 - 1");
         }
     }
 
+    public BigInteger getNonceAsInteger() {
+        return BigIntegers.fromUnsignedByteArray(nonce);
+    }
+
+    /**
+     * Rejects a y_parity outside {@code {0, 1}}, per tuple, since the decoder admits any single byte.
+     * Recovery cannot do it: headers 31/32 make y_parity 4 and 5 recover the same authority as 0
+     * and 1, so the tuple would be applied rather than skipped.
+     */
+    public void verifyYParity() {
+        byte v = signature.getV();
+        if (v != Transaction.LOWER_REAL_V && v != Transaction.LOWER_REAL_V + 1) {
+            throw new IllegalStateException("Signature y_parity must be 0 or 1");
+        }
+    }
+
+    /**
+     * Rejects signature components outside {@code [1, secp256k1n)}, per tuple, since the decoder
+     * admits any value below {@code 2^256}. The Bouncy Castle backend only sign-checks r and s, so
+     * key recovery cannot do this either.
+     */
+    public void verifySignatureComponents() {
+        if (!signature.validateComponentsWithoutV()) {
+            throw new IllegalStateException("Signature r and s must be in [1, secp256k1n)");
+        }
+    }
+
+    /**
+     * RSKIP-545 / EIP-7702 admit {@code s == secp256k1n/2} for authorization tuples.
+     * The outer type 4 transaction signature keeps the exclusive bound shared by all types.
+     */
     public void verifyLowS() {
         if (signature.getS().compareTo(SECP256K1N_HALF) > 0) {
             throw new IllegalStateException("Signature s exceeds secp256k1n / 2");

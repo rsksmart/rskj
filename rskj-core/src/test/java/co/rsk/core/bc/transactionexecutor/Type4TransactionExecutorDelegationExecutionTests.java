@@ -17,25 +17,37 @@
  */
 package co.rsk.core.bc.transactionexecutor;
 
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.transactionexecutor.helper.Type4TransactionExecutorHelperTest;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.DelegationCodeResolver;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 
+import java.math.BigInteger;
 import java.util.List;
+import java.util.stream.Stream;
 
+import static org.ethereum.util.BIUtil.toBI;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -300,4 +312,262 @@ import static org.mockito.Mockito.when;
          verifyTransactionCostBiggerOrEqualThan(tx, GasCost.PER_EMPTY_ACCOUNT_COST);
      }
 
+     private static Stream<Arguments> exceptionalHaltPrograms() {
+         return Stream.of(Arguments.of("invalid opcode", new byte[]{(byte) 0xfe}),
+                 Arguments.of("out of gas", new byte[]{
+                                 0x5b,       // JUMPDEST
+                                 0x60, 0x00, // PUSH1 0
+                                 0x56        // JUMP -> jump back to 0 forever
+                         }));
+     }
+
+     @ParameterizedTest(name = "{0}")
+     @MethodSource("exceptionalHaltPrograms")
+     void exceptionalHaltShouldPreserveAuthorizationRefund(String scenario, byte[] receiverCode) {
+         long expectedAuthorizationRefund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST;
+
+         var cacheTracker = mock(MutableRepository.class);
+         var authorizationTracker = mock(MutableRepository.class);
+         when(tracker.startTracking()).thenReturn(cacheTracker, authorizationTracker);
+
+         mockAccountWithBalanceAndNonce(tracker, sender, 1_000_000, ONE_NONCE);
+         mockReceiver(receiver, receiverCode);
+
+         byte[] existingDelegatedCode = DelegationCodeResolver.createDelegatedCode(delegatedAddress);
+         mockAuthorizationAccount(authorizationTracker, authorityAddress, ONE_NONCE, existingDelegatedCode);
+
+         var authorization = createValidAuthorizationTuple(createRandomAddress(), ONE_NONCE, constants.getChainId(), authorityKey);
+
+         long gasLimit = 600_000L;
+         long gasPrice = 1L;
+
+         var tx = createSignedType4Transaction(
+                 senderKey,
+                 constants.getChainId(),
+                 ONE_NONCE,
+                 gasLimit,
+                 gasPrice,
+                 gasPrice,
+                 receiver,
+                 0,
+                 EMPTY_DATA,
+                 authorization
+         );
+
+         mockSuccessfulProgramInvoke(tx, cacheTracker);
+
+         var txExecutor = newExecutor(tx);
+         assertTrue(txExecutor.executeTransaction());
+
+         // Both INVALID and OOG must reach an actual VM exceptional halt.
+         assertNotNull(txExecutor.getResult().getException(), scenario + " should produce an exceptional halt");
+
+         BigInteger receiptGasUsed = toBI(txExecutor.getReceipt().getGasUsed());
+         BigInteger txGasLimit = toBI(tx.getGasLimit());
+
+         long expectedAppliedRefund = Math.min(expectedAuthorizationRefund, txExecutor.getResult().getGasUsedBeforeRefunds() / 2);
+
+         BigInteger expectedReceiptGasUsed = txGasLimit.subtract(BigInteger.valueOf(expectedAppliedRefund));
+
+         assertEquals(expectedReceiptGasUsed, receiptGasUsed, "authorization refund should survive " + scenario);
+         assertEquals( tx.getGasPrice().multiply(receiptGasUsed), txExecutor.getPaidFees(), "paidFees must use the same post-refund gas as the receipt");
+         assertSenderReceivedRefund(tx.getGasPrice().multiply(BigInteger.valueOf(expectedAppliedRefund)));
+
+         // Authorization processing must still persist even though execution
+         verifyValidAuthorityChanges(authorizationTracker, authorityAddress, authorization.getAddress());
+     }
+
+     @Test
+     void revertShouldPreserveAuthorizationRefundAndRemainingExecutionGas() {
+         long expectedAuthorizationRefund = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST;
+
+         var cacheTracker = mock(MutableRepository.class);
+         var authorizationTracker = mock(MutableRepository.class);
+         when(tracker.startTracking()).thenReturn(cacheTracker, authorizationTracker);
+
+         mockAccountWithBalanceAndNonce(tracker, sender, 1_000_000, ONE_NONCE);
+
+         //PUSH1 0 , PUSH1 0, REVERT
+         mockReceiver(receiver, new byte[]{0x60, 0x00, 0x60, 0x00, (byte) 0xfd});
+
+         byte[] existingDelegatedCode = DelegationCodeResolver.createDelegatedCode(delegatedAddress);
+         mockAuthorizationAccount(authorizationTracker, authorityAddress, ONE_NONCE, existingDelegatedCode);
+         var authorization = createValidAuthorizationTuple(createRandomAddress(), ONE_NONCE, constants.getChainId(), authorityKey);
+
+         long gasLimit = 600_000L;
+         long gasPrice = 1L;
+
+         var tx = createSignedType4Transaction(
+                 senderKey,
+                 constants.getChainId(),
+                 ONE_NONCE,
+                 gasLimit,
+                 gasPrice,
+                 gasPrice,
+                 receiver,
+                 0,
+                 EMPTY_DATA,
+                 authorization
+         );
+
+         mockSuccessfulProgramInvoke(tx, cacheTracker);
+
+         var txExecutor = newExecutor(tx);
+
+         assertTrue(txExecutor.executeTransaction());
+
+         //REVERT is not an exceptional halt.  It sets the revert flag but doesn't set an exception.
+         assertNull(txExecutor.getResult().getException());
+         assertTrue(txExecutor.getResult().isRevert());
+
+         BigInteger receiptGasUsed = toBI(txExecutor.getReceipt().getGasUsed());
+
+         //REVERT preserves unused execution gas => final gas used = gas used before refunds - authorization refund
+         long gasUsedBeforeRefunds = txExecutor.getResult().getGasUsedBeforeRefunds();
+         long expectedAppliedRefund = Math.min(expectedAuthorizationRefund, gasUsedBeforeRefunds / 2);
+         BigInteger expectedReceiptGasUsed = BigInteger.valueOf(gasUsedBeforeRefunds).subtract(BigInteger.valueOf(expectedAppliedRefund));
+
+         assertEquals(expectedReceiptGasUsed, receiptGasUsed, "authorization refund should be applied after REVERT");
+         assertEquals(tx.getGasPrice().multiply(receiptGasUsed), txExecutor.getPaidFees(), "paidFees must use the same post-refund gas as the receipt");
+         assertEquals(expectedAppliedRefund, txExecutor.getResult().getDeductedRefund());
+
+         // For REVERT the sender receives: unused execution gas + authorization refund.
+         // getGasConsumed() already reflects both.
+         BigInteger totalRefundedGas = toBI(tx.getGasLimit()).subtract(receiptGasUsed);
+         assertSenderReceivedRefund(tx.getGasPrice().multiply(totalRefundedGas));
+
+         /*
+          * Authorization processing happened before REVERT and must persist.
+          */
+         verifyValidAuthorityChanges(authorizationTracker, authorityAddress, authorization.getAddress());
+     }
+
+     @Test
+     void exceptionalHaltShouldNotRefundNonRefundableAuthorization() {
+         var cacheTracker = mock(MutableRepository.class);
+         var authorizationTracker = mock(MutableRepository.class);
+         when(tracker.startTracking()).thenReturn(cacheTracker, authorizationTracker);
+
+         mockAccountWithBalanceAndNonce(tracker, sender, 1_000_000, ONE_NONCE);
+
+         // INVALID -> real exceptional halt.
+         mockReceiver(receiver, new byte[]{(byte) 0xfe});
+
+         mockAuthorizationAccount(authorizationTracker, authorityAddress, ONE_NONCE, EMPTY_CODE);
+         var authorization = createValidAuthorizationTuple(createRandomAddress(), ONE_NONCE, constants.getChainId(), authorityKey);
+
+         long gasLimit = 600_000L;
+         long gasPrice = 1L;
+
+         var tx = createSignedType4Transaction(
+                 senderKey,
+                 constants.getChainId(),
+                 ONE_NONCE,
+                 gasLimit,
+                 gasPrice,
+                 gasPrice,
+                 receiver,
+                 0,
+                 EMPTY_DATA,
+                 authorization
+         );
+
+         mockSuccessfulProgramInvoke(tx, cacheTracker);
+
+         var txExecutor = newExecutor(tx);
+
+         assertTrue(txExecutor.executeTransaction());
+
+         assertNotNull(txExecutor.getResult().getException(), "INVALID should produce an exceptional halt");
+
+         BigInteger receiptGasUsed = toBI(txExecutor.getReceipt().getGasUsed());
+         BigInteger txGasLimit = toBI(tx.getGasLimit());
+
+         assertEquals(txGasLimit, receiptGasUsed, "full gas limit should be charged when authorization is not refundable");
+         assertEquals(0L, txExecutor.getResult().getDeductedRefund(), "non-refundable authorization should not produce a gas refund");
+         assertEquals(tx.getGasPrice().multiply(receiptGasUsed), txExecutor.getPaidFees(), "paidFees must match receipt gas used");
+
+         verifyValidAuthorityChanges(authorizationTracker, authorityAddress, authorization.getAddress());
+     }
+
+     @Test
+     void exceptionalHaltShouldPreserveRefundFromMultipleAuthorizations() {
+        long refundPerAuthorization = GasCost.PER_EMPTY_ACCOUNT_COST - GasCost.PER_AUTH_BASE_COST;
+        long expectedAuthorizationRefund = refundPerAuthorization * 2;
+
+        var cacheTracker = mock(MutableRepository.class);
+        var firstAuthorizationTracker = mock(MutableRepository.class);
+        var secondAuthorizationTracker = mock(MutableRepository.class);
+
+        when(tracker.startTracking()).thenReturn(cacheTracker, firstAuthorizationTracker, secondAuthorizationTracker);
+        mockAccountWithBalanceAndNonce(tracker, sender, 1_000_000, ONE_NONCE);
+
+        // INVALID -> real exceptional halt after processing both authorizations
+        mockReceiver(receiver, new byte[]{(byte) 0xfe});
+
+        byte[] firstExistingDelegatedCode = DelegationCodeResolver.createDelegatedCode(delegatedAddress);
+        mockAuthorizationAccount(firstAuthorizationTracker, authorityAddress, ONE_NONCE, firstExistingDelegatedCode);
+
+        ECKey secondAuthorityKey = new ECKey();
+        RskAddress secondAuthorityAddress = new RskAddress(secondAuthorityKey.getAddress());
+        byte[] secondExistingDelegatedCode = DelegationCodeResolver.createDelegatedCode(createRandomAddress());
+        mockAuthorizationAccount(secondAuthorizationTracker, secondAuthorityAddress, ONE_NONCE, secondExistingDelegatedCode);
+
+
+         var firstAuthorization = createValidAuthorizationTuple(createRandomAddress(), ONE_NONCE, constants.getChainId(), authorityKey);
+         var secondAuthorization = createValidAuthorizationTuple(createRandomAddress(), ONE_NONCE, constants.getChainId(), secondAuthorityKey);
+
+         long gasLimit = 600_000L;
+         long gasPrice = 1L;
+
+         var tx = createSignedType4Transaction(
+                 senderKey,
+                 constants.getChainId(),
+                 ONE_NONCE,
+                 gasLimit,
+                 gasPrice,
+                 gasPrice,
+                 receiver,
+                 0,
+                 EMPTY_DATA,
+                 firstAuthorization,
+                 secondAuthorization
+         );
+
+         mockSuccessfulProgramInvoke(tx, cacheTracker);
+
+         var txExecutor = newExecutor(tx);
+
+         assertTrue(txExecutor.executeTransaction());
+
+         assertNotNull(txExecutor.getResult().getException(), "INVALID should produce an exceptional halt");
+
+         BigInteger receiptGasUsed = toBI(txExecutor.getReceipt().getGasUsed());
+         BigInteger txGasLimit = toBI(tx.getGasLimit());
+
+         long expectedAppliedRefund = Math.min(expectedAuthorizationRefund, txExecutor.getResult().getGasUsedBeforeRefunds() / 2);
+         /*
+          * Both authorization refunds must survive the exceptional halt.
+          * gasLeftover after exceptional halt = 0
+          * final gasLeftover = refund(A) + refund(B)
+          */
+         BigInteger expectedReceiptGasUsed = txGasLimit.subtract(BigInteger.valueOf(expectedAppliedRefund));
+
+         assertEquals(expectedReceiptGasUsed, receiptGasUsed, "refunds from both authorizations should survive exceptional halt");
+         assertEquals(expectedAppliedRefund, txExecutor.getResult().getDeductedRefund(), "both authorization refunds should be applied");
+
+         assertEquals(tx.getGasPrice().multiply(receiptGasUsed), txExecutor.getPaidFees(), "paidFees must use the same post-refund gas as the receipt");
+         assertSenderReceivedRefund(tx.getGasPrice().multiply(BigInteger.valueOf(expectedAppliedRefund)));
+
+         verifyValidAuthorityChanges(firstAuthorizationTracker, authorityAddress, firstAuthorization.getAddress());
+         verifyValidAuthorityChanges(secondAuthorizationTracker, secondAuthorityAddress, secondAuthorization.getAddress());
+     }
+
+     private void assertSenderReceivedRefund(Coin expectedRefund) {
+         ArgumentCaptor<Coin> balanceChangeCaptor = ArgumentCaptor.forClass(Coin.class);
+         verify(tracker, atLeast(2)).addBalance(eq(sender), balanceChangeCaptor.capture());
+         assertTrue(balanceChangeCaptor.getAllValues().contains(expectedRefund),
+                 "sender should receive expected gas refund: " + expectedRefund
+         );
+     }
 }

@@ -121,7 +121,7 @@ class Rskip546DslTest {
 
         assertNotNull(tx);
         assertEquals(expectedType, tx.getType());
-        assertFalse(tx.isRskNamespaceTransaction());
+        assertFalse(tx.getTypePrefix().isRskNamespace());
     }
 
     @ParameterizedTest
@@ -435,7 +435,7 @@ class Rskip546DslTest {
         assertEquals(1, decoded.getTransactionsList().size());
         Transaction decodedTx = decoded.getTransactionsList().get(0);
         assertEquals(expectedTxType, decodedTx.getType());
-        assertFalse(decodedTx.isRskNamespaceTransaction());
+        assertFalse(decodedTx.getTypePrefix().isRskNamespace());
     }
 
     @ParameterizedTest

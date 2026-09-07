@@ -69,6 +69,9 @@ public class TransactionReceipt {
         }
 
         TransactionTypePrefix prefix = TransactionTypePrefix.fromRawData(rlp);
+        if (prefix.isRskNamespace()) {
+            throw new IllegalArgumentException(TransactionTypePrefix.RSK_NAMESPACE_UNSUPPORTED_MESSAGE);
+        }
         this.typePrefix = prefix;
         BytesSlice receiptData = TransactionTypePrefix.stripPrefix(rlp, prefix);
 
@@ -91,7 +94,6 @@ public class TransactionReceipt {
     /**
      * RSKIP-546 / RSKIP-545: standard Type 1, standard Type 2, and Type 4 receipts use
      * {@code rlp([status, cumulativeGasUsed, logsBloom, logs])} after the single-byte type prefix.
-     * RSK-namespace Type 2 and Type 3 use the legacy six-field body.
      */
     public static boolean usesFourFieldReceiptBody(TransactionTypePrefix prefix) {
         if (prefix instanceof StandardTypedPrefix st) {

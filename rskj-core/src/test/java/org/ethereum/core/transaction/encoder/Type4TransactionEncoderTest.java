@@ -36,6 +36,10 @@ import org.mockito.quality.Strictness;
 import java.math.BigInteger;
 import java.util.List;
 
+import static org.ethereum.core.transaction.encoder.EncoderTestSupport.FIXED_R;
+import static org.ethereum.core.transaction.encoder.EncoderTestSupport.FIXED_S;
+import static org.ethereum.core.transaction.encoder.EncoderTestSupport.FIXED_V_Y_PARITY_0;
+import static org.ethereum.core.transaction.encoder.EncoderTestSupport.withFixedSignature;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -166,9 +170,19 @@ class Type4TransactionEncoderTest {
         assertEquals(13, fields.size());
         assertNullOrEmpty(fields.get(11).getRLPData(), "r must be empty when unsigned");
         assertNullOrEmpty(fields.get(12).getRLPData(), "s must be empty when unsigned");
-        byte[] yParityData = fields.get(10).getRLPData();
-        assertTrue(yParityData == null || yParityData.length == 0 || yParityData[0] == 0,
-                "yParity defaults to 0 when unsigned");
+        assertNullOrEmpty(fields.get(10).getRLPData(),
+                "yParity defaults to empty RLP byte (0x80) when unsigned - not a bare 0x00");
+    }
+
+    @Test
+    void encodeSigned_yParity0_encodesAsEmptyRlpByte() {
+        Transaction tx = withFixedSignature(validUnsignedType4(), FIXED_V_Y_PARITY_0);
+        RLPList fields = decodeSignedPayload(ENCODER.encodeSigned(tx));
+
+        assertNullOrEmpty(fields.get(10).getRLPData(),
+                "yParity 0 must encode as empty RLP byte (0x80), not 0x00");
+        assertArrayEquals(FIXED_R, fields.get(11).getRLPData());
+        assertArrayEquals(FIXED_S, fields.get(12).getRLPData());
     }
 
     @Test

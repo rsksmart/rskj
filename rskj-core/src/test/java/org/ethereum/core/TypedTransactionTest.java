@@ -452,6 +452,22 @@ class TypedTransactionTest {
                 "Parsing Type 2 tx with maxPriorityFeePerGas > maxFeePerGas must throw per EIP-1559");
     }
 
+    @Test
+    void type2_decodeAcceptsCanonicalRlpZeroFees() {
+        byte[][] fields = defaultType2ShapeFields();
+        fields[2] = RLP.encodeElement(null);
+        fields[3] = RLP.encodeElement(null);
+        byte[] raw = ByteUtil.merge(
+                new byte[] { TransactionType.TYPE_2.getByteCode() },
+                RLP.encodeList(fields)
+        );
+
+        Transaction tx = new ImmutableTransaction(raw);
+
+        assertEquals(Coin.ZERO, tx.getMaxPriorityFeePerGas());
+        assertEquals(Coin.ZERO, tx.getMaxFeePerGas());
+    }
+
     // ========================================================================
     // Legacy decode-time field validation
     // ========================================================================

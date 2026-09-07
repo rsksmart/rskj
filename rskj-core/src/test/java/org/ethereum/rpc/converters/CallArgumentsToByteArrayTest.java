@@ -19,6 +19,7 @@
 package org.ethereum.rpc.converters;
 
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -152,13 +153,13 @@ class CallArgumentsToByteArrayTest {
     @Test
     void getGasPrice_whenMaxFeeHasHighBitSet_returnsUnsignedEncoding() {
         CallArguments args = new CallArguments();
-        args.setMaxFeePerGas("0x80");            // 128 — high bit set
-        args.setMaxPriorityFeePerGas("0xff");    // 255 — higher than maxFee, so min selects maxFee
+        args.setMaxFeePerGas("0xff");
+        args.setMaxPriorityFeePerGas("0x80"); // 128 — high bit set; valid tip <= fee cap
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
         Assertions.assertArrayEquals(new byte[] {(byte) 0x80}, byteArrayArgs.getGasPrice(),
-                "min(maxPriority, maxFee) must be encoded as unsigned bytes; no 0x00 sign byte prefix");
+                "effective gas price must be encoded as unsigned bytes; no 0x00 sign byte prefix");
     }
 
     @Test
@@ -170,17 +171,89 @@ class CallArgumentsToByteArrayTest {
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
         Assertions.assertArrayEquals(new byte[] {(byte) 0x81}, byteArrayArgs.getGasPrice(),
-                "min selected and must be unsigned");
+                "priority fee selected and must be unsigned");
     }
 
     @Test
-    void getGasPrice_whenOnlyMaxFeeIsSet_usesMaxFee() {
+    void getGasPrice_whenOnlyMaxFeeIsSet_rejectsRequest() {
         CallArguments args = new CallArguments();
         args.setMaxFeePerGas("0x64");
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                byteArrayArgs::getGasPrice);
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals("maxFeePerGas requires maxPriorityFeePerGas", ex.getMessage());
+    }
+
+    @Test
+    void getGasPrice_whenOnlyMaxPriorityFeeIsSet_rejectsRequest() {
+        CallArguments args = new CallArguments();
+        args.setMaxPriorityFeePerGas("0x64");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                byteArrayArgs::getGasPrice);
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals("maxPriorityFeePerGas requires maxFeePerGas", ex.getMessage());
+    }
+
+    @Test
+    void getGasPrice_whenMaxPriorityFeeSetAndMaxFeeEmpty_rejectsRequest() {
+        CallArguments args = new CallArguments();
+        args.setMaxPriorityFeePerGas("0x64");
+        args.setMaxFeePerGas("");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                byteArrayArgs::getGasPrice);
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals("maxPriorityFeePerGas requires maxFeePerGas", ex.getMessage());
+    }
+
+    @Test
+    void getGasPrice_whenMaxPriorityFeeExceedsMaxFee_rejectsRequest() {
+        CallArguments args = new CallArguments();
+        args.setMaxFeePerGas("0x1");
+        args.setMaxPriorityFeePerGas("0x64");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                byteArrayArgs::getGasPrice);
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals(
+                "maxPriorityFeePerGas (100) must not exceed maxFeePerGas (1)",
+                ex.getMessage());
+    }
+
+    @Test
+    void getGasPrice_whenMaxPriorityFeeEqualsMaxFee_usesPriorityFee() {
+        CallArguments args = new CallArguments();
+        args.setMaxFeePerGas("0x64");
+        args.setMaxPriorityFeePerGas("0x64");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
         Assertions.assertArrayEquals(new byte[] {0x64}, byteArrayArgs.getGasPrice());
+    }
+
+    @Test
+    void getGasPrice_whenGasPriceSetAndOnlyMaxPriorityFee_usesGasPriceWithoutError() {
+        CallArguments args = new CallArguments();
+        args.setGasPrice("0x7");
+        args.setMaxPriorityFeePerGas("0x64");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertArrayEquals(new byte[] {0x7}, byteArrayArgs.getGasPrice());
     }
 
     @Test
@@ -189,6 +262,18 @@ class CallArgumentsToByteArrayTest {
         args.setGasPrice("0x7");
         args.setMaxFeePerGas("0xff");
         args.setMaxPriorityFeePerGas("0xff");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertArrayEquals(new byte[] {0x7}, byteArrayArgs.getGasPrice());
+    }
+
+    @Test
+    void getGasPrice_whenGasPriceSetAndMaxPriorityExceedsMaxFee_usesGasPriceWithoutError() {
+        CallArguments args = new CallArguments();
+        args.setGasPrice("0x7");
+        args.setMaxFeePerGas("0x1");
+        args.setMaxPriorityFeePerGas("0x64");
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
