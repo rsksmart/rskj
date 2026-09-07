@@ -283,11 +283,10 @@ public final class TransactionInput {
         return new BigInteger(1, gasLimitBytes);
     }
 
-    static byte[] resolveNonceBytes(@Nullable byte[] nonceBytes, boolean defaultToZero) {
-        if (nonceBytes != null) {
-            CommonParsingUtils.requireDataWordBytes(nonceBytes, "Nonce is not valid");
-            return nonceBytes;
-        }
-        return defaultToZero ? BigInteger.ZERO.toByteArray() : null;
+    // nonceBytes is always TransactionInput.nonce(), which never surfaces a true null
+    // (ByteUtil.cloneBytes(null) -> empty array), so no null-defaulting is needed here.
+    static byte[] resolveNonceBytes(byte[] nonceBytes) {
+        CommonParsingUtils.requireDataWordBytes(nonceBytes, "Nonce is not valid");
+        return nonceBytes;
     }
 }

@@ -98,7 +98,7 @@ public class Type4RawTransactionParser implements RawTransactionTypeParser<Parse
 
     @Override
     public ParsedType4Transaction parse(TransactionTypePrefix typePrefix, TransactionInput input, byte defaultChainId) {
-        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce(), true);
+        byte[] nonce = TransactionInput.resolveNonceBytes(input.nonce());
         BigInteger gasLimit = TransactionInput.resolveGasLimit(input.gasLimit());
         Coin value = CommonParsingUtils.defaultValue(input.value());
         RskAddress receiveAddress = CommonParsingUtils.defaultAddress(input.receiveAddress());
