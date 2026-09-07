@@ -22,7 +22,6 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.core.transaction.parser.util.AuthorizationListCodec;
-import org.ethereum.core.transaction.parser.util.CommonParsingUtils;
 import org.ethereum.rpc.CallArguments;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,6 +31,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.ethereum.core.Rskip546TestSupport.DEFAULT_GAS_PRICE;
@@ -60,6 +60,18 @@ class NonceGasLimitCanonicalEncodingTest {
     );
 
 
+    private static final Map<BigInteger, byte[]> PINNED_MINIMAL_BYTES = Map.of(
+            BigInteger.ZERO, new byte[]{},
+            BigInteger.ONE, new byte[]{0x01},
+            BigInteger.valueOf(127), new byte[]{0x7f},
+            BigInteger.valueOf(128), new byte[]{(byte) 0x80},
+            BigInteger.valueOf(255), new byte[]{(byte) 0xff},
+            BigInteger.valueOf(256), new byte[]{0x01, 0x00},
+            BigInteger.valueOf(21_000), new byte[]{0x52, 0x08},
+            BigInteger.valueOf(32767), new byte[]{0x7f, (byte) 0xff},
+            BigInteger.valueOf(32768), new byte[]{(byte) 0x80, 0x00}
+    );
+
     private static final List<TransactionType> SUPPORTED_TYPES = List.of(TransactionType.LEGACY, TransactionType.TYPE_1, TransactionType.TYPE_2, TransactionType.TYPE_4);
 
     @ParameterizedTest(name = "{0} nonce={1}")
@@ -80,7 +92,7 @@ class NonceGasLimitCanonicalEncodingTest {
         Transaction builderTx = build(type, BigInteger.ZERO, DEFAULT_GAS_LIMIT);
         Transaction rpcTx = Transaction.fromCallArguments(callArguments(type, null, DEFAULT_GAS_LIMIT), null, REGTEST_CHAIN_ID);
 
-        byte[] expectedNonce = CommonParsingUtils.unsignedBytes(BigInteger.ZERO);
+        byte[] expectedNonce = pinnedMinimalBytes(BigInteger.ZERO);
         assertArrayEquals(expectedNonce, rpcTx.getNonce());
         assertArrayEquals(builderTx.getNonce(), rpcTx.getNonce());
         assertArrayEquals(builderTx.getEncodedRaw(), rpcTx.getEncodedRaw());
@@ -98,15 +110,15 @@ class NonceGasLimitCanonicalEncodingTest {
     @Test
     void legacyNonceOmittedAlsoResolvesToCanonicalZero() {
         Transaction rpcTx = Transaction.fromCallArguments(callArguments(TransactionType.LEGACY, null, DEFAULT_GAS_LIMIT), null, REGTEST_CHAIN_ID);
-        assertArrayEquals(CommonParsingUtils.unsignedBytes(BigInteger.ZERO), rpcTx.getNonce());
+        assertArrayEquals(pinnedMinimalBytes(BigInteger.ZERO), rpcTx.getNonce());
     }
 
     private static void assertCanonical(TransactionType type, BigInteger nonce, BigInteger gasLimit) {
         Transaction builderTx = build(type, nonce, gasLimit);
         Transaction rpcTx = Transaction.fromCallArguments(callArguments(type, nonce, gasLimit), null, REGTEST_CHAIN_ID);
 
-        byte[] expectedNonce = CommonParsingUtils.unsignedBytes(nonce);
-        byte[] expectedGasLimit = CommonParsingUtils.unsignedBytes(gasLimit);
+        byte[] expectedNonce = pinnedMinimalBytes(nonce);
+        byte[] expectedGasLimit = pinnedMinimalBytes(gasLimit);
 
         assertArrayEquals(expectedNonce, builderTx.getNonce());
         assertArrayEquals(expectedNonce, rpcTx.getNonce());
@@ -125,6 +137,14 @@ class NonceGasLimitCanonicalEncodingTest {
         assertEquals(builderTx.getRawHash(), rawTx.getRawHash());
         assertEquals(builderTx.getHash(), rpcTx.getHash());
         assertEquals(builderTx.getHash(), rawTx.getHash());
+    }
+
+    private static byte[] pinnedMinimalBytes(BigInteger value) {
+        byte[] pinned = PINNED_MINIMAL_BYTES.get(value);
+        if (pinned == null) {
+            throw new IllegalArgumentException("no pinned minimal-bytes literal for " + value);
+        }
+        return pinned;
     }
 
     private static Transaction build(TransactionType type, BigInteger nonce, BigInteger gasLimit) {
