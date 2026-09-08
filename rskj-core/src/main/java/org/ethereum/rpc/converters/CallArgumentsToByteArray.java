@@ -21,13 +21,19 @@ package org.ethereum.rpc.converters;
 import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.core.transaction.SetCodeAuthorization;
+import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.parser.util.AccessListCodec;
+import org.ethereum.core.transaction.parser.util.AuthorizationListCodec;
 import org.ethereum.core.transaction.parser.util.Rskip546FeeValidation;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
+import java.util.List;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
@@ -125,6 +131,53 @@ public class CallArgumentsToByteArray {
         }
 
         return new RskAddress(HexUtils.strHexOrStrNumberToByteArray(args.getFrom()));
+    }
+
+    public List<SetCodeAuthorization> getAuthorizationList() {
+        List<CallArguments.AuthorizationListEntry> entries = args.getAuthorizationList();
+        if (entries == null || entries.isEmpty()) {
+            return null;
+        }
+        return AuthorizationListCodec.parseFromCallArguments(entries);
+    }
+
+    public TransactionType resolveType() {
+        if (args.getAuthorizationList() != null) {
+            return TransactionType.TYPE_4;
+        }
+        if (!isAbsent(args.getMaxFeePerGas()) || !isAbsent(args.getMaxPriorityFeePerGas())) {
+            return TransactionType.TYPE_2;
+        }
+        if (args.getAccessList() != null) {
+            return TransactionType.TYPE_1;
+        }
+        return TransactionType.LEGACY;
+    }
+
+    public byte[] getAccessListBytes() {
+        return AccessListCodec.encodeAccessList(args.getAccessList());
+    }
+
+
+    public byte[] getMaxPriorityFeePerGasBytes() {
+        return isAbsent(args.getMaxPriorityFeePerGas()) ? null : HexUtils.strHexOrStrNumberToByteArray(args.getMaxPriorityFeePerGas());
+    }
+
+
+    public byte[] getMaxFeePerGasBytes() {
+        return isAbsent(args.getMaxFeePerGas()) ? null : HexUtils.strHexOrStrNumberToByteArray(args.getMaxFeePerGas());
+    }
+
+    public byte getChainId(byte defaultChainId) {
+        String hex = args.getChainId();
+        if (hex == null || hex.isEmpty()) {
+            return defaultChainId;
+        }
+        byte[] bytes = HexUtils.strHexOrStrNumberToByteArray(hex);
+        if (bytes.length != 1) {
+            throw invalidParamError("Invalid chainId: " + hex);
+        }
+        return bytes[0];
     }
 
     public byte[] gasLimitForCall(long gasCap) {

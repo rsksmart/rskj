@@ -95,7 +95,7 @@ class EthModuleTest {
                 .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -109,7 +109,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -152,7 +152,7 @@ class EthModuleTest {
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionOnSnapshot(any(), eq(block), any(), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -405,7 +405,7 @@ class EthModuleTest {
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionOnSnapshot(any(), eq(block), any(), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -454,7 +454,7 @@ class EthModuleTest {
                 .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -466,7 +466,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -508,7 +508,7 @@ class EthModuleTest {
                 .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -520,7 +520,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -563,7 +563,7 @@ class EthModuleTest {
         when(executorResult.isRevert()).thenReturn(true);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -575,7 +575,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -867,7 +867,7 @@ class EthModuleTest {
                 .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -879,7 +879,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -895,10 +895,10 @@ class EthModuleTest {
 
         eth.call(callArgumentsParam, blockIdentifierParam);
 
-        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> paramsCaptor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
         verify(executor, times(1))
-                .executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
-        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getData()), dataCaptor.getValue());
+                .executeTransactionAtBlock(eq(block), any(), paramsCaptor.capture());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getData()), paramsCaptor.getValue().data());
     }
 
     @Test
@@ -918,7 +918,7 @@ class EthModuleTest {
                 .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -930,7 +930,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -946,10 +946,10 @@ class EthModuleTest {
 
         eth.call(callArgumentsParam, blockIdentifierParam);
 
-        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> paramsCaptor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
         verify(executor, times(1))
-                .executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
-        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
+                .executeTransactionAtBlock(eq(block), any(), paramsCaptor.capture());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), paramsCaptor.getValue().data());
     }
 
     @Test
@@ -970,7 +970,7 @@ class EthModuleTest {
                 .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransactionAtBlock(eq(block), any(), any()))
                 .thenReturn(executorResult);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -982,7 +982,7 @@ class EthModuleTest {
                 null,
                 executor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 bridgeSupportFactory,
@@ -999,10 +999,10 @@ class EthModuleTest {
 
         eth.call(callArgumentsParam, blockIdentifierParam);
 
-        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> paramsCaptor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
         verify(executor, times(1))
-                .executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
-        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
+                .executeTransactionAtBlock(eq(block), any(), paramsCaptor.capture());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), paramsCaptor.getValue().data());
     }
 
     @Test
@@ -1022,7 +1022,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -1049,10 +1049,10 @@ class EthModuleTest {
 
         eth.estimateGas(callArgumentsParam, new BlockIdentifierParam("latest"));
 
-        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> paramsCaptor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
         verify(reversibleTransactionExecutor, times(1))
-                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any(), any());
-        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getData()), dataCaptor.getValue());
+                .estimateGas(eq(block), any(), any(), paramsCaptor.capture());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getData()), paramsCaptor.getValue().data());
     }
 
     @Test
@@ -1072,7 +1072,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -1120,7 +1120,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -1147,10 +1147,10 @@ class EthModuleTest {
 
         eth.estimateGas(callArgumentsParam, new BlockIdentifierParam("latest"));
 
-        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> paramsCaptor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
         verify(reversibleTransactionExecutor, times(1))
-                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any(), any());
-        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
+                .estimateGas(eq(block), any(), any(), paramsCaptor.capture());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), paramsCaptor.getValue().data());
     }
 
     @Test
@@ -1171,7 +1171,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
@@ -1198,10 +1198,10 @@ class EthModuleTest {
 
         eth.estimateGas(callArgumentsParam, new BlockIdentifierParam("latest"));
 
-        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> paramsCaptor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
         verify(reversibleTransactionExecutor, times(1))
-                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any(), any());
-        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
+                .estimateGas(eq(block), any(), any(), paramsCaptor.capture());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), paramsCaptor.getValue().data());
     }
 
     @Test

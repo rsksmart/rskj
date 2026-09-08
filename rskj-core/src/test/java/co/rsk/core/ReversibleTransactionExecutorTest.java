@@ -24,6 +24,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.util.ContractRunner;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.program.ProgramResult;
@@ -64,15 +65,13 @@ class ReversibleTransactionExecutorTest {
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
 
-        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+        ProgramResult result = reversibleTransactionExecutor.executeTransactionAtBlock(
                 bestBlock,
                 bestBlock.getCoinbase(),
-                gasPrice,
-                gasLimit,
-                contractAddress.getBytes(),
-                value,
-                helloFn.encode(),
-                from
+                new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                        gasPrice, gasLimit, contractAddress.getBytes(), value, helloFn.encode(), from,
+                        null, (byte) 0, TransactionType.LEGACY, null, null, null
+                )
         );
 
         Assertions.assertNull(result.getException());
@@ -112,15 +111,13 @@ class ReversibleTransactionExecutorTest {
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
 
-        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+        ProgramResult result = reversibleTransactionExecutor.executeTransactionAtBlock(
                 bestBlock,
                 bestBlock.getCoinbase(),
-                gasPrice,
-                gasLimit,
-                contractAddress.getBytes(),
-                value,
-                greeterFn.encode("greet me"),
-                from
+                new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                        gasPrice, gasLimit, contractAddress.getBytes(), value, greeterFn.encode("greet me"), from,
+                        null, (byte) 0, TransactionType.LEGACY, null, null, null
+                )
         );
 
         Assertions.assertTrue(result.isRevert());
@@ -139,15 +136,13 @@ class ReversibleTransactionExecutorTest {
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
 
-        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+        ProgramResult result = reversibleTransactionExecutor.executeTransactionAtBlock(
                 bestBlock,
                 bestBlock.getCoinbase(),
-                gasPrice,
-                gasLimit,
-                contractAddress.getBytes(),
-                value,
-                callsFn.encodeSignature(),
-                from
+                new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                        gasPrice, gasLimit, contractAddress.getBytes(), value, callsFn.encodeSignature(), from,
+                        null, (byte) 0, TransactionType.LEGACY, null, null, null
+                )
         );
 
         Assertions.assertNull(result.getException());
@@ -155,15 +150,13 @@ class ReversibleTransactionExecutorTest {
                 new String[]{"calls: 1"},
                 callsFn.decodeResult(result.getHReturn()));
 
-        ProgramResult result2 = reversibleTransactionExecutor.executeTransaction(
+        ProgramResult result2 = reversibleTransactionExecutor.executeTransactionAtBlock(
                 bestBlock,
                 bestBlock.getCoinbase(),
-                gasPrice,
-                gasLimit,
-                contractAddress.getBytes(),
-                value,
-                callsFn.encodeSignature(),
-                from
+                new ReversibleTransactionExecutor.ReversibleTransactionParams(
+                        gasPrice, gasLimit, contractAddress.getBytes(), value, callsFn.encodeSignature(), from,
+                        null, (byte) 0, TransactionType.LEGACY, null, null, null
+                )
         );
 
         Assertions.assertNull(result2.getException());

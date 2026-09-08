@@ -18,11 +18,16 @@
 
 package org.ethereum.rpc.converters;
 
+import org.ethereum.core.Rskip545TestSupport;
+import org.ethereum.core.transaction.SetCodeAuthorization;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.util.HexUtils;
@@ -278,5 +283,130 @@ class CallArgumentsToByteArrayTest {
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
         Assertions.assertArrayEquals(new byte[] {0x7}, byteArrayArgs.getGasPrice());
+    }
+
+    @Test
+    void getAuthorizationListWhenValueIsNull() {
+        CallArguments args = new CallArguments();
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertNull(byteArrayArgs.getAuthorizationList());
+    }
+
+    @Test
+    void getAuthorizationListWhenValueIsEmpty() {
+        CallArguments args = new CallArguments();
+        args.setAuthorizationList(List.of());
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertNull(byteArrayArgs.getAuthorizationList());
+    }
+
+    @Test
+    void getAuthorizationListParsesEntriesIntoSetCodeAuthorizations() {
+        CallArguments.AuthorizationListEntry entry = Rskip545TestSupport.defaultType4AuthorizationEntry();
+        CallArguments args = new CallArguments();
+        args.setAuthorizationList(List.of(entry));
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        List<SetCodeAuthorization> authorizations = byteArrayArgs.getAuthorizationList();
+        Assertions.assertEquals(1, authorizations.size());
+        Assertions.assertEquals(entry.getAddress(), authorizations.get(0).getAddress().toJsonString());
+    }
+
+    @Test
+    void getChainIdWhenValueIsNull_returnsDefault() {
+        CallArguments args = new CallArguments();
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertEquals((byte) 33, byteArrayArgs.getChainId((byte) 33));
+    }
+
+    @Test
+    void getChainIdWhenValueIsEmpty_returnsDefault() {
+        CallArguments args = new CallArguments();
+        args.setChainId("");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertEquals((byte) 33, byteArrayArgs.getChainId((byte) 33));
+    }
+
+    @Test
+    void getChainIdWhenValueIsSet_returnsParsedValue() {
+        CallArguments args = new CallArguments();
+        args.setChainId("0x21");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertEquals((byte) 33, byteArrayArgs.getChainId((byte) 1));
+    }
+
+    @Test
+    void getChainIdWhenValueIsInvalid_rejectsRequest() {
+        CallArguments args = new CallArguments();
+        args.setChainId("0x1234");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> byteArrayArgs.getChainId((byte) 1));
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals("Invalid chainId: 0x1234", ex.getMessage());
+    }
+
+    @Test
+    void resolveType_noAttributesPresent_returnsLegacy() {
+        CallArguments args = new CallArguments();
+
+        Assertions.assertEquals(TransactionType.LEGACY, new CallArgumentsToByteArray(args).resolveType());
+    }
+
+    @Test
+    void resolveType_typeFieldAlone_isIgnored() {
+        CallArguments args = new CallArguments();
+        args.setType("0x2");
+        Assertions.assertEquals(TransactionType.LEGACY, new CallArgumentsToByteArray(args).resolveType());
+    }
+
+    @Test
+    void resolveType_accessListPresentButEmpty_returnsType1() {
+        CallArguments args = new CallArguments();
+        args.setAccessList(List.of());
+        Assertions.assertEquals(TransactionType.TYPE_1, new CallArgumentsToByteArray(args).resolveType());
+    }
+
+    @Test
+    void resolveType_accessListNonEmpty_returnsType1() {
+        CallArguments args = new CallArguments();
+        args.setAccessList(List.of(new CallArguments.AccessListEntry()));
+
+        Assertions.assertEquals(TransactionType.TYPE_1, new CallArgumentsToByteArray(args).resolveType());
+    }
+
+    @Test
+    void resolveType_feeCapsPresent_returnsType2_evenWithAccessListAlsoPresent() {
+        CallArguments args = new CallArguments();
+        args.setMaxPriorityFeePerGas("0x1");
+        args.setMaxFeePerGas("0x2");
+        args.setAccessList(List.of());
+
+        Assertions.assertEquals(TransactionType.TYPE_2, new CallArgumentsToByteArray(args).resolveType());
+    }
+
+    @Test
+    void resolveType_authorizationListPresentButEmpty_returnsType4_evenWithEverythingElsePresent() {
+        CallArguments args = new CallArguments();
+        args.setMaxPriorityFeePerGas("0x1");
+        args.setMaxFeePerGas("0x2");
+        args.setAccessList(List.of());
+        args.setAuthorizationList(List.of());
+
+        Assertions.assertEquals(TransactionType.TYPE_4, new CallArgumentsToByteArray(args).resolveType());
     }
 }

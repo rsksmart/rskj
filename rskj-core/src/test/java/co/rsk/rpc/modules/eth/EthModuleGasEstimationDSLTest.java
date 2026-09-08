@@ -72,7 +72,7 @@ class EthModuleGasEstimationDSLTest {
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
-        ProgramResult callConstantResult = eth.callConstant(args, block);
+        ProgramResult callConstantResult = eth.simulateTransactionExecution(args, block);
 
         assertEquals(callConstantResult.getGasUsed(), estimatedGas);
 
@@ -129,7 +129,7 @@ class EthModuleGasEstimationDSLTest {
         Block block = world.getBlockChain().getBlockByNumber(2); // block 2 contains 0 tx
 
         // Evaluate the gas used
-        ProgramResult callConstant = eth.callConstant(args, block);
+        ProgramResult callConstant = eth.simulateTransactionExecution(args, block);
         long gasUsed = callConstant.getGasUsed();
         assertEquals(ByteUtil.byteArrayToLong(callWithValueReceipt.getGasUsed()), gasUsed);
         assertFalse(callConstant.getMovedRemainingGasToChild()); // it just moved STIPEND_CALL (2300) to child
@@ -193,7 +193,7 @@ class EthModuleGasEstimationDSLTest {
                 "0000000000000000000000000000000000000000000000000000000000000001" +
                 "0000000000000000000000000000000000000000000000000000000000000000"); // setValue(1,0)
 
-        ProgramResult callConstantResult = eth.callConstant(args, block);
+        ProgramResult callConstantResult = eth.simulateTransactionExecution(args, block);
 
         long clearStorageGasUsed = callConstantResult.getGasUsed();
         long clearStorageEstimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
@@ -220,7 +220,7 @@ class EthModuleGasEstimationDSLTest {
         args.setData("0x7b8d56e3" +
                 "0000000000000000000000000000000000000000000000000000000000000001" +
                 "0000000000000000000000000000000000000000000000000000000000000001"); // setValue(1,1)
-        long updateStorageGasUsed = eth.callConstant(args, block).getGasUsed();
+        long updateStorageGasUsed = eth.simulateTransactionExecution(args, block).getGasUsed();
         long updateStorageEstimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
         assertEquals(26661, updateStorageEstimatedGas);
 
@@ -254,7 +254,7 @@ class EthModuleGasEstimationDSLTest {
                 "0000000000000000000000000000000000000000000000000000000000000000");
         args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
 
-        ProgramResult anotherCallConstantResult = eth.callConstant(args, block);
+        ProgramResult anotherCallConstantResult = eth.simulateTransactionExecution(args, block);
         long anotherClearStorageGasUsed = anotherCallConstantResult.getGasUsed();
         long anotherClearStorageEstimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
         assertEquals(26649, anotherClearStorageEstimatedGas);
@@ -323,7 +323,7 @@ class EthModuleGasEstimationDSLTest {
         args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData("0x5b3f8140"); // clearStorageAndSendValue()
 
-        ProgramResult callConstant = eth.callConstant(args, block);
+        ProgramResult callConstant = eth.simulateTransactionExecution(args, block);
         long callConstantGasUsed = callConstant.getGasUsed();
 
         long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
@@ -390,7 +390,7 @@ class EthModuleGasEstimationDSLTest {
         args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData("0xfb60f709"); // callAddressWithValue()
 
-        ProgramResult callConstant = eth.callConstant(args, block);
+        ProgramResult callConstant = eth.simulateTransactionExecution(args, block);
         List<InternalTransaction> internalTransactions = callConstant.getInternalTransactions();
 
         assertTrue(internalTransactions.stream().allMatch(i -> i.getValue().equals(Coin.valueOf(1))));
@@ -467,7 +467,7 @@ class EthModuleGasEstimationDSLTest {
         args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData("0x18d3af63"); // callNextAddress()
 
-        ProgramResult callConstant = eth.callConstant(args, block);
+        ProgramResult callConstant = eth.simulateTransactionExecution(args, block);
         List<InternalTransaction> internalTransactions = callConstant.getInternalTransactions();
 
         assertEquals(internalTransactions.get(internalTransactions.size() - 1).getValue(), Coin.valueOf(1000));
@@ -540,7 +540,7 @@ class EthModuleGasEstimationDSLTest {
         args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData("0x18d3af63"); // callNextAddress()
 
-        ProgramResult callConstant = eth.callConstant(args, block);
+        ProgramResult callConstant = eth.simulateTransactionExecution(args, block);
         List<InternalTransaction> internalTransactions = callConstant.getInternalTransactions();
 
         assertEquals(internalTransactions.get(internalTransactions.size() - 1).getValue(), Coin.valueOf(1000));
@@ -599,7 +599,7 @@ class EthModuleGasEstimationDSLTest {
         Block block = world.getBlockChain().getBlockByNumber(2); // block 2 contains 0 tx
 
         // Evaluate the gas used
-        ProgramResult callConstant = eth.callConstant(args, block);
+        ProgramResult callConstant = eth.simulateTransactionExecution(args, block);
         long gasUsed = callConstant.getGasUsed();
         assertEquals(ByteUtil.byteArrayToLong(callWithValueReceipt.getGasUsed()), gasUsed);
 
@@ -672,7 +672,7 @@ class EthModuleGasEstimationDSLTest {
         args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData("0xfb60f709"); // callAddressWithValue()
 
-        ProgramResult callConstant = eth.callConstant(args, block);
+        ProgramResult callConstant = eth.simulateTransactionExecution(args, block);
         List<InternalTransaction> internalTransactions = callConstant.getInternalTransactions();
 
         assertTrue(internalTransactions.stream().allMatch(i -> i.getValue().equals(Coin.valueOf(1))));
@@ -750,7 +750,7 @@ class EthModuleGasEstimationDSLTest {
         args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData("0xfb60f709"); // callAddressWithValue()
 
-        ProgramResult callConstant = eth.callConstant(args, block);
+        ProgramResult callConstant = eth.simulateTransactionExecution(args, block);
         List<InternalTransaction> internalTransactions = callConstant.getInternalTransactions();
 
         assertTrue(internalTransactions.stream().allMatch(i -> i.getValue().equals(Coin.valueOf(1))));
@@ -1099,7 +1099,7 @@ class EthModuleGasEstimationDSLTest {
             "608060405260405161025e38038061025e833981016040819052610022916100ed565b817f360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc555f80836001600160a01b03168360405161005f91906101b5565b5f60405180830381855af49150503d805f8114610097576040519150601f19603f3d011682016040523d82523d5f602084013e61009c565b606091505b5091509150816100ae57805160208201fd5b505050506101d0565b634e487b7160e01b5f52604160045260245ffd5b5f5b838110156100e55781810151838201526020016100cd565b50505f910152565b5f80604083850312156100fe575f80fd5b82516001600160a01b0381168114610114575f80fd5b60208401519092506001600160401b0380821115610130575f80fd5b818501915085601f830112610143575f80fd5b815181811115610155576101556100b7565b604051601f8201601f19908116603f0116810190838211818310171561017d5761017d6100b7565b81604052828152886020848701011115610195575f80fd5b6101a68360208301602088016100cb565b80955050505050509250929050565b5f82516101c68184602087016100cb565b9190910192915050565b6082806101dc5f395ff3fe608060405236600a57005b7f360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc8054365f80375f80365f845af490503d5f803e8080156048573d5ff35b3d5ffdfea2646970667358221220c69507ddaa45264afbc0bbb56cf7c588c4482bbf2fe8d71d8fcd32eb3cfc674364736f6c63430008140033";
 
     public boolean runWithArgumentsAndBlock(EthModuleTestUtils.EthModuleGasEstimation ethModule, CallArguments args, Block block) {
-        ProgramResult localCallResult = ethModule.callConstant(args, block);
+        ProgramResult localCallResult = ethModule.simulateTransactionExecution(args, block);
 
         return localCallResult.getException() == null;
     }
