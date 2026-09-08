@@ -37,7 +37,7 @@ These instructions cover running the node from the **JAR file**, on **Mainnet** 
 
 - **Java 17 JDK** and **RSKj `VETIVER-9.0.4` or later** — see [Setup node using Java](/node-operators/setup/installation/java/). Earlier versions cannot read the bootstrap data published today, and will fail the import.
 - **Disk for the database.** Size the data directory for a full node, per the [minimum requirements](/node-operators/setup/requirements/) — not for the size of the download.
-- **Disk for temporary files.** RSKj downloads the bootstrap archive and extracts it into the JVM's temporary directory: `/tmp` on Linux, a per-user directory under `/var/folders` on macOS. To see the exact path yours will use, run `java -XshowSettings:properties -version 2>&1 | grep java.io.tmpdir`. Both files exist there at the same time. The extracted contents are larger than the archive, so allow **about three times the size of the bootstrap archive** in temporary space, on top of the database itself. To check that size before committing to the download, see [Check where import sync will land you](#check-where-import-sync-will-land-you).
+- **Disk for temporary files.** RSKj downloads the bootstrap archive and extracts it into the JVM's temporary directory: `/tmp` on Linux, a per-user directory under `/var/folders` on macOS. To see the exact path yours will use, run `java -XshowSettings:properties -version 2>&1 | grep java.io.tmpdir`. Both files exist there at the same time, so size the temporary space for **the archive plus the larger file extracted from it**, on top of the database itself. To check that size before committing to the download, see [Check where import sync will land you](#check-where-import-sync-will-land-you).
 
 ## How bootstrap data is trusted
 
@@ -220,7 +220,7 @@ The result is the latest synced block in hexadecimal. If it is at or above the h
 
 ### Clean up temporary files
 
-RSKj leaves the downloaded archive and its extracted contents behind in the temporary directory — together, more than twice the size of the archive. They are not needed once the import has completed.
+RSKj leaves the downloaded archive and its extracted contents behind in the temporary directory — together, the archive plus the larger file extracted from it. They are not needed once the import has completed.
 
 ```shell
 TMP=$(java -XshowSettings:properties -version 2>&1 | sed -n 's/.*java.io.tmpdir = //p')
@@ -305,7 +305,7 @@ Then import, mounting that volume at the `rsk` user's home so the database lands
 
 The container does not exit when the import finishes — the node carries on into normal operation. Watch for `Bootstrap data has successfully been imported` in the logs, stop the container, then start your usual container against the same volume **without** `--import`.
 
-The archive is downloaded and unpacked inside the container, under `/tmp`, which is the container's own writable layer rather than the volume. Allow roughly three times the archive size there, on top of the space the database needs in the volume.
+The archive is downloaded and unpacked inside the container, under `/tmp`, which is the container's own writable layer rather than the volume. Allow room for the archive and the larger file extracted from it at the same time, on top of the space the database needs in the volume.
 
 ### Ubuntu package
 
