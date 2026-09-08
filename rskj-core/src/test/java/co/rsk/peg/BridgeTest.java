@@ -985,23 +985,27 @@ class BridgeTest {
         }
 
         @Test
-        void registerPegoutTransaction_withInvalidStringData_shouldThrowVMException() {
+        void registerPegoutTransaction_afterRskip643_shouldSuccessfullyCallBridgeSupport() throws VMException {
             // arrange
-            byte[] invalidString = Hex.decode("ab");
-            byte[] invalidStringData = registerPegoutTransactionFunction.encode(invalidString);
+            BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+            Transaction rskTx = mock(Transaction.class);
+            Bridge bridge = bridgeBuilder
+                .activationConfig(allActivationsConfig)
+                .bridgeSupport(bridgeSupportMock)
+                .transaction(rskTx)
+                .build();
 
-            // act & assert
-            assertThrows(VMException.class, () -> bridge.execute(invalidStringData));
-        }
+            Sha256Hash btcTxId = BitcoinTestUtils.createHash(1);
+            int height = 100;
+            byte[] pmt = Hex.decode("ab");
 
-        @Test
-        void registerPegoutTransaction_withInvalidHexData_shouldThrowVMException() {
-            // arrange
-            byte[] invalidHex = Hex.decode("0000000000000000000000000000000000000000000000080000000000000000");
-            byte[] invalidHexData = registerPegoutTransactionFunction.encode(invalidHex);
+            byte[] data = registerPegoutTransactionFunction.encode(btcTxId.getBytes(), height, pmt);
 
-            // act & assert
-            assertThrows(VMException.class, () -> bridge.execute(invalidHexData));
+            // act
+            bridge.execute(data);
+
+            // assert
+            verify(bridgeSupportMock, times(1)).registerPegoutTransaction(rskTx, btcTxId, height, pmt);
         }
     }
 
