@@ -943,6 +943,20 @@ class BridgeTest {
     }
 
     @Test
+    void registerPegoutTransaction_beforeRskip643_shouldThrowVMException() {
+        // arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.vetiver900();
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
+
+        byte[] data = Bridge.REGISTER_PEGOUT_TRANSACTION.encode();
+
+        // act & assert
+        assertThrows(VMException.class, () -> bridge.execute(data));
+    }
+
+    @Test
     void getActiveFederationCreationBlockHeight_before_RSKIP186_activation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
 

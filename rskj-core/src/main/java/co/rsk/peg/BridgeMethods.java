@@ -647,6 +647,17 @@ public enum BridgeMethods {
         ),
         fixedPermission(false)
     ),
+    REGISTER_PEGOUT_TRANSACTION(
+        CallTransaction.Function.fromSignature(
+            "registerPegoutTransaction",
+            new String[]{},
+            new String[]{}
+        ),
+        fixedCost(0L), // TODO: define real cost for registerPegoutTransaction
+        (BridgeMethodExecutorVoid) Bridge::registerPegoutTransaction,
+        activations -> activations.isActive(RSKIP643),
+        fixedPermission(false)
+    ),
     RELEASE_BTC(
         CallTransaction.Function.fromSignature(
             "releaseBtc",
