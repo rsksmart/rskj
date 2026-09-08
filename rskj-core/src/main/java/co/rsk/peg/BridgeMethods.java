@@ -650,7 +650,7 @@ public enum BridgeMethods {
     REGISTER_PEGOUT_TRANSACTION(
         CallTransaction.Function.fromSignature(
             "registerPegoutTransaction",
-            new String[]{},
+            new String[]{BYTES32, INT, BYTES},
             new String[]{}
         ),
         fixedCost(0L), // TODO: define real cost for registerPegoutTransaction

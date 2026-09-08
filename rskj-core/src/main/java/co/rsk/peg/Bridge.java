@@ -602,7 +602,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public void registerPegoutTransaction(Object[] objects) {
+    public void registerPegoutTransaction(Object[] args) {
         logger.trace("registerPegoutTransaction");
     }
 
