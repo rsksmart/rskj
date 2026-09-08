@@ -308,7 +308,7 @@ The package installs the JAR at `/usr/share/rsk/rsk.jar` and its configuration i
 
 ```shell
 sudo service rsk stop
-sudo -u rsk java -Xmx4G -cp /usr/share/rsk/rsk.jar co.rsk.Start --import
+sudo -u rsk java -Xmx4G -Dlogback.configurationFile=/etc/rsk/logback.xml -cp /usr/share/rsk/rsk.jar co.rsk.Start --import
 sudo service rsk start
 ```
 
@@ -316,7 +316,7 @@ Three details matter here:
 
 - **Run it as the `rsk` user**, as above. The service runs as `rsk`, so an import run as `root` or as your own account leaves behind a database the service cannot read.
 - **There is no configuration flag to pass, and no network flag either.** RSKj reads `/etc/rsk/node.conf` on its own when that file exists, exactly as the service does. That file is a symlink to the network you chose at installation, and it sets the database location — `/var/lib/rsk/database/<network>`. See [switching networks](/node-operators/setup/configuration/switch-network) if you need to change it.
-- **Stop the import once it reports success.** As with Docker, the node continues into normal operation rather than exiting; interrupt it after `Bootstrap data has successfully been imported`, then hand the node back to the service.
+- **Stop the import once it reports success.** As with Docker, the node continues into normal operation rather than exiting; interrupt it after `Bootstrap data has successfully been imported`, then hand the node back to the service. The `-Dlogback.configurationFile` option above is what the service uses, so the import logs to `/var/log/rsk/rsk.log`. Without it the log goes to `./logs/rsk.log` in whatever directory you ran the command from.
 
 ## Related
 
