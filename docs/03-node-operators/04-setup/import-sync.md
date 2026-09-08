@@ -177,8 +177,12 @@ The import prints nothing to the console. It writes to `logs/rsk.log`, relative 
 Bootstrap data downloaded
 Bootstrap data hash checked
 Bootstrap data extracted
+Detected bootstrap-data v2 (chunked) format
+Bootstrap-data v2 imported <blocks> blocks, <values> long values and <nodes> state nodes in <n> ms
 Bootstrap data has successfully been imported in <n> mills
 ```
+
+Other subsystems log in between; what matters is that these six appear in this order. Older bootstrap data logs `Detected bootstrap-data v1 (legacy) format` in place of the two `v2` lines.
 
 The node then continues into normal operation and starts importing blocks from peers, beginning just above the imported height.
 
