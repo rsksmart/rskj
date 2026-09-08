@@ -347,7 +347,7 @@ public class MinerServerImpl implements MinerServer {
         long nextBlockNumber = mainchainView.get().isEmpty()
                 ? 0L
                 : mainchainView.get().get(mainchainView.get().size() - 1).getNumber() + 1L;
-        if (!activationConfig.isActive(ConsensusRule.RSKIP555, nextBlockNumber)) {
+        if (!activationConfig.isActive(ConsensusRule.RSKIP567, nextBlockNumber)) {
             return;
         }
         if (activationConfig.getHeaderVersion(nextBlockNumber) != (byte) 0x03) {
@@ -358,7 +358,7 @@ public class MinerServerImpl implements MinerServer {
         }
         throw new IllegalStateException(
                 "miner.forkBalance.btcRpc.url must point to a local bitcoind when mining header v3 blocks "
-                        + "(RSKIP555 active at next height " + nextBlockNumber + "). "
+                        + "(RSKIP567 active at next height " + nextBlockNumber + "). "
                         + "Validating-only nodes should leave this empty and keep miner.server.enabled=false.");
     }
 

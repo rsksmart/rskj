@@ -107,7 +107,7 @@ class ForkBalanceBlockWireValidationTest {
 
     private static final class V2HeadersNo555 extends TestSystemProperties {
         private final ActivationConfig activationConfig =
-                ActivationConfigsForTest.allBut(ConsensusRule.RSKIP144, ConsensusRule.RSKIP555);
+                ActivationConfigsForTest.allBut(ConsensusRule.RSKIP144, ConsensusRule.RSKIP567);
 
         @Override
         public ActivationConfig getActivationConfig() {
@@ -173,7 +173,7 @@ class ForkBalanceBlockWireValidationTest {
     }
 
     @Test
-    void v2Header_rejected_whenRskip555Active() {
+    void v2Header_rejected_whenRskip567Active() {
         AllButRskip144 props555 = new AllButRskip144();
         V2HeadersNo555 propsV2 = new V2HeadersNo555();
         BlockGenerator gen = new BlockGenerator(Constants.regtest(), propsV2.getActivationConfig());
@@ -186,7 +186,7 @@ class ForkBalanceBlockWireValidationTest {
     }
 
     @Test
-    void v2ShapedWire_rejectedAtDecode_whenRskip555Active() {
+    void v2ShapedWire_rejectedAtDecode_whenRskip567Active() {
         AllButRskip144 propsV3 = new AllButRskip144();
         V2HeadersNo555 propsV2 = new V2HeadersNo555();
         BlockGenerator gen = new BlockGenerator(Constants.regtest(), propsV2.getActivationConfig());

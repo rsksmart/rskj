@@ -42,7 +42,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * RSKIP555 activation boundary checks using merged mainnet config.
+ * RSKIP567 activation boundary checks using merged mainnet config.
  * Height is shifted to {@link MergedNetworkConfig#SHORT_CHAIN_VETIVER_HEIGHT} for short chains.
  */
 class MainnetVetiverActivationTest {

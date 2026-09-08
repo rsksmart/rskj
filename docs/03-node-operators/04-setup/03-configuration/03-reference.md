@@ -343,7 +343,7 @@ for detailed information about the `miner` configuration.
 
 ## miner.forkBalance
 
-Header v3 / RSKIP555 merge-mining pools need a local **Bitcoin Core** JSON-RPC endpoint to resolve parent BTC blocks when building fork-balance proofs. Validating nodes should leave `miner.forkBalance.btcRpc.url` empty.
+Header v3 / RSKIP567 merge-mining pools need a local **Bitcoin Core** JSON-RPC endpoint to resolve parent BTC blocks when building fork-balance proofs. Validating nodes should leave `miner.forkBalance.btcRpc.url` empty.
 
 See [Fork-balance mining (header v3)](./fork-balance-mining.md) for `bitcoind` setup, configuration fields, and operational notes.
 

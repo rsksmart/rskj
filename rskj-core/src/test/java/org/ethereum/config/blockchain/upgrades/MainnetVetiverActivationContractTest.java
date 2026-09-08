@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP351;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP535;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP555;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP567;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,52 +23,52 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class MainnetVetiverActivationContractTest {
 
     @Test
-    void mainnet_beforeVetiver_rskip555Inactive_headerV0() {
+    void mainnet_beforeVetiver_rskip567Inactive_headerV0() {
         ActivationConfig config = MergedNetworkConfig.activationConfig(MergedNetworkConfig.MAINNET_RESOURCE);
         long before = MergedNetworkConfig.MAINNET_BEFORE_VETIVER_HEIGHT;
 
-        assertFalse(config.isActive(RSKIP555, before));
+        assertFalse(config.isActive(RSKIP567, before));
         assertFalse(config.isActive(RSKIP351, before));
         assertFalse(config.isActive(RSKIP535, before));
         assertEquals((byte) 0x00, config.getHeaderVersion(before));
     }
 
     @Test
-    void mainnet_atVetiver_rskip351And555Active_headerV3() {
+    void mainnet_atVetiver_rskip351And567Active_headerV3() {
         ActivationConfig config = MergedNetworkConfig.activationConfig(MergedNetworkConfig.MAINNET_RESOURCE);
         long at = MergedNetworkConfig.MAINNET_VETIVER_HEIGHT;
 
         assertTrue(config.isActive(RSKIP351, at));
-        assertTrue(config.isActive(RSKIP555, at));
+        assertTrue(config.isActive(RSKIP567, at));
         assertEquals((byte) 0x03, config.getHeaderVersion(at));
     }
 
     @Test
-    void testnet_beforeVetiver_rskip555Inactive_headerV1() {
+    void testnet_beforeVetiver_rskip567Inactive_headerV1() {
         ActivationConfig config = MergedNetworkConfig.activationConfig(MergedNetworkConfig.TESTNET_RESOURCE);
         long before = MergedNetworkConfig.TESTNET_BEFORE_VETIVER_HEIGHT;
 
-        assertFalse(config.isActive(RSKIP555, before));
+        assertFalse(config.isActive(RSKIP567, before));
         assertTrue(config.isActive(RSKIP351, before), "testnet RSKIP351 follows reed810");
         assertFalse(config.isActive(RSKIP535, before));
         assertEquals((byte) 0x01, config.getHeaderVersion(before));
     }
 
     @Test
-    void testnet_atVetiver_rskip555Active_headerV3() {
+    void testnet_atVetiver_rskip567Active_headerV3() {
         ActivationConfig config = MergedNetworkConfig.activationConfig(MergedNetworkConfig.TESTNET_RESOURCE);
         long at = MergedNetworkConfig.TESTNET_VETIVER_HEIGHT;
 
-        assertTrue(config.isActive(RSKIP555, at));
+        assertTrue(config.isActive(RSKIP567, at));
         assertEquals((byte) 0x03, config.getHeaderVersion(at));
     }
 
     @Test
-    void testnet2_earlyRskip555_requiresRskip351ForHeaderV3() {
+    void testnet2_earlyRskip567_requiresRskip351ForHeaderV3() {
         ActivationConfig config = MergedNetworkConfig.activationConfig(MergedNetworkConfig.TESTNET2_RESOURCE);
 
         assertTrue(config.isActive(RSKIP351, 1L));
-        assertTrue(config.isActive(RSKIP555, 1L));
+        assertTrue(config.isActive(RSKIP567, 1L));
         assertEquals((byte) 0x03, config.getHeaderVersion(1L));
     }
 }

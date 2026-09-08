@@ -44,8 +44,8 @@ public class MainnetMergedConfigProperties extends TestSystemProperties {
                         "blockchain.config.consensusRules.rskip536",
                         blockchain.getValue("consensusRules.rskip536"))
                 .withValue(
-                        "blockchain.config.consensusRules.rskip555",
-                        blockchain.getValue("consensusRules.rskip555"));
+                        "blockchain.config.consensusRules.rskip567",
+                        blockchain.getValue("consensusRules.rskip567"));
         return activationOverlay.withFallback(base)
                 .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true));
     }

@@ -1,6 +1,6 @@
-# Fork-balance mining (header v3 / RSKIP555)
+# Fork-balance mining (header v3 / RSKIP567)
 
-After **RSKIP555** is active, merge-mined blocks may use **header version 3** with a `forkBalanceProof` in the header extension. Mining pools must supply parent Bitcoin block data when building work; validating nodes do not need Bitcoin RPC.
+After **RSKIP567** is active, merge-mined blocks may use **header version 3** with a `forkBalanceProof` in the header extension. Mining pools must supply parent Bitcoin block data when building work; validating nodes do not need Bitcoin RPC.
 
 ## Who needs what
 
@@ -9,7 +9,7 @@ After **RSKIP555** is active, merge-mined blocks may use **header version 3** wi
 | Validating / full node | `false` (default) | Leave empty (default) |
 | Merge-mining pool | `true` | **Required** — pool `bitcoind` JSON-RPC URL |
 
-RSKj refuses to start the miner on mainnet/testnet when RSKIP555 is active at the next block height and no Bitcoin RPC URL is configured (regtest is exempt; it seeds BTC parents locally).
+RSKj refuses to start the miner on mainnet/testnet when RSKIP567 is active at the next block height and no Bitcoin RPC URL is configured (regtest is exempt; it seeds BTC parents locally).
 
 ## Bitcoin Core (`bitcoind`) setup
 
@@ -82,7 +82,7 @@ Defaults and full field list: [`reference.conf`](https://github.com/rsksmart/rsk
 
 ## JSON-RPC `forkSafe` (FAC fork-safe head)
 
-After RSKIP555, JSON-RPC supports an RSK-specific **FAC fork-safe** head distinct from Ethereum’s `safe` tag (which maps to the canonical best block).
+After RSKIP567, JSON-RPC supports an RSK-specific **FAC fork-safe** head distinct from Ethereum’s `safe` tag (which maps to the canonical best block).
 
 | Tag / parameter | Meaning |
 | --- | --- |
@@ -104,4 +104,4 @@ Supported on `eth_blockNumber`, `eth_getBlockByNumber`, `eth_getBlockByHash`, `e
 ## Related configuration
 
 - General miner options: [Configuration reference — miner](./03-reference.md#miner)
-- RSKIP555 activation: `blockchain.config.consensusRules.rskip555`
+- RSKIP567 activation: `blockchain.config.consensusRules.rskip567`

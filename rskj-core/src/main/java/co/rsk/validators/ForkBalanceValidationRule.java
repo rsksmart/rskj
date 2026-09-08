@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Validates fork-balance proof for RSK blocks with header version 3 after {@link ConsensusRule#RSKIP555}.
+ * Validates fork-balance proof for RSK blocks with header version 3 after {@link ConsensusRule#RSKIP567}.
  * <p>
  * Checks cryptographic proof content only (header version, BTC parent link, coinbase midstate/merkle).
  * Proof type is derived locally after import as FAC cache metadata
@@ -45,7 +45,7 @@ public class ForkBalanceValidationRule implements BlockValidationRule {
     @Override
     public boolean isValid(Block block) {
         long blockNumber = block.getNumber();
-        if (!activationConfig.isActive(ConsensusRule.RSKIP555, blockNumber)) {
+        if (!activationConfig.isActive(ConsensusRule.RSKIP567, blockNumber)) {
             return true;
         }
 

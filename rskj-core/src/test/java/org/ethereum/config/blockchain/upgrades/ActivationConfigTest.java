@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP103;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP351;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP535;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP555;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP567;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP98;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.values;
@@ -155,7 +155,7 @@ class ActivationConfigTest {
         "    rskip529: reed810",
         "    rskip535: vetiver900",
         "    rskip536: reed810",
-        "    rskip555: vetiver900",
+        "    rskip567: vetiver900",
         "    rskip540: vetiver900",
         "    rskip544: vetiver900",
         "    rskip551: vetiver900",
@@ -235,13 +235,13 @@ class ActivationConfigTest {
 
     @Test
     void headerVersion1() {
-        ActivationConfig config = ActivationConfigsForTest.allBut(RSKIP535, RSKIP555);
+        ActivationConfig config = ActivationConfigsForTest.allBut(RSKIP535, RSKIP567);
         assertEquals((byte) 0x1, config.getHeaderVersion(10));
     }
 
     @Test
     void headerVersion2() {
-        ActivationConfig config = ActivationConfigsForTest.allBut(RSKIP555);
+        ActivationConfig config = ActivationConfigsForTest.allBut(RSKIP567);
         assertEquals((byte) 0x2, config.getHeaderVersion(10));
     }
 
@@ -252,18 +252,18 @@ class ActivationConfigTest {
     }
 
     @Test
-    void mainnetRskip555ActivatesAtVetiverHeight() {
+    void mainnetRskip567ActivatesAtVetiverHeight() {
         ActivationConfig config = MergedNetworkConfig.activationConfig(MergedNetworkConfig.MAINNET_RESOURCE);
-        assertFalse(config.isActive(RSKIP555, MergedNetworkConfig.MAINNET_BEFORE_VETIVER_HEIGHT));
-        assertTrue(config.isActive(RSKIP555, MergedNetworkConfig.MAINNET_VETIVER_HEIGHT));
+        assertFalse(config.isActive(RSKIP567, MergedNetworkConfig.MAINNET_BEFORE_VETIVER_HEIGHT));
+        assertTrue(config.isActive(RSKIP567, MergedNetworkConfig.MAINNET_VETIVER_HEIGHT));
         assertEquals((byte) 0x03, config.getHeaderVersion(MergedNetworkConfig.MAINNET_VETIVER_HEIGHT));
     }
 
     @Test
-    void testnetRskip555ActivatesAtVetiverHeight() {
+    void testnetRskip567ActivatesAtVetiverHeight() {
         ActivationConfig config = MergedNetworkConfig.activationConfig(MergedNetworkConfig.TESTNET_RESOURCE);
-        assertFalse(config.isActive(RSKIP555, MergedNetworkConfig.TESTNET_BEFORE_VETIVER_HEIGHT));
-        assertTrue(config.isActive(RSKIP555, MergedNetworkConfig.TESTNET_VETIVER_HEIGHT));
+        assertFalse(config.isActive(RSKIP567, MergedNetworkConfig.TESTNET_BEFORE_VETIVER_HEIGHT));
+        assertTrue(config.isActive(RSKIP567, MergedNetworkConfig.TESTNET_VETIVER_HEIGHT));
         assertEquals((byte) 0x03, config.getHeaderVersion(MergedNetworkConfig.TESTNET_VETIVER_HEIGHT));
     }
 }

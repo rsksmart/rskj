@@ -98,7 +98,7 @@ public class ActivationConfig {
         if (!this.isActive(ConsensusRule.RSKIP351, blockNumber)) {
             return 0x0;
         }
-        if (this.isActive(ConsensusRule.RSKIP555, blockNumber)) {
+        if (this.isActive(ConsensusRule.RSKIP567, blockNumber)) {
             return 0x3;
         }
         if (this.isActive(ConsensusRule.RSKIP535, blockNumber)) {
