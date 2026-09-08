@@ -109,10 +109,10 @@ Describes where the blockchain database is saved.
 
 ## database.import
 
-Options related to experimental import sync v0.1.
+Options related to import sync. See [Bootstrap a node using Import Sync](/node-operators/setup/import-sync/) for the full procedure.
 
 * `database.import.url = URL`
-  is the URL to the S3 bucket that hosts the database.
+  is the base URL under which the trusted signers publish their indexes and archives.
 * `database.import.trusted-keys = []`
   list of trusted public keys to validate legit source.
 * `database.import.enabled = [true/false]`
