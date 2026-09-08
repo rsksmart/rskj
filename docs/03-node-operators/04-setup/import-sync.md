@@ -242,7 +242,7 @@ Remove anything left there.
 | `Error trying to read bootstrap data contents. Please start again the import process` | The downloaded archive could not be read back while verifying its hash — this happens before extraction, not after. Usually a truncated or removed temporary file, or an I/O error on the filesystem holding the temporary directory. Retry the import. |
 | `Error reading bootstrap data from <path>` | The extracted `bootstrap-data.bin` could not be read. Check that the temporary directory still holds it and that nothing is cleaning temporary files while the node runs. |
 | `Configuration has less trusted sources than the minimum required <n> of 2` | Fewer than two trusted keys are configured, and two is the floor however few you configure. Restore the shipped keys for the network. This is a warning at startup, not the failure itself — the run continues and then fails on one of the messages above. |
-| `java.lang.OutOfMemoryError` | The load stage ran out of heap. Raise `-Xmx` above the 4G used above and run the import again; note that a retry downloads the bootstrap data again. |
+| `java.lang.OutOfMemoryError` | Note this one appears **on the terminal, not in `logs/rsk.log`** — if the log stops after `Bootstrap data extracted`, check the terminal before assuming the node is still working. `Java heap space` means the load stage ran out of heap: raise `-Xmx` above the 4G used above and run the import again. `Required array size too large` means the node is older than `VETIVER-9.0.4` and cannot read the bootstrap data published today; raising `-Xmx` will not help, so upgrade instead. Either way, a retry downloads the bootstrap data again. |
 
 </details>
 
