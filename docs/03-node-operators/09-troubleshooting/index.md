@@ -52,11 +52,11 @@ How to use
   The tool class is: `co.rsk.cli.tools.DbMigrate`
 
 **Required CLI arguments:**
-- `args[0]` - database target where we are going to insert the information from the current selected database.
+- `-t, --targetDb` - the database engine to migrate to (`rocksdb` or `leveldb`). Use `rocksdb`; `leveldb` is deprecated.
     - Note: You cannot migrate to the same database or an error will be thrown. It is highly recommended to turn off the node in order to perform the migration since latest data could be lost.
     - Example migrating from `leveldb` to `rocksdb`:
 
-      `java -cp rsk-core-<VERSION>.jar co.rsk.cli.tools.DbMigrate rocksdb`
+      `java -cp rsk-core-<VERSION>.jar co.rsk.cli.tools.DbMigrate -t rocksdb`
 
 ## Docker Issues
 
