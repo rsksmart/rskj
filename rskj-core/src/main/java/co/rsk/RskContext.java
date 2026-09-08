@@ -1251,10 +1251,23 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             // degrades to the normal file access instead of refusing to start.
             indexDBMaker = indexDBMaker.fileMmapEnableIfSupported()
                     // Skip zeroing freshly mapped regions; MapDB writes before it reads them.
-                    .fileMmapPreclearDisable()
-                    // Without the cleaner hack the mapping is only released at GC, which on a
-                    // growing index means the old mappings pile up.
-                    .fileMmapCleanerHackEnable();
+                    .fileMmapPreclearDisable();
+            // NOT fileMmapCleanerHackEnable(). It unmaps eagerly by reflectively calling
+            // DirectByteBuffer.cleaner(), which returns an internal jdk.internal.ref.Cleaner. Since
+            // JDK 16 strongly encapsulated JDK internals that throws InaccessibleObjectException
+            // unless the JVM is launched with --add-opens java.base/java.nio=ALL-UNNAMED. MapDB
+            // catches the throw and logs it, so the hack silently does nothing and mappings fall
+            // back to being released at GC.
+            //
+            // Leaving it out makes that the intended behaviour rather than an accident, and avoids
+            // depending on an escape hatch the platform is progressively closing - one that would
+            // also have to be threaded through every unit file, container image and launch script,
+            // where a single omission is invisible because the failure is only a log line.
+            //
+            // GC-driven release is sufficient in practice: two full mainnet syncs on a 2-core /
+            // 7.6 GB host ran 42-44 h in exactly this configuration and grew from ~5.45 GB to
+            // ~5.8 GB RSS before flattening, with ~1.4 GB still available and no OOM. Measured
+            // over ~24,000 samples; see reports/fast-sync/REPORT.md Appendix E.
         }
         if (blocksIndexConfig.isAsyncWrite()) {
             indexDBMaker = indexDBMaker.asyncWriteEnable();
