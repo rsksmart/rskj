@@ -26,6 +26,10 @@ import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.lockingcap.LockingCapStorageProvider;
+import co.rsk.peg.lockingcap.LockingCapStorageProviderImpl;
+import co.rsk.peg.lockingcap.LockingCapSupport;
+import co.rsk.peg.lockingcap.LockingCapSupportImpl;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.union.UnionBridgeSupport;
@@ -71,11 +75,18 @@ class BridgeTest {
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private final FederationConstants federationMainNetConstants = bridgeMainNetConstants.getFederationConstants();
     private final NetworkParameters networkParameters = bridgeMainNetConstants.getBtcParams();
+    private final CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
     private BridgeBuilder bridgeBuilder;
+    private LockingCapSupport lockingCapSupport;
 
     @BeforeEach
     void setup() {
         bridgeBuilder = new BridgeBuilder();
+
+        StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+        LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, allActivations, bridgeMainNetConstants.getLockingCapConstants(), signatureCache);
     }
 
     @Test
@@ -166,8 +177,6 @@ class BridgeTest {
     @ParameterizedTest()
     @MethodSource("lockingCapValues")
     void increaseLockingCap_after_RSKIP134_activation(long newLockingCapValue) throws VMException {
-        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
-
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.increaseLockingCap(any(), any())).thenReturn(true);
 
@@ -196,9 +205,14 @@ class BridgeTest {
 
     @Test
     void increaseLockingCap_whenNewLockingCapIsInvalidParameter_shouldThrowVMException() {
-        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+            .withActivations(allActivations)
+            .withLockingCapSupport(lockingCapSupport)
+            .build();
+
         Bridge bridge = bridgeBuilder
             .activationConfig(allActivationsConfig)
+            .bridgeSupport(bridgeSupport)
             .build();
 
         // Uses the proper signature but appends an invalid data type
@@ -217,46 +231,63 @@ class BridgeTest {
     @Test
     void increaseLockingCap_whenNoArgumentsInTheMethodSignature_shouldThrowVMException() {
         // Arrange
-        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
-        Bridge bridge = bridgeBuilder
-            .activationConfig(allActivationsConfig)
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+            .withActivations(allActivations)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
-        // No arguments signature
-        final byte[] noArgumentData = increaseLockingCapFunction.encodeArguments();
+        Bridge bridge = bridgeBuilder
+            .activationConfig(allActivationsConfig)
+            .bridgeSupport(bridgeSupport)
+            .build();
 
-        // Act / Assert
+        final byte[] noArgumentData = increaseLockingCapFunction.encode();
+
+        // this exception is thrown because increaseLockingCap receives zero as value.
+        // an empty value, it returns BigInteger.ZERO. Then, increaseLockingCap fails when
+        // This happens because when decoding with decodeInt, if decodeInt receives an empty array,
+        // it returns zero.
+        // Act & assert
         assertThrows(VMException.class, () -> bridge.execute(noArgumentData));
     }
 
     @Test
     void increaseLockingCap_whenNewLockingCapIsNegativeValue_shouldThrowVMException() {
         // Arrange
-        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
-        Bridge bridge = bridgeBuilder
-            .activationConfig(allActivationsConfig)
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+            .withActivations(allActivations)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
-        // When new LockingCap is a negative value
-        final byte[] negativeValueData = increaseLockingCapFunction.encodeArguments(Coin.NEGATIVE_SATOSHI.getValue());
+        Bridge bridge = bridgeBuilder
+            .activationConfig(allActivationsConfig)
+            .bridgeSupport(bridgeSupport)
+            .build();
 
-        // Act / Assert
+        final byte[] negativeValueData = increaseLockingCapFunction.encode(Coin.NEGATIVE_SATOSHI.getValue());
+
+        // Act & assert
         assertThrows(VMException.class, () -> bridge.execute(negativeValueData));
     }
 
     @Test
     void increaseLockingCap_whenNewLockingCapIsZeroValue_shouldThrowVMException() {
         // Arrange
-        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+            .withActivations(allActivations)
+            .withLockingCapSupport(lockingCapSupport)
+            .build();
+
         Bridge bridge = bridgeBuilder
             .activationConfig(allActivationsConfig)
+            .bridgeSupport(bridgeSupport)
             .build();
 
         // When new LockingCap is a zero value
-        final byte[] negativeValueData = increaseLockingCapFunction.encodeArguments(Coin.ZERO.getValue());
+        final byte[] zeroValueData = increaseLockingCapFunction.encode(Coin.ZERO.getValue());
 
         // Act / Assert
-        assertThrows(VMException.class, () -> bridge.execute(negativeValueData));
+        assertThrows(VMException.class, () -> bridge.execute(zeroValueData));
     }
 
     @Test
