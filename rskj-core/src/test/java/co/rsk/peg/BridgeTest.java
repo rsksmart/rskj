@@ -957,6 +957,50 @@ class BridgeTest {
     }
 
     @Test
+    void registerPegoutTransaction_withEmptyData_shouldThrowVMException() {
+        // arrange
+        CallTransaction.Function registerPegoutTransactionFunction = Bridge.REGISTER_PEGOUT_TRANSACTION;
+        Bridge bridge = bridgeBuilder
+            .activationConfig(ActivationConfigsForTest.cardamom1000())
+            .build();
+
+        final byte[] emptyData = registerPegoutTransactionFunction.encodeSignature();
+
+        // act & assert
+        assertThrows(VMException.class, () -> bridge.execute(emptyData));
+    }
+
+    @Test
+    void registerPegoutTransaction_withInvalidStringData_shouldThrowVMException() {
+        // arrange
+        Bridge bridge = bridgeBuilder
+            .activationConfig(ActivationConfigsForTest.cardamom1000())
+            .build();
+
+        CallTransaction.Function registerPegoutTransactionFunction = Bridge.REGISTER_PEGOUT_TRANSACTION;
+        byte[] invalidString = Hex.decode("ab");
+        byte[] invalidStringData = registerPegoutTransactionFunction.encode(invalidString);
+
+        // act & assert
+        assertThrows(VMException.class, () -> bridge.execute(invalidStringData));
+    }
+
+    @Test
+    void registerPegoutTransaction_withInvalidHexData_shouldThrowVMException() {
+        // arrange
+        Bridge bridge = bridgeBuilder
+            .activationConfig(ActivationConfigsForTest.cardamom1000())
+            .build();
+
+        CallTransaction.Function registerPegoutTransactionFunction = Bridge.REGISTER_PEGOUT_TRANSACTION;
+        byte[] invalidHex = Hex.decode("0000000000000000000000000000000000000000000000080000000000000000");
+        byte[] invalidHexData = registerPegoutTransactionFunction.encode(invalidHex);
+
+        // act & assert
+        assertThrows(VMException.class, () -> bridge.execute(invalidHexData));
+    }
+
+    @Test
     void getActiveFederationCreationBlockHeight_before_RSKIP186_activation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
 
