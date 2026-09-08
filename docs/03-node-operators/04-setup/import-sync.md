@@ -67,6 +67,8 @@ Every entry in an index carries a block `height`, the path to the archive, its `
 
 RSKj will only import bootstrap data that **enough trusted signers agree on**: the same height, with the same hash, correctly signed by each. The threshold is a majority of the keys you have configured, and never fewer than two — with the three keys shipped for each network, that is two. A height offered by too few signers is ignored, however recent it is. Among the heights that meet that bar, RSKj takes the highest.
 
+Every configured signer's index must also be **reachable**. RSKj fetches all of them before it compares anything, so one index that cannot be fetched or parsed stops the import, even when the signers that did respond would have met the threshold. The threshold decides how many signers must agree; it does not make a missing publisher optional. If a publisher is down, wait for it to come back and run the import again.
+
 The trusted keys are long, and they are the one thing worth taking from the JAR you are about to run rather than from this page, since that is the authoritative answer for your version:
 
 <Tabs>
