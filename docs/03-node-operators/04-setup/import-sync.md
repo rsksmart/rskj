@@ -135,7 +135,7 @@ You can see exactly which height you would land on before downloading anything. 
 
 This reproduces the node's own selection rule and prints the height it would choose, along with how many signers agree on it. The threshold is derived from the number of index files you fetched, so the query stays correct if you configure a different set of keys.
 
-Each network gets its own directory because the final `jq` reads every `index-*.json` it finds. Index files are named after the signer's key, and the two networks use different keys, so running both checks in one directory leaves six files there rather than overwriting three — and the query then takes the highest height across both networks. On a Testnet check that had Mainnet files alongside it, the answer would be a Mainnet height, reported with two agreeing signers and no error.
+Each network gets its own directory because the final `jq` reads every `index-*.json` it finds. Index files are named after the signer's key, and the two networks use different keys, so running both checks in one directory leaves six files there rather than overwriting three. That breaks the query rather than giving a wrong answer: the threshold is derived from the file count, so six files require four agreeing signers, more than either network has, and the query prints `null`. With a partial mix of the two networks in one directory, it can instead return a height from the wrong network.
 
 :::warning[The newest entry in an index is not necessarily the one you get]
 
