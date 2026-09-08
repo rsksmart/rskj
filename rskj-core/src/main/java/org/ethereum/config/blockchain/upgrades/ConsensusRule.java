@@ -119,6 +119,7 @@ public enum ConsensusRule {
     RSKIP551("rskip551"), // Disable RSKIP459
     RSKIP552("rskip552"), // Blake2F improvements in data handling
     RSKIP559("rskip559"), // Pegouts deterministic sorting
+    RSKIP643("rskip643"), // Adds registerPegoutTransaction method to the Bridge
     ;
 
     private final String configKey;
