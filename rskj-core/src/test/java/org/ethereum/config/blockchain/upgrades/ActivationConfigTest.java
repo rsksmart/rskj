@@ -160,6 +160,7 @@ class ActivationConfigTest {
         "    rskip551: vetiver900",
         "    rskip552: vetiver900",
         "    rskip559: cardamom1000",
+        "    rskip643: cardamom1000",
         "}"
     ));
 
