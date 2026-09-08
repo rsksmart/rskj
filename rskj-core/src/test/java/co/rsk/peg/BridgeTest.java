@@ -65,6 +65,7 @@ class BridgeTest {
     private final ActivationConfig papyrus200Config = ActivationConfigsForTest.papyrus200();
     private final ActivationConfig iris300Config = ActivationConfigsForTest.iris300();
     private final ActivationConfig hop400Config = ActivationConfigsForTest.hop400();
+    private final ActivationConfig vetiver900Config = ActivationConfigsForTest.vetiver900();
     private final ActivationConfig allActivationsConfig = ActivationConfigsForTest.all();
     private final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
@@ -942,62 +943,66 @@ class BridgeTest {
         }
     }
 
-    @Test
-    void registerPegoutTransaction_beforeRskip643_shouldThrowVMException() {
-        // arrange
-        ActivationConfig activationConfig = ActivationConfigsForTest.vetiver900();
-        Bridge bridge = bridgeBuilder
-            .activationConfig(activationConfig)
-            .build();
+    @Nested
+    class RegisterPegoutTransactionValidations {
+        private final CallTransaction.Function registerPegoutTransactionFunction = Bridge.REGISTER_PEGOUT_TRANSACTION;
+        private BridgeSupport bridgeSupport;
+        private Bridge bridge;
 
-        byte[] data = Bridge.REGISTER_PEGOUT_TRANSACTION.encode();
+        @BeforeEach
+        void setup() {
+            bridgeSupport = BridgeSupportBuilder.builder()
+                .withActivations(allActivations)
+                .build();
 
-        // act & assert
-        assertThrows(VMException.class, () -> bridge.execute(data));
-    }
+            bridge = bridgeBuilder
+                .activationConfig(allActivationsConfig)
+                .bridgeSupport(bridgeSupport)
+                .build();
+        }
 
-    @Test
-    void registerPegoutTransaction_withEmptyData_shouldThrowVMException() {
-        // arrange
-        CallTransaction.Function registerPegoutTransactionFunction = Bridge.REGISTER_PEGOUT_TRANSACTION;
-        Bridge bridge = bridgeBuilder
-            .activationConfig(ActivationConfigsForTest.cardamom1000())
-            .build();
+        @Test
+        void registerPegoutTransaction_beforeRskip643_shouldThrowVMException() {
+            // arrange
+            Bridge bridge = bridgeBuilder
+                .activationConfig(vetiver900Config)
+                .bridgeSupport(bridgeSupport)
+                .build();
 
-        final byte[] emptyData = registerPegoutTransactionFunction.encodeSignature();
+            byte[] data = registerPegoutTransactionFunction.encode();
 
-        // act & assert
-        assertThrows(VMException.class, () -> bridge.execute(emptyData));
-    }
+            // act & assert
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
 
-    @Test
-    void registerPegoutTransaction_withInvalidStringData_shouldThrowVMException() {
-        // arrange
-        Bridge bridge = bridgeBuilder
-            .activationConfig(ActivationConfigsForTest.cardamom1000())
-            .build();
+        @Test
+        void registerPegoutTransaction_withEmptyData_shouldThrowVMException() {
+            // arrange
+            final byte[] emptyData = registerPegoutTransactionFunction.encodeSignature();
 
-        CallTransaction.Function registerPegoutTransactionFunction = Bridge.REGISTER_PEGOUT_TRANSACTION;
-        byte[] invalidString = Hex.decode("ab");
-        byte[] invalidStringData = registerPegoutTransactionFunction.encode(invalidString);
+            // act & assert
+            assertThrows(VMException.class, () -> bridge.execute(emptyData));
+        }
 
-        // act & assert
-        assertThrows(VMException.class, () -> bridge.execute(invalidStringData));
-    }
+        @Test
+        void registerPegoutTransaction_withInvalidStringData_shouldThrowVMException() {
+            // arrange
+            byte[] invalidString = Hex.decode("ab");
+            byte[] invalidStringData = registerPegoutTransactionFunction.encode(invalidString);
 
-    @Test
-    void registerPegoutTransaction_withInvalidHexData_shouldThrowVMException() {
-        // arrange
-        Bridge bridge = bridgeBuilder
-            .activationConfig(ActivationConfigsForTest.cardamom1000())
-            .build();
+            // act & assert
+            assertThrows(VMException.class, () -> bridge.execute(invalidStringData));
+        }
 
-        CallTransaction.Function registerPegoutTransactionFunction = Bridge.REGISTER_PEGOUT_TRANSACTION;
-        byte[] invalidHex = Hex.decode("0000000000000000000000000000000000000000000000080000000000000000");
-        byte[] invalidHexData = registerPegoutTransactionFunction.encode(invalidHex);
+        @Test
+        void registerPegoutTransaction_withInvalidHexData_shouldThrowVMException() {
+            // arrange
+            byte[] invalidHex = Hex.decode("0000000000000000000000000000000000000000000000080000000000000000");
+            byte[] invalidHexData = registerPegoutTransactionFunction.encode(invalidHex);
 
-        // act & assert
-        assertThrows(VMException.class, () -> bridge.execute(invalidHexData));
+            // act & assert
+            assertThrows(VMException.class, () -> bridge.execute(invalidHexData));
+        }
     }
 
     @Test
