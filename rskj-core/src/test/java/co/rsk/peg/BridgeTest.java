@@ -977,12 +977,11 @@ class BridgeTest {
     @Nested
     class RegisterPegoutTransactionValidations {
         private final CallTransaction.Function registerPegoutTransactionFunction = Bridge.REGISTER_PEGOUT_TRANSACTION;
-        private BridgeSupport bridgeSupport;
         private Bridge bridge;
 
         @BeforeEach
         void setup() {
-            bridgeSupport = BridgeSupportBuilder.builder()
+            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
                 .withActivations(allActivations)
                 .build();
 
@@ -995,12 +994,21 @@ class BridgeTest {
         @Test
         void registerPegoutTransaction_beforeRskip643_shouldThrowVMException() {
             // arrange
+            ActivationConfig.ForBlock vetiverActivation = vetiver900Config.forBlock(0);
+            BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+                .withActivations(vetiverActivation)
+                .build();
+
             Bridge bridge = bridgeBuilder
                 .activationConfig(vetiver900Config)
                 .bridgeSupport(bridgeSupport)
                 .build();
 
-            byte[] data = registerPegoutTransactionFunction.encode();
+            byte[] btcTxId = BitcoinTestUtils.createHash(1).getBytes();
+            int height = 100;
+            byte[] pmt = Hex.decode("ab");
+
+            byte[] data = registerPegoutTransactionFunction.encode(btcTxId, height, pmt);
 
             // act & assert
             assertThrows(VMException.class, () -> bridge.execute(data));
