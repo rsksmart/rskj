@@ -653,7 +653,7 @@ public enum BridgeMethods {
             new String[]{BYTES32, INT, BYTES},
             new String[]{}
         ),
-        fixedCost(0L), // TODO: define real cost for registerPegoutTransaction
+        fixedCost(22000L), // TODO: define real cost for registerPegoutTransaction
         (BridgeMethodExecutorVoid) Bridge::registerPegoutTransaction,
         activations -> activations.isActive(RSKIP643),
         fixedPermission(false)
