@@ -243,10 +243,10 @@ class BridgeTest {
 
         final byte[] noArgumentData = increaseLockingCapFunction.encode();
 
-        // this exception is thrown because increaseLockingCap receives zero as value.
-        // an empty value, it returns BigInteger.ZERO. Then, increaseLockingCap fails when
-        // This happens because when decoding with decodeInt, if decodeInt receives an empty array,
-        // it returns zero.
+        // Decoding an empty payload for a single int256 param doesn't fail: IntType.decodeInt
+        // special-cases an empty array and returns BigInteger.ZERO instead of throwing. So
+        // newLockingCap decodes as zero, and it's increaseLockingCap's own "must be greater
+        // than zero" check that throws here, not the ABI decoder.
         // Act & assert
         assertThrows(VMException.class, () -> bridge.execute(noArgumentData));
     }
