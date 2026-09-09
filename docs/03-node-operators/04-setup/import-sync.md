@@ -37,7 +37,7 @@ These instructions cover running the node from the **JAR file**, on **Mainnet** 
 
 - **Java 17 JDK** and **RSKj `VETIVER-9.0.4` or later** — see [Setup node using Java](/node-operators/setup/installation/java/). Earlier versions cannot read the bootstrap data published today, and will fail the import.
 - **Disk for the database.** Size the data directory for a full node, per the [minimum requirements](/node-operators/setup/requirements/) — not for the size of the download.
-- **Disk for temporary files.** RSKj downloads the bootstrap archive and extracts it into the JVM's temporary directory: `/tmp` on Linux, a per-user directory under `/var/folders` on macOS. To see the exact path yours will use, run `java -XshowSettings:properties -version 2>&1 | grep java.io.tmpdir`. Both files exist there at the same time. The extracted contents are larger than the archive, so allow **about three times the size of the bootstrap archive** in temporary space, on top of the database itself. To check that size before committing to the download, see [Check where import sync will land you](#check-where-import-sync-will-land-you).
+- **Disk for temporary files.** RSKj downloads the bootstrap archive and extracts it into the JVM's temporary directory: `/tmp` on Linux, a per-user directory under `/var/folders` on macOS. To see the exact path yours will use, run `java -XshowSettings:properties -version 2>&1 | grep java.io.tmpdir`. Both files exist there at the same time, so size the temporary space for **the archive plus the larger file extracted from it**, on top of the database itself. To check that size before committing to the download, see [Check where import sync will land you](#check-where-import-sync-will-land-you).
 
 ## How bootstrap data is trusted
 
@@ -66,6 +66,8 @@ Each signer publishes its own index under that URL, at a path named for its publ
 Every entry in an index carries a block `height`, the path to the archive, its `hash`, and the signer's signature over that entry.
 
 RSKj will only import bootstrap data that **enough trusted signers agree on**: the same height, with the same hash, correctly signed by each. The threshold is a majority of the keys you have configured, and never fewer than two — with the three keys shipped for each network, that is two. A height offered by too few signers is ignored, however recent it is. Among the heights that meet that bar, RSKj takes the highest.
+
+Every configured signer's index must also be **reachable**. RSKj fetches all of them before it compares anything, so one index that cannot be fetched or parsed stops the import, even when the signers that did respond would have met the threshold. The threshold decides how many signers must agree; it does not make a missing publisher optional. If a publisher is down, wait for it to come back and run the import again.
 
 The trusted keys are long, and they are the one thing worth taking from the JAR you are about to run rather than from this page, since that is the authoritative answer for your version:
 
@@ -133,7 +135,7 @@ You can see exactly which height you would land on before downloading anything. 
 
 This reproduces the node's own selection rule and prints the height it would choose, along with how many signers agree on it. The threshold is derived from the number of index files you fetched, so the query stays correct if you configure a different set of keys.
 
-Each network gets its own directory because the final `jq` reads every `index-*.json` it finds. Index files are named after the signer's key, and the two networks use different keys, so running both checks in one directory leaves six files there rather than overwriting three — and the query then takes the highest height across both networks. On a Testnet check that had Mainnet files alongside it, the answer would be a Mainnet height, reported with two agreeing signers and no error.
+Each network gets its own directory because the final `jq` reads every `index-*.json` it finds. Index files are named after the signer's key, and the two networks use different keys, so running both checks in one directory leaves six files there rather than overwriting three. That breaks the query rather than giving a wrong answer: the threshold is derived from the file count, so six files require four agreeing signers, more than either network has, and the query prints `null`. With a partial mix of the two networks in one directory, it can instead return a height from the wrong network.
 
 :::warning[The newest entry in an index is not necessarily the one you get]
 
@@ -175,8 +177,12 @@ The import prints nothing to the console. It writes to `logs/rsk.log`, relative 
 Bootstrap data downloaded
 Bootstrap data hash checked
 Bootstrap data extracted
+Detected bootstrap-data v2 (chunked) format
+Bootstrap-data v2 imported <blocks> blocks, <values> long values and <nodes> state nodes in <n> ms
 Bootstrap data has successfully been imported in <n> mills
 ```
+
+Other subsystems log in between; what matters is that these six appear in this order. Older bootstrap data logs `Detected bootstrap-data v1 (legacy) format` in place of the two `v2` lines.
 
 The node then continues into normal operation and starts importing blocks from peers, beginning just above the imported height.
 
@@ -214,7 +220,7 @@ The result is the latest synced block in hexadecimal. If it is at or above the h
 
 ### Clean up temporary files
 
-RSKj leaves the downloaded archive and its extracted contents behind in the temporary directory — together, more than twice the size of the archive. They are not needed once the import has completed.
+RSKj leaves the downloaded archive and its extracted contents behind in the temporary directory — together, the archive plus the larger file extracted from it. They are not needed once the import has completed.
 
 ```shell
 TMP=$(java -XshowSettings:properties -version 2>&1 | sed -n 's/.*java.io.tmpdir = //p')
@@ -230,17 +236,18 @@ Remove anything left there.
 
 | Message | What it means |
 |---|---|
-| `Failed to download and parse index from <url>` | A signer's index could not be fetched or parsed. Check network access to the import URL, and that you have not overridden `database.import.url` with something unreachable. |
-| `Downloaded files doesn't contain enough entries for a common height` | No single height is offered, with a matching hash, by the required majority of trusted signers. This is what you see if `database.import.trusted-keys` has been narrowed to fewer working signers than the threshold, or if the indexes have no height in common. |
+| `Failed to download and parse index from <url>` | A signer's index could not be fetched or parsed. **This stops the import even if the other signers already agree**, so it is often an outage at the publisher rather than a problem on your side. Your database has already been erased at this point. Check network access to the import URL, and that you have not overridden `database.import.url` with something unreachable. If the URL is right and reachable for the other keys, wait for that publisher to recover and retry. |
+| `Downloaded files doesn't contain enough entries for a common height` | No single height is offered, with a matching hash, by the required majority of trusted signers. This is what you see if `database.import.trusted-keys` has been narrowed below the threshold, or if the indexes have no height in common. An unreachable signer does **not** produce this message; it fails earlier, with `Failed to download and parse index from <url>`. |
 | `Not enough valid signatures: selected height <n> doesn't have enough trustworthy sources: <x> of <y>` | A height looked agreed-upon, but too few signatures actually verified against the trusted keys. The bootstrap data is not trustworthy. Do not work around this by lowering the requirement. |
 | `Failed to create a temporary directory. Please start again the import process` | RSKj could not create its working directory under the JVM's temporary directory. This happens before anything is downloaded. Check that `java.io.tmpdir` exists and is writable by the user running the node — a read-only or otherwise restricted temporary directory is the usual cause. |
 | `File: <path> does not match with expected hash: <hash>` | The downloaded archive does not match the hash the signers committed to. Usually an incomplete or corrupted download; remove the temporary files and retry. |
 | `Error downloading bootstrap data from <url>. Please start again the import process` | The archive could not be retrieved, or could not be written to disk. Check network access, and check free space in the temporary directory — a download that fills the filesystem fails here. If it persists, the published archive may be missing from the location its index advertises. |
 | `The file is corrupted or incomplete. Please start again the import process` | The archive downloaded and matched its hash, but could not be unpacked. Check free space in the temporary directory first: running out during extraction produces this message even though the archive itself is fine. If space is adequate and it persists, the published archive is faulty — report it rather than working around it. |
 | `Error trying to read bootstrap data contents. Please start again the import process` | The downloaded archive could not be read back while verifying its hash — this happens before extraction, not after. Usually a truncated or removed temporary file, or an I/O error on the filesystem holding the temporary directory. Retry the import. |
-| `Error reading bootstrap data from <path>` | The extracted `bootstrap-data.bin` could not be read. Check that the temporary directory still holds it and that nothing is cleaning temporary files while the node runs. |
+| `Error reading bootstrap data from <path>` or `Error reading bootstrap-data v2 from <path>` | The extracted `bootstrap-data.bin` could not be read. Check that the temporary directory still holds it and that nothing is cleaning temporary files while the node runs. |
+| Any message starting `Bootstrap-data v2 ` (bad magic, unsupported version, chunk length, section order, truncated or trailing bytes) | The extracted file is not intact. Check first that you are on `VETIVER-9.0.4` or later, then delete the temporary files and run the import again. If it repeats, the published archive is faulty — report it rather than working around it. |
 | `Configuration has less trusted sources than the minimum required <n> of 2` | Fewer than two trusted keys are configured, and two is the floor however few you configure. Restore the shipped keys for the network. This is a warning at startup, not the failure itself — the run continues and then fails on one of the messages above. |
-| `java.lang.OutOfMemoryError` | The load stage ran out of heap. Raise `-Xmx` above the 4G used above and run the import again; note that a retry downloads the bootstrap data again. |
+| `java.lang.OutOfMemoryError` | Note this one appears **on the terminal, not in `logs/rsk.log`** — if the log stops after `Bootstrap data extracted`, check the terminal before assuming the node is still working. `Java heap space` means the load stage ran out of heap: raise `-Xmx` above the 4G used above and run the import again. `Required array size too large` means the node is older than `VETIVER-9.0.4` and cannot read the bootstrap data published today; raising `-Xmx` will not help, so upgrade instead. Either way, a retry downloads the bootstrap data again. |
 
 </details>
 
@@ -298,7 +305,7 @@ Then import, mounting that volume at the `rsk` user's home so the database lands
 
 The container does not exit when the import finishes — the node carries on into normal operation. Watch for `Bootstrap data has successfully been imported` in the logs, stop the container, then start your usual container against the same volume **without** `--import`.
 
-The archive is downloaded and unpacked inside the container, under `/tmp`, which is the container's own writable layer rather than the volume. Allow roughly three times the archive size there, on top of the space the database needs in the volume.
+The archive is downloaded and unpacked inside the container, under `/tmp`, which is the container's own writable layer rather than the volume. Allow room for the archive and the larger file extracted from it at the same time, on top of the space the database needs in the volume.
 
 ### Ubuntu package
 
@@ -306,7 +313,7 @@ The package installs the JAR at `/usr/share/rsk/rsk.jar` and its configuration i
 
 ```shell
 sudo service rsk stop
-sudo -u rsk java -Xmx4G -cp /usr/share/rsk/rsk.jar co.rsk.Start --import
+sudo -u rsk java -Xmx4G -Dlogback.configurationFile=/etc/rsk/logback.xml -cp /usr/share/rsk/rsk.jar co.rsk.Start --import
 sudo service rsk start
 ```
 
@@ -314,7 +321,7 @@ Three details matter here:
 
 - **Run it as the `rsk` user**, as above. The service runs as `rsk`, so an import run as `root` or as your own account leaves behind a database the service cannot read.
 - **There is no configuration flag to pass, and no network flag either.** RSKj reads `/etc/rsk/node.conf` on its own when that file exists, exactly as the service does. That file is a symlink to the network you chose at installation, and it sets the database location — `/var/lib/rsk/database/<network>`. See [switching networks](/node-operators/setup/configuration/switch-network) if you need to change it.
-- **Stop the import once it reports success.** As with Docker, the node continues into normal operation rather than exiting; interrupt it after `Bootstrap data has successfully been imported`, then hand the node back to the service.
+- **Stop the import once it reports success.** As with Docker, the node continues into normal operation rather than exiting; interrupt it after `Bootstrap data has successfully been imported`, then hand the node back to the service. The `-Dlogback.configurationFile` option above is what the service uses, so the import logs to `/var/log/rsk/rsk.log`. Without it the log goes to `./logs/rsk.log` in whatever directory you ran the command from.
 
 ## Related
 
