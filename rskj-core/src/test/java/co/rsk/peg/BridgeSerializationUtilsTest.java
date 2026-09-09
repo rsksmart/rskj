@@ -20,6 +20,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeSerializationUtils.*;
 import static co.rsk.peg.PegTestUtils.createHash3;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.*;
@@ -753,10 +754,19 @@ class BridgeSerializationUtilsTest {
         @Test
         void deserialize_withNullData_shouldReturnEmptyList() {
             // act
-            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(null);
+            List<UTXO> deserializedNullData = BridgeSerializationUtils.deserializeUTXOList(null);
 
             // assert
-            assertUtxosEquals(Collections.emptyList(), deserializedUtxos);
+            assertUtxosEquals(Collections.emptyList(), deserializedNullData);
+        }
+
+        @Test
+        void deserialize_withEmptyData_shouldReturnEmptyList() {
+            // act
+            List<UTXO> deserializedEmptyData = BridgeSerializationUtils.deserializeUTXOList(EMPTY_BYTE_ARRAY);
+
+            // assert
+            assertUtxosEquals(Collections.emptyList(), deserializedEmptyData);
         }
 
         @Test
