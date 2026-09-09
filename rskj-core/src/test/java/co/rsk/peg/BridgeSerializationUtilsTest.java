@@ -806,7 +806,11 @@ class BridgeSerializationUtilsTest {
                 .withBlockHeight(Integer.MAX_VALUE)
                 .withScriptPubKey(p2shOutputScript)
                 .build();
-            List<UTXO> utxos = List.of(lowValueNonCoinbaseUtxo, highValueCoinbaseUtxo, multisigUtxoWithHighIndexAndHeight);
+            List<UTXO> utxos = List.of(
+                lowValueNonCoinbaseUtxo,
+                highValueCoinbaseUtxo,
+                multisigUtxoWithHighIndexAndHeight
+            );
 
             // act
             byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
@@ -903,7 +907,11 @@ class BridgeSerializationUtilsTest {
                 .withBlockHeight(300)
                 .withScriptPubKey(p2shP2wshErpFederation.getP2SHScript())
                 .build();
-            List<UTXO> utxos = List.of(utxoFromStandardFederation, utxoFromErpFederation, utxoFromP2shP2wshErpFederation);
+            List<UTXO> utxos = List.of(
+                utxoFromStandardFederation,
+                utxoFromErpFederation,
+                utxoFromP2shP2wshErpFederation
+            );
 
             // act
             byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
