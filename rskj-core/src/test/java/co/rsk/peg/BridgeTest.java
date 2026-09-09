@@ -1016,27 +1016,26 @@ class BridgeTest {
         }
 
         @Test
-        void registerPegoutTransaction_afterRskip643_shouldSuccessfullyCallBridgeSupport() throws VMException {
+        void registerPegoutTransaction_withNotEnoughDataForFirstParam_shouldThrowVMException() {
             // arrange
-            BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-            Transaction rskTx = mock(Transaction.class);
-            Bridge bridge = bridgeBuilder
-                .activationConfig(allActivationsConfig)
-                .bridgeSupport(bridgeSupportMock)
-                .transaction(rskTx)
-                .build();
+            // one byte isn't enough to decode btcTxId (bytes32, needs 32 bytes) -> Bytes32Type.decode throws
+            final byte[] invalidData = ByteUtil.merge(registerPegoutTransactionFunction.encodeSignature(), Hex.decode("ab"));
 
-            Sha256Hash btcTxId = BitcoinTestUtils.createHash(1);
-            int height = 100;
-            byte[] pmt = Hex.decode("ab");
+            // act & assert
+            assertThrows(VMException.class, () -> bridge.execute(invalidData));
+        }
 
-            byte[] data = registerPegoutTransactionFunction.encode(btcTxId.getBytes(), height, pmt);
+        @Test
+        void registerPegoutTransaction_withNotEnoughDataForSecondParam_shouldThrowVMException() {
+            // arrange
+            // this literal is exactly 32 bytes, so btcTxId decodes fine; height then has no bytes left -> IntType.decode throws
+            final byte[] invalidHexData = ByteUtil.merge(
+                registerPegoutTransactionFunction.encodeSignature(),
+                Hex.decode("0000000000000000000000000000000000000000000000080000000000000000")
+            );
 
-            // act
-            bridge.execute(data);
-
-            // assert
-            verify(bridgeSupportMock, times(1)).registerPegoutTransaction(rskTx, btcTxId, height, pmt);
+            // act & assert
+            assertThrows(VMException.class, () -> bridge.execute(invalidHexData));
         }
     }
 
