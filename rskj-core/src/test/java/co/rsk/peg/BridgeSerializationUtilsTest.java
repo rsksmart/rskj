@@ -751,6 +751,15 @@ class BridgeSerializationUtilsTest {
         }
 
         @Test
+        void deserialize_withNullData_shouldReturnEmptyList() {
+            // act
+            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(null);
+
+            // assert
+            assertUtxosEquals(Collections.emptyList(), deserializedUtxos);
+        }
+
+        @Test
         void withSingleUtxo_shouldRecoverOriginalUtxoData() {
             // arrange
             UTXO utxo = UTXOBuilder.builder()
