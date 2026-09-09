@@ -43,6 +43,7 @@ import co.rsk.peg.resources.TestConstants;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.vote.*;
 import co.rsk.peg.whitelist.*;
+import co.rsk.test.builders.UTXOBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.UnsignedBytes;
 import java.math.BigInteger;
@@ -726,6 +727,241 @@ class BridgeSerializationUtilsTest {
 
             // assert
             assertEquals(p2ShP2wshErpFederation, deserializedFederation);
+        }
+    }
+
+    @Nested
+    class SerializeAndDeserializeUTXOList {
+        private final Federation standardFederation = StandardMultiSigFederationBuilder.builder().build();
+        private final Federation p2shErpFederation = P2shErpFederationBuilder.builder().build();
+        private final Federation p2shP2wshErpFederation = P2shP2wshErpFederationBuilder.builder().build();
+        private final Sha256Hash fundingTxHash = BitcoinTestUtils.createHash(99);
+
+        @Test
+        void withEmptyList_shouldReturnEmptyList() {
+            // arrange
+            List<UTXO> utxos = new ArrayList<>();
+
+            // act
+            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
+            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
+
+            // assert
+            assertUtxosEquals(utxos, deserializedUtxos);
+        }
+
+        @Test
+        void withSingleUtxo_shouldRecoverOriginalUtxoData() {
+            // arrange
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(BitcoinTestUtils.createHash(1))
+                .withValue(Coin.COIN)
+                .withBlockHeight(100)
+                .withOutpointIndex(2)
+                .withScriptPubKey(ScriptBuilder.createOutputScript(ADDRESS))
+                .isCoinbase(true)
+                .build();
+            List<UTXO> utxos = Collections.singletonList(utxo);
+
+            // act
+            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
+            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
+
+            // assert
+            assertUtxosEquals(utxos, deserializedUtxos);
+        }
+
+        @Test
+        void withDifferentUtxoCombinations_shouldRecoverAllUtxosInOrder() {
+            // arrange
+            UTXO lowValueNonCoinbaseUtxo = UTXOBuilder.builder()
+                .withTransactionHash(BitcoinTestUtils.createHash(1))
+                .withOutpointIndex(5)
+                .withValue(Coin.SATOSHI)
+                .withBlockHeight(50)
+                .withScriptPubKey(ScriptBuilder.createOutputScript(ADDRESS))
+                .build();
+            UTXO highValueCoinbaseUtxo = UTXOBuilder.builder()
+                .withTransactionHash(BitcoinTestUtils.createHash(2))
+                .withOutpointIndex(1)
+                .withValue(Coin.FIFTY_COINS)
+                .withBlockHeight(0)
+                .isCoinbase(true)
+                .withScriptPubKey(ScriptBuilder.createOutputScript(OTHER_ADDRESS))
+                .build();
+            Script p2shOutputScript = ScriptBuilder.createP2SHOutputScript(2, BitcoinTestUtils.getBtcEcKeys(3));
+            UTXO multisigUtxoWithHighIndexAndHeight = UTXOBuilder.builder()
+                .withTransactionHash(BitcoinTestUtils.createHash(3))
+                .withOutpointIndex(Integer.MAX_VALUE)
+                .withValue(Coin.valueOf(123_456_789L))
+                .withBlockHeight(Integer.MAX_VALUE)
+                .withScriptPubKey(p2shOutputScript)
+                .build();
+            List<UTXO> utxos = List.of(lowValueNonCoinbaseUtxo, highValueCoinbaseUtxo, multisigUtxoWithHighIndexAndHeight);
+
+            // act
+            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
+            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
+
+            // assert
+            assertUtxosEquals(utxos, deserializedUtxos);
+        }
+
+        @Test
+        void withUtxoBelongingToStandardMultisigFederation_shouldAllowRecoveringFederationAddressFromScript() {
+            // arrange
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(fundingTxHash)
+                .withValue(Coin.COIN)
+                .withBlockHeight(500)
+                .withScriptPubKey(standardFederation.getP2SHScript())
+                .build();
+            List<UTXO> utxos = Collections.singletonList(utxo);
+
+            // act
+            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
+            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
+
+            // assert
+            Address recoveredAddress = deserializedUtxos.get(0).getScript().getToAddress(MAINNET_PARAMETERS);
+            assertEquals(standardFederation.getAddress(), recoveredAddress);
+            assertUtxosEquals(utxos, deserializedUtxos);
+        }
+
+        @Test
+        void withUtxoBelongingToP2shErpFederation_shouldAllowRecoveringFederationAddressFromScript() {
+            // arrange
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(fundingTxHash)
+                .withValue(Coin.FIFTY_COINS)
+                .withBlockHeight(1_000)
+                .withScriptPubKey(p2shErpFederation.getP2SHScript())
+                .build();
+            List<UTXO> utxos = Collections.singletonList(utxo);
+
+            // act
+            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
+            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
+
+            // assert
+            Address recoveredAddress = deserializedUtxos.get(0).getScript().getToAddress(MAINNET_PARAMETERS);
+            assertEquals(p2shErpFederation.getAddress(), recoveredAddress);
+            assertUtxosEquals(utxos, deserializedUtxos);
+        }
+
+        @Test
+        void withUtxoBelongingToP2shP2wshErpFederation_shouldAllowRecoveringFederationAddressFromScript() {
+            // arrange
+            UTXO utxo = UTXOBuilder.builder()
+                .withTransactionHash(fundingTxHash)
+                .withValue(Coin.CENT)
+                .withBlockHeight(2_000)
+                .withScriptPubKey(p2shP2wshErpFederation.getP2SHScript())
+                .build();
+            List<UTXO> utxos = Collections.singletonList(utxo);
+
+            // act
+            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
+            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
+
+            // assert
+            Address recoveredAddress = deserializedUtxos.get(0).getScript().getToAddress(MAINNET_PARAMETERS);
+            assertEquals(p2shP2wshErpFederation.getAddress(), recoveredAddress);
+            assertUtxosEquals(utxos, deserializedUtxos);
+        }
+
+        @Test
+        void withUtxosBelongingToDifferentFederations_shouldAllowRecoveringEachFederationAddress() {
+            // arrange
+            UTXO utxoFromStandardFederation = UTXOBuilder.builder()
+                .withTransactionHash(fundingTxHash)
+                .withOutpointIndex(0)
+                .withValue(Coin.COIN)
+                .withBlockHeight(100)
+                .withScriptPubKey(standardFederation.getP2SHScript())
+                .build();
+            UTXO utxoFromErpFederation = UTXOBuilder.builder()
+                .withTransactionHash(fundingTxHash)
+                .withOutpointIndex(1)
+                .withValue(Coin.COIN.multiply(2))
+                .withBlockHeight(200)
+                .withScriptPubKey(p2shErpFederation.getP2SHScript())
+                .build();
+            UTXO utxoFromP2shP2wshErpFederation = UTXOBuilder.builder()
+                .withTransactionHash(fundingTxHash)
+                .withOutpointIndex(2)
+                .withValue(Coin.COIN.multiply(3))
+                .withBlockHeight(300)
+                .withScriptPubKey(p2shP2wshErpFederation.getP2SHScript())
+                .build();
+            List<UTXO> utxos = List.of(utxoFromStandardFederation, utxoFromErpFederation, utxoFromP2shP2wshErpFederation);
+
+            // act
+            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
+            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
+
+            // assert
+            Address recoveredAddressForStandardFederationUtxo = deserializedUtxos.get(0).getScript().getToAddress(MAINNET_PARAMETERS);
+            Address recoveredAddressForErpFederationUtxo = deserializedUtxos.get(1).getScript().getToAddress(MAINNET_PARAMETERS);
+            Address recoveredAddressForP2shP2wshErpFederationUtxo = deserializedUtxos.get(2).getScript().getToAddress(MAINNET_PARAMETERS);
+
+            assertEquals(standardFederation.getAddress(), recoveredAddressForStandardFederationUtxo);
+            assertEquals(p2shErpFederation.getAddress(), recoveredAddressForErpFederationUtxo);
+            assertEquals(p2shP2wshErpFederation.getAddress(), recoveredAddressForP2shP2wshErpFederationUtxo);
+            assertNotEquals(recoveredAddressForStandardFederationUtxo, recoveredAddressForErpFederationUtxo);
+            assertNotEquals(recoveredAddressForStandardFederationUtxo, recoveredAddressForP2shP2wshErpFederationUtxo);
+            assertNotEquals(recoveredAddressForErpFederationUtxo, recoveredAddressForP2shP2wshErpFederationUtxo);
+            assertUtxosEquals(utxos, deserializedUtxos);
+        }
+
+        @Test
+        void withAddressField_shouldNotPreserveAddress() {
+            // arrange
+            UTXO utxo = new UTXO(
+                BitcoinTestUtils.createHash(1),
+                0,
+                Coin.COIN,
+                100,
+                false,
+                standardFederation.getP2SHScript(),
+                standardFederation.getAddress().toString()
+            );
+            List<UTXO> utxos = Collections.singletonList(utxo);
+
+            // act
+            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
+            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
+
+            // assert
+            assertEquals(standardFederation.getAddress().toString(), utxo.getAddress());
+            assertNull(deserializedUtxos.get(0).getAddress());
+            assertUtxosEquals(utxos, deserializedUtxos);
+        }
+
+        @Test
+        void withTruncatedUtxoData_shouldThrowSerializationException() {
+            // arrange
+            byte[] truncatedUtxoBytes = { 1, 2, 3 }; // too short to contain even the UTXO value field (8 bytes)
+            byte[] data = RLP.encodeList(RLP.encodeElement(truncatedUtxoBytes));
+
+            // act & assert
+            assertThrows(SerializationException.class, () -> BridgeSerializationUtils.deserializeUTXOList(data));
+        }
+
+        private void assertUtxosEquals(List<UTXO> expected, List<UTXO> actual) {
+            assertEquals(expected.size(), actual.size());
+            for (int i = 0; i < expected.size(); i++) {
+                assertUtxoEquals(expected.get(i), actual.get(i));
+            }
+        }
+
+        private void assertUtxoEquals(UTXO expected, UTXO actual) {
+            assertEquals(expected.getHash(), actual.getHash());
+            assertEquals(expected.getIndex(), actual.getIndex());
+            assertEquals(expected.getValue(), actual.getValue());
+            assertEquals(expected.getHeight(), actual.getHeight());
+            assertEquals(expected.isCoinbase(), actual.isCoinbase());
+            assertEquals(expected.getScript(), actual.getScript());
         }
     }
 
