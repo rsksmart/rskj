@@ -430,10 +430,6 @@ public class BridgeSupport {
         }
     }
 
-    public void registerPegoutTransaction(Transaction rskTx, Sha256Hash btcTxId, int height, byte[] pmtSerialized) {
-        // TODO: implement pegout-registration logic (validate PMT, look up known UTXOs for btcTxId, credit federation)
-    }
-
     private void registerSvpFundTx(BtcTransaction btcTx) throws IOException {
         registerNewUtxos(btcTx); // Need to register the change UTXO
 
