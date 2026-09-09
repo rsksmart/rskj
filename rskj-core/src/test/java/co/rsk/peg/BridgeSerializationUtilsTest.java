@@ -752,6 +752,11 @@ class BridgeSerializationUtilsTest {
         }
 
         @Test
+        void serialize_withNullData_shouldThrowNullPointerException() {
+            assertThrows(NullPointerException.class, () -> BridgeSerializationUtils.serializeUTXOList(null));
+        }
+
+        @Test
         void deserialize_withNullData_shouldReturnEmptyList() {
             // act
             List<UTXO> deserializedNullData = BridgeSerializationUtils.deserializeUTXOList(null);
