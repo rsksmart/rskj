@@ -305,6 +305,18 @@ task parallelTest(type: Test) {
     reports.junitXml.required = false
 }
 
+task updateActivationGolden(type: Test) {
+    group = 'Verification'
+    description = 'Regenerate src/test/resources/config/activation-heights-golden.json from the shipped network configs'
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    filter { includeTestsMatching 'org.ethereum.config.blockchain.upgrades.NetworkConfigsActivationTest.passedActivationHeightsMatchGolden' }
+    systemProperty 'activation.golden.update', 'true'
+    testLogging { showStandardStreams = true }
+    outputs.upToDateWhen { false }
+}
+
 tasks.withType(Javadoc) {
     options.addStringOption('Xdoclint:none', '-quiet')
 }
