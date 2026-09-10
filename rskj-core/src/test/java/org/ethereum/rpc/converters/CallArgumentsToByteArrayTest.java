@@ -323,7 +323,7 @@ class CallArgumentsToByteArrayTest {
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assertions.assertEquals((byte) 33, byteArrayArgs.getChainId((byte) 33));
+        Assertions.assertEquals((byte) 33, byteArrayArgs.getChainId(TransactionType.LEGACY, (byte) 33));
     }
 
     @Test
@@ -333,7 +333,7 @@ class CallArgumentsToByteArrayTest {
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assertions.assertEquals((byte) 33, byteArrayArgs.getChainId((byte) 33));
+        Assertions.assertEquals((byte) 33, byteArrayArgs.getChainId(TransactionType.LEGACY, (byte) 33));
     }
 
     @Test
@@ -343,7 +343,7 @@ class CallArgumentsToByteArrayTest {
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assertions.assertEquals((byte) 33, byteArrayArgs.getChainId((byte) 1));
+        Assertions.assertEquals((byte) 33, byteArrayArgs.getChainId(TransactionType.LEGACY, (byte) 1));
     }
 
     @Test
@@ -355,9 +355,32 @@ class CallArgumentsToByteArrayTest {
 
         RskJsonRpcRequestException ex = Assertions.assertThrows(
                 RskJsonRpcRequestException.class,
-                () -> byteArrayArgs.getChainId((byte) 1));
+                () -> byteArrayArgs.getChainId(TransactionType.LEGACY, (byte) 1));
         Assertions.assertEquals(-32602, ex.getCode());
         Assertions.assertEquals("Invalid chainId: 0x1234", ex.getMessage());
+    }
+
+    @Test
+    void getChainIdWhenValueIsExplicitZeroForTypedTransaction_rejectsRequest() {
+        CallArguments args = new CallArguments();
+        args.setChainId("0x0");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        RskJsonRpcRequestException ex = Assertions.assertThrows(RskJsonRpcRequestException.class,
+                () -> byteArrayArgs.getChainId(TransactionType.TYPE_2, (byte) 33));
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals("Invalid chainId: 0x0", ex.getMessage());
+    }
+
+    @Test
+    void getChainIdWhenValueIsExplicitZeroForLegacyTransaction_returnsZero() {
+        CallArguments args = new CallArguments();
+        args.setChainId("0x0");
+
+        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
+
+        Assertions.assertEquals((byte) 0, byteArrayArgs.getChainId(TransactionType.LEGACY, (byte) 33));
     }
 
     @Test

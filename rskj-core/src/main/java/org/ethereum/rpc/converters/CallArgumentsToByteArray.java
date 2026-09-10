@@ -167,13 +167,14 @@ public class CallArgumentsToByteArray {
         return isAbsent(args.getMaxFeePerGas()) ? null : HexUtils.strHexOrStrNumberToByteArray(args.getMaxFeePerGas());
     }
 
-    public byte getChainId(byte defaultChainId) {
+
+    public byte getChainId(TransactionType type, byte defaultChainId) {
         String hex = args.getChainId();
         if (hex == null || hex.isEmpty()) {
             return defaultChainId;
         }
         byte[] bytes = HexUtils.strHexOrStrNumberToByteArray(hex);
-        if (bytes.length != 1) {
+        if (bytes.length != 1 || (bytes[0] == 0 && type != TransactionType.LEGACY)) {
             throw invalidParamError("Invalid chainId: " + hex);
         }
         return bytes[0];

@@ -40,6 +40,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.CallArguments;
@@ -355,6 +356,7 @@ public class EthModule
     }
 
     public static ReversibleTransactionExecutor.ReversibleTransactionParams buildParams(CallArgumentsToByteArray hexArgs, byte[] gasLimit, byte defaultChainId) {
+        TransactionType type = hexArgs.resolveType();
         return new ReversibleTransactionExecutor.ReversibleTransactionParams(
                 hexArgs.getGasPrice(),
                 gasLimit,
@@ -363,8 +365,8 @@ public class EthModule
                 hexArgs.getData(),
                 hexArgs.getFromAddress(),
                 hexArgs.getAuthorizationList(),
-                hexArgs.getChainId(defaultChainId),
-                hexArgs.resolveType(),
+                hexArgs.getChainId(type, defaultChainId),
+                type,
                 hexArgs.getAccessListBytes(),
                 hexArgs.getMaxPriorityFeePerGasBytes(),
                 hexArgs.getMaxFeePerGasBytes()
