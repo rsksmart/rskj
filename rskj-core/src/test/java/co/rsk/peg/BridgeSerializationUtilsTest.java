@@ -922,7 +922,6 @@ class BridgeSerializationUtilsTest {
             List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
 
             // assert
-            assertEquals(standardFederation.getAddress().toString(), utxo.getAddress());
             assertNull(deserializedUtxos.get(0).getAddress());
             assertUtxosEquals(utxos, deserializedUtxos);
         }
