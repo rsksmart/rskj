@@ -739,7 +739,7 @@ class BridgeSerializationUtilsTest {
         private final Sha256Hash fundingTxHash = BitcoinTestUtils.createHash(99);
 
         @Test
-        void withEmptyList_shouldReturnEmptyList() {
+        void serializeAndDeserialize_withEmptyList_shouldReturnEmptyList() {
             // arrange
             List<UTXO> utxos = new ArrayList<>();
 
@@ -748,6 +748,11 @@ class BridgeSerializationUtilsTest {
             List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
 
             // assert
+
+            // 0xc0 is RLP's single-byte encoding for a list with zero-length payload
+            // (OFFSET_SHORT_LIST + 0), i.e. the actual bytes persisted for "no UTXOs".
+            byte[] expectedSerializationForEmptyList = {(byte) 0xc0};
+            assertArrayEquals(expectedSerializationForEmptyList, serializedUtxos);
             assertUtxosEquals(utxos, deserializedUtxos);
         }
 
