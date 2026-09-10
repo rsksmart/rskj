@@ -134,10 +134,7 @@ public class CallArgumentsToByteArray {
 
     public List<SetCodeAuthorization> getAuthorizationList() {
         List<CallArguments.AuthorizationListEntry> entries = args.getAuthorizationList();
-        if (entries == null || entries.isEmpty()) {
-            return null;
-        }
-        return AuthorizationListCodec.parseFromCallArguments(entries);
+        return entries == null ? List.of() : AuthorizationListCodec.parseFromCallArguments(entries);
     }
 
     public TransactionType resolveType() {

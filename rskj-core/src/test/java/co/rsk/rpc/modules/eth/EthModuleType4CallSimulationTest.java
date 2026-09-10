@@ -235,6 +235,79 @@ class EthModuleType4CallSimulationTest {
         assertEquals(BigInteger.ZERO, chainState.getNonce(plainEOA_WITH_NO_CODE.getAddress()));
     }
 
+    @Test
+    void call_type4WithAccessList_executesDelegatedCode() {
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
+
+        List<CallArguments.AccessListEntry> accessList = List.of(accessListEntry(const42));
+
+        CallArgumentsParam params =
+                callArgumentsParam(
+                        authorityA.getAddress(),
+                        authorityA.getAddress(),
+                        new byte[0],
+                        List.of(auth),
+                        accessList);
+
+        String result = eth.call(params, new BlockIdentifierParam("latest"));
+        assertEquals("0x" + "00".repeat(31) + "2a", result);
+    }
+
+    @Test
+    void estimateGas_type4WithAccessList_includesAccessListIntrinsicGas() {
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
+        List<CallArguments.AccessListEntry> accessList = List.of(accessListEntry(const42));
+
+        byte[] encodedAccessList = AccessListCodec.encodeAccessList(accessList);
+
+        long withoutAccessList = estimate(authorityA.getAddress(), new byte[0], List.of(auth), null);
+        long withAccessList = estimate(authorityA.getAddress(), new byte[0], List.of(auth), accessList);
+        assertEquals(encodedAccessList.length * GasCost.ACCESS_LIST_GAS_PER_BYTE, withAccessList - withoutAccessList);
+    }
+
+    @Test
+    void estimateGas_emptyAuthorizationList_rejectsInvalidParams() {
+        CallArguments args = new CallArguments();
+        args.setFrom(authorityA.getAddress().toJsonString());
+        args.setTo(authorityA.getAddress().toJsonString());
+        args.setGas("0x5B8D80");
+        args.setAuthorizationList(List.of());
+
+        CallArgumentsParam params = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> ethGas.estimateGas(params, latest));
+        assertEquals(-32602, ex.getCode());
+    }
+
+    @Test
+    void estimateGas_type4_executesDelegatedCode() {
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
+
+        long noDelegation = estimate(authorityA.getAddress(), SET_VALUE_42, null);
+        long delegated = estimate(authorityA.getAddress(), SET_VALUE_42, List.of(auth));
+        long authorizationIntrinsicCost = GasCost.PER_EMPTY_ACCOUNT_COST;
+
+        assertTrue(delegated > noDelegation + authorizationIntrinsicCost, "delegated execution should consume execution gas in addition " + "to the authorization intrinsic cost");
+    }
+
+    @Test
+    void estimateGas_type4DelegatedExecutionReverts_propagatesError() {
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), reverter, BigInteger.ZERO, CHAIN_ID);
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> estimate(authorityA.getAddress(), new byte[0], List.of(auth)));
+
+        assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("revert"), "expected delegated revert to propagate through eth_estimateGas");
+    }
+
+
+
+    private CallArguments.AccessListEntry accessListEntry(RskAddress address) {
+        CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+        entry.setAddress(address.toJsonString());
+        entry.setStorageKeys(List.of("0x" + "0".repeat(63) + "1"));
+        return entry;
+    }
+
     private long estimate(RskAddress to, byte[] data, List<SetCodeAuthorization> authorizationList) {
         return estimate(to, data, authorizationList, null);
     }

@@ -38,6 +38,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
+import org.ethereum.core.transaction.TransactionType;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.datasource.HashMapDB;
@@ -1460,6 +1461,137 @@ class EthModuleTest {
         List<Transaction> result = ethModule.ethPendingTransactions();
 
         assertTrue(result.isEmpty(), "Expected no transactions as wallet is disabled");
+    }
+
+    @Test
+    void call_type4WithStateOverride_usesSnapshotAndPreservesTypedParams() {
+        RskAddress from = TestUtils.generateAddress("from");
+        RskAddress to = TestUtils.generateAddress("to");
+        CallArguments args = Rskip545TestSupport.defaultType4CallArguments(new byte[0]);
+
+        args.setFrom(from.toJsonString());
+        args.setTo(to.toJsonString());
+
+        AccountOverride accountOverride = new AccountOverride(to);
+
+        accountOverride.setBalance(BigInteger.valueOf(100_000));
+
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+        RepositorySnapshot snapshot = new MutableRepository(new TrieStoreImpl(new HashMapDB()), new Trie());
+        when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
+
+        ProgramResult result = mock(ProgramResult.class);
+        when(result.getHReturn()).thenReturn(new byte[0]);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+
+        when(executor.executeTransactionOnSnapshot(any(), eq(block), any(), any(), any())).thenReturn(result);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+        EthModule eth = new EthModule(
+                        null,
+                        Constants.REGTEST_CHAIN_ID,
+                        null,
+                        null,
+                        executor,
+                        retriever,
+                        repositoryLocator,
+                        null,
+                        null,
+                        bridgeSupportFactory,
+                        config.getGasEstimationCap(),
+                        config.getCallGasCap(),
+                        config.getActivationConfig(),
+                        new PrecompiledContracts(
+                                config,
+                                bridgeSupportFactory,
+                                signatureCache),
+                        true,
+                        new DefaultStateOverrideApplier(
+                                config.getActivationConfig()));
+
+
+        eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"), List.of(accountOverride));
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> captor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
+
+        verify(executor).executeTransactionOnSnapshot(any(), eq(block), any(), any(), captor.capture());
+        verify(executor, never()).executeTransactionAtBlock(any(), any(), any());
+
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = captor.getValue();
+
+        assertEquals(TransactionType.TYPE_4, params.type());
+        assertEquals(Constants.REGTEST_CHAIN_ID, params.chainId());
+        assertNotNull(params.authorizationList());
+        assertEquals(1, params.authorizationList().size());
+    }
+
+    @Test
+    void call_type4WithoutStateOverride_usesBlockAndPreservesTypedParams() {
+        RskAddress from = TestUtils.generateAddress("from");
+        RskAddress to = TestUtils.generateAddress("to");
+
+        CallArguments args = Rskip545TestSupport.defaultType4CallArguments(new byte[0]);
+        args.setFrom(from.toJsonString());
+        args.setTo(to.toJsonString());
+
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        ProgramResult result = mock(ProgramResult.class);
+        when(result.getHReturn()).thenReturn(new byte[0]);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+
+        when(executor.executeTransactionAtBlock(eq(block), any(), any())).thenReturn(result);
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(null, null, null, signatureCache);
+
+        EthModule eth =
+                new EthModule(
+                        null,
+                        Constants.REGTEST_CHAIN_ID,
+                        null,
+                        null,
+                        executor,
+                        retriever,
+                        mock(RepositoryLocator.class),
+                        null,
+                        null,
+                        bridgeSupportFactory,
+                        config.getGasEstimationCap(),
+                        config.getCallGasCap(),
+                        config.getActivationConfig(),
+                        new PrecompiledContracts(
+                                config,
+                                bridgeSupportFactory,
+                                signatureCache),
+                        true,
+                        new DefaultStateOverrideApplier(
+                                config.getActivationConfig()));
+
+        eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
+
+        ArgumentCaptor<ReversibleTransactionExecutor.ReversibleTransactionParams> captor = ArgumentCaptor.forClass(ReversibleTransactionExecutor.ReversibleTransactionParams.class);
+
+        verify(executor).executeTransactionAtBlock(eq(block), any(), captor.capture());
+        verify(executor, never()).executeTransactionOnSnapshot(any(), any(), any(), any(), any());
+        ReversibleTransactionExecutor.ReversibleTransactionParams params = captor.getValue();
+
+        assertEquals(TransactionType.TYPE_4, params.type());
+        assertEquals(Constants.REGTEST_CHAIN_ID, params.chainId());
+
+        assertNotNull(params.authorizationList());
+        assertEquals(1, params.authorizationList().size());
     }
 
     private Transaction createMockTransaction(String fromAddress) {

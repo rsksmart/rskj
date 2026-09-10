@@ -26,8 +26,12 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.util.HexUtils;
@@ -286,22 +290,26 @@ class CallArgumentsToByteArrayTest {
     }
 
     @Test
-    void getAuthorizationListWhenValueIsNull() {
+    void getAuthorizationListWhenValueIsNull_returnsEmptyList() {
         CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assertions.assertNull(byteArrayArgs.getAuthorizationList());
+        Assertions.assertTrue(byteArrayArgs.getAuthorizationList().isEmpty());
     }
 
     @Test
-    void getAuthorizationListWhenValueIsEmpty() {
+    void getAuthorizationListWhenValueIsEmpty_rejectsRequest() {
         CallArguments args = new CallArguments();
         args.setAuthorizationList(List.of());
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assertions.assertNull(byteArrayArgs.getAuthorizationList());
+        RskJsonRpcRequestException ex = Assertions.assertThrows(
+                RskJsonRpcRequestException.class,
+                byteArrayArgs::getAuthorizationList);
+        Assertions.assertEquals(-32602, ex.getCode());
+        Assertions.assertEquals("Set-code transaction authorization_list must not be empty", ex.getMessage());
     }
 
     @Test
@@ -317,33 +325,25 @@ class CallArgumentsToByteArrayTest {
         Assertions.assertEquals(entry.getAddress(), authorizations.get(0).getAddress().toJsonString());
     }
 
-    @Test
-    void getChainIdWhenValueIsNull_returnsDefault() {
+    @ParameterizedTest(name = "chainId=\"{0}\", default={1} -> {2}")
+    @MethodSource("chainIdDefaultingCases")
+    void getChainIdWhenValueIsAbsentOrSet_returnsExpected(String chainId, byte defaultChainId, byte expected) {
         CallArguments args = new CallArguments();
+        if (chainId != null) {
+            args.setChainId(chainId);
+        }
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assertions.assertEquals((byte) 33, byteArrayArgs.getChainId(TransactionType.LEGACY, (byte) 33));
+        Assertions.assertEquals(expected, byteArrayArgs.getChainId(TransactionType.LEGACY, defaultChainId));
     }
 
-    @Test
-    void getChainIdWhenValueIsEmpty_returnsDefault() {
-        CallArguments args = new CallArguments();
-        args.setChainId("");
-
-        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
-
-        Assertions.assertEquals((byte) 33, byteArrayArgs.getChainId(TransactionType.LEGACY, (byte) 33));
-    }
-
-    @Test
-    void getChainIdWhenValueIsSet_returnsParsedValue() {
-        CallArguments args = new CallArguments();
-        args.setChainId("0x21");
-
-        CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
-
-        Assertions.assertEquals((byte) 33, byteArrayArgs.getChainId(TransactionType.LEGACY, (byte) 1));
+    private static Stream<Arguments> chainIdDefaultingCases() {
+        return Stream.of(
+                Arguments.of(null, (byte) 33, (byte) 33),
+                Arguments.of("", (byte) 33, (byte) 33),
+                Arguments.of("0x21", (byte) 1, (byte) 33)
+        );
     }
 
     @Test

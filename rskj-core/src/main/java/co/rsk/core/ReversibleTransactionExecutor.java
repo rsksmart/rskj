@@ -76,6 +76,7 @@ public class ReversibleTransactionExecutor {
         return reversibleExecution(snapshot, executionBlock, coinbase, precompiledContracts, params).getResult();
     }
 
+    @SuppressWarnings("java:S6218")
     public record ReversibleTransactionParams(
             byte[] gasPrice,
             byte[] gasLimit,
