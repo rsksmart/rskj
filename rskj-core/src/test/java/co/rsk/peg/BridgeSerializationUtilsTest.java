@@ -739,24 +739,6 @@ class BridgeSerializationUtilsTest {
         private final Sha256Hash fundingTxHash = BitcoinTestUtils.createHash(99);
 
         @Test
-        void withEmptyUtxoList_shouldReturnEmptyList() {
-            // arrange
-            List<UTXO> utxos = new ArrayList<>();
-
-            // act
-            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
-            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
-
-            // assert
-
-            // 0xc0 is RLP's single-byte encoding for a list with zero-length payload
-            // (OFFSET_SHORT_LIST + 0), i.e. the actual bytes persisted for "no UTXOs".
-            byte[] expectedSerializationForEmptyList = {(byte) 0xc0};
-            assertArrayEquals(expectedSerializationForEmptyList, serializedUtxos);
-            assertUtxosEquals(utxos, deserializedUtxos);
-        }
-
-        @Test
         void serialize_withNullData_shouldThrowNullPointerException() {
             // serializeUTXOList has no null guard (list.size() is called directly), so this
             // pins the current NPE behavior — the storage layer must never save a null list.
@@ -782,15 +764,20 @@ class BridgeSerializationUtilsTest {
         }
 
         @Test
-        void withLargeUtxoList_shouldRecoverAllUtxosInOrder() {
+        void withEmptyUtxoList_shouldReturnEmptyList() {
             // arrange
-            List<UTXO> utxos = UTXOBuilder.builder().buildMany(200, BitcoinTestUtils::createHash);
+            List<UTXO> utxos = new ArrayList<>();
 
             // act
             byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
             List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
 
             // assert
+
+            // 0xc0 is RLP's single-byte encoding for a list with zero-length payload
+            // (OFFSET_SHORT_LIST + 0), i.e. the actual bytes persisted for "no UTXOs".
+            byte[] expectedSerializationForEmptyList = {(byte) 0xc0};
+            assertArrayEquals(expectedSerializationForEmptyList, serializedUtxos);
             assertUtxosEquals(utxos, deserializedUtxos);
         }
 
@@ -806,6 +793,19 @@ class BridgeSerializationUtilsTest {
                 .isCoinbase(true)
                 .build();
             List<UTXO> utxos = Collections.singletonList(utxo);
+
+            // act
+            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
+            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
+
+            // assert
+            assertUtxosEquals(utxos, deserializedUtxos);
+        }
+
+        @Test
+        void withLargeUtxoList_shouldRecoverAllUtxosInOrder() {
+            // arrange
+            List<UTXO> utxos = UTXOBuilder.builder().buildMany(200, BitcoinTestUtils::createHash);
 
             // act
             byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
