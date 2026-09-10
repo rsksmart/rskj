@@ -818,6 +818,10 @@ class BridgeSerializationUtilsTest {
         @Test
         void withDifferentUtxoCombinations_shouldRecoverAllUtxosInOrder() {
             // arrange
+            UTXO withZeroValueUtxo = UTXOBuilder.builder()
+                .withTransactionHash(BitcoinTestUtils.createHash(4))
+                .withValue(Coin.ZERO)
+                .build();
             UTXO lowValueNonCoinbaseUtxo = UTXOBuilder.builder()
                 .withTransactionHash(BitcoinTestUtils.createHash(1))
                 .withOutpointIndex(5)
@@ -842,6 +846,7 @@ class BridgeSerializationUtilsTest {
                 .withScriptPubKey(p2shOutputScript)
                 .build();
             List<UTXO> utxos = List.of(
+                withZeroValueUtxo,
                 lowValueNonCoinbaseUtxo,
                 highValueCoinbaseUtxo,
                 multisigUtxoWithHighIndexAndHeight
