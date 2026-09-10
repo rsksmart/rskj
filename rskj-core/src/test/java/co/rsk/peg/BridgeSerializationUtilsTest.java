@@ -782,6 +782,19 @@ class BridgeSerializationUtilsTest {
         }
 
         @Test
+        void serializeAndDeserialize_withLargeUtxoList_shouldRecoverAllUtxosInOrder() {
+            // arrange
+            List<UTXO> utxos = UTXOBuilder.builder().buildMany(200, BitcoinTestUtils::createHash);
+
+            // act
+            byte[] serializedUtxos = BridgeSerializationUtils.serializeUTXOList(utxos);
+            List<UTXO> deserializedUtxos = BridgeSerializationUtils.deserializeUTXOList(serializedUtxos);
+
+            // assert
+            assertUtxosEquals(utxos, deserializedUtxos);
+        }
+
+        @Test
         void withSingleUtxo_shouldRecoverOriginalUtxoData() {
             // arrange
             UTXO utxo = UTXOBuilder.builder()
