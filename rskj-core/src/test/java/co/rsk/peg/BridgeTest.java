@@ -1039,7 +1039,7 @@ class BridgeTest {
             // this literal is exactly 32 bytes, so btcTxId decodes fine; height then has no bytes left -> IntType.decode throws
             final byte[] invalidHexData = ByteUtil.merge(
                 registerPegoutTransactionFunction.encodeSignature(),
-                Hex.decode("0000000000000000000000000000000000000000000000080000000000000000")
+                Hex.decode("1111111111111111111111111111111111111111111111111111111111111111")
             );
 
             // act & assert
