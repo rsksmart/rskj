@@ -758,6 +758,8 @@ class BridgeSerializationUtilsTest {
 
         @Test
         void serialize_withNullData_shouldThrowNullPointerException() {
+            // serializeUTXOList has no null guard (list.size() is called directly), so this
+            // pins the current NPE behavior — the storage layer must never save a null list.
             assertThrows(NullPointerException.class, () -> BridgeSerializationUtils.serializeUTXOList(null));
         }
 
