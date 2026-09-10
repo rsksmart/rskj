@@ -34,6 +34,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.core.transaction.SetCodeAuthorization;
 import org.ethereum.core.transaction.TransactionType;
+import org.ethereum.core.transaction.parser.util.AccessListCodec;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.CallArguments;
@@ -187,7 +188,7 @@ class EthModuleType4CallSimulationTest {
     void delegatedRevert_propagatesAsEthCallRevert() {
         SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(plainEOA_WITH_NO_CODE.getEcKey(), reverter, BigInteger.ZERO, CHAIN_ID);
 
-        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> eth.call(callArgumentsParam(plainEOA_WITH_NO_CODE.getAddress(), plainEOA_WITH_NO_CODE.getAddress(), new byte[0], List.of(auth)), new BlockIdentifierParam("latest")));
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> eth.call(callArgumentsParam(plainEOA_WITH_NO_CODE.getAddress(), plainEOA_WITH_NO_CODE.getAddress(), new byte[0], List.of(auth), null), new BlockIdentifierParam("latest")));
         assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("revert"), "expected a revert error, got: " + ex.getMessage());
     }
 
@@ -204,6 +205,21 @@ class EthModuleType4CallSimulationTest {
     }
 
     @Test
+    void estimateGas_type4WithAccessList_addsAccessListIntrinsicGas() {
+        SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(authorityA.getEcKey(), const42, BigInteger.ZERO, CHAIN_ID);
+        CallArguments.AccessListEntry entry = new CallArguments.AccessListEntry();
+        entry.setAddress(const42.toJsonString());
+        entry.setStorageKeys(List.of("0x" + "0".repeat(63) + "1"));
+        List<CallArguments.AccessListEntry> accessList = List.of(entry);
+        byte[] encoded = AccessListCodec.encodeAccessList(accessList);
+
+        long withoutAccessList = estimate(authorityA.getAddress(), new byte[0], List.of(auth), null);
+        long withAccessList = estimate(authorityA.getAddress(), new byte[0], List.of(auth), accessList);
+
+        assertEquals(encoded.length * GasCost.ACCESS_LIST_GAS_PER_BYTE, withAccessList - withoutAccessList, "a Type 4 call with authorizationList must still be charged RSKIP-546's access-list intrinsic gas");
+    }
+
+    @Test
     void stateChangesFromDelegatedExecution_areDiscardedAfterTheCall() {
         SetCodeAuthorization selfAuth = Rskip545TestSupport.createSignedAuthorization(plainEOA_WITH_NO_CODE.getEcKey(), simpleStorage, BigInteger.ZERO, CHAIN_ID);
 
@@ -217,18 +233,24 @@ class EthModuleType4CallSimulationTest {
     }
 
     private long estimate(RskAddress to, byte[] data, List<SetCodeAuthorization> authorizationList) {
-        CallArgumentsParam params = callArgumentsParam(to, to, data, authorizationList);
+        return estimate(to, data, authorizationList, null);
+    }
+
+    private long estimate(RskAddress to, byte[] data, List<SetCodeAuthorization> authorizationList,
+                           List<CallArguments.AccessListEntry> accessList) {
+        CallArgumentsParam params = callArgumentsParam(to, to, data, authorizationList, accessList);
         String hex = ethGas.estimateGas(params, new BlockIdentifierParam("latest"));
         return HexUtils.jsonHexToLong(hex);
     }
 
     private String callHex(RskAddress to, byte[] data, List<SetCodeAuthorization> authorizationList) {
-        CallArgumentsParam params = callArgumentsParam(to, to, data, authorizationList);
+        CallArgumentsParam params = callArgumentsParam(to, to, data, authorizationList, null);
         return eth.call(params, new BlockIdentifierParam("latest"));
     }
 
     private CallArgumentsParam callArgumentsParam(RskAddress from, RskAddress to, byte[] data,
-                                                   List<SetCodeAuthorization> authorizationList) {
+                                                   List<SetCodeAuthorization> authorizationList,
+                                                   List<CallArguments.AccessListEntry> accessList) {
         CallArguments args = new CallArguments();
         args.setFrom(from.toJsonString());
         args.setTo(to.toJsonString());
@@ -237,6 +259,9 @@ class EthModuleType4CallSimulationTest {
         args.setType("0x4");
         if (authorizationList != null && !authorizationList.isEmpty()) {
             args.setAuthorizationList(authorizationList.stream().map(this::toEntry).toList());
+        }
+        if (accessList != null) {
+            args.setAccessList(accessList);
         }
         return TransactionFactoryHelper.toCallArgumentsParam(args);
     }

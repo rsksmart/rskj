@@ -142,7 +142,7 @@ public class ReversibleTransactionExecutor {
         }
 
         private static void applyAccessList(TransactionBuilder builder, TransactionType type, byte[] accessListBytes) {
-            if (accessListBytes != null && (type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2)) {
+            if (accessListBytes != null && (type == TransactionType.TYPE_1 || type == TransactionType.TYPE_2 || type == TransactionType.TYPE_4)) {
                 builder.accessList(accessListBytes);
             }
         }
