@@ -188,7 +188,10 @@ class EthModuleType4CallSimulationTest {
     void delegatedRevert_propagatesAsEthCallRevert() {
         SetCodeAuthorization auth = Rskip545TestSupport.createSignedAuthorization(plainEOA_WITH_NO_CODE.getEcKey(), reverter, BigInteger.ZERO, CHAIN_ID);
 
-        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> eth.call(callArgumentsParam(plainEOA_WITH_NO_CODE.getAddress(), plainEOA_WITH_NO_CODE.getAddress(), new byte[0], List.of(auth), null), new BlockIdentifierParam("latest")));
+        CallArgumentsParam params = callArgumentsParam(plainEOA_WITH_NO_CODE.getAddress(), plainEOA_WITH_NO_CODE.getAddress(), new byte[0], List.of(auth), null);
+        BlockIdentifierParam latest = new BlockIdentifierParam("latest");
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> eth.call(params, latest));
         assertTrue(ex.getMessage() != null && ex.getMessage().toLowerCase().contains("revert"), "expected a revert error, got: " + ex.getMessage());
     }
 

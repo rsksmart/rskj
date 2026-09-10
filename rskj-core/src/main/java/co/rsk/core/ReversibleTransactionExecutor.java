@@ -113,6 +113,25 @@ public class ReversibleTransactionExecutor {
             this(buildReversibleTransaction(nonce, params), params.fromAddress());
         }
 
+        private ReversibleTransaction(Transaction transaction, RskAddress fromAddress) {
+            super(
+                    transaction.getNonce(),
+                    transaction.getGasPrice(),
+                    transaction.getGasLimit(),
+                    transaction.getReceiveAddress(),
+                    transaction.getValue(),
+                    transaction.getData(),
+                    transaction.getChainId(),
+                    transaction.isLocalCallTransaction(),
+                    transaction.getTypePrefix(),
+                    transaction.getAccessListBytes(),
+                    transaction.getMaxPriorityFeePerGas(),
+                    transaction.getMaxFeePerGas(),
+                    transaction.getAuthorizationList()
+            );
+            this.sender = fromAddress;
+        }
+
         /**
          * We don't call Transaction.fromCallArguments(...) directly because it would
          * reject a Type 2/4 call that omits the fee-cap fields, and it picks the transaction type
@@ -168,25 +187,6 @@ public class ReversibleTransactionExecutor {
             if (type == TransactionType.TYPE_4) {
                 builder.authorizationList(authorizationList);
             }
-        }
-
-        private ReversibleTransaction(Transaction transaction, RskAddress fromAddress) {
-            super(
-                    transaction.getNonce(),
-                    transaction.getGasPrice(),
-                    transaction.getGasLimit(),
-                    transaction.getReceiveAddress(),
-                    transaction.getValue(),
-                    transaction.getData(),
-                    transaction.getChainId(),
-                    transaction.isLocalCallTransaction(),
-                    transaction.getTypePrefix(),
-                    transaction.getAccessListBytes(),
-                    transaction.getMaxPriorityFeePerGas(),
-                    transaction.getMaxFeePerGas(),
-                    transaction.getAuthorizationList()
-            );
-            this.sender = fromAddress;
         }
 
         @Override
